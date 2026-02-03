@@ -6,16 +6,16 @@ import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
 
-router.post("/create-pledge", protect, authorizeRoles("superadmin", "churchadmin"), createPledge);
-router.get("/get-pledge", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllPledge);
-router.get("/get-pledge/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSinglePledge); 
-router.put("/update-pledge/:id", protect, authorizeRoles("superadmin", "churchadmin"), updatePledge);
-router.delete("/delete-pledge/:id", protect, authorizeRoles("superadmin", "churchadmin"), deletePledge);
+router.post("/pledges", protect, authorizeRoles("superadmin", "churchadmin"), createPledge);
+router.get("/pledges", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllPledge);
+router.get("/pledges/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSinglePledge); 
+router.put("/pledges/:id", protect, authorizeRoles("superadmin", "churchadmin"), updatePledge);
+router.delete("/pledges/:id", protect, authorizeRoles("superadmin", "churchadmin"), deletePledge);
 
 
-router.post("/:pledgeId/create-pledge-payment", protect, authorizeRoles("superadmin", "churchadmin"), createPledgePayment);
-router.get("/:pledgeId/get-pledge-payment", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllPledgePayments);
-router.put("/:pledgeId/update-pledge-payment/:id", protect, authorizeRoles("superadmin", "churchadmin"), updatePledgePayment);
-router.delete("/:pledgeId/delete-pledge-payment/:id", protect, authorizeRoles("superadmin", "churchadmin"), deletePledgePayment);
+router.post("/pledges/:pledgeId/payments", protect, authorizeRoles("superadmin", "churchadmin"), createPledgePayment);
+router.get("/pledges/:pledgeId/payments", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllPledgePayments);
+router.put("/pledges/:pledgeId/payments/:id", protect, authorizeRoles("superadmin", "churchadmin"), updatePledgePayment);
+router.delete("/pledges/:pledgeId/payments/:id", protect, authorizeRoles("superadmin", "churchadmin"), deletePledgePayment);
 
 export default router

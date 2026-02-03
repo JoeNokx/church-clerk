@@ -1,7 +1,7 @@
-import Subscription from "../models/billingModel/subscriptionModel.js";
-import Plan from "../models/billingModel/planModel.js";
-import BillingHistory from "../models/billingModel/billingHistoryModel.js";
-import { addMonths, addDays } from "../utils/dateUtils.js";
+import Plan from "../../models/billingModel/planModel.js";
+import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
+import ReferralCode from "../../models/referralModel/referralCodeModel.js";
+import { addMonths } from "../../utils/dateBillingUtils.js";
 
 export const processBillingForSubscription = async (subscription) => {
   const now = new Date();
@@ -26,6 +26,11 @@ export const processBillingForSubscription = async (subscription) => {
     subscription.expiryWarning.shown = false;
 
     await subscription.save();
+
+    await ReferralCode.findOneAndUpdate(
+      { church: subscription.church },
+      { $inc: { totalFreeMonthsUsed: 1 } }
+    );
 
     await BillingHistory.create({
       church: subscription.church,

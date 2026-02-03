@@ -43,6 +43,7 @@ const billingHistorySchema = new mongoose.Schema(
     },
 
     invoiceSnapshot: {
+  planId: { type: mongoose.Schema.Types.ObjectId, ref: "Plan" },
   planName: String,
   billingInterval: String,
   amount: Number,

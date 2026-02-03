@@ -8,28 +8,14 @@ export const runDailyBillingJob = async () => {
 
   const subscriptions = await Subscription.find({
     nextBillingDate: { $lte: today },
-    status: { $nin: ["cancelled", "suspended"] }
+    status: { $in: ["active", "past_due"] }
   });
 
   for (const subscription of subscriptions) {
     const result = await processBillingForSubscription(subscription);
 
     if (result.charged) {
-      try {
-        // 🔥 Call Paystack here
-        const paystackResponse = { success: true, reference: "PS_REF_123" };
-
-        if (paystackResponse.success) {
-          await handleSuccessfulPayment(
-            subscription,
-            paystackResponse.reference
-          );
-        } else {
-          await handlePaymentFailure(subscription);
-        }
-      } catch (err) {
-        await handlePaymentFailure(subscription);
-      }
+      await handlePaymentFailure(subscription);
     }
 
     // Apply scheduled downgrade

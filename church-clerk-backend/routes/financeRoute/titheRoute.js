@@ -6,16 +6,16 @@ import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
 
-router.post("/create-titheIndividuals", protect, authorizeRoles("superadmin", "churchadmin"), createTitheIndividual);
-router.get("/get-titheIndividuals", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllTitheIndividual);
-router.put("/update-titheIndividuals/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateTitheIndividual);
-router.delete("/delete-titheIndividuals/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteTitheIndividual);
-router.get("/get-titheIndividuals-kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getTitheIndividualKPI);
+router.post("/tithe-individuals", protect, authorizeRoles("superadmin", "churchadmin"), createTitheIndividual);
+router.get("/tithe-individuals", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllTitheIndividual);
+router.put("/tithe-individuals/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateTitheIndividual);
+router.delete("/tithe-individuals/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteTitheIndividual);
+router.get("/tithe-individuals/stats/kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getTitheIndividualKPI);
 
-router.post("/create-titheAggregates", protect, authorizeRoles("superadmin", "churchadmin"), createTitheAggregate);
-router.get("/get-titheAggregates", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllTitheAggregates);
-router.put("/update-titheAggregates/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateTitheAggregate);
-router.delete("/delete-titheAggregates/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteTitheAggregate);
-router.get("/get-titheAggregates-kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getTitheAggregateKPI);
+router.post("/tithe-aggregates", protect, authorizeRoles("superadmin", "churchadmin"), createTitheAggregate);
+router.get("/tithe-aggregates", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllTitheAggregates);
+router.put("/tithe-aggregates/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateTitheAggregate);
+router.delete("/tithe-aggregates/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteTitheAggregate);
+router.get("/tithe-aggregates/stats/kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getTitheAggregateKPI);
 
 export default router

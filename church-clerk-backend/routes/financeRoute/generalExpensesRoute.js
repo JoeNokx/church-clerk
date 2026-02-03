@@ -7,12 +7,12 @@ import {setActiveChurch} from "../../middleware/activeChurchMiddleware.js";
 import {attachBillingBanner} from "../../middleware/expiryWarningMiddleware.js";
 import {readOnlyBranchGuard} from "../../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";   
+import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
 
-
-router.get("/get-general-expenses", protect, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllGeneralExpenses);
-router.post("/create-general-expenses", protect, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin"), createGeneralExpenses);
-router.put("/update-general-expenses/:id", protect, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin"), updateGeneralExpenses);
-router.delete("/delete-general-expenses/:id", protect, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin"), deleteGeneralExpenses);
-router.get("/get-general-expenses-kpi", protect, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getGeneralExpensesKPI);
+router.get("/general-expenses", protect, attachPermissions, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllGeneralExpenses);
+router.post("/general-expenses", protect, attachPermissions, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin"), createGeneralExpenses);
+router.put("/general-expenses/:id", protect, attachPermissions, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin"), updateGeneralExpenses);
+router.delete("/general-expenses/:id", protect, attachPermissions, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin"), deleteGeneralExpenses);
+router.get("/general-expenses/stats/kpi", protect, attachPermissions, setActiveChurch, readOnlyBranchGuard, attachBillingBanner, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getGeneralExpensesKPI);
 
 export default router

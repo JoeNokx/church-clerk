@@ -1,5 +1,6 @@
 import { createSubscriptionForChurch, upgradeTrialToPlans, runBillingCycles } from "./subscriptionService.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
+import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
 
 
@@ -10,7 +11,8 @@ export const chooseSubscription = async (req, res) => {
       planId = null,
       trial = false,
       currency = "GHS",
-      billingCycle = "monthly"
+      billingInterval = "monthly",
+      billingCycle
     } = req.body;
 
     const church = await Church.findById(churchId);
@@ -23,7 +25,7 @@ export const chooseSubscription = async (req, res) => {
       planId,
       trial,
       currency,
-      billingCycle
+      billingInterval: billingCycle || billingInterval
     });
 
     res.status(201).json({
@@ -40,14 +42,40 @@ export const chooseSubscription = async (req, res) => {
 
 export const getMySubscription = async (req, res) => {
   try {
-    const subscription = await Subscription.findOne({ church: req.user.church })
+    const subscription = await Subscription.findOne({ church: req.activeChurch._id })
       .populate("plan")
       .lean();
 
     if (!subscription)
       return res.status(404).json({ message: "No subscription found" });
 
-    res.json({ subscription });
+    const now = new Date();
+
+    const isTrialExpired =
+      subscription.status === "trialing" &&
+      subscription.trialEnd &&
+      now > new Date(subscription.trialEnd);
+
+    const isGraceExpired =
+      subscription.status === "past_due" &&
+      subscription.gracePeriodEnd &&
+      now > new Date(subscription.gracePeriodEnd);
+
+    const effectivePlan = subscription.status === "trialing"
+      ? await Plan.findOne({ name: { $regex: /^premium$/i }, isActive: true }).lean()
+      : subscription.plan;
+
+    const readOnly = Boolean(
+      isTrialExpired ||
+        subscription.status === "suspended" ||
+        isGraceExpired
+    );
+
+    res.json({
+      subscription,
+      effectivePlan: effectivePlan || subscription.plan || null,
+      readOnly
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -83,4 +111,11 @@ export const runBillingCycle = async (req, res) => {
   }
 };
 
-
+export const getAvailablePlans = async (req, res) => {
+  try {
+    const plans = await Plan.find({ isActive: true }).sort({ createdAt: 1 }).lean();
+    return res.json({ plans });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};

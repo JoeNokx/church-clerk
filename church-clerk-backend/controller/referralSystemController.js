@@ -11,6 +11,10 @@ import Church from "../models/churchModel.js";
  */
 const getMyReferralCode = async (req, res) => {
   try {
+    if (!req.activeChurch) {
+      return res.status(400).json({ message: "Church context not found" });
+    }
+
     const referralCode = await ReferralCode.findOne({
   church: req.activeChurch._id
 });
@@ -78,13 +82,9 @@ const rewardReferralIfEligible = async (churchId) => {
   const referral = await ReferralHistory.findOne({
     referredChurch: churchId,
     rewardStatus: "pending"
-  });
+  }).lean();
 
   if (!referral) return;
-
-  referral.rewardStatus = "rewarded";
-  referral.subscribedAt = new Date();
-  await referral.save();
 
   const subscription = await Subscription.findOne({
     church: referral.referrerChurch
@@ -92,8 +92,23 @@ const rewardReferralIfEligible = async (churchId) => {
 
   if (!subscription) return;
 
-  subscription.freeMonths.earned += 1;
-  await subscription.save();
+  const lockedReferral = await ReferralHistory.findOneAndUpdate(
+    {
+      _id: referral._id,
+      rewardStatus: "pending"
+    },
+    {
+      rewardStatus: "rewarded",
+      subscribedAt: new Date()
+    },
+    { new: true }
+  );
+
+  if (!lockedReferral) return;
+
+  await Subscription.findByIdAndUpdate(subscription._id, {
+    $inc: { "freeMonths.earned": 1 }
+  });
 
   await ReferralCode.findOneAndUpdate(
     { church: referral.referrerChurch },

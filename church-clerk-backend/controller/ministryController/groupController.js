@@ -13,7 +13,7 @@ const createGroup = async (req, res) => {
             return res.status(400).json({message: "group name is required"})    
         }
 
-        const existingGroup = await Group.findOne({name, church: req.user.church});
+        const existingGroup = await Group.findOne({name, church: req.activeChurch._id});
         if(existingGroup) {
             return res.status(400).json({message: "group name already exist"})
         }
@@ -34,7 +34,7 @@ const createGroup = async (req, res) => {
             name,
             description,
             meetingSchedule,
-            church: req.user.church,
+            church: req.activeChurch._id,
             createdBy: req.user._id
         })
 
@@ -50,11 +50,7 @@ const createGroup = async (req, res) => {
 const getAllGroups = async (req, res) => {
     
     try {
-        const query = {}
-
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = { church: req.activeChurch._id }
 
         const groups = await Group.find(query)
         .sort({createdAt: -1})
@@ -67,7 +63,7 @@ const getAllGroups = async (req, res) => {
  // Count members for all groups
     const groupsWithCounts = await Promise.all(
   groups.map(async group => {
-    const memberCount = await GroupMember.countDocuments({ group: group._id });
+    const memberCount = await GroupMember.countDocuments({ group: group._id, church: req.activeChurch._id });
     return { ...group.toObject(), totalMembers: memberCount };
   })
 );
@@ -90,11 +86,7 @@ const getSingleGroup = async (req, res) => {
 
             if (!groupId) return res.status(400).json({ message: "Group ID is required" });
 
-        const query = {_id: groupId}
-
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = {_id: groupId, church: req.activeChurch._id}
 
         const group = await Group.findOne(query)
         .select("name description meetingSchedule members");
@@ -125,11 +117,7 @@ const addMemberToGroup = async (req, res) => {
       return res.status(400).json({ message: "Please provide a name, email, or phone to search." });
     }
 
-        const query = {_id: groupId}
-
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = {_id: groupId, church: req.activeChurch._id}
         
         const group = await Group.findOne(query)
         if (!group) {
@@ -138,7 +126,7 @@ const addMemberToGroup = async (req, res) => {
 
           //search member by name, email or phone
           const member = await Member.findOne({
-            church: group.church,
+            church: req.activeChurch._id,
       $or: [
         { firstName: { $regex: searchMember, $options: "i" } },
         { lastName: { $regex: searchMember, $options: "i" } },
@@ -153,7 +141,7 @@ const addMemberToGroup = async (req, res) => {
 
           //check if member is already in group
            const memberExists = await GroupMember.findOne({
-      group: groupId,
+      group: groupId, church: req.activeChurch._id,
       member: member._id
     });
 
@@ -165,7 +153,7 @@ const addMemberToGroup = async (req, res) => {
       group: groupId,
       member: member._id,
       role,
-    church: group.church,
+    church: req.activeChurch._id,
     createdBy: req.user._id
     });
 
@@ -189,7 +177,7 @@ const getGroupMembers = async (req, res) => {
     const groupId = req.params.id;
 
         // 1️⃣ Total members (all, ignore search)
-    const totalMembers = await GroupMember.countDocuments({ group: groupId });
+    const totalMembers = await GroupMember.countDocuments({ group: groupId, church: req.activeChurch._id });
 
     // 2️⃣ Build search filter for populated members
     let memberMatch = {};
@@ -208,7 +196,7 @@ const getGroupMembers = async (req, res) => {
 
    
     // 3️⃣ Fetch paginated members with search
-    const groupMembers = await GroupMember.find({ group: groupId })
+    const groupMembers = await GroupMember.find({ group: groupId, church: req.activeChurch._id })
       .skip(skip)
       .limit(limitNum)
       .populate({
@@ -281,10 +269,7 @@ const updateMemberRole = async (req, res) => {
       return res.status(400).json({ message: "Role is required" });
     }
 
-    const query = { group: groupId, member: memberId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { group: groupId, member: memberId, church: req.activeChurch._id };
 
     const groupMember = await GroupMember.findOne(query);
     if (!groupMember) return res.status(404).json({ message: "group not found" });
@@ -322,10 +307,7 @@ const removeMemberFromGroup = async (req, res) => {
     const groupId = req.params.id;
     const memberId = req.params.memberId;
 
-    const query = { group: groupId, member: memberId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { group: groupId, member: memberId, church: req.activeChurch._id };
 
     const groupMember = await GroupMember.findOneAndDelete(query);
     if (!groupMember) return res.status(404).json({ message: "group member not found" });
@@ -349,11 +331,7 @@ const updateGroup = async (req, res) => {
     try {
         
         const groupId = req.params.id
-        const query = {_id: groupId}
-
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = {_id: groupId, church: req.activeChurch._id}
 
         const group = await Group.findOneAndUpdate(query, req.body, {new: true, runValidators: true});
 
@@ -373,11 +351,7 @@ const deleteGroup = async (req, res) => {
     
     try {
         const groupId = req.params.id
-        const query = {_id: groupId}
-
-        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = {_id: groupId, church: req.activeChurch._id}
 
         const group = await Group.findOneAndDelete(query);
 
@@ -406,10 +380,7 @@ const addMeeting = async (req, res) => {
         .json({ message: "meetingDay, meetingTime, and meetingVenue are required" });
     }
 
-    const query = { _id: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { _id: groupId, church: req.activeChurch._id };
 
     const group = await Group.findOne(query);
     if (!group) return res.status(404).json({ message: "Group not found" });
@@ -434,10 +405,7 @@ const updateMeeting = async (req, res) => {
     const meetingId = req.params.meetingId;
     const { meetingDay, meetingTime, meetingVenue } = req.body;
 
-    const query = { _id: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { _id: groupId, church: req.activeChurch._id };
 
     const group = await Group.findOne(query);
     if (!group) return res.status(404).json({ message: "Group not found" });
@@ -468,10 +436,7 @@ const deleteMeeting = async (req, res) => {
     const groupId = req.params.id;
     const meetingId = req.params.meetingId;
 
-    const query = { _id: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { _id: groupId, church: req.activeChurch._id };
 
     const group = await Group.findOne(query);
     if (!group) return res.status(404).json({ message: "Group not found" });
@@ -496,10 +461,7 @@ const getMeetings = async (req, res) => {
   try {
     const groupId = req.params.id;
 
-    const query = { _id: groupId };
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { _id: groupId, church: req.activeChurch._id };
 
     const group = await Group.findOne(query).select("meetingSchedule");
     if (!group) return res.status(404).json({ message: "Group not found" });
@@ -522,12 +484,7 @@ import Department from "../../models/ministryModel/departmentModel.js";
 
 const getMinistryKPI = async (req, res) => {
   try {
-    const ministryQuery = {};
-
-    // Restrict to user's church if not superadmin/supportadmin
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      ministryQuery.church = req.user.church;
-    }
+    const ministryQuery = { church: req.activeChurch._id };
 
     // Run all counts in parallel
     const [totalGroups, totalCells, totalDepartments] = await Promise.all([

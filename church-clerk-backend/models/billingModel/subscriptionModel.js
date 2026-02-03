@@ -15,6 +15,12 @@ const subscriptionSchema = new mongoose.Schema(
       required: false
     },
 
+    pendingPlan: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Plan",
+      default: null
+    },
+
     status: {
       type: String,
       enum: ["trialing", "active", "past_due", "suspended", "cancelled"],

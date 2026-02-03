@@ -5,11 +5,11 @@ import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
 
-router.get("/get-cells", protect, authorizeRoles("superadmin", "admin", "financialofficer"), getAllCells);
-router.get("/get-cell/:id", protect, authorizeRoles("superadmin", "admin"), getSingleCell); 
-router.post("/create-cell", protect, authorizeRoles("superadmin", "admin"), createCell);
-router.put("/update-cell/:id", protect, authorizeRoles("superadmin", "admin"), updateCell);
-router.delete("/delete-cell/:id", protect, authorizeRoles("superadmin", "admin"), deleteCell);
+router.get("/cells", protect, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllCells);
+router.get("/cells/:id", protect, authorizeRoles("superadmin", "churchadmin", "admin"), getSingleCell); 
+router.post("/cells", protect, authorizeRoles("superadmin", "churchadmin", "admin"), createCell);
+router.put("/cells/:id", protect, authorizeRoles("superadmin", "churchadmin", "admin"), updateCell);
+router.delete("/cells/:id", protect, authorizeRoles("superadmin", "churchadmin", "admin"), deleteCell);
 
 
 export default router

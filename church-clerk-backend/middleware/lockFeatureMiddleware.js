@@ -12,6 +12,7 @@ export const featureAccessGuard = async (req, res, next) => {
   if (
   subscription.status === "suspended" ||
   (subscription.status === "past_due" &&
+    subscription.gracePeriodEnd &&
     new Date() > subscription.gracePeriodEnd)
 ) {
   return res.status(402).json({

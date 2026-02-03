@@ -55,18 +55,20 @@ const registerUser = async (req, res) => {
         //user successful registered
         console.log("user registered successfully...")
 
-        res.status(201).json({
-          message: "User registered successfully. Proceed to church registration.", 
-          user,
-          userId: user._id,
-      nextStep: "church-registration"
-
-        });
-
-    } catch (error) {
-        res.status(400).json({message: error.message})
-        console.log("user could not be created")
-    }
+         res.status(201).json({
+      status: "success",
+      message: "User registered successfully",
+      data: {
+        user,
+        nextStep: "church-registration"
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message
+    });
+  }
 };
 
 
@@ -99,18 +101,28 @@ const loginUser =  async (req, res) => {
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
+            sameSite: "lax",
             maxAge: 24 * 60 * 60 * 1000 // 1 day
         });
 
 
         //login successful
-        res.status(200).json({message: "Login successful", user, token});
-        console.log("user logged in successfully...")
-    } catch (error) {
-        res.status(400).json({message: error.message})
-        console.log("user could not be created")
-    }
+      res.status(200).json({
+      status: "success",
+      message: "Login successful",
+      data: {
+        user,
+        activeChurch: req.activeChurch,
+        permissions: req.permissions
+      },
+      token: token 
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message
+    });
+  }
 };
 
 
@@ -125,12 +137,15 @@ const logoutUser = async (req, res) => {
       expires: new Date(0)
     });
 
-    res.status(200).json({ message: "Logged out successfully" });
-    console.log("User logged out successfully...");
-
+   res.status(200).json({
+    status: "success",
+    message: "Logged out successfully"
+  });
   } catch (error) {
-    res.status(500).json({ message: error.message });
-    console.log("Logout failed:", error.message);
+    res.status(500).json({
+      status: "error",
+      message: error.message
+    });
   }
 };
 
@@ -169,11 +184,15 @@ const updatePassword = async (req, res) => {
     // Remove password from response
     user.password = undefined;
 
-    res.status(200).json({ message: "Password updated successfully", user });
-    console.log("Password updated successfully...");
+    res.status(200).json({
+      status: "success",
+      message: "Password updated successfully"
+    });
   } catch (error) {
-    console.error("Update password error:", error.message);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      status: "error",
+      message: error.message
+    });
   }
 };
 

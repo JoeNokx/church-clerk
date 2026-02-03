@@ -7,19 +7,19 @@ import getWelfareKPI from "../../controller/financeController/welfareController/
 import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
-router.post("/create-welfare-contributions", protect, authorizeRoles("superadmin", "churchadmin"), createWelfareContribution);
-router.get("/get-welfare-contributions", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllWelfareContribution);
-router.put("/update-welfare-contributions/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateWelfareContribution);
-router.delete("/delete-welfare-contributions/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteWelfareContribution);
+router.post("/welfare-contributions", protect, authorizeRoles("superadmin", "churchadmin"), createWelfareContribution);
+router.get("/welfare-contributions", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllWelfareContribution);
+router.put("/welfare-contributions/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateWelfareContribution);
+router.delete("/welfare-contributions/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteWelfareContribution);
 
 
-router.post("/create-welfare-disbursement", protect, authorizeRoles("superadmin", "churchadmin"), createWelfareDisbursement);
-router.get("/get-welfare-disbursement", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllWelfareDisbursement);
-router.put("/update-welfare-disbursement/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateWelfareDisbursement);
-router.delete("/delete-welfare-disbursement/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteWelfareDisbursement);
+router.post("/welfare-disbursements", protect, authorizeRoles("superadmin", "churchadmin"), createWelfareDisbursement);
+router.get("/welfare-disbursements", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllWelfareDisbursement);
+router.put("/welfare-disbursements/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateWelfareDisbursement);
+router.delete("/welfare-disbursements/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteWelfareDisbursement);
 
 
-router.get("/get-welfare-kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getWelfareKPI);
+router.get("/welfare/stats/kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getWelfareKPI);
 
 
 export default router

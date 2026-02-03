@@ -5,7 +5,7 @@ import User from "../models/userModel.js";
 const myProfile =  async (req, res) => {
     try {
         const userId = req.user._id;
-        const user = await User.findById(userId).select("-password");
+        const user = await User.findById(userId).select("-password").populate("church", "name");
 
         //check if user exist
          if(!user) {
@@ -13,14 +13,21 @@ const myProfile =  async (req, res) => {
          }
        
         //my profile successfully retrieve
-        res.status(201).json(user)
-        console.log("my profile retrieved successfully...")
-
-    } catch (error) {
-        res.status(400).json({message: error.message})
-        console.log("user could not be found")
-
-    }
+         res.status(200).json({
+      status: "success",
+      message: "user profile fetched successfully",
+      data: {
+        user,
+        activeChurch: req.activeChurch,
+        permissions: req.permissions
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message
+    });
+  }
 };
 
 

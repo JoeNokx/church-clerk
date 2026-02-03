@@ -9,27 +9,25 @@ import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
 
-router.post("/create-business-ventures", protect, authorizeRoles("superadmin", "churchadmin"), createBusinessVentures);
-router.get("/get-business-ventures", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessVentures);
-router.get("/get-business-ventures/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSingleBusinessVentures); 
-router.put("/update-business-ventures/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateBusinessVentures);
-router.delete("/delete-business-ventures/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteBusinessVentures);
-router.get("/get-business-kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessKPI);
+router.post("/business-ventures", protect, authorizeRoles("superadmin", "churchadmin"), createBusinessVentures);
+router.get("/business-ventures", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessVentures);
+router.get("/business-ventures/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSingleBusinessVentures); 
+router.put("/business-ventures/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateBusinessVentures);
+router.delete("/business-ventures/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteBusinessVentures);
+router.get("/business-ventures/stats/kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessKPI);
 
 
-router.post("/:businessId/add-business-income", protect, authorizeRoles("superadmin", "churchadmin"), createBusinessIncome);
-router.get("/:businessId/get-business-income", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessIncome);
-router.put("/:businessId/update-business-income/:incomeId", protect, authorizeRoles("superadmin", "churchadmin"), updateBusinessIncome);
-router.delete("/:businessId/delete-business-income/:incomeId", protect, authorizeRoles("superadmin", "churchadmin"), deleteBusinessIncome);
+router.post("/business-ventures/:businessId/incomes", protect, authorizeRoles("superadmin", "churchadmin"), createBusinessIncome);
+router.get("/business-ventures/:businessId/incomes", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessIncome);
+router.put("/business-ventures/:businessId/incomes/:incomeId", protect, authorizeRoles("superadmin", "churchadmin"), updateBusinessIncome);
+router.delete("/business-ventures/:businessId/incomes/:incomeId", protect, authorizeRoles("superadmin", "churchadmin"), deleteBusinessIncome);
 
-router.post("/:businessId/add-business-expenses", protect, authorizeRoles("superadmin", "churchadmin"), createBusinessExpenses);
-router.get("/:businessId/get-business-expenses", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessExpenses);
-router.put("/:businessId/update-business-expenses/:expensesId", protect, authorizeRoles("superadmin", "churchadmin"), updateBusinessExpenses);
-router.delete("/:businessId/delete-business-expenses/:expensesId", protect, authorizeRoles("superadmin", "churchadmin"), deleteBusinessExpenses);
+router.post("/business-ventures/:businessId/expenses", protect, authorizeRoles("superadmin", "churchadmin"), createBusinessExpenses);
+router.get("/business-ventures/:businessId/expenses", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessExpenses);
+router.put("/business-ventures/:businessId/expenses/:expensesId", protect, authorizeRoles("superadmin", "churchadmin"), updateBusinessExpenses);
+router.delete("/business-ventures/:businessId/expenses/:expensesId", protect, authorizeRoles("superadmin", "churchadmin"), deleteBusinessExpenses);
 
-router.get("/:businessId/get-income-expenses-kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getIncomeExpensesKPI);
-
-
+router.get("/business-ventures/:businessId/income-expenses/kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getIncomeExpensesKPI);
 
 
 export default router

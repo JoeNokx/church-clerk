@@ -8,47 +8,89 @@ const getDashboardKPI = async (req, res) => {
  try {
     // --- MAIN QUERY (church scoped) ---
     const query = {};
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+    const churchId = req.activeChurch?._id || req.user?.church;
+    if (churchId) {
+      query.church = churchId;
     }
 
+    const now = new Date();
+
     // --- Start of current month for new members ---
-    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // --- Previous month range ---
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
 
     // --- MEMBER KPIs (parallel) ---
-    const [totalMembers, currentMembers, newMembersThisMonth] = await Promise.all([
+    const [
+      totalMembers,
+      currentMembers,
+      newMembersThisMonth,
+      totalMembersPrev,
+      currentMembersPrev,
+      newMembersPrevMonth
+    ] = await Promise.all([
       Member.countDocuments(query),
       Member.countDocuments({ ...query, status: "active" }),
-      Member.countDocuments({ ...query, dateJoined: { $gte: startOfMonth } })
+      Member.countDocuments({ ...query, dateJoined: { $gte: startOfMonth, $lt: startOfNextMonth } }),
+
+      // Previous month comparators
+      Member.countDocuments({ ...query, dateJoined: { $lt: startOfMonth } }),
+      Member.countDocuments({ ...query, status: "active", dateJoined: { $lt: startOfMonth } }),
+      Member.countDocuments({ ...query, dateJoined: { $gte: startOfPrevMonth, $lt: startOfMonth } })
     ]);
 
-    // --- LAST SUNDAY ATTENDANCE ---
+    // --- THIS SUNDAY ATTENDANCE (vs last Sunday) ---
     const today = new Date();
     const dayOfWeek = today.getDay(); // Sunday = 0
-    // Correct last Sunday: previous Sunday if today is Sunday, else most recent Sunday
-    const offset = dayOfWeek === 0 ? 7 : dayOfWeek;
-    const lastSunday = new Date(today);
-    lastSunday.setDate(today.getDate() - offset);
-    lastSunday.setHours(0, 0, 0, 0);
 
-    const nextDay = new Date(lastSunday);
-    nextDay.setDate(lastSunday.getDate() + 1);
+    // Most recent Sunday (today if Sunday, else previous Sunday)
+    const thisSunday = new Date(today);
+    thisSunday.setDate(today.getDate() - dayOfWeek);
+    thisSunday.setHours(0, 0, 0, 0);
 
-    // Find all Sunday services on that last Sunday
-    const sundayServices = await Attendance.find({
+    const thisSundayNextDay = new Date(thisSunday);
+    thisSundayNextDay.setDate(thisSunday.getDate() + 1);
+
+    const thisSundayServices = await Attendance.find({
       church: query.church,
-      serviceDate: { $gte: lastSunday, $lt: nextDay },
-      serviceType: { $regex: /^Sunday/i } // matches all Sunday services
+      serviceDate: { $gte: thisSunday, $lt: thisSundayNextDay },
+      serviceType: { $regex: /^Sunday/i }
     });
 
-    // Aggregate total attendance
-    const lastSundayAttendance = sundayServices.reduce(
-      (total, service) => total + (service.totalNumber || 0),
-      0
-    );
+    const lastSunday = new Date(thisSunday);
+    lastSunday.setDate(thisSunday.getDate() - 7);
+    lastSunday.setHours(0, 0, 0, 0);
 
-    const serviceCount = sundayServices.length;
-    const lastSundayDate = lastSunday.toISOString().split("T")[0]; // YYYY-MM-DD
+    const lastSundayNextDay = new Date(lastSunday);
+    lastSundayNextDay.setDate(lastSunday.getDate() + 1);
+
+    const lastSundayServices = await Attendance.find({
+      church: query.church,
+      serviceDate: { $gte: lastSunday, $lt: lastSundayNextDay },
+      serviceType: { $regex: /^Sunday/i }
+    });
+
+    const thisSundayAttendance = thisSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
+    const lastSundayAttendancePrevWeek = lastSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
+
+    const serviceCount = thisSundayServices.length;
+    const thisSundayDate = thisSunday.toISOString().split("T")[0]; // YYYY-MM-DD
+
+    const change = {
+      totalMembers: pctChange(totalMembers, totalMembersPrev),
+      currentMembers: pctChange(currentMembers, currentMembersPrev),
+      newMembersThisMonth: pctChange(newMembersThisMonth, newMembersPrevMonth),
+      lastSundayAttendance: pctChange(thisSundayAttendance, lastSundayAttendancePrevWeek)
+    };
 
     // --- RESPONSE ---
     return res.status(200).json({
@@ -57,8 +99,9 @@ const getDashboardKPI = async (req, res) => {
         totalMembers,
         currentMembers,
         newMembersThisMonth,
-        lastSundayAttendance,
-        lastSundayInfo: `${serviceCount} service${serviceCount !== 1 ? 's' : ''} · ${lastSundayDate}`
+        lastSundayAttendance: thisSundayAttendance,
+        change,
+        lastSundayInfo: `${serviceCount} service${serviceCount !== 1 ? 's' : ''} · ${thisSundayDate}`
       }
     });
 
@@ -76,8 +119,9 @@ const getDashboardKPI = async (req, res) => {
 const getDashboardAnalytics = async (req, res) => {
   try {
     const query = {};
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+    const churchId = req.activeChurch?._id || req.user?.church;
+    if (churchId) {
+      query.church = churchId;
     }
 
     // --- Year parameter (default: current year) ---
@@ -169,11 +213,20 @@ const getDashboardWidget = async (req, res) => {
   try {
     // --- Church scoping ---
     const query = {};
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+    const churchId = req.activeChurch?._id || req.user?.church;
+    if (churchId) {
+      query.church = churchId;
     }
 
     const today = new Date();
+
+    const rawBirthdaysLimit = req.query?.birthdaysLimit;
+    let birthdaysLimit = 10;
+    if (rawBirthdaysLimit !== undefined && rawBirthdaysLimit !== null && rawBirthdaysLimit !== "") {
+      const parsed = parseInt(rawBirthdaysLimit);
+      if (!Number.isNaN(parsed)) birthdaysLimit = parsed;
+    }
+    if (birthdaysLimit <= 0) birthdaysLimit = Number.MAX_SAFE_INTEGER;
 
     // --- 1. Upcoming Birthdays (next 30 days) ---
     // MongoDB cannot match by month/day directly, so we handle in JS after fetching
@@ -196,36 +249,36 @@ const getDashboardWidget = async (req, res) => {
       })
       .filter(Boolean)
       .sort((a, b) => a.daysAway - b.daysAway)
-      .slice(0, 10); // top 10 upcoming birthdays
+      .slice(0, birthdaysLimit);
 
-    // --- 2. Recent Members (last 10 joined) ---
+    // --- 2. Recent Members (last 10 created) ---
     const recentMembers = await Member.find(query)
-      .sort({ dateJoined: -1 })
+      .sort({ createdAt: -1 })
       .limit(10)
-      .select("firstName lastName dateJoined status")
+      .select("firstName lastName createdAt status")
       .lean();
 
     // --- 3. Upcoming Events ---
-   const upcomingEvents = await Event.find({
-  ...query,
-  $or: [
-    // Single-day future events
-    {
-      dateTo: { $exists: false },
-      dateFrom: { $gt: today }
-    },
+    const upcomingEvents = await Event.find({
+      ...query,
+      $or: [
+        // Single-day future events
+        {
+          dateTo: { $exists: false },
+          dateFrom: { $gt: today }
+        },
 
-    // Multi-day events that start in the future
-    {
-      dateFrom: { $gt: today },
-      dateTo: { $gt: today }
-    }
-  ]
-})
-  .sort({ dateFrom: 1 })
-  .limit(10)
-  .select("title dateFrom venue")
-  .lean();
+        // Multi-day events that start in the future
+        {
+          dateFrom: { $gt: today },
+          dateTo: { $gt: today }
+        }
+      ]
+    })
+      .sort({ dateFrom: 1 })
+      .limit(10)
+      .select("title dateFrom venue")
+      .lean();
 
   
     // --- RESPONSE ---
@@ -248,4 +301,6 @@ const getDashboardWidget = async (req, res) => {
 
 
 export {getDashboardKPI, getDashboardAnalytics, getDashboardWidget };
+
+
 

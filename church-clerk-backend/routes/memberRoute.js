@@ -6,13 +6,11 @@ import authorizeRoles from "../middleware/roleMiddleware.js";
 import {blockMemberCreationIfOverdue} from "../middleware/blockMemberCreationMiddleware.js"
 
 
-router.get("/get-members", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllMembers);
-router.get("/get-members/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSingleMember); 
-router.post("/create-members", protect, blockMemberCreationIfOverdue, authorizeRoles("superadmin", "churchadmin"), createMember);
-router.put("/update-members/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateMember);
-router.delete("/delete-members/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteMember);
-router.get("/get-members-kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllMembersKPI);
+router.get("/members", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllMembers);
+router.get("/members/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSingleMember); 
+router.post("/members", protect, blockMemberCreationIfOverdue, authorizeRoles("superadmin", "churchadmin"), createMember);
+router.put("/members/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateMember);
+router.delete("/members/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteMember);
+router.get("/members/stats/kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllMembersKPI);
 
-export default router 
-
-
+export default router

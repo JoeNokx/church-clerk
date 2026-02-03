@@ -17,13 +17,13 @@ const createMember = async (req, res) => {
                 return res.status(400).json({message: "first name, last name and phone number are required"})
             }
 
-          // Get logged-in user's church and userId
-    const churchId = req.user.church;
+          // Get active church and userId
+    const churchId = req.activeChurch?._id;
     const createdBy = req.user._id;
 
 
     if (!churchId) {
-      return res.status(400).json({ message: "User has no church assigned." });
+      return res.status(400).json({ message: "Church context not found" });
     }
 
     // Fetch church document
@@ -128,21 +128,25 @@ const getAllMembers = async (req, res) => {
       page = 1,
       limit = 10,
       search = "",
-      department,
-      group,
-      cell,
+      dateFrom,
+      dateTo,
       status, // active | inactive
     } = req.query;
+
+    // ---- Validate date query params ----
+    if (dateFrom && isNaN(Date.parse(dateFrom))) {
+      return res.status(400).json({ message: "Invalid dateFrom" });
+    }
+
+    if (dateTo && isNaN(Date.parse(dateTo))) {
+      return res.status(400).json({ message: "Invalid dateTo" });
+    }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
     const skip = (pageNum - 1) * limitNum;
 
-        const baseQuery = {}
-
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            baseQuery.church = req.user.church
-        }
+        const baseQuery = { church: req.activeChurch._id }
 
         // Query for filtered member list
     const query = { ...baseQuery };
@@ -159,38 +163,36 @@ const getAllMembers = async (req, res) => {
       ];
     }
 
-    // Exact filters
-// if (department) query.department = department;
-// if (group) query.group = group;
-// if (cell) query.cell = cell;
+    // Status filter: active, inactive, or all
+    if (status && status !== "all") {
+      query.status = status; // "active" or "inactive"
+    }
 
-// Status filter: active, inactive, or all
-if (status && status !== "all") {
-  query.status = status; // "active" or "inactive"
-}
+    // Filter by date range (dateJoined)
+    if (dateFrom || dateTo) {
+      query.dateJoined = {};
 
-// Department filter: dynamic predefined or user-added
-if (department && department !== "all departments") {
-  query.department = { $in: [department] };
-}
+      if (dateFrom) {
+        const startDate = new Date(dateFrom);
+        startDate.setHours(0, 0, 0, 0);
+        query.dateJoined.$gte = startDate;
+      }
 
-if (group && group !== "all groups") {
-  query.group = { $in: [group] };
-}
-
-if (cell && cell !== "all cells") {
-  query.cell = { $in: [cell] };
-}
-
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        query.dateJoined.$lte = endDate;
+      }
+    }
 
         const members = await Member.find(query)
         .sort({ createdAt: -1 })
-        .select("firstName lastName phoneNumber email dateJoined churchRole city status")
+        .select("firstName lastName phoneNumber email dateJoined createdAt churchRole city status")
         .skip(skip)
         .limit(limitNum);
 
       
-const totalMembers = await Member.countDocuments(baseQuery);
+const totalMembers = await Member.countDocuments(query);
 
 
     // Pagination info
@@ -231,126 +233,93 @@ const totalMembers = await Member.countDocuments(baseQuery);
             pagination,
             count: members.length,
             members
-
         })
         
     } catch (error) {
         console.log("members could not be fetched", error)
         res.status(400).json({message: "member could not be fetched", error: error.message})
-
     }
 }
 
-
 const getSingleMember = async (req, res) => {
-    
-    try {
-        
-        const memberId = req.params.id;
-        const query = {_id: memberId}
+  
+  try {
+    const memberId = req.params.id;
+    const query = { _id: memberId, church: req.activeChurch._id }
 
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+    const member = await Member.findOne(query)
+      .populate("church", "name")
+      .populate("cell", "name role status")
+      .populate("group", "name role status")
+      .populate("department", "name role status")
 
-        const member = await Member.findOne(query)
-        .populate("church", "name")
-        .populate("cell", "name role status")
-        .populate("group", "name role status")
-        .populate("department", "name role status")
-       
-        
-        const memberStatus = member.status;
+    const memberStatus = member.status;
 
-        if(!member) {
-            return res.status(404).json({message: "member not found"})
-        }
+    if (!member) {
+      return res.status(404).json({ message: "member not found" })
+    }
 
-      
     return res.status(200).json({
       message: "Member retrieved successfully",
       member,
       memberStatus: memberStatus
-     
     });
-    } catch (error) {
-                console.log("member could not be fetched", error)
-        return res.status(400).json({message: "member could not be created", error: error.message})
-   
-    }
+  } catch (error) {
+    console.log("member could not be fetched", error)
+    return res.status(400).json({ message: "member could not be created", error: error.message })
+  }
 }
-
 
 //UPDATE MEMBER
 const updateMember = async (req, res) => {
-    
-    try {
-        const memberId = req.params.id;
-        const query = {_id: memberId}
+  
+  try {
+    const memberId = req.params.id;
+    const query = { _id: memberId, church: req.activeChurch._id }
 
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+    const member = await Member.findOneAndUpdate(query, req.body, { new: true, runValidators: true })
 
-        const member = await Member.findOneAndUpdate(query, req.body, {new: true, runValidators: true})
-
-         if (!member) {
+    if (!member) {
       return res.status(404).json({ message: "Member not found" });
     }
-        return res.status(200).json({
-            message: "member updated successfully", 
-            member
-        })
-
-        
-    } catch (error) {
-        console.log("member could not be updated", error)
-        return res.status(400).json({message: "member could not be updated", error: error.message})
-   
-    }
+    return res.status(200).json({
+      message: "member updated successfully",
+      member
+    })
+  } catch (error) {
+    console.log("member could not be updated", error)
+    return res.status(400).json({ message: "member could not be updated", error: error.message })
+  }
 }
-
 
 const deleteMember = async (req, res) => {
-    
-    try {
-         const memberId = req.params.id;
-        const query = {_id: memberId}
+  
+  try {
+    const memberId = req.params.id;
+    const query = { _id: memberId, church: req.activeChurch._id }
 
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+    const member = await Member.findOneAndDelete(query);
 
-        const member = await Member.findOneAndDelete(query);
-
-         if (!member) {
+    if (!member) {
       return res.status(404).json({ message: "Member not found" });
     }
-        return res.status(200).json({
-            message: "member deleted successfully", 
-            member
-        })
-    } catch (error) {
-         console.log("member could not be deleted", error)
-        return res.status(400).json({message: "member could not be deleted", error: error.message})
-   
-    }
+    return res.status(200).json({
+      message: "member deleted successfully",
+      member
+    })
+  } catch (error) {
+    console.log("member could not be deleted", error)
+    return res.status(400).json({ message: "member could not be deleted", error: error.message })
+  }
 }
 
-
 //get members KPI
-
 
 const getAllMembersKPI = async (req, res) => {
   try {
 
     // MAIN QUERY
-    const query = {};
-
-    // Restrict by church for non-admins
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { church: req.activeChurch._id };
 
     // Start of current month
     const startOfMonth = new Date(

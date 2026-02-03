@@ -4,11 +4,11 @@ import {createIncome, getAllIncomes, getSingleIncome, updateIncome, deleteIncome
 import { protect } from "../../../middleware/authMiddleware.js";
 import authorizeRoles from "../../../middleware/roleMiddleware.js";
 
-router.post("/create-income", protect, authorizeRoles("superadmin", "admin"), createIncome);
-router.get("/get-income", protect, authorizeRoles("superadmin", "admin", "financialofficer"), getAllIncomes);
-router.get("/get-income/:id", protect, authorizeRoles("superadmin", "admin"), getSingleIncome); 
-router.put("/update-income/:id", protect, authorizeRoles("superadmin", "admin"), updateIncome);
-router.delete("/delete-income/:id", protect, authorizeRoles("superadmin", "admin"), deleteIncome);
+router.post("/incomes", protect, authorizeRoles("superadmin", "admin"), createIncome);
+router.get("/incomes", protect, authorizeRoles("superadmin", "admin", "financialofficer"), getAllIncomes);
+router.get("/incomes/:id", protect, authorizeRoles("superadmin", "admin"), getSingleIncome); 
+router.put("/incomes/:id", protect, authorizeRoles("superadmin", "admin"), updateIncome);
+router.delete("/incomes/:id", protect, authorizeRoles("superadmin", "admin"), deleteIncome);
 
 
 export default router

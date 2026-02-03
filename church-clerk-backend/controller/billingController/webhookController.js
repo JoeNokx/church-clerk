@@ -3,40 +3,47 @@ import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import ReferralHistory from "../../models/referralModel/referralHistoryModel.js";
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
-import { addMonths } from "../utils/dateUtils.js";
+import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
 
 export const paystackWebhook = async (req, res) => {
   try {
     // VERIFY PAYSTACK SIGNATURE
+    if (!req.rawBody) {
+      return res.status(400).send("Missing raw body");
+    }
+
     const hash = crypto
       .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
-      .update(req.body)
+      .update(req.rawBody)
       .digest("hex");
 
     if (hash !== req.headers["x-paystack-signature"]) {
       return res.status(401).send("Invalid signature");
     }
 
-    const event = JSON.parse(req.body.toString());
+    const event = JSON.parse(req.rawBody.toString());
 
     // HANDLE SUCCESSFUL PAYMENT
     if (event.event === "charge.success") {
       const reference = event.data.reference;
 
-      // 🔒 Idempotency: do not reprocess
-      const existingBilling = await BillingHistory.findOne({
-        providerReference: reference
-      });
+      const billingId = event?.data?.metadata?.billingId;
 
-      if (existingBilling) {
-        return res.sendStatus(200);
-      }
-
-      const billing = await BillingHistory.findOne({
-        status: "pending"
-      }).sort({ createdAt: -1 });
+      const billing = billingId
+        ? await BillingHistory.findOne({
+            _id: billingId,
+            paymentProvider: "paystack"
+          })
+        : await BillingHistory.findOne({
+            providerReference: reference,
+            paymentProvider: "paystack"
+          }).sort({ createdAt: -1 });
 
       if (!billing) return res.sendStatus(200);
+
+      if (billing.status === "paid") {
+        return res.sendStatus(200);
+      }
 
       // Update billing record
       billing.status = "paid";
@@ -48,10 +55,26 @@ export const paystackWebhook = async (req, res) => {
       if (!subscription) return res.sendStatus(200);
 
       const now = new Date();
+      const wasTrialing = subscription.status === "trialing";
 
       subscription.status = "active";
       subscription.gracePeriodEnd = null;
       subscription.expiryWarning.shown = false;
+
+      if (wasTrialing) {
+        subscription.trialStart = null;
+        subscription.trialEnd = null;
+      }
+
+      if (billing.invoiceSnapshot?.planId) {
+        subscription.plan = billing.invoiceSnapshot.planId;
+      }
+
+      if (billing.invoiceSnapshot?.billingInterval) {
+        subscription.billingInterval = billing.invoiceSnapshot.billingInterval;
+      }
+
+      subscription.paymentProvider = "paystack";
 
       subscription.nextBillingDate = addMonths(
         now,
@@ -67,38 +90,48 @@ export const paystackWebhook = async (req, res) => {
       // =============================
       // 3️⃣ REFERRAL REWARD (FIRST PAYMENT ONLY)
       // =============================
-      const referral = await ReferralHistory.findOne({
+      const referralRecord = await ReferralHistory.findOne({
         referredChurch: subscription.church,
         rewardStatus: "pending"
-      });
+      }).lean();
 
-      if (referral) {
-        referral.rewardStatus = "rewarded";
-        referral.subscribedAt = new Date();
-        await referral.save();
-
-        // Increment referrer's free month
+      if (referralRecord) {
         const referrerSubscription = await Subscription.findOne({
-          church: referral.referrerChurch
+          church: referralRecord.referrerChurch
         });
 
         if (referrerSubscription) {
-          referrerSubscription.freeMonths.earned += 1;
-          await referrerSubscription.save();
+          const lockedReferral = await ReferralHistory.findOneAndUpdate(
+            {
+              _id: referralRecord._id,
+              rewardStatus: "pending"
+            },
+            {
+              rewardStatus: "rewarded",
+              subscribedAt: new Date()
+            },
+            { new: true }
+          );
+
+          if (lockedReferral) {
+            await Subscription.findByIdAndUpdate(referrerSubscription._id, {
+              $inc: { "freeMonths.earned": 1 }
+            });
+
+            await ReferralCode.findOneAndUpdate(
+              { church: referralRecord.referrerChurch },
+              { $inc: { totalFreeMonthsEarned: 1 } }
+            );
+
+            await BillingHistory.create({
+              church: referralRecord.referrerChurch,
+              subscription: referrerSubscription._id,
+              type: "free_month",
+              status: "rewarded",
+              amount: 0
+            });
+          }
         }
-
-        await ReferralCode.findOneAndUpdate(
-          { church: referral.referrerChurch },
-          { $inc: { totalFreeMonthsEarned: 1 } }
-        );
-
-        await BillingHistory.create({
-          church: referral.referrerChurch,
-          subscription: referrerSubscription._id,
-          type: "free_month",
-          status: "rewarded",
-          amount: 0
-        });
       }
     }
 
@@ -106,11 +139,23 @@ export const paystackWebhook = async (req, res) => {
     if (event.event === "charge.failed") {
       const reference = event.data.reference;
 
-      const billing = await BillingHistory.findOne({
-        providerReference: reference
-      });
+      const billingId = event?.data?.metadata?.billingId;
+
+      const billing = billingId
+        ? await BillingHistory.findOne({
+            _id: billingId,
+            paymentProvider: "paystack"
+          })
+        : await BillingHistory.findOne({
+            providerReference: reference,
+            paymentProvider: "paystack"
+          });
 
       if (!billing) return res.sendStatus(200);
+
+      if (billing.status === "failed") {
+        return res.sendStatus(200);
+      }
 
       billing.status = "failed";
       await billing.save();
@@ -119,9 +164,7 @@ export const paystackWebhook = async (req, res) => {
       if (!subscription) return res.sendStatus(200);
 
       subscription.status = "past_due";
-      subscription.gracePeriodEnd = new Date(
-        Date.now() + 3 * 24 * 60 * 60 * 1000
-      );
+      subscription.gracePeriodEnd = addDays(new Date(), 3);
 
       await subscription.save();
     }

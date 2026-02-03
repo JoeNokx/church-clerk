@@ -17,7 +17,7 @@ const createAttendance = async (req, res) => {
             serviceTime,
             totalNumber,
             mainSpeaker,
-            church: req.user.church,
+            church: req.activeChurch._id,
             createdBy: req.user._id
           })
 
@@ -44,10 +44,7 @@ const getAllAttendances = async (req, res) => {
     // MAIN QUERY
     const query = {};
 
-    // Restrict by church for non-admins
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    query.church = req.activeChurch._id;
 
     // Filter by serviceType
     if (serviceType) {
@@ -138,9 +135,7 @@ const updateAttendance = async (req, res) => {
         const {id} = req.params;
         const query = {_id: id}
 
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        query.church = req.activeChurch._id
 
         const attendance = await Attendance.findOneAndUpdate(query, req.body, {
             new: true,
@@ -162,11 +157,7 @@ const deleteAttendance = async (req, res) => {
     
     try {
          const {id} = req.params;
-        const query = {_id: id}
-
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = { _id: id, church: req.activeChurch._id }
         
         const attendance = await Attendance.findOneAndDelete(query)
 
@@ -201,13 +192,13 @@ const createVisitor = async (req, res) => {
       note
     } = req.body;
 
-    if (!fullName || !phoneNumber ||!serviceType) {
+    if (!fullName || !phoneNumber || !location || !serviceType) {
       return res.status(400).json({
-        message: "fullName, phoneNumber and serviceType are required",
+        message: "fullName, phoneNumber, location and serviceType are required",
       });
     }
 
-    const visitor = await Visitor.create({
+    const data = {
       fullName,
       phoneNumber,
       email,
@@ -215,11 +206,16 @@ const createVisitor = async (req, res) => {
       serviceType,
       serviceDate,
       invitedBy,
-      status,
       note,
-      church: req.user.church,
-      createdBy: req.user._id,
-    });
+      church: req.activeChurch._id,
+      createdBy: req.user._id
+    };
+
+    if (status) {
+      data.status = status;
+    }
+
+    const visitor = await Visitor.create(data);
 
     return res.status(201).json({
       message: "Visitor created successfully",
@@ -240,11 +236,7 @@ const getSingleVisitor = async (req, res) => {
     
     try {
         const {id} = req.params;
-        const query = {_id: id}
-
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = { _id: id, church: req.activeChurch._id }
 
         const visitor = await Visitor.findOne(query)
 
@@ -273,11 +265,7 @@ const getAllVisitors = async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     // MAIN QUERY
-    const query = { };
-
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { church: req.activeChurch._id };
 
     if (search) {
       query.$or = [
@@ -303,14 +291,14 @@ const getAllVisitors = async (req, res) => {
     startOfMonth.setHours(0, 0, 0, 0);
 
     const thisMonthVisitors = await Visitor.countDocuments({
-      church: req.user.church,
+      church: req.activeChurch._id,
       createdAt: { $gte: startOfMonth },
     });
 
     // COUNT CONVERTED VISITORS (member exists with same phoneNumber)
  const convertedVisitors = await Member.countDocuments({
   visitorId: { $ne: null },
-  church: req.user.church
+  church: req.activeChurch._id
 });
 
     // IF NO RESULTS
@@ -376,11 +364,7 @@ const updateVisitor = async (req, res) => {
     
     try {
         const {id} = req.params;
-        const query = {_id: id}
-
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = { _id: id, church: req.activeChurch._id }
 
         const attendance = await Visitor.findOneAndUpdate(query, req.body, {
             new: true,
@@ -402,11 +386,7 @@ const deleteVisitor = async (req, res) => {
     
     try {
          const {id} = req.params;
-        const query = {_id: id}
-
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = { _id: id, church: req.activeChurch._id }
         
         const attendance = await Visitor.findOneAndDelete(query)
 

@@ -3,7 +3,7 @@ export const getExpiryInfo = (subscription) => {
 
   const expiryDate =
     subscription.status === "trialing"
-      ? subscription.trialEndsAt
+      ? subscription.trialEnd
       : subscription.nextBillingDate;
 
   if (!expiryDate) return null;

@@ -24,7 +24,7 @@ const createPledge = async (req, res) => {
                   }
         
                   const pledges = await Pledge.create({
-                    church: req.user.church,
+                    church: req.activeChurch._id,
                     name,
                     phoneNumber,
                     serviceType,
@@ -58,10 +58,7 @@ const getAllPledge = async (req, res) => {
                     // MAIN QUERY
                     const query = {};
                 
-                    // Restrict by church for non-admins
-                    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                      query.church = req.user.church;
-                    }
+                    query.church = req.activeChurch._id;
                 
                     // Filter by serviceType
                     if (serviceType) {
@@ -171,11 +168,7 @@ const getSinglePledge = async (req, res) => {
     
     try {
         const {id} = req.params;
-        const query = {_id: id}
-
-        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
-        }
+        const query = { _id: id, church: req.activeChurch._id }
 
         const pledges = await Pledge.findOne(query)
 
@@ -218,11 +211,7 @@ const updatePledge = async (req, res) => {
     
     try {
          const {id} = req.params;
-                        const query = {_id: id}
-                
-                        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                            query.church = req.user.church
-                        }
+                        const query = { _id: id, church: req.activeChurch._id }
                 
                         const pledges = await Pledge.findOneAndUpdate(query, req.body, {
                             new: true,
@@ -244,11 +233,7 @@ const deletePledge = async (req, res) => {
     
     try {
         const {id} = req.params;
-                        const query = {_id: id}
-                
-                        if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                            query.church = req.user.church
-                        }
+                        const query = { _id: id, church: req.activeChurch._id }
                         
                         const pledges = await Pledge.findOneAndDelete(query)
                 

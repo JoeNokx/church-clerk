@@ -13,7 +13,7 @@ const createTitheAggregate = async (req, res) => {
                     date,
                     description,
                     amount,
-                    church: req.user.church,
+                    church: req.activeChurch._id,
                     createdBy: req.user._id
                   })
         
@@ -48,10 +48,7 @@ const getAllTitheAggregates = async (req, res) => {
             // MAIN QUERY
             const query = {};
         
-            // Restrict by church for non-admins
-            if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-              query.church = req.user.church;
-            }
+            query.church = req.activeChurch._id;
         
           
          // Filter by date range
@@ -132,11 +129,7 @@ const updateTitheAggregate = async (req, res) => {
     
     try {
              const {id} = req.params;
-                const query = {_id: id}
-        
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
-                }
+                const query = { _id: id, church: req.activeChurch._id }
         
                 const titheAggregates = await TitheAggregate.findOneAndUpdate(query, req.body, {
                     new: true,
@@ -158,11 +151,7 @@ const deleteTitheAggregate = async (req, res) => {
     
     try {
          const {id} = req.params;
-                const query = {_id: id}
-        
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
-                }
+                const query = { _id: id, church: req.activeChurch._id }
                 
                 const titheAggregates = await TitheAggregate.findOneAndDelete(query)
         
@@ -208,11 +197,7 @@ const getTitheAggregateKPI = async (req, res) => {
     startOfYear.setHours(0, 0, 0, 0);
 
     // ---- Query (matches your pattern) ----
-    const query = {};
-
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { church: req.activeChurch._id };
 
     // ---- Aggregations ----
     const [week, month, lastMonth, year] = await Promise.all([

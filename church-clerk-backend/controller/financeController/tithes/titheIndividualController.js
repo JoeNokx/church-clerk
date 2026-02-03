@@ -12,7 +12,7 @@ const createTitheIndividual = async (req, res) => {
                 
                   //search member by name, email or phone
                   const member = await Member.findOne({
-                    church: req.user.church,
+                    church: req.activeChurch._id,
               $or: [
                 { firstName: { $regex: searchMember, $options: "i" } },
                 { lastName: { $regex: searchMember, $options: "i" } },
@@ -31,7 +31,7 @@ const createTitheIndividual = async (req, res) => {
               paymentMethod,
               date,
               member: member._id,
-            church: req.user.church,
+            church: req.activeChurch._id,
             createdBy: req.user._id
             });
         
@@ -55,16 +55,13 @@ const getAllTitheIndividual = async (req, res) => {
           // MAIN QUERY
           const query = {};
       
-          // Restrict by church for non-admins
-          if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church;
-          }
+          query.church = req.activeChurch._id;
       
       
     // Search by member name
     if (search) {
       const members = await Member.find({
-        church: req.user.church,
+        church: req.activeChurch._id,
         $or: [
           { firstName: { $regex: search, $options: "i" } },
           { lastName: { $regex: search, $options: "i" } }
@@ -155,11 +152,7 @@ const updateTitheIndividual = async (req, res) => {
     
     try {
          const {id} = req.params;
-      const query = {_id: id}
-
-      if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-          query.church = req.user.church
-      }
+      const query = { _id: id, church: req.activeChurch._id }
 
       const titheIndividuals = await TitheIndividual.findOneAndUpdate(query, req.body, {
           new: true,
@@ -181,11 +174,7 @@ const deleteTitheIndividual = async (req, res) => {
     
     try {
         const {id} = req.params;
-            const query = {_id: id}
-    
-            if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                query.church = req.user.church
-            }
+            const query = { _id: id, church: req.activeChurch._id }
             
             const titheIndividuals = await TitheIndividual.findOneAndDelete(query)
     
@@ -232,11 +221,7 @@ const getTitheIndividualKPI = async (req, res) => {
     startOfYear.setHours(0, 0, 0, 0);
 
     // ---- Query (matches your pattern) ----
-    const query = {};
-
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { church: req.activeChurch._id };
 
     // ---- Aggregations ----
     const [week, month, lastMonth, year, membersPaid] = await Promise.all([

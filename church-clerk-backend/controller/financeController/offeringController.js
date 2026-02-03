@@ -14,7 +14,7 @@ const createOffering = async (req, res) => {
                     offeringType,
                     serviceDate,
                     amount,
-                    church: req.user.church,
+                    church: req.activeChurch._id,
                     createdBy: req.user._id
                   })
         
@@ -49,10 +49,7 @@ const getAllOfferings = async (req, res) => {
             // MAIN QUERY
             const query = {};
         
-            // Restrict by church for non-admins
-            if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-              query.church = req.user.church;
-            }
+            query.church = req.activeChurch._id;
         
             // Filter by serviceType
             if (serviceType) {
@@ -137,11 +134,7 @@ const updateOffering = async (req, res) => {
     
     try {
              const {id} = req.params;
-                const query = {_id: id}
-        
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
-                }
+                const query = { _id: id, church: req.activeChurch._id }
         
                 const offering = await Offering.findOneAndUpdate(query, req.body, {
                     new: true,
@@ -163,11 +156,7 @@ const deleteOffering = async (req, res) => {
     
     try {
          const {id} = req.params;
-                const query = {_id: id}
-        
-                if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
-                }
+                const query = { _id: id, church: req.activeChurch._id }
                 
                 const offering = await Offering.findOneAndDelete(query)
         
@@ -213,11 +202,7 @@ const getOfferingKPI = async (req, res) => {
     startOfYear.setHours(0, 0, 0, 0);
 
     // ---- Query (matches your pattern) ----
-    const query = {};
-
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = { church: req.activeChurch._id };
 
     // ---- Aggregations ----
     const [week, month, lastMonth, year] = await Promise.all([

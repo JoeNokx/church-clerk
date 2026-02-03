@@ -17,6 +17,9 @@ import authRoutes from "./authRoute.js";
 import userRoutes from "./userRoute.js";
 import churchRoute from "./churchRoute.js";
 
+// admin billing routes
+import adminBillingRoute from "./adminBillingRoute.js";
+
 // main module routes
 import subscriptionRoute from "./billingRoute/subscriptionRoute.js";
 import memberRoute from "./memberRoute.js";
@@ -51,6 +54,7 @@ export {
   userRoutes,
   systemAdminRoute,
   churchRoute,
+  adminBillingRoute,
   subscriptionRoute,
   memberRoute,
   eventRoute,

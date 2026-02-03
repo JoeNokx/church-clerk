@@ -6,7 +6,7 @@ const createSpecialFund = async (req, res) => {
     try {
     const { giverName, category, totalAmount, description, givingDate } = req.body;
 
-    if (!totalAmount || !givingDate) {
+    if (!giverName || !totalAmount || !givingDate || !category) {
       return res.status(400).json({ message: "Amount and date are required." });
     }
 
@@ -17,7 +17,7 @@ const createSpecialFund = async (req, res) => {
       totalAmount,
       givingDate,
       description,
-      church: req.user.church,
+      church: req.activeChurch._id,
       createdBy: req.user._id
     });
 
@@ -35,7 +35,7 @@ const createSpecialFund = async (req, res) => {
 const getAllSpecialFunds = async (req, res) => {
     
     try {
-         const { page = 1, limit = 10, category, dateFrom, dateTo } = req.query;
+         const { page = 1, limit = 10, search = "", category, dateFrom, dateTo } = req.query;
                         
            
           // ---- Validate date query params ----
@@ -53,11 +53,14 @@ const getAllSpecialFunds = async (req, res) => {
       const skip = (pageNum - 1) * limitNum;
   
       // MAIN QUERY
-      const query = {};
-  
-      // Restrict by church for non-admins
-      if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-        query.church = req.user.church;
+      const query = {
+        church: req.activeChurch._id
+      };
+
+      if (search) {
+        query.$or = [
+          { giverName: { $regex: search, $options: "i" } }
+        ];
       }
   
       // Filter by category
@@ -143,10 +146,9 @@ const updateSpecialFund = async (req, res) => {
     
     try {
           const {id} = req.params;
-      const query = {_id: id}
-
-      if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-          query.church = req.user.church
+      const query = {
+        _id: id,
+        church: req.activeChurch._id
       }
 
       const specialFund = await SpecialFund.findOneAndUpdate(query, req.body, {
@@ -170,10 +172,9 @@ const deleteSpecialFund = async (req, res) => {
     
     try {
           const {id} = req.params;
-            const query = {_id: id}
-    
-            if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                query.church = req.user.church
+            const query = {
+              _id: id,
+              church: req.activeChurch._id
             }
             
             const specialFund = await SpecialFund.findOneAndDelete(query)
@@ -220,11 +221,9 @@ const getSpecialFundKPI = async (req, res) => {
     startOfYear.setHours(0, 0, 0, 0);
 
     // ---- Query (matches your pattern) ----
-    const query = {};
-
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
-    }
+    const query = {
+      church: req.activeChurch._id
+    };
 
     // ---- Aggregations ----
     const [week, month, lastMonth, year] = await Promise.all([

@@ -20,15 +20,15 @@ import { protect } from "../middleware/authMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
 
 
-router.get("/get-events/upcoming", protect, authorizeRoles("superadmin", "churchadmin"), getUpcomingEvents);
-router.get("/get-events/ongoing", protect, authorizeRoles("superadmin", "churchadmin"), getOngoingEvents);
-router.get("/get-events/past", protect, authorizeRoles("superadmin", "churchadmin"), getPastEvents);
+router.get("/events/upcoming", protect, authorizeRoles("superadmin", "churchadmin"), getUpcomingEvents);
+router.get("/events/ongoing", protect, authorizeRoles("superadmin", "churchadmin"), getOngoingEvents);
+router.get("/events/past", protect, authorizeRoles("superadmin", "churchadmin"), getPastEvents);
 
 
-router.get("/get-events/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSingleEvent); 
-router.post("/create-events", protect, authorizeRoles("superadmin", "churchadmin"), createEvent);
-router.put("/update-events/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateEvent);
-router.delete("/delete-events/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteEvent);
+router.get("/events/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSingleEvent); 
+router.post("/events", protect, authorizeRoles("superadmin", "churchadmin"), createEvent);
+router.put("/events/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateEvent);
+router.delete("/events/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteEvent);
 
 
 router.post("/events/:eventId/attendees", protect, authorizeRoles("superadmin", "churchadmin"), createEventAttendee);

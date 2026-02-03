@@ -5,10 +5,10 @@ import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
 
-router.get("/get-departments", protect, authorizeRoles("superadmin", "admin", "financialofficer"), getAllDepartments);
-router.get("/get-department/:id", protect, authorizeRoles("superadmin", "admin"), getSingleDepartment); 
-router.post("/create-department", protect, authorizeRoles("superadmin", "admin"), createDepartment);
-router.put("/update-department/:id", protect, authorizeRoles("superadmin", "admin"), updateDepartment);
-router.delete("/delete-department/:id", protect, authorizeRoles("superadmin", "admin"), deleteDepartment);
+router.get("/departments", protect, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllDepartments);
+router.get("/departments/:id", protect, authorizeRoles("superadmin", "churchadmin", "admin"), getSingleDepartment); 
+router.post("/departments", protect, authorizeRoles("superadmin", "churchadmin", "admin"), createDepartment);
+router.put("/departments/:id", protect, authorizeRoles("superadmin", "churchadmin", "admin"), updateDepartment);
+router.delete("/departments/:id", protect, authorizeRoles("superadmin", "churchadmin", "admin"), deleteDepartment);
 
 export default router

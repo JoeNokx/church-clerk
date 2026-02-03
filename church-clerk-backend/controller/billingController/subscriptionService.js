@@ -1,15 +1,22 @@
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
+import ReferralCode from "../../models/referralModel/referralCodeModel.js";
 import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
-import { chargeWithPaystack } from "./paystackController.js";
 import Church from "../../models/churchModel.js";
+
+const getIntervalMonths = (billingInterval) => {
+  if (billingInterval === "monthly") return 1;
+  if (billingInterval === "halfYear") return 6;
+  if (billingInterval === "yearly") return 12;
+  return 1;
+};
 
 // =============================
 // Helper: HQ-only restriction
 // =============================
 const validatePlanForChurch = (church, plan) => {
-  if (church.type === "Headquarters" && plan.name !== "premium") {
+  if (church.type === "Headquarters" && String(plan.name || "").toLowerCase() !== "premium") {
     throw new Error("HQ churches must subscribe to Premium plan only");
   }
 };
@@ -40,8 +47,8 @@ export const createSubscriptionForChurch = async ({
   if (trial) {
     subscriptionData.status = "trialing";
     subscriptionData.trialStart = new Date();
-    subscriptionData.trialEnd = addMonths(new Date(), 1);
-    subscriptionData.nextBillingDate = addMonths(new Date(), 1);
+    subscriptionData.trialEnd = addDays(new Date(), 14);
+    subscriptionData.nextBillingDate = subscriptionData.trialEnd;
   }
 
   if (planId) {
@@ -51,7 +58,7 @@ export const createSubscriptionForChurch = async ({
 
     subscriptionData.plan = plan._id;
     subscriptionData.status = "active";
-    subscriptionData.nextBillingDate = addMonths(new Date(), 1);
+    subscriptionData.nextBillingDate = addMonths(new Date(), getIntervalMonths(billingInterval));
   }
 
   const subscription = await Subscription.create(subscriptionData);
@@ -74,7 +81,7 @@ export const upgradeTrialToPlans = async (church, planId) => {
   subscription.status = "active";
   subscription.trialStart = null;
   subscription.trialEnd = null;
-  subscription.nextBillingDate = addMonths(new Date(), 1);
+  subscription.nextBillingDate = addMonths(new Date(), getIntervalMonths(subscription.billingInterval));
   subscription.gracePeriodEnd = null;
   subscription.expiryWarning.shown = false;
 
@@ -92,12 +99,20 @@ export const processSubscriptionBillings = async (subscription) => {
   // -----------------------------
   if (subscription.freeMonths.earned > subscription.freeMonths.used) {
     subscription.freeMonths.used += 1;
-    subscription.nextBillingDate = addMonths(subscription.nextBillingDate, 1);
+    subscription.nextBillingDate = addMonths(
+      subscription.nextBillingDate,
+      getIntervalMonths(subscription.billingInterval)
+    );
     subscription.status = "active"; 
     subscription.gracePeriodEnd = null;
     subscription.expiryWarning.shown = false;
 
     await subscription.save();
+
+    await ReferralCode.findOneAndUpdate(
+      { church: subscription.church },
+      { $inc: { totalFreeMonthsUsed: 1 } }
+    );
 
     await BillingHistory.create({
       church: subscription.church,
@@ -113,10 +128,10 @@ export const processSubscriptionBillings = async (subscription) => {
   // -----------------------------
   // Paid billing
   // -----------------------------
-  const plans = await Plan.findById(subscription.plan);
-  if (!plans) throw new Error("Plan not found");
+  const plan = await Plan.findById(subscription.plan);
+  if (!plan) throw new Error("Plan not found");
 
-  const price = plans.pricing[subscription.currency]?.[subscription.billingInterval];
+  const price = plan.pricing[subscription.currency]?.[subscription.billingInterval];
   if (!price) throw new Error("Pricing not configured");
 
   await BillingHistory.create({
@@ -128,6 +143,7 @@ export const processSubscriptionBillings = async (subscription) => {
     status: "pending",
     paymentProvider: subscription.paymentProvider,
     invoiceSnapshot: {
+      planId: plan._id,
       planName: plan.name,
       billingInterval: subscription.billingInterval,
       amount: price,
@@ -146,19 +162,16 @@ export const runBillingCycles = async () => {
 
   const subscriptions = await Subscription.find({
     nextBillingDate: { $lte: today },
-    status: { $nin: ["cancelled", "suspended"] }
+    status: { $in: ["active", "past_due"] }
   });
 
   for (const subscription of subscriptions) {
     const result = await processSubscriptionBillings(subscription);
 
     if (result.charged) {
-      try {
-        await chargeWithPaystack(subscription);
-      } catch (err) {
-        console.error("Payment failed for subscription:", subscription._id);
-        // Optional: trigger grace period logic here
-      }
+      subscription.status = "past_due";
+      subscription.gracePeriodEnd = addDays(new Date(), 3);
+      await subscription.save();
     }
 
     // Apply scheduled downgrade

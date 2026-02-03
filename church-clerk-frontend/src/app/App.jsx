@@ -1,11 +1,12 @@
+import { BrowserRouter } from "react-router-dom";
+import AppRoutes from "./routes.jsx";
 
-export default function App() {
+function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-      <h1 className="text-4xl font-bold">
-        Church Clerk Frontend 
-      </h1>
-
-    </div>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
+
+export default App;

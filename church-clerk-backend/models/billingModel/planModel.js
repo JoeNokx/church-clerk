@@ -4,7 +4,6 @@ const planSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      enum: ["basic", "standard", "premium"],
       required: true,
       unique: true
     },
@@ -31,6 +30,18 @@ const planSchema = new mongoose.Schema(
       GHS: { monthly: Number, halfYear: Number, yearly: Number },
       NGN: { monthly: Number, halfYear: Number, yearly: Number },
       USD: { monthly: Number, halfYear: Number, yearly: Number }
+    },
+
+    priceByCurrency: {
+      GHS: { monthly: Number, halfYear: Number, yearly: Number },
+      NGN: { monthly: Number, halfYear: Number, yearly: Number },
+      USD: { monthly: Number, halfYear: Number, yearly: Number }
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false
     },
 
     isActive: { type: Boolean, default: true }

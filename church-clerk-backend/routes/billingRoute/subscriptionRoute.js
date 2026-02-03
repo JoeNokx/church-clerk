@@ -3,13 +3,14 @@ import express from "express";
 
 import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js"; 
-
+import { initializePaystackPayment } from "../../controller/billingController/paystackController.js";
+import { paystackWebhook } from "../../controller/billingController/webhookController.js";
 
 import {
   chooseSubscription,
   upgradeTrialToPlan,
-  runBillingCycle,
-  getMySubscription
+  getMySubscription,
+  getAvailablePlans
 } from "../../controller/billingController/subscriptionController.js";
 
 const router = express.Router();
@@ -19,9 +20,9 @@ const router = express.Router();
 // 1. Choose subscription (trial or plan) AFTER church registration
 // -----------------------------
 router.post(
-  "/choose-subscription",
+  "/subscriptions",
   protect, 
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("churchadmin"),
   chooseSubscription
 );
 
@@ -29,9 +30,9 @@ router.post(
 // 2. Upgrade trial to plan immediately
 // -----------------------------
 router.post(
-  "/upgrade-trial",
+  "/subscriptions/upgrade",
   protect,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("churchadmin"),
   upgradeTrialToPlan
 );
 
@@ -39,27 +40,30 @@ router.post(
 // 3. View subscription (for frontend banner etc)
 // -----------------------------
 router.get(
-  "/my-subscription",
+  "/subscriptions/me",
   protect,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("churchadmin"),
   getMySubscription
 );
 
-// -----------------------------
-// 4. Run billing cycle (admin / cron)
-// -----------------------------
-router.post(
-  "/run-billing-cycle",
+router.get(
+  "/plans",
   protect,
-  authorizeRoles("superadmin"),
-  runBillingCycle
+  authorizeRoles("churchadmin"),
+  getAvailablePlans
 );
 
+router.post(
+  "/payments/paystack/initialize",
+  protect,
+  authorizeRoles("churchadmin"),
+  initializePaystackPayment
+);
+
+router.post("/webhooks/paystack", paystackWebhook);
 
 
 // Paystack webhook
 // router.post("/paystack", express.raw({ type: "application/json" }), chargeWithPaystack);
-
-
 
 export default router;

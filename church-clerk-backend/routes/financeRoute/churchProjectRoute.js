@@ -9,23 +9,23 @@ import getProjectContributionExpensesKPI from "../../controller/financeControlle
 import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
-router.post("/create-church-projects", protect, authorizeRoles("superadmin", "churchadmin"), createChurchProjects);
-router.get("/get-church-projects", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllChurchProjects);
-router.put("/update-church-projects/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateChurchProjects);
-router.delete("/delete-church-projects/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteChurchProjects);
+router.post("/church-projects", protect, authorizeRoles("superadmin", "churchadmin"), createChurchProjects);
+router.get("/church-projects", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllChurchProjects);
+router.put("/church-projects/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateChurchProjects);
+router.delete("/church-projects/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteChurchProjects);
 
-router.post("/:projectId/create-project-contributions", protect, authorizeRoles("superadmin", "churchadmin"), createProjectContributions);
-router.get("/:projectId/get-project-contributions", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllProjectContributions);
-router.put("/:projectId/update-project-contributions/:contributionId", protect, authorizeRoles("superadmin", "churchadmin"), updateProjectContributions);
-router.delete("/:projectId/delete-project-contributions/:contributionId", protect, authorizeRoles("superadmin", "churchadmin"), deleteProjectContributions);
+router.post("/church-projects/:projectId/contributions", protect, authorizeRoles("superadmin", "churchadmin"), createProjectContributions);
+router.get("/church-projects/:projectId/contributions", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllProjectContributions);
+router.put("/church-projects/:projectId/contributions/:contributionId", protect, authorizeRoles("superadmin", "churchadmin"), updateProjectContributions);
+router.delete("/church-projects/:projectId/contributions/:contributionId", protect, authorizeRoles("superadmin", "churchadmin"), deleteProjectContributions);
 
-router.post("/:projectId/create-project-expenses", protect, authorizeRoles("superadmin", "churchadmin"), createProjectExpenses);
-router.get("/:projectId/get-project-expenses", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllProjectExpenses);
-router.put("/:projectId/update-project-expenses/:expensesId", protect, authorizeRoles("superadmin", "churchadmin"), updateProjectExpenses);
-router.delete("/:projectId/delete-project-expenses/:expensesId", protect, authorizeRoles("superadmin", "churchadmin"), deleteProjectExpenses);
+router.post("/church-projects/:projectId/expenses", protect, authorizeRoles("superadmin", "churchadmin"), createProjectExpenses);
+router.get("/church-projects/:projectId/expenses", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllProjectExpenses);
+router.put("/church-projects/:projectId/expenses/:expensesId", protect, authorizeRoles("superadmin", "churchadmin"), updateProjectExpenses);
+router.delete("/church-projects/:projectId/expenses/:expensesId", protect, authorizeRoles("superadmin", "churchadmin"), deleteProjectExpenses);
 
 
-router.get("/:projectId/get-project-contribution-expenses-kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getProjectContributionExpensesKPI);
+router.get("/church-projects/:projectId/contribution-expenses/kpi", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getProjectContributionExpensesKPI);
 
 
 
