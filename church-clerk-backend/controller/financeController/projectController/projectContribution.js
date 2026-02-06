@@ -11,7 +11,8 @@ const createProjectContributions = async (req, res) => {
                 contributorName,
                 date,
                 amount,
-                note
+                note,
+                notes
                 } = req.body;
                 
 
@@ -35,7 +36,7 @@ const createProjectContributions = async (req, res) => {
                 contributorName,
                 date,
                 amount,
-                note,
+                notes: (notes || note || "").trim(),
                 church: churchProject.church,
                 createdBy: req.user._id
                 });
@@ -104,7 +105,7 @@ const getAllProjectContributions = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const projectContribution = await ProjectContribution.find(query)
-                .select("contributorName date amount note createdBy")
+                .select("contributorName date amount notes createdBy")
                 .populate("createdBy", "fullName")
                 .populate("churchProject", "name")
                     .sort({ createdAt: -1 })

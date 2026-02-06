@@ -47,7 +47,7 @@ export function AttendanceProvider({ children }) {
   const [visitors, setVisitors] = useState([]);
   const [visitorPagination, setVisitorPagination] = useState(emptyPagination);
   const [visitorFilters, setVisitorFiltersState] = useState(emptyVisitorFilters);
-  const [visitorStats, setVisitorStats] = useState({ totalVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
+  const [visitorStats, setVisitorStats] = useState({ totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
 
   const [visitorLoading, setVisitorLoading] = useState(false);
   const [visitorError, setVisitorError] = useState(null);
@@ -182,12 +182,12 @@ export function AttendanceProvider({ children }) {
 
         setVisitors(payload?.visitors || []);
         setVisitorPagination(payload?.pagination || emptyPagination);
-        setVisitorStats(payload?.stats || { totalVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
+        setVisitorStats(payload?.stats || { totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
       } catch (e) {
         setVisitorError(e?.response?.data?.message || e?.message || "Failed to fetch visitors");
         setVisitors([]);
         setVisitorPagination(emptyPagination);
-        setVisitorStats({ totalVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
+        setVisitorStats({ totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
       } finally {
         setVisitorLoading(false);
       }
@@ -200,9 +200,9 @@ export function AttendanceProvider({ children }) {
       if (!activeChurch) return;
       const res = await getVisitors({ page: 1, limit: 1 });
       const payload = res?.data?.data ?? res?.data;
-      setVisitorStats(payload?.stats || { totalVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
+      setVisitorStats(payload?.stats || { totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
     } catch {
-      setVisitorStats({ totalVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
+      setVisitorStats({ totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
     }
   }, [activeChurch]);
 

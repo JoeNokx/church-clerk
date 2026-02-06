@@ -103,7 +103,7 @@ function MemberTable({ onEdit, onDeleted }) {
               <th className="px-6 py-2">Email</th>
               <th className="px-6 py-2">City</th>
               <th className="px-6 py-2">Status</th>
-              <th className="px-6 py-2">Date Registered</th>
+              <th className="px-6 py-2">Date Added</th>
               <th className="px-6 py-2 text-right">Actions</th>
             </tr>
           </thead>

@@ -1,7 +1,5 @@
 import Event from "../../models/eventModel.js";
 
-
-
 // UPDATE
 const updateEvent = async (req, res) => {
   try {
@@ -9,17 +7,38 @@ const updateEvent = async (req, res) => {
     const query = { _id: id };
 
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch?._id || req.user.church;
     }
 
-    const event = await Event.findOneAndUpdate(query, req.body, {
+    const body = { ...(req.body || {}) };
+
+    if (body.organizers !== undefined) {
+      const safeOrganizer =
+        typeof body.organizers === "string"
+          ? body.organizers.trim()
+          : Array.isArray(body.organizers)
+            ? String(body.organizers[0] || "").trim()
+            : "";
+      body.organizers = safeOrganizer ? [safeOrganizer] : [];
+    }
+
+    const safeTimeFrom = typeof body.timeFrom === "string" ? body.timeFrom.trim() : "";
+    const safeTimeTo = typeof body.timeTo === "string" ? body.timeTo.trim() : "";
+
+    if ((safeTimeFrom || safeTimeTo) && !body.time) {
+      body.time =
+        safeTimeFrom && safeTimeTo
+          ? `${safeTimeFrom} - ${safeTimeTo}`
+          : safeTimeFrom || safeTimeTo;
+    }
+
+    if (body.timeFrom !== undefined) body.timeFrom = safeTimeFrom || undefined;
+    if (body.timeTo !== undefined) body.timeTo = safeTimeTo || undefined;
+
+    const event = await Event.findOneAndUpdate(query, body, {
       new: true,
       runValidators: true
-    })
-    .populate("church", "name")
-      .populate("cell", "name")
-      .populate("group", "name")
-      .populate("department", "name");
+    });
 
     if (!event) {
       return res.status(404).json({ message: "Event not found or access denied" });
@@ -32,4 +51,4 @@ const updateEvent = async (req, res) => {
   }
 };
 
-export default updateEvent ;
+export default updateEvent;

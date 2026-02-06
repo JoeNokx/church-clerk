@@ -157,7 +157,7 @@ function AttendancePageInner() {
         </>
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-gray-200 bg-white p-5">
               <div className="flex items-start justify-between">
                 <div>
@@ -170,6 +170,22 @@ function AttendancePageInner() {
                     <path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="1.8" />
                     <path d="M3 20c0-3 2-5 5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     <path d="M21 20c0-3-2-5-5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500">This Week Visitors</div>
+                  <div className="mt-2 text-lg font-semibold text-gray-900">{Number(store?.visitorStats?.thisWeekVisitors || 0).toLocaleString()}</div>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-purple-700">
+                    <path d="M7 3v3M17 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M8 13h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
                 </div>
               </div>

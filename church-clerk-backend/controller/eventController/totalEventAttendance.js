@@ -6,25 +6,24 @@ const createTotalEventAttendance = async (req, res) => {
     const { eventId } = req.params;
     const { date, numberOfAttendees, mainSpeaker } = req.body;
 
-      // 1. Validate group exists and belongs to this church
-    const query = { _id: eventId };
+    // 1. Validate group exists and belongs to this church
+    const eventQuery = { _id: eventId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      eventQuery.church = req.activeChurch?._id || req.user.church;
     }
 
-    const event = await Event.findOne(query);
+    const event = await Event.findOne(eventQuery);
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
 
     const attendance = await totalEventAttendance.create({
       event: eventId,
-      church: event.church,
+      church: req.activeChurch?._id || req.user.church,
       createdBy: req.user._id, 
       date,
       numberOfAttendees,
       mainSpeaker
-      
     });
 
     res.status(201).json(attendance);
@@ -39,15 +38,23 @@ const createTotalEventAttendance = async (req, res) => {
 const getAllTotalEventAttendances = async(req, res) => {
   try {
        const { page = 1, limit = 10 } = req.query;
+       const { eventId } = req.params;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
     const skip = (pageNum - 1) * limitNum;
 
-    const query = {};
-    if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-        query.church = req.user.church
+    const eventQuery = { _id: eventId };
+    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+      eventQuery.church = req.activeChurch?._id || req.user.church;
     }
+
+    const event = await Event.findOne(eventQuery);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const query = { church: req.activeChurch?._id || req.user.church, event: eventId };
 
     const attendances = await totalEventAttendance.find(query)
       .select("date numberOfAttendees mainSpeaker")
@@ -103,14 +110,11 @@ const getAllTotalEventAttendances = async(req, res) => {
       count: attendances.length,
       attendances
     })
-
-
   } catch (error) {
     console.log("could not record attendance", error)
     return res.status(500).json({ error: error.message });
   }
 }
-
 
 
 //update group attendance
@@ -122,10 +126,19 @@ const updateTotalEventAttendance = async(req, res) => {
     const query = {_id: attendanceId, event: eventId}
 
     if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-        query.church = req.user.church
+        query.church = req.activeChurch?._id || req.user.church
     }
 
-    
+    const eventQuery = { _id: eventId };
+    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+      eventQuery.church = req.activeChurch?._id || req.user.church;
+    }
+
+    const event = await Event.findOne(eventQuery);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
     const attendance = await totalEventAttendance.findOneAndUpdate(query, req.body, {
         new: true,
         runValidators: true
@@ -136,7 +149,6 @@ const updateTotalEventAttendance = async(req, res) => {
     }
 
     return res.status(200).json({message: "attendance updated successfully", attendance})
-
   } catch (error) {
     console.log("could not update attendance", error)
     return res.status(500).json({ error: error.message });
@@ -153,7 +165,17 @@ const deleteTotalEventAttendance = async(req, res) => {
     const query = {_id: attendanceId, event: eventId}
 
       if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-          query.church = req.user.church  
+          query.church = req.activeChurch?._id || req.user.church  
+      }
+
+      const eventQuery = { _id: eventId };
+      if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+        eventQuery.church = req.activeChurch?._id || req.user.church;
+      }
+
+      const event = await Event.findOne(eventQuery);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
       }
 
       const attendance = await totalEventAttendance.findOneAndDelete(query)

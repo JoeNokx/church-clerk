@@ -15,6 +15,8 @@ const createEvent = async (req, res) => {
       organizers,
       dateFrom,
       dateTo,
+      timeFrom,
+      timeTo,
       time,
       venue, 
       status
@@ -24,6 +26,20 @@ const createEvent = async (req, res) => {
       return res.status(400).json({ message: "Title, Date and Venue are required." });
     }
 
+    const safeTimeFrom = typeof timeFrom === "string" ? timeFrom.trim() : "";
+    const safeTimeTo = typeof timeTo === "string" ? timeTo.trim() : "";
+    const computedTime =
+      safeTimeFrom && safeTimeTo
+        ? `${safeTimeFrom} - ${safeTimeTo}`
+        : safeTimeFrom || safeTimeTo || (typeof time === "string" ? time.trim() : "");
+
+    const safeOrganizer =
+      typeof organizers === "string"
+        ? organizers.trim()
+        : Array.isArray(organizers)
+          ? String(organizers[0] || "").trim()
+          : "";
+
     const event = await Event.create({
       title,
       category,
@@ -31,13 +47,15 @@ const createEvent = async (req, res) => {
       cell,
       group,
       department,
-      organizers,
+      organizers: safeOrganizer ? [safeOrganizer] : undefined,
       dateFrom,
       dateTo,
-      time,
+      timeFrom: safeTimeFrom || undefined,
+      timeTo: safeTimeTo || undefined,
+      time: computedTime || undefined,
       venue,
       status,
-      church: req.user.church,
+      church: req.activeChurch?._id || req.user.church,
       createdBy: req.user._id
     });
 

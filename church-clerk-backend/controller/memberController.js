@@ -340,7 +340,7 @@ const getAllMembersKPI = async (req, res) => {
       Member.countDocuments({ ...query, status: "inactive" }),
       Member.countDocuments({
         ...query,
-        dateJoined: { $gte: startOfMonth }
+        createdAt: { $gte: startOfMonth }
       })
     ]);
 

@@ -1,4 +1,5 @@
 import TitheAggregate from '../../../models/financeModel/tithesModel/titheAggregateModel.js' 
+import User from '../../../models/userModel.js'
 
 const createTitheAggregate = async (req, res) => {
     
@@ -29,7 +30,7 @@ const getAllTitheAggregates = async (req, res) => {
     
     try {
         
-         const { page = 1, limit = 10, dateFrom, dateTo } = req.query;
+         const { page = 1, limit = 10, search = "", dateFrom, dateTo } = req.query;
         
           // ---- Validate date query params ----
     if (dateFrom && isNaN(Date.parse(dateFrom))) {
@@ -49,6 +50,18 @@ const getAllTitheAggregates = async (req, res) => {
             const query = {};
         
             query.church = req.activeChurch._id;
+
+        // Search by recorded by (user fullName/email/phone)
+        if (search) {
+          const regex = new RegExp(String(search).trim(), "i");
+          const users = await User.find({
+            church: req.activeChurch._id,
+            $or: [{ fullName: regex }, { email: regex }, { phoneNumber: regex }]
+          }).select("_id");
+
+          const userIds = users.map((u) => u._id);
+          query.createdBy = { $in: userIds.length ? userIds : [null] };
+        }
         
           
          // Filter by date range
@@ -72,6 +85,7 @@ const getAllTitheAggregates = async (req, res) => {
         
             // FETCH TitheAggregates
             const titheAggregates = await TitheAggregate.find(query)
+              .populate("createdBy", "fullName email")
               .sort({ createdAt: -1 })
               .skip(skip)
               .limit(limitNum)
@@ -200,7 +214,7 @@ const getTitheAggregateKPI = async (req, res) => {
     const query = { church: req.activeChurch._id };
 
     // ---- Aggregations ----
-    const [week, month, lastMonth, year] = await Promise.all([
+    const [week, month, lastMonth, year, thisMonthCount] = await Promise.all([
       // This week
       TitheAggregate.aggregate([
         { $match: { ...query, date: { $gte: startOfWeek } } },
@@ -228,7 +242,10 @@ const getTitheAggregateKPI = async (req, res) => {
       TitheAggregate.aggregate([
         { $match: { ...query, date: { $gte: startOfYear } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
-      ])
+      ]),
+
+      // Total records this month
+      TitheAggregate.countDocuments({ ...query, date: { $gte: startOfMonth } })
     ]);
 
     return res.status(200).json({
@@ -236,6 +253,7 @@ const getTitheAggregateKPI = async (req, res) => {
       data: {
         thisWeek: week[0]?.totalAmount || 0,
         thisMonth: month[0]?.totalAmount || 0,
+        thisMonthRecords: thisMonthCount || 0,
         lastMonth: lastMonth[0]?.totalAmount || 0,
         thisYear: year[0]?.totalAmount || 0
       }

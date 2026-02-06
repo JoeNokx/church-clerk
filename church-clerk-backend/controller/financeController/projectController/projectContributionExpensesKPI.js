@@ -17,7 +17,7 @@ const getProjectContributionExpensesKPI = async (req, res) => {
     const churchProject = await ChurchProject.findOne({
       _id: projectId,
       ...(query.church && { church: query.church })
-    }).select(" targetAmount status").lean();
+    }).select("name description targetAmount status").lean();
 
     if (!churchProject) {
       return res.status(404).json({ message: "Church project not found" });

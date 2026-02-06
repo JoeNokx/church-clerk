@@ -295,6 +295,18 @@ const getAllVisitors = async (req, res) => {
       createdAt: { $gte: startOfMonth },
     });
 
+    // COUNT THIS WEEK VISITORS
+    const startOfWeek = new Date();
+    const day = startOfWeek.getDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const thisWeekVisitors = await Visitor.countDocuments({
+      church: req.activeChurch._id,
+      createdAt: { $gte: startOfWeek }
+    });
+
     // COUNT CONVERTED VISITORS (member exists with same phoneNumber)
  const convertedVisitors = await Member.countDocuments({
   visitorId: { $ne: null },
@@ -307,6 +319,7 @@ const getAllVisitors = async (req, res) => {
         message: "No visitor found.",
         stats: {
           totalVisitors,
+          thisWeekVisitors,
           thisMonthVisitors,
           convertedVisitors,
         },
@@ -341,6 +354,7 @@ const getAllVisitors = async (req, res) => {
     return res.status(200).json({
       stats: {
         totalVisitors,
+        thisWeekVisitors,
         thisMonthVisitors,
         convertedVisitors,
       },

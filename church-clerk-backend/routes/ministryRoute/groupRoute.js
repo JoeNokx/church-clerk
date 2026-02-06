@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import {getAllGroups, getSingleGroup, createGroup, updateGroup, deleteGroup, addMemberToGroup, getGroupMembers,updateMemberRole, removeMemberFromGroup, addMeeting, updateMeeting, deleteMeeting, getMeetings, getMinistryKPI } from "../../controller/ministryController/groupController.js"
+import {getAllGroups, getSingleGroup, createGroup, updateGroup, deleteGroup, searchMembersToAddToGroup, addMemberToGroup, getGroupMembers,updateMemberRole, removeMemberFromGroup, addMeeting, updateMeeting, deleteMeeting, getMeetings, getMinistryKPI } from "../../controller/ministryController/groupController.js"
 
 import  {createGroupAttendance, updateGroupAttendance, deleteGroupAttendance, getAllGroupAttendances} from "../../controller/ministryController/groupAttendanceController.js"
 import  {createGroupOffering, updateGroupOffering, deleteGroupOffering, getAllGroupOfferings} from "../../controller/ministryController/groupOfferingController.js"
@@ -17,6 +17,7 @@ router.delete("/groups/:id", protect, authorizeRoles("superadmin", "churchadmin"
 
 
 router.post("/groups/:id/members", protect, authorizeRoles("superadmin", "churchadmin"), addMemberToGroup);
+router.get("/groups/:id/members/search", protect, authorizeRoles("superadmin", "churchadmin"), searchMembersToAddToGroup);
 router.get("/groups/:id/members", protect, authorizeRoles("superadmin", "churchadmin"), getGroupMembers);
 router.put("/groups/:id/members/:memberId", protect, authorizeRoles("superadmin", "churchadmin"), updateMemberRole);
 router.delete("/groups/:id/members/:memberId", protect, authorizeRoles("superadmin", "churchadmin"), removeMemberFromGroup);

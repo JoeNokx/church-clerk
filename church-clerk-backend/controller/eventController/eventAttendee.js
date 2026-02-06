@@ -4,7 +4,8 @@ import EventAttendees from "../../models/eventModel/eventAttendeesModel.js";
 // POST: register attendee to event
 const createEventAttendee = async (req, res) => {
   try {
-    const { fullName, email, phoneNumber, location, eventId } = req.body;
+    const { fullName, email, phoneNumber, location } = req.body;
+    const { eventId } = req.params;
 
     if (!fullName) {
       return res.status(400).json({ message: "Full name is required." });
@@ -12,7 +13,7 @@ const createEventAttendee = async (req, res) => {
 
     const query = { _id: eventId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch?._id || req.user.church;
     }
 
 
@@ -46,20 +47,23 @@ const createEventAttendee = async (req, res) => {
 const getEventAttendees = async(req, res) => {
   try {
        const { page = 1, limit = 10 } = req.query;
+       const { eventId } = req.params;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
     const skip = (pageNum - 1) * limitNum;
 
-    const query = {};
-    if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-        query.church = req.user.church
+    const eventQuery = { _id: eventId };
+    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+      eventQuery.church = req.activeChurch?._id || req.user.church;
     }
 
-    const event = await Event.findOne(query);
+    const event = await Event.findOne(eventQuery);
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
+
+    const query = { church: event.church, event: eventId };
 
     const attendees = await EventAttendees.find(query)
       .select("fullName email phoneNumber location")
@@ -129,34 +133,30 @@ const getEventAttendees = async(req, res) => {
 //PUT: update attendee
 const updateEventAttendee = async (req, res) => {
   try {
-    const { id, attendeeId } = req.params;
-    const { fullName, email, phone, location } = req.body;
+    const { eventId, attendeeId } = req.params;
 
-    const query = { _id: id };
+    const eventQuery = { _id: eventId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      eventQuery.church = req.activeChurch?._id || req.user.church;
     }
 
-    const event = await Event.findOne(query);
+    const event = await Event.findOne(eventQuery);
     if (!event) return res.status(404).json({ message: "Event not found." });
 
-    const attendee = event.attendees.id(attendeeId);
+    const query = { _id: attendeeId, event: eventId, church: event.church };
+    const attendee = await EventAttendees.findOneAndUpdate(query, req.body, {
+      new: true,
+      runValidators: true
+    });
+
     if (!attendee) {
       return res.status(404).json({ message: "Attendee not found." });
     }
-
-    if (fullName) attendee.fullName = fullName;
-    if (email) attendee.email = email;
-    if (phone) attendee.phone = phone;
-    if (location) attendee.location = location;
-
-    await event.save();
 
     return res.status(200).json({
       message: "Attendee updated successfully.",
       attendee
     });
-
   } catch (error) {
     return res.status(500).json({ message: "Error updating attendee", error: error.message });
   }
@@ -172,10 +172,15 @@ const deleteEventAttendee = async (req, res) => {
     const query = { _id: attendeeId, event: eventId };
     
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch?._id || req.user.church;
     }
 
-    const event = await Event.findById(eventId);
+    const eventQuery = { _id: eventId };
+    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+      eventQuery.church = req.activeChurch?._id || req.user.church;
+    }
+
+    const event = await Event.findOne(eventQuery);
     if (!event) return res.status(404).json({ message: "Event not found." });
 
     const attendee = await EventAttendees.findOneAndDelete(query);

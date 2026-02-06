@@ -1,41 +1,125 @@
 import TitheIndividual from '../../../models/financeModel/tithesModel/titheIndividualModel.js'
 import Member from '../../../models/memberModel.js'
 
+const searchMembersForTithe = async (req, res) => {
+  try {
+    const search = (req.query.search || "").trim();
+
+    if (!search) {
+      return res.status(200).json({ message: "No search term provided", members: [] });
+    }
+
+    const regex = { $regex: search, $options: "i" };
+
+    const members = await Member.find({
+      church: req.activeChurch._id,
+      $or: [
+        { firstName: regex },
+        { lastName: regex },
+        { phoneNumber: regex },
+        { email: regex },
+        { city: regex },
+        { memberId: regex }
+      ]
+    })
+      .select("firstName lastName phoneNumber email city")
+      .limit(20)
+      .lean();
+
+    return res.status(200).json({ message: "Members fetched successfully", members });
+  } catch (error) {
+    return res.status(400).json({ message: "Members could not be fetched", error: error.message });
+  }
+};
+
 const createTitheIndividual = async (req, res) => {
     
     try {
-            const searchMember = (req.body.searchMember || "").trim()
-            const {amount, paymentMethod, date} = req.body      
-                  if (!searchMember) {
-              return res.status(400).json({ message: "Please provide a name, email, or phone to search." });
+            const searchMember = (req.body.searchMember || "").trim();
+            const memberId = (req.body.memberId || "").trim();
+            const memberIds = Array.isArray(req.body.memberIds) ? req.body.memberIds : [];
+            const {amount, paymentMethod, date} = req.body;
+
+            if (!amount || !paymentMethod || !date) {
+              return res.status(400).json({ message: "amount, paymentMethod and date are required" });
             }
-                
-                  //search member by name, email or phone
-                  const member = await Member.findOne({
-                    church: req.activeChurch._id,
+
+            if (memberIds.length > 0) {
+              const members = await Member.find({
+                _id: { $in: memberIds },
+                church: req.activeChurch._id
+              }).select("_id").lean();
+
+              if (!members || members.length === 0) {
+                return res.status(404).json({ message: "Members not found" });
+              }
+
+              const docs = members.map((m) => ({
+                amount,
+                paymentMethod,
+                date,
+                member: m._id,
+                church: req.activeChurch._id,
+                createdBy: req.user._id
+              }));
+
+              const titheIndividuals = await TitheIndividual.insertMany(docs);
+
+              return res.status(200).json({
+                message: "titheIndividuals created successfully",
+                count: titheIndividuals.length,
+                titheIndividuals
+              });
+            }
+
+            if (memberId) {
+              const member = await Member.findOne({ _id: memberId, church: req.activeChurch._id }).select("_id");
+
+              if (!member) {
+                return res.status(404).json({ message: "Member not found" });
+              }
+
+              const titheIndividual =  await TitheIndividual.create({ 
+                amount,
+                paymentMethod,
+                date,
+                member: member._id,
+                church: req.activeChurch._id,
+                createdBy: req.user._id
+              });
+
+              return res.status(200).json({ message: "titheIndividual created successfully", titheIndividual });
+            }
+
+            if (!searchMember) {
+              return res.status(400).json({ message: "Please provide memberId, memberIds, or searchMember." });
+            }
+
+            //search member by name, email or phone
+            const member = await Member.findOne({
+              church: req.activeChurch._id,
               $or: [
                 { firstName: { $regex: searchMember, $options: "i" } },
                 { lastName: { $regex: searchMember, $options: "i" } },
                 { email: { $regex: searchMember, $options: "i" } },
-                { phoneNumber: { $regex: searchMember, $options: "i" } },
-              ],
-                   })
-        
-                  if (!member) {
-                    return res.status(404).json({ message: "Member not found" });
-                  }
-        
-        
+                { phoneNumber: { $regex: searchMember, $options: "i" } }
+              ]
+            }).select("_id");
+
+            if (!member) {
+              return res.status(404).json({ message: "Member not found" });
+            }
+
             const titheIndividual =  await TitheIndividual.create({ 
               amount,
               paymentMethod,
               date,
               member: member._id,
-            church: req.activeChurch._id,
-            createdBy: req.user._id
+              church: req.activeChurch._id,
+              createdBy: req.user._id
             });
-        
-                  return res.status(200).json({ message: "titheIndividual created successfully", titheIndividual });
+
+            return res.status(200).json({ message: "titheIndividual created successfully", titheIndividual });
     } catch (error) {
         return res.status(400).json({message: "titheIndividual could not be created", error: error.message})
     }
@@ -282,4 +366,4 @@ const getTitheIndividualKPI = async (req, res) => {
 };
 
 
-export {createTitheIndividual, getAllTitheIndividual, updateTitheIndividual, deleteTitheIndividual, getTitheIndividualKPI}
+export {searchMembersForTithe, createTitheIndividual, getAllTitheIndividual, updateTitheIndividual, deleteTitheIndividual, getTitheIndividualKPI}

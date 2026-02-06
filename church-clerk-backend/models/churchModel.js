@@ -39,6 +39,12 @@ const churchSchema = new mongoose.Schema({
   select: false // optional, not expose by default
 },
 
+  titheRecordingMode: {
+    type: String,
+    enum: ["individual", "aggregate"],
+    default: null
+  },
+
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"

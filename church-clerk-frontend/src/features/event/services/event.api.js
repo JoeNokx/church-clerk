@@ -1,15 +1,23 @@
 import http from "../../../shared/services/http.js";
 
+export const getEvents = async (params) => {
+  return await http.get("/event/events", { params });
+};
+
+export const getEventStats = async (params) => {
+  return await http.get("/event/events/stats", { params });
+};
+
 export const getUpcomingEvents = async (params) => {
-  return await http.get("/event/events/upcoming", { params });
+  return await getEvents({ ...(params || {}), status: "upcoming" });
 };
 
 export const getOngoingEvents = async (params) => {
-  return await http.get("/event/events/ongoing", { params });
+  return await getEvents({ ...(params || {}), status: "ongoing" });
 };
 
 export const getPastEvents = async (params) => {
-  return await http.get("/event/events/past", { params });
+  return await getEvents({ ...(params || {}), status: "past" });
 };
 
 export const getEvent = async (id) => {

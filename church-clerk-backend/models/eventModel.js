@@ -36,6 +36,8 @@ const eventSchema = new mongoose.Schema({
 dateTo: {
   type: Date
 },
+  timeFrom: { type: String, trim: true },
+  timeTo: { type: String, trim: true },
   time: String,
   venue: {
     type: String,

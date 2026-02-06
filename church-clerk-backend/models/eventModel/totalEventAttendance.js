@@ -9,4 +9,4 @@ const totalEventAttendanceSchema = new mongoose.Schema({
   mainSpeaker: { type: String, trim: true }
 }, { timestamps: true });
 
-export default mongoose.model("GroupAttendance", totalEventAttendanceSchema);
+export default mongoose.model("TotalEventAttendance", totalEventAttendanceSchema);

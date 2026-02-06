@@ -1,6 +1,8 @@
 import express from "express";
 import connectDB from "./config/db.js";
 import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -10,7 +12,9 @@ import cookieParser from "cookie-parser";
 
 import * as Routes from "./routes/index.js"; // imports the named exports from routes/index.js
 
-dotenv.config();    // loads environment variables from .env file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, ".env") });
 connectDB();   // connects to the database
 
 const app = express();   

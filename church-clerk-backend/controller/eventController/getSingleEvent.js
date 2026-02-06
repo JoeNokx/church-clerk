@@ -1,15 +1,15 @@
 import Event from "../../models/eventModel.js";
+import EventAttendees from "../../models/eventModel/eventAttendeesModel.js";
+import TotalEventAttendance from "../../models/eventModel/totalEventAttendance.js";
 
 // GET SINGLE
 const getSingleEvent = async (req, res) => {
   try {
-
-    const {dateFrom, dateTo} = req.query
     const eventId = req.params.id;
     const query = { _id: eventId };
 
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch?._id || req.user.church;
     }
 
     const event = await Event.findOne(query)
@@ -21,17 +21,29 @@ const getSingleEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    const today = new Date();
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(todayStart.getDate() + 1);
+
     let status = "unknown";
     if (event.dateFrom && event.dateTo) {
-      if (event.dateFrom > today) status = "upcoming";
-      else if (event.dateTo < today) status = "past";
+      if (event.dateFrom > now) status = "upcoming";
+      else if (event.dateTo < now) status = "past";
+      else status = "ongoing";
+    } else if (event.dateFrom) {
+      if (event.dateFrom >= tomorrowStart) status = "upcoming";
+      else if (event.dateFrom < todayStart) status = "past";
       else status = "ongoing";
     }
 
+    const attendeeCount = await EventAttendees.countDocuments({ church: event.church, event: eventId });
+    const totalAttendanceRecords = await TotalEventAttendance.countDocuments({ church: event.church, event: eventId });
+
     return res.status(200).json({
       message: "Event retrieved successfully",
-      event: { ...event.toObject(), status,     attendeeCount: event.attendees.length}
+      event: { ...event.toObject(), status, attendeeCount, totalAttendanceRecords }
     });
   } catch (error) {
     console.error("Get single event error:", error);

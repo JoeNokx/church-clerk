@@ -106,18 +106,110 @@ const getSingleGroup = async (req, res) => {
 import Member from "../../models/memberModel.js"
 import GroupMember from "../../models/ministryModel/groupMembersModel.js";
 
+const searchMembersToAddToGroup = async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    const search = String(req.query.search || req.query.q || "").trim();
+
+    const churchId = req.activeChurch?._id || req.user?.church;
+    if (!churchId) {
+      return res.status(400).json({ message: "Church is missing" });
+    }
+
+    if (!search) {
+      return res.status(400).json({ message: "Please provide a search term." });
+    }
+
+    const group = await Group.findOne({ _id: groupId, church: churchId }).lean();
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    const existingMemberIds = await GroupMember.find({ group: groupId, church: churchId }).distinct("member");
+
+    const regex = new RegExp(search, "i");
+    const members = await Member.find({
+      church: churchId,
+      _id: { $nin: existingMemberIds },
+      $or: [{ firstName: regex }, { lastName: regex }, { email: regex }, { phoneNumber: regex }]
+    })
+      .sort({ firstName: 1, lastName: 1 })
+      .select("firstName lastName phoneNumber email city")
+      .limit(30)
+      .lean();
+
+    return res.status(200).json({
+      message: "Members fetched successfully",
+      count: members.length,
+      members
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to search members", error: error.message });
+  }
+};
+
 const addMemberToGroup = async (req, res) => {
     
     try {
         const groupId = req.params.id
     const searchMember = (req.body.searchMember || "").trim()
+      const memberId = (req.body.memberId || "").trim();
+      const memberIds = Array.isArray(req.body.memberIds) ? req.body.memberIds : [];
       const role = req.body.role || "member";
 
-          if (!searchMember) {
-      return res.status(400).json({ message: "Please provide a name, email, or phone to search." });
+      const churchId = req.activeChurch?._id || req.user?.church;
+      if (!churchId) {
+        return res.status(400).json({ message: "Church is missing" });
+      }
+
+          if (memberIds.length > 0) {
+            const query = { _id: groupId, church: churchId };
+
+            const group = await Group.findOne(query);
+            if (!group) {
+              return res.status(404).json({ message: "Group not found" });
+            }
+
+            const members = await Member.find({ _id: { $in: memberIds }, church: churchId }).select("_id").lean();
+            if (!members || members.length === 0) {
+              return res.status(404).json({ message: "Members not found" });
+            }
+
+            const existing = await GroupMember.find({
+              group: groupId,
+              church: churchId,
+              member: { $in: members.map((m) => m._id) }
+            }).distinct("member");
+
+            const existingSet = new Set(existing.map((id) => String(id)));
+            const toCreate = members.filter((m) => !existingSet.has(String(m._id)));
+
+            if (toCreate.length === 0) {
+              return res.status(400).json({ message: "Members already in this group" });
+            }
+
+            const docs = toCreate.map((m) => ({
+              group: groupId,
+              member: m._id,
+              role,
+              church: churchId,
+              createdBy: req.user._id
+            }));
+
+            const created = await GroupMember.insertMany(docs);
+
+            return res.status(200).json({
+              message: "Members added to group successfully",
+              count: created.length,
+              members: created
+            });
+          }
+
+          if (!memberId && !searchMember) {
+      return res.status(400).json({ message: "Please provide memberId, memberIds or a name/email/phone to search." });
     }
 
-        const query = {_id: groupId, church: req.activeChurch._id}
+        const query = {_id: groupId, church: churchId}
         
         const group = await Group.findOne(query)
         if (!group) {
@@ -125,15 +217,17 @@ const addMemberToGroup = async (req, res) => {
           }
 
           //search member by name, email or phone
-          const member = await Member.findOne({
-            church: req.activeChurch._id,
-      $or: [
-        { firstName: { $regex: searchMember, $options: "i" } },
-        { lastName: { $regex: searchMember, $options: "i" } },
-        { email: { $regex: searchMember, $options: "i" } },
-        { phoneNumber: { $regex: searchMember, $options: "i" } },
-      ],
-           })
+          const member = memberId
+            ? await Member.findOne({ _id: memberId, church: churchId })
+            : await Member.findOne({
+                church: churchId,
+                $or: [
+                  { firstName: { $regex: searchMember, $options: "i" } },
+                  { lastName: { $regex: searchMember, $options: "i" } },
+                  { email: { $regex: searchMember, $options: "i" } },
+                  { phoneNumber: { $regex: searchMember, $options: "i" } },
+                ],
+              })
 
           if (!member) {
             return res.status(404).json({ message: "Member not found" });
@@ -141,7 +235,7 @@ const addMemberToGroup = async (req, res) => {
 
           //check if member is already in group
            const memberExists = await GroupMember.findOne({
-      group: groupId, church: req.activeChurch._id,
+      group: groupId, church: churchId,
       member: member._id
     });
 
@@ -153,7 +247,7 @@ const addMemberToGroup = async (req, res) => {
       group: groupId,
       member: member._id,
       role,
-    church: req.activeChurch._id,
+    church: churchId,
     createdBy: req.user._id
     });
 
@@ -517,4 +611,4 @@ const getMinistryKPI = async (req, res) => {
 
 
 
-export {createGroup, getAllGroups, getSingleGroup, updateGroup, deleteGroup, addMemberToGroup, updateMemberRole, removeMemberFromGroup, getGroupMembers, addMeeting, updateMeeting, deleteMeeting, getMeetings, getMinistryKPI }
+export {createGroup, getAllGroups, getSingleGroup, updateGroup, deleteGroup, searchMembersToAddToGroup, addMemberToGroup, updateMemberRole, removeMemberFromGroup, getGroupMembers, addMeeting, updateMeeting, deleteMeeting, getMeetings, getMinistryKPI }

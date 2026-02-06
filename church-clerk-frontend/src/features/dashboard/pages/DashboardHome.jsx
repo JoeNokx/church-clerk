@@ -4,11 +4,20 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import SpecialFundPage from "../../specialFund/pages/SpecialFundPage.jsx";
 import ReferralProgramPage from "../../referral/pages/ReferralProgramPage.jsx";
 import OfferingPage from "../../offering/pages/OfferingPage.jsx";
+import TithePage from "../../tithe/pages/TithePage.jsx";
 import AttendancePage from "../../attendance/pages/AttendancePage.jsx";
 import MembersPage from "../../member/pages/MembersPage.jsx";
 import MemberFormPage from "../../member/pages/MemberFormPage.jsx";
 import MemberDetailsPage from "../../member/pages/MemberDetailsPage.jsx";
+import ChurchProjectsPage from "../../churchProject/pages/ChurchProjectsPage.jsx";
+import ChurchProjectDetailsPage from "../../churchProject/pages/ChurchProjectDetailsPage.jsx";
+import ProgramsEventsPage from "../../event/pages/ProgramsEventsPage.jsx";
+import EventDetailsPage from "../../event/pages/EventDetailsPage.jsx";
+import MinistriesPage from "../../ministries/pages/MinistriesPage.jsx";
+import MinistryDetailsPage from "../../ministries/pages/MinistryDetailsPage.jsx";
 import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboardWidgetsWithParams } from "../services/dashboard.api.js";
+import { getUpcomingEvents } from "../../event/services/event.api.js";
+import { getMembers } from "../../member/services/member.api.js";
 import { getMyReferralCode, getMyReferralHistory } from "../../referral/services/referral.api.js";
 
 function formatPercent(value) {
@@ -33,6 +42,16 @@ function formatLongDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+function formatYmdLocal(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function formatRelativeTime(value) {
   if (!value) return "—";
   const d = new Date(value);
@@ -54,6 +73,31 @@ function formatRelativeTime(value) {
 
   const diffYears = Math.floor(diffDays / 365);
   return `${diffYears} year${diffYears === 1 ? "" : "s"} ago`;
+}
+
+function formatRange(from, to) {
+  const f = from ? new Date(from) : null;
+  const t = to ? new Date(to) : null;
+  if (f && Number.isNaN(f.getTime())) return "—";
+  if (t && Number.isNaN(t.getTime())) return "—";
+
+  if (f && t) {
+    const sameDay = f.toDateString() === t.toDateString();
+    if (sameDay) return formatLongDate(f);
+    return `${formatLongDate(f)} - ${formatLongDate(t)}`;
+  }
+  if (f) return formatLongDate(f);
+  if (t) return formatLongDate(t);
+  return "—";
+}
+
+function formatTimeRange(from, to, legacy) {
+  const f = String(from || "").trim();
+  const t = String(to || "").trim();
+  if (f && t) return `${f} - ${t}`;
+  if (f) return f;
+  if (t) return t;
+  return legacy ? String(legacy) : "—";
 }
 
 function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }) {
@@ -115,6 +159,12 @@ function DashboardOverview({ onNavigate }) {
   const [widgets, setWidgets] = useState(null);
   const [referral, setReferral] = useState(null);
 
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [upcomingEventsLoading, setUpcomingEventsLoading] = useState(false);
+  const [upcomingEventsError, setUpcomingEventsError] = useState("");
+
+  const [newMembersThisMonthCount, setNewMembersThisMonthCount] = useState(null);
+
   const [birthdaysModalOpen, setBirthdaysModalOpen] = useState(false);
   const [birthdaysModalLoading, setBirthdaysModalLoading] = useState(false);
   const [birthdaysModalError, setBirthdaysModalError] = useState("");
@@ -131,13 +181,66 @@ function DashboardOverview({ onNavigate }) {
       setError("");
       setLoading(true);
 
+      setUpcomingEventsLoading(true);
+      setUpcomingEventsError("");
+      setNewMembersThisMonthCount(null);
+
+      const fetchNewMembersThisMonth = async () => {
+        const now = new Date();
+        const from = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const dateFrom = formatYmdLocal(from);
+        const dateTo = formatYmdLocal(now);
+
+        const limit = 1000;
+        let page = 1;
+        let total = 0;
+
+        // We rely on backend paging shape (totalPages/currentPage/nextPage/prevPage).
+        // This avoids fetching all members, only the current month.
+        while (true) {
+          const res = await getMembers({ page, limit, dateFrom, dateTo });
+          const payload = res?.data?.data ?? res?.data;
+          const rows = Array.isArray(payload?.members) ? payload.members : [];
+          total += rows.length;
+
+          const pagination = payload?.pagination || {};
+          const nextPage = pagination?.nextPage;
+          const totalPages = Number(pagination?.totalPages || 0);
+
+          if (nextPage) {
+            page = nextPage;
+            continue;
+          }
+
+          if (totalPages && page < totalPages) {
+            page += 1;
+            continue;
+          }
+
+          break;
+        }
+
+        return total;
+      };
+
       try {
-        const [kpiResult, analyticsResult, widgetsResult, referralCodeResult, referralHistoryResult] = await Promise.allSettled([
+        const [
+          kpiResult,
+          analyticsResult,
+          widgetsResult,
+          referralCodeResult,
+          referralHistoryResult,
+          upcomingEventsResult,
+          newMembersThisMonthResult
+        ] = await Promise.allSettled([
           getDashboardKPI(),
           getDashboardAnalytics({ year }),
           getDashboardWidgets(),
           getMyReferralCode(),
-          getMyReferralHistory()
+          getMyReferralHistory(),
+          getUpcomingEvents({ page: 1, limit: 6 }),
+          fetchNewMembersThisMonth()
         ]);
 
         if (cancelled) return;
@@ -154,6 +257,31 @@ function DashboardOverview({ onNavigate }) {
         setAnalytics(analyticsRes?.data?.analyticsDashboard || null);
         setWidgets(widgetsRes?.data?.dashboardWidget || null);
 
+        if (!cancelled) {
+          if (newMembersThisMonthResult.status === "fulfilled") {
+            setNewMembersThisMonthCount(Number(newMembersThisMonthResult.value || 0));
+          } else {
+            setNewMembersThisMonthCount(null);
+          }
+        }
+
+        if (!cancelled) {
+          if (upcomingEventsResult.status === "fulfilled") {
+            const res = upcomingEventsResult.value;
+            const payload = res?.data?.data ?? res?.data;
+            const data = payload?.data ?? payload;
+            const events = Array.isArray(data?.events) ? data.events : [];
+            setUpcomingEvents(events.slice(0, 6));
+          } else {
+            setUpcomingEvents([]);
+            setUpcomingEventsError(
+              upcomingEventsResult?.reason?.response?.data?.message ||
+                upcomingEventsResult?.reason?.message ||
+                "Failed to load upcoming events"
+            );
+          }
+        }
+
         const code = referralCodeResult.status === "fulfilled" ? referralCodeResult.value?.data || {} : {};
         const history = referralHistoryResult.status === "fulfilled" ? referralHistoryResult.value?.data || {} : {};
         const referrals = Array.isArray(history.referrals) ? history.referrals : [];
@@ -169,6 +297,7 @@ function DashboardOverview({ onNavigate }) {
       } finally {
         if (cancelled) return;
         setLoading(false);
+        setUpcomingEventsLoading(false);
       }
     };
 
@@ -200,13 +329,13 @@ function DashboardOverview({ onNavigate }) {
   const upcomingBirthdays = useMemo(() => {
     const rows = widgets?.upcomingBirthdays;
     if (!Array.isArray(rows)) return [];
-    return rows;
+    return rows.slice(0, 6);
   }, [widgets]);
 
   const recentMembers = useMemo(() => {
     const rows = widgets?.recentMembers;
     if (!Array.isArray(rows)) return [];
-    return rows;
+    return rows.slice(0, 6);
   }, [widgets]);
 
   const openBirthdaysModal = async () => {
@@ -237,6 +366,11 @@ function DashboardOverview({ onNavigate }) {
     if (!id) return;
     closeBirthdaysModal();
     navigate(`/dashboard?page=member-details&id=${id}`, { state: { from: "dashboard" } });
+  };
+
+  const goToEventDetails = (id) => {
+    if (!id) return;
+    navigate(`/dashboard?page=event-details&id=${id}`, { state: { from: "dashboard" } });
   };
 
   const filteredBirthdays = useMemo(() => {
@@ -325,7 +459,7 @@ function DashboardOverview({ onNavigate }) {
         />
         <KpiCard
           title="New Members This Month"
-          value={kpis?.newMembersThisMonth ?? 0}
+          value={typeof newMembersThisMonthCount === "number" ? newMembersThisMonthCount : kpis?.newMembersThisMonth ?? 0}
           change={kpis?.change?.newMembersThisMonth}
           compareLabel="vs last month"
           onClick={() => onNavigate("members")}
@@ -398,8 +532,8 @@ function DashboardOverview({ onNavigate }) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-start justify-between gap-3">
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
             <div>
               <div className="text-sm font-semibold text-gray-900">Upcoming Birthdays</div>
               <div className="mt-1 text-sm text-gray-600">Next 30 days</div>
@@ -413,30 +547,32 @@ function DashboardOverview({ onNavigate }) {
             </button>
           </div>
 
-          <div className="mt-4 divide-y divide-gray-200">
-            {upcomingBirthdays.length ? (
-              upcomingBirthdays.map((m, idx) => (
-                <button
-                  key={`${m?._id || "b"}-${idx}`}
-                  type="button"
-                  onClick={() => goToMemberDetails(m?._id)}
-                  className="w-full text-left flex items-center justify-between gap-3 py-1.5 hover:bg-gray-50"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
-                    <div className="mt-0.5 text-xs text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
-                  </div>
-                  <div className="text-xs font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
-                </button>
-              ))
-            ) : (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No upcoming birthdays.</div>
-            )}
+          <div className="px-5 pb-5">
+            <div className="mt-4 divide-y divide-gray-200">
+              {upcomingBirthdays.length ? (
+                upcomingBirthdays.map((m, idx) => (
+                  <button
+                    key={`${m?._id || "b"}-${idx}`}
+                    type="button"
+                    onClick={() => goToMemberDetails(m?._id)}
+                    className="w-full text-left flex items-center justify-between gap-3 py-1.5 hover:bg-gray-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                      <div className="mt-0.5 text-xs text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                    </div>
+                    <div className="text-xs font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                  </button>
+                ))
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No upcoming birthdays.</div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-start justify-between gap-3">
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
             <div>
               <div className="text-sm font-semibold text-gray-900">Recent Members</div>
               <div className="mt-1 text-sm text-gray-600">Latest registrations</div>
@@ -450,44 +586,88 @@ function DashboardOverview({ onNavigate }) {
             </button>
           </div>
 
-          <div className="mt-4 divide-y divide-gray-200">
-            {recentMembers.length ? (
-              recentMembers.map((m, idx) => (
-                <button
-                  key={`${m?._id || "m"}-${idx}`}
-                  type="button"
-                  onClick={() => goToMemberDetails(m?._id)}
-                  className="w-full text-left flex items-start justify-between gap-3 py-1.5 hover:bg-gray-50"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
-                  <div className="mt-0.5 text-xs text-gray-500">{formatRelativeTime(m?.createdAt || m?.dateJoined)}</div>
-                  </div>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      String(m?.status || "").toLowerCase() === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-                    }`}
+          <div className="px-5 pb-5">
+            <div className="mt-4 divide-y divide-gray-200">
+              {recentMembers.length ? (
+                recentMembers.map((m, idx) => (
+                  <button
+                    key={`${m?._id || "m"}-${idx}`}
+                    type="button"
+                    onClick={() => goToMemberDetails(m?._id)}
+                    className="w-full text-left flex items-start justify-between gap-3 py-1.5 hover:bg-gray-50"
                   >
-                    {String(m?.status || "—")}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No recent members.</div>
-            )}
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                      <div className="mt-0.5 text-xs text-gray-500">{formatRelativeTime(m?.createdAt || m?.dateJoined)}</div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        String(m?.status || "").toLowerCase() === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {String(m?.status || "—")}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No recent members.</div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-sm font-semibold text-gray-900">Upcoming Events</div>
-          <div className="mt-1 text-sm text-gray-600">Programs &amp; Events module</div>
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
+            <div>
+              <div className="text-sm font-semibold text-gray-900">Upcoming Events</div>
+              <div className="mt-1 text-sm text-gray-600">Programs &amp; Events module</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate("programs-events")}
+              className="text-sm font-semibold text-blue-700 hover:underline"
+            >
+              View All
+            </button>
+          </div>
 
-          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Module loading soon.</div>
+          <div className="px-5 pb-5">
+            {upcomingEventsLoading && !upcomingEvents.length ? (
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+            ) : upcomingEventsError ? (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{upcomingEventsError}</div>
+            ) : upcomingEvents.length ? (
+              <div className="mt-4 divide-y divide-gray-200">
+                {upcomingEvents.map((ev, idx) => (
+                  <button
+                    key={`${ev?._id || "ev"}-${idx}`}
+                    type="button"
+                    onClick={() => goToEventDetails(ev?._id)}
+                    className="w-full text-left py-2 hover:bg-gray-50"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 truncate">{ev?.title || "—"}</div>
+                        <div className="mt-0.5 text-xs text-gray-500 truncate">
+                          {formatRange(ev?.dateFrom, ev?.dateTo)}
+                          {" "}•{" "}
+                          {formatTimeRange(ev?.timeFrom, ev?.timeTo, ev?.time)}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-xs font-semibold text-gray-700 truncate max-w-[40%]">{ev?.venue || "—"}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No upcoming events.</div>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/30 p-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap md:flex-nowrap">
+        <div className="flex items-center justify-end gap-4 flex-wrap md:flex-nowrap">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-xl bg-white ring-1 ring-blue-100 flex items-center justify-center">
               <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-blue-700">
@@ -639,6 +819,10 @@ function DashboardHome() {
     return <OfferingPage />;
   }
 
+  if (page === "tithe") {
+    return <TithePage />;
+  }
+
   if (page === "referrals") {
     return <ReferralProgramPage />;
   }
@@ -657,6 +841,30 @@ function DashboardHome() {
 
   if (page === "member-details") {
     return <MemberDetailsPage />;
+  }
+
+  if (page === "church-projects") {
+    return <ChurchProjectsPage />;
+  }
+
+  if (page === "church-project-details") {
+    return <ChurchProjectDetailsPage />;
+  }
+
+  if (page === "programs-events") {
+    return <ProgramsEventsPage />;
+  }
+
+  if (page === "event-details") {
+    return <EventDetailsPage />;
+  }
+
+  if (page === "ministries") {
+    return <MinistriesPage />;
+  }
+
+  if (page === "ministry-details") {
+    return <MinistryDetailsPage />;
   }
 
   if (page === "billing") return null;

@@ -24,6 +24,10 @@ export const addGroupMember = async (id, payload) => {
   return await http.post(`/group/groups/${id}/members`, payload);
 };
 
+export const searchGroupMembersToAdd = async (id, params) => {
+  return await http.get(`/group/groups/${id}/members/search`, { params });
+};
+
 export const getGroupMembers = async (id, params) => {
   return await http.get(`/group/groups/${id}/members`, { params });
 };

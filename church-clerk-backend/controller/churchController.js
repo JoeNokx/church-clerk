@@ -209,7 +209,7 @@ const updateMyChurchProfile = async (req, res) => {
       query._id = id;
     } else {
       // Non-admins can ONLY update their own church
-      query._id = req.user.church;
+      query._id = req.activeChurch?._id || req.user.church;
     }
 
     //  Prevent invalid church type changes
@@ -218,6 +218,13 @@ const updateMyChurchProfile = async (req, res) => {
       !["Independent", "Branch", "Headquarters"].includes(updateData.type)
     ) {
       return res.status(400).json({ message: "Invalid church type" });
+    }
+
+    if (
+      updateData.titheRecordingMode &&
+      !["individual", "aggregate"].includes(updateData.titheRecordingMode)
+    ) {
+      return res.status(400).json({ message: "Invalid tithe recording mode" });
     }
 
     /**
@@ -235,12 +242,12 @@ const updateMyChurchProfile = async (req, res) => {
       }
     }
 
-    // 🚫 Prevent illegal parentChurch usage
+    // Prevent illegal parentChurch usage
     if (updateData.type !== "Branch") {
       updateData.parentChurch = null;
     }
 
-    // ✅ Update church
+    // Update church
     const updatedChurch = await Church.findOneAndUpdate(
       query,
       updateData,
@@ -367,11 +374,11 @@ const getMyBranches = async (req, res) => {
 //view spcified modules by branch or hq
 
 const getActiveChurchContext = (req, res) => {
-  const { _id, name, type, parentChurch, canEdit, visibleModules } = req.activeChurch;
+  const { _id, name, type, parentChurch, canEdit, visibleModules, titheRecordingMode } = req.activeChurch;
 
   res.status(200).json({
     message: "Church context fetched",
-    activeChurch: { _id, name, type, parentChurch: parentChurch || null, canEdit, visibleModules },
+    activeChurch: { _id, name, type, parentChurch: parentChurch || null, canEdit, visibleModules, titheRecordingMode },
   });
 };
 
