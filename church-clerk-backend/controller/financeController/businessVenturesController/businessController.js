@@ -1,6 +1,6 @@
 import BusinessVentures from "../../../models/financeModel/businessModel/businessVenturesModel.js";
 import BusinessIncome from "../../../models/financeModel/businessModel/businessIncomeModel.js";
-import BusinessExpenses from "../../../models/financeModel/businessModel/BusinessExpensesModel.js";
+import BusinessExpenses from "../../../models/financeModel/businessModel/businessExpensesModel.js";
 
 
 const createBusinessVentures = async (req, res) => {
@@ -23,7 +23,7 @@ const createBusinessVentures = async (req, res) => {
                 description,
                 manager,
                 phoneNumber,
-                church: req.user.church,
+                church: req.activeChurch._id,
                 createdBy: req.user._id
                 });
         
@@ -52,7 +52,7 @@ const getAllBusinessVentures = async (req, res) => {
     
         // Restrict by church for non-admins
         if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church;
+            query.church = req.activeChurch._id;
         }
     
         // FETCH ALL  BUSINESS VENTURES
@@ -144,7 +144,7 @@ const getSingleBusinessVentures = async (req, res) => {
             const query = {_id: id}
     
             if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                query.church = req.user.church
+                query.church = req.activeChurch._id
             }
           const businessVentures = await BusinessVentures.findOne(query)
                 .select("businessName description manager phoneNumber createdBy")
@@ -168,7 +168,7 @@ const updateBusinessVentures = async (req, res) => {
                 const query = {_id: id}
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
+                    query.church = req.activeChurch._id
                 }
         
                 const businessVentures = await BusinessVentures.findOneAndUpdate(query, req.body, {new: true, runValidators: true})
@@ -192,7 +192,7 @@ const deleteBusinessVentures = async (req, res) => {
                 const query = {_id: id}
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
+                    query.church = req.activeChurch._id
                 }
         
                 const businessVentures = await BusinessVentures.findOneAndDelete(query)
@@ -221,7 +221,7 @@ const getAllBusinessKPI = async(req, res) => {
 
     // Restrict by church for non-admins
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch._id;
     }
     
       // ---- TOTAL INCOME AND EXPENSES ----

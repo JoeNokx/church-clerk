@@ -13,7 +13,7 @@ const createEventAttendee = async (req, res) => {
 
     const query = { _id: eventId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.activeChurch?._id || req.user.church;
+      query.church = req.activeChurch._id;
     }
 
 
@@ -55,7 +55,7 @@ const getEventAttendees = async(req, res) => {
 
     const eventQuery = { _id: eventId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      eventQuery.church = req.activeChurch?._id || req.user.church;
+      eventQuery.church = req.activeChurch._id;
     }
 
     const event = await Event.findOne(eventQuery);
@@ -137,7 +137,7 @@ const updateEventAttendee = async (req, res) => {
 
     const eventQuery = { _id: eventId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      eventQuery.church = req.activeChurch?._id || req.user.church;
+      eventQuery.church = req.activeChurch._id;
     }
 
     const event = await Event.findOne(eventQuery);
@@ -169,19 +169,15 @@ const deleteEventAttendee = async (req, res) => {
   try {
     const { eventId, attendeeId } = req.params;
 
-    const query = { _id: attendeeId, event: eventId };
-    
-    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.activeChurch?._id || req.user.church;
-    }
-
     const eventQuery = { _id: eventId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      eventQuery.church = req.activeChurch?._id || req.user.church;
+      eventQuery.church = req.activeChurch._id;
     }
 
     const event = await Event.findOne(eventQuery);
     if (!event) return res.status(404).json({ message: "Event not found." });
+
+    const query = { _id: attendeeId, event: eventId, church: event.church };
 
     const attendee = await EventAttendees.findOneAndDelete(query);
     if (!attendee) return res.status(404).json({ message: "Attendee not found." });

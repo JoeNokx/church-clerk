@@ -18,7 +18,7 @@ const createProjectContributions = async (req, res) => {
 
                 const query = { _id: projectId };
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                query.church = req.user.church;
+                query.church = req.activeChurch._id;
                 }
 
                 const churchProject = await ChurchProject.findOne(query);
@@ -69,7 +69,7 @@ const getAllProjectContributions = async (req, res) => {
             
                 // Restrict by church for non-admins
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church;
+                    query.church = req.activeChurch._id;
                 }
             
                 const churchProject = await ChurchProject.findById(projectId);
@@ -170,7 +170,7 @@ const updateProjectContributions = async (req, res) => {
          const query = {_id: contributionId, churchProject: projectId}
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
+                    query.church = req.activeChurch._id
                 }
         
                 const churchProject = await ChurchProject.findById(projectId)
@@ -203,7 +203,7 @@ const query = {
 };
 
 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-  query.church = req.user.church;
+  query.church = req.activeChurch._id;
 }
 
 const churchProject = await ChurchProject.findById(projectId);

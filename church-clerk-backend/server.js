@@ -66,6 +66,7 @@ app.use("/api/v1/expense", Routes.expenseRoute);
 app.use("/api/v1/special-fund", Routes.specialFundRoute);
 app.use("/api/v1/offering", Routes.offeringRoute);
 app.use("/api/v1/financial-statement", Routes.financialStatementRoute);
+app.use("/api/v1/reports-analytics", Routes.reportsAnalyticsRoute);
 app.use("/api/v1/church-project", Routes.churchProjectRoute);
 app.use("/api/v1/welfare", Routes.welfareRoute);
 app.use("/api/v1/business-ventures", Routes.businessVenturesRoute);

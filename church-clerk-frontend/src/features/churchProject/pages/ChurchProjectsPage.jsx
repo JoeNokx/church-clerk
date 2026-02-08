@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ChurchContext from "../../church/church.store.js";
 import {
   createChurchProject,
   deleteChurchProject,
@@ -442,6 +443,10 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess }) {
 function ChurchProjectsPage() {
   const navigate = useNavigate();
 
+  const churchCtx = useContext(ChurchContext);
+  const activeChurch = churchCtx?.activeChurch;
+  const canEdit = activeChurch?._id ? activeChurch?.canEdit !== false : true;
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [projects, setProjects] = useState([]);
@@ -557,14 +562,16 @@ function ChurchProjectsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setAddProjectOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
-          >
-            <span className="text-lg leading-none">+</span>
-            Add Project
-          </button>
+          {canEdit ? (
+            <button
+              type="button"
+              onClick={() => setAddProjectOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+            >
+              <span className="text-lg leading-none">+</span>
+              Add Project
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -643,21 +650,25 @@ function ChurchProjectsPage() {
                 </div>
 
                 <div className="mt-5 flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <button
-                    type="button"
-                    onClick={() => openContribution(p)}
-                    className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                  >
-                    Add Contribution
-                  </button>
+                  {canEdit ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openContribution(p)}
+                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                      >
+                        Add Contribution
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => openExpense(p)}
-                    className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                  >
-                    Record Expense
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => openExpense(p)}
+                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                      >
+                        Record Expense
+                      </button>
+                    </>
+                  ) : null}
 
                   <button
                     type="button"
@@ -667,21 +678,25 @@ function ChurchProjectsPage() {
                     View
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => openEdit(p)}
-                    className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                  >
-                    Edit
-                  </button>
+                  {canEdit ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(p)}
+                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                      >
+                        Edit
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => openDelete(p)}
-                    className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 shadow-sm hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => openDelete(p)}
+                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 shadow-sm hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </div>
             );
@@ -691,7 +706,7 @@ function ChurchProjectsPage() {
 
       <AddProjectModal
         open={addProjectOpen}
-        disabled={false}
+        disabled={!canEdit}
         onClose={() => setAddProjectOpen(false)}
         onSuccess={() => {
           setAddProjectOpen(false);
@@ -701,7 +716,7 @@ function ChurchProjectsPage() {
 
       <ContributionModal
         open={contributionOpen}
-        disabled={false}
+        disabled={!canEdit}
         project={activeProject}
         onClose={() => {
           setContributionOpen(false);
@@ -716,7 +731,7 @@ function ChurchProjectsPage() {
 
       <ExpenseModal
         open={expenseOpen}
-        disabled={false}
+        disabled={!canEdit}
         project={activeProject}
         onClose={() => {
           setExpenseOpen(false);

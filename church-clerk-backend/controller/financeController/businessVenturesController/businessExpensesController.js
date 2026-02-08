@@ -1,4 +1,4 @@
-import BusinessExpenses from "../../../models/financeModel/businessModel/BusinessExpensesModel.js";
+import BusinessExpenses from "../../../models/financeModel/businessModel/businessExpensesModel.js";
 import BusinessVentures from "../../../models/financeModel/businessModel/businessVenturesModel.js";
 
 
@@ -18,7 +18,7 @@ const createBusinessExpenses = async (req, res) => {
 
                 const query = { _id: businessId };
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                query.church = req.user.church;
+                query.church = req.activeChurch._id;
                 }
 
                 const business = await BusinessVentures.findOne(query);
@@ -70,7 +70,7 @@ const getAllBusinessExpenses = async (req, res) => {
             
                 // Restrict by church for non-admins
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church;
+                    query.church = req.activeChurch._id;
                 }
             
                 const business = await BusinessVentures.findById(businessId);
@@ -174,7 +174,7 @@ const updateBusinessExpenses = async (req, res) => {
          const query = {_id: expensesId, businessVentures: businessId}
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
+                    query.church = req.activeChurch._id
                 }
         
                 const business = await BusinessVentures.findById(businessId)
@@ -207,7 +207,7 @@ const query = {
 };
 
 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-  query.church = req.user.church;
+  query.church = req.activeChurch._id;
 }
 
 const business = await BusinessVentures.findById(businessId);

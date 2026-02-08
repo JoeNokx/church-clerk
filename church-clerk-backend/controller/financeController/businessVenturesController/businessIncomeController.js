@@ -17,7 +17,7 @@ const createBusinessIncome = async (req, res) => {
 
                 const query = { _id: businessId };
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                query.church = req.user.church;
+                query.church = req.activeChurch._id;
                 }
 
                 const business = await BusinessVentures.findOne(query);
@@ -68,7 +68,7 @@ const getAllBusinessIncome = async (req, res) => {
             
                 // Restrict by church for non-admins
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church;
+                    query.church = req.activeChurch._id;
                 }
             
                 const business = await BusinessVentures.findById(businessId);
@@ -167,7 +167,7 @@ const updateBusinessIncome = async (req, res) => {
          const query = {_id: incomeId, businessVentures: businessId}
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
+                    query.church = req.activeChurch._id
                 }
         
                 const business = await BusinessVentures.findById(businessId)
@@ -200,7 +200,7 @@ const query = {
 };
 
 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-  query.church = req.user.church;
+  query.church = req.activeChurch._id;
 }
 
 const business = await BusinessVentures.findById(businessId);

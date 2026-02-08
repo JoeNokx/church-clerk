@@ -6,6 +6,7 @@ const createWelfareContribution = async (req, res) => {
     
     try {
         const searchMember = (req.body.searchMember || "").trim();
+        const memberId = String(req.body.memberId || "").trim();
           const {
                 amount,
                 date,
@@ -15,22 +16,29 @@ const createWelfareContribution = async (req, res) => {
                 if (!amount || !date) {
                 return res.status(400).json({ message: "Amount and date are required." });
                 }
-        
-                // Ensure user provides at least one identifier
-                 if (!searchMember) {
-                      return res.status(400).json({ message: "Please provide a name, email, or phone to search." });
+
+                let member = null;
+
+                if (memberId) {
+                  member = await Member.findOne({ _id: memberId, church: req.activeChurch._id });
+                  if (!member) {
+                    return res.status(404).json({ message: "Member not found" });
+                  }
+                } else {
+                  if (!searchMember) {
+                    return res.status(400).json({ message: "Please provide a name, email, or phone to search." });
                   }
 
-                //search member by name, email or phone
-                const member = await Member.findOne({
-                church: req.activeChurch._id,
-                $or: [
-                    { firstName: { $regex: searchMember, $options: "i" } },
-                    { lastName: { $regex: searchMember, $options: "i" } },
-                    { email: { $regex: searchMember, $options: "i" } },
-                    { phoneNumber: { $regex: searchMember, $options: "i" } },
-                ],
-                });
+                  member = await Member.findOne({
+                    church: req.activeChurch._id,
+                    $or: [
+                      { firstName: { $regex: searchMember, $options: "i" } },
+                      { lastName: { $regex: searchMember, $options: "i" } },
+                      { email: { $regex: searchMember, $options: "i" } },
+                      { phoneNumber: { $regex: searchMember, $options: "i" } }
+                    ]
+                  });
+                }
         
                 if (!member) {
                 return res.status(404).json({ message: "Member not found" });
@@ -53,6 +61,37 @@ const createWelfareContribution = async (req, res) => {
         return res.status(400).json({message: "Welfare contribution could not be created", error: error.message})
     }
 }
+
+const searchMembersForWelfare = async (req, res) => {
+  try {
+    const search = (req.query.search || "").trim();
+
+    if (!search) {
+      return res.status(200).json({ message: "No search term provided", members: [] });
+    }
+
+    const regex = { $regex: search, $options: "i" };
+
+    const members = await Member.find({
+      church: req.activeChurch._id,
+      $or: [
+        { firstName: regex },
+        { lastName: regex },
+        { phoneNumber: regex },
+        { email: regex },
+        { city: regex },
+        { memberId: regex }
+      ]
+    })
+      .select("firstName lastName phoneNumber email city")
+      .limit(20)
+      .lean();
+
+    return res.status(200).json({ message: "Members fetched successfully", members });
+  } catch (error) {
+    return res.status(400).json({ message: "Members could not be fetched", error: error.message });
+  }
+};
 
 
 
@@ -89,26 +128,26 @@ const getAllWelfareContribution = async (req, res) => {
 
                 // Filter by date range
             if (dateFrom || dateTo) {
-                query.serviceDate = {};
+                query.date = {};
             
                 // Filter from a starting date
                 if (dateFrom) {
                 const startDate = new Date(dateFrom);
                 startDate.setHours(0, 0, 0, 0); // Start of the day
-                query.serviceDate.$gte = startDate;
+                query.date.$gte = startDate;
                 }
             
                 // Filter up to an ending date
                 if (dateTo) {
                 const endDate = new Date(dateTo);
                 endDate.setHours(23, 59, 59, 999); // End of the day
-                query.serviceDate.$lte = endDate;
+                query.date.$lte = endDate;
                 }
             }
              
                 // FETCH welfare Disbursement
                 const welfareContribution = await WelfareContributions.find(query)
-                .select("searchMember amount date paymentMethod createdBy")
+                .select("member amount date paymentMethod createdBy")
                 .populate("member", "firstName lastName email phoneNumber")
                     .sort({ createdAt: -1 })
                     .skip(skip)
@@ -202,4 +241,4 @@ const deleteWelfareContribution = async (req, res) => {
     }
 }
 
-export {createWelfareContribution, getAllWelfareContribution, updateWelfareContribution, deleteWelfareContribution}
+export {createWelfareContribution, getAllWelfareContribution, updateWelfareContribution, deleteWelfareContribution, searchMembersForWelfare}

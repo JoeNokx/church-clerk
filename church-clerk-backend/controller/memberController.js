@@ -39,18 +39,20 @@ const createMember = async (req, res) => {
   .map(word => word.replace(/[^a-zA-Z]/g, "")[0].toUpperCase()) // remove non-letters, take first letter
   .join("");
 
-    // 6. Increment memberCount atomically
+    // 6. Increment member serial atomically (used for generating a unique memberId)
     const updatedChurch = await Church.findByIdAndUpdate(
       churchId,
-      { $inc: { memberCount: 1 } }, // increment memberCount
-      { new: true } // return updated doc
+      { $inc: { memberSerial: 1 } },
+      { new: true }
     );
 
-    // 7. Generate memberId: PREFIX + padded number
-    const paddedNumber = String(updatedChurch.memberCount).padStart(6, "0");
-    const memberId = `${prefix}-${paddedNumber}`; // e.g., "GBC-000001"
+    // 7. Generate memberId: PREFIX + padded serial
+    const paddedNumber = String(updatedChurch.memberSerial || 0).padStart(6, "0");
+    const memberId = `${prefix}-${paddedNumber}`;
 
-            const member = await Member.create({
+            let member;
+            try {
+              member = await Member.create({
                 // Personal information
                 memberId,     //auto-generated
                 firstName,
@@ -81,7 +83,10 @@ const createMember = async (req, res) => {
                       // Tenant ownership
                 createdBy,
                 church: churchId
-            })
+            });
+            } catch (error) {
+              throw error;
+            }
 
              // If this member was created from a visitor → update visitor status
     if (visitorId) {
@@ -102,15 +107,19 @@ const createMember = async (req, res) => {
   ));
 }
 
-
 // after member is created
-await checkAndHandleMemberLimit({
-  churchId: req.activeChurch._id,
-  totalMembers: await Member.countDocuments({
-    church: req.activeChurch._id
-  })
+const totalMembers = await Member.countDocuments({
+  church: req.activeChurch._id
 });
 
+await Church.findByIdAndUpdate(req.activeChurch._id, {
+  memberCount: totalMembers
+});
+
+await checkAndHandleMemberLimit({
+  churchId: req.activeChurch._id,
+  totalMembers
+});
 
         return res.status(201).json({message: "member created successfully", member})
     } catch (error) {
@@ -303,6 +312,15 @@ const deleteMember = async (req, res) => {
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
     }
+
+    const totalMembers = await Member.countDocuments({
+      church: req.activeChurch._id
+    });
+
+    await Church.findByIdAndUpdate(req.activeChurch._id, {
+      memberCount: totalMembers
+    });
+
     return res.status(200).json({
       message: "member deleted successfully",
       member

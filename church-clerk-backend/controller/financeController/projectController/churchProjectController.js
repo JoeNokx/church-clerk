@@ -24,7 +24,7 @@ const createChurchProjects = async (req, res) => {
                 description,
                 targetAmount,
                 status,
-                church: req.user.church,
+                church: req.activeChurch._id,
                 createdBy: req.user._id
                 });
         
@@ -53,7 +53,7 @@ const getAllChurchProjects = async (req, res) => {
             
                 // Restrict by church for non-admins
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church;
+                    query.church = req.activeChurch._id;
                 }
             
             
@@ -147,7 +147,7 @@ const updateChurchProjects = async (req, res) => {
                 const query = {_id: id}
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
+                    query.church = req.activeChurch._id
                 }
         
                 const churchProject = await ChurchProject.findOneAndUpdate(query, req.body, {new: true, runValidators: true})
@@ -171,7 +171,7 @@ const deleteChurchProjects = async (req, res) => {
                 const query = {_id: id}
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
+                    query.church = req.activeChurch._id
                 }
         
                 const churchProject = await ChurchProject.findOneAndDelete(query)

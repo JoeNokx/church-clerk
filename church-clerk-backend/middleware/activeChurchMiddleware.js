@@ -10,8 +10,26 @@ export const setActiveChurch = async (req, res, next) => {
       return next();
     }
 
-    const activeChurchId =
-      req.headers["x-active-church"] || req.user.church;
+    const headerChurchId = req.headers["x-active-church"];
+    const userChurchId = req.user.church;
+
+    let activeChurchId = headerChurchId || userChurchId;
+
+    // Branch/Independent users should never switch context via header.
+    // If a stale/foreign x-active-church is present, force it back to their home church.
+    let userChurch = null;
+    if (
+      req.user.role !== "superadmin" &&
+      headerChurchId &&
+      userChurchId &&
+      headerChurchId.toString() !== userChurchId.toString()
+    ) {
+      userChurch = await Church.findById(userChurchId).lean();
+
+      if (!userChurch || userChurch.type !== "Headquarters") {
+        activeChurchId = userChurchId;
+      }
+    }
 
     if (!activeChurchId) {
       req.activeChurch = null;
@@ -27,11 +45,15 @@ export const setActiveChurch = async (req, res, next) => {
     // Switching church context (HQ → Branch only)
     if (
       req.user.role !== "superadmin" &&
-      activeChurchId.toString() !== req.user.church.toString()
+      userChurchId &&
+      activeChurchId.toString() !== userChurchId.toString()
     ) {
-      const userChurch = await Church.findById(req.user.church);
+      if (!userChurch) {
+        userChurch = await Church.findById(userChurchId).lean();
+      }
 
       if (
+        !userChurch ||
         userChurch.type !== "Headquarters" ||
         church.parentChurch?.toString() !== userChurch._id.toString()
       ) {
@@ -43,7 +65,7 @@ export const setActiveChurch = async (req, res, next) => {
 
     req.activeChurch.canEdit =
       req.user.role === "superadmin" ||
-      req.activeChurch._id.toString() === req.user.church?.toString();
+      req.activeChurch._id.toString() === userChurchId?.toString();
 
     const subscription = await Subscription.findOne({ church: activeChurchId })
       .populate("plan")

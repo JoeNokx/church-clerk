@@ -15,8 +15,8 @@ export const updateChurchProfile = async (id, payload) => {
   return await http.put(`/church/churches/${id}`, payload);
 };
 
-export const getMyBranches = async () => {
-  return await http.get("/church/branches");
+export const getMyBranches = async (params) => {
+  return await http.get("/church/branches", { params });
 };
 
 export const getActiveChurchContext = async () => {

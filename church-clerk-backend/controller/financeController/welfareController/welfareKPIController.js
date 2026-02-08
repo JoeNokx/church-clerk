@@ -34,7 +34,7 @@ const getWelfareKPI = async (req, res) => {
     const query = {};
 
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch._id;
     }
 
     // ---- Aggregations ----

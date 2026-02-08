@@ -1,5 +1,5 @@
 import BusinessIncome from "../../../models/financeModel/businessModel/businessIncomeModel.js";
-import BusinessExpenses from "../../../models/financeModel/businessModel/BusinessExpensesModel.js";
+import BusinessExpenses from "../../../models/financeModel/businessModel/businessExpensesModel.js";
 import BusinessVentures from "../../../models/financeModel/businessModel/businessVenturesModel.js";
 
 
@@ -13,7 +13,7 @@ const getIncomeExpensesKPI = async (req, res) => {
     const query = { businessVentures: businessId };
 
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch._id;
     }
 
     // CHECK BUSINESS EXISTS

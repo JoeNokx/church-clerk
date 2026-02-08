@@ -17,7 +17,7 @@ const createProjectExpenses = async (req, res) => {
 
                 const query = { _id: projectId };
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                query.church = req.user.church;
+                query.church = req.activeChurch._id;
                 }
 
                 const churchProject = await ChurchProject.findOne(query);
@@ -68,7 +68,7 @@ const getAllProjectExpenses = async (req, res) => {
             
                 // Restrict by church for non-admins
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church;
+                    query.church = req.activeChurch._id;
                 }
             
                 const churchProject = await ChurchProject.findById(projectId);
@@ -168,7 +168,7 @@ const updateProjectExpenses = async (req, res) => {
          const query = {_id: expensesId, churchProject: projectId}
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                    query.church = req.user.church
+                    query.church = req.activeChurch._id
                 }
         
                 const churchProject = await ChurchProject.findById(projectId)
@@ -201,7 +201,7 @@ const query = {
 };
 
 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-  query.church = req.user.church;
+  query.church = req.activeChurch._id;
 }
 
 const churchProject = await ChurchProject.findById(projectId);

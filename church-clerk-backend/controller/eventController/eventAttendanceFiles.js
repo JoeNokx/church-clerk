@@ -14,7 +14,7 @@ async function getScopedEvent(req) {
   const query = { _id: eventId };
 
   if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-    query.church = req.activeChurch?._id || req.user.church;
+    query.church = req.activeChurch._id;
   }
 
   const event = await Event.findOne(query).lean();

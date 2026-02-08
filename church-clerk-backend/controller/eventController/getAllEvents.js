@@ -4,7 +4,7 @@ const getScopedChurchId = (req) => {
   if (req.user?.role === "superadmin" || req.user?.role === "supportadmin") {
     return null;
   }
-  return req.activeChurch?._id || req.user?.church || null;
+  return req.activeChurch?._id || null;
 };
 
 const buildEventQuery = ({
@@ -269,7 +269,7 @@ const getUpcomingEvents = async (req, res) => {
 
     // Church scoping
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.activeChurch?._id || req.user.church;
+      query.church = req.activeChurch._id;
     }
 
     // Search
@@ -398,7 +398,7 @@ const getOngoingEvents = async (req, res) => {
 
 // Church scope
 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-  query.church = req.activeChurch?._id || req.user.church;
+  query.church = req.activeChurch._id;
 }
 
     // Search
@@ -533,7 +533,7 @@ let query = {
 
     // Church scoping
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.activeChurch?._id || req.user.church;
+      query.church = req.activeChurch._id;
     }
 
     // Search

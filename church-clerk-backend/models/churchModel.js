@@ -20,7 +20,13 @@ const churchSchema = new mongoose.Schema({
     default: null // only for branches
   },
 
+  pastor: {
+    type: String,
+    required: true,
+    trim: true
+  },
   memberCount: { type: Number, default: 0 },
+  memberSerial: { type: Number, default: 0 },
 
   foundedDate: { type: Date },
 

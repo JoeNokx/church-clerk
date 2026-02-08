@@ -55,7 +55,7 @@ const createEvent = async (req, res) => {
       time: computedTime || undefined,
       venue,
       status,
-      church: req.activeChurch?._id || req.user.church,
+      church: req.activeChurch._id,
       createdBy: req.user._id
     });
 

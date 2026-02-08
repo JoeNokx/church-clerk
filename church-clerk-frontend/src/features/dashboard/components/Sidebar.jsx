@@ -1,11 +1,20 @@
+import { useContext } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
+import ChurchContext from "../../church/church.store.js";
 
 
 function Sidebar() {
 
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin" || user?.role === "superadmin";
+
+  const churchCtx = useContext(ChurchContext);
+  const activeChurch = churchCtx?.activeChurch;
+  const homeChurchId = typeof user?.church === "string" ? user.church : user?.church?._id;
+  const showHeadquartersNav =
+    activeChurch?.type === "Headquarters" ||
+    (activeChurch?.type === "Branch" && homeChurchId && String(activeChurch?.parentChurch || "") === String(homeChurchId));
 
   const location = useLocation();
   const isBillingPath = location.pathname === "/dashboard/billing";
@@ -55,19 +64,21 @@ function Sidebar() {
             </NavLink>
           </div>
 
-          <div>
-            <div className="px-3 text-xs font-semibold text-gray-400 tracking-wider">HEADQUARTERS</div>
-            <div className="mt-2 space-y-1">
-              <NavLink to={toPage("branches-overview")} className={itemClass("branches-overview")}>
-                <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                    <path d="M4 7h16M7 7v14m10-14v14M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                </span>
-                Branches Overview
-              </NavLink>
+          {showHeadquartersNav ? (
+            <div>
+              <div className="px-3 text-xs font-semibold text-gray-400 tracking-wider">HEADQUARTERS</div>
+              <div className="mt-2 space-y-1">
+                <NavLink to={toPage("branches-overview")} className={itemClass("branches-overview")}>
+                  <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                      <path d="M4 7h16M7 7v14m10-14v14M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  Branches Overview
+                </NavLink>
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div>
             <div className="px-3 text-xs font-semibold text-gray-400 tracking-wider">PEOPLE &amp; MINISTRIES</div>

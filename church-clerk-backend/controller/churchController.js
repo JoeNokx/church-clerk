@@ -1,5 +1,6 @@
 import Church from "../models/churchModel.js";
 import User from "../models/userModel.js";
+import Subscription from "../models/billingModel/subscriptionModel.js";
 
 // referral models
 import ReferralCode from "../models/referralModel/referralCodeModel.js";
@@ -14,6 +15,7 @@ const createMyChurch = async (req, res) => {
       type,
       parentChurchId,
       phoneNumber,
+      pastor,
       email,
       streetAddress,
       city,
@@ -23,9 +25,9 @@ const createMyChurch = async (req, res) => {
       referralCodeInput
     } = req.body;
 
-    if (!name || !type || !phoneNumber || !city) {
+    if (!name || !type || !phoneNumber || !pastor || !city) {
       return res.status(400).json({
-        message: "Church name, city, phone number and type are required"
+        message: "Church name, pastor, city, phone number and type are required"
       });
     }
 
@@ -52,6 +54,7 @@ const createMyChurch = async (req, res) => {
       type,
       parentChurch,
       phoneNumber,
+      pastor,
       email,
       streetAddress,
       city,
@@ -139,7 +142,8 @@ const searchHeadquartersChurches = async (req, res) => {
       type: "Headquarters",
       name: { $regex: search, $options: "i" }
     })
-    .select("_id name city region")
+    .select("_id name city region createdBy")
+    .populate("createdBy", "fullName")
     .limit(10)
     .lean();
 
@@ -169,12 +173,13 @@ const getMyChurchProfile = async (req, res) => {
     } 
     // Everyone else sees ONLY their own church
     else {
-      query._id = req.user.church;
+      query._id = req.activeChurch._id;
     }
 
 
     const church = await Church.findOne(query)
      .populate("createdBy", "fullName email")
+     .populate("parentChurch", "name city region type")
      
      .lean();
     if (!church) {
@@ -209,7 +214,7 @@ const updateMyChurchProfile = async (req, res) => {
       query._id = id;
     } else {
       // Non-admins can ONLY update their own church
-      query._id = req.activeChurch?._id || req.user.church;
+      query._id = req.activeChurch._id;
     }
 
     //  Prevent invalid church type changes
@@ -293,31 +298,34 @@ const getMyBranches = async (req, res) => {
     const headquarters = req.activeChurch;
 
     //  Ensure it's HQ
-    if (headquarters.type !== "Headquarters") {
+    if (String(headquarters?.type || "").toLowerCase() !== "headquarters") {
       return res.status(403).json({
         message: "Only headquarters churches can view branches"
       });
     }
 
-    // Branch query
-    const query = {
-        parentChurch: req.activeChurch._id
-
+    const baseQuery = {
+      parentChurch: req.activeChurch._id
     };
 
-    // Search
+    const query = {
+      ...baseQuery
+    };
+
     if (search) {
       const regex = new RegExp(search, "i");
       query.$or = [
         { name: regex },
+        { pastor: regex },
+        { streetAddress: regex },
         { city: regex },
-        { region: regex }
+        { region: regex },
+        { country: regex }
       ];
     }
 
     const branches = await Church.find(query)
-      .select("name city region phoneNumber email memberCount")
-      .populate("createdBy", "fullName phoneNumber")
+      .select("name pastor streetAddress city region country phoneNumber email memberCount")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
@@ -325,6 +333,30 @@ const getMyBranches = async (req, res) => {
 
     const totalBranches = await Church.countDocuments(query);
     const totalPages = Math.ceil(totalBranches / limitNum);
+
+    const baseKpiAgg = await Church.aggregate([
+      { $match: baseQuery },
+      {
+        $group: {
+          _id: null,
+          totalBranches: { $sum: 1 },
+          totalMembers: { $sum: { $ifNull: ["$memberCount", 0] } }
+        }
+      }
+    ]);
+
+    const totalBranchesAll = Number(baseKpiAgg?.[0]?.totalBranches || 0);
+    const totalMembersAll = Number(baseKpiAgg?.[0]?.totalMembers || 0);
+
+    const branchIds = await Church.find(baseQuery).select("_id").lean();
+    const branchIdList = branchIds.map((b) => b._id);
+
+    const activeBranches = branchIdList.length
+      ? await Subscription.countDocuments({
+          church: { $in: branchIdList },
+          status: { $in: ["trialing", "active", "past_due"] }
+        })
+      : 0;
 
    
       const pagination = {
@@ -340,6 +372,11 @@ const getMyBranches = async (req, res) => {
      if (!branches || branches.length === 0) {
             return res.status(200).json({
               message: "No branches church found.",
+              kpis: {
+                totalBranches: totalBranchesAll,
+                totalMembers: totalMembersAll,
+                activeBranches
+              },
               pagination: {
                 totalResult: 0,
                 totalPages: 0,
@@ -354,21 +391,22 @@ const getMyBranches = async (req, res) => {
             });
           }
 
-          console.log("ACTIVE:", req.activeChurch.name, req.activeChurch.type);
-
             // SUCCESS RESPONSE
           return res.status(200).json({
             message: "branches fetched successfully",
+            kpis: {
+              totalBranches: totalBranchesAll,
+              totalMembers: totalMembersAll,
+              activeBranches
+            },
             pagination,
             count: branches.length,
             branches
           })
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 
 //view spcified modules by branch or hq

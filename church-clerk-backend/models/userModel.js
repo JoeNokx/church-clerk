@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    profileImageUrl: {
+        type: String,
+        default: ""
+    },
     email: {
         type: String,
         required: true,
@@ -30,6 +34,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ["superadmin", "supportadmin", "churchadmin", "associateadmin", "secretary", "financialofficer", "leader"],
         default: "churchadmin"
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     },
     
     church: {

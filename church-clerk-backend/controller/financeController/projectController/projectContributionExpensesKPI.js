@@ -10,7 +10,7 @@ const getProjectContributionExpensesKPI = async (req, res) => {
     const query = { churchProject: projectId };
 
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch._id;
     }
 
     // CHECK PROJECT EXISTS

@@ -12,4 +12,4 @@ const businessExpensesSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-export default mongoose.model("BusinessExpenses", businessExpensesSchema);
+export default mongoose.models.BusinessExpenses || mongoose.model("BusinessExpenses", businessExpensesSchema);

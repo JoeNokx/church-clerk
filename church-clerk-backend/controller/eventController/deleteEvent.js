@@ -8,7 +8,7 @@ const deleteEvent = async (req, res) => {
     const query = { _id: id };
 
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.activeChurch?._id || req.user.church;
+      query.church = req.activeChurch._id;
     }
 
     const event = await Event.findOneAndDelete(query);
@@ -24,4 +24,4 @@ const deleteEvent = async (req, res) => {
   }
 };
 
-export default deleteEvent ;
+export default deleteEvent;

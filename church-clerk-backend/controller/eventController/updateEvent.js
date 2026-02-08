@@ -7,7 +7,7 @@ const updateEvent = async (req, res) => {
     const query = { _id: id };
 
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.activeChurch?._id || req.user.church;
+      query.church = req.activeChurch._id;
     }
 
     const body = { ...(req.body || {}) };

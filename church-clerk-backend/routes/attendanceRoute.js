@@ -5,18 +5,20 @@ import {getAllAttendances, createAttendance, updateAttendance, deleteAttendance,
 } from "../controller/attendanceController.js"
 import authorizeRoles from "../middleware/roleMiddleware.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
+import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
 
 
-router.get("/attendances", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllAttendances);
-router.post("/attendances", protect, authorizeRoles("superadmin", "churchadmin"), createAttendance);
-router.put("/attendances/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateAttendance);
-router.delete("/attendances/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteAttendance);
+router.get("/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllAttendances);
+router.post("/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createAttendance);
+router.put("/attendances/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateAttendance);
+router.delete("/attendances/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteAttendance);
 
-router.post("/visitors", protect, authorizeRoles("superadmin", "churchadmin"), createVisitor);
-router.put("/visitors/:id", protect, authorizeRoles("superadmin", "churchadmin"), updateVisitor);
-router.delete("/visitors/:id", protect, authorizeRoles("superadmin", "churchadmin"), deleteVisitor);
-router.get("/visitors/:id", protect, authorizeRoles("superadmin", "churchadmin"), getSingleVisitor);
-router.get("/visitors", protect, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllVisitors);
+router.post("/visitors", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createVisitor);
+router.put("/visitors/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateVisitor);
+router.delete("/visitors/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteVisitor);
+router.get("/visitors/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getSingleVisitor);
+router.get("/visitors", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllVisitors);
 
 
 export default router

@@ -13,7 +13,7 @@ const createGroupOffering = async (req, res) => {
       // 1. Validate group exists and belongs to this church
     const query = { _id: groupId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.user.church;
+      query.church = req.activeChurch._id;
     }
 
     const group = await Group.findOne(query);
@@ -54,7 +54,7 @@ const getAllGroupOfferings = async(req, res) => {
   const query = { group: groupId };
   
     if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-        query.church = req.user.church
+        query.church = req.activeChurch._id
     }
 
     const offerings = await Offering.find(query)
@@ -131,7 +131,7 @@ const updateGroupOffering = async(req, res) => {
     const query = {_id: offeringId, group: groupId}
 
     if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-        query.church = req.user.church
+        query.church = req.activeChurch._id
     }
 
 const group = await Group.findOne({ _id: groupId });
@@ -166,7 +166,7 @@ const deleteGroupOffering = async(req, res) => {
 const query = { _id: offeringId, group: groupId };
 
       if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-          query.church = req.user.church  
+          query.church = req.activeChurch._id  
       }
 
       const group = await Group.findOne({_id: groupId});

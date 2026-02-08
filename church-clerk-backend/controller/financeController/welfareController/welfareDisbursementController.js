@@ -19,7 +19,7 @@ const createWelfareDisbursement = async (req, res) => {
         date,
         description,
         paymentMethod,
-        church: req.user.church,
+        church: req.activeChurch._id,
         createdBy: req.user._id
         });
 
@@ -48,7 +48,7 @@ const getAllWelfareDisbursement = async (req, res) => {
                     
                         // Restrict by church for non-admins
                         if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                            query.church = req.user.church;
+                            query.church = req.activeChurch._id;
                         }
                     
                         //search by beneficiary name
@@ -144,7 +144,7 @@ const updateWelfareDisbursement = async (req, res) => {
 
         
         if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
+            query.church = req.activeChurch._id
         }
         
 
@@ -171,7 +171,7 @@ const deleteWelfareDisbursement = async (req, res) => {
         const query = {_id: id}
 
         if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-            query.church = req.user.church
+            query.church = req.activeChurch._id
         }
 
         const welfareDisbursement = await WelfareDisbursements.findOneAndDelete(query)

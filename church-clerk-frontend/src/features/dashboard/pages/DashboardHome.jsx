@@ -11,10 +11,21 @@ import MemberFormPage from "../../member/pages/MemberFormPage.jsx";
 import MemberDetailsPage from "../../member/pages/MemberDetailsPage.jsx";
 import ChurchProjectsPage from "../../churchProject/pages/ChurchProjectsPage.jsx";
 import ChurchProjectDetailsPage from "../../churchProject/pages/ChurchProjectDetailsPage.jsx";
+import BusinessVenturesPage from "../../businessVentures/pages/BusinessVenturesPage.jsx";
+import BusinessVentureDetailsPage from "../../businessVentures/pages/BusinessVentureDetailsPage.jsx";
 import ProgramsEventsPage from "../../event/pages/ProgramsEventsPage.jsx";
 import EventDetailsPage from "../../event/pages/EventDetailsPage.jsx";
 import MinistriesPage from "../../ministries/pages/MinistriesPage.jsx";
 import MinistryDetailsPage from "../../ministries/pages/MinistryDetailsPage.jsx";
+import BranchesOverviewPage from "../../church/pages/BranchesOverviewPage.jsx";
+import WelfarePage from "../../welfare/pages/WelfarePage.jsx";
+import ExpensesPage from "../../expenses/pages/ExpensesPage.jsx";
+import PledgesPage from "../../pledge/pages/PledgesPage.jsx";
+import PledgeDetailsPage from "../../pledge/pages/PledgeDetailsPage.jsx";
+import FinancialStatementPage from "../../financialStatement/pages/FinancialStatementPage.jsx";
+import SettingsPage from "../../settings/pages/SettingsPage.jsx";
+import ReportsAnalyticsPage from "../../reportsAnalytics/pages/ReportsAnalyticsPage.jsx";
+import SupportHelpPage from "../../supportHelp/pages/SupportHelpPage.jsx";
 import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboardWidgetsWithParams } from "../services/dashboard.api.js";
 import { getUpcomingEvents } from "../../event/services/event.api.js";
 import { getMembers } from "../../member/services/member.api.js";
@@ -851,6 +862,14 @@ function DashboardHome() {
     return <ChurchProjectDetailsPage />;
   }
 
+  if (page === "business-ventures") {
+    return <BusinessVenturesPage />;
+  }
+
+  if (page === "business-venture-details") {
+    return <BusinessVentureDetailsPage />;
+  }
+
   if (page === "programs-events") {
     return <ProgramsEventsPage />;
   }
@@ -865,6 +884,42 @@ function DashboardHome() {
 
   if (page === "ministry-details") {
     return <MinistryDetailsPage />;
+  }
+
+  if (page === "branches-overview") {
+    return <BranchesOverviewPage />;
+  }
+
+  if (page === "welfare") {
+    return <WelfarePage />;
+  }
+
+  if (page === "pledges") {
+    return <PledgesPage />;
+  }
+
+  if (page === "pledge-details") {
+    return <PledgeDetailsPage />;
+  }
+
+  if (page === "expenses") {
+    return <ExpensesPage />;
+  }
+
+  if (page === "financial-statement") {
+    return <FinancialStatementPage />;
+  }
+
+  if (page === "settings") {
+    return <SettingsPage />;
+  }
+
+  if (page === "reports-analytics") {
+    return <ReportsAnalyticsPage />;
+  }
+
+  if (page === "support-help") {
+    return <SupportHelpPage />;
   }
 
   if (page === "billing") return null;

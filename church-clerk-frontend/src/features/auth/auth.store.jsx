@@ -22,11 +22,18 @@ export function AuthProvider({ children }) {
       try {
         const res = await getMyProfile();
         const payload = res?.data?.data;
-        setUser(payload?.user);
+        const nextUser = payload?.user || null;
+        setUser(nextUser);
+        if (nextUser) {
+          localStorage.setItem("userIsActive", nextUser?.isActive === false ? "0" : "1");
+        } else {
+          localStorage.removeItem("userIsActive");
+        }
         permissionCtx?.setPermissions?.(payload?.permissions);
         churchCtx?.setActiveChurch?.(payload?.activeChurch);
       } catch {
         setUser(null);
+        localStorage.removeItem("userIsActive");
         permissionCtx?.clearPermissions?.();
         churchCtx?.clearActiveChurch?.();
       } finally {
@@ -42,6 +49,11 @@ export function AuthProvider({ children }) {
     const payload = res?.data?.data;
     const userData = payload?.user;
     setUser(userData);
+    if (userData) {
+      localStorage.setItem("userIsActive", userData?.isActive === false ? "0" : "1");
+    } else {
+      localStorage.removeItem("userIsActive");
+    }
     permissionCtx?.setPermissions?.(payload?.permissions);
     churchCtx?.setActiveChurch?.(payload?.activeChurch);
     return userData;
@@ -65,6 +77,7 @@ export function AuthProvider({ children }) {
       await logoutUser();
     } finally {
       setUser(null);
+      localStorage.removeItem("userIsActive");
       permissionCtx?.clearPermissions?.();
       churchCtx?.clearActiveChurch?.();
     }

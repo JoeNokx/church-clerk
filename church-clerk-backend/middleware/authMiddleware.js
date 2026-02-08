@@ -24,7 +24,34 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ message: "User no longer exists" });
     }
 
-    const activeChurchId = req.headers["x-active-church"] || req.user.church;
+    const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
+    if (req.user?.isActive === false && isWrite) {
+      return res.status(403).json({
+        message: "This account has been deactivated. You can only view data allowed by your role.",
+        readOnly: true
+      });
+    }
+
+    const headerChurchId = req.headers["x-active-church"];
+    const userChurchId = req.user.church;
+
+    let activeChurchId = headerChurchId || userChurchId;
+
+    // Branch/Independent users should never switch context via header.
+    // If a stale/foreign x-active-church is present, force it back to their home church.
+    let userChurch = null;
+    if (
+      req.user.role !== "superadmin" &&
+      headerChurchId &&
+      userChurchId &&
+      headerChurchId.toString() !== userChurchId.toString()
+    ) {
+      userChurch = await Church.findById(userChurchId).lean();
+
+      if (!userChurch || userChurch.type !== "Headquarters") {
+        activeChurchId = userChurchId;
+      }
+    }
 
     if (!activeChurchId) {
       req.activeChurch = null;
@@ -38,8 +65,14 @@ const protect = async (req, res, next) => {
       return res.status(404).json({ message: "Church context not found" });
     }
 
-    if (req.user.role !== "superadmin" && activeChurchId.toString() !== req.user.church.toString()) {
-      const userChurch = await Church.findById(req.user.church).lean();
+    if (
+      req.user.role !== "superadmin" &&
+      userChurchId &&
+      activeChurchId.toString() !== userChurchId.toString()
+    ) {
+      if (!userChurch) {
+        userChurch = await Church.findById(userChurchId).lean();
+      }
 
       if (
         !userChurch ||
@@ -109,8 +142,6 @@ const protect = async (req, res, next) => {
           now > new Date(subscription.gracePeriodEnd);
 
         const isSuspended = subscription.status === "suspended";
-
-        const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
 
         if ((isTrialExpired || isGraceExpired || isSuspended) && isWrite) {
           return res.status(402).json({

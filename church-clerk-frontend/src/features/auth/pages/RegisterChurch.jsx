@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../useAuth.js";
-import { createChurch } from "../../church/services/church.api.js";
+import { createChurch, searchHeadquartersChurches } from "../../church/services/church.api.js";
 import AuthCard from "../components/AuthCard.jsx";
 
 function RegisterChurch() {
@@ -9,8 +9,16 @@ function RegisterChurch() {
   const { user, refreshUser } = useAuth();
 
   const [name, setName] = useState("");
+  const [pastor, setPastor] = useState("");
   const [type, setType] = useState("Headquarters");
   const [parentChurchId, setParentChurchId] = useState("");
+  const [headquarterChurchId, setHeadquarterChurchId] = useState("");
+  const [hqSearch, setHqSearch] = useState("");
+  const [hqDropdownOpen, setHqDropdownOpen] = useState(false);
+  const [hqLoading, setHqLoading] = useState(false);
+  const [hqMessage, setHqMessage] = useState("");
+  const [hqResults, setHqResults] = useState([]);
+  const hqBoxRef = useRef(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState(user?.email || "");
   const [streetAddress, setStreetAddress] = useState("");
@@ -23,14 +31,103 @@ function RegisterChurch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isBranch = type === "Branch";
+
+  const selectedHqLabel = useMemo(() => {
+    const row = hqResults.find((r) => r?._id === headquarterChurchId);
+    if (!row) return "";
+    const location = `${row?.city || ""}${row?.region ? `, ${row.region}` : ""}`.trim();
+    return location ? `${row?.name || ""} (${location})` : `${row?.name || ""}`;
+  }, [headquarterChurchId, hqResults]);
+
+  useEffect(() => {
+    if (!isBranch) {
+      setParentChurchId("");
+      setHeadquarterChurchId("");
+      setHqSearch("");
+      setHqResults([]);
+      setHqMessage("");
+      setHqDropdownOpen(false);
+      setHqLoading(false);
+    }
+  }, [isBranch]);
+
+  useEffect(() => {
+    const handleOutside = (event) => {
+      const el = hqBoxRef.current;
+      if (!el) return;
+      if (el.contains(event.target)) return;
+      setHqDropdownOpen(false);
+    };
+
+    if (hqDropdownOpen) {
+      document.addEventListener("mousedown", handleOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+    };
+  }, [hqDropdownOpen]);
+
+  useEffect(() => {
+    if (!isBranch) return;
+
+    if (parentChurchId && !hqDropdownOpen) {
+      setHqLoading(false);
+      return;
+    }
+
+    const q = String(hqSearch || "").trim();
+    if (!q) {
+      setHqLoading(false);
+      setHqMessage("");
+      setHqResults([]);
+      return;
+    }
+
+    setHqLoading(true);
+    setHqMessage("");
+
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchHeadquartersChurches({ search: q });
+        const data = res?.data;
+
+        if (Array.isArray(data)) {
+          setHqResults(data);
+          setHqMessage(data.length ? "" : "No church matched your search");
+          return;
+        }
+
+        const rows = Array.isArray(data?.churches) ? data.churches : [];
+        setHqResults(rows);
+        setHqMessage(data?.message || (rows.length ? "" : "No church matched your search"));
+      } catch (e) {
+        setHqResults([]);
+        setHqMessage(e?.response?.data?.message || e?.message || "Failed to search churches");
+      } finally {
+        setHqLoading(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [hqDropdownOpen, hqSearch, isBranch, parentChurchId]);
+
   const handleRegisterChurch = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
+    if (type === "Branch" && !parentChurchId) {
+      setLoading(false);
+      setError("Please select a headquarters church from the list");
+      return;
+    }
+
     try {
       await createChurch({
         name,
+        pastor,
         type,
         parentChurchId: type === "Branch" ? parentChurchId : undefined,
         phoneNumber,
@@ -80,6 +177,18 @@ function RegisterChurch() {
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Pastor's Name</label>
+          <input
+            type="text"
+            placeholder="Pastor's full name"
+            value={pastor}
+            onChange={(e) => setPastor(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            required
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Church Type</label>
           <select
             value={type}
@@ -93,16 +202,65 @@ function RegisterChurch() {
         </div>
 
         {type === "Branch" && (
-          <div>
+          <div ref={hqBoxRef} className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">Parent Church ID (HQ)</label>
+            <input type="hidden" name="parentId" value={parentChurchId} />
             <input
               type="text"
-              placeholder="Enter headquarters church ID"
-              value={parentChurchId}
-              onChange={(e) => setParentChurchId(e.target.value)}
+              placeholder="Search headquarters church"
+              value={hqSearch}
+              onChange={(e) => {
+                setHqSearch(e.target.value);
+                setParentChurchId("");
+                setHeadquarterChurchId("");
+                setHqDropdownOpen(true);
+              }}
+              onFocus={() => setHqDropdownOpen(true)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
               required
             />
+
+            {selectedHqLabel && parentChurchId ? (
+              <div className="mt-1 text-xs text-gray-500">Selected: {selectedHqLabel}</div>
+            ) : null}
+
+            {hqDropdownOpen ? (
+              <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                <div className="max-h-72 overflow-y-auto">
+                  {hqLoading ? (
+                    <div className="px-4 py-3 text-sm text-gray-600">Searching…</div>
+                  ) : hqMessage && !hqResults.length ? (
+                    <div className="px-4 py-3 text-sm text-gray-600">{hqMessage}</div>
+                  ) : hqResults.length ? (
+                    hqResults.map((c) => (
+                      <button
+                        key={c?._id}
+                        type="button"
+                        onClick={() => {
+                          setParentChurchId(c?._id || "");
+                          setHeadquarterChurchId(c?._id || "");
+                          const location = `${c?.city || ""}${c?.region ? `, ${c.region}` : ""}`.trim();
+                          setHqSearch(c?.name ? `${c.name}${location ? ` (${location})` : ""}` : "");
+                          setHqDropdownOpen(false);
+                          setHqMessage("");
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50"
+                      >
+                        <div className="text-sm font-semibold text-gray-900 truncate">{c?.name || "—"}</div>
+                        <div className="mt-0.5 text-xs text-gray-600 truncate">
+                          {`${c?.city || ""}${c?.region ? `, ${c.region}` : ""}`.trim() || "—"}
+                        </div>
+                        <div className="mt-0.5 text-xs text-gray-500 truncate">
+                          Pastor: {c?.createdBy?.fullName || "—"}
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-600">Type to search headquarters churches.</div>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
 
@@ -197,7 +355,7 @@ function RegisterChurch() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (type === "Branch" && !parentChurchId)}
           className="w-full bg-blue-900 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50"
         >
           {loading ? "Saving..." : "Register Church"}

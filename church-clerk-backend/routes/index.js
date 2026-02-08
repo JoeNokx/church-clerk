@@ -46,6 +46,8 @@ import generalExpensesRoute from "./financeRoute/generalExpensesRoute.js";
 import businessVenturesRoute from "./financeRoute/businessVenturesRoute.js";
 import churchProjectRoute from "./financeRoute/churchProjectRoute.js";
 
+import reportsAnalyticsRoute from "./reportsAnalyticsRoute.js";
+
 
 // export all routes
 export {
@@ -75,5 +77,6 @@ export {
   financialStatementRoute,
   churchProjectRoute,
   businessVenturesRoute,
-  referralSystemRoute
+  referralSystemRoute,
+  reportsAnalyticsRoute
 };

@@ -8,12 +8,12 @@ import "./styles/index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <PermissionProvider>
-      <ChurchProvider>
+    <ChurchProvider>
+      <PermissionProvider>
         <AuthProvider>
           <App />
         </AuthProvider>
-      </ChurchProvider>
-    </PermissionProvider>
+      </PermissionProvider>
+    </ChurchProvider>
   </React.StrictMode>
 );
