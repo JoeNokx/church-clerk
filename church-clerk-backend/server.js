@@ -11,6 +11,7 @@ import cookieParser from "cookie-parser";
 
 
 import * as Routes from "./routes/index.js"; // imports the named exports from routes/index.js
+import { activityLogMiddleware } from "./middleware/activityLogMiddleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +20,8 @@ connectDB();   // connects to the database
 
 const app = express();   
 
+app.set("trust proxy", true);
+
 // Logging middleware (logs every request)
 app.use(morgan("dev"));
 
@@ -26,7 +29,7 @@ app.use(morgan("dev"));
 app.use(helmet());
 
 app.use(cors({
-  origin: "http://localhost:5173",  // frontend URL
+  origin: ["http://localhost:5173", "http://localhost:5174"],  // frontend URLs
   credentials: true                // allow cookies
 }));
 
@@ -40,14 +43,20 @@ app.use(
 
 app.use(cookieParser()); 
 
+// Audit logging (records all write actions on protected routes)
+app.use(activityLogMiddleware);
+
 // mount all routes
 app.use("/api/v1/dashboard", Routes.dashboardRoute);
 app.use("/api/v1/auth", Routes.authRoutes);
+app.use("/api/v1/admin", Routes.adminAuthRoute);
 app.use("/api/v1/user", Routes.userRoutes);
 app.use("/api/v1/system-admin", Routes.systemAdminRoute);
 app.use("/api/v1/church", Routes.churchRoute);
 
 app.use("/api/admin/billing", Routes.adminBillingRoute);
+
+app.use("/api/v1/admin/billing", Routes.adminBillingRoute);
 
 app.use("/api/v1/subscription", Routes.subscriptionRoute);
 app.use("/api/v1/member", Routes.memberRoute);
@@ -84,10 +93,11 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({ status: "error", message: err.message || "Server error" });
 });
-
-
+ 
+ 
 // start the server
 const PORT = process.env.PORT || 5100;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+server.setTimeout(5 * 60 * 1000);

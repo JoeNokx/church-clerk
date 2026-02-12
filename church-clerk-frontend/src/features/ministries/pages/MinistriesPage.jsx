@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { getGroups, createGroup, updateGroup, deleteGroup } from "../../group/services/group.api.js";
 import {
   getDepartments,
@@ -454,7 +454,7 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
 }
 
 function MinistriesPage() {
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const [activeTab, setActiveTab] = useState("groups");
   const [kpiLoading, setKpiLoading] = useState(false);
@@ -716,7 +716,8 @@ function MinistriesPage() {
                     type={ministryType}
                     onView={() => {
                       if (!row?._id) return;
-                      navigate(`/dashboard?page=ministry-details&type=${ministryType}&id=${row._id}`);
+
+                      toPage("ministry-details", { type: ministryType, id: row._id });
                     }}
                     onEdit={() => openEdit(row)}
                     onDelete={() => openDelete(row)}

@@ -60,12 +60,6 @@ const getDashboardKPI = async (req, res) => {
     const thisSundayNextDay = new Date(thisSunday);
     thisSundayNextDay.setDate(thisSunday.getDate() + 1);
 
-    const thisSundayServices = await Attendance.find({
-      church: query.church,
-      serviceDate: { $gte: thisSunday, $lt: thisSundayNextDay },
-      serviceType: { $regex: /^Sunday/i }
-    });
-
     const lastSunday = new Date(thisSunday);
     lastSunday.setDate(thisSunday.getDate() - 7);
     lastSunday.setHours(0, 0, 0, 0);
@@ -73,11 +67,22 @@ const getDashboardKPI = async (req, res) => {
     const lastSundayNextDay = new Date(lastSunday);
     lastSundayNextDay.setDate(lastSunday.getDate() + 1);
 
-    const lastSundayServices = await Attendance.find({
-      church: query.church,
-      serviceDate: { $gte: lastSunday, $lt: lastSundayNextDay },
-      serviceType: { $regex: /^Sunday/i }
-    });
+    const [thisSundayServices, lastSundayServices] = await Promise.all([
+      Attendance.find({
+        church: query.church,
+        serviceDate: { $gte: thisSunday, $lt: thisSundayNextDay },
+        serviceType: { $regex: /^Sunday/i }
+      })
+        .select("totalNumber")
+        .lean(),
+      Attendance.find({
+        church: query.church,
+        serviceDate: { $gte: lastSunday, $lt: lastSundayNextDay },
+        serviceType: { $regex: /^Sunday/i }
+      })
+        .select("totalNumber")
+        .lean()
+    ]);
 
     const thisSundayAttendance = thisSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
     const lastSundayAttendancePrevWeek = lastSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);

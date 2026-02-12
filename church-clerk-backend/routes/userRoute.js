@@ -65,7 +65,7 @@ router.get(
 router.post(
   "/church-users",
   protect,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("churchadmin"),
   setActiveChurch,
   readOnlyBranchGuard,
   createChurchUser
@@ -74,7 +74,7 @@ router.post(
 router.put(
   "/church-users/:id",
   protect,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("churchadmin"),
   setActiveChurch,
   readOnlyBranchGuard,
   updateChurchUser
@@ -83,7 +83,7 @@ router.put(
 router.patch(
   "/church-users/:id/status",
   protect,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  authorizeRoles("churchadmin"),
   setActiveChurch,
   readOnlyBranchGuard,
   setChurchUserActiveStatus

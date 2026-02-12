@@ -12,22 +12,50 @@ import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
 router.post("/church-projects", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createChurchProjects);
-router.get("/church-projects", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllChurchProjects);
+router.get(
+  "/church-projects",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllChurchProjects
+);
 router.put("/church-projects/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateChurchProjects);
 router.delete("/church-projects/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteChurchProjects);
 
 router.post("/church-projects/:projectId/contributions", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createProjectContributions);
-router.get("/church-projects/:projectId/contributions", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllProjectContributions);
+router.get(
+  "/church-projects/:projectId/contributions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllProjectContributions
+);
 router.put("/church-projects/:projectId/contributions/:contributionId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateProjectContributions);
 router.delete("/church-projects/:projectId/contributions/:contributionId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteProjectContributions);
 
 router.post("/church-projects/:projectId/expenses", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createProjectExpenses);
-router.get("/church-projects/:projectId/expenses", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllProjectExpenses);
+router.get(
+  "/church-projects/:projectId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllProjectExpenses
+);
 router.put("/church-projects/:projectId/expenses/:expensesId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateProjectExpenses);
 router.delete("/church-projects/:projectId/expenses/:expensesId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteProjectExpenses);
 
 
-router.get("/church-projects/:projectId/contribution-expenses/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getProjectContributionExpensesKPI);
+router.get(
+  "/church-projects/:projectId/contribution-expenses/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getProjectContributionExpensesKPI
+);
 
 
 

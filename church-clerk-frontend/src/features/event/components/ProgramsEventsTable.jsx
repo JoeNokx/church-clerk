@@ -1,5 +1,5 @@
 import { useContext, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import EventContext from "../event.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { deleteEvent as apiDeleteEvent } from "../services/event.api.js";
@@ -32,7 +32,7 @@ function formatTimeRange(from, to, legacy) {
 function ProgramsEventsTable({ status, onEdit }) {
   const store = useContext(EventContext);
   const { can } = useContext(PermissionContext) || {};
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const [deletingId, setDeletingId] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -132,7 +132,7 @@ function ProgramsEventsTable({ status, onEdit }) {
                       type="button"
                       onClick={() => {
                         if (!row?._id) return;
-                        navigate(`/dashboard?page=event-details&id=${row._id}`, { state: { from: "programs-events" } });
+                        toPage("event-details", { id: row._id }, { state: { from: "programs-events" } });
                       }}
                       className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                     >

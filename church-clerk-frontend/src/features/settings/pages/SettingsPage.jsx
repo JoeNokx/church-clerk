@@ -1,8 +1,11 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { getChurchProfile, searchHeadquartersChurches, updateChurchProfile } from "../../church/services/church.api.js";
+import { updateMyPassword, updateMyProfile } from "../../auth/services/auth.api.js";
+import { getActivityLogs } from "../../activityLog/services/activityLog.api.js";
 import {
   createChurchUser,
   getChurchUsers,
@@ -35,8 +38,39 @@ function getChurchTypeInfo(type) {
   return "";
 }
 
+function activityTextFromLog(row) {
+  const module = String(row?.module || "").trim();
+  const action = String(row?.action || "").trim();
+
+  const nouns = {
+    Members: "Member",
+    Attendance: "Attendance",
+    Events: "Event",
+    Announcements: "Announcement",
+    Tithe: "Tithe",
+    Income: "Income",
+    Expense: "Expense",
+    SpecialFunds: "Special fund",
+    Offerings: "Offering",
+    Welfare: "Welfare",
+    Church: "Church",
+    Settings: "Settings",
+    Authentication: "Authentication",
+    ReportsAnalytics: "Report",
+    Dashboard: "Dashboard",
+    System: "System"
+  };
+
+  const subject = nouns[module] || module || "Activity";
+  if (!action) return subject;
+
+  const verb = action.toLowerCase();
+  return `${subject} ${verb}`;
+}
+
 function SettingsPage() {
-  const { user } = useAuth();
+  const location = useLocation();
+  const { user, refreshUser } = useAuth();
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
   const switchChurch = churchCtx?.switchChurch;
@@ -45,7 +79,83 @@ function SettingsPage() {
   const canRead = useMemo(() => (typeof can === "function" ? can("settings", "read") : true), [can]);
   const canWrite = useMemo(() => (typeof can === "function" ? can("settings", "update") : true), [can]);
 
-  const [tab, setTab] = useState("profile");
+  const [tab, setTab] = useState("my-profile");
+
+  const [myProfileLoading, setMyProfileLoading] = useState(false);
+  const [myProfileError, setMyProfileError] = useState("");
+  const [myProfileSuccess, setMyProfileSuccess] = useState("");
+
+  const [myFullName, setMyFullName] = useState("");
+  const [myEmail, setMyEmail] = useState("");
+  const [myPhone, setMyPhone] = useState("");
+  const [myRole, setMyRole] = useState("");
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const avatarInputRef = useRef(null);
+
+  const [pwOld, setPwOld] = useState("");
+  const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState("");
+  const passwordSectionRef = useRef(null);
+
+  const isUserActive = useMemo(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("userIsActive") !== "0";
+  }, []);
+
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const requestedTab = String(sp.get("tab") || "").trim().toLowerCase();
+    if (requestedTab === "my-profile") {
+      setTab("my-profile");
+      return;
+    }
+    if (requestedTab === "church-profile" || requestedTab === "profile") {
+      setTab("profile");
+      return;
+    }
+    if (requestedTab === "users") {
+      setTab("users");
+      return;
+    }
+    if (requestedTab === "audit") {
+      setTab("audit");
+      return;
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    setMyFullName(user?.fullName || "");
+    setMyEmail(user?.email || "");
+    setMyPhone(user?.phoneNumber || "");
+    setMyRole(user?.role || "");
+  }, [user?._id]);
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreviewUrl("");
+      return;
+    }
+
+    const url = URL.createObjectURL(avatarFile);
+    setAvatarPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [avatarFile]);
+
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const section = String(sp.get("section") || "").trim().toLowerCase();
+    if (tab !== "my-profile") return;
+    if (section !== "password") return;
+
+    const t = setTimeout(() => {
+      passwordSectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    }, 0);
+    return () => clearTimeout(t);
+  }, [location.search, tab]);
 
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -72,6 +182,65 @@ function SettingsPage() {
   const [referralCodeInput, setReferralCodeInput] = useState("");
 
   const isBranch = type === "Branch";
+
+  const avatarUrl =
+    avatarPreviewUrl ||
+    user?.profileImageUrl ||
+    user?.avatarUrl ||
+    user?.photoUrl ||
+    user?.imageUrl ||
+    user?.image ||
+    "";
+
+  const handlePickAvatar = () => {
+    avatarInputRef.current?.click?.();
+  };
+
+  const handleSaveMyProfile = async (e) => {
+    e.preventDefault();
+    setMyProfileError("");
+    setMyProfileSuccess("");
+
+    try {
+      setMyProfileLoading(true);
+
+      const fd = new FormData();
+      fd.append("fullName", myFullName);
+      fd.append("email", myEmail);
+      fd.append("phoneNumber", myPhone);
+      if (avatarFile) {
+        fd.append("avatar", avatarFile);
+      }
+
+      await updateMyProfile(fd);
+      await refreshUser?.();
+      setAvatarFile(null);
+      setMyProfileSuccess("Profile updated successfully");
+    } catch (err) {
+      setMyProfileError(err?.response?.data?.message || err?.message || "Failed to update profile");
+    } finally {
+      setMyProfileLoading(false);
+    }
+  };
+
+  const handleUpdateMyPassword = async (e) => {
+    e.preventDefault();
+    setPwError("");
+    setPwSuccess("");
+
+    try {
+      setPwLoading(true);
+      await updateMyPassword({ oldPassword: pwOld, newPassword: pwNew, confirmPassword: pwConfirm });
+      setPwOld("");
+      setPwNew("");
+      setPwConfirm("");
+      setPwSuccess("Password updated successfully");
+    } catch (err) {
+      setPwError(err?.response?.data?.message || err?.message || "Failed to update password");
+    } finally {
+      setPwLoading(false);
+    }
+  };
 
   const selectedHqLabel = useMemo(() => {
     const row = hqResults.find((r) => r?._id === headquarterChurchId);
@@ -233,8 +402,7 @@ function SettingsPage() {
         city,
         region,
         country,
-        foundedDate: foundedDate || null,
-        referralCodeInput: referralCodeInput || undefined
+        foundedDate: foundedDate || null
       };
 
       await updateChurchProfile(activeChurch._id, payload);
@@ -264,6 +432,34 @@ function SettingsPage() {
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("");
+
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState("");
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditPagination, setAuditPagination] = useState({
+    total: 0,
+    totalPages: 1,
+    currentPage: 1,
+    limit: 20,
+    nextPage: null,
+    prevPage: null
+  });
+  const [auditSearch, setAuditSearch] = useState("");
+  const [auditModule, setAuditModule] = useState("");
+  const [auditAction, setAuditAction] = useState("");
+  const [auditRole, setAuditRole] = useState("");
+  const [auditDateFrom, setAuditDateFrom] = useState("");
+  const [auditDateTo, setAuditDateTo] = useState("");
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditLimit, setAuditLimit] = useState(20);
+
+  const [auditDetailOpen, setAuditDetailOpen] = useState(false);
+  const [auditDetailRow, setAuditDetailRow] = useState(null);
+
+  const auditDatePickerRef = useRef(null);
+  const [auditDatePickerOpen, setAuditDatePickerOpen] = useState(false);
+  const [auditDraftFrom, setAuditDraftFrom] = useState("");
+  const [auditDraftTo, setAuditDraftTo] = useState("");
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmUser, setConfirmUser] = useState(null);
@@ -334,9 +530,132 @@ function SettingsPage() {
     return () => clearTimeout(t);
   }, [tab, userSearch, userRoleFilter, canRead]);
 
+  useEffect(() => {
+    if (!auditDatePickerOpen) return;
+
+    const onDocMouseDown = (e) => {
+      if (!auditDatePickerRef.current) return;
+      if (auditDatePickerRef.current.contains(e.target)) return;
+      setAuditDatePickerOpen(false);
+    };
+
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, [auditDatePickerOpen]);
+
+  useEffect(() => {
+    if (!canRead) return;
+    if (tab !== "audit") return;
+
+    setAuditDraftFrom(auditDateFrom || "");
+    setAuditDraftTo(auditDateTo || "");
+  }, [auditDateFrom, auditDateTo, canRead, tab]);
+
+  const fetchAuditLogs = async (partial = {}) => {
+    const next = {
+      search: auditSearch,
+      module: auditModule,
+      action: auditAction,
+      role: auditRole,
+      dateFrom: auditDateFrom,
+      dateTo: auditDateTo,
+      page: auditPage,
+      limit: auditLimit,
+      ...(partial || {})
+    };
+
+    setAuditLoading(true);
+    setAuditError("");
+
+    try {
+      const params = {
+        page: next.page,
+        limit: next.limit
+      };
+
+      if (next.search) params.search = next.search;
+      if (next.module) params.module = next.module;
+      if (next.action) params.action = next.action;
+      if (next.role) params.role = next.role;
+      if (next.dateFrom) params.dateFrom = next.dateFrom;
+      if (next.dateTo) params.dateTo = next.dateTo;
+
+      const res = await getActivityLogs(params);
+      const logs = Array.isArray(res?.data?.logs) ? res.data.logs : [];
+      const pagination = res?.data?.pagination || null;
+
+      setAuditLogs(logs);
+      if (pagination) {
+        setAuditPagination(pagination);
+      } else {
+        setAuditPagination({
+          total: logs.length,
+          totalPages: 1,
+          currentPage: 1,
+          limit: next.limit,
+          nextPage: null,
+          prevPage: null
+        });
+      }
+
+      setAuditSearch(next.search);
+      setAuditModule(next.module);
+      setAuditAction(next.action);
+      setAuditRole(next.role);
+      setAuditDateFrom(next.dateFrom);
+      setAuditDateTo(next.dateTo);
+      setAuditPage(next.page);
+      setAuditLimit(next.limit);
+    } catch (e) {
+      setAuditLogs([]);
+      setAuditPagination({
+        total: 0,
+        totalPages: 1,
+        currentPage: 1,
+        limit: auditLimit,
+        nextPage: null,
+        prevPage: null
+      });
+      setAuditError(e?.response?.data?.message || e?.message || "Failed to load audit logs");
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!canRead) return;
+    if (tab !== "audit") return;
+
+    fetchAuditLogs({ page: 1 });
+  }, [tab, canRead]);
+
+  useEffect(() => {
+    if (!canRead) return;
+    if (tab !== "audit") return;
+
+    const t = setTimeout(() => {
+      fetchAuditLogs({
+        search: auditSearch,
+        module: auditModule,
+        action: auditAction,
+        role: auditRole,
+        dateFrom: auditDateFrom,
+        dateTo: auditDateTo,
+        page: 1
+      });
+    }, 300);
+
+    return () => clearTimeout(t);
+  }, [auditSearch, auditModule, auditAction, auditRole, auditDateFrom, auditDateTo, canRead, tab]);
+
   const openDeactivateConfirm = (row) => {
     setConfirmUser(row);
     setConfirmOpen(true);
+  };
+
+  const openAuditDetail = (row) => {
+    setAuditDetailRow(row || null);
+    setAuditDetailOpen(true);
   };
 
   const handleToggleActive = async () => {
@@ -464,6 +783,13 @@ function SettingsPage() {
           <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-1">
             <button
               type="button"
+              onClick={() => setTab("my-profile")}
+              className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "my-profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+            >
+              My Profile
+            </button>
+            <button
+              type="button"
               onClick={() => setTab("profile")}
               className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
             >
@@ -486,6 +812,285 @@ function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {tab === "my-profile" ? (
+        <div className="mt-6">
+          {myProfileError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{myProfileError}</div> : null}
+          {myProfileSuccess ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{myProfileSuccess}</div> : null}
+
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">User Details</div>
+                <div className="mt-1 text-xs text-gray-500">Update your account information and profile picture.</div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-start gap-5 flex-wrap">
+              <div className="shrink-0">
+                <div className="relative h-24 w-24">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={user?.fullName || "User"}
+                      className="h-24 w-24 rounded-full object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="h-24 w-24 rounded-full bg-blue-900 text-white flex items-center justify-center text-2xl font-semibold">
+                      {(user?.fullName || "U").slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handlePickAvatar}
+                    disabled={!isUserActive}
+                    className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                    title="Edit"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-700">
+                      <path d="M4 20h4l10.5-10.5a2 2 0 10-4-4L4 16v4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                      <path d="M13.5 6.5l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      setAvatarFile(f);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <form onSubmit={handleSaveMyProfile} className="flex-1 min-w-[260px] space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={myFullName}
+                    onChange={(e) => setMyFullName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    required
+                    disabled={!isUserActive}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={myEmail}
+                    onChange={(e) => setMyEmail(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    required
+                    disabled={!isUserActive}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input
+                    type="text"
+                    value={myPhone}
+                    onChange={(e) => setMyPhone(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    required
+                    disabled={!isUserActive}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <input
+                    type="text"
+                    value={myRole}
+                    readOnly
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 bg-gray-50"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={myProfileLoading || !isUserActive}
+                  className="w-full bg-blue-900 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50"
+                >
+                  {myProfileLoading ? "Saving..." : "Save Profile"}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div ref={passwordSectionRef} className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
+            <div className="text-sm font-semibold text-gray-900">Change Password</div>
+            <div className="mt-1 text-xs text-gray-500">Update your password using your current password.</div>
+
+            {pwError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{pwError}</div> : null}
+            {pwSuccess ? <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{pwSuccess}</div> : null}
+
+            <form onSubmit={handleUpdateMyPassword} className="mt-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Old Password</label>
+                <input
+                  type="password"
+                  value={pwOld}
+                  onChange={(e) => setPwOld(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  required
+                  disabled={!isUserActive}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                  <input
+                    type="password"
+                    value={pwNew}
+                    onChange={(e) => setPwNew(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    required
+                    disabled={!isUserActive}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                  <input
+                    type="password"
+                    value={pwConfirm}
+                    onChange={(e) => setPwConfirm(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    required
+                    disabled={!isUserActive}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={pwLoading || !isUserActive}
+                className="w-full bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50"
+              >
+                {pwLoading ? "Updating..." : "Update Password"}
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {auditDetailOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setAuditDetailOpen(false)} />
+          <div className="relative w-full max-w-4xl rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+            <div className="border-b border-gray-200 px-6 py-4 flex items-start justify-between gap-4">
+              <div>
+                <div className="text-lg font-semibold text-gray-900">Audit Log Details</div>
+                <div className="mt-1 text-xs text-gray-500">All captured fields for this activity.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAuditDetailOpen(false)}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Timestamp</div>
+                    <div className="mt-1 text-gray-900">
+                      {auditDetailRow?.createdAt ? new Date(auditDetailRow.createdAt).toLocaleString() : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Status</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.status || "—"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">User</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.user?.fullName || auditDetailRow?.userName || "—"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Role</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.user?.role || auditDetailRow?.userRole || "—"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Module</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.module || "—"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Action</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.action || "—"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Activity</div>
+                    <div className="mt-1 text-gray-900">{activityTextFromLog(auditDetailRow) || "—"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Description</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.description || "—"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">HTTP Method</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.httpMethod || "—"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Path</div>
+                    <div className="mt-1 text-gray-900 break-all">{auditDetailRow?.path || "—"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Resource</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.resource || "—"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Response Code</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.responseStatusCode ?? "—"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Device Type</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.deviceType || "—"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Model</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.model || "—"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">Browser</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.browser || "—"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500">OS</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.os || "—"}</div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <div className="text-xs font-semibold text-gray-500">User Agent</div>
+                    <div className="mt-1 text-gray-900 break-all">{auditDetailRow?.userAgent || "—"}</div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <div className="text-xs font-semibold text-gray-500">IP Address</div>
+                    <div className="mt-1 text-gray-900">{auditDetailRow?.ipAddress || "—"}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {tab === "profile" ? (
         <div className="mt-6">
@@ -704,7 +1309,7 @@ function SettingsPage() {
                   value={referralCodeInput}
                   onChange={(e) => setReferralCodeInput(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-                  disabled={!canWrite}
+                  disabled
                 />
               </div>
 
@@ -724,44 +1329,6 @@ function SettingsPage() {
         <div className="mt-6">
           {rolesError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{rolesError}</div> : null}
           {usersError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{usersError}</div> : null}
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-sm font-semibold text-gray-900">Available Roles</div>
-                <div className="mt-1 text-xs text-gray-500">Roles and what they can do in the system</div>
-              </div>
-            </div>
-
-            {rolesLoading ? (
-              <div className="mt-4 text-sm text-gray-600">Loading roles…</div>
-            ) : churchRoles.length ? (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {churchRoles.map((r) => {
-                  const cfg = rolePermissions?.[r] || {};
-                  const modules = Object.keys(cfg).filter((k) => k !== "__all__" && Array.isArray(cfg[k]) && cfg[k].length);
-                  return (
-                    <div key={r} className="rounded-lg border border-gray-200 p-3">
-                      <div className="text-sm font-semibold text-gray-900">{r}</div>
-                      <div className="mt-2 space-y-1">
-                        {modules.length ? (
-                          modules.map((m) => (
-                            <div key={`${r}-${m}`} className="text-xs text-gray-600">
-                              <span className="font-semibold text-gray-800">{m}:</span> {cfg[m].join(", ")}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-xs text-gray-600">No permissions configured.</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="mt-4 text-sm text-gray-600">No role data available.</div>
-            )}
-          </div>
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -860,13 +1427,348 @@ function SettingsPage() {
               </div>
             )}
           </div>
+
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Available Roles</div>
+                <div className="mt-1 text-xs text-gray-500">Roles and what they can do in the system</div>
+              </div>
+            </div>
+
+            {rolesLoading ? (
+              <div className="mt-4 text-sm text-gray-600">Loading roles…</div>
+            ) : churchRoles.length ? (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                {churchRoles.map((r) => {
+                  const cfg = rolePermissions?.[r] || {};
+                  const modules = Object.keys(cfg)
+                    .filter((k) => k !== "__all__" && Array.isArray(cfg[k]) && cfg[k].length)
+                    .sort((a, b) => String(a).localeCompare(String(b)));
+
+                  return (
+                    <div key={r} className="rounded-lg border border-gray-200 p-4">
+                      <div className="text-sm font-semibold text-gray-900">{r}</div>
+                      <div className="mt-3 space-y-3">
+                        {modules.length ? (
+                          modules.map((m) => (
+                            <div key={`${r}-${m}`}>
+                              <div className="text-xs font-semibold text-gray-800">{m}</div>
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {cfg[m].map((a) => (
+                                  <span
+                                    key={`${r}-${m}-${a}`}
+                                    className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700"
+                                  >
+                                    {a}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-gray-600">No permissions configured.</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mt-4 text-sm text-gray-600">No role data available.</div>
+            )}
+          </div>
         </div>
       ) : null}
 
       {tab === "audit" ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-sm font-semibold text-gray-900">Audit Log</div>
-          <div className="mt-2 text-sm text-gray-600">This section will be added later.</div>
+        <div className="mt-6">
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Audit Log</div>
+                <div className="mt-1 text-xs text-gray-500">Search and filter user activity within your current church context.</div>
+              </div>
+            </div>
+
+            {auditError ? (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{auditError}</div>
+            ) : null}
+
+            <div className="mt-4 flex flex-nowrap items-end gap-3 overflow-x-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500">Search:</span>
+                <input
+                  value={auditSearch}
+                  onChange={(e) => setAuditSearch(e.target.value)}
+                  className="h-9 w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  placeholder="User name"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500">Module:</span>
+                <select
+                  value={auditModule}
+                  onChange={(e) => setAuditModule(e.target.value)}
+                  className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                >
+                  <option value="">All Modules</option>
+                  <option value="Authentication">Authentication</option>
+                  <option value="Members">Members</option>
+                  <option value="Attendance">Attendance</option>
+                  <option value="Events">Events</option>
+                  <option value="Announcements">Announcements</option>
+                  <option value="Tithe">Tithe</option>
+                  <option value="Income">Income</option>
+                  <option value="Expense">Expense</option>
+                  <option value="SpecialFunds">SpecialFunds</option>
+                  <option value="Offerings">Offerings</option>
+                  <option value="Welfare">Welfare</option>
+                  <option value="Church">Church</option>
+                  <option value="Settings">Settings</option>
+                  <option value="ReportsAnalytics">ReportsAnalytics</option>
+                  <option value="Dashboard">Dashboard</option>
+                  <option value="System">System</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500">Action:</span>
+                <select
+                  value={auditAction}
+                  onChange={(e) => setAuditAction(e.target.value)}
+                  className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                >
+                  <option value="">All Actions</option>
+                  <option value="Create">Create</option>
+                  <option value="Update">Update</option>
+                  <option value="Delete">Delete</option>
+                  <option value="Activate">Activate</option>
+                  <option value="Deactivate">Deactivate</option>
+                  <option value="Convert">Convert</option>
+                  <option value="Login">Login</option>
+                  <option value="Register">Register</option>
+                  <option value="Logout">Logout</option>
+                  <option value="ChangePassword">ChangePassword</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500">Role:</span>
+                <select
+                  value={auditRole}
+                  onChange={(e) => setAuditRole(e.target.value)}
+                  className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                >
+                  <option value="">All Roles</option>
+                  <option value="churchadmin">churchadmin</option>
+                  <option value="associateadmin">associateadmin</option>
+                  <option value="secretary">secretary</option>
+                  <option value="financialofficer">financialofficer</option>
+                  <option value="leader">leader</option>
+                </select>
+              </div>
+
+              <div className="relative" ref={auditDatePickerRef}>
+                <button
+                  type="button"
+                  onClick={() => setAuditDatePickerOpen((v) => !v)}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
+                    <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
+                  </svg>
+                  <span className="text-gray-700">Date</span>
+                  <span className="text-xs text-gray-500">{auditDateFrom || auditDateTo ? "Filtered" : "All"}</span>
+                </button>
+
+                {auditDatePickerOpen ? (
+                  <div className="absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+                    <div className="flex items-center justify-between gap-3 pb-3">
+                      <div className="text-xs font-semibold text-gray-500">Filter by date</div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuditDraftFrom("");
+                          setAuditDraftTo("");
+                          setAuditDateFrom("");
+                          setAuditDateTo("");
+                          setAuditDatePickerOpen(false);
+                        }}
+                        className="text-xs font-semibold text-gray-600 hover:text-gray-900"
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-xs font-semibold text-gray-500">From</div>
+                        <input
+                          type="date"
+                          value={auditDraftFrom}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setAuditDraftFrom(value);
+                            if (auditDraftTo && value && auditDraftTo < value) {
+                              setAuditDraftTo("");
+                            }
+                          }}
+                          className="mt-2 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-gray-500">To</div>
+                        <input
+                          type="date"
+                          value={auditDraftTo}
+                          min={auditDraftFrom || undefined}
+                          onChange={(e) => setAuditDraftTo(e.target.value)}
+                          className="mt-2 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3 flex items-center justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const from = auditDraftFrom || "";
+                          const to = auditDraftTo || "";
+
+                          if (!from && !to) {
+                            setAuditDateFrom("");
+                            setAuditDateTo("");
+                            setAuditDatePickerOpen(false);
+                            return;
+                          }
+
+                          if ((from && !to) || (!from && to)) {
+                            const single = from || to;
+                            setAuditDateFrom(single);
+                            setAuditDateTo(single);
+                            setAuditDatePickerOpen(false);
+                            return;
+                          }
+
+                          setAuditDateFrom(from);
+                          setAuditDateTo(to);
+                          setAuditDatePickerOpen(false);
+                        }}
+                        className="h-9 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold">Timestamp</th>
+                    <th className="px-4 py-3 text-left font-semibold">User</th>
+                    <th className="px-4 py-3 text-left font-semibold">Action</th>
+                    <th className="px-4 py-3 text-left font-semibold">Module</th>
+                    <th className="px-4 py-3 text-left font-semibold">Activity</th>
+                    <th className="px-4 py-3 text-left font-semibold">Device Type</th>
+                    <th className="px-4 py-3 text-left font-semibold">Status</th>
+                    <th className="px-4 py-3 text-left font-semibold">View</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {auditLoading ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center text-gray-600">Loading...</td>
+                    </tr>
+                  ) : auditLogs.length ? (
+                    auditLogs.map((row) => {
+                      const userName = row?.user?.fullName || row?.userName || "—";
+                      const userRole = row?.user?.role || row?.userRole || "—";
+                      const timestamp = row?.createdAt ? new Date(row.createdAt).toLocaleString() : "—";
+                      const activity = activityTextFromLog(row) || "—";
+                      const ok = String(row?.status || "").toLowerCase() === "success";
+                      const deviceType = String(row?.deviceType || "").trim() || "—";
+                      return (
+                        <tr key={row?._id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{timestamp}</td>
+                          <td className="px-4 py-3">
+                            <div className="font-semibold text-gray-900">{userName}</div>
+                            <div className="text-xs text-gray-500">{userRole}</div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">{row?.action || "—"}</td>
+                          <td className="px-4 py-3 text-gray-700">{row?.module || "—"}</td>
+                          <td className="px-4 py-3 text-gray-700">{activity}</td>
+                          <td className="px-4 py-3 text-gray-700">{deviceType}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                              {row?.status || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              type="button"
+                              onClick={() => openAuditDetail(row)}
+                              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center text-gray-600">No audit logs found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+            <div className="text-xs text-gray-500">
+              Total: <span className="font-semibold text-gray-700">{auditPagination?.total ?? 0}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const prev = auditPagination?.prevPage;
+                  if (!prev) return;
+                  fetchAuditLogs({ page: prev });
+                }}
+                disabled={!auditPagination?.prevPage || auditLoading}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <div className="text-xs text-gray-600">
+                Page <span className="font-semibold">{auditPagination?.currentPage ?? 1}</span> of <span className="font-semibold">{auditPagination?.totalPages ?? 1}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = auditPagination?.nextPage;
+                  if (!next) return;
+                  fetchAuditLogs({ page: next });
+                }}
+                disabled={!auditPagination?.nextPage || auditLoading}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 

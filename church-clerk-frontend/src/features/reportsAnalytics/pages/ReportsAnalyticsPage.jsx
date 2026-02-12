@@ -5,10 +5,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  BarChart,
-  Bar,
-  AreaChart,
-  Area
+  LineChart,
+  Line
 } from "recharts";
 
 import PermissionContext from "../../permissions/permission.store.js";
@@ -208,6 +206,8 @@ function ReportsAnalyticsPage() {
   const [reportExportOpen, setReportExportOpen] = useState(false);
   const [reportExportLoading, setReportExportLoading] = useState(false);
   const [reportExportError, setReportExportError] = useState("");
+  const [reportExportStep, setReportExportStep] = useState("fields");
+  const [reportExportFields, setReportExportFields] = useState([]);
 
   const analyticsParams = useMemo(() => ({ year }), [year]);
 
@@ -262,7 +262,8 @@ function ReportsAnalyticsPage() {
     () => [
       { value: "members", label: "Members" },
       { value: "attendance", label: "Attendance" },
-      { value: "tithe", label: "Tithe" },
+      { value: "tithe-individual", label: "Tithe (Individual)" },
+      { value: "tithe-aggregate", label: "Tithe (Aggregate)" },
       { value: "offerings", label: "Offerings" },
       { value: "special-funds", label: "Special Fund" },
       { value: "expenses", label: "Expenses" },
@@ -301,18 +302,20 @@ function ReportsAnalyticsPage() {
     }
   };
 
-  const exportReport = async (format) => {
+  const exportReport = async (format, fields) => {
     if (!lastGenerated?.module) return;
 
     setReportExportLoading(true);
     setReportExportError("");
 
     try {
+      const fieldsRaw = Array.isArray(fields) && fields.length ? fields.join(",") : "";
       const res = await exportReportsAnalyticsReport({
         module: lastGenerated.module,
         from: lastGenerated.from || undefined,
         to: lastGenerated.to || undefined,
-        format
+        format,
+        fields: fieldsRaw || undefined
       });
 
       const contentType = res?.headers?.["content-type"] || "application/octet-stream";
@@ -337,6 +340,19 @@ function ReportsAnalyticsPage() {
     } finally {
       setReportExportLoading(false);
     }
+  };
+
+  const reportExportAvailableColumns = useMemo(() => {
+    const cols = report?.availableColumns?.length ? report.availableColumns : report?.columns;
+    return Array.isArray(cols) ? cols : [];
+  }, [report]);
+
+  const openExportModal = () => {
+    setReportExportError("");
+    setReportExportStep("fields");
+    const defaultKeys = (Array.isArray(report?.columns) ? report.columns : []).map((c) => c?.key).filter(Boolean);
+    setReportExportFields(defaultKeys);
+    setReportExportOpen(true);
   };
 
   if (!canRead) {
@@ -414,9 +430,9 @@ function ReportsAnalyticsPage() {
         <>
           {!loading ? (
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-              <KpiCard title="Overall Income" value={formatCurrency(kpi?.kpis?.totalIncome)} accent="bg-green-600" />
+              <KpiCard title="Overall Revenue" value={formatCurrency(kpi?.kpis?.totalIncome)} accent="bg-green-600" />
               <KpiCard title="Overall Expenses" value={formatCurrency(kpi?.kpis?.totalExpenses)} accent="bg-orange-600" />
-              <KpiCard title="Surplus / Deficit" value={formatCurrency(kpi?.kpis?.surplus)} accent="bg-blue-700" />
+              <KpiCard title="Overall Surplus / Deficit" value={formatCurrency(kpi?.kpis?.surplus)} accent="bg-blue-700" />
               <KpiCard title="Overall New Members" value={String(kpi?.kpis?.newMembers ?? 0)} accent="bg-purple-600" />
               <KpiCard title="Overall Visitors" value={String(kpi?.kpis?.visitors ?? 0)} accent="bg-gray-800" />
             </div>
@@ -429,7 +445,7 @@ function ReportsAnalyticsPage() {
 
               <div className="mt-3 h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
                     <YAxis tick={{ fontSize: 11 }} />
@@ -437,9 +453,9 @@ function ReportsAnalyticsPage() {
                       formatter={(v, n) => (n === "income" || n === "expenses" ? formatCurrency(v) : v)}
                       contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }}
                     />
-                    <Area type="monotone" dataKey="income" stroke="#16a34a" fill="#16a34a" fillOpacity={0.12} strokeWidth={2} />
-                    <Area type="monotone" dataKey="expenses" stroke="#f97316" fill="#f97316" fillOpacity={0.12} strokeWidth={2} />
-                  </AreaChart>
+                    <Line type="monotone" dataKey="income" stroke="#16a34a" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="expenses" stroke="#f97316" strokeWidth={2} dot={false} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -450,7 +466,7 @@ function ReportsAnalyticsPage() {
 
               <div className="mt-3 h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
                     <YAxis tick={{ fontSize: 11 }} />
@@ -458,9 +474,9 @@ function ReportsAnalyticsPage() {
                       formatter={(v, n) => (n === "offering" || n === "tithe" ? formatCurrency(v) : v)}
                       contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }}
                     />
-                    <Area type="monotone" dataKey="offering" stroke="#2563eb" fill="#2563eb" fillOpacity={0.12} strokeWidth={2} />
-                    <Area type="monotone" dataKey="tithe" stroke="#7c3aed" fill="#7c3aed" fillOpacity={0.12} strokeWidth={2} />
-                  </AreaChart>
+                    <Line type="monotone" dataKey="offering" stroke="#2563eb" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="tithe" stroke="#7c3aed" strokeWidth={2} dot={false} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -471,14 +487,14 @@ function ReportsAnalyticsPage() {
 
               <div className="mt-3 h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
-                    <Bar dataKey="totalMembers" fill="#0f172a" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="newMembers" fill="#22c55e" radius={[6, 6, 0, 0]} />
-                  </BarChart>
+                    <Line type="monotone" dataKey="totalMembers" stroke="#0f172a" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="newMembers" stroke="#22c55e" strokeWidth={2} dot={false} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -489,14 +505,14 @@ function ReportsAnalyticsPage() {
 
               <div className="mt-3 h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
-                    <Bar dataKey="attendance" fill="#2563eb" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="visitors" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-                  </BarChart>
+                    <Line type="monotone" dataKey="attendance" stroke="#2563eb" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="visitors" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -552,8 +568,7 @@ function ReportsAnalyticsPage() {
                   type="button"
                   disabled={!lastGenerated?.module || reportExportLoading}
                   onClick={() => {
-                    setReportExportError("");
-                    setReportExportOpen(true);
+                    openExportModal();
                   }}
                   className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
@@ -608,7 +623,9 @@ function ReportsAnalyticsPage() {
                 <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">Export Report</div>
-                    <div className="mt-1 text-xs text-gray-500">Choose a format for download.</div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      {reportExportStep === "fields" ? "Select fields to include." : "Choose a format for download."}
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -624,24 +641,92 @@ function ReportsAnalyticsPage() {
                     <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{reportExportError}</div>
                   ) : null}
 
-                  <div className="grid grid-cols-1 gap-3">
-                    <button
-                      type="button"
-                      disabled={reportExportLoading}
-                      onClick={() => exportReport("pdf")}
-                      className="w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
-                    >
-                      {reportExportLoading ? "Exporting…" : "Export PDF"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={reportExportLoading}
-                      onClick={() => exportReport("excel")}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      {reportExportLoading ? "Exporting…" : "Export Excel"}
-                    </button>
-                  </div>
+                  {reportExportStep === "fields" ? (
+                    <div>
+                      <div className="max-h-64 overflow-auto rounded-lg border border-gray-200">
+                        {reportExportAvailableColumns.length ? (
+                          <div className="p-3 grid grid-cols-1 gap-2">
+                            {reportExportAvailableColumns.map((c) => {
+                              const key = c?.key;
+                              const label = c?.label || key;
+                              if (!key) return null;
+                              const checked = reportExportFields.includes(key);
+                              return (
+                                <label key={key} className="flex items-center gap-2 text-sm text-gray-700">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      const nextChecked = e.target.checked;
+                                      setReportExportFields((prev) => {
+                                        const existing = Array.isArray(prev) ? prev : [];
+                                        if (nextChecked) return Array.from(new Set([...existing, key]));
+                                        return existing.filter((k) => k !== key);
+                                      });
+                                    }}
+                                  />
+                                  <span>{label}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="p-3 text-sm text-gray-600">No fields available.</div>
+                        )}
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          disabled={!reportExportAvailableColumns.length}
+                          onClick={() => setReportExportFields(reportExportAvailableColumns.map((c) => c?.key).filter(Boolean))}
+                          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Select all
+                        </button>
+                        <button
+                          type="button"
+                          disabled={reportExportLoading || !reportExportFields.length}
+                          onClick={() => setReportExportStep("format")}
+                          className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="grid grid-cols-1 gap-3">
+                        <button
+                          type="button"
+                          disabled={reportExportLoading}
+                          onClick={() => exportReport("pdf", reportExportFields)}
+                          className="w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                        >
+                          {reportExportLoading ? "Exporting…" : "Export PDF"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={reportExportLoading}
+                          onClick={() => exportReport("excel", reportExportFields)}
+                          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          {reportExportLoading ? "Exporting…" : "Export Excel"}
+                        </button>
+                      </div>
+
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          disabled={reportExportLoading}
+                          onClick={() => setReportExportStep("fields")}
+                          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Back
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-4 text-xs text-gray-500">
                     Period: {lastGenerated?.from || "—"} to {lastGenerated?.to || "—"}

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { getProjectContributionExpensesKPI } from "../services/churchProject.api.js";
 import {
@@ -459,7 +460,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
 function ChurchProjectDetailsPage() {
   const { can } = useContext(PermissionContext) || {};
   const location = useLocation();
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const projectId = useMemo(() => new URLSearchParams(location.search).get("id"), [location.search]);
 
@@ -646,7 +647,7 @@ function ChurchProjectDetailsPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate("/dashboard?page=church-projects")}
+            onClick={() => toPage("church-projects")}
             className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:underline"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">

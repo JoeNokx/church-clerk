@@ -4,6 +4,7 @@ import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
 import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
 import Church from "../../models/churchModel.js";
+import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
 const getIntervalMonths = (billingInterval) => {
   if (billingInterval === "monthly") return 1;
@@ -45,9 +46,10 @@ export const createSubscriptionForChurch = async ({
   };
 
   if (trial) {
-    subscriptionData.status = "trialing";
+    const { trialDays } = await getSystemSettingsSnapshot();
+    subscriptionData.status = "free trial";
     subscriptionData.trialStart = new Date();
-    subscriptionData.trialEnd = addDays(new Date(), 14);
+    subscriptionData.trialEnd = addDays(new Date(), Number(trialDays || 14));
     subscriptionData.nextBillingDate = subscriptionData.trialEnd;
   }
 
@@ -169,8 +171,9 @@ export const runBillingCycles = async () => {
     const result = await processSubscriptionBillings(subscription);
 
     if (result.charged) {
+      const { gracePeriodDays } = await getSystemSettingsSnapshot();
       subscription.status = "past_due";
-      subscription.gracePeriodEnd = addDays(new Date(), 3);
+      subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
       await subscription.save();
     }
 

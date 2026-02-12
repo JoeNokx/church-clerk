@@ -34,6 +34,7 @@ export function AuthProvider({ children }) {
       } catch {
         setUser(null);
         localStorage.removeItem("userIsActive");
+        localStorage.removeItem("subscriptionReadOnly");
         permissionCtx?.clearPermissions?.();
         churchCtx?.clearActiveChurch?.();
       } finally {
@@ -78,6 +79,7 @@ export function AuthProvider({ children }) {
     } finally {
       setUser(null);
       localStorage.removeItem("userIsActive");
+      localStorage.removeItem("subscriptionReadOnly");
       permissionCtx?.clearPermissions?.();
       churchCtx?.clearActiveChurch?.();
     }

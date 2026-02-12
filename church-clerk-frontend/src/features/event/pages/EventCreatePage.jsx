@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { createEvent as apiCreateEvent, getEvent as apiGetEvent, updateEvent as apiUpdateEvent } from "../services/event.api.js";
 
@@ -32,6 +33,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { toPage } = useDashboardNavigator();
 
   const isModal = typeof open === "boolean";
   const isEdit = mode === "edit";
@@ -127,11 +129,11 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
     }
     const from = location?.state?.from;
     if (from === "programs-events") {
-      navigate("/dashboard?page=programs-events");
+      toPage("programs-events");
       return;
     }
     navigate(-1);
-  }, [isModal, onClose, location?.state?.from, navigate]);
+  }, [isModal, onClose, location?.state?.from, navigate, toPage]);
 
   const closeModal = useCallback(() => {
     if (loading) return;
@@ -223,7 +225,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
         onClose?.();
         return;
       }
-      navigate("/dashboard?page=programs-events", { replace: true });
+      toPage("programs-events", undefined, { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to create event");
     } finally {

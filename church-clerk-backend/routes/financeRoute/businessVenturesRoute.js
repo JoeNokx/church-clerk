@@ -12,24 +12,66 @@ import authorizeRoles from "../../middleware/roleMiddleware.js";
 
 
 router.post("/business-ventures", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createBusinessVentures);
-router.get("/business-ventures", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessVentures);
-router.get("/business-ventures/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getSingleBusinessVentures); 
+router.get(
+  "/business-ventures",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllBusinessVentures
+);
+router.get(
+  "/business-ventures/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getSingleBusinessVentures
+); 
 router.put("/business-ventures/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateBusinessVentures);
 router.delete("/business-ventures/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteBusinessVentures);
-router.get("/business-ventures/stats/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessKPI);
+router.get(
+  "/business-ventures/stats/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllBusinessKPI
+);
 
 
 router.post("/business-ventures/:businessId/incomes", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createBusinessIncome);
-router.get("/business-ventures/:businessId/incomes", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessIncome);
+router.get(
+  "/business-ventures/:businessId/incomes",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllBusinessIncome
+);
 router.put("/business-ventures/:businessId/incomes/:incomeId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateBusinessIncome);
 router.delete("/business-ventures/:businessId/incomes/:incomeId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteBusinessIncome);
 
 router.post("/business-ventures/:businessId/expenses", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createBusinessExpenses);
-router.get("/business-ventures/:businessId/expenses", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllBusinessExpenses);
+router.get(
+  "/business-ventures/:businessId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllBusinessExpenses
+);
 router.put("/business-ventures/:businessId/expenses/:expensesId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateBusinessExpenses);
 router.delete("/business-ventures/:businessId/expenses/:expensesId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteBusinessExpenses);
 
-router.get("/business-ventures/:businessId/income-expenses/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getIncomeExpensesKPI);
+router.get(
+  "/business-ventures/:businessId/income-expenses/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getIncomeExpensesKPI
+);
 
 
 export default router

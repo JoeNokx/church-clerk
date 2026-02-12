@@ -1,6 +1,6 @@
 import User from "../models/userModel.js";
 import { ROLE_PERMISSIONS, CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
-
+import cloudinary from "../config/cloudinary.js";
 
 //GET: fetch my profile
 const myProfile =  async (req, res) => {
@@ -37,16 +37,59 @@ const myProfile =  async (req, res) => {
 const updateMyProfile = async (req, res) => {
     try {
         const userId = req.user._id;
-          const { email } = req.body;
+        const { email } = req.body;
 
-        // const {name, email} = req.body;
-        if(email) {
-            const emailExisting = await User.findOne({email});
-            if(emailExisting && emailExisting._id.toString() !== userId.toString()) {
-                return res.status(400).json({message: "email already in use by another user."}) 
+        if (email) {
+            const normalizedEmail = String(email).toLowerCase().trim();
+            const emailExisting = await User.findOne({ email: normalizedEmail });
+            if (emailExisting && emailExisting._id.toString() !== userId.toString()) {
+                return res.status(400).json({ message: "email already in use by another user." });
             }
         }
-        const user = await User.findByIdAndUpdate(userId, req.body, {new: true, runValidators:true}).select("-password").populate("church", "name");
+
+        const update = {};
+        if (req.body?.fullName !== undefined) update.fullName = String(req.body.fullName || "").trim();
+        if (req.body?.email !== undefined) update.email = String(req.body.email || "").toLowerCase().trim();
+        if (req.body?.phoneNumber !== undefined) update.phoneNumber = String(req.body.phoneNumber || "").trim();
+
+        const file = req.file;
+        if (file) {
+            if (!file.buffer) {
+                return res.status(400).json({ message: "File buffer is missing" });
+            }
+
+            const mt = String(file.mimetype || "").toLowerCase();
+            if (!mt.startsWith("image/")) {
+                return res.status(400).json({ message: "Only image files are allowed" });
+            }
+
+            const folder = `church-clerk/users/${userId}/avatar`;
+            const uploadResult = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                        folder,
+                        resource_type: "image",
+                        use_filename: true,
+                        unique_filename: true
+                    },
+                    (err, result) => {
+                        if (err) return reject(err);
+                        resolve(result);
+                    }
+                );
+                stream.end(file.buffer);
+            });
+
+            if (!uploadResult?.secure_url) {
+                return res.status(502).json({ message: "Failed to upload avatar" });
+            }
+
+            update.profileImageUrl = uploadResult.secure_url;
+        }
+
+        const user = await User.findByIdAndUpdate(userId, update, { new: true, runValidators: true })
+            .select("-password")
+            .populate("church", "name");
        
         //check if user exist
         if(!user) {
@@ -56,7 +99,7 @@ const updateMyProfile = async (req, res) => {
         //user successful update
                 console.log("user details updated successfully...")
 
-        res.status(201).json(user)
+        return res.status(200).json({ message: "Profile updated successfully", user })
 
     } catch (error) {
         res.status(400).json({message: error.message})
@@ -143,6 +186,10 @@ const listChurchUsers = async (req, res) => {
 
 const createChurchUser = async (req, res) => {
   try {
+    if (req.user?.role !== "churchadmin") {
+      return res.status(403).json({ message: "Only a church admin can add users" });
+    }
+
     const churchId = req.activeChurch?._id;
     if (!churchId) {
       return res.status(400).json({ message: "Active church context is required" });
@@ -187,6 +234,10 @@ const createChurchUser = async (req, res) => {
 
 const updateChurchUser = async (req, res) => {
   try {
+    if (req.user?.role !== "churchadmin") {
+      return res.status(403).json({ message: "Only a church admin can update users" });
+    }
+
     const churchId = req.activeChurch?._id;
     if (!churchId) {
       return res.status(400).json({ message: "Active church context is required" });

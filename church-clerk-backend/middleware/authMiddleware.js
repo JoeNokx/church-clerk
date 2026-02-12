@@ -35,13 +35,17 @@ const protect = async (req, res, next) => {
     const headerChurchId = req.headers["x-active-church"];
     const userChurchId = req.user.church;
 
+    const normalizedRole = String(req.user?.role || "").trim().toLowerCase();
+    const effectiveRole = normalizedRole === "super_admin" ? "superadmin" : normalizedRole === "support_admin" ? "supportadmin" : normalizedRole;
+
     let activeChurchId = headerChurchId || userChurchId;
 
     // Branch/Independent users should never switch context via header.
     // If a stale/foreign x-active-church is present, force it back to their home church.
     let userChurch = null;
     if (
-      req.user.role !== "superadmin" &&
+      effectiveRole !== "superadmin" &&
+      effectiveRole !== "supportadmin" &&
       headerChurchId &&
       userChurchId &&
       headerChurchId.toString() !== userChurchId.toString()
@@ -66,7 +70,8 @@ const protect = async (req, res, next) => {
     }
 
     if (
-      req.user.role !== "superadmin" &&
+      effectiveRole !== "superadmin" &&
+      effectiveRole !== "supportadmin" &&
       userChurchId &&
       activeChurchId.toString() !== userChurchId.toString()
     ) {
@@ -90,7 +95,7 @@ const protect = async (req, res, next) => {
       req.subscription = subscription || null;
 
       if (subscription) {
-        if (req.user.role === "superadmin") {
+        if (effectiveRole === "superadmin" || effectiveRole === "supportadmin") {
           return next();
         }
 
@@ -114,7 +119,7 @@ const protect = async (req, res, next) => {
 
           if (isFinanceRoute) {
             let planName = "basic";
-            if (subscription.status === "trialing") {
+            if (subscription.status === "free trial" || subscription.status === "trialing") {
               planName = "premium";
             } else if (subscription.plan) {
               const plan = await Plan.findById(subscription.plan).lean();
@@ -132,7 +137,7 @@ const protect = async (req, res, next) => {
 
         const now = new Date();
         const isTrialExpired =
-          subscription.status === "trialing" &&
+          (subscription.status === "free trial" || subscription.status === "trialing") &&
           subscription.trialEnd &&
           now > new Date(subscription.trialEnd);
 
@@ -143,7 +148,12 @@ const protect = async (req, res, next) => {
 
         const isSuspended = subscription.status === "suspended";
 
-        if ((isTrialExpired || isGraceExpired || isSuspended) && isWrite) {
+        const path = req.originalUrl || "";
+        const isSubscriptionPaymentRoute =
+          path.startsWith("/api/v1/subscription/payments/") ||
+          path.startsWith("/api/v1/subscription/payment-methods/");
+
+        if ((isTrialExpired || isGraceExpired || isSuspended) && isWrite && !isSubscriptionPaymentRoute) {
           return res.status(402).json({
             message: isTrialExpired
               ? "Trial expired. Please upgrade to continue using the system."

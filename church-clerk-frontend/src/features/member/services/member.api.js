@@ -23,3 +23,21 @@ export const deleteMember = async (id) => {
 export const getMembersKPI = async () => {
   return await http.get("/member/members/stats/kpi");
 };
+
+export const downloadMembersImportTemplate = async () => {
+  return await http.get("/member/members/import/template", {
+    responseType: "blob"
+  });
+};
+
+export const previewMembersImport = async (file) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  return await http.post("/member/members/import/preview", fd);
+};
+
+export const importMembersCsv = async (file) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  return await http.post("/member/members/import", fd);
+};

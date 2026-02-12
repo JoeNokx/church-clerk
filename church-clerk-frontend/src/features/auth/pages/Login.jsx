@@ -20,8 +20,7 @@ function Login() {
     try {
       const userData = await login({ email, password });
 
-      const needsChurch =
-        userData && !userData.church && userData.role !== "superadmin";
+      const needsChurch = userData && !userData.church;
 
       if (needsChurch) {
         navigate("/register-church", { replace: true });

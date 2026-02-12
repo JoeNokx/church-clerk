@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import PledgeContext, { PledgeProvider } from "../pledge.store.js";
@@ -235,7 +236,7 @@ function PledgeDetailsPageInner() {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(PledgeContext);
   const location = useLocation();
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const pledgeId = params.get("id");
@@ -264,7 +265,7 @@ function PledgeDetailsPageInner() {
   const [confirmDeletePayment, setConfirmDeletePayment] = useState(null);
 
   const goBack = () => {
-    navigate("/dashboard?page=pledges");
+    toPage("pledges");
   };
 
   const loadPledge = useCallback(async () => {

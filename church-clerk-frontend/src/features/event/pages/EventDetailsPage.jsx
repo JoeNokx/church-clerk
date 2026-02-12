@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getEvent as apiGetEvent } from "../services/event.api.js";
 import PermissionContext from "../../permissions/permission.store.js";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { createEventAttendee, getEventAttendees } from "../attendees/services/eventAttendees.api.js";
 import { createTotalEventAttendance, getAllTotalEventAttendances } from "../attendances/services/eventAttendances.api.js";
 import {
@@ -95,6 +96,7 @@ function SimpleModal({ open, title, children, onClose }) {
 function EventDetailsPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
   const { can } = useContext(PermissionContext) || {};
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -351,11 +353,11 @@ function EventDetailsPage() {
   const goBack = () => {
     const from = location?.state?.from;
     if (from === "dashboard") {
-      navigate("/dashboard");
+      toPage("dashboard");
       return;
     }
     if (from === "programs-events") {
-      navigate("/dashboard?page=programs-events");
+      toPage("programs-events");
       return;
     }
     navigate(-1);

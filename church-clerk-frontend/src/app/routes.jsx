@@ -2,10 +2,9 @@ import { Routes, Route } from "react-router-dom";
 
 import AuthLayout from "../layouts/AuthLayout.jsx";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
-import AdminLayout from "../layouts/AdminLayout.jsx";
+import RoleBasedDashboardLayout from "../layouts/RoleBasedDashboardLayout.jsx";
 
 import ProtectedRoute from "../shared/components/ProtectedRoute.jsx";
-import SuperAdminRoute from "../shared/components/SuperAdminRoute.jsx";
 
 import Login from "../features/auth/pages/Login.jsx";
 import Register from "../features/auth/pages/Register.jsx";
@@ -17,9 +16,6 @@ import LandingPage from "../features/dashboard/pages/LandingPage.jsx";
 import BillingPage from "../features/subscription/pages/BillingPage.jsx";
 
 import OfferingPage from "../features/offering/pages/OfferingPage.jsx";
-
-import AdminPlansPage from "../features/adminBilling/pages/AdminPlansPage.jsx";
-import AdminSubscriptionsPage from "../features/adminBilling/pages/AdminSubscriptionsPage.jsx";
 
 function AppRoutes() {
   return (
@@ -41,7 +37,7 @@ function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <RoleBasedDashboardLayout />
           </ProtectedRoute>
         }
       >
@@ -59,18 +55,6 @@ function AppRoutes() {
         }
       >
         <Route index element={<OfferingPage />} />
-      </Route>
-
-      <Route
-        path="/admin/billing"
-        element={
-          <SuperAdminRoute>
-            <AdminLayout />
-          </SuperAdminRoute>
-        }
-      >
-        <Route path="plans" element={<AdminPlansPage />} />
-        <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
       </Route>
     </Routes>
   );

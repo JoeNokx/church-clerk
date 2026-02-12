@@ -9,21 +9,49 @@ import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
-router.get("/members/search", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), searchMembersForWelfare);
+router.get(
+  "/members/search",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  searchMembersForWelfare
+);
 
 router.post("/welfare-contributions", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createWelfareContribution);
-router.get("/welfare-contributions", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllWelfareContribution);
+router.get(
+  "/welfare-contributions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllWelfareContribution
+);
 router.put("/welfare-contributions/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateWelfareContribution);
 router.delete("/welfare-contributions/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteWelfareContribution);
 
 
 router.post("/welfare-disbursements", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createWelfareDisbursement);
-router.get("/welfare-disbursements", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllWelfareDisbursement);
+router.get(
+  "/welfare-disbursements",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllWelfareDisbursement
+);
 router.put("/welfare-disbursements/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateWelfareDisbursement);
 router.delete("/welfare-disbursements/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteWelfareDisbursement);
 
 
-router.get("/welfare/stats/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getWelfareKPI);
+router.get(
+  "/welfare/stats/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getWelfareKPI
+);
 
 
 export default router

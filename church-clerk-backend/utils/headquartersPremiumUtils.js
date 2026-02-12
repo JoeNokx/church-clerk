@@ -1,5 +1,6 @@
 export const validatePlanForChurch = (church, plan) => {
-  if (church.type === "Headquarters" && plan.name !== "premium") {
+  const planName = String(plan?.name || "").toLowerCase();
+  if (church.type === "Headquarters" && planName !== "premium") {
     throw new Error("HQ churches must subscribe to Premium plan only");
   }
 };

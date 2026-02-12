@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 import {
   getGroup,
@@ -180,7 +181,7 @@ function SimpleModal({ open, title, children, onClose }) {
 
 function MinistryDetailsPage() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   const id = params.get("id") || "";
@@ -400,7 +401,7 @@ function MinistryDetailsPage() {
   };
 
   const goBack = () => {
-    navigate("/dashboard?page=ministries");
+    toPage("ministries");
   };
 
   const typeColor = type === "group" ? "blue" : type === "cell" ? "orange" : "purple";
@@ -901,7 +902,7 @@ function MinistryDetailsPage() {
                               onClick={() => {
                                 const memberId = member?._id;
                                 if (!memberId) return;
-                                navigate(`/dashboard?page=member-details&id=${memberId}`);
+                                toPage("member-details", { id: memberId });
                               }}
                               className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                             >

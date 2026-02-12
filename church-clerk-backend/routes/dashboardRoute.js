@@ -7,9 +7,9 @@ import {readOnlyBranchGuard} from "../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
 
 
-router.get("/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getDashboardKPI);
-router.get("/analytics", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getDashboardAnalytics);
-router.get("/widgets", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getDashboardWidget);
+router.get("/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"), getDashboardKPI);
+router.get("/analytics", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"), getDashboardAnalytics);
+router.get("/widgets", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"), getDashboardWidget);
 
 
 export default router

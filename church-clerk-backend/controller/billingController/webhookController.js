@@ -1,27 +1,57 @@
 import crypto from "crypto";
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
+import WebhookLog from "../../models/billingModel/webhookLogModel.js";
 import ReferralHistory from "../../models/referralModel/referralHistoryModel.js";
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
 import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
+import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
 export const paystackWebhook = async (req, res) => {
+  let log = null;
   try {
     // VERIFY PAYSTACK SIGNATURE
     if (!req.rawBody) {
       return res.status(400).send("Missing raw body");
     }
 
+    let parsedEvent = null;
+    try {
+      parsedEvent = JSON.parse(req.rawBody.toString());
+    } catch {
+      parsedEvent = null;
+    }
+
+    const eventType = parsedEvent?.event || null;
+    const reference = parsedEvent?.data?.reference || null;
+
+    log = await WebhookLog.create({
+      provider: "paystack",
+      eventType,
+      reference,
+      status: "received",
+      headers: {
+        "x-paystack-signature": req.headers["x-paystack-signature"] || null,
+        "user-agent": req.headers["user-agent"] || null
+      },
+      payload: parsedEvent
+    });
+
     const hash = crypto
-      .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
+      .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY || process.env.TEST_SECRET_KEY || "")
       .update(req.rawBody)
       .digest("hex");
 
     if (hash !== req.headers["x-paystack-signature"]) {
+      if (log) {
+        log.status = "rejected";
+        log.errorMessage = "Invalid signature";
+        await log.save();
+      }
       return res.status(401).send("Invalid signature");
     }
 
-    const event = JSON.parse(req.rawBody.toString());
+    const event = parsedEvent || JSON.parse(req.rawBody.toString());
 
     // HANDLE SUCCESSFUL PAYMENT
     if (event.event === "charge.success") {
@@ -42,6 +72,10 @@ export const paystackWebhook = async (req, res) => {
       if (!billing) return res.sendStatus(200);
 
       if (billing.status === "paid") {
+        if (log) {
+          log.status = "processed";
+          await log.save();
+        }
         return res.sendStatus(200);
       }
 
@@ -55,13 +89,13 @@ export const paystackWebhook = async (req, res) => {
       if (!subscription) return res.sendStatus(200);
 
       const now = new Date();
-      const wasTrialing = subscription.status === "trialing";
+      const wasFreeTrial = subscription.status === "free trial" || subscription.status === "trialing";
 
       subscription.status = "active";
       subscription.gracePeriodEnd = null;
       subscription.expiryWarning.shown = false;
 
-      if (wasTrialing) {
+      if (wasFreeTrial) {
         subscription.trialStart = null;
         subscription.trialEnd = null;
       }
@@ -164,14 +198,41 @@ export const paystackWebhook = async (req, res) => {
       if (!subscription) return res.sendStatus(200);
 
       subscription.status = "past_due";
-      subscription.gracePeriodEnd = addDays(new Date(), 3);
+      {
+        const { gracePeriodDays } = await getSystemSettingsSnapshot();
+        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
+      }
 
       await subscription.save();
+    }
+
+    if (log) {
+      log.status = "processed";
+      await log.save();
     }
 
     return res.sendStatus(200);
   } catch (error) {
     console.error("Paystack Webhook Error:", error);
+    try {
+      if (log) {
+        log.status = "failed";
+        log.errorMessage = error?.message || String(error);
+        await log.save();
+      } else {
+        await WebhookLog.create({
+          provider: "paystack",
+          status: "failed",
+          errorMessage: error?.message || String(error),
+          headers: {
+            "x-paystack-signature": req.headers["x-paystack-signature"] || null,
+            "user-agent": req.headers["user-agent"] || null
+          }
+        });
+      }
+    } catch {
+      // ignore logging errors
+    }
     return res.sendStatus(500);
   }
 };

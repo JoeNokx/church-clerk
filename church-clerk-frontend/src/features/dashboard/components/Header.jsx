@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../../church/church.store.js";
 import { getMyBranches } from "../../church/services/church.api.js";
+import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
 
 function DashboardHeader() {
 
@@ -16,6 +17,9 @@ function DashboardHeader() {
     const [branchesLoading, setBranchesLoading] = useState(false);
     const [branchesError, setBranchesError] = useState("");
     const [branches, setBranches] = useState([]);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [pendingSwitch, setPendingSwitch] = useState(null);
+    const [switching, setSwitching] = useState(false);
 
     const menuRef = useRef(null);
     const accountRef = useRef(null);
@@ -87,6 +91,44 @@ function DashboardHeader() {
       }
     }, [churchCtx, viewingChurchId]);
 
+    const requestSwitch = useCallback((church, nextMode) => {
+      if (!church?._id) return;
+      if (church._id === viewingChurchId) {
+        setChurchMenuOpen(false);
+        return;
+      }
+
+      const mode = nextMode || (homeChurchId && String(church._id) === String(homeChurchId) ? "hq" : "branch");
+      const city = String(church?.city || "").trim();
+      const baseName = String(church?.name || "").trim() || "—";
+      const displayName = mode === "hq"
+        ? `${homeChurchName || baseName} - headquarters`
+        : (city ? `${baseName} - ${city}` : baseName);
+
+      setPendingSwitch({ id: church._id, name: displayName, mode });
+      setChurchMenuOpen(false);
+      setConfirmOpen(true);
+    }, [homeChurchId, homeChurchName, viewingChurchId]);
+
+    const cancelConfirm = useCallback(() => {
+      if (switching) return;
+      setConfirmOpen(false);
+      setPendingSwitch(null);
+    }, [switching]);
+
+    const confirmSwitch = useCallback(async () => {
+      const id = pendingSwitch?.id;
+      if (!id) return;
+      setSwitching(true);
+      try {
+        await switchToChurch(id);
+      } finally {
+        setSwitching(false);
+        setConfirmOpen(false);
+        setPendingSwitch(null);
+      }
+    }, [pendingSwitch?.id, switchToChurch]);
+
     useEffect(() => {
       if (canSwitchContext) return;
       setBranchesError("");
@@ -154,9 +196,7 @@ function DashboardHeader() {
         ? "Church Admin"
         : user.role === "financialofficer"
           ? "Financial Officer"
-          : user.role === "superadmin"
-            ? "System Admin"
-            : user.role
+          : user.role
       : "";
 
     const avatarUrl =
@@ -238,7 +278,7 @@ function DashboardHeader() {
                   {homeChurchId ? (
                     <button
                       type="button"
-                      onClick={() => switchToChurch(homeChurchId)}
+                      onClick={() => requestSwitch({ _id: homeChurchId, name: homeChurchName || "Headquarters" })}
                       className={`w-full text-left rounded-lg px-3 py-2 hover:bg-gray-50 ${viewingChurchId === homeChurchId ? "bg-blue-50" : ""}`}
                     >
                       <div className="text-sm font-semibold text-gray-900 truncate">{homeChurchName || "Headquarters"}</div>
@@ -256,7 +296,7 @@ function DashboardHeader() {
                         <button
                           key={b?._id}
                           type="button"
-                          onClick={() => switchToChurch(b?._id)}
+                          onClick={() => requestSwitch(b)}
                           className={`w-full text-left rounded-lg px-3 py-2 hover:bg-gray-50 ${viewingChurchId === b?._id ? "bg-blue-50" : ""}`}
                         >
                           <div className="text-sm font-semibold text-gray-900 truncate">{b?.name || "—"}</div>
@@ -403,6 +443,15 @@ function DashboardHeader() {
           </div>
         </div>
       </div>
+
+      <ConfirmChurchSwitchModal
+        open={confirmOpen}
+        churchDisplayName={pendingSwitch?.name}
+        mode={pendingSwitch?.mode}
+        onCancel={cancelConfirm}
+        onConfirm={confirmSwitch}
+        loading={switching}
+      />
     </header>
   )
 }

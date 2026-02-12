@@ -7,9 +7,23 @@ import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 
 router.post("/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createOffering);
-router.get("/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllOfferings);
+router.get(
+  "/offerings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllOfferings
+);
 router.put("/offerings/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateOffering);
 router.delete("/offerings/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteOffering);
-router.get("/offerings/stats/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getOfferingKPI);
+router.get(
+  "/offerings/stats/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getOfferingKPI
+);
 
 export default router

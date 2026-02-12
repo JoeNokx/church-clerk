@@ -35,8 +35,7 @@ function Register() {
       const nextStep = res?.data?.data?.nextStep;
       const effectiveUser = serverUser || res?.data?.data?.user;
 
-      const needsChurch =
-        effectiveUser && !effectiveUser.church && effectiveUser.role !== "superadmin";
+      const needsChurch = effectiveUser && !effectiveUser.church;
 
       // Redirect to church registration if backend says nextStep
       if (nextStep === "church-registration" || needsChurch) {

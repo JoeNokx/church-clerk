@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { useContext } from "react";
 import ChurchContext from "../../church/church.store.js";
 import {
@@ -314,7 +314,7 @@ function safeKpiPayload(res) {
 }
 
 function BusinessVenturesPage() {
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
@@ -377,17 +377,17 @@ function BusinessVenturesPage() {
 
   const viewDetails = (row) => {
     if (!row?._id) return;
-    navigate(`/dashboard?page=business-venture-details&id=${row._id}`);
+    toPage("business-venture-details", { id: row._id });
   };
 
   const viewIncome = (row) => {
     if (!row?._id) return;
-    navigate(`/dashboard?page=business-venture-details&id=${row._id}&tab=incomes`);
+    toPage("business-venture-details", { id: row._id, tab: "incomes" });
   };
 
   const viewExpenses = (row) => {
     if (!row?._id) return;
-    navigate(`/dashboard?page=business-venture-details&id=${row._id}&tab=expenses`);
+    toPage("business-venture-details", { id: row._id, tab: "expenses" });
   };
 
   const openEdit = (row) => {

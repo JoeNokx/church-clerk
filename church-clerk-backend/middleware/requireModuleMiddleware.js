@@ -28,7 +28,7 @@ export const requireModule = (moduleKey) => {
 
       let planName = "basic";
 
-      if (subscription.status === "trialing") {
+      if (subscription.status === "free trial" || subscription.status === "trialing") {
         planName = "premium";
       } else if (subscription.plan) {
         const plan = await Plan.findById(subscription.plan).lean();

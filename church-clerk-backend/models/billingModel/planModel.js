@@ -16,7 +16,37 @@ const planSchema = new mongoose.Schema(
 
     features: {
       financeModule: { type: Boolean, default: false },
-      announcements: { type: Boolean, default: false }
+      announcements: { type: Boolean, default: false },
+
+      // PEOPLE & MINISTRIES
+      members: { type: Boolean, default: false },
+      attendance: { type: Boolean, default: false },
+      programsEvents: { type: Boolean, default: false },
+      ministries: { type: Boolean, default: false },
+      announcement: { type: Boolean, default: false },
+
+      // FINANCE
+      tithes: { type: Boolean, default: false },
+      specialFund: { type: Boolean, default: false },
+      offerings: { type: Boolean, default: false },
+      welfare: { type: Boolean, default: false },
+      pledges: { type: Boolean, default: false },
+      businessVentures: { type: Boolean, default: false },
+      expenses: { type: Boolean, default: false },
+      financialStatement: { type: Boolean, default: false },
+
+      // ADMINISTRATION
+      reportsAnalytics: { type: Boolean, default: false },
+      billing: { type: Boolean, default: false },
+      referrals: { type: Boolean, default: false },
+      settings: { type: Boolean, default: false },
+      supportHelp: { type: Boolean, default: false }
+    },
+
+    featureCategories: {
+      peopleMinistries: { type: Boolean, default: false },
+      finance: { type: Boolean, default: false },
+      administration: { type: Boolean, default: false }
     },
 
     // HQ restriction

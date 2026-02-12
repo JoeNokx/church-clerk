@@ -7,7 +7,6 @@ import ChurchContext from "../../church/church.store.js";
 function Sidebar() {
 
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin" || user?.role === "superadmin";
 
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
@@ -235,23 +234,11 @@ function Sidebar() {
           <div>
             <div className="px-3 text-xs font-semibold text-gray-400 tracking-wider">ADMINISTRATION</div>
             <div className="mt-2 space-y-1">
-              {isSuperAdmin ? (
-                <NavLink to="/admin/billing/plans" className={itemClass("admin-billing")}>
-                  <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                      <path d="M4 7h16v10H4V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                      <path d="M7 12h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  Admin Billing
-                </NavLink>
-              ) : null}
-
               <NavLink to={toPage("reports-analytics")} className={itemClass("reports-analytics")}>
                 <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                    <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M7 16V9M12 16V5M17 16v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M4 20V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M7 16l4-5 4 3 3-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
                 Reports &amp; Analytics

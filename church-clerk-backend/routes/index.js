@@ -13,6 +13,9 @@ import referralSystemRoute from "./referralSystemRoute.js";
 // auth routes
 import authRoutes from "./authRoute.js";
 
+// admin auth routes
+import adminAuthRoute from "./adminAuthRoute.js";
+
 // user and church profile routes
 import userRoutes from "./userRoute.js";
 import churchRoute from "./churchRoute.js";
@@ -53,6 +56,7 @@ import reportsAnalyticsRoute from "./reportsAnalyticsRoute.js";
 export {
   dashboardRoute,
   authRoutes,
+  adminAuthRoute,
   userRoutes,
   systemAdminRoute,
   churchRoute,

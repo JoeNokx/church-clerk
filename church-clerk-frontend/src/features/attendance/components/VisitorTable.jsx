@@ -1,5 +1,5 @@
 import { useContext, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 
@@ -30,7 +30,7 @@ function StatusChip({ value }) {
 function VisitorTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -130,20 +130,24 @@ function VisitorTable({ onEdit, onDeleted }) {
     const firstName = parts[0] || "";
     const lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
 
-    navigate("/dashboard?page=member-form", {
-      state: {
-        prefillMember: {
-          firstName,
-          lastName,
-          phoneNumber: row?.phoneNumber || "",
-          email: row?.email || "",
-          city: row?.location || "",
-          note: row?.note || "",
-          status: "active",
-          visitorId: row._id
+    toPage(
+      "member-form",
+      undefined,
+      {
+        state: {
+          prefillMember: {
+            firstName,
+            lastName,
+            phoneNumber: row?.phoneNumber || "",
+            email: row?.email || "",
+            city: row?.location || "",
+            note: row?.note || "",
+            status: "active",
+            visitorId: row._id
+          }
         }
       }
-    });
+    );
   };
 
   if (store?.visitorLoading) {

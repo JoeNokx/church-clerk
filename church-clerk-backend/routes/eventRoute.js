@@ -52,34 +52,34 @@ const uploadAttendanceFile = (req, res, next) => {
   });
 };
 
-router.get("/events", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getEvents);
-router.get("/events/stats", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getEventStats);
+router.get("/events", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getEvents);
+router.get("/events/stats", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getEventStats);
 
-router.get("/events/upcoming", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getUpcomingEvents);
-router.get("/events/ongoing", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getOngoingEvents);
-router.get("/events/past", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getPastEvents);
+router.get("/events/upcoming", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getUpcomingEvents);
+router.get("/events/ongoing", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getOngoingEvents);
+router.get("/events/past", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getPastEvents);
 
-router.get("/events/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getSingleEvent); 
-router.post("/events", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createEvent);
-router.put("/events/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateEvent);
-router.delete("/events/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteEvent);
+router.get("/events/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getSingleEvent); 
+router.post("/events", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), createEvent);
+router.put("/events/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), updateEvent);
+router.delete("/events/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), deleteEvent);
 
-router.post("/events/:eventId/attendees", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createEventAttendee);
-router.get("/events/:eventId/attendees", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getEventAttendees);
-router.put("/events/:eventId/attendees/:attendeeId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateEventAttendee);
-router.delete("/events/:eventId/attendees/:attendeeId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteEventAttendee);
+router.post("/events/:eventId/attendees", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), createEventAttendee);
+router.get("/events/:eventId/attendees", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getEventAttendees);
+router.put("/events/:eventId/attendees/:attendeeId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), updateEventAttendee);
+router.delete("/events/:eventId/attendees/:attendeeId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), deleteEventAttendee);
 
-router.post("/events/:eventId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createTotalEventAttendance);
-router.get("/events/:eventId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getAllTotalEventAttendances);
-router.put("/events/:eventId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateTotalEventAttendance);
-router.delete("/events/:eventId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteTotalEventAttendance);
+router.post("/events/:eventId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), createTotalEventAttendance);
+router.get("/events/:eventId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getAllTotalEventAttendances);
+router.put("/events/:eventId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), updateTotalEventAttendance);
+router.delete("/events/:eventId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), deleteTotalEventAttendance);
 
 router.post(
   "/events/:eventId/attendance-files",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   uploadAttendanceFile,
   uploadEventAttendanceFile
 );
@@ -89,7 +89,7 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   listEventAttendanceFiles
 );
 
@@ -98,7 +98,7 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   downloadEventAttendanceFile
 );
 
@@ -107,7 +107,7 @@ router.put(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   updateEventAttendanceFile
 );
 
@@ -116,7 +116,7 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   deleteEventAttendanceFile
 );
 
@@ -125,7 +125,7 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   createEventOffering
 );
 
@@ -134,7 +134,7 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   getEventOfferings
 );
 
@@ -143,7 +143,7 @@ router.put(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   updateEventOffering
 );
 
@@ -152,7 +152,7 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   deleteEventOffering
 );
 

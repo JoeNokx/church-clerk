@@ -16,7 +16,7 @@ const billingHistorySchema = new mongoose.Schema(
 
     type: {
       type: String,
-      enum: ["payment", "free_month"],
+      enum: ["payment", "free_month", "invoice"],
       required: true
     },
 
@@ -32,7 +32,7 @@ const billingHistorySchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["paid", "failed", "pending", "rewarded"],
+      enum: ["paid", "failed", "pending", "rewarded", "unpaid"],
       required: true
     },
 
@@ -49,6 +49,16 @@ const billingHistorySchema = new mongoose.Schema(
   amount: Number,
   currency: String
 },
+
+    invoiceNumber: {
+      type: String,
+      default: null
+    },
+
+    dueDate: {
+      type: Date,
+      default: null
+    },
 
     providerReference: {
       type: String,

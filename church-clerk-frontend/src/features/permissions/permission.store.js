@@ -28,6 +28,11 @@ export function PermissionProvider({ children }) {
       if (activeFlag === "0") {
         return false;
       }
+
+      const subscriptionReadOnly = typeof window !== "undefined" ? localStorage.getItem("subscriptionReadOnly") : "0";
+      if (subscriptionReadOnly === "1") {
+        return false;
+      }
     }
     if (isWriteAction && activeChurch?._id && activeChurch?.canEdit === false) {
       return false;

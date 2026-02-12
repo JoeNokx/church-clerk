@@ -5,7 +5,10 @@ import Plan from "../models/billingModel/planModel.js";
 export const setActiveChurch = async (req, res, next) => {
   try {
      // System admin (no church) should skip church context
-    if (!req.user?.church && req.user?.role !== "superadmin") {
+    const normalizedRole = String(req.user?.role || "").trim().toLowerCase();
+    const effectiveRole = normalizedRole === "super_admin" ? "superadmin" : normalizedRole === "support_admin" ? "supportadmin" : normalizedRole;
+
+    if (!req.user?.church && effectiveRole !== "superadmin" && effectiveRole !== "supportadmin") {
       req.activeChurch = null;    // explicitly set for dashboard controllers
       return next();
     }
@@ -19,7 +22,7 @@ export const setActiveChurch = async (req, res, next) => {
     // If a stale/foreign x-active-church is present, force it back to their home church.
     let userChurch = null;
     if (
-      req.user.role !== "superadmin" &&
+      effectiveRole !== "superadmin" &&
       headerChurchId &&
       userChurchId &&
       headerChurchId.toString() !== userChurchId.toString()
@@ -44,7 +47,7 @@ export const setActiveChurch = async (req, res, next) => {
 
     // Switching church context (HQ → Branch only)
     if (
-      req.user.role !== "superadmin" &&
+      effectiveRole !== "superadmin" &&
       userChurchId &&
       activeChurchId.toString() !== userChurchId.toString()
     ) {
@@ -64,18 +67,16 @@ export const setActiveChurch = async (req, res, next) => {
     req.activeChurch = church;
 
     req.activeChurch.canEdit =
-      req.user.role === "superadmin" ||
+      effectiveRole === "superadmin" ||
+      effectiveRole === "supportadmin" ||
       req.activeChurch._id.toString() === userChurchId?.toString();
 
     const subscription = await Subscription.findOne({ church: activeChurchId })
       .populate("plan")
       .lean();
 
-    const effectivePlan = subscription?.status === "trialing"
-      ? await Plan.findOne({ name: "premium", isActive: true }).lean()
-      : subscription?.plan;
-
-    const planName = effectivePlan?.name || "basic";
+    const isTrial = subscription?.status === "free trial" || subscription?.status === "trialing";
+    const planName = isTrial ? "premium" : (subscription?.plan?.name || "basic");
 
     const baseModules = {
       Dashboard: true,

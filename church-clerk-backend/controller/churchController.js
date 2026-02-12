@@ -107,9 +107,18 @@ const createMyChurch = async (req, res) => {
   
 
      // Update the user to belong to this church
+    const existingUsersInChurch = await User.countDocuments({ church: church._id });
+
+    const setRole =
+      existingUsersInChurch === 0 &&
+      req.user.role !== "superadmin" &&
+      req.user.role !== "supportadmin"
+        ? "churchadmin"
+        : req.user.role;
+
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
-      { church: church._id },
+      { church: church._id, role: setRole },
       { new: true }
     );
 
@@ -354,7 +363,7 @@ const getMyBranches = async (req, res) => {
     const activeBranches = branchIdList.length
       ? await Subscription.countDocuments({
           church: { $in: branchIdList },
-          status: { $in: ["trialing", "active", "past_due"] }
+          status: { $in: ["free trial", "active", "past_due"] }
         })
       : 0;
 

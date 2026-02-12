@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from "recharts";
 import SpecialFundPage from "../../specialFund/pages/SpecialFundPage.jsx";
 import ReferralProgramPage from "../../referral/pages/ReferralProgramPage.jsx";
@@ -26,10 +27,12 @@ import FinancialStatementPage from "../../financialStatement/pages/FinancialStat
 import SettingsPage from "../../settings/pages/SettingsPage.jsx";
 import ReportsAnalyticsPage from "../../reportsAnalytics/pages/ReportsAnalyticsPage.jsx";
 import SupportHelpPage from "../../supportHelp/pages/SupportHelpPage.jsx";
+import BillingPage from "../../subscription/pages/BillingPage.jsx";
 import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboardWidgetsWithParams } from "../services/dashboard.api.js";
 import { getUpcomingEvents } from "../../event/services/event.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import { getMyReferralCode, getMyReferralHistory } from "../../referral/services/referral.api.js";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 function formatPercent(value) {
   const v = Number(value || 0);
@@ -162,7 +165,7 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
 }
 
 function DashboardOverview({ onNavigate }) {
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [kpis, setKpis] = useState(null);
@@ -376,12 +379,12 @@ function DashboardOverview({ onNavigate }) {
   const goToMemberDetails = (id) => {
     if (!id) return;
     closeBirthdaysModal();
-    navigate(`/dashboard?page=member-details&id=${id}`, { state: { from: "dashboard" } });
+    toPage("member-details", { id }, { state: { from: "dashboard" } });
   };
 
   const goToEventDetails = (id) => {
     if (!id) return;
-    navigate(`/dashboard?page=event-details&id=${id}`, { state: { from: "dashboard" } });
+    toPage("event-details", { id }, { state: { from: "dashboard" } });
   };
 
   const filteredBirthdays = useMemo(() => {
@@ -811,16 +814,14 @@ function DashboardOverview({ onNavigate }) {
 
 function DashboardHome() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const rawPage = new URLSearchParams(location.search).get("page") || "dashboard";
   const page = rawPage === "offering" ? "offerings" : rawPage;
 
-  useEffect(() => {
-    if (page === "billing") {
-      navigate("/dashboard/billing", { replace: true });
-    }
-  }, [navigate, page]);
+  if (page === "billing") {
+    return <BillingPage />;
+  }
 
   if (page === "special-funds") {
     return <SpecialFundPage />;
@@ -928,11 +929,7 @@ function DashboardHome() {
     <DashboardOverview
       onNavigate={(targetPage) => {
         if (!targetPage) return;
-        if (targetPage === "dashboard") {
-          navigate("/dashboard");
-          return;
-        }
-        navigate(`/dashboard?page=${targetPage}`);
+        toPage(targetPage === "dashboard" ? "dashboard" : targetPage);
       }}
     />
   );

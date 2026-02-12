@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import ChurchContext from "../../church/church.store.js";
 import {
   createChurchProject,
@@ -441,7 +441,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess }) {
 }
 
 function ChurchProjectsPage() {
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
@@ -528,7 +528,7 @@ function ChurchProjectsPage() {
 
   const viewDetails = (project) => {
     if (!project?._id) return;
-    navigate(`/dashboard?page=church-project-details&id=${project._id}`);
+    toPage("church-project-details", { id: project._id });
   };
 
   const openEdit = (project) => {

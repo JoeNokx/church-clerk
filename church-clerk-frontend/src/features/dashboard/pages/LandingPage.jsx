@@ -1,10 +1,73 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
-import PricingCard from "../components/landing/PricingCard.jsx";
+import http from "../../../shared/services/http.js";
+import MinistryPlusCustomPlanModal from "../../../shared/components/MinistryPlusCustomPlanModal.jsx";
+
+function formatCurrency(amount, currency) {
+  const v = Number(amount || 0);
+  const c = String(currency || "").trim();
+  if (!c) return v.toLocaleString();
+  const symbol = c === "GHS" ? "₵" : c === "NGN" ? "₦" : c === "USD" ? "$" : "";
+  return symbol ? `${symbol}${v.toLocaleString()}` : `${c} ${v.toLocaleString()}`;
+}
 
 function LandingPage() {
+  const [plans, setPlans] = useState([]);
+  const [billingInterval, setBillingInterval] = useState("monthly");
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadingPlans(true);
+      try {
+        const res = await http.get("/subscription/public/plans");
+        if (cancelled) return;
+        setPlans(Array.isArray(res?.data?.plans) ? res.data.plans : []);
+      } catch {
+        if (cancelled) return;
+        setPlans([]);
+      } finally {
+        if (cancelled) return;
+        setLoadingPlans(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const plansSorted = useMemo(() => {
+    const rows = Array.isArray(plans) ? plans : [];
+    const order = { "free lite": 0, basic: 1, standard: 2, premium: 3 };
+    return rows.slice().sort((a, b) => {
+      const aName = String(a?.name || "").toLowerCase();
+      const bName = String(b?.name || "").toLowerCase();
+      const aRank = Number.isFinite(order[aName]) ? order[aName] : 99;
+      const bRank = Number.isFinite(order[bName]) ? order[bName] : 99;
+      if (aRank !== bRank) return aRank - bRank;
+      return aName.localeCompare(bName);
+    });
+  }, [plans]);
+
+  const currency = useMemo(() => {
+    const rows = Array.isArray(plansSorted) ? plansSorted : [];
+    const preferred = ["GHS", "USD", "NGN"];
+    for (const p of rows) {
+      const obj = p?.pricing || p?.priceByCurrency || {};
+      const keys = Object.keys(obj || {});
+      for (const cur of preferred) {
+        if (keys.includes(cur)) return cur;
+      }
+      if (keys[0]) return keys[0];
+    }
+    return "GHS";
+  }, [plansSorted]);
+
   return (
     <div className="min-h-screen bg-white">
       <LandingHeader />
@@ -77,41 +140,121 @@ function LandingPage() {
               <p className="mt-2 text-sm text-gray-600">Start simple, upgrade when you’re ready.</p>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              <PricingCard
-                name="Basic"
-                price="$19"
-                features={[
-                  "Member directory",
-                  "Attendance tracking",
-                  "Standard reports",
-                  "Email support"
-                ]}
-              />
-
-              <PricingCard
-                name="Standard"
-                price="$49"
-                featured
-                features={[
-                  "Everything in Basic",
-                  "Multiple departments",
-                  "Financial summaries",
-                  "Priority support"
-                ]}
-              />
-
-              <PricingCard
-                name="Premium"
-                price="$99"
-                features={[
-                  "Everything in Standard",
-                  "Multi-branch management",
-                  "Advanced permissions",
-                  "Dedicated onboarding"
-                ]}
-              />
+            <div className="mt-8 flex flex-col items-center justify-center gap-3">
+              <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => setBillingInterval("monthly")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                    billingInterval === "monthly" ? "bg-blue-900 text-white" : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingInterval("halfYear")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                    billingInterval === "halfYear" ? "bg-blue-900 text-white" : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  6 months
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingInterval("yearly")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                    billingInterval === "yearly" ? "bg-blue-900 text-white" : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Yearly
+                </button>
+              </div>
             </div>
+
+            <div className="mt-10">
+              {loadingPlans ? (
+                <div className="text-center text-sm text-gray-600">Loading plans…</div>
+              ) : null}
+
+              {!loadingPlans && plansSorted.length === 0 ? (
+                <div className="text-center text-sm text-gray-600">No plans available right now.</div>
+              ) : null}
+
+              {!loadingPlans && plansSorted.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+                  {plansSorted.map((p) => {
+                    const id = p?._id;
+                    const name = String(p?.name || "");
+                    const isMostPopular = name.toLowerCase() === "standard";
+                    const price =
+                      p?.pricing?.[currency]?.[billingInterval] ??
+                      p?.priceByCurrency?.[currency]?.[billingInterval] ??
+                      0;
+                    const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
+
+                    return (
+                      <div
+                        key={id}
+                        className={`relative rounded-2xl bg-white p-6 flex flex-col ${
+                          isMostPopular ? "shadow-md ring-2 ring-blue-900" : "shadow-sm ring-1 ring-gray-200"
+                        }`}
+                      >
+                        {isMostPopular ? (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-900 px-3 py-1 text-[10px] font-semibold text-white">
+                            Most Popular
+                          </div>
+                        ) : null}
+
+                        <div className="text-lg font-semibold text-gray-900">{name || "—"}</div>
+                        <div className="mt-4 flex items-end gap-2">
+                          <span className="text-3xl font-semibold text-gray-900">{formatCurrency(price, currency)}</span>
+                          <span className="text-sm text-gray-500">{per}</span>
+                        </div>
+
+                        <div className="mt-6 space-y-2 text-sm text-gray-600">
+                          <div>{p?.memberLimit === null ? "Unlimited members" : `Up to ${Number(p?.memberLimit || 0).toLocaleString()} members`}</div>
+                          <div>Member management</div>
+                          <div>Attendance tracking</div>
+                          <div>Finance module access</div>
+                        </div>
+
+                        <div className="mt-6">
+                          <Link
+                            to="/register"
+                            className={`w-full inline-flex justify-center items-center rounded-lg text-sm font-semibold px-4 py-2.5 shadow-sm ${
+                              isMostPopular
+                                ? "bg-blue-900 text-white hover:bg-blue-800"
+                                : "border border-blue-900 text-blue-900 hover:bg-blue-50"
+                            }`}
+                          >
+                            Get started
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-10 rounded-2xl border border-indigo-200 bg-indigo-50 p-6">
+              <div className="text-base font-semibold text-gray-900">Need a fully customized church management solution?</div>
+              <div className="mt-2 text-sm text-gray-700">
+                With Ministry Plus, get a tailor-made system built specifically for your church’s needs. Features, workflows, and integrations — all designed just for you.
+              </div>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCustomPlanModal(true)}
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-900 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+                >
+                  Contact us for a custom plan
+                </button>
+              </div>
+            </div>
+
+            <MinistryPlusCustomPlanModal open={showCustomPlanModal} onClose={() => setShowCustomPlanModal(false)} defaultEmail="" />
           </div>
         </section>
 

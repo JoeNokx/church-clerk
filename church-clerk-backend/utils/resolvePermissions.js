@@ -2,7 +2,10 @@ import { ROLE_PERMISSIONS } from "../config/roles.js";
 import { MODULES } from "../config/permissions.js";
 
 export const resolvePermissions = (role) => {
-  const roleConfig = ROLE_PERMISSIONS[role];
+  const normalizedRole = String(role || "").trim().toLowerCase();
+  const effectiveRole = normalizedRole === "super_admin" ? "superadmin" : normalizedRole === "support_admin" ? "supportadmin" : normalizedRole;
+
+  const roleConfig = ROLE_PERMISSIONS[effectiveRole];
 
   if (!roleConfig) return {};
 

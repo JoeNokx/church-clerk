@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../church.store.js";
 import { getMyBranches } from "../services/church.api.js";
+import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
 
 function BranchesOverviewPage() {
   const navigate = useNavigate();
@@ -16,6 +17,9 @@ function BranchesOverviewPage() {
   const [kpis, setKpis] = useState({ totalBranches: 0, totalMembers: 0, activeBranches: 0 });
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingSwitch, setPendingSwitch] = useState(null);
+  const [switching, setSwitching] = useState(false);
   const limit = 10;
 
   const activeChurch = churchStore?.activeChurch;
@@ -44,6 +48,48 @@ function BranchesOverviewPage() {
       navigate("/dashboard");
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to switch church");
+    }
+  };
+
+  const openConfirm = (payload) => {
+    if (!payload?.id) return;
+    setPendingSwitch({
+      id: payload.id,
+      name: payload?.name || "",
+      mode: payload?.mode || "branch"
+    });
+    setConfirmOpen(true);
+  };
+
+  const openConfirmBranch = (church) => {
+    if (!church?._id) return;
+    const city = String(church?.city || "").trim();
+    const displayName = city ? `${church?.name || ""} - ${city}` : (church?.name || "");
+    openConfirm({ id: church._id, name: displayName, mode: "branch" });
+  };
+
+  const openConfirmHq = (churchId) => {
+    if (!churchId) return;
+    const displayName = `${homeChurchName || "Headquarters"} - headquarters`;
+    openConfirm({ id: churchId, name: displayName, mode: "hq" });
+  };
+
+  const cancelConfirm = () => {
+    if (switching) return;
+    setConfirmOpen(false);
+    setPendingSwitch(null);
+  };
+
+  const confirmSwitch = async () => {
+    const churchId = pendingSwitch?.id;
+    if (!churchId) return;
+    setSwitching(true);
+    try {
+      await switchTo(churchId);
+    } finally {
+      setSwitching(false);
+      setConfirmOpen(false);
+      setPendingSwitch(null);
     }
   };
 
@@ -118,7 +164,7 @@ function BranchesOverviewPage() {
         {homeChurchId && String(activeChurch?._id || "") !== String(homeChurchId) ? (
           <button
             type="button"
-            onClick={() => switchTo(homeChurchId)}
+            onClick={() => openConfirmHq(homeChurchId)}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
             Back to {homeChurchName || "Headquarters"}
@@ -221,7 +267,7 @@ function BranchesOverviewPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
-                            onClick={() => switchTo(b?._id)}
+                            onClick={() => openConfirmBranch(b)}
                             className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                           >
                             View
@@ -256,6 +302,15 @@ function BranchesOverviewPage() {
           </div>
         </div>
       ) : null}
+
+      <ConfirmChurchSwitchModal
+        open={confirmOpen}
+        churchDisplayName={pendingSwitch?.name}
+        mode={pendingSwitch?.mode}
+        onCancel={cancelConfirm}
+        onConfirm={confirmSwitch}
+        loading={switching}
+      />
     </div>
   );
 }

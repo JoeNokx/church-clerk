@@ -7,11 +7,46 @@ import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js
 import authorizeRoles from "../middleware/roleMiddleware.js";
 
 
-router.get("/announcements", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "admin", "financialofficer"), getAllAnnouncements);
-router.get("/announcements/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "admin"), getSingleAnnouncement); 
-router.post("/announcements", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "admin"), createAnnouncement);
-router.put("/announcements/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "admin"), updateAnnouncement);
-router.delete("/announcements/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "admin"), deleteAnnouncement);
+router.get(
+  "/announcements",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  getAllAnnouncements
+);
+router.get(
+  "/announcements/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  getSingleAnnouncement
+);
+router.post(
+  "/announcements",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  createAnnouncement
+);
+router.put(
+  "/announcements/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  updateAnnouncement
+);
+router.delete(
+  "/announcements/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  deleteAnnouncement
+);
 
 
 export default router

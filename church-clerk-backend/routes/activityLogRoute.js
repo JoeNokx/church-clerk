@@ -7,8 +7,22 @@ import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js
 import authorizeRoles from "../middleware/roleMiddleware.js";
 
 
-router.get("/activity-logs", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "admin", "financialofficer"), getAllActivityLogs);
-router.get("/activity-logs/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "admin"), getSingleActivityLog);
+router.get(
+  "/activity-logs",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("churchadmin"),
+  getAllActivityLogs
+);
+router.get(
+  "/activity-logs/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("churchadmin"),
+  getSingleActivityLog
+);
 
 
 export default router

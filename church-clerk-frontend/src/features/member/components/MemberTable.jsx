@@ -1,5 +1,5 @@
 import { useContext, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext from "../member.store.js";
 
@@ -32,7 +32,7 @@ function formatDate(value) {
 function MemberTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(MemberContext);
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -127,7 +127,7 @@ function MemberTable({ onEdit, onDeleted }) {
                         type="button"
                         onClick={() => {
                           if (!row?._id) return;
-                          navigate(`/dashboard?page=member-details&id=${row._id}`, { state: { from: "members" } });
+                          toPage("member-details", { id: row._id }, { state: { from: "members" } });
                         }}
                         className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                       >
@@ -139,7 +139,7 @@ function MemberTable({ onEdit, onDeleted }) {
                           type="button"
                           onClick={() => {
                             if (!row?._id) return;
-                            navigate(`/dashboard?page=member-form&id=${row._id}`);
+                            toPage("member-form", { id: row._id });
                           }}
                           className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                         >

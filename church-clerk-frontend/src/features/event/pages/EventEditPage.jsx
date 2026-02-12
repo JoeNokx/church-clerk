@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { getEvent as apiGetEvent, updateEvent as apiUpdateEvent } from "../services/event.api.js";
 
@@ -31,6 +32,7 @@ function EventEditPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { toPage } = useDashboardNavigator();
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const eventId = params.get("id");
@@ -51,11 +53,11 @@ function EventEditPage() {
   const goBack = () => {
     const from = location?.state?.from;
     if (from === "programs-events") {
-      navigate("/dashboard?page=programs-events");
+      toPage("programs-events");
       return;
     }
     if (from === "event-details" && eventId) {
-      navigate(`/dashboard?page=event-details&id=${eventId}`);
+      toPage("event-details", { id: eventId });
       return;
     }
     navigate(-1);
@@ -140,7 +142,7 @@ function EventEditPage() {
 
     try {
       await apiUpdateEvent(eventId, payload);
-      navigate(`/dashboard?page=event-details&id=${eventId}`, { replace: true, state: { from: "programs-events" } });
+      toPage("event-details", { id: eventId }, { replace: true, state: { from: "programs-events" } });
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to update event");
     } finally {

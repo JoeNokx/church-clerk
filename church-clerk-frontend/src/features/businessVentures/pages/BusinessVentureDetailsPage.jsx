@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import ChurchContext from "../../church/church.store.js";
 import {
   getBusinessIncomeExpensesKPI,
@@ -542,6 +543,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title })
 function BusinessVentureDetailsPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
@@ -698,7 +700,7 @@ function BusinessVentureDetailsPage() {
           <div className="mt-2 text-sm text-gray-600">Missing business id.</div>
           <button
             type="button"
-            onClick={() => navigate("/dashboard?page=business-ventures")}
+            onClick={() => toPage("business-ventures")}
             className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
             Back
@@ -714,7 +716,7 @@ function BusinessVentureDetailsPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate("/dashboard?page=business-ventures")}
+            onClick={() => toPage("business-ventures")}
             className="text-sm font-semibold text-gray-600 hover:text-gray-900"
           >
             ← Back

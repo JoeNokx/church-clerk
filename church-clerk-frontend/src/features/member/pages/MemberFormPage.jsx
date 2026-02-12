@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
@@ -101,6 +102,7 @@ function MemberFormPageInner() {
   const store = useContext(MemberContext);
   const location = useLocation();
   const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const memberId = params.get("id");
@@ -391,7 +393,7 @@ function MemberFormPageInner() {
         await store?.createMember(payload);
       }
 
-      navigate("/dashboard?page=members");
+      toPage("members");
     } catch (e2) {
       const message = e2?.response?.data?.error || e2?.response?.data?.message || e2?.message || "Request failed";
       setError(message);
@@ -408,7 +410,7 @@ function MemberFormPageInner() {
 
         <button
           type="button"
-          onClick={() => navigate("/dashboard?page=members")}
+          onClick={() => toPage("members")}
           className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
         >
           Back

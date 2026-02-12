@@ -3,7 +3,7 @@ import http from "../../../../shared/services/http.js";
 export const uploadEventAttendanceFile = async (eventId, file) => {
   const formData = new FormData();
   formData.append("file", file);
-  return await http.post(`/event/events/${eventId}/attendance-files`, formData, { timeout: 60000 });
+  return await http.post(`/event/events/${eventId}/attendance-files`, formData, { timeout: 300000 });
 };
 
 export const getEventAttendanceFiles = async (eventId) => {

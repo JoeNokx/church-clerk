@@ -12,8 +12,8 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Logged in but no church (and not superadmin) → register church
-  if (!user.church && user.role !== "superadmin" && user.role !== "super_admin") {
+  // Logged in but no church → register church
+  if (!user.church) {
     if (location.pathname !== "/register-church") {
       return <Navigate to="/register-church" replace />;
     }

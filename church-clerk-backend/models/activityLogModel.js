@@ -5,12 +5,22 @@ const activityLogSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+    },
+    userName: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    userRole: {
+      type: String,
+      trim: true,
+      default: ""
     },
     church: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Church",
-      required: true,
+      required: false,
     },
     action: {
       type: String,
@@ -19,18 +29,22 @@ const activityLogSchema = new mongoose.Schema(
     },
     module: {
       type: String,
-      enum: [
-        "Members",
-        "Finance",
-        "Attendance",
-        "Events",
-        "Announcements",
-        "Projects",
-        "Dashboard",
-        "Settings",
-        "Authentication",
-      ],
       required: true,
+    },
+    resource: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    httpMethod: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    path: {
+      type: String,
+      trim: true,
+      default: ""
     },
     description: {
       type: String,
@@ -39,12 +53,42 @@ const activityLogSchema = new mongoose.Schema(
     ipAddress: {
       type: String,
     },
+    browser: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    os: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    deviceType: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    model: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    userAgent: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    responseStatusCode: {
+      type: Number,
+      default: 0
+    },
     status: {
       type: String,
       enum: ["Success", "Failed"],
       default: "Success",
     },
   },
+
   { timestamps: true }
 );
 

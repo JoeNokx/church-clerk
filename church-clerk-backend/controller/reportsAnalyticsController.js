@@ -741,6 +741,65 @@ async function buildModuleReport({ moduleKey, churchId, from, to }) {
     };
   }
 
+  if (module === "tithe-individual") {
+    const match = { church: churchId, ...rangeMatch("date") };
+    const individuals = await TitheIndividual.find(match)
+      .select("member payerName amount date paymentMethod")
+      .populate("member", "firstName lastName")
+      .sort({ date: -1 })
+      .limit(2000)
+      .lean();
+
+    const rows = (individuals || []).map((r) => ({
+      payer: r?.member ? [r.member?.firstName, r.member?.lastName].filter(Boolean).join(" ") : r?.payerName || "—",
+      date: r?.date ? new Date(r.date).toISOString().slice(0, 10) : "—",
+      amount: clampToNumber(r?.amount),
+      paymentMethod: r?.paymentMethod || "—"
+    }));
+
+    const availableColumns = [
+      { key: "payer", label: "Payer" },
+      { key: "date", label: "Date" },
+      { key: "amount", label: "Amount" },
+      { key: "paymentMethod", label: "Payment Method" }
+    ];
+
+    return {
+      title: "Tithe (Individual)",
+      columns: availableColumns,
+      availableColumns,
+      rows
+    };
+  }
+
+  if (module === "tithe-aggregate") {
+    const match = { church: churchId, ...rangeMatch("date") };
+    const aggregates = await TitheAggregate.find(match)
+      .select("amount date description")
+      .sort({ date: -1 })
+      .limit(2000)
+      .lean();
+
+    const rows = (aggregates || []).map((r) => ({
+      date: r?.date ? new Date(r.date).toISOString().slice(0, 10) : "—",
+      amount: clampToNumber(r?.amount),
+      description: r?.description || "—"
+    }));
+
+    const availableColumns = [
+      { key: "date", label: "Date" },
+      { key: "amount", label: "Amount" },
+      { key: "description", label: "Description" }
+    ];
+
+    return {
+      title: "Tithe (Aggregate)",
+      columns: availableColumns,
+      availableColumns,
+      rows
+    };
+  }
+
   if (module === "offerings") {
     const match = { church: churchId, ...rangeMatch("serviceDate") };
     const rows = await Offering.find(match)
@@ -1194,9 +1253,9 @@ function writePdfReport({ report, res, fileName }) {
 
   const k = report?.kpis || {};
   const rows = [
-    ["Total Income", formatCurrency(k.totalIncome)],
-    ["Total Expenses", formatCurrency(k.totalExpenses)],
-    ["Surplus / Deficit", formatCurrency(k.surplus)],
+    ["Overall Revenue", formatCurrency(k.totalIncome)],
+    ["Overall Expenses", formatCurrency(k.totalExpenses)],
+    ["Overall Surplus / Deficit", formatCurrency(k.surplus)],
     ["New Members", String(k.newMembers ?? 0)],
     ["Total Attendance", String(k.totalAttendance ?? 0)]
   ];
@@ -1237,9 +1296,9 @@ async function writeExcelReport({ report, res, fileName }) {
 
   const k = report?.kpis || {};
   kpiSheet.addRow({ metric: "Period", value: report?.period?.label || "—" });
-  kpiSheet.addRow({ metric: "Total Income", value: clampToNumber(k.totalIncome) });
-  kpiSheet.addRow({ metric: "Total Expenses", value: clampToNumber(k.totalExpenses) });
-  kpiSheet.addRow({ metric: "Surplus / Deficit", value: clampToNumber(k.surplus) });
+  kpiSheet.addRow({ metric: "Overall Revenue", value: clampToNumber(k.totalIncome) });
+  kpiSheet.addRow({ metric: "Overall Expenses", value: clampToNumber(k.totalExpenses) });
+  kpiSheet.addRow({ metric: "Overall Surplus / Deficit", value: clampToNumber(k.surplus) });
   kpiSheet.addRow({ metric: "New Members", value: clampToNumber(k.newMembers) });
   kpiSheet.addRow({ metric: "Total Attendance", value: clampToNumber(k.totalAttendance) });
 
@@ -1392,10 +1451,27 @@ const exportReportsAnalyticsReport = async (req, res) => {
       : "all-time";
     const fileName = `report-${toSafeFileName(moduleKey)}-${toSafeFileName(periodLabel)}.${ext}`;
 
+    const availableColumns = Array.isArray(report?.availableColumns) && report.availableColumns.length
+      ? report.availableColumns
+      : report?.columns;
+
+    const fieldsRaw = String(req.query?.fields || "").trim();
+    const requestedKeys = fieldsRaw
+      ? fieldsRaw.split(",").map((k) => String(k || "").trim()).filter(Boolean)
+      : [];
+
+    const exportColumns = requestedKeys.length && Array.isArray(availableColumns)
+      ? requestedKeys
+          .map((key) => availableColumns.find((c) => c.key === key))
+          .filter(Boolean)
+      : report?.columns;
+
+    const finalColumns = Array.isArray(exportColumns) && exportColumns.length ? exportColumns : report?.columns;
+
     if (format === "excel") {
       await writeExcelTableReport({
         title: report?.title,
-        columns: report?.columns,
+        columns: finalColumns,
         rows: report?.rows,
         res,
         fileName
@@ -1405,7 +1481,7 @@ const exportReportsAnalyticsReport = async (req, res) => {
 
     writePdfTableReport({
       title: report?.title,
-      columns: report?.columns,
+      columns: finalColumns,
       rows: report?.rows,
       res,
       fileName

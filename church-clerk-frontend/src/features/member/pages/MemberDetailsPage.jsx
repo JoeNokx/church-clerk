@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
@@ -87,6 +88,7 @@ function MemberDetailsPageInner() {
   const store = useContext(MemberContext);
   const location = useLocation();
   const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const memberId = params.get("id");
@@ -170,11 +172,11 @@ function MemberDetailsPageInner() {
             type="button"
             onClick={() => {
               if (from === "dashboard") {
-                navigate("/dashboard");
+                toPage("dashboard");
                 return;
               }
               if (from === "members") {
-                navigate("/dashboard?page=members");
+                toPage("members");
                 return;
               }
               navigate(-1);
@@ -187,7 +189,7 @@ function MemberDetailsPageInner() {
           {canEdit && memberId && (
             <button
               type="button"
-              onClick={() => navigate(`/dashboard?page=member-form&id=${memberId}`)}
+              onClick={() => toPage("member-form", { id: memberId })}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
               Edit

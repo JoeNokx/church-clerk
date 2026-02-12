@@ -14,7 +14,29 @@ export const ROLE_PERMISSIONS = {
   },
 
   supportadmin: {
-    __all__: true
+    dashboard: ["read", "create", "update", "delete"],
+    branches: ["read", "create", "update", "delete"],
+    members: ["read", "create", "update", "delete"],
+    attendance: ["read", "create", "update", "delete"],
+    visitors: ["read", "create", "update", "delete"],
+    events: ["read", "create", "update", "delete"],
+    announcements: ["read", "create", "update", "delete"],
+    reportsAnalytics: ["read"],
+    billing: ["read"],
+    referrals: ["read"],
+    settings: ["read", "create", "update", "delete"],
+    support: ["read"],
+
+    // Finance modules (view-only)
+    tithe: ["read"],
+    churchProjects: ["read"],
+    specialFunds: ["read"],
+    offerings: ["read"],
+    welfare: ["read"],
+    pledges: ["read"],
+    businessVentures: ["read"],
+    expenses: ["read"],
+    financialStatement: ["read"]
   },
 
   // CHURCH ROLES

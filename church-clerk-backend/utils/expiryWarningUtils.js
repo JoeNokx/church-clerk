@@ -1,8 +1,10 @@
 export const getExpiryInfo = (subscription) => {
   const today = new Date();
 
+  const isTrial = subscription.status === "free trial" || subscription.status === "trialing";
+
   const expiryDate =
-    subscription.status === "trialing"
+    isTrial
       ? subscription.trialEnd
       : subscription.nextBillingDate;
 
@@ -15,7 +17,7 @@ export const getExpiryInfo = (subscription) => {
     return {
       isExpiring: true,
       daysRemaining: diffDays,
-      type: subscription.status === "trialing"
+      type: isTrial
         ? "trial_expiry"
         : "expiry_warning"
     };

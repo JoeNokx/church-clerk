@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import PledgeContext, { PledgeProvider } from "../pledge.store.js";
@@ -451,7 +451,7 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
 }
 
 function PledgesPageInner() {
-  const navigate = useNavigate();
+  const { toPage } = useDashboardNavigator();
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(PledgeContext);
 
@@ -575,7 +575,7 @@ function PledgesPageInner() {
 
   const viewDetails = (row) => {
     if (!row?._id) return;
-    navigate(`/dashboard?page=pledge-details&id=${row._id}`);
+    toPage("pledge-details", { id: row._id });
   };
 
   const openDelete = (row) => {
