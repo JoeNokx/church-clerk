@@ -156,6 +156,9 @@ export const addBankPaymentMethod = async (req, res) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
+    const church = await Church.findById(churchId).lean();
+    const country = String(church?.country || "").trim().toLowerCase();
+
     const currency = "GHS";
 
     const resolved = await paystackResolveBankAccount({
@@ -228,6 +231,9 @@ export const updatePaymentMethod = async (req, res) => {
     }
 
     if (type === "mobile_money") {
+      if (country !== "ghana") {
+        return res.status(400).json({ message: "Mobile money is only available for churches in Ghana" });
+      }
       const { provider, phone } = req.body;
       const normalizedProvider = String(provider || "").trim().toLowerCase();
       let normalizedPhone = String(phone || "").replace(/\D+/g, "");
@@ -573,6 +579,12 @@ export const addMobileMoneyPaymentMethod = async (req, res) => {
     const churchId = req.activeChurch?._id;
     if (!churchId) {
       return res.status(400).json({ message: "Active church is required" });
+    }
+
+    const church = await Church.findById(churchId).lean();
+    const country = String(church?.country || "").trim().toLowerCase();
+    if (country !== "ghana") {
+      return res.status(400).json({ message: "Mobile money is only available for churches in Ghana" });
     }
 
     const { provider, phone } = req.body;

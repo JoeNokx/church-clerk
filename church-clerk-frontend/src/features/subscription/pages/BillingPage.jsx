@@ -293,7 +293,7 @@ function BillingPage() {
 
   const savedPaymentMethods = useMemo(() => {
     const rows = Array.isArray(subscription?.paymentMethods) ? subscription.paymentMethods : [];
-    return rows
+    const filteredRows = rows
       .map((m) => ({
         ...m,
         type: m?.type || "mobile_money"
@@ -302,6 +302,8 @@ function BillingPage() {
         const t = String(m?.type || "");
         return t === "mobile_money" || t === "card";
       });
+    if (!isGhana) return filteredRows.filter((m) => String(m?.type || "").toLowerCase() === "card");
+    return filteredRows;
   }, [subscription]);
 
   const latestPaymentAttempt = useMemo(() => {
@@ -783,7 +785,9 @@ function BillingPage() {
           <div>
             <div className="text-sm font-semibold text-gray-900">Payment Methods</div>
             <div className="text-xs text-gray-500">Manage your payment information</div>
-            <div className="mt-2 text-xs text-blue-700">Payment options: Visa/Mastercard, Mobile Money (GHS only)</div>
+            <div className="mt-2 text-xs text-blue-700">
+              {isGhana ? "Payment options: Visa/Mastercard, Mobile Money" : "Payment options: Visa/Mastercard"}
+            </div>
           </div>
           <button
             type="button"
@@ -918,9 +922,13 @@ function BillingPage() {
             >
               <option value="">Select payment method</option>
               <option value="card">Visa/Mastercard</option>
-              <option value="mtn">MTN Mobile Money</option>
-              <option value="vod">Telecel Cash</option>
-              <option value="tgo">AirtelTigo Money</option>
+              {isGhana ? (
+                <>
+                  <option value="mtn">MTN Mobile Money</option>
+                  <option value="vod">Telecel Cash</option>
+                  <option value="tgo">AirtelTigo Money</option>
+                </>
+              ) : null}
             </select>
 
             {newProvider === "card" ? (
@@ -1071,6 +1079,11 @@ function BillingPage() {
                 onClick={async () => {
                   if (!newProvider) {
                     setAddMethodError("Please select a payment provider");
+                    return;
+                  }
+
+                  if (!isGhana && newProvider !== "card") {
+                    setAddMethodError("Mobile money is only available for churches in Ghana");
                     return;
                   }
 

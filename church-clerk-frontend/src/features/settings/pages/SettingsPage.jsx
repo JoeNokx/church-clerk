@@ -6,6 +6,7 @@ import ChurchContext from "../../church/church.store.js";
 import { getChurchProfile, searchHeadquartersChurches, updateChurchProfile } from "../../church/services/church.api.js";
 import Select from "react-select";
 import currencyCodes from "currency-codes";
+import { Country, State } from "country-state-city";
 import { updateMyPassword, updateMyProfile } from "../../auth/services/auth.api.js";
 import { getActivityLogs } from "../../activityLog/services/activityLog.api.js";
 import {
@@ -176,13 +177,52 @@ function SettingsPage() {
   const hqBoxRef = useRef(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
-  const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
   const [region, setRegion] = useState("");
   const [country, setCountry] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [stateCode, setStateCode] = useState("");
   const [currency, setCurrency] = useState("");
   const [foundedDate, setFoundedDate] = useState("");
   const [referralCodeInput, setReferralCodeInput] = useState("");
+
+  const countryOptions = useMemo(() => {
+    return Country.getAllCountries().map((c) => ({
+      value: c.isoCode,
+      label: c.name
+    }));
+  }, []);
+
+  const selectedCountryOption = useMemo(() => {
+    const code = String(countryCode || "").trim();
+    if (code) {
+      return countryOptions.find((o) => String(o.value) === code) || null;
+    }
+
+    const label = String(country || "").trim().toLowerCase();
+    if (!label) return null;
+    return countryOptions.find((o) => String(o.label || "").trim().toLowerCase() === label) || null;
+  }, [country, countryCode, countryOptions]);
+
+  const regionOptions = useMemo(() => {
+    const code = String(countryCode || "").trim();
+    if (!code) return [];
+    return State.getStatesOfCountry(code).map((s) => ({
+      value: s.isoCode,
+      label: s.name
+    }));
+  }, [countryCode]);
+
+  const selectedRegionOption = useMemo(() => {
+    const code = String(stateCode || "").trim();
+    if (code) {
+      return regionOptions.find((o) => String(o.value) === code) || null;
+    }
+
+    const label = String(region || "").trim().toLowerCase();
+    if (!label) return null;
+    return regionOptions.find((o) => String(o.label || "").trim().toLowerCase() === label) || null;
+  }, [region, regionOptions, stateCode]);
 
   const currencyOptions = useMemo(() => {
     const rows = Array.isArray(currencyCodes?.data) ? currencyCodes.data : [];
@@ -325,10 +365,26 @@ function SettingsPage() {
         setHqDropdownOpen(false);
         setPhoneNumber(church?.phoneNumber || "");
         setEmail(church?.email || user?.email || "");
-        setStreetAddress(church?.streetAddress || "");
         setCity(church?.city || "");
         setRegion(church?.region || "");
         setCountry(church?.country || "");
+
+        const nextCountry = String(church?.country || "").trim().toLowerCase();
+        const matchedCountry = nextCountry
+          ? countryOptions.find((o) => String(o.label || "").trim().toLowerCase() === nextCountry) || null
+          : null;
+        setCountryCode(matchedCountry?.value || "");
+
+        if (matchedCountry?.value) {
+          const nextRegion = String(church?.region || "").trim().toLowerCase();
+          const states = State.getStatesOfCountry(matchedCountry.value);
+          const matchedState = nextRegion
+            ? (Array.isArray(states) ? states : []).find((s) => String(s.name || "").trim().toLowerCase() === nextRegion) || null
+            : null;
+          setStateCode(matchedState?.isoCode || "");
+        } else {
+          setStateCode("");
+        }
         setCurrency(
           String(church?.currency || "").trim().toUpperCase() ||
             (String(church?.country || "").trim().toLowerCase() === "ghana" ? "GHS" : "USD")
@@ -349,7 +405,7 @@ function SettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeChurch?._id, canRead, user?.email]);
+  }, [activeChurch?._id, canRead, countryOptions, user?.email]);
 
   useEffect(() => {
     if (!isBranch) {
@@ -429,7 +485,6 @@ function SettingsPage() {
         parentChurch: type === "Branch" ? parentChurchId : null,
         phoneNumber,
         email,
-        streetAddress,
         city,
         region,
         country,
@@ -1274,50 +1329,92 @@ function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address (optional)</label>
-                <input
-                  type="text"
-                  placeholder="Street address"
-                  value={streetAddress}
-                  onChange={(e) => setStreetAddress(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-                  disabled={!canWrite}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <Select
+                  inputId="church-country"
+                  isSearchable
+                  isClearable
+                  options={countryOptions}
+                  value={selectedCountryOption}
+                  onChange={(opt) => {
+                    if (!opt) {
+                      setCountry("");
+                      setCountryCode("");
+                      setRegion("");
+                      setStateCode("");
+                      return;
+                    }
+
+                    setCountry(String(opt?.label || ""));
+                    setCountryCode(String(opt?.value || ""));
+                    setRegion("");
+                    setStateCode("");
+                  }}
+                  placeholder="Select country"
+                  isDisabled={!canWrite}
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      minHeight: "44px",
+                      borderRadius: "0.5rem",
+                      borderColor: state.isFocused ? "#1e3a8a" : "#d1d5db",
+                      boxShadow: state.isFocused ? "0 0 0 2px rgba(30,58,138,0.2)" : "none",
+                      ":hover": { borderColor: state.isFocused ? "#1e3a8a" : "#9ca3af" }
+                    }),
+                    valueContainer: (base) => ({ ...base, padding: "0 0.75rem" }),
+                    input: (base) => ({ ...base, margin: 0, padding: 0 }),
+                    placeholder: (base) => ({ ...base, color: "#9ca3af" }),
+                    singleValue: (base) => ({ ...base, color: "#111827" })
+                  }}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                <Select
+                  inputId="church-region"
+                  isSearchable
+                  isClearable
+                  options={regionOptions}
+                  value={selectedRegionOption}
+                  onChange={(opt) => {
+                    if (!opt) {
+                      setRegion("");
+                      setStateCode("");
+                      return;
+                    }
+
+                    setRegion(String(opt?.label || ""));
+                    setStateCode(String(opt?.value || ""));
+                  }}
+                  placeholder={countryCode ? "Select region" : "Select country first"}
+                  isDisabled={!canWrite || !countryCode}
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      minHeight: "44px",
+                      borderRadius: "0.5rem",
+                      borderColor: state.isFocused ? "#1e3a8a" : "#d1d5db",
+                      boxShadow: state.isFocused ? "0 0 0 2px rgba(30,58,138,0.2)" : "none",
+                      ":hover": { borderColor: state.isFocused ? "#1e3a8a" : "#9ca3af" }
+                    }),
+                    valueContainer: (base) => ({ ...base, padding: "0 0.75rem" }),
+                    input: (base) => ({ ...base, margin: 0, padding: 0 }),
+                    placeholder: (base) => ({ ...base, color: "#9ca3af" }),
+                    singleValue: (base) => ({ ...base, color: "#111827" })
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                 <input
                   type="text"
-                  placeholder="City"
+                  placeholder="Enter your location"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                   required
-                  disabled={!canWrite}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Region (optional)</label>
-                <input
-                  type="text"
-                  placeholder="State / Region"
-                  value={region}
-                  onChange={(e) => setRegion(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-                  disabled={!canWrite}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Country (optional)</label>
-                <input
-                  type="text"
-                  placeholder="Country"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                   disabled={!canWrite}
                 />
               </div>
@@ -1347,6 +1444,18 @@ function SettingsPage() {
                     singleValue: (base) => ({ ...base, color: "#111827" })
                   }}
                 />
+                <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 text-amber-700" aria-hidden="true">
+                    <path
+                      d="M12 9v4m0 4h.01M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <div>Currency can be updated, but it will be locked after you start making transactions.</div>
+                </div>
               </div>
 
               <div>

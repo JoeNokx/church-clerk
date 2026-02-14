@@ -4,6 +4,18 @@ export function formatMoney(value, currency) {
 
   if (!cur) return v.toLocaleString();
 
+  if (cur === "USD") {
+    try {
+      const nf = new Intl.NumberFormat(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      });
+      return `$${nf.format(v)}`;
+    } catch {
+      return `$${v.toLocaleString()}`;
+    }
+  }
+
   try {
     const nf = new Intl.NumberFormat(undefined, {
       style: "currency",
