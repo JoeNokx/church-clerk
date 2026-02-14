@@ -1,6 +1,8 @@
 import { useContext, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -20,6 +22,8 @@ function memberName(member) {
 function TitheIndividualTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(TitheContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -102,7 +106,7 @@ function TitheIndividualTable({ onEdit, onDeleted }) {
                     <div className="font-semibold text-gray-900">{memberName(row?.member)}</div>
                   </div>
                 </td>
-                <td className="px-6 py-3 text-blue-700">GHS {Number(row?.amount || 0).toLocaleString()}</td>
+                <td className="px-6 py-3 text-blue-700">{formatMoney(row?.amount || 0, currency)}</td>
                 <td className="px-6 py-3">{formatDate(row?.date)}</td>
                 <td className="px-6 py-3">
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">

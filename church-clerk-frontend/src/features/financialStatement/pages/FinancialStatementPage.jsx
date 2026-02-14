@@ -1,14 +1,16 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
+import ChurchContext from "../../church/church.store.js";
 import {
   getAnnualFinancialStatement,
   getMonthlyFinancialStatement,
   getQuarterlyFinancialStatement,
   exportFinancialStatement
 } from "../services/financialStatement.api.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
+function formatCurrency(value, currency) {
+  return formatMoney(value, currency);
 }
 
 function formatPercent(value) {
@@ -67,6 +69,9 @@ function buildYearOptions({ fromYear, toYear }) {
 }
 
 function FinancialStatementPage() {
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const money = useMemo(() => (value) => formatCurrency(value, currency), [currency]);
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("financialStatement", "read") : true), [can]);
 
@@ -146,11 +151,11 @@ function FinancialStatementPage() {
     if (!statement) return "";
 
     const periodLabel = statement?.period?.label || "this period";
-    const totalIncome = formatCurrency(kpi.totalIncome);
-    const totalExpenses = formatCurrency(kpi.totalExpenses);
+    const totalIncome = money(kpi.totalIncome);
+    const totalExpenses = money(kpi.totalExpenses);
     const surplusValue = Number(kpi.surplus || 0);
     const surplusLabel = surplusValue >= 0 ? "surplus" : "deficit";
-    const surplusAmount = formatCurrency(Math.abs(surplusValue));
+    const surplusAmount = money(Math.abs(surplusValue));
 
     const topIncomeLabel = statement?.highlights?.topIncomeSource?.label;
     const topIncomePct = formatPercentNumber(statement?.highlights?.topIncomeSource?.percentage);
@@ -384,7 +389,7 @@ function FinancialStatementPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-xs font-semibold text-gray-500">Total Income</div>
-                  <div className="mt-2 text-lg font-semibold text-gray-900">{formatCurrency(kpi.totalIncome)}</div>
+                  <div className="mt-2 text-lg font-semibold text-gray-900">{money(kpi.totalIncome)}</div>
                   <div className="mt-1 text-xs font-semibold text-green-600">{formatPercent(kpi.incomeChangePct)} {comparisonLabel}</div>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
@@ -400,7 +405,7 @@ function FinancialStatementPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-xs font-semibold text-gray-500">Total Expenses</div>
-                  <div className="mt-2 text-lg font-semibold text-gray-900">{formatCurrency(kpi.totalExpenses)}</div>
+                  <div className="mt-2 text-lg font-semibold text-gray-900">{money(kpi.totalExpenses)}</div>
                   <div className="mt-1 text-xs font-semibold text-orange-600">{formatPercent(kpi.expensesChangePct)} {comparisonLabel}</div>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
@@ -417,7 +422,7 @@ function FinancialStatementPage() {
                 <div>
                   <div className="text-xs font-semibold text-gray-500">Surplus / Deficit</div>
                   <div className={`mt-2 text-lg font-semibold ${Number(kpi.surplus || 0) >= 0 ? "text-gray-900" : "text-red-700"}`}>
-                    {formatCurrency(kpi.surplus)}
+                    {money(kpi.surplus)}
                   </div>
                   <div className="mt-1 text-xs font-semibold text-blue-700">{formatPercent(kpi.surplusPctOfIncome)} of income</div>
                 </div>
@@ -448,7 +453,7 @@ function FinancialStatementPage() {
                       <div key={row.key} className="space-y-2 rounded-lg border border-gray-200 p-3">
                         <div className="flex items-center justify-between gap-4">
                           <div className="text-sm font-semibold text-gray-900">{row.label}</div>
-                          <div className="text-sm font-semibold text-gray-900">{formatCurrency(row.amount)}</div>
+                          <div className="text-sm font-semibold text-gray-900">{money(row.amount)}</div>
                         </div>
                         <div className="flex items-center justify-between gap-4 text-xs text-gray-500">
                           <div>{Math.round(Number(row.percentage || 0) * 10) / 10}% of income</div>
@@ -482,7 +487,7 @@ function FinancialStatementPage() {
                       <div key={row.key} className="space-y-2 rounded-lg border border-gray-200 p-3">
                         <div className="flex items-center justify-between gap-4">
                           <div className="text-sm font-semibold text-gray-900">{row.label}</div>
-                          <div className="text-sm font-semibold text-gray-900">{formatCurrency(row.amount)}</div>
+                          <div className="text-sm font-semibold text-gray-900">{money(row.amount)}</div>
                         </div>
                         <div className="flex items-center justify-between gap-4 text-xs text-gray-500">
                           <div>{Math.round(Number(row.percentage || 0) * 10) / 10}% of expenses</div>

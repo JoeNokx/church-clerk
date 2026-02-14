@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   ResponsiveContainer,
   XAxis,
@@ -17,10 +17,8 @@ import {
   getReportsAnalyticsReport,
   exportReportsAnalyticsReport
 } from "../services/reportsAnalytics.api.js";
-
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
-}
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function safeNumber(n) {
   const v = Number(n || 0);
@@ -179,6 +177,9 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
 }
 
 function ReportsAnalyticsPage() {
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const formatCurrency = useCallback((value) => formatMoney(value, currency), [currency]);
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(
     () => (typeof can === "function" ? can("reportsAnalytics", "read") : true),

@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import {
   createChurchProject,
   deleteChurchProject,
@@ -10,8 +11,8 @@ import {
 import { createProjectContribution } from "../contributions/services/projectContributions.api.js";
 import { createProjectExpense } from "../expenses/services/projectExpenses.api.js";
 
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
+function formatCurrency(value, currency) {
+  return formatMoney(value, currency);
 }
 
 function formatPercent(value) {
@@ -67,7 +68,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   );
 }
 
-function AddProjectModal({ open, onClose, onSuccess, disabled }) {
+function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -141,7 +142,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Target Amount (GHS)</label>
+          <label className="block text-xs font-semibold text-gray-500">{currency ? `Target Amount (${currency})` : "Target Amount"}</label>
           <input
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
@@ -182,7 +183,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled }) {
   );
 }
 
-function ContributionModal({ open, onClose, project, disabled, onSuccess }) {
+function ContributionModal({ open, onClose, project, disabled, onSuccess, currency }) {
   const [contributorName, setContributorName] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
@@ -259,7 +260,7 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess }) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Amount (GHS)</label>
+            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -311,7 +312,7 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess }) {
   );
 }
 
-function ExpenseModal({ open, onClose, project, disabled, onSuccess }) {
+function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency }) {
   const [spentOn, setSpentOn] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
@@ -388,7 +389,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess }) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Amount (GHS)</label>
+            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -444,6 +445,7 @@ function ChurchProjectsPage() {
   const { toPage } = useDashboardNavigator();
 
   const churchCtx = useContext(ChurchContext);
+  const currency = String(churchCtx?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const activeChurch = churchCtx?.activeChurch;
   const canEdit = activeChurch?._id ? activeChurch?.canEdit !== false : true;
 
@@ -586,17 +588,17 @@ function ChurchProjectsPage() {
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Raised</div>
-          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(totals.totalRaised)}</div>
+          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(totals.totalRaised, currency)}</div>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Target</div>
-          <div className="mt-3 text-2xl font-semibold text-purple-700">{formatCurrency(totals.totalTarget)}</div>
+          <div className="mt-3 text-2xl font-semibold text-purple-700">{formatCurrency(totals.totalTarget, currency)}</div>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Spent</div>
-          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(totals.totalSpent)}</div>
+          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(totals.totalSpent, currency)}</div>
         </div>
       </div>
 
@@ -618,7 +620,7 @@ function ChurchProjectsPage() {
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-gray-900 truncate">{p?.name || "—"}</div>
                     <div className="mt-1 text-xs text-gray-500">
-                      Target: {formatCurrency(target)} | Raised: {formatCurrency(raised)} | Left: {formatCurrency(target - raised)}
+                      Target: {formatCurrency(target, currency)} | Raised: {formatCurrency(raised, currency)} | Left: {formatCurrency(target - raised, currency)}
                     </div>
                   </div>
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
@@ -637,15 +639,15 @@ function ChurchProjectsPage() {
                 <div className="mt-5 grid grid-cols-3 gap-3">
                   <div>
                     <div className="text-xs font-semibold text-gray-500">Amount Raised</div>
-                    <div className="mt-1 text-sm font-semibold text-green-700">{formatCurrency(raised)}</div>
+                    <div className="mt-1 text-sm font-semibold text-green-700">{formatCurrency(raised, currency)}</div>
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-gray-500">Amount Spent</div>
-                    <div className="mt-1 text-sm font-semibold text-orange-600">{formatCurrency(spent)}</div>
+                    <div className="mt-1 text-sm font-semibold text-orange-600">{formatCurrency(spent, currency)}</div>
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-gray-500">Balance</div>
-                    <div className="mt-1 text-sm font-semibold text-blue-900">{formatCurrency(balance)}</div>
+                    <div className="mt-1 text-sm font-semibold text-blue-900">{formatCurrency(balance, currency)}</div>
                   </div>
                 </div>
 
@@ -707,6 +709,7 @@ function ChurchProjectsPage() {
       <AddProjectModal
         open={addProjectOpen}
         disabled={!canEdit}
+        currency={currency}
         onClose={() => setAddProjectOpen(false)}
         onSuccess={() => {
           setAddProjectOpen(false);
@@ -717,6 +720,7 @@ function ChurchProjectsPage() {
       <ContributionModal
         open={contributionOpen}
         disabled={!canEdit}
+        currency={currency}
         project={activeProject}
         onClose={() => {
           setContributionOpen(false);
@@ -732,6 +736,7 @@ function ChurchProjectsPage() {
       <ExpenseModal
         open={expenseOpen}
         disabled={!canEdit}
+        currency={currency}
         project={activeProject}
         onClose={() => {
           setExpenseOpen(false);
@@ -747,6 +752,7 @@ function ChurchProjectsPage() {
       <EditProjectModal
         open={editProjectOpen}
         initialData={editProjectRow}
+        currency={currency}
         onClose={() => {
           setEditProjectOpen(false);
           setEditProjectRow(null);
@@ -773,7 +779,7 @@ function ChurchProjectsPage() {
   );
 }
 
-function EditProjectModal({ open, onClose, onSuccess, initialData }) {
+function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -849,7 +855,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Target Amount (GHS)</label>
+          <label className="block text-xs font-semibold text-gray-500">{currency ? `Target Amount (${currency})` : "Target Amount"}</label>
           <input
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}

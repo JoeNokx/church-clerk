@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import {
@@ -10,20 +10,19 @@ import {
   getBillingInvoiceDownloadUrl,
   getMyBillingHistory,
   getMySubscription,
-  chargePaystackMobileMoney,
   initializePaystackPayment,
   removePaymentMethod,
+  updatePaymentMethod,
   verifyPaystackPayment
 } from "../services/subscription.api.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import MinistryPlusCustomPlanModal from "../../../shared/components/MinistryPlusCustomPlanModal.jsx";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
 
 function formatCurrency(amount, currency) {
-  const v = Number(amount || 0);
-  const c = String(currency || "").trim();
-  if (!c) return v.toLocaleString();
-  const symbol = c === "GHS" ? "₵" : c === "NGN" ? "₦" : c === "USD" ? "$" : "";
-  return symbol ? `${symbol}${v.toLocaleString()}` : `${c} ${v.toLocaleString()}`;
+  return formatMoney(amount, currency);
 }
 
 function formatShortDate(value) {
@@ -60,6 +59,7 @@ function providerLabel(provider) {
   if (v === "mtn") return "MTN Mobile Money";
   if (v === "vod") return "Telecel Cash";
   if (v === "tgo") return "AirtelTigo Money";
+  if (v === "ussd") return "Mobile Money / USSD";
   if (v === "card") return "Visa/Mastercard";
   return provider || "Mobile Money";
 }
@@ -144,11 +144,11 @@ function phoneEnding(phone) {
   return `Mobile Money ending in ${last}`;
 }
 
-function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = "max-w-2xl" }) {
+function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = "max-w-2xl", zIndexClass = "z-50" }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+    <div className={`fixed inset-0 ${zIndexClass} flex items-center justify-center bg-black/30 p-4`}>
       <div className={`w-full ${maxWidthClass} rounded-xl bg-white shadow-xl`}>
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
           <div>
@@ -175,6 +175,8 @@ function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = 
 
 function BillingPage() {
   const { user } = useAuth();
+  const churchStore = useContext(ChurchContext);
+  const activeChurch = churchStore?.activeChurch;
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
 
@@ -183,7 +185,6 @@ function BillingPage() {
   const [readOnly, setReadOnly] = useState(false);
   const [plans, setPlans] = useState([]);
   const [billingInterval, setBillingInterval] = useState("monthly");
-  const [selectedCurrency, setSelectedCurrency] = useState("");
   const [planId, setPlanId] = useState("");
   const [history, setHistory] = useState([]);
   const [historyPagination, setHistoryPagination] = useState({ currentPage: 1, nextPage: null, prevPage: null });
@@ -210,6 +211,7 @@ function BillingPage() {
   const [newCardExpiry, setNewCardExpiry] = useState("");
   const [newCardCvv, setNewCardCvv] = useState("");
   const [newCardHolderName, setNewCardHolderName] = useState("");
+  const [editingMethodId, setEditingMethodId] = useState(null);
   const [addMethodError, setAddMethodError] = useState("");
   const [addMethodFieldErrors, setAddMethodFieldErrors] = useState({});
   const [checkoutError, setCheckoutError] = useState("");
@@ -227,8 +229,34 @@ function BillingPage() {
     }));
   }, []);
 
-  const subscriptionCurrency = useMemo(() => subscription?.currency || "", [subscription]);
-  const checkoutCurrency = useMemo(() => selectedCurrency || subscriptionCurrency || "GHS", [selectedCurrency, subscriptionCurrency]);
+  const country = String(activeChurch?.country || "").trim().toLowerCase();
+  const isGhana = country === "ghana";
+  const [usdToGhs, setUsdToGhs] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (isGhana) {
+        setUsdToGhs(null);
+        return;
+      }
+
+      try {
+        const rate = await getUsdToGhsRate();
+        if (cancelled) return;
+        setUsdToGhs(rate);
+      } catch {
+        if (cancelled) return;
+        setUsdToGhs(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isGhana]);
+
+  const displayCurrency = isGhana || !usdToGhs ? "GHS" : "USD";
   const freeMonths = useMemo(() => subscription?.freeMonths || { earned: 0, used: 0 }, [subscription]);
   const freeRemaining = Math.max(0, Number(freeMonths?.earned || 0) - Number(freeMonths?.used || 0));
 
@@ -270,7 +298,10 @@ function BillingPage() {
         ...m,
         type: m?.type || "mobile_money"
       }))
-      .filter((m) => m?.type === "mobile_money" || m?.type === "card");
+      .filter((m) => {
+        const t = String(m?.type || "");
+        return t === "mobile_money" || t === "card";
+      });
   }, [subscription]);
 
   const latestPaymentAttempt = useMemo(() => {
@@ -304,18 +335,18 @@ function BillingPage() {
       const sub = subRes?.data?.subscription;
       const eff = subRes?.data?.effectivePlan;
       const ro = Boolean(subRes?.data?.readOnly);
-      const fetchedPlans = plansRes?.data?.plans || [];
+      const plansPayload = plansRes?.data?.data ?? plansRes?.data;
+      const fetchedPlans = plansPayload?.plans || [];
       const fetchedHistory = historyRes?.data?.history || [];
       const fetchedPagination = historyRes?.data?.pagination || { currentPage: 1 };
 
-      setSubscription(sub || null);
+      setSubscription(sub);
       setEffectivePlan(eff || null);
-      setReadOnly(ro);
-      setPlans(fetchedPlans);
+      setReadOnly(Boolean(subRes?.data?.readOnly));
       setHistory(Array.isArray(fetchedHistory) ? fetchedHistory : []);
       setHistoryPagination(fetchedPagination);
 
-      setSelectedCurrency((prev) => (prev ? prev : sub?.currency || "GHS"));
+      setPlans(Array.isArray(fetchedPlans) ? fetchedPlans : []);
 
       if (sub?.billingInterval) {
         setBillingInterval(sub.billingInterval);
@@ -325,7 +356,7 @@ function BillingPage() {
         setPlanId(sub.plan._id);
       } else if (eff?._id) {
         setPlanId(eff._id);
-      } else if (fetchedPlans[0]?._id) {
+      } else if (Array.isArray(fetchedPlans) && fetchedPlans[0]?._id) {
         setPlanId(fetchedPlans[0]._id);
       }
     } catch (e) {
@@ -416,12 +447,13 @@ function BillingPage() {
   const overviewInterval = subscription?.billingInterval || "monthly";
   const overviewIntervalLabel = overviewInterval === "halfYear" ? "6 months" : overviewInterval === "yearly" ? "12 months" : "month";
 
-  const currentPrice =
-    currentPlan?.pricing?.[subscriptionCurrency]?.[overviewInterval] ??
-    currentPlan?.priceByCurrency?.[subscriptionCurrency]?.[overviewInterval] ??
-    null;
-  const selectedPrice =
-    selectedPlan?.pricing?.[checkoutCurrency]?.[billingInterval] ?? selectedPlan?.priceByCurrency?.[checkoutCurrency]?.[billingInterval] ?? null;
+  const currentPriceGhs = currentPlan?.pricing?.GHS?.[overviewInterval] ?? currentPlan?.priceByCurrency?.GHS?.[overviewInterval] ?? null;
+  const currentPriceDisplay =
+    displayCurrency === "USD" && usdToGhs ? Number(currentPriceGhs || 0) / Number(usdToGhs || 1) : currentPriceGhs;
+
+  const selectedPriceGhs = selectedPlan?.pricing?.GHS?.[billingInterval] ?? selectedPlan?.priceByCurrency?.GHS?.[billingInterval] ?? null;
+  const selectedPriceDisplay =
+    displayCurrency === "USD" && usdToGhs ? Number(selectedPriceGhs || 0) / Number(usdToGhs || 1) : selectedPriceGhs;
   const nextBillingDate = computeNextBillingDate(subscription);
   const nextBillingText = nextBillingDate ? formatShortDate(nextBillingDate) : "—";
 
@@ -477,7 +509,7 @@ function BillingPage() {
       </div>
 
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
-        <div className="text-xs font-semibold text-gray-500">Current: {currentPlan?.name || "—"} Plan</div>
+        <div className="text-xs font-semibold text-gray-500">Current: {isFreeTrial ? "Free trial" : currentPlan?.name || "—"} Plan</div>
         <div className="mt-1 text-xs text-gray-600">
           {currentPlan?.memberLimit === null ? "Unlimited members" : `Up to ${Number(currentPlan?.memberLimit || 0).toLocaleString()} members`}
         </div>
@@ -524,35 +556,7 @@ function BillingPage() {
               </button>
             </div>
 
-            <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
-              <button
-                type="button"
-                onClick={() => setSelectedCurrency("GHS")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                  checkoutCurrency === "GHS" ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                GHS
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedCurrency("NGN")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                  checkoutCurrency === "NGN" ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                NGN
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedCurrency("USD")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                  checkoutCurrency === "USD" ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                USD
-              </button>
-            </div>
+            
           </div>
         </div>
       </div>
@@ -563,7 +567,8 @@ function BillingPage() {
           const isCurrent = id && String(id) === String(subscribedPlanId || "");
           const name = String(p?.name || "");
           const isMostPopular = name.toLowerCase() === "standard";
-          const price = p?.pricing?.[checkoutCurrency]?.[billingInterval] ?? p?.priceByCurrency?.[checkoutCurrency]?.[billingInterval] ?? 0;
+          const priceGhs = p?.pricing?.GHS?.[billingInterval] ?? p?.priceByCurrency?.GHS?.[billingInterval] ?? 0;
+          const priceDisplay = displayCurrency === "USD" && usdToGhs ? Number(priceGhs || 0) / Number(usdToGhs || 1) : priceGhs;
           const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
 
           const isFreeLite = name.toLowerCase() === "free lite";
@@ -599,7 +604,7 @@ function BillingPage() {
               ) : null}
 
               <div className="text-sm font-semibold text-gray-900">{name || "—"}</div>
-              <div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrency(price, checkoutCurrency)}</div>
+              <div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrency(priceDisplay, displayCurrency)}</div>
               <div className="text-xs text-gray-500">{per}</div>
 
               <div className="mt-4 space-y-2 text-xs text-gray-700">
@@ -711,23 +716,23 @@ function BillingPage() {
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <div className="text-xs font-semibold text-gray-500">Current Plan</div>
-            <div className="mt-1 text-lg font-semibold text-gray-900">{currentPlan?.name || "—"}</div>
+            <div className="mt-1 text-lg font-semibold text-gray-900">{isFreeTrial ? "Free trial" : currentPlan?.name || "—"}</div>
             <div className="text-xs text-gray-500">
-              {currentPrice ? `${formatCurrency(currentPrice, subscriptionCurrency)}/${overviewIntervalLabel}` : ""}
+              {currentPriceGhs ? `${formatCurrency(currentPriceDisplay, displayCurrency)}/${overviewIntervalLabel}` : ""}
             </div>
           </div>
 
           <div>
             <div className="text-xs font-semibold text-gray-500">Currency</div>
-            <div className="mt-2 text-sm font-semibold text-gray-900">{subscriptionCurrency || "—"}</div>
-            <div className="text-xs text-gray-500">Billing currency</div>
+            <div className="mt-2 text-sm font-semibold text-gray-900">{displayCurrency || "—"}</div>
+            <div className="text-xs text-gray-500">Display currency</div>
           </div>
 
           <div>
             <div className="text-xs font-semibold text-gray-500">Next Billing Date</div>
             <div className="mt-2 text-sm font-semibold text-gray-900">{nextBillingText}</div>
             <div className="text-xs text-gray-500">
-              You will be charged {currentPrice ? formatCurrency(currentPrice, subscriptionCurrency) : "—"} on this date
+              You will be charged {currentPriceGhs ? formatCurrency(currentPriceGhs, "GHS") : "—"} on this date
             </div>
           </div>
         </div>
@@ -778,7 +783,7 @@ function BillingPage() {
           <div>
             <div className="text-sm font-semibold text-gray-900">Payment Methods</div>
             <div className="text-xs text-gray-500">Manage your payment information</div>
-            <div className="mt-2 text-xs text-blue-700">Payment options: Visa/Mastercard (GHS/NGN/USD), Mobile Money (GHS only)</div>
+            <div className="mt-2 text-xs text-blue-700">Payment options: Visa/Mastercard, Mobile Money (GHS only)</div>
           </div>
           <button
             type="button"
@@ -790,6 +795,7 @@ function BillingPage() {
               setNewCardExpiry("");
               setNewCardCvv("");
               setNewCardHolderName("");
+              setEditingMethodId(null);
               setAddMethodError("");
               setAddMethodFieldErrors({});
             }}
@@ -828,6 +834,29 @@ function BillingPage() {
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700">Active</span>
                       )}
 
+                      {String(m?.type || "").toLowerCase() !== "card" ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (methodsLoading) return;
+                            setShowAddPaymentMethod(true);
+                            setEditingMethodId(m?._id || null);
+                            setNewProvider(String(m?.provider || ""));
+                            setNewPhone(String(m?.phone || ""));
+                            setNewCardNumber("");
+                            setNewCardExpiry("");
+                            setNewCardCvv("");
+                            setNewCardHolderName("");
+                            setAddMethodError("");
+                            setAddMethodFieldErrors({});
+                          }}
+                          disabled={methodsLoading}
+                          className="text-xs font-semibold text-blue-700 hover:underline disabled:opacity-60"
+                        >
+                          Edit
+                        </button>
+                      ) : null}
+
                       <button
                         type="button"
                         onClick={async () => {
@@ -861,13 +890,14 @@ function BillingPage() {
 
         <ModalShell
           open={showAddPaymentMethod}
-          title="Add Payment Method"
-          subtitle="Add a new payment method for GHS"
+          title={editingMethodId ? "Edit Payment Method" : "Add Payment Method"}
+          subtitle={editingMethodId ? "Update your payment method details" : "Add a new payment method"}
           onClose={() => {
             if (methodsLoading) return;
             setShowAddPaymentMethod(false);
           }}
           maxWidthClass="max-w-2xl"
+          zIndexClass="z-[80]"
         >
           <div>
             {addMethodError ? (
@@ -878,6 +908,7 @@ function BillingPage() {
             <select
               value={newProvider}
               onChange={(e) => {
+                if (editingMethodId) return;
                 setNewProvider(e.target.value);
                 setAddMethodError("");
                 setAddMethodFieldErrors({});
@@ -1005,12 +1036,12 @@ function BillingPage() {
                   onChange={(e) => {
                     const v = e.target.value;
                     setNewPhone(v);
-                    const digits = normalizeGhanaPhone(v);
-                    if (!digits) {
+                    const gh = normalizeGhanaPhone(v);
+                    if (!gh) {
                       setAddFieldError("phone", "Mobile number is required");
                       return;
                     }
-                    if (!isValidMomo(newProvider, digits)) {
+                    if (!isValidMomo(newProvider, gh)) {
                       setAddFieldError("phone", "Mobile number does not match selected provider");
                       return;
                     }
@@ -1046,6 +1077,21 @@ function BillingPage() {
                   setMethodsLoading(true);
                   setAddMethodError("");
                   try {
+                    if (editingMethodId) {
+                      const phoneDigits = normalizeGhanaPhone(newPhone);
+                      if (!isValidMomo(newProvider, phoneDigits)) {
+                        setAddMethodError("Mobile number does not match selected provider");
+                        return;
+                      }
+
+                      const res = await updatePaymentMethod(editingMethodId, { provider: newProvider, phone: phoneDigits });
+                      const nextSub = res?.data?.subscription || subscription;
+                      setSubscription(nextSub);
+                      setShowAddPaymentMethod(false);
+                      setEditingMethodId(null);
+                      return;
+                    }
+
                     if (newProvider === "card") {
                       const digits = String(newCardNumber || "").replace(/\D+/g, "");
                       if (!digits || digits.length < 13 || digits.length > 19 || !luhnCheck(digits)) {
@@ -1086,7 +1132,13 @@ function BillingPage() {
                         cvv: cvvDigits,
                         holderName
                       });
-                      setSubscription(res?.data?.subscription || subscription);
+                      const nextSub = res?.data?.subscription || subscription;
+                      setSubscription(nextSub);
+                      const nextMethods = Array.isArray(nextSub?.paymentMethods) ? nextSub.paymentMethods : [];
+                      const idx = nextMethods.findIndex(
+                        (m) => String(m?.type || "").toLowerCase() === "card" && String(m?.last4 || "") === digits.slice(-4)
+                      );
+                      if (idx >= 0) setSelectedSavedMethodIndex(idx);
                       setShowAddPaymentMethod(false);
                     } else {
                       const phoneDigits = normalizeGhanaPhone(newPhone);
@@ -1094,8 +1146,18 @@ function BillingPage() {
                         setAddMethodError("Mobile number does not match selected provider");
                         return;
                       }
+
                       const res = await addMobileMoneyPaymentMethod({ provider: newProvider, phone: phoneDigits });
-                      setSubscription(res?.data?.subscription || subscription);
+                      const nextSub = res?.data?.subscription || subscription;
+                      setSubscription(nextSub);
+                      const nextMethods = Array.isArray(nextSub?.paymentMethods) ? nextSub.paymentMethods : [];
+                      const idx = nextMethods.findIndex(
+                        (m) =>
+                          String(m?.type || "").toLowerCase() === "mobile_money" &&
+                          String(m?.provider || "") === String(newProvider) &&
+                          String(m?.phone || "") === String(phoneDigits)
+                      );
+                      if (idx >= 0) setSelectedSavedMethodIndex(idx);
                       setShowAddPaymentMethod(false);
                     }
                   } catch (e) {
@@ -1107,7 +1169,7 @@ function BillingPage() {
                 disabled={methodsLoading}
                 className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60"
               >
-                {methodsLoading ? "Saving…" : "Add Payment Method"}
+                {methodsLoading ? "Saving…" : editingMethodId ? "Save Changes" : "Add Payment Method"}
               </button>
             </div>
           </div>
@@ -1252,12 +1314,12 @@ function BillingPage() {
               <div className="font-semibold text-gray-900">{selectedPlan?.name || "—"}</div>
             </div>
             <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="text-gray-700">Amount</div>
-              <div className="font-semibold text-gray-900">{formatCurrency(selectedPrice ?? 0, checkoutCurrency)}</div>
+              <div className="text-gray-700">Amount (Display)</div>
+              <div className="font-semibold text-gray-900">{formatCurrency(selectedPriceDisplay ?? 0, displayCurrency)}</div>
             </div>
             <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="text-gray-700">Currency</div>
-              <div className="font-semibold text-gray-900">{checkoutCurrency || "—"}</div>
+              <div className="text-gray-700">Amount (Charged)</div>
+              <div className="font-semibold text-gray-900">{formatCurrency(selectedPriceGhs ?? 0, "GHS")}</div>
             </div>
             <div className="flex items-center justify-between gap-4 text-sm">
               <div className="text-gray-700">Billing Cycle</div>
@@ -1273,7 +1335,7 @@ function BillingPage() {
             <div className="flex items-center justify-between gap-4">
               <div className="text-sm font-semibold text-gray-700">Total Due Now</div>
               <div className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(selectedPrice ?? 0, checkoutCurrency)}
+                {formatCurrency(selectedPriceGhs ?? 0, "GHS")}
               </div>
             </div>
           </div>
@@ -1291,7 +1353,7 @@ function BillingPage() {
             <div className="min-w-0">
               <div className="text-sm font-semibold text-gray-900">What happens next:</div>
               <div className="mt-2 space-y-1 text-sm text-gray-600">
-                <div>- You'll be charged {formatCurrency(selectedPrice ?? 0, checkoutCurrency)} today</div>
+                <div>- You'll be charged {formatCurrency(selectedPriceGhs ?? 0, "GHS")} today</div>
                 <div>- Your subscription will be activated immediately</div>
                 <div>- Next billing date will be {nextBillingText}</div>
                 <div>- You can cancel anytime before the next billing cycle</div>
@@ -1347,7 +1409,7 @@ function BillingPage() {
 
                 return (
                   <label
-                    key={`${m?.provider || "momo"}-${m?.phone || idx}-${idx}`}
+                    key={String(m?._id || `${m?.type || "method"}-${idx}`)}
                     className={`flex cursor-pointer items-center justify-between gap-4 rounded-xl border px-4 py-3 ${
                       isSelected ? "border-blue-200 bg-blue-50/30" : "border-gray-200 bg-white"
                     }`}
@@ -1428,7 +1490,13 @@ function BillingPage() {
                   return;
                 }
 
-                const amount = selectedPrice ?? 0;
+                const amount = selectedPriceGhs ?? 0;
+
+                const amountMajor = Number(amount);
+                if (!Number.isFinite(amountMajor) || amountMajor <= 0) {
+                  setCheckoutError("Transaction amount is not set. Please re-select a plan and try again.");
+                  return;
+                }
 
                 const method = savedPaymentMethods?.[selectedSavedMethodIndex] || null;
                 if (!method) {
@@ -1439,113 +1507,111 @@ function BillingPage() {
                 setCheckoutLoading(true);
                 setCheckoutError("");
                 try {
+                  const pollVerify = async (reference) => {
+                    if (!reference) return "unknown";
+                    let finalStatus = "pending";
+                    for (let attempt = 0; attempt < 10; attempt += 1) {
+                      const verifyRes = await verifyPaystackPayment({ reference });
+                      const st = String(verifyRes?.data?.status || "").toLowerCase();
+                      finalStatus = st || finalStatus;
+                      if (st === "paid" || st === "failed") break;
+                      await new Promise((r) => setTimeout(r, 2500));
+                    }
+                    return finalStatus || "unknown";
+                  };
+
                   const type = String(method?.type || "mobile_money").toLowerCase();
-                  if (type === "card") {
-                    const key =
-                      import.meta.env.TEST_PUBLC_KEY ||
-                      import.meta.env.TEST_PUBLIC_KEY ||
-                      import.meta.env.VITE_TEST_PUBLC_KEY ||
-                      import.meta.env.VITE_TEST_PUBLIC_KEY ||
-                      import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ||
-                      "";
-                    if (!key) {
-                      setCheckoutError(
-                        "Paystack public key is not configured. Set VITE_TEST_PUBLC_KEY=pk_test_... (or TEST_PUBLC_KEY=pk_test_...) in frontend .env, then restart the frontend."
-                      );
-                      return;
-                    }
+                  const channels =
+                    type === "mobile_money"
+                      ? ["mobile_money", "card"]
+                      : type === "card"
+                        ? ["card"]
+                        : ["bank_transfer"];
 
-                    const res = await initializePaystackPayment({ planId, billingInterval, currency: checkoutCurrency });
-                    const accessCode = res?.data?.accessCode;
-                    const initRef = res?.data?.reference;
-                    if (!accessCode) {
-                      setCheckoutError(
-                        "Paystack initialize did not return an access code. Restart the backend (and ensure paystack initialize returns accessCode), then try again."
-                      );
-                      return;
-                    }
+                  const amountMinor = Math.round(amountMajor * 100);
 
-                    const paystack = window?.PaystackPop;
-                    if (!paystack || typeof paystack.setup !== "function") {
-                      setCheckoutError("Paystack inline script is not loaded");
-                      return;
-                    }
+                  const key =
+                    import.meta.env.TEST_PUBLC_KEY ||
+                    import.meta.env.TEST_PUBLIC_KEY ||
+                    import.meta.env.VITE_TEST_PUBLC_KEY ||
+                    import.meta.env.VITE_TEST_PUBLIC_KEY ||
+                    import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ||
+                    "";
+                  if (!key) {
+                    setCheckoutError(
+                      "Paystack public key is not configured. Set VITE_TEST_PUBLC_KEY=pk_test_... (or TEST_PUBLC_KEY=pk_test_...) in frontend .env, then restart the frontend."
+                    );
+                    return;
+                  }
 
-                    const reference = await new Promise((resolve, reject) => {
-                      let settled = false;
-                      const handler = paystack.setup({
-                        key,
-                        access_code: accessCode,
-                        ref: initRef,
-                        callback: (response) => {
-                          if (settled) return;
-                          settled = true;
-                          resolve(response?.reference || response?.trxref || initRef);
-                        },
-                        onClose: () => {
-                          if (settled) return;
-                          settled = true;
-                          reject(new Error("Payment was cancelled"));
-                        }
-                      });
-                      handler.openIframe();
+                  const payerEmail = String(user?.email || "").trim();
+                  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmail);
+                  if (!emailOk) {
+                    setCheckoutError(
+                      "Your account email is missing or invalid. Please update your profile email and try again."
+                    );
+                    return;
+                  }
+
+                  const res = await initializePaystackPayment({
+                    planId,
+                    billingInterval,
+                    channels
+                  });
+                  const accessCode = res?.data?.accessCode;
+                  const initRef = res?.data?.reference;
+                  if (!accessCode) {
+                    setCheckoutError(
+                      "Paystack initialize did not return an access code. Restart the backend (and ensure paystack initialize returns accessCode), then try again."
+                    );
+                    return;
+                  }
+
+                  const paystack = window?.PaystackPop;
+                  if (!paystack || typeof paystack.setup !== "function") {
+                    setCheckoutError("Paystack inline script is not loaded");
+                    return;
+                  }
+
+                  const reference = await new Promise((resolve, reject) => {
+                    let settled = false;
+                    const handler = paystack.setup({
+                      key,
+                      email: payerEmail,
+                      amount: amountMinor,
+                      currency: "GHS",
+                      ...(channels.length ? { channels } : {}),
+                      access_code: accessCode,
+                      ref: initRef,
+                      callback: (response) => {
+                        if (settled) return;
+                        settled = true;
+                        resolve(response?.reference || response?.trxref || initRef);
+                      },
+                      onClose: () => {
+                        if (settled) return;
+                        settled = true;
+                        reject(new Error("Payment was cancelled"));
+                      }
                     });
+                    handler.openIframe();
+                  });
 
-                    const verifyRes = await verifyPaystackPayment({ reference });
-                    const st = String(verifyRes?.data?.status || "").toLowerCase();
-                    if (st === "paid") {
-                      setPaymentResult({ status: "success", amount });
-                      setShowPaymentMethod(false);
-                      setShowPaymentResult(true);
-                      setToastMessage("Payment successful! Your subscription has been activated.");
-                      setTimeout(() => setToastMessage(""), 4000);
-                      await load();
-                    } else {
-                      setPaymentResult({ status: "failed", amount });
-                      setShowPaymentMethod(false);
-                      setShowPaymentResult(true);
-                      await load();
-                    }
-                    return;
-                  }
-
-                  const provider = method?.provider;
-                  const phone = method?.phone;
-                  if (!provider || !phone) {
-                    setCheckoutError("Please select a mobile number");
-                    return;
-                  }
-
-                  if (checkoutCurrency !== "GHS") {
-                    setCheckoutError("Mobile money is only available for GHS payments. Please select a card or switch currency to GHS.");
-                    return;
-                  }
-
-                  const chargeRes = await chargePaystackMobileMoney({ planId, billingInterval, currency: checkoutCurrency, provider, phone });
-                  const reference = chargeRes?.data?.reference;
-                  if (!reference) {
-                    setCheckoutError("Missing payment reference");
-                    return;
-                  }
-
-                  let finalStatus = "pending";
-                  for (let attempt = 0; attempt < 10; attempt += 1) {
-                    const verifyRes = await verifyPaystackPayment({ reference });
-                    const st = String(verifyRes?.data?.status || "").toLowerCase();
-                    finalStatus = st || finalStatus;
-                    if (st === "paid" || st === "failed") break;
-                    await new Promise((r) => setTimeout(r, 2500));
-                  }
-
-                  if (finalStatus === "paid") {
+                  const st = await pollVerify(reference);
+                  if (st === "paid") {
                     setPaymentResult({ status: "success", amount });
                     setShowPaymentMethod(false);
                     setShowPaymentResult(true);
                     setToastMessage("Payment successful! Your subscription has been activated.");
                     setTimeout(() => setToastMessage(""), 4000);
                     await load();
-                  } else {
+                  } else if (st === "failed") {
                     setPaymentResult({ status: "failed", amount });
+                    setShowPaymentMethod(false);
+                    setShowPaymentResult(true);
+                    await load();
+                  } else {
+                    setPaymentResult({ status: "pending", amount });
                     setShowPaymentMethod(false);
                     setShowPaymentResult(true);
                     await load();
@@ -1561,7 +1627,7 @@ function BillingPage() {
             >
               {checkoutLoading
                 ? "Processing…"
-                : `Proceed to Pay ${formatCurrency(selectedPrice ?? 0, checkoutCurrency)}`}
+                : `Proceed to Pay ${formatCurrency(selectedPriceGhs ?? 0, "GHS")}`}
             </button>
           </div>
         </div>
@@ -1569,20 +1635,41 @@ function BillingPage() {
 
       <ModalShell
         open={showPaymentResult}
-        title={paymentResult?.status === "success" ? "Payment Successful!" : "Payment Failed"}
-        subtitle={paymentResult?.status === "success" ? "Your subscription has been activated" : "Your payment could not be completed"}
+        title={
+          paymentResult?.status === "success"
+            ? "Payment Successful!"
+            : paymentResult?.status === "pending"
+              ? "Payment Pending"
+              : "Payment Failed"
+        }
+        subtitle={
+          paymentResult?.status === "success"
+            ? "Your subscription has been activated"
+            : paymentResult?.status === "pending"
+              ? "We’re still confirming your payment. Please wait a moment and refresh your billing page."
+              : "Your payment could not be completed"
+        }
         onClose={() => setShowPaymentResult(false)}
         maxWidthClass="max-w-xl"
       >
         <div className="flex flex-col items-center text-center">
           <div
             className={`mt-1 inline-flex h-14 w-14 items-center justify-center rounded-full ${
-              paymentResult?.status === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+              paymentResult?.status === "success"
+                ? "bg-green-100 text-green-700"
+                : paymentResult?.status === "pending"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-red-100 text-red-700"
             }`}
           >
             {paymentResult?.status === "success" ? (
               <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
                 <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : paymentResult?.status === "pending" ? (
+              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
+                <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             ) : (
               <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
@@ -1592,10 +1679,14 @@ function BillingPage() {
           </div>
 
           <div className="mt-4 text-lg font-semibold text-gray-900">
-            {paymentResult?.status === "success" ? "Payment Completed Successfully" : "Payment Not Completed"}
+            {paymentResult?.status === "success"
+              ? "Payment Completed Successfully"
+              : paymentResult?.status === "pending"
+                ? "Payment Pending"
+                : "Payment Not Completed"}
           </div>
           <div className="mt-2 text-sm text-gray-600">
-            Amount paid: <span className="font-semibold text-gray-900">{formatCurrency(paymentResult?.amount ?? 0, checkoutCurrency)}</span>
+            Amount paid: <span className="font-semibold text-gray-900">{formatCurrency(paymentResult?.amount ?? 0, "GHS")}</span>
           </div>
 
           {paymentResult?.status === "success" ? (

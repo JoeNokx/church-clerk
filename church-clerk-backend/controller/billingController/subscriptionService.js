@@ -6,6 +6,14 @@ import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
 import Church from "../../models/churchModel.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
+const normalizeLegacyCurrency = (currency) => {
+  const cur = String(currency || "")
+    .trim()
+    .toUpperCase();
+  if (cur === "GHS") return "GHS";
+  return "GHS";
+};
+
 const getIntervalMonths = (billingInterval) => {
   if (billingInterval === "monthly") return 1;
   if (billingInterval === "halfYear") return 6;
@@ -29,7 +37,7 @@ export const createSubscriptionForChurch = async ({
   church,
   planId = null,
   trial = false,
-  currency = "GHS",
+  currency,
   billingInterval = "monthly",
   paymentProvider = "paystack"
 }) => {
@@ -38,9 +46,14 @@ export const createSubscriptionForChurch = async ({
   // Prevent sending both trial + plan
   if (trial && planId) throw new Error("Cannot choose trial and plan at the same time");
 
+  const normalizedCurrency = String(currency || "")
+    .trim()
+    .toUpperCase();
+  const planCurrency = normalizedCurrency === "GHS" ? "GHS" : "GHS";
+
   let subscriptionData = {
     church: church._id,
-    currency,
+    currency: planCurrency,
     billingInterval,
     paymentProvider
   };
@@ -133,7 +146,14 @@ export const processSubscriptionBillings = async (subscription) => {
   const plan = await Plan.findById(subscription.plan);
   if (!plan) throw new Error("Plan not found");
 
-  const price = plan.pricing[subscription.currency]?.[subscription.billingInterval];
+  const billingCurrency = normalizeLegacyCurrency(subscription.currency);
+
+  if (billingCurrency !== subscription.currency) {
+    subscription.currency = billingCurrency;
+    await subscription.save();
+  }
+
+  const price = plan.pricing[billingCurrency]?.[subscription.billingInterval];
   if (!price) throw new Error("Pricing not configured");
 
   await BillingHistory.create({
@@ -141,7 +161,7 @@ export const processSubscriptionBillings = async (subscription) => {
     subscription: subscription._id,
     type: "payment",
     amount: price,
-    currency: subscription.currency,
+    currency: billingCurrency,
     status: "pending",
     paymentProvider: subscription.paymentProvider,
     invoiceSnapshot: {
@@ -149,7 +169,7 @@ export const processSubscriptionBillings = async (subscription) => {
       planName: plan.name,
       billingInterval: subscription.billingInterval,
       amount: price,
-      currency: subscription.currency
+      currency: billingCurrency
     }
   });
 

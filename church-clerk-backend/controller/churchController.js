@@ -21,6 +21,7 @@ const createMyChurch = async (req, res) => {
       city,
       region,
       country,
+      currency,
       foundedDate,
       referralCodeInput
     } = req.body;
@@ -49,6 +50,11 @@ const createMyChurch = async (req, res) => {
       parentChurch = null;
     }
 
+    const normalizedCountry = String(country || "").trim();
+    const requestedCurrency = String(currency || "").trim().toUpperCase();
+    const derivedCurrency = normalizedCountry.toLowerCase() === "ghana" ? "GHS" : "USD";
+    const finalCurrency = requestedCurrency || derivedCurrency;
+
     const church = await Church.create({
       name,
       type,
@@ -60,6 +66,7 @@ const createMyChurch = async (req, res) => {
       city,
       region,
       country,
+      currency: finalCurrency,
       foundedDate,
       referralCodeInput,
       createdBy: req.user._id
@@ -239,6 +246,14 @@ const updateMyChurchProfile = async (req, res) => {
       !["individual", "aggregate"].includes(updateData.titheRecordingMode)
     ) {
       return res.status(400).json({ message: "Invalid tithe recording mode" });
+    }
+
+    if (updateData.currency !== undefined) {
+      const cur = String(updateData.currency || "").trim().toUpperCase();
+      if (!cur || !/^[A-Z]{3}$/.test(cur)) {
+        return res.status(400).json({ message: "Invalid currency" });
+      }
+      updateData.currency = cur;
     }
 
     /**
@@ -421,11 +436,11 @@ const getMyBranches = async (req, res) => {
 //view spcified modules by branch or hq
 
 const getActiveChurchContext = (req, res) => {
-  const { _id, name, type, parentChurch, canEdit, visibleModules, titheRecordingMode } = req.activeChurch;
+  const { _id, name, type, parentChurch, canEdit, visibleModules, titheRecordingMode, currency } = req.activeChurch;
 
   res.status(200).json({
     message: "Church context fetched",
-    activeChurch: { _id, name, type, parentChurch: parentChurch || null, canEdit, visibleModules, titheRecordingMode },
+    activeChurch: { _id, name, type, parentChurch: parentChurch || null, canEdit, visibleModules, titheRecordingMode, currency },
   });
 };
 

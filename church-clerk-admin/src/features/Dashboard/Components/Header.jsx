@@ -12,6 +12,8 @@ function DashboardHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const viewingChurchName = useMemo(() => {
+    const inViewMode = typeof window !== "undefined" && localStorage.getItem("systemAdminViewChurch") === "1";
+    if (!inViewMode) return "";
     return churchCtx?.activeChurch?.name || "";
   }, [churchCtx?.activeChurch?.name]);
 

@@ -2,11 +2,13 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 import PermissionContext from "../../permissions/permission.store.js";
+import ChurchContext from "../../church/church.store.js";
 import PledgeContext, { PledgeProvider } from "../pledge.store.js";
 import { getPledges as apiGetPledges } from "../services/pledge.api.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
+function formatCurrency(value, currency) {
+  return formatMoney(value, currency);
 }
 
 function formatDate(value) {
@@ -212,7 +214,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   );
 }
 
-function PledgeFormModal({ open, mode, initialData, onClose, onSubmit }) {
+function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency }) {
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [serviceType, setServiceType] = useState("");
@@ -358,7 +360,7 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Amount (GHS)</label>
+            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -452,13 +454,14 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
 
 function PledgesPageInner() {
   const { toPage } = useDashboardNavigator();
-  const { can } = useContext(PermissionContext) || {};
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const store = useContext(PledgeContext);
-
-  const canCreate = useMemo(() => (typeof can === "function" ? can("pledges", "create") : false), [can]);
+  const { can } = useContext(PermissionContext) || {};
+  const canRead = useMemo(() => (typeof can === "function" ? can("pledge", "read") : true), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("pledges", "create") : true), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("pledges", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("pledges", "delete") : false), [can]);
-
   const [kpi, setKpi] = useState({ total: 0, pledged: 0, paid: 0, outstanding: 0 });
   const [newOpen, setNewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -690,7 +693,7 @@ function PledgesPageInner() {
               </svg>
             </span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-purple-700">{formatCurrency(kpi.pledged)}</div>
+          <div className="mt-2 text-2xl font-semibold text-purple-700">{formatCurrency(kpi.pledged, currency)}</div>
           <div className="mt-1 text-xs text-gray-500">Committed amount</div>
         </div>
 
@@ -703,7 +706,7 @@ function PledgesPageInner() {
               </svg>
             </span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(kpi.paid)}</div>
+          <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(kpi.paid, currency)}</div>
           <div className="mt-1 text-xs text-gray-500">Payments received</div>
         </div>
 
@@ -718,7 +721,7 @@ function PledgesPageInner() {
               </svg>
             </span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-red-600">{formatCurrency(kpi.outstanding)}</div>
+          <div className="mt-2 text-2xl font-semibold text-red-600">{formatCurrency(kpi.outstanding, currency)}</div>
           <div className="mt-1 text-xs text-gray-500">Remaining balance</div>
         </div>
       </div>
@@ -812,9 +815,9 @@ function PledgesPageInner() {
                     <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
                       <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{row?.name || "—"}</td>
                       <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap">{row?.phoneNumber || "—"}</td>
-                      <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(row?.amount || 0)}</td>
-                      <td className="px-6 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.totalPaid || 0)}</td>
-                      <td className="px-6 py-1.5 text-red-600 whitespace-nowrap">{formatCurrency(row?.remainingBalance || 0)}</td>
+                      <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(row?.amount || 0, currency)}</td>
+                      <td className="px-6 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.totalPaid || 0, currency)}</td>
+                      <td className="px-6 py-1.5 text-red-600 whitespace-nowrap">{formatCurrency(row?.remainingBalance || 0, currency)}</td>
                       <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap">{formatDate(row?.deadline)}</td>
                       <td className="px-6 py-1.5 whitespace-nowrap">
                         <StatusChip value={row?.status} />
@@ -908,23 +911,34 @@ function PledgesPageInner() {
         open={newOpen}
         mode="create"
         initialData={null}
-        onClose={closeForms}
+        onClose={() => {
+          setNewOpen(false);
+          setError("");
+        }}
         onSubmit={async (payload) => {
           await store?.createPledge?.(payload);
           await computeKpi();
         }}
+        currency={currency}
+        title="Create New Pledge"
       />
 
       <PledgeFormModal
         open={editOpen}
         mode="edit"
         initialData={editingRow}
-        onClose={closeForms}
+        onClose={() => {
+          setEditOpen(false);
+          setEditingRow(null);
+          setError("");
+        }}
         onSubmit={async (payload) => {
           if (!editingRow?._id) return;
           await store?.updatePledge?.(editingRow._id, payload);
           await computeKpi();
         }}
+        currency={currency}
+        title="Edit Pledge"
       />
 
       <ConfirmDeleteModal

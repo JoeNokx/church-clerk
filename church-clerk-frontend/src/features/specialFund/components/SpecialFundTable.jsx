@@ -1,6 +1,8 @@
 import { useContext, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import SpecialFundContext from "../specialFund.store.js";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -12,6 +14,8 @@ function formatDate(value) {
 function SpecialFundTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(SpecialFundContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -90,7 +94,7 @@ function SpecialFundTable({ onEdit, onDeleted }) {
               <tr key={fund?._id ?? `row-${index}`} className="text-sm text-gray-700">
                 <td className="px-6 py-1.5 text-gray-700">{fund?.giverName || "-"}</td>
                 <td className="px-6 py-1.5 text-gray-900">{fund?.category || "-"}</td>
-                <td className="px-6 py-1.5 text-blue-700">GHS {Number(fund?.totalAmount || 0).toLocaleString()}</td>
+                <td className="px-6 py-1.5 text-blue-700">{formatMoney(fund?.totalAmount || 0, currency)}</td>
                 <td className="px-6 py-1.5">{formatDate(fund?.givingDate)}</td>
                 <td className="px-6 py-1.5 text-gray-600 max-w-[360px] break-words">{fund?.description || "-"}</td>
                 <td className="px-6 py-1.5">

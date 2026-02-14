@@ -195,6 +195,12 @@ function ChurchDetailPage() {
     };
   }, [id]);
 
+  useEffect(() => {
+    return () => {
+      churchCtx?.exitChurchView?.();
+    };
+  }, []);
+
   const displayName = useMemo(() => formatChurchDisplayName(church), [church]);
 
   const activeSubTabs =

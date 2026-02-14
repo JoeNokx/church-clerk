@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminGetPayments, adminVerifyPayment } from "../Services/adminBilling.api.js";
 
@@ -15,9 +15,30 @@ function BillingPaymentsPage() {
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(null);
 
+  const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [currency, setCurrency] = useState("");
+  const [provider, setProvider] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
+
+  const filtered = useMemo(() => {
+    const q = String(search || "").trim().toLowerCase();
+    const cur = String(currency || "").trim().toUpperCase();
+    const prov = String(provider || "").trim().toLowerCase();
+    return (Array.isArray(rows) ? rows : []).filter((p) => {
+      if (cur && String(p?.currency || "").toUpperCase() !== cur) return false;
+      if (prov && String(p?.paymentProvider || "").toLowerCase() !== prov) return false;
+      if (!q) return true;
+
+      const churchName = String(p?.church?.name || "").toLowerCase();
+      const planName = String(p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName || "").toLowerCase();
+      const ref = String(p?.providerReference || "").toLowerCase();
+      const st = String(p?.status || "").toLowerCase();
+
+      return churchName.includes(q) || planName.includes(q) || ref.includes(q) || st.includes(q);
+    });
+  }, [currency, provider, rows, search]);
 
   const load = useCallback(
     async ({ nextPage } = {}) => {
@@ -66,6 +87,12 @@ function BillingPaymentsPage() {
           <div className="mt-1 text-sm text-gray-600">View payment transactions across churches.</div>
         </div>
         <div className="flex-1" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search church, plan, reference..."
+          className="w-full md:w-72 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
@@ -75,6 +102,24 @@ function BillingPaymentsPage() {
           <option value="paid">paid</option>
           <option value="failed">failed</option>
           <option value="pending">pending</option>
+        </select>
+        <select
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value)}
+          className="w-full md:w-36 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All currencies</option>
+          <option value="GHS">GHS</option>
+          <option value="NGN">NGN</option>
+          <option value="USD">USD</option>
+        </select>
+        <select
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
+          className="w-full md:w-40 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All providers</option>
+          <option value="paystack">paystack</option>
         </select>
       </div>
 
@@ -101,14 +146,14 @@ function BillingPaymentsPage() {
                   Loading...
                 </td>
               </tr>
-            ) : rows.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-6 text-center text-gray-500">
                   No payments found.
                 </td>
               </tr>
             ) : (
-              rows.map((p) => (
+              filtered.map((p) => (
                 <tr key={p?._id} className="border-b last:border-b-0">
                   <td className="py-3 text-gray-900">{p?.church?.name || "—"}</td>
                   <td className="py-3 text-gray-700">{p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName || "—"}</td>

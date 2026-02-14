@@ -14,7 +14,7 @@ const systemSettingsSchema = new mongoose.Schema(
     },
     gracePeriodDays: {
       type: Number,
-      default: 3
+      default: 7
     }
   },
   { timestamps: true }

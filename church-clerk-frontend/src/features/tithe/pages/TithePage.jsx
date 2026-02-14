@@ -1,13 +1,15 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
+import ChurchContext from "../../church/church.store.js";
 import TitheContext, { TitheProvider } from "../tithe.store.js";
 import TitheIndividualTable from "../components/TitheIndividualTable.jsx";
 import TitheAggregateTable from "../components/TitheAggregateTable.jsx";
 import TitheIndividualForm from "../components/TitheIndividualForm.jsx";
 import TitheAggregateForm from "../components/TitheAggregateForm.jsx";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
+function formatCurrency(value, currency) {
+  return formatMoney(value, currency);
 }
 
 function monthLabel(date = new Date()) {
@@ -367,7 +369,10 @@ function ModeSwitchCards({ currentMode, onPick }) {
 }
 
 function TithePageInner() {
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const { can } = useContext(PermissionContext) || {};
+  const canRead = useMemo(() => (typeof can === "function" ? can("tithe", "read") : true), [can]);
   const store = useContext(TitheContext);
 
   const [kpi, setKpi] = useState(null);
@@ -605,7 +610,7 @@ function TithePageInner() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="text-xs font-semibold text-gray-500">This Month</div>
-                    <div className="mt-2 text-2xl font-semibold text-blue-900">{formatCurrency(kpiThisMonth)}</div>
+                    <div className="mt-2 text-2xl font-semibold text-blue-900">{formatCurrency(kpiThisMonth, currency)}</div>
                     <div className="mt-1 text-xs text-gray-500">{monthLabel()}</div>
                   </div>
                   <PillIcon color="blue">
@@ -622,7 +627,7 @@ function TithePageInner() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="text-xs font-semibold text-gray-500">This Year</div>
-                    <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(kpiThisYear)}</div>
+                    <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(kpiThisYear, currency)}</div>
                     <div className="mt-1 text-xs text-gray-500">{yearLabel()}</div>
                   </div>
                   <PillIcon color="green">

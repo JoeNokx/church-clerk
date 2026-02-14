@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
+import ChurchContext from "../../church/church.store.js";
 import { getProjectContributionExpensesKPI } from "../services/churchProject.api.js";
 import {
   createProjectContribution,
@@ -15,6 +16,7 @@ import {
   getProjectExpenses,
   updateProjectExpense
 } from "../expenses/services/projectExpenses.api.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -25,8 +27,8 @@ function useDebouncedValue(value, delayMs) {
   return debounced;
 }
 
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
+function formatCurrency(value, currency) {
+  return formatMoney(value, currency);
 }
 
 function formatDate(value) {
@@ -187,7 +189,7 @@ function DateRangePopover({ dateFrom, dateTo, onChangeFrom, onChangeTo, onClear 
   );
 }
 
-function ContributionFormModal({ open, mode, initialData, projectName, disabled, onClose, onSubmit }) {
+function ContributionFormModal({ open, mode, initialData, projectName, disabled, onClose, onSubmit, currency }) {
   const [contributorName, setContributorName] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
@@ -270,7 +272,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Amount (GHS)</label>
+            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -322,7 +324,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
   );
 }
 
-function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onClose, onSubmit }) {
+function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onClose, onSubmit, currency }) {
   const [spentOn, setSpentOn] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
@@ -405,7 +407,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Amount (GHS)</label>
+            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -458,6 +460,8 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
 }
 
 function ChurchProjectDetailsPage() {
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const { can } = useContext(PermissionContext) || {};
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
@@ -666,23 +670,22 @@ function ChurchProjectDetailsPage() {
       </div>
 
       {kpiError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{kpiError}</div> : null}
-
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Target Amount</div>
-          <div className="mt-3 text-2xl font-semibold text-purple-700">{formatCurrency(kpi?.targetAmount || 0)}</div>
+          <div className="mt-3 text-2xl font-semibold text-purple-700">{formatCurrency(kpi?.targetAmount || 0, currency)}</div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Raised</div>
-          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(kpi?.totalContributions || 0)}</div>
+          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(kpi?.totalContributions || 0, currency)}</div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Spent</div>
-          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(kpi?.totalExpenses || 0)}</div>
+          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(kpi?.totalExpenses || 0, currency)}</div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Balance</div>
-          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatCurrency(kpi?.balance || 0)}</div>
+          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatCurrency(kpi?.balance || 0, currency)}</div>
         </div>
       </div>
 
@@ -805,7 +808,7 @@ function ChurchProjectDetailsPage() {
                       {contribRows.map((row, idx) => (
                         <tr key={row?._id ?? `c-${idx}`} className="text-sm text-gray-700">
                           <td className="px-6 py-1.5 text-gray-900">{row?.contributorName || "—"}</td>
-                          <td className="px-6 py-1.5 text-green-700">{formatCurrency(row?.amount || 0)}</td>
+                          <td className="px-6 py-1.5 text-green-700">{formatCurrency(row?.amount || 0, currency)}</td>
                           <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
                           <td className="px-6 py-1.5 text-gray-600 max-w-[320px] break-words">{row?.notes || "—"}</td>
                           <td className="px-6 py-1.5">{row?.createdBy?.fullName || "—"}</td>
@@ -885,7 +888,7 @@ function ChurchProjectDetailsPage() {
                       {expenseRows.map((row, idx) => (
                         <tr key={row?._id ?? `e-${idx}`} className="text-sm text-gray-700">
                           <td className="px-6 py-1.5 text-gray-900">{row?.spentOn || "—"}</td>
-                          <td className="px-6 py-1.5 text-orange-600">{formatCurrency(row?.amount || 0)}</td>
+                          <td className="px-6 py-1.5 text-orange-600">{formatCurrency(row?.amount || 0, currency)}</td>
                           <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
                           <td className="px-6 py-1.5 text-gray-600 max-w-[320px] break-words">{row?.description || "—"}</td>
                           <td className="px-6 py-1.5">{row?.createdBy?.fullName || "—"}</td>
@@ -945,8 +948,9 @@ function ChurchProjectDetailsPage() {
         open={contributionModalOpen}
         mode={editingContribution ? "edit" : "create"}
         initialData={editingContribution}
-        projectName={projectName}
-        disabled={false}
+        projectName={project?.name || ""}
+        disabled={contribSaving}
+        currency={currency}
         onClose={() => {
           setContributionModalOpen(false);
           setEditingContribution(null);
@@ -968,8 +972,9 @@ function ChurchProjectDetailsPage() {
         open={expenseModalOpen}
         mode={editingExpense ? "edit" : "create"}
         initialData={editingExpense}
-        projectName={projectName}
-        disabled={false}
+        projectName={project?.name || ""}
+        disabled={expenseSaving}
+        currency={currency}
         onClose={() => {
           setExpenseModalOpen(false);
           setEditingExpense(null);

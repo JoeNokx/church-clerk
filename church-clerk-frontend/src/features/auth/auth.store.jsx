@@ -23,6 +23,21 @@ export function AuthProvider({ children }) {
         const res = await getMyProfile();
         const payload = res?.data?.data;
         const nextUser = payload?.user || null;
+
+        const nextId = nextUser?._id ? String(nextUser._id) : "";
+        const prevId = typeof window !== "undefined" ? String(localStorage.getItem("cckUserId") || "") : "";
+        if (typeof window !== "undefined" && prevId && nextId && prevId !== nextId) {
+          localStorage.removeItem("activeChurch");
+          localStorage.removeItem("subscriptionReadOnly");
+          localStorage.removeItem("userIsActive");
+          permissionCtx?.clearPermissions?.();
+          churchCtx?.clearActiveChurch?.();
+        }
+        if (typeof window !== "undefined") {
+          if (nextId) localStorage.setItem("cckUserId", nextId);
+          else localStorage.removeItem("cckUserId");
+        }
+
         setUser(nextUser);
         if (nextUser) {
           localStorage.setItem("userIsActive", nextUser?.isActive === false ? "0" : "1");
@@ -33,6 +48,7 @@ export function AuthProvider({ children }) {
         churchCtx?.setActiveChurch?.(payload?.activeChurch);
       } catch {
         setUser(null);
+        localStorage.removeItem("cckUserId");
         localStorage.removeItem("userIsActive");
         localStorage.removeItem("subscriptionReadOnly");
         permissionCtx?.clearPermissions?.();
@@ -49,6 +65,21 @@ export function AuthProvider({ children }) {
     const res = await getMyProfile();
     const payload = res?.data?.data;
     const userData = payload?.user;
+
+    const nextId = userData?._id ? String(userData._id) : "";
+    const prevId = typeof window !== "undefined" ? String(localStorage.getItem("cckUserId") || "") : "";
+    if (typeof window !== "undefined" && prevId && nextId && prevId !== nextId) {
+      localStorage.removeItem("activeChurch");
+      localStorage.removeItem("subscriptionReadOnly");
+      localStorage.removeItem("userIsActive");
+      permissionCtx?.clearPermissions?.();
+      churchCtx?.clearActiveChurch?.();
+    }
+    if (typeof window !== "undefined") {
+      if (nextId) localStorage.setItem("cckUserId", nextId);
+      else localStorage.removeItem("cckUserId");
+    }
+
     setUser(userData);
     if (userData) {
       localStorage.setItem("userIsActive", userData?.isActive === false ? "0" : "1");
@@ -78,6 +109,7 @@ export function AuthProvider({ children }) {
       await logoutUser();
     } finally {
       setUser(null);
+      localStorage.removeItem("cckUserId");
       localStorage.removeItem("userIsActive");
       localStorage.removeItem("subscriptionReadOnly");
       permissionCtx?.clearPermissions?.();

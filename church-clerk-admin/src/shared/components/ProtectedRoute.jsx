@@ -14,9 +14,12 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/admin/login" replace state={{ from: location }} />;
   }
 
-  const role = String(user?.role || "");
-  const isSuperAdmin = role === "super_admin" || role === "superadmin";
-  const isSupportAdmin = role === "supportadmin" || role === "support_admin";
+  const normalizedRole = String(user?.role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  const isSuperAdmin = normalizedRole === "superadmin";
+  const isSupportAdmin = normalizedRole === "supportadmin";
 
   if (!isSuperAdmin && !isSupportAdmin) {
     return (

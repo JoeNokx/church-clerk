@@ -1,9 +1,22 @@
-import { Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import DashboardHeader from "../../Features/Dashboard/Components/Header.jsx";
 import Footer from "../../Features/Dashboard/Components/Footer.jsx";
 import SystemAdminSidebar from "../../Features/SystemAdmin/Components/SystemAdminSidebar.jsx";
 
 function DashboardLayout() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const path = String(location?.pathname || "");
+    const isChurchDetail = /^\/admin\/churches\/[^/]+/i.test(path);
+    if (!isChurchDetail) {
+      localStorage.removeItem("systemAdminViewChurch");
+      localStorage.removeItem("systemAdminActiveChurch");
+      localStorage.removeItem("adminViewChurch");
+    }
+  }, [location?.pathname]);
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <SystemAdminSidebar />

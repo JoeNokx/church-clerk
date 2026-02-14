@@ -1,4 +1,6 @@
 import SystemSettings from "../models/systemSettingsModel.js";
+import Subscription from "../models/billingModel/subscriptionModel.js";
+import { addDays } from "../utils/dateBillingUtils.js";
 
 const TRIAL_DAYS_ALLOWED = new Set([3, 7, 14, 21, 30, 40]);
 
@@ -61,6 +63,50 @@ export const updateSystemSettings = async (req, res) => {
     settings.set(update);
     await settings.save();
 
+    if (update.trialDays !== undefined) {
+      const n = Number(update.trialDays);
+      const subs = await Subscription.find({
+        status: { $in: ["free trial", "trialing"] },
+        trialStart: { $ne: null }
+      })
+        .select("trialStart trialEnd nextBillingDate")
+        .lean();
+
+      const ops = (Array.isArray(subs) ? subs : [])
+        .map((s) => {
+          const start = s?.trialStart ? new Date(s.trialStart) : null;
+          if (!start || Number.isNaN(start.getTime())) return null;
+
+          const prevTrialEnd = s?.trialEnd ? new Date(s.trialEnd) : null;
+          const prevNext = s?.nextBillingDate ? new Date(s.nextBillingDate) : null;
+
+          const nextTrialEnd = addDays(start, n);
+          const set = { trialEnd: nextTrialEnd };
+
+          if (
+            prevTrialEnd &&
+            prevNext &&
+            !Number.isNaN(prevTrialEnd.getTime()) &&
+            !Number.isNaN(prevNext.getTime()) &&
+            prevTrialEnd.getTime() === prevNext.getTime()
+          ) {
+            set.nextBillingDate = nextTrialEnd;
+          }
+
+          return {
+            updateOne: {
+              filter: { _id: s._id },
+              update: { $set: set }
+            }
+          };
+        })
+        .filter(Boolean);
+
+      if (ops.length) {
+        await Subscription.bulkWrite(ops);
+      }
+    }
+
     return res.json({
       message: "System settings updated",
       settings: {
@@ -77,6 +123,6 @@ export const getSystemSettingsSnapshot = async () => {
   const settings = await getSingletonSettings();
   return {
     trialDays: Number(settings.trialDays || 14),
-    gracePeriodDays: Number(settings.gracePeriodDays || 3)
+    gracePeriodDays: Number(settings.gracePeriodDays || 7)
   };
 };

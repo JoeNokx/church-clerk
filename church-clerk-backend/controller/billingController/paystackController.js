@@ -1,9 +1,23 @@
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
+import Church from "../../models/churchModel.js";
 import https from "https";
 import { addDays, addMonths } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
+
+const getSupportedPaystackCurrencies = () => {
+  const raw = String(process.env.PAYSTACK_SUPPORTED_CURRENCIES || "").trim();
+  const parsed = raw
+    ? raw
+        .split(",")
+        .map((s) => String(s || "").trim().toUpperCase())
+        .filter(Boolean)
+    : [];
+
+  const onlyGhs = parsed.filter((c) => c === "GHS");
+  return onlyGhs.length ? onlyGhs : ["GHS"];
+};
 
 export const chargeWithPaystack = async (subscription) => {
   const billing = await BillingHistory.findOne({
@@ -60,30 +74,77 @@ const paystackRequest = ({ path, method, body }) =>
         let data = "";
         res.on("data", (chunk) => (data += chunk));
         res.on("end", () => {
+          const statusCode = res.statusCode || 0;
+
+          let json = null;
           try {
-            const json = JSON.parse(data);
-            if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
-              return reject(new Error(json?.message || "Paystack request failed"));
-            }
-            if (!json?.status) {
-              return reject(new Error(json?.message || "Paystack returned an error"));
-            }
-            resolve(json);
-          } catch (err) {
-            reject(err);
+            json = data ? JSON.parse(data) : {};
+          } catch {
+            json = null;
           }
+
+          if (statusCode < 200 || statusCode >= 300) {
+            const msg = json?.message || (data ? String(data).slice(0, 500) : "Paystack request failed");
+            return reject(new Error(`${msg} (${statusCode})`));
+          }
+
+          if (!json) {
+            return reject(new Error("Paystack returned a non-JSON response"));
+          }
+
+          if (json?.status === false) {
+            return reject(new Error(json?.message || "Paystack returned an error"));
+          }
+
+          resolve(json);
         });
+
+        res.on("error", reject);
       }
     );
 
     req.on("error", reject);
-    req.write(payload);
+    if (payload) req.write(payload);
     req.end();
   });
 
+export const getPaystackBanks = async (req, res) => {
+  try {
+    const currency = String(req.query?.currency || "GHS")
+      .trim()
+      .toUpperCase();
+
+    if (currency !== "GHS") {
+      return res.status(400).json({ message: "Only GHS banks are supported" });
+    }
+
+    const supportedCurrencies = getSupportedPaystackCurrencies();
+    if (!supportedCurrencies.includes(currency)) {
+      return res.status(400).json({
+        message: `Paystack is not configured for ${currency} on this server. Supported currencies: ${supportedCurrencies.join(", ")}.`
+      });
+    }
+
+    const banks = await paystackRequest({
+      method: "GET",
+      path: `/bank?currency=${encodeURIComponent(currency)}`
+    });
+
+    return res.status(200).json({ banks: banks?.data || [] });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export const initializePaystackPayment = async (req, res) => {
   try {
-    const { planId, billingInterval = "monthly", currency: requestedCurrency } = req.body;
+    const { planId, billingInterval = "monthly", channels } = req.body;
+
+    const email = String(req.user?.email || "").trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk) {
+      return res.status(400).json({ message: "Your account email is missing or invalid. Please update your profile email and try again." });
+    }
 
     const churchId = req.activeChurch?._id || req.user?.church;
     const subscription = churchId ? await Subscription.findOne({ church: churchId }) : null;
@@ -96,18 +157,22 @@ export const initializePaystackPayment = async (req, res) => {
       return res.status(404).json({ message: "Plan not found" });
     }
 
-    const currency = requestedCurrency ? String(requestedCurrency).trim().toUpperCase() : subscription.currency;
-    if (currency !== "GHS" && currency !== "NGN" && currency !== "USD") {
-      return res.status(400).json({ message: "Unsupported currency" });
-    }
+    const currency = "GHS";
 
-    if (currency !== "GHS" && currency !== "NGN") {
+    const supportedCurrencies = getSupportedPaystackCurrencies();
+    if (!supportedCurrencies.includes(currency)) {
       return res.status(400).json({
-        message: "Paystack is only available for GHS and NGN churches"
+        message: `Paystack is not configured for ${currency} on this server. Supported currencies: ${supportedCurrencies.join(", ")}.`
       });
     }
 
-    const amount = plan.pricing?.[currency]?.[billingInterval];
+    const normalizedChannels = Array.isArray(channels)
+      ? channels
+          .map((c) => String(c || "").trim().toLowerCase())
+          .filter(Boolean)
+      : [];
+
+    const amount = plan.pricing?.GHS?.[billingInterval];
     if (!amount) {
       return res.status(400).json({ message: "Pricing not configured" });
     }
@@ -136,13 +201,17 @@ export const initializePaystackPayment = async (req, res) => {
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 
+    const reference = `CCK_${billing._id.toString()}`;
+
     const init = await paystackRequest({
       method: "POST",
       path: "/transaction/initialize",
       body: {
-        email: req.user.email,
+        email,
         amount: Math.round(amount * 100),
         currency,
+        reference,
+        ...(normalizedChannels.length ? { channels: normalizedChannels } : {}),
         callback_url: `${frontendUrl}/dashboard/billing`,
         metadata: {
           billingId: billing._id.toString(),
@@ -152,12 +221,12 @@ export const initializePaystackPayment = async (req, res) => {
       }
     });
 
-    billing.providerReference = init.data.reference;
+    billing.providerReference = reference;
     await billing.save();
 
     return res.status(200).json({
       authorizationUrl: init.data.authorization_url,
-      reference: init.data.reference,
+      reference,
       accessCode: init.data.access_code
     });
   } catch (error) {
@@ -167,7 +236,13 @@ export const initializePaystackPayment = async (req, res) => {
 
 export const chargePaystackMobileMoney = async (req, res) => {
   try {
-    const { planId, billingInterval = "monthly", provider, phone, currency: requestedCurrency } = req.body;
+    const { planId, billingInterval = "monthly", provider, phone } = req.body;
+
+    const email = String(req.user?.email || "").trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk) {
+      return res.status(400).json({ message: "Your account email is missing or invalid. Please update your profile email and try again." });
+    }
 
     if (!provider || !phone) {
       return res.status(400).json({ message: "Provider and phone are required" });
@@ -195,16 +270,16 @@ export const chargePaystackMobileMoney = async (req, res) => {
       return res.status(404).json({ message: "Plan not found" });
     }
 
-    const currency = requestedCurrency ? String(requestedCurrency).trim().toUpperCase() : subscription.currency;
-    if (currency !== "GHS" && currency !== "NGN" && currency !== "USD") {
-      return res.status(400).json({ message: "Unsupported currency" });
+    const currency = "GHS";
+
+    const supportedCurrencies = getSupportedPaystackCurrencies();
+    if (!supportedCurrencies.includes(currency)) {
+      return res.status(400).json({
+        message: `Paystack is not configured for ${currency} on this server. Supported currencies: ${supportedCurrencies.join(", ")}.`
+      });
     }
 
-    if (currency !== "GHS") {
-      return res.status(400).json({ message: "Mobile money is only available for GHS churches" });
-    }
-
-    const amount = plan.pricing?.[currency]?.[billingInterval];
+    const amount = plan.pricing?.GHS?.[billingInterval];
     if (!amount) {
       return res.status(400).json({ message: "Pricing not configured" });
     }
@@ -240,32 +315,39 @@ export const chargePaystackMobileMoney = async (req, res) => {
       }
     });
 
-    const charge = await paystackRequest({
-      method: "POST",
-      path: "/charge",
-      body: {
-        email: req.user.email,
-        amount: Math.round(amount * 100),
-        currency,
-        mobile_money: {
-          phone: normalizedPhone,
-          provider: normalizedProvider
-        },
-        metadata: {
-          billingId: billing._id.toString(),
-          subscriptionId: subscription._id.toString(),
-          churchId: subscription.church.toString()
+    const reference = `CCK_${billing._id.toString()}`;
+    billing.providerReference = reference;
+    await billing.save();
+
+    try {
+      const charge = await paystackRequest({
+        method: "POST",
+        path: "/charge",
+        body: {
+          email,
+          amount: Math.round(amount * 100),
+          currency,
+          reference,
+          mobile_money: {
+            phone: normalizedPhone,
+            provider: normalizedProvider
+          },
+          metadata: {
+            billingId: billing._id.toString(),
+            subscriptionId: subscription._id.toString(),
+            churchId: subscription.church.toString()
+          }
         }
+      });
+
+      return res.status(200).json({ reference, status: charge?.data?.status || "pending" });
+    } catch (e) {
+      const msg = String(e?.message || "");
+      if (msg.toLowerCase().includes("charge attempted")) {
+        return res.status(200).json({ reference, status: "pending" });
       }
-    });
-
-    const reference = charge?.data?.reference;
-    if (reference) {
-      billing.providerReference = reference;
-      await billing.save();
+      throw e;
     }
-
-    return res.status(200).json({ reference, status: charge?.data?.status || "pending" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -290,11 +372,33 @@ export const verifyPaystackPayment = async (req, res) => {
 
     const status = String(verification?.data?.status || "").toLowerCase();
 
-    const billing = await BillingHistory.findOne({
+    let billing = await BillingHistory.findOne({
       church: churchId,
       providerReference: reference,
       paymentProvider: "paystack"
     }).sort({ status: 1, createdAt: -1 });
+
+    if (!billing) {
+      const fallback = await BillingHistory.findOne({
+        providerReference: reference,
+        paymentProvider: "paystack"
+      }).sort({ status: 1, createdAt: -1 });
+
+      if (fallback) {
+        const userChurchId = req.user?.church;
+        if (userChurchId && String(fallback.church) === String(userChurchId)) {
+          billing = fallback;
+        } else if (userChurchId) {
+          const userChurch = await Church.findById(userChurchId).lean();
+          if (userChurch?.type === "Headquarters") {
+            const targetChurch = await Church.findById(fallback.church).lean();
+            if (targetChurch?.parentChurch?.toString() === userChurchId.toString()) {
+              billing = fallback;
+            }
+          }
+        }
+      }
+    }
 
     if (!billing) {
       return res.status(404).json({ message: "Billing record not found" });
@@ -374,7 +478,7 @@ export const verifyPaystackPayment = async (req, res) => {
       return res.json({ status: "paid", subscription: populated });
     }
 
-    if (status === "failed" || status === "abandoned") {
+    if (status === "failed") {
       if (billing.status !== "failed") {
         billing.status = "failed";
         await billing.save();
@@ -383,12 +487,17 @@ export const verifyPaystackPayment = async (req, res) => {
       subscription.status = "past_due";
       {
         const { gracePeriodDays } = await getSystemSettingsSnapshot();
-        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
+        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 7));
       }
       await subscription.save();
 
       const populated = await Subscription.findById(subscription._id).populate("plan").lean();
       return res.json({ status: "failed", subscription: populated });
+    }
+
+    if (status === "abandoned") {
+      const populated = await Subscription.findById(subscription._id).populate("plan").lean();
+      return res.json({ status: "pending", subscription: populated });
     }
 
     const populated = await Subscription.findById(subscription._id).populate("plan").lean();

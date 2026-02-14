@@ -4,6 +4,8 @@ import { useAuth } from "../../auth/useAuth.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { getChurchProfile, searchHeadquartersChurches, updateChurchProfile } from "../../church/services/church.api.js";
+import Select from "react-select";
+import currencyCodes from "currency-codes";
 import { updateMyPassword, updateMyProfile } from "../../auth/services/auth.api.js";
 import { getActivityLogs } from "../../activityLog/services/activityLog.api.js";
 import {
@@ -178,8 +180,33 @@ function SettingsPage() {
   const [city, setCity] = useState("");
   const [region, setRegion] = useState("");
   const [country, setCountry] = useState("");
+  const [currency, setCurrency] = useState("");
   const [foundedDate, setFoundedDate] = useState("");
   const [referralCodeInput, setReferralCodeInput] = useState("");
+
+  const currencyOptions = useMemo(() => {
+    const rows = Array.isArray(currencyCodes?.data) ? currencyCodes.data : [];
+    if (rows.length) {
+      return rows
+        .filter((r) => r?.code)
+        .map((r) => ({
+          value: String(r.code).toUpperCase(),
+          label: `${String(r.code).toUpperCase()} - ${String(r.currency || "").trim() || String(r.code).toUpperCase()}`
+        }));
+    }
+
+    const codes = typeof currencyCodes?.codes === "function" ? currencyCodes.codes() : [];
+    return (Array.isArray(codes) ? codes : []).map((c) => ({
+      value: String(c).toUpperCase(),
+      label: String(c).toUpperCase()
+    }));
+  }, []);
+
+  const selectedCurrencyOption = useMemo(() => {
+    const cur = String(currency || "").trim().toUpperCase();
+    if (!cur) return null;
+    return currencyOptions.find((o) => String(o.value) === cur) || { value: cur, label: cur };
+  }, [currency, currencyOptions]);
 
   const isBranch = type === "Branch";
 
@@ -302,6 +329,10 @@ function SettingsPage() {
         setCity(church?.city || "");
         setRegion(church?.region || "");
         setCountry(church?.country || "");
+        setCurrency(
+          String(church?.currency || "").trim().toUpperCase() ||
+            (String(church?.country || "").trim().toLowerCase() === "ghana" ? "GHS" : "USD")
+        );
         setFoundedDate(formatYmdLocal(church?.foundedDate));
         setReferralCodeInput("");
       } catch (e) {
@@ -402,6 +433,7 @@ function SettingsPage() {
         city,
         region,
         country,
+        currency: String(currency || "").trim().toUpperCase(),
         foundedDate: foundedDate || null
       };
 
@@ -1287,6 +1319,33 @@ function SettingsPage() {
                   onChange={(e) => setCountry(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                   disabled={!canWrite}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                <Select
+                  inputId="church-currency"
+                  isSearchable
+                  options={currencyOptions}
+                  value={selectedCurrencyOption}
+                  onChange={(opt) => setCurrency(String(opt?.value || "").toUpperCase())}
+                  placeholder="Select currency"
+                  isDisabled={!canWrite}
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      minHeight: "44px",
+                      borderRadius: "0.5rem",
+                      borderColor: state.isFocused ? "#1e3a8a" : "#d1d5db",
+                      boxShadow: state.isFocused ? "0 0 0 2px rgba(30,58,138,0.2)" : "none",
+                      ":hover": { borderColor: state.isFocused ? "#1e3a8a" : "#9ca3af" }
+                    }),
+                    valueContainer: (base) => ({ ...base, padding: "0 0.75rem" }),
+                    input: (base) => ({ ...base, margin: 0, padding: 0 }),
+                    placeholder: (base) => ({ ...base, color: "#9ca3af" }),
+                    singleValue: (base) => ({ ...base, color: "#111827" })
+                  }}
                 />
               </div>
 

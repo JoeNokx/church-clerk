@@ -3,7 +3,7 @@ import express from "express";
 
 import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js"; 
-import { chargePaystackMobileMoney, initializePaystackPayment, verifyPaystackPayment } from "../../controller/billingController/paystackController.js";
+import { chargePaystackMobileMoney, initializePaystackPayment, verifyPaystackPayment, getPaystackBanks } from "../../controller/billingController/paystackController.js";
 import { paystackWebhook } from "../../controller/billingController/webhookController.js";
 import { cancelSubscription, changePlan } from "../../controller/billingController/cancelPauseResumeSubscriptionController.js";
 
@@ -17,6 +17,8 @@ import {
   getMyBillingHistory,
   addMobileMoneyPaymentMethod,
   addCardPaymentMethod,
+  addBankPaymentMethod,
+  updatePaymentMethod,
   removePaymentMethod
 } from "../../controller/billingController/subscriptionController.js";
 
@@ -97,6 +99,13 @@ router.post(
 );
 
 router.get(
+  "/payments/paystack/banks",
+  protect,
+  authorizeRoles(...churchDashboardRoles),
+  getPaystackBanks
+);
+
+router.get(
   "/billing-history",
   protect,
   authorizeRoles(...churchDashboardRoles),
@@ -124,11 +133,25 @@ router.post(
   addCardPaymentMethod
 );
 
+router.post(
+  "/payment-methods/bank",
+  protect,
+  authorizeRoles(...churchDashboardRoles),
+  addBankPaymentMethod
+);
+
 router.delete(
   "/payment-methods/:methodId",
   protect,
   authorizeRoles(...churchDashboardRoles),
   removePaymentMethod
+);
+
+router.put(
+  "/payment-methods/:methodId",
+  protect,
+  authorizeRoles(...churchDashboardRoles),
+  updatePaymentMethod
 );
 
 router.post(

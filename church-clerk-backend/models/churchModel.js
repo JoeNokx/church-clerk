@@ -35,6 +35,13 @@ const churchSchema = new mongoose.Schema({
   region: String,
   country: { type: String, default: "Ghana" },
 
+  currency: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    default: "GHS"
+  },
+
   phoneNumber: { type: String, trim: true },
   email: { type: String, lowercase: true, trim: true },
 

@@ -1,12 +1,13 @@
 import express from "express";
 const router = express.Router();
 
-import { registerSystemAdmin, loginSystemAdmin, logoutSystemAdmin } from "../controller/adminAuthController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { registerSystemAdmin, loginSystemAdmin, logoutSystemAdmin, getSystemAdminMe } from "../controller/adminAuthController.js";
+import { protectAdmin } from "../middleware/authMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
 
 router.post("/login", loginSystemAdmin);
-router.post("/logout", protect, authorizeRoles("superadmin", "supportadmin"), logoutSystemAdmin);
-router.post("/register", protect, authorizeRoles("superadmin"), registerSystemAdmin);
+router.get("/me", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getSystemAdminMe);
+router.post("/logout", protectAdmin, authorizeRoles("superadmin", "supportadmin"), logoutSystemAdmin);
+router.post("/register", protectAdmin, authorizeRoles("superadmin"), registerSystemAdmin);
 
 export default router;

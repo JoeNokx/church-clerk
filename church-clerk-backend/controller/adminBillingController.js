@@ -62,6 +62,29 @@ const normalizePriceByCurrency = (body) => {
   return priceByCurrency;
 };
 
+const sanitizePriceByCurrency = (priceByCurrency) => {
+  if (!priceByCurrency || typeof priceByCurrency !== "object") return null;
+  const sanitized = {};
+  if (priceByCurrency?.GHS) sanitized.GHS = priceByCurrency.GHS;
+  return Object.keys(sanitized).length ? sanitized : null;
+};
+
+const sanitizePlanCurrencies = (plan) => {
+  if (!plan) return plan;
+  const obj = typeof plan.toObject === "function" ? plan.toObject() : plan;
+  const copy = { ...obj };
+
+  const nextPricing = {};
+  if (copy?.pricing?.GHS) nextPricing.GHS = copy.pricing.GHS;
+  copy.pricing = nextPricing;
+
+  const nextPriceByCurrency = {};
+  if (copy?.priceByCurrency?.GHS) nextPriceByCurrency.GHS = copy.priceByCurrency.GHS;
+  copy.priceByCurrency = nextPriceByCurrency;
+
+  return copy;
+};
+
 const normalizePlanName = (name) => {
   return typeof name === "string" ? name.trim().toLowerCase() : name;
 };
@@ -76,7 +99,8 @@ const validatePlanName = (name) => {
 export const createPlan = async (req, res) => {
   try {
     const { name, description, memberLimit = null, features = {}, featureCategories = {}, isActive = true } = req.body;
-    const priceByCurrency = normalizePriceByCurrency(req.body);
+    const rawPriceByCurrency = normalizePriceByCurrency(req.body);
+    const priceByCurrency = sanitizePriceByCurrency(rawPriceByCurrency);
 
     const normalizedName = normalizePlanName(name);
 
@@ -103,7 +127,7 @@ export const createPlan = async (req, res) => {
       createdBy: req.user._id
     });
 
-    return res.status(201).json({ message: "Plan created successfully", plan });
+    return res.status(201).json({ message: "Plan created successfully", plan: sanitizePlanCurrencies(plan) });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }
@@ -112,7 +136,8 @@ export const createPlan = async (req, res) => {
 export const getPlans = async (req, res) => {
   try {
     const plans = await Plan.find().sort({ createdAt: -1 });
-    return res.status(200).json({ message: "Plans fetched successfully", plans });
+    const sanitized = Array.isArray(plans) ? plans.map(sanitizePlanCurrencies) : [];
+    return res.status(200).json({ message: "Plans fetched successfully", plans: sanitized });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -127,7 +152,11 @@ export const updatePlan = async (req, res) => {
       validatePlanName(updates.name);
     }
 
-    const priceByCurrency = normalizePriceByCurrency(req.body);
+    const rawPriceByCurrency = normalizePriceByCurrency(req.body);
+    const priceByCurrency = rawPriceByCurrency ? sanitizePriceByCurrency(rawPriceByCurrency) : null;
+    if (rawPriceByCurrency && !priceByCurrency) {
+      return res.status(400).json({ message: "Only GHS pricing is supported" });
+    }
     if (priceByCurrency) {
       updates.priceByCurrency = priceByCurrency;
       updates.pricing = priceByCurrency;
@@ -142,7 +171,7 @@ export const updatePlan = async (req, res) => {
 
     if (!plan) return res.status(404).json({ message: "Plan not found" });
 
-    return res.status(200).json({ message: "Plan updated", plan });
+    return res.status(200).json({ message: "Plan updated", plan: sanitizePlanCurrencies(plan) });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }

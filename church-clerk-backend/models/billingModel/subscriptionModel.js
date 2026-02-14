@@ -74,12 +74,12 @@ const subscriptionSchema = new mongoose.Schema(
       {
         type: {
           type: String,
-          enum: ["mobile_money", "card"],
+          enum: ["mobile_money", "card", "bank"],
           default: "mobile_money"
         },
         provider: {
           type: String,
-          enum: ["mtn", "vod", "tgo"],
+          enum: ["mtn", "vod", "tgo", "ussd"],
           required: function () {
             return this.type === "mobile_money";
           }
@@ -112,6 +112,23 @@ const subscriptionSchema = new mongoose.Schema(
           default: null
         },
         authorizationCode: {
+          type: String,
+          default: null
+        },
+
+        bankCode: {
+          type: String,
+          default: null
+        },
+        bankName: {
+          type: String,
+          default: null
+        },
+        accountName: {
+          type: String,
+          default: null
+        },
+        accountNumberLast4: {
           type: String,
           default: null
         }

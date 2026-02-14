@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 import PermissionContext from "../../permissions/permission.store.js";
+import ChurchContext from "../../church/church.store.js";
 import PledgeContext, { PledgeProvider } from "../pledge.store.js";
 import {
   createPledgePayment,
@@ -10,9 +11,10 @@ import {
   getPledgePayments,
   updatePledgePayment
 } from "../payments/services/pledgePayments.api.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
+function formatCurrency(value, currency) {
+  return formatMoney(value, currency);
 }
 
 function formatDate(value) {
@@ -59,7 +61,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   );
 }
 
-function PaymentFormModal({ open, mode, initialData, onClose, onSubmit }) {
+function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency }) {
   const [paymentDate, setPaymentDate] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
@@ -145,7 +147,7 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Amount (GHS)</label>
+            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -233,8 +235,10 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
 }
 
 function PledgeDetailsPageInner() {
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "";
   const { can } = useContext(PermissionContext) || {};
-  const store = useContext(PledgeContext);
+  const canRead = useMemo(() => (typeof can === "function" ? can("pledge", "read") : true), [can]);
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
 
@@ -472,17 +476,17 @@ function PledgeDetailsPageInner() {
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="text-xs font-semibold text-gray-500">Amount Pledged</div>
-          <div className="mt-2 text-2xl font-semibold text-purple-700">{formatCurrency(pledge?.amount || paymentsSummary?.amountPledged || 0)}</div>
+          <div className="mt-2 text-2xl font-semibold text-purple-700">{formatCurrency(pledge?.amount || paymentsSummary?.amountPledged || 0, currency)}</div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="text-xs font-semibold text-gray-500">Total Paid</div>
-          <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(paymentsSummary?.totalPaid || 0)}</div>
+          <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(paymentsSummary?.totalPaid || 0, currency)}</div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="text-xs font-semibold text-gray-500">Balance</div>
-          <div className="mt-2 text-2xl font-semibold text-red-600">{formatCurrency(paymentsSummary?.remainingBalance || 0)}</div>
+          <div className="mt-2 text-2xl font-semibold text-red-600">{formatCurrency(paymentsSummary?.remainingBalance || 0, currency)}</div>
         </div>
       </div>
 
@@ -518,7 +522,7 @@ function PledgeDetailsPageInner() {
                     {payments.map((p, idx) => (
                       <tr key={p?._id ?? `p-${idx}`} className="text-sm text-gray-700">
                         <td className="px-6 py-1.5 text-gray-900">{formatDate(p?.paymentDate)}</td>
-                        <td className="px-6 py-1.5 text-green-700 font-semibold">{formatCurrency(p?.amount || 0)}</td>
+                        <td className="px-6 py-1.5 text-green-700 font-semibold">{formatCurrency(p?.amount || 0, currency)}</td>
                         <td className="px-6 py-1.5 text-gray-600">{p?.paymentMethod || "—"}</td>
                         <td className="px-6 py-1.5 text-gray-600">{p?.note || "—"}</td>
                         <td className="px-6 py-1.5">
@@ -577,26 +581,35 @@ function PledgeDetailsPageInner() {
         open={newPaymentOpen}
         mode="create"
         initialData={null}
-        onClose={closePaymentForms}
+        onClose={() => {
+          setNewPaymentOpen(false);
+          setPaymentError("");
+        }}
         onSubmit={async (payload) => {
           if (!pledgeId) return;
           await createPledgePayment(pledgeId, payload);
           await loadPayments({ page: 1 });
           await loadPledge();
         }}
+        currency={currency}
       />
 
       <PaymentFormModal
         open={editPaymentOpen}
         mode="edit"
         initialData={editingPayment}
-        onClose={closePaymentForms}
+        onClose={() => {
+          setEditPaymentOpen(false);
+          setEditingPayment(null);
+          setPaymentError("");
+        }}
         onSubmit={async (payload) => {
           if (!pledgeId || !editingPayment?._id) return;
           await updatePledgePayment(pledgeId, editingPayment._id, payload);
           await loadPayments({ page: 1 });
           await loadPledge();
         }}
+        currency={currency}
       />
 
       <ConfirmDeleteModal

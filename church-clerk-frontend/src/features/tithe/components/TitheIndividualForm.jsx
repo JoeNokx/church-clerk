@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque", "Card"];
 
@@ -25,6 +27,8 @@ function memberLabel(member) {
 function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(TitheContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("tithe", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
@@ -325,7 +329,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
                         <div key={`pending-${i}`} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
                           <div className="text-sm font-semibold text-gray-900 truncate">{memberLabel(p?.member)}</div>
                           <div className="mt-1 text-xs text-gray-600">
-                            GHS {Number(p?.payload?.amount || 0).toLocaleString()} • {p?.payload?.paymentMethod || "-"} • {(p?.payload?.date || "").slice(0, 10)}
+                            {formatMoney(p?.payload?.amount || 0, currency)} • {p?.payload?.paymentMethod || "-"} • {(p?.payload?.date || "").slice(0, 10)}
                           </div>
                         </div>
                       ))}

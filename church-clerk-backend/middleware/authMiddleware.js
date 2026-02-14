@@ -6,11 +6,11 @@ import Church from "../models/churchModel.js";
 
 
 
-const protect = async (req, res, next) => {
+const protectWithCookie = (cookieNames) => async (req, res, next) => {
   try {
-    const token = req.cookies?.token;
-
-    console.log("Cookies received:", req.cookies);
+    const cookies = req.cookies || {};
+    const names = Array.isArray(cookieNames) ? cookieNames : [cookieNames];
+    const token = names.map((n) => cookies?.[n]).find(Boolean);
 
     if (!token) {
       return res.status(401).json({ message: "Not authorized, token missing" });
@@ -172,4 +172,7 @@ const protect = async (req, res, next) => {
   }
 };
 
-export { protect };
+const protect = protectWithCookie(["token", "userToken"]);
+const protectAdmin = protectWithCookie(["adminToken"]);
+
+export { protect, protectAdmin };

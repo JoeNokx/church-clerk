@@ -20,12 +20,43 @@ function BillingSubscriptionsPage() {
   const [plans, setPlans] = useState([]);
 
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [currencyFilter, setCurrencyFilter] = useState("");
+
+  const planOptions = useMemo(() => {
+    const list = Array.isArray(plans) ? plans : [];
+    const names = list.map((p) => String(p?.name || "").trim()).filter(Boolean);
+    return Array.from(new Set(names));
+  }, [plans]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((s) => {
+    const st = String(statusFilter || "").trim().toLowerCase();
+    const pf = String(planFilter || "").trim().toLowerCase();
+    const cf = String(currencyFilter || "").trim().toUpperCase();
+
+    return (Array.isArray(rows) ? rows : []).filter((s) => {
       const church = s?.church;
       const plan = s?.plan;
+
+      if (st) {
+        const statusValue = String(s?.status || "").toLowerCase();
+        if (statusValue !== st) return false;
+      }
+
+      if (pf) {
+        const planName = String(plan?.name || "").toLowerCase();
+        if (planName !== pf) return false;
+      }
+
+      if (cf) {
+        const cur = String(s?.currency || "").toUpperCase();
+        if (cur !== cf) return false;
+      }
+
+      if (!q) return true;
+
       return (
         String(church?.name || "").toLowerCase().includes(q) ||
         String(church?.email || "").toLowerCase().includes(q) ||
@@ -33,7 +64,7 @@ function BillingSubscriptionsPage() {
         String(s?.status || "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search]);
+  }, [currencyFilter, planFilter, rows, search, statusFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -135,8 +166,42 @@ function BillingSubscriptionsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search church, plan, status..."
-          className="w-full md:w-80 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+          className="w-full md:w-72 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
         />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All statuses</option>
+          <option value="free trial">free trial</option>
+          <option value="trialing">trialing</option>
+          <option value="active">active</option>
+          <option value="past_due">past_due</option>
+          <option value="suspended">suspended</option>
+          <option value="cancelled">cancelled</option>
+          <option value="canceled">canceled</option>
+        </select>
+        <select
+          value={planFilter}
+          onChange={(e) => setPlanFilter(e.target.value)}
+          className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All plans</option>
+          {planOptions.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <select
+          value={currencyFilter}
+          onChange={(e) => setCurrencyFilter(e.target.value)}
+          className="w-full md:w-36 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All currencies</option>
+          <option value="GHS">GHS</option>
+        </select>
       </div>
 
       {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}

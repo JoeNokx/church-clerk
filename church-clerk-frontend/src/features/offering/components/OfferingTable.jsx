@@ -1,6 +1,8 @@
 import { useContext, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import OfferingContext from "../offering.store.js";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -12,6 +14,8 @@ function formatDate(value) {
 function OfferingTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(OfferingContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -89,7 +93,7 @@ function OfferingTable({ onEdit, onDeleted }) {
               <tr key={offering?._id ?? `row-${index}`} className="text-sm text-gray-700">
                 <td className="px-6 py-1.5 text-gray-900">{offering?.serviceType || "-"}</td>
                 <td className="px-6 py-1.5 text-gray-700">{offering?.offeringType || "-"}</td>
-                <td className="px-6 py-1.5 text-blue-700">GHS {Number(offering?.amount || 0).toLocaleString()}</td>
+                <td className="px-6 py-1.5 text-blue-700">{formatMoney(offering?.amount || 0, currency)}</td>
                 <td className="px-6 py-1.5">{formatDate(offering?.serviceDate)}</td>
                 <td className="px-6 py-1.5">
                   <div className="flex items-center justify-end gap-2">

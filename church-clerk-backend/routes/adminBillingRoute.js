@@ -1,6 +1,6 @@
 import express from "express";
 
-import { protect } from "../middleware/authMiddleware.js";
+import { protectAdmin } from "../middleware/authMiddleware.js";
 import requireSuperAdmin from "../middleware/requireSuperAdmin.js";
 
 import {
@@ -22,7 +22,7 @@ import {
 
 const router = express.Router();
 
-router.use(protect);
+router.use(protectAdmin);
 router.use(requireSuperAdmin);
 
 router.post("/plans", createPlan);

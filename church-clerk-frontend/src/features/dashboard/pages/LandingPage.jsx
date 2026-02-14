@@ -4,13 +4,11 @@ import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
 import http from "../../../shared/services/http.js";
 import MinistryPlusCustomPlanModal from "../../../shared/components/MinistryPlusCustomPlanModal.jsx";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
 
 function formatCurrency(amount, currency) {
-  const v = Number(amount || 0);
-  const c = String(currency || "").trim();
-  if (!c) return v.toLocaleString();
-  const symbol = c === "GHS" ? "₵" : c === "NGN" ? "₦" : c === "USD" ? "$" : "";
-  return symbol ? `${symbol}${v.toLocaleString()}` : `${c} ${v.toLocaleString()}`;
+  return formatMoney(amount, currency);
 }
 
 function LandingPage() {
@@ -18,6 +16,8 @@ function LandingPage() {
   const [billingInterval, setBillingInterval] = useState("monthly");
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
+  const [visitorIsGhana, setVisitorIsGhana] = useState(true);
+  const [usdToGhs, setUsdToGhs] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +41,52 @@ function LandingPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (visitorIsGhana) {
+        setUsdToGhs(null);
+        return;
+      }
+
+      try {
+        const rate = await getUsdToGhsRate();
+        if (cancelled) return;
+        setUsdToGhs(rate);
+      } catch {
+        if (cancelled) return;
+        setUsdToGhs(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visitorIsGhana]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
+        if (!res.ok) throw new Error("geo lookup failed");
+        const json = await res.json();
+        if (cancelled) return;
+        const code = String(json?.country || "").trim().toUpperCase();
+        const name = String(json?.country_name || "").trim().toLowerCase();
+        const isGhana = code === "GH" || name === "ghana";
+        setVisitorIsGhana(isGhana);
+      } catch {
+        if (cancelled) return;
+        setVisitorIsGhana(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const plansSorted = useMemo(() => {
     const rows = Array.isArray(plans) ? plans : [];
     const order = { "free lite": 0, basic: 1, standard: 2, premium: 3 };
@@ -54,19 +100,7 @@ function LandingPage() {
     });
   }, [plans]);
 
-  const currency = useMemo(() => {
-    const rows = Array.isArray(plansSorted) ? plansSorted : [];
-    const preferred = ["GHS", "USD", "NGN"];
-    for (const p of rows) {
-      const obj = p?.pricing || p?.priceByCurrency || {};
-      const keys = Object.keys(obj || {});
-      for (const cur of preferred) {
-        if (keys.includes(cur)) return cur;
-      }
-      if (keys[0]) return keys[0];
-    }
-    return "GHS";
-  }, [plansSorted]);
+  const displayCurrency = visitorIsGhana || !usdToGhs ? "GHS" : "USD";
 
   return (
     <div className="min-h-screen bg-white">
@@ -187,10 +221,8 @@ function LandingPage() {
                     const id = p?._id;
                     const name = String(p?.name || "");
                     const isMostPopular = name.toLowerCase() === "standard";
-                    const price =
-                      p?.pricing?.[currency]?.[billingInterval] ??
-                      p?.priceByCurrency?.[currency]?.[billingInterval] ??
-                      0;
+                    const ghsPrice = p?.pricing?.GHS?.[billingInterval] ?? p?.priceByCurrency?.GHS?.[billingInterval] ?? 0;
+                    const displayPrice = !visitorIsGhana && usdToGhs ? Number(ghsPrice || 0) / Number(usdToGhs || 1) : ghsPrice;
                     const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
 
                     return (
@@ -208,7 +240,7 @@ function LandingPage() {
 
                         <div className="text-lg font-semibold text-gray-900">{name || "—"}</div>
                         <div className="mt-4 flex items-end gap-2">
-                          <span className="text-3xl font-semibold text-gray-900">{formatCurrency(price, currency)}</span>
+                          <span className="text-3xl font-semibold text-gray-900">{formatCurrency(displayPrice, displayCurrency)}</span>
                           <span className="text-sm text-gray-500">{per}</span>
                         </div>
 

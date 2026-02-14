@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import {
   getBusinessIncomeExpensesKPI,
   getBusinessVenture
@@ -19,8 +20,8 @@ import {
   updateBusinessExpense
 } from "../expenses/services/businessExpenses.api.js";
 
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
+function formatCurrency(value, currency) {
+  return formatMoney(value, currency);
 }
 
 function formatDate(value) {
@@ -247,7 +248,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
   );
 }
 
-function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title }) {
+function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, currency }) {
   const [recievedFrom, setRecievedFrom] = useState("");
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
@@ -324,7 +325,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title }) 
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Amount (GHS)</label>
+            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -375,7 +376,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title }) 
   );
 }
 
-function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title }) {
+function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, currency }) {
   const [spentBy, setSpentBy] = useState("");
   const [category, setCategory] = useState("");
   const [date, setDate] = useState("");
@@ -499,7 +500,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title })
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Amount (GHS)</label>
+            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -546,6 +547,7 @@ function BusinessVentureDetailsPage() {
   const { toPage } = useDashboardNavigator();
 
   const churchCtx = useContext(ChurchContext);
+  const currency = String(churchCtx?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const activeChurch = churchCtx?.activeChurch;
   const canEdit = activeChurch?._id ? activeChurch?.canEdit !== false : true;
 
@@ -732,25 +734,25 @@ function BusinessVentureDetailsPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Income</div>
-          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(kpiCards.totalIncome)}</div>
+          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(kpiCards.totalIncome, currency)}</div>
           <div className="mt-2 text-xs text-gray-500">{kpiCards.incomeCount} transactions</div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Expenses</div>
-          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(kpiCards.totalExpenses)}</div>
+          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(kpiCards.totalExpenses, currency)}</div>
           <div className="mt-2 text-xs text-gray-500">{kpiCards.expensesCount} transactions</div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Net</div>
-          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatCurrency(kpiCards.totalNet)}</div>
+          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatCurrency(kpiCards.totalNet, currency)}</div>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">This Month</div>
           <div className="mt-3 text-sm font-semibold text-gray-900">
-            Income: {formatCurrency(kpiCards.incomeThisMonth)}
+            Income: {formatCurrency(kpiCards.incomeThisMonth, currency)}
           </div>
           <div className="mt-1 text-sm font-semibold text-gray-900">
-            Expenses: {formatCurrency(kpiCards.expensesThisMonth)}
+            Expenses: {formatCurrency(kpiCards.expensesThisMonth, currency)}
           </div>
         </div>
       </div>
@@ -864,7 +866,7 @@ function BusinessVentureDetailsPage() {
                           <td className="px-6 py-1.5 text-gray-900">{row?.recievedFrom || "—"}</td>
                           <td className="px-6 py-1.5 text-gray-600">{row?.note || "—"}</td>
                           <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
-                          <td className="px-6 py-1.5 text-green-700">{formatCurrency(row?.amount)}</td>
+                          <td className="px-6 py-1.5 text-green-700">{formatCurrency(row?.amount, currency)}</td>
                           <td className="px-6 py-1.5">
                             <div className="flex items-center justify-end gap-2">
                               {canEdit ? (
@@ -944,7 +946,7 @@ function BusinessVentureDetailsPage() {
                           <td className="px-6 py-1.5 text-gray-600">{row?.category || "—"}</td>
                           <td className="px-6 py-1.5 text-gray-600">{row?.description || "—"}</td>
                           <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
-                          <td className="px-6 py-1.5 text-orange-600">{formatCurrency(row?.amount)}</td>
+                          <td className="px-6 py-1.5 text-orange-600">{formatCurrency(row?.amount, currency)}</td>
                           <td className="px-6 py-1.5">
                             <div className="flex items-center justify-end gap-2">
                               {canEdit ? (
@@ -1023,6 +1025,7 @@ function BusinessVentureDetailsPage() {
         open={editIncomeOpen}
         mode="edit"
         title="Edit Income"
+        currency={currency}
         initialData={editIncomeRow}
         onClose={() => {
           setEditIncomeOpen(false);
@@ -1059,7 +1062,12 @@ function BusinessVentureDetailsPage() {
         open={addExpenseOpen}
         mode="add"
         title="Add Expense"
-        onClose={() => setAddExpenseOpen(false)}
+        currency={currency}
+        initialData={null}
+        onClose={() => {
+          setAddExpenseOpen(false);
+          setAddExpenseError("");
+        }}
         onSubmit={async (payload) => {
           await createBusinessExpense(businessId, payload);
           setAddExpenseOpen(false);
@@ -1072,6 +1080,7 @@ function BusinessVentureDetailsPage() {
         open={editExpenseOpen}
         mode="edit"
         title="Edit Expense"
+        currency={currency}
         initialData={editExpenseRow}
         onClose={() => {
           setEditExpenseOpen(false);

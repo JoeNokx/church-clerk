@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 import {
   getGroup,
@@ -183,6 +186,9 @@ function MinistryDetailsPage() {
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const id = params.get("id") || "";
   const type = (params.get("type") || "group").toLowerCase();
@@ -1390,7 +1396,7 @@ function MinistryDetailsPage() {
                   {offerings.map((r, idx) => (
                     <tr key={r?._id || idx} className="text-sm text-gray-700">
                       <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
-                      <td className="px-6 py-1.5 text-blue-700">GHS {Number(r?.amount || 0).toLocaleString()}</td>
+                      <td className="px-6 py-1.5 text-blue-700">{formatMoney(r?.amount || 0, currency)}</td>
                       <td className="px-6 py-1.5 text-gray-600 max-w-[420px] break-words">{r?.note || "-"}</td>
                       <td className="px-6 py-1.5">
                         <div className="flex items-center justify-end gap-2">

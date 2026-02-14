@@ -5,10 +5,14 @@ import OfferingContext from "../offering.store.js";
 import OfferingFilters from "../components/OfferingFilters.jsx";
 import OfferingForm from "../components/OfferingForm.jsx";
 import OfferingTable from "../components/OfferingTable.jsx";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 export function OfferingPageInner({ hideKpi = false, embedded = false }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(OfferingContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOffering, setEditingOffering] = useState(null);
@@ -86,7 +90,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false }) {
             <div className="flex items-start justify-between">
               <div>
                 <div className="text-xs font-semibold text-gray-500">This Week</div>
-                <div className="mt-2 text-lg font-semibold text-gray-900">GHS {Number(kpi.thisWeek || 0).toLocaleString()}</div>
+                <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisWeek || 0, currency)}</div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-600">
@@ -103,7 +107,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false }) {
             <div className="flex items-start justify-between">
               <div>
                 <div className="text-xs font-semibold text-gray-500">This Month</div>
-                <div className="mt-2 text-lg font-semibold text-gray-900">GHS {Number(kpi.thisMonth || 0).toLocaleString()}</div>
+                <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisMonth || 0, currency)}</div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-500">
@@ -121,7 +125,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false }) {
             <div className="flex items-start justify-between">
               <div>
                 <div className="text-xs font-semibold text-gray-500">This Year</div>
-                <div className="mt-2 text-lg font-semibold text-gray-900">GHS {Number(kpi.thisYear || 0).toLocaleString()}</div>
+                <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisYear || 0, currency)}</div>
               </div>
               <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-600">

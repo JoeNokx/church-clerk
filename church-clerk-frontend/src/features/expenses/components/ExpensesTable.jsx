@@ -2,6 +2,8 @@ import { useContext, useMemo, useState } from "react";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import ExpensesContext from "../expenses.store.js";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -13,6 +15,8 @@ function formatDate(value) {
 function ExpensesTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(ExpensesContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -86,7 +90,7 @@ function ExpensesTable({ onEdit, onDeleted }) {
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
                 <td className="px-6 py-1.5 text-gray-900">{row?.category || "-"}</td>
-                <td className="px-6 py-1.5 text-orange-600">GHS {Number(row?.amount || 0).toLocaleString()}</td>
+                <td className="px-6 py-1.5 text-orange-600">{formatMoney(row?.amount || 0, currency)}</td>
                 <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
                 <td className="px-6 py-1.5 text-gray-600">{row?.paymentMethod || "-"}</td>
                 <td className="px-6 py-1.5 text-gray-600 max-w-[360px] break-words">{row?.description || "-"}</td>

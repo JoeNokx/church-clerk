@@ -392,6 +392,13 @@ const logoutUser = async (req, res) => {
       expires: new Date(0)
     });
 
+    res.cookie("userToken", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      expires: new Date(0)
+    });
+
     try {
       const userAgent = String(req.headers["user-agent"] || "");
       const meta = parseUserAgentMeta(userAgent);

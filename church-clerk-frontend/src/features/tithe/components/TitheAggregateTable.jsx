@@ -1,6 +1,8 @@
 import { useContext, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -12,6 +14,8 @@ function formatDate(value) {
 function TitheAggregateTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(TitheContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -86,9 +90,9 @@ function TitheAggregateTable({ onEdit, onDeleted }) {
                 <td className="px-6 py-3">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-green-50 text-green-700 flex items-center justify-center">
-                      <span className="text-base font-semibold">$</span>
+                      <span className="text-[10px] font-semibold leading-none">{currency}</span>
                     </div>
-                    <div className="text-blue-700">GHS {Number(row?.amount || 0).toLocaleString()}</div>
+                    <div className="text-blue-700">{formatMoney(row?.amount || 0, currency)}</div>
                   </div>
                 </td>
                 <td className="px-6 py-3">{formatDate(row?.date)}</td>

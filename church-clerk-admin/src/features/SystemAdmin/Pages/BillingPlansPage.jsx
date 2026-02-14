@@ -9,6 +9,52 @@ import {
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
+const FEATURE_GROUPS = [
+  {
+    label: "PEOPLE & MINISTRIES",
+    items: [
+      { key: "members", label: "Members" },
+      { key: "attendance", label: "Attendance" },
+      { key: "programsEvents", label: "Programs & Events" },
+      { key: "ministries", label: "Ministries" },
+      { key: "announcement", label: "Announcement" }
+    ]
+  },
+  {
+    label: "FINANCE",
+    items: [
+      { key: "tithes", label: "Tithes" },
+      { key: "specialFund", label: "Special fund" },
+      { key: "offerings", label: "Offerings" },
+      { key: "welfare", label: "Welfare" },
+      { key: "pledges", label: "Pledges" },
+      { key: "businessVentures", label: "Business Ventures" },
+      { key: "expenses", label: "Expenses" },
+      { key: "financialStatement", label: "Financial statement" }
+    ]
+  },
+  {
+    label: "ADMINISTRATION",
+    items: [
+      { key: "reportsAnalytics", label: "Reports & Analytics" },
+      { key: "billing", label: "Billing" },
+      { key: "referrals", label: "Referrals" },
+      { key: "settings", label: "Settings" },
+      { key: "supportHelp", label: "Support & Help" }
+    ]
+  }
+];
+
+const getEmptyFeatures = () => {
+  const obj = {};
+  for (const group of FEATURE_GROUPS) {
+    for (const item of group.items) {
+      obj[item.key] = false;
+    }
+  }
+  return obj;
+};
+
 const normalizePlanValue = (value) => {
   const v = safeString(value).trim().toLowerCase();
   if (v === "free lite" || v === "basic" || v === "standard" || v === "premium") return v;
@@ -20,6 +66,9 @@ function BillingPlansPage() {
   const [error, setError] = useState("");
   const [plans, setPlans] = useState([]);
 
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("");
+
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -27,19 +76,10 @@ function BillingPlansPage() {
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
 
-  const [currency, setCurrency] = useState("GHS");
-  const [pricingMonthly, setPricingMonthly] = useState("");
-  const [pricingHalfYear, setPricingHalfYear] = useState("");
-  const [pricingYearly, setPricingYearly] = useState("");
-
-  const [catPeopleMinistries, setCatPeopleMinistries] = useState(false);
-  const [catFinance, setCatFinance] = useState(false);
-  const [catAdministration, setCatAdministration] = useState(false);
+  const [features, setFeatures] = useState(getEmptyFeatures);
 
   const [prices, setPrices] = useState({
-    GHS: { monthly: "", halfYear: "", yearly: "" },
-    NGN: { monthly: "", halfYear: "", yearly: "" },
-    USD: { monthly: "", halfYear: "", yearly: "" }
+    GHS: { monthly: "", halfYear: "", yearly: "" }
   });
 
   const planOptions = useMemo(
@@ -61,6 +101,19 @@ function BillingPlansPage() {
       return order(aName) - order(bName);
     });
   }, [plans]);
+
+  const filtered = useMemo(() => {
+    const q = String(search || "").trim().toLowerCase();
+    return (Array.isArray(sorted) ? sorted : []).filter((p) => {
+      if (activeFilter === "active" && !p?.isActive) return false;
+      if (activeFilter === "inactive" && p?.isActive) return false;
+
+      if (!q) return true;
+      const desc = safeString(p?.description).toLowerCase();
+      const name = safeString(p?.name).toLowerCase();
+      return name.includes(q) || desc.includes(q);
+    });
+  }, [activeFilter, search, sorted]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,30 +138,15 @@ function BillingPlansPage() {
     setName("free lite");
     setDescription("");
     setIsActive(true);
-    setCurrency("GHS");
-    setPricingMonthly("");
-    setPricingHalfYear("");
-    setPricingYearly("");
-    setCatPeopleMinistries(false);
-    setCatFinance(false);
-    setCatAdministration(false);
+    setFeatures(getEmptyFeatures());
     setPrices({
-      GHS: { monthly: "", halfYear: "", yearly: "" },
-      NGN: { monthly: "", halfYear: "", yearly: "" },
-      USD: { monthly: "", halfYear: "", yearly: "" }
+      GHS: { monthly: "", halfYear: "", yearly: "" }
     });
   };
 
   const openCreate = () => {
     resetForm();
     setFormOpen(true);
-  };
-
-  const currencyLabel = (cur) => {
-    if (cur === "GHS") return "Ghana Cedi (GHS)";
-    if (cur === "NGN") return "Nigeria Naira (NGN)";
-    if (cur === "USD") return "USD (for other countries)";
-    return cur;
   };
 
   const openEdit = (p) => {
@@ -123,29 +161,20 @@ function BillingPlansPage() {
         monthly: by?.GHS?.monthly !== undefined && by?.GHS?.monthly !== null ? String(by.GHS.monthly) : "",
         halfYear: by?.GHS?.halfYear !== undefined && by?.GHS?.halfYear !== null ? String(by.GHS.halfYear) : "",
         yearly: by?.GHS?.yearly !== undefined && by?.GHS?.yearly !== null ? String(by.GHS.yearly) : ""
-      },
-      NGN: {
-        monthly: by?.NGN?.monthly !== undefined && by?.NGN?.monthly !== null ? String(by.NGN.monthly) : "",
-        halfYear: by?.NGN?.halfYear !== undefined && by?.NGN?.halfYear !== null ? String(by.NGN.halfYear) : "",
-        yearly: by?.NGN?.yearly !== undefined && by?.NGN?.yearly !== null ? String(by.NGN.yearly) : ""
-      },
-      USD: {
-        monthly: by?.USD?.monthly !== undefined && by?.USD?.monthly !== null ? String(by.USD.monthly) : "",
-        halfYear: by?.USD?.halfYear !== undefined && by?.USD?.halfYear !== null ? String(by.USD.halfYear) : "",
-        yearly: by?.USD?.yearly !== undefined && by?.USD?.yearly !== null ? String(by.USD.yearly) : ""
       }
     };
     setPrices(nextPrices);
 
-    setCurrency("GHS");
-    setPricingMonthly(nextPrices.GHS.monthly);
-    setPricingHalfYear(nextPrices.GHS.halfYear);
-    setPricingYearly(nextPrices.GHS.yearly);
-
-    const cats = p?.featureCategories || {};
-    setCatPeopleMinistries(Boolean(cats?.peopleMinistries));
-    setCatFinance(Boolean(cats?.finance));
-    setCatAdministration(Boolean(cats?.administration));
+    const savedFeatures = p?.features || {};
+    const nextFeatures = getEmptyFeatures();
+    for (const key of Object.keys(nextFeatures)) {
+      if (key === "announcement") {
+        nextFeatures.announcement = Boolean(savedFeatures?.announcement || savedFeatures?.announcements);
+        continue;
+      }
+      nextFeatures[key] = Boolean(savedFeatures?.[key]);
+    }
+    setFeatures(nextFeatures);
 
     setFormOpen(true);
   };
@@ -157,15 +186,6 @@ function BillingPlansPage() {
       return;
     }
 
-    const nextPrices = {
-      ...(prices || {}),
-      [currency]: {
-        monthly: pricingMonthly,
-        halfYear: pricingHalfYear,
-        yearly: pricingYearly
-      }
-    };
-
     const toNumberOrNull = (v) => {
       if (v === "" || v === null || v === undefined) return null;
       const n = Number(v);
@@ -173,25 +193,22 @@ function BillingPlansPage() {
     };
 
     const priceByCurrency = {};
-    const currencies = ["GHS", "NGN", "USD"];
-    for (const cur of currencies) {
-      const row = nextPrices?.[cur] || {};
-      const monthly = toNumberOrNull(row.monthly);
-      const halfYear = toNumberOrNull(row.halfYear);
-      const yearly = toNumberOrNull(row.yearly);
+    const row = prices?.GHS || {};
+    const monthly = toNumberOrNull(row.monthly);
+    const halfYear = toNumberOrNull(row.halfYear);
+    const yearly = toNumberOrNull(row.yearly);
 
-      if (Number.isNaN(monthly) || Number.isNaN(halfYear) || Number.isNaN(yearly)) {
-        setError("Plan prices must be numbers");
-        return;
-      }
+    if (Number.isNaN(monthly) || Number.isNaN(halfYear) || Number.isNaN(yearly)) {
+      setError("Plan prices must be numbers");
+      return;
+    }
 
-      if (monthly !== null || halfYear !== null || yearly !== null) {
-        priceByCurrency[cur] = {
-          ...(monthly !== null ? { monthly } : {}),
-          ...(halfYear !== null ? { halfYear } : {}),
-          ...(yearly !== null ? { yearly } : {})
-        };
-      }
+    if (monthly !== null || halfYear !== null || yearly !== null) {
+      priceByCurrency.GHS = {
+        ...(monthly !== null ? { monthly } : {}),
+        ...(halfYear !== null ? { halfYear } : {}),
+        ...(yearly !== null ? { yearly } : {})
+      };
     }
 
     if (Object.keys(priceByCurrency).length === 0) {
@@ -199,10 +216,22 @@ function BillingPlansPage() {
       return;
     }
 
+    const featuresPayload = { ...(features || {}) };
+    const peopleKeys = FEATURE_GROUPS[0].items.map((x) => x.key);
+    const financeKeys = FEATURE_GROUPS[1].items.map((x) => x.key);
+    const adminKeys = FEATURE_GROUPS[2].items.map((x) => x.key);
+
+    const peopleMinistriesEnabled = peopleKeys.some((k) => Boolean(featuresPayload?.[k]));
+    const financeEnabled = financeKeys.some((k) => Boolean(featuresPayload?.[k]));
+    const adminEnabled = adminKeys.some((k) => Boolean(featuresPayload?.[k]));
+
+    featuresPayload.announcements = Boolean(featuresPayload.announcement);
+    featuresPayload.financeModule = financeEnabled;
+
     const featureCategories = {
-      peopleMinistries: Boolean(catPeopleMinistries),
-      finance: Boolean(catFinance),
-      administration: Boolean(catAdministration)
+      peopleMinistries: peopleMinistriesEnabled,
+      finance: financeEnabled,
+      administration: adminEnabled
     };
 
     setLoading(true);
@@ -214,6 +243,7 @@ function BillingPlansPage() {
           description,
           isActive,
           priceByCurrency,
+          features: featuresPayload,
           featureCategories
         });
       } else {
@@ -222,6 +252,7 @@ function BillingPlansPage() {
           description,
           isActive,
           priceByCurrency,
+          features: featuresPayload,
           featureCategories
         });
       }
@@ -267,6 +298,26 @@ function BillingPlansPage() {
         </button>
       </div>
 
+      <div className="mt-4 flex flex-col md:flex-row md:items-center gap-3">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search plan name or description..."
+          className="w-full md:w-80 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        />
+        <select
+          value={activeFilter}
+          onChange={(e) => setActiveFilter(e.target.value)}
+          className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All statuses</option>
+          <option value="active">active</option>
+          <option value="inactive">inactive</option>
+        </select>
+        <div className="flex-1" />
+        <div className="text-xs text-gray-500">{filtered.length} plan(s)</div>
+      </div>
+
       {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
 
       <div className="mt-4 overflow-x-auto">
@@ -274,9 +325,7 @@ function BillingPlansPage() {
           <thead className="text-xs uppercase text-gray-400">
             <tr className="border-b">
               <th className="py-3 text-left font-semibold">Name</th>
-              <th className="py-3 text-left font-semibold">Monthly (GHS)</th>
-              <th className="py-3 text-left font-semibold">6 months (GHS)</th>
-              <th className="py-3 text-left font-semibold">Yearly (GHS)</th>
+              <th className="py-3 text-left font-semibold">GHS (M / 6M / Y)</th>
               <th className="py-3 text-left font-semibold">Status</th>
               <th className="py-3 text-right font-semibold">Actions</th>
             </tr>
@@ -284,29 +333,32 @@ function BillingPlansPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-gray-500">
+                <td colSpan={4} className="py-6 text-center text-gray-500">
                   Loading...
                 </td>
               </tr>
-            ) : sorted.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-gray-500">
+                <td colSpan={4} className="py-6 text-center text-gray-500">
                   No plans found.
                 </td>
               </tr>
             ) : (
-              sorted.map((p) => {
-                const ghs = p?.priceByCurrency?.GHS || p?.pricing?.GHS || {};
-                const monthly = ghs?.monthly;
-                const halfYear = ghs?.halfYear;
-                const yearly = ghs?.yearly;
+              filtered.map((p) => {
+                const fmt = (row) => {
+                  const m = row?.monthly;
+                  const h = row?.halfYear;
+                  const y = row?.yearly;
+                  const show = (v) => (v === undefined || v === null ? "—" : v);
+                  return `${show(m)} / ${show(h)} / ${show(y)}`;
+                };
 
+                const by = p?.priceByCurrency || p?.pricing || {};
+                const ghs = by?.GHS || {};
                 return (
                   <tr key={p?._id} className="border-b last:border-b-0">
                     <td className="py-3 text-gray-900">{p?.name || "—"}</td>
-                    <td className="py-3 text-gray-700">{monthly !== undefined ? monthly : "—"}</td>
-                    <td className="py-3 text-gray-700">{halfYear !== undefined ? halfYear : "—"}</td>
-                    <td className="py-3 text-gray-700">{yearly !== undefined ? yearly : "—"}</td>
+                    <td className="py-3 text-gray-700">{fmt(ghs)}</td>
                     <td className="py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -344,191 +396,170 @@ function BillingPlansPage() {
 
       {formOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-lg font-semibold text-gray-900">{editingId ? "Edit Plan" : "New Plan"}</div>
-                <div className="mt-1 text-sm text-gray-600">Set pricing per currency and billing cycle.</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormOpen(false);
-                  resetForm();
-                }}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-4 grid gap-3">
-              <div>
-                <div className="text-xs font-semibold text-gray-600">Plan Name</div>
-                <select
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                >
-                  {planOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <div className="text-xs font-semibold text-gray-600">Description</div>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div>
-                <div className="text-xs font-semibold text-gray-600">Currency</div>
-                <select
-                  value={currency}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    const updated = {
-                      ...(prices || {}),
-                      [currency]: {
-                        monthly: pricingMonthly,
-                        halfYear: pricingHalfYear,
-                        yearly: pricingYearly
-                      }
-                    };
-
-                    setPrices(updated);
-                    setCurrency(next);
-
-                    const row = updated?.[next] || { monthly: "", halfYear: "", yearly: "" };
-                    setPricingMonthly(row.monthly || "");
-                    setPricingHalfYear(row.halfYear || "");
-                    setPricingYearly(row.yearly || "");
-                  }}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                >
-                  <option value="GHS">{currencyLabel("GHS")}</option>
-                  <option value="NGN">{currencyLabel("NGN")}</option>
-                  <option value="USD">{currencyLabel("USD")}</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-xl">
+            <div className="p-5 overflow-y-auto max-h-[90vh]">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs font-semibold text-gray-600">Monthly</div>
-                  <input
-                    value={pricingMonthly}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setPricingMonthly(v);
-                      setPrices((prev) => ({
-                        ...(prev || {}),
-                        [currency]: {
-                          ...(prev?.[currency] || {}),
-                          monthly: v
-                        }
-                      }));
-                    }}
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                    placeholder="e.g. 50"
-                  />
+                  <div className="text-lg font-semibold text-gray-900">{editingId ? "Edit Plan" : "New Plan"}</div>
+                  <div className="mt-1 text-sm text-gray-600">Set pricing per currency and billing cycle.</div>
                 </div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-600">6 months</div>
-                  <input
-                    value={pricingHalfYear}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setPricingHalfYear(v);
-                      setPrices((prev) => ({
-                        ...(prev || {}),
-                        [currency]: {
-                          ...(prev?.[currency] || {}),
-                          halfYear: v
-                        }
-                      }));
-                    }}
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                    placeholder="e.g. 270"
-                  />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-600">Yearly</div>
-                  <input
-                    value={pricingYearly}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setPricingYearly(v);
-                      setPrices((prev) => ({
-                        ...(prev || {}),
-                        [currency]: {
-                          ...(prev?.[currency] || {}),
-                          yearly: v
-                        }
-                      }));
-                    }}
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                    placeholder="e.g. 500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="text-xs font-semibold text-gray-600">Feature Categories</div>
-                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={catPeopleMinistries}
-                      onChange={(e) => setCatPeopleMinistries(e.target.checked)}
-                    />
-                    PEOPLE &amp; MINISTRIES
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" checked={catFinance} onChange={(e) => setCatFinance(e.target.checked)} />
-                    FINANCE
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={catAdministration}
-                      onChange={(e) => setCatAdministration(e.target.checked)}
-                    />
-                    ADMINISTRATION
-                  </label>
-                </div>
-              </div>
-
-              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-                Active
-              </label>
-
-              <div className="mt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setFormOpen(false);
                     resetForm();
                   }}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                 >
-                  Cancel
+                  Close
                 </button>
-                <button
-                  type="button"
-                  onClick={onSave}
-                  disabled={loading}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  Save
-                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">Plan Name</div>
+                  <select
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                  >
+                    {planOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">Description</div>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">Pricing</div>
+                  <div className="mt-2 grid gap-3">
+                    <div className="rounded-lg border border-gray-200 p-3">
+                      <div className="text-sm font-semibold text-gray-900">Ghana Cedi (GHS)</div>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <div className="text-xs font-semibold text-gray-600">Monthly</div>
+                          <input
+                            value={prices?.GHS?.monthly || ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setPrices((prev) => ({
+                                ...(prev || {}),
+                                GHS: {
+                                  ...(prev?.GHS || {}),
+                                  monthly: v
+                                }
+                              }));
+                            }}
+                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                            placeholder="e.g. 50"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-gray-600">6 months</div>
+                          <input
+                            value={prices?.GHS?.halfYear || ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setPrices((prev) => ({
+                                ...(prev || {}),
+                                GHS: {
+                                  ...(prev?.GHS || {}),
+                                  halfYear: v
+                                }
+                              }));
+                            }}
+                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                            placeholder="e.g. 270"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-gray-600">Yearly</div>
+                          <input
+                            value={prices?.GHS?.yearly || ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setPrices((prev) => ({
+                                ...(prev || {}),
+                                GHS: {
+                                  ...(prev?.GHS || {}),
+                                  yearly: v
+                                }
+                              }));
+                            }}
+                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                            placeholder="e.g. 500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">Modules</div>
+                  <div className="mt-2 grid gap-4">
+                    {FEATURE_GROUPS.map((group) => (
+                      <div key={group.label} className="rounded-lg border border-gray-200 p-3">
+                        <div className="text-sm font-semibold text-gray-900">{group.label}</div>
+                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {group.items.map((item) => (
+                            <label key={item.key} className="inline-flex items-center gap-2 text-sm text-gray-700">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(features?.[item.key])}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setFeatures((prev) => ({
+                                    ...(prev || {}),
+                                    [item.key]: checked
+                                  }));
+                                }}
+                              />
+                              {item.label}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                  Active
+                </label>
+
+                <div className="mt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormOpen(false);
+                      resetForm();
+                    }}
+                    className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSave}
+                    disabled={loading}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import PDFDocument from "pdfkit";
+import https from "https";
 
 
 const planRank = (plan) => {
@@ -27,13 +28,28 @@ const sortPlans = (plans) => {
   });
 };
 
+const sanitizePlanCurrencies = (plan) => {
+  if (!plan || typeof plan !== "object") return plan;
+  const copy = { ...plan };
+
+  const nextPricing = {};
+  if (plan?.pricing?.GHS) nextPricing.GHS = plan.pricing.GHS;
+  copy.pricing = nextPricing;
+
+  const nextPriceByCurrency = {};
+  if (plan?.priceByCurrency?.GHS) nextPriceByCurrency.GHS = plan.priceByCurrency.GHS;
+  copy.priceByCurrency = nextPriceByCurrency;
+
+  return copy;
+};
+
 export const chooseSubscription = async (req, res) => {
   try {
     const {
       churchId,
       planId = null,
       trial = false,
-      currency = "GHS",
+      currency: requestedCurrency,
       billingInterval = "monthly",
       billingCycle
     } = req.body;
@@ -42,6 +58,8 @@ export const chooseSubscription = async (req, res) => {
     if (!church) {
       return res.status(404).json({ message: "Church not found" });
     }
+
+    const currency = "GHS";
 
     const subscription = await createSubscriptionForChurch({
       church,
@@ -59,6 +77,197 @@ export const chooseSubscription = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+const paystackResolveBankAccount = ({ accountNumber, bankCode }) =>
+  new Promise((resolve, reject) => {
+    const secretKey = process.env.PAYSTACK_SECRET_KEY || process.env.TEST_SECRET_KEY;
+    if (!secretKey) {
+      return reject(new Error("Paystack secret key is not configured"));
+    }
+
+    const path = `/bank/resolve?account_number=${encodeURIComponent(accountNumber)}&bank_code=${encodeURIComponent(
+      bankCode
+    )}`;
+
+    const req = https.request(
+      {
+        hostname: "api.paystack.co",
+        path,
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${secretKey}`
+        }
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => {
+          const statusCode = res.statusCode || 0;
+          let json = null;
+          try {
+            json = data ? JSON.parse(data) : {};
+          } catch {
+            json = null;
+          }
+
+          if (statusCode < 200 || statusCode >= 300) {
+            const msg = json?.message || (data ? String(data).slice(0, 500) : "Paystack resolve failed");
+            return reject(new Error(`${msg} (${statusCode})`));
+          }
+
+          if (!json || json?.status === false) {
+            return reject(new Error(json?.message || "Paystack returned an error"));
+          }
+
+          return resolve(json);
+        });
+      }
+    );
+
+    req.on("error", reject);
+    req.end();
+  });
+
+export const addBankPaymentMethod = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) {
+      return res.status(400).json({ message: "Active church is required" });
+    }
+
+    return res.status(400).json({ message: "Bank payment methods are not supported" });
+
+    const { bankCode, accountNumber } = req.body;
+    const bankCodeStr = String(bankCode || "").trim();
+    const accountDigits = String(accountNumber || "").replace(/\D+/g, "");
+
+    if (!bankCodeStr) {
+      return res.status(400).json({ message: "Bank code is required" });
+    }
+
+    if (!accountDigits || accountDigits.length !== 10) {
+      return res.status(400).json({ message: "Account number must be 10 digits" });
+    }
+
+    const subscription = await Subscription.findOne({ church: churchId });
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found" });
+    }
+
+    const currency = "GHS";
+
+    const resolved = await paystackResolveBankAccount({
+      accountNumber: accountDigits,
+      bankCode: bankCodeStr
+    });
+
+    const accountName = resolved?.data?.account_name ? String(resolved.data.account_name) : "";
+    const bankName = resolved?.data?.bank_name ? String(resolved.data.bank_name) : "";
+    const last4 = accountDigits.slice(-4);
+
+    subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
+    const exists = subscription.paymentMethods.some(
+      (m) =>
+        String(m?.type || "") === "bank" &&
+        String(m?.bankCode || "") === bankCodeStr &&
+        String(m?.accountNumberLast4 || "") === last4
+    );
+
+    if (!exists) {
+      subscription.paymentMethods.push({
+        type: "bank",
+        bankCode: bankCodeStr,
+        bankName: bankName || null,
+        accountName: accountName || null,
+        accountNumberLast4: last4
+      });
+      await subscription.save();
+    }
+
+    const populated = await Subscription.findById(subscription._id).populate("plan").lean();
+    return res.json({ subscription: populated });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const updatePaymentMethod = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) {
+      return res.status(400).json({ message: "Active church is required" });
+    }
+
+    const methodId = req.params?.methodId;
+    if (!methodId) {
+      return res.status(400).json({ message: "Payment method id is required" });
+    }
+
+    const subscription = await Subscription.findOne({ church: churchId });
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found" });
+    }
+
+    subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
+    const method = subscription.paymentMethods.find((m) => String(m?._id || "") === String(methodId));
+    if (!method) {
+      return res.status(404).json({ message: "Payment method not found" });
+    }
+
+    const type = String(method?.type || "mobile_money").toLowerCase();
+    const currency = "GHS";
+
+    if (type === "card") {
+      return res.status(400).json({ message: "Card payment methods cannot be edited" });
+    }
+
+    if (type === "bank") {
+      return res.status(400).json({ message: "Bank payment methods are not supported" });
+    }
+
+    if (type === "mobile_money") {
+      const { provider, phone } = req.body;
+      const normalizedProvider = String(provider || "").trim().toLowerCase();
+      let normalizedPhone = String(phone || "").replace(/\D+/g, "");
+
+      
+
+      if (normalizedPhone.startsWith("233") && normalizedPhone.length === 12) {
+        normalizedPhone = `0${normalizedPhone.slice(3)}`;
+      }
+
+      if (!["mtn", "vod", "tgo"].includes(normalizedProvider)) {
+        return res.status(400).json({ message: "Unsupported mobile money provider" });
+      }
+
+      if (!normalizedPhone || normalizedPhone.length !== 10 || !normalizedPhone.startsWith("0")) {
+        return res.status(400).json({ message: "Mobile number must be 10 digits and start with 0" });
+      }
+
+      const prefix = normalizedPhone.slice(0, 3);
+      const prefixByProvider = {
+        mtn: ["024", "054", "055", "059"],
+        vod: ["020", "050"],
+        tgo: ["026", "027", "056", "057"]
+      };
+      const allowedPrefixes = prefixByProvider[normalizedProvider] || [];
+      if (allowedPrefixes.length > 0 && !allowedPrefixes.includes(prefix)) {
+        return res.status(400).json({ message: "Mobile number does not match selected provider" });
+      }
+
+      method.provider = normalizedProvider;
+      method.phone = normalizedPhone;
+
+      await subscription.save();
+      const populated = await Subscription.findById(subscription._id).populate("plan").lean();
+      return res.json({ subscription: populated });
+    }
+
+    return res.status(400).json({ message: "Unsupported payment method type" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -180,7 +389,7 @@ export const getMySubscription = async (req, res) => {
       await createSubscriptionForChurch({
         church,
         trial: true,
-        currency: "GHS",
+        currency: church?.currency,
         billingInterval: "monthly"
       });
 
@@ -256,7 +465,8 @@ export const runBillingCycle = async (req, res) => {
 export const getAvailablePlans = async (req, res) => {
   try {
     const plans = await Plan.find({ isActive: true }).lean();
-    return res.json({ plans: sortPlans(plans) });
+    const sanitized = sortPlans(plans).map(sanitizePlanCurrencies);
+    return res.json({ plans: sanitized });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -265,7 +475,8 @@ export const getAvailablePlans = async (req, res) => {
 export const getPublicPlans = async (req, res) => {
   try {
     const plans = await Plan.find({ isActive: true }).lean();
-    return res.json({ plans: sortPlans(plans) });
+    const sanitized = sortPlans(plans).map(sanitizePlanCurrencies);
+    return res.json({ plans: sanitized });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -374,8 +585,11 @@ export const addMobileMoneyPaymentMethod = async (req, res) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
+    const currency = "GHS";
+
     const normalizedProvider = String(provider).toLowerCase();
     let normalizedPhone = String(phone).replace(/\D+/g, "");
+
     if (normalizedPhone.startsWith("233") && normalizedPhone.length === 12) {
       normalizedPhone = `0${normalizedPhone.slice(3)}`;
     }

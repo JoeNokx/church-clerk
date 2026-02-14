@@ -28,6 +28,10 @@ export const verifyPaystackPayment = async (payload) => {
   return await http.post("/subscription/payments/paystack/verify", payload);
 };
 
+export const getPaystackBanks = async (params) => {
+  return await http.get("/subscription/payments/paystack/banks", { params });
+};
+
 export const getMyBillingHistory = async (params) => {
   return await http.get("/subscription/billing-history", { params });
 };
@@ -40,8 +44,16 @@ export const addCardPaymentMethod = async (payload) => {
   return await http.post("/subscription/payment-methods/card", payload);
 };
 
+export const addBankPaymentMethod = async (payload) => {
+  return await http.post("/subscription/payment-methods/bank", payload);
+};
+
 export const removePaymentMethod = async (methodId) => {
   return await http.delete(`/subscription/payment-methods/${methodId}`);
+};
+
+export const updatePaymentMethod = async (methodId, payload) => {
+  return await http.put(`/subscription/payment-methods/${methodId}`, payload);
 };
 
 export const getBillingInvoiceDownloadUrl = (id) => {

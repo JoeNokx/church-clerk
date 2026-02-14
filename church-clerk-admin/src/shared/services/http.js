@@ -26,8 +26,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const inViewChurchMode = localStorage.getItem("adminViewChurch") === "1";
-    const activeChurch = localStorage.getItem("activeChurch");
+    const inViewChurchMode = localStorage.getItem("systemAdminViewChurch") === "1";
+    const activeChurch = localStorage.getItem("systemAdminActiveChurch");
 
     if (inViewChurchMode && activeChurch) {
       config.headers["x-active-church"] = activeChurch;
@@ -49,7 +49,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("activeChurch");
+      localStorage.removeItem("systemAdminActiveChurch");
+      localStorage.removeItem("systemAdminViewChurch");
       localStorage.removeItem("adminViewChurch");
     }
     return Promise.reject(error);

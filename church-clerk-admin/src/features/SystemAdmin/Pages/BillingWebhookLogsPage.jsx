@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminGetWebhookLogs } from "../Services/adminBilling.api.js";
 
@@ -15,9 +15,25 @@ function BillingWebhookLogsPage() {
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(null);
 
+  const [search, setSearch] = useState("");
+  const [eventType, setEventType] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
+
+  const filtered = useMemo(() => {
+    const q = String(search || "").trim().toLowerCase();
+    const ev = String(eventType || "").trim().toLowerCase();
+    return (Array.isArray(rows) ? rows : []).filter((l) => {
+      if (ev && String(l?.eventType || "").toLowerCase() !== ev) return false;
+      if (!q) return true;
+      const e = String(l?.eventType || "").toLowerCase();
+      const ref = String(l?.reference || "").toLowerCase();
+      const st = String(l?.status || "").toLowerCase();
+      const err = String(l?.errorMessage || "").toLowerCase();
+      return e.includes(q) || ref.includes(q) || st.includes(q) || err.includes(q);
+    });
+  }, [eventType, rows, search]);
 
   const load = useCallback(
     async ({ nextPage } = {}) => {
@@ -52,6 +68,18 @@ function BillingWebhookLogsPage() {
           <div className="mt-1 text-sm text-gray-600">Paystack webhook events for debugging.</div>
         </div>
         <div className="flex-1" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search event, reference, error..."
+          className="w-full md:w-72 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        />
+        <input
+          value={eventType}
+          onChange={(e) => setEventType(e.target.value)}
+          placeholder="Event type (optional)"
+          className="w-full md:w-56 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
@@ -85,14 +113,14 @@ function BillingWebhookLogsPage() {
                   Loading...
                 </td>
               </tr>
-            ) : rows.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-6 text-center text-gray-500">
                   No logs found.
                 </td>
               </tr>
             ) : (
-              rows.map((l) => (
+              filtered.map((l) => (
                 <tr key={l?._id} className="border-b last:border-b-0">
                   <td className="py-3 text-gray-900">{l?.eventType || "—"}</td>
                   <td className="py-3 text-gray-700">{l?.reference || "—"}</td>

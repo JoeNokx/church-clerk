@@ -24,7 +24,7 @@ export function PermissionProvider({ children }) {
 
     const isWriteAction = action === "create" || action === "update" || action === "delete";
     if (isWriteAction) {
-      const activeFlag = typeof window !== "undefined" ? localStorage.getItem("userIsActive") : "1";
+      const activeFlag = typeof window !== "undefined" ? localStorage.getItem("systemAdminUserIsActive") : "1";
       if (activeFlag === "0") {
         return false;
       }

@@ -2,6 +2,15 @@ import Plan from "../../models/billingModel/planModel.js";
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
 import { addMonths } from "../../utils/dateBillingUtils.js";
+import Church from "../../models/churchModel.js";
+
+const normalizeLegacyCurrency = (currency) => {
+  const cur = String(currency || "")
+    .trim()
+    .toUpperCase();
+  if (cur === "GHS") return "GHS";
+  return "GHS";
+};
 
 export const processBillingForSubscription = async (subscription) => {
   const now = new Date();
@@ -49,8 +58,15 @@ export const processBillingForSubscription = async (subscription) => {
   const plan = await Plan.findById(subscription.plan);
   if (!plan) throw new Error("Plan not found");
 
+  const billingCurrency = normalizeLegacyCurrency(subscription.currency);
+
+  if (billingCurrency !== subscription.currency) {
+    subscription.currency = billingCurrency;
+    await subscription.save();
+  }
+
   const price =
-    plan.pricing[subscription.currency]?.[subscription.billingInterval];
+    plan.pricing[billingCurrency]?.[subscription.billingInterval];
 
   if (!price) throw new Error("Pricing not configured");
 
@@ -59,14 +75,14 @@ export const processBillingForSubscription = async (subscription) => {
   subscription: subscription._id,
   type: "payment",
   amount: price,
-  currency: subscription.currency,
+  currency: billingCurrency,
   status: "pending",
   paymentProvider: subscription.paymentProvider,
   invoiceSnapshot: {
     planName: plan.name,
     billingInterval: subscription.billingInterval,
     amount: price,
-    currency: subscription.currency
+    currency: billingCurrency
   }
 });
 

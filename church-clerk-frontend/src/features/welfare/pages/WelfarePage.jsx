@@ -9,10 +9,14 @@ import WelfareContributionTable from "../components/WelfareContributionTable.jsx
 import WelfareDisbursementFilters from "../components/WelfareDisbursementFilters.jsx";
 import WelfareDisbursementForm from "../components/WelfareDisbursementForm.jsx";
 import WelfareDisbursementTable from "../components/WelfareDisbursementTable.jsx";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function WelfarePageInner() {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(WelfareContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [activeTab, setActiveTab] = useState("contributions");
 
@@ -120,19 +124,19 @@ function WelfarePageInner() {
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="text-xs font-semibold text-gray-500">Contributions (This Month)</div>
-          <div className="mt-2 text-lg font-semibold text-green-700">GHS {Number(kpi.thisMonthContribution || 0).toLocaleString()}</div>
+          <div className="mt-2 text-lg font-semibold text-green-700">{formatMoney(kpi.thisMonthContribution || 0, currency)}</div>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="text-xs font-semibold text-gray-500">Disbursements (This Month)</div>
-          <div className="mt-2 text-lg font-semibold text-orange-600">GHS {Number(kpi.thisMonthDisbursement || 0).toLocaleString()}</div>
+          <div className="mt-2 text-lg font-semibold text-orange-600">{formatMoney(kpi.thisMonthDisbursement || 0, currency)}</div>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="text-xs font-semibold text-gray-500">Contributions (This Year)</div>
-          <div className="mt-2 text-lg font-semibold text-gray-900">GHS {Number(kpi.thisYearContribution || 0).toLocaleString()}</div>
+          <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisYearContribution || 0, currency)}</div>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="text-xs font-semibold text-gray-500">Disbursements (This Year)</div>
-          <div className="mt-2 text-lg font-semibold text-gray-900">GHS {Number(kpi.thisYearDisbursement || 0).toLocaleString()}</div>
+          <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisYearDisbursement || 0, currency)}</div>
         </div>
       </div>
 

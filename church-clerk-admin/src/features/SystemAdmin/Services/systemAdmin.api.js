@@ -16,6 +16,22 @@ export const getSystemRoles = async () => {
   return await http.get("/system-admin/roles");
 };
 
+export const updateSystemUser = async (id, payload) => {
+  return await http.patch(`/system-admin/users/${id}`, payload);
+};
+
+export const getSystemAuditLogs = async (params) => {
+  return await http.get("/system-admin/audit-logs", { params });
+};
+
+export const getSystemReferralSummary = async () => {
+  return await http.get("/system-admin/referrals/summary");
+};
+
+export const getSystemReferralHistory = async (params) => {
+  return await http.get("/system-admin/referrals/history", { params });
+};
+
 export const getSystemSettings = async () => {
   return await http.get("/system-admin/settings");
 };

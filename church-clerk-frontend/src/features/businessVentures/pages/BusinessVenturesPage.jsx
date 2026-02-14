@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { useContext } from "react";
 import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import {
   createBusinessVenture,
   deleteBusinessVenture,
@@ -9,10 +10,6 @@ import {
   getBusinessVentures,
   updateBusinessVenture
 } from "../services/businessVentures.api.js";
-
-function formatCurrency(value) {
-  return `GHS ${Number(value || 0).toLocaleString()}`;
-}
 
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
@@ -318,6 +315,7 @@ function BusinessVenturesPage() {
 
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
+  const currency = String(activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const canEdit = activeChurch?._id ? activeChurch?.canEdit !== false : true;
 
   const [loading, setLoading] = useState(true);
@@ -444,17 +442,17 @@ function BusinessVenturesPage() {
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Income</div>
-          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(totals.totalIncome)}</div>
+          <div className="mt-3 text-2xl font-semibold text-green-700">{formatMoney(totals.totalIncome, currency)}</div>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Total Expenses</div>
-          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(totals.totalExpenses)}</div>
+          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatMoney(totals.totalExpenses, currency)}</div>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Net</div>
-          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatCurrency(totals.net)}</div>
+          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatMoney(totals.net, currency)}</div>
         </div>
       </div>
 
@@ -477,15 +475,15 @@ function BusinessVenturesPage() {
               <div className="mt-5 grid grid-cols-3 gap-3">
                 <div>
                   <div className="text-xs font-semibold text-gray-500">Income</div>
-                  <div className="mt-1 text-sm font-semibold text-green-700">{formatCurrency(v?.totalIncome)}</div>
+                  <div className="mt-1 text-sm font-semibold text-green-700">{formatMoney(v?.totalIncome, currency)}</div>
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-gray-500">Expenses</div>
-                  <div className="mt-1 text-sm font-semibold text-orange-600">{formatCurrency(v?.totalExpenses)}</div>
+                  <div className="mt-1 text-sm font-semibold text-orange-600">{formatMoney(v?.totalExpenses, currency)}</div>
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-gray-500">Net</div>
-                  <div className="mt-1 text-sm font-semibold text-blue-900">{formatCurrency(v?.net)}</div>
+                  <div className="mt-1 text-sm font-semibold text-blue-900">{formatMoney(v?.net, currency)}</div>
                 </div>
               </div>
 

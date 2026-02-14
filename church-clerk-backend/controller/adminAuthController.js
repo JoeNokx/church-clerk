@@ -50,6 +50,21 @@ const registerSystemAdmin = async (req, res) => {
   }
 };
 
+const getSystemAdminMe = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+    return res.status(200).json({
+      status: "success",
+      data: { user }
+    });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
 const loginSystemAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -73,7 +88,7 @@ const loginSystemAdmin = async (req, res) => {
 
     user.password = undefined;
 
-    res.cookie("token", token, {
+    res.cookie("adminToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -92,7 +107,7 @@ const loginSystemAdmin = async (req, res) => {
 
 const logoutSystemAdmin = async (req, res) => {
   try {
-    res.cookie("token", "", {
+    res.cookie("adminToken", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
@@ -108,4 +123,4 @@ const logoutSystemAdmin = async (req, res) => {
   }
 };
 
-export { registerSystemAdmin, loginSystemAdmin, logoutSystemAdmin };
+export { registerSystemAdmin, loginSystemAdmin, logoutSystemAdmin, getSystemAdminMe };

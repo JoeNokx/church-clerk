@@ -200,7 +200,7 @@ export const paystackWebhook = async (req, res) => {
       subscription.status = "past_due";
       {
         const { gracePeriodDays } = await getSystemSettingsSnapshot();
-        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
+        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 7));
       }
 
       await subscription.save();

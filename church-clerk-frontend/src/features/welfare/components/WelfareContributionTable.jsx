@@ -2,6 +2,8 @@ import { useContext, useMemo, useState } from "react";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import WelfareContext from "../welfare.store.js";
+import ChurchContext from "../../church/church.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -13,6 +15,8 @@ function formatDate(value) {
 function WelfareContributionTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(WelfareContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -87,7 +91,7 @@ function WelfareContributionTable({ onEdit, onDeleted }) {
               return (
                 <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
                   <td className="px-6 py-1.5 text-gray-900">{memberName || "-"}</td>
-                  <td className="px-6 py-1.5 text-green-700">GHS {Number(row?.amount || 0).toLocaleString()}</td>
+                  <td className="px-6 py-1.5 text-green-700">{formatMoney(row?.amount || 0, currency)}</td>
                   <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
                   <td className="px-6 py-1.5 text-gray-600">{row?.paymentMethod || "-"}</td>
                   <td className="px-6 py-1.5">

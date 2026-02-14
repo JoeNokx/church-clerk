@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   adminCreateInvoice,
@@ -20,9 +20,24 @@ function BillingInvoicesPage() {
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(null);
 
+  const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [currency, setCurrency] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
+
+  const filtered = useMemo(() => {
+    const q = String(search || "").trim().toLowerCase();
+    const cur = String(currency || "").trim().toUpperCase();
+    return (Array.isArray(rows) ? rows : []).filter((i) => {
+      if (cur && String(i?.currency || "").toUpperCase() !== cur) return false;
+      if (!q) return true;
+      const invoiceNumber = String(i?.invoiceNumber || "").toLowerCase();
+      const churchName = String(i?.church?.name || "").toLowerCase();
+      const st = String(i?.status || "").toLowerCase();
+      return invoiceNumber.includes(q) || churchName.includes(q) || st.includes(q);
+    });
+  }, [currency, rows, search]);
 
   const load = useCallback(
     async ({ nextPage } = {}) => {
@@ -105,6 +120,36 @@ function BillingInvoicesPage() {
         </button>
       </div>
 
+      <div className="mt-4 flex flex-col md:flex-row md:items-center gap-3">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search invoice #, church, status..."
+          className="w-full md:w-80 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        />
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All statuses</option>
+          <option value="paid">paid</option>
+          <option value="unpaid">unpaid</option>
+        </select>
+        <select
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value)}
+          className="w-full md:w-36 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          <option value="">All currencies</option>
+          <option value="GHS">GHS</option>
+          <option value="NGN">NGN</option>
+          <option value="USD">USD</option>
+        </select>
+        <div className="flex-1" />
+        <div className="text-xs text-gray-500">{filtered.length} invoice(s)</div>
+      </div>
+
       {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
 
       <div className="mt-4 overflow-x-auto">
@@ -126,14 +171,14 @@ function BillingInvoicesPage() {
                   Loading...
                 </td>
               </tr>
-            ) : rows.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-6 text-center text-gray-500">
                   No invoices found.
                 </td>
               </tr>
             ) : (
-              rows.map((i) => (
+              filtered.map((i) => (
                 <tr key={i?._id} className="border-b last:border-b-0">
                   <td className="py-3 text-gray-900">{i?.invoiceNumber || "—"}</td>
                   <td className="py-3 text-gray-700">{i?.church?.name || "—"}</td>

@@ -17,18 +17,38 @@ export function AuthProvider({ children }) {
         const payload = res?.data?.data;
         const nextUser = payload?.user || null;
 
+        const nextId = nextUser?._id ? String(nextUser._id) : "";
+        const prevId = typeof window !== "undefined" ? String(localStorage.getItem("cckSystemAdminUserId") || "") : "";
+        if (typeof window !== "undefined" && prevId && nextId && prevId !== nextId) {
+          localStorage.removeItem("systemAdminActiveChurch");
+          localStorage.removeItem("systemAdminViewChurch");
+          localStorage.removeItem("adminViewChurch");
+          localStorage.removeItem("systemAdminUserIsActive");
+          churchCtx?.clearActiveChurch?.();
+        }
+        if (typeof window !== "undefined") {
+          if (nextId) localStorage.setItem("cckSystemAdminUserId", nextId);
+          else localStorage.removeItem("cckSystemAdminUserId");
+        }
+
         setUser(nextUser);
 
         if (nextUser) {
-          localStorage.setItem("userIsActive", nextUser?.isActive === false ? "0" : "1");
+          localStorage.setItem("systemAdminUserIsActive", nextUser?.isActive === false ? "0" : "1");
         } else {
-          localStorage.removeItem("userIsActive");
+          localStorage.removeItem("systemAdminUserIsActive");
         }
 
-        churchCtx?.setActiveChurch?.(payload?.activeChurch);
+        const inViewMode = typeof window !== "undefined" && localStorage.getItem("systemAdminViewChurch") === "1";
+        if (inViewMode) {
+          churchCtx?.setActiveChurch?.(payload?.activeChurch);
+        } else {
+          churchCtx?.clearActiveChurch?.();
+        }
       } catch {
         setUser(null);
-        localStorage.removeItem("userIsActive");
+        localStorage.removeItem("cckSystemAdminUserId");
+        localStorage.removeItem("systemAdminUserIsActive");
         churchCtx?.clearActiveChurch?.();
       } finally {
         setLoading(false);
@@ -43,15 +63,34 @@ export function AuthProvider({ children }) {
     const payload = res?.data?.data;
     const userData = payload?.user;
 
+    const nextId = userData?._id ? String(userData._id) : "";
+    const prevId = typeof window !== "undefined" ? String(localStorage.getItem("cckSystemAdminUserId") || "") : "";
+    if (typeof window !== "undefined" && prevId && nextId && prevId !== nextId) {
+      localStorage.removeItem("systemAdminActiveChurch");
+      localStorage.removeItem("systemAdminViewChurch");
+      localStorage.removeItem("adminViewChurch");
+      localStorage.removeItem("systemAdminUserIsActive");
+      churchCtx?.clearActiveChurch?.();
+    }
+    if (typeof window !== "undefined") {
+      if (nextId) localStorage.setItem("cckSystemAdminUserId", nextId);
+      else localStorage.removeItem("cckSystemAdminUserId");
+    }
+
     setUser(userData);
 
     if (userData) {
-      localStorage.setItem("userIsActive", userData?.isActive === false ? "0" : "1");
+      localStorage.setItem("systemAdminUserIsActive", userData?.isActive === false ? "0" : "1");
     } else {
-      localStorage.removeItem("userIsActive");
+      localStorage.removeItem("systemAdminUserIsActive");
     }
 
-    churchCtx?.setActiveChurch?.(payload?.activeChurch);
+    const inViewMode = typeof window !== "undefined" && localStorage.getItem("systemAdminViewChurch") === "1";
+    if (inViewMode) {
+      churchCtx?.setActiveChurch?.(payload?.activeChurch);
+    } else {
+      churchCtx?.clearActiveChurch?.();
+    }
     return userData;
   };
 
@@ -66,7 +105,8 @@ export function AuthProvider({ children }) {
       await logoutUser();
     } finally {
       setUser(null);
-      localStorage.removeItem("userIsActive");
+      localStorage.removeItem("cckSystemAdminUserId");
+      localStorage.removeItem("systemAdminUserIsActive");
       churchCtx?.clearActiveChurch?.();
     }
   };

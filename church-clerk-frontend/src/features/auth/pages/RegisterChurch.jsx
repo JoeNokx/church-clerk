@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../useAuth.js";
 import { createChurch, searchHeadquartersChurches } from "../../church/services/church.api.js";
 import AuthCard from "../components/AuthCard.jsx";
+import Select from "react-select";
+import { Country, State } from "country-state-city";
+import currencyCodes from "currency-codes";
 
 function RegisterChurch() {
   const navigate = useNavigate();
@@ -21,12 +24,64 @@ function RegisterChurch() {
   const hqBoxRef = useRef(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState(user?.email || "");
-  const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
   const [region, setRegion] = useState("");
   const [country, setCountry] = useState("");
+  const [currency, setCurrency] = useState("");
   const [foundedDate, setFoundedDate] = useState("");
   const [referralCodeInput, setReferralCodeInput] = useState("");
+
+  const [countryCode, setCountryCode] = useState("");
+  const [stateCode, setStateCode] = useState("");
+
+  const countryOptions = useMemo(() => {
+    return Country.getAllCountries().map((c) => ({
+      value: c.isoCode,
+      label: c.name
+    }));
+  }, []);
+
+  const stateOptions = useMemo(() => {
+    if (!countryCode) return [];
+    return State.getStatesOfCountry(countryCode).map((s) => ({
+      value: s.isoCode,
+      label: s.name
+    }));
+  }, [countryCode]);
+
+  const selectedCountryOption = useMemo(() => {
+    if (!countryCode) return null;
+    return countryOptions.find((o) => String(o.value) === String(countryCode)) || null;
+  }, [countryCode, countryOptions]);
+
+  const selectedStateOption = useMemo(() => {
+    if (!stateCode) return null;
+    return stateOptions.find((o) => String(o.value) === String(stateCode)) || null;
+  }, [stateCode, stateOptions]);
+
+  const currencyOptions = useMemo(() => {
+    const rows = Array.isArray(currencyCodes?.data) ? currencyCodes.data : [];
+    if (rows.length) {
+      return rows
+        .filter((r) => r?.code)
+        .map((r) => ({
+          value: String(r.code).toUpperCase(),
+          label: `${String(r.code).toUpperCase()} - ${String(r.currency || "").trim() || String(r.code).toUpperCase()}`
+        }));
+    }
+
+    const codes = typeof currencyCodes?.codes === "function" ? currencyCodes.codes() : [];
+    return (Array.isArray(codes) ? codes : []).map((c) => ({
+      value: String(c).toUpperCase(),
+      label: String(c).toUpperCase()
+    }));
+  }, []);
+
+  const selectedCurrencyOption = useMemo(() => {
+    const cur = String(currency || "").trim().toUpperCase();
+    if (!cur) return null;
+    return currencyOptions.find((o) => String(o.value) === cur) || { value: cur, label: cur };
+  }, [currency, currencyOptions]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -124,6 +179,30 @@ function RegisterChurch() {
       return;
     }
 
+    if (!String(country || "").trim()) {
+      setLoading(false);
+      setError("Country is required");
+      return;
+    }
+
+    if (!String(region || "").trim()) {
+      setLoading(false);
+      setError("State/Region is required");
+      return;
+    }
+
+    if (!String(city || "").trim()) {
+      setLoading(false);
+      setError("Location is required");
+      return;
+    }
+
+    if (!String(currency || "").trim()) {
+      setLoading(false);
+      setError("Currency is required");
+      return;
+    }
+
     try {
       await createChurch({
         name,
@@ -132,10 +211,10 @@ function RegisterChurch() {
         parentChurchId: type === "Branch" ? parentChurchId : undefined,
         phoneNumber,
         email,
-        streetAddress,
         city,
         region,
         country,
+        currency: String(currency || "").trim().toUpperCase(),
         foundedDate,
         referralCodeInput,
       });
@@ -288,21 +367,75 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Street Address (optional)</label>
-          <input
-            type="text"
-            placeholder="Street address"
-            value={streetAddress}
-            onChange={(e) => setStreetAddress(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+          <Select
+            inputId="church-country"
+            isSearchable
+            options={countryOptions}
+            value={selectedCountryOption}
+            onChange={(opt) => {
+              setCountry(String(opt?.label || ""));
+              setCountryCode(String(opt?.value || ""));
+              setRegion("");
+              setStateCode("");
+              setCity("");
+              const nextCurrency = String(opt?.label || "").trim().toLowerCase() === "ghana" ? "GHS" : "USD";
+              setCurrency(nextCurrency);
+            }}
+            placeholder="Select country"
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                minHeight: "44px",
+                borderRadius: "0.5rem",
+                borderColor: state.isFocused ? "#1e3a8a" : "#d1d5db",
+                boxShadow: state.isFocused ? "0 0 0 2px rgba(30,58,138,0.2)" : "none",
+                ":hover": { borderColor: state.isFocused ? "#1e3a8a" : "#9ca3af" }
+              }),
+              valueContainer: (base) => ({ ...base, padding: "0 0.75rem" }),
+              input: (base) => ({ ...base, margin: 0, padding: 0 }),
+              placeholder: (base) => ({ ...base, color: "#9ca3af" }),
+              singleValue: (base) => ({ ...base, color: "#111827" })
+            }}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">State / Region</label>
+          <Select
+            inputId="church-state"
+            isSearchable
+            isDisabled={!countryCode}
+            options={stateOptions}
+            value={selectedStateOption}
+            onChange={(opt) => {
+              setRegion(String(opt?.label || ""));
+              setStateCode(String(opt?.value || ""));
+              setCity("");
+            }}
+            placeholder={countryCode ? "Select state/region" : "Select country first"}
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                minHeight: "44px",
+                borderRadius: "0.5rem",
+                borderColor: state.isFocused ? "#1e3a8a" : "#d1d5db",
+                boxShadow: state.isFocused ? "0 0 0 2px rgba(30,58,138,0.2)" : "none",
+                ":hover": { borderColor: state.isFocused ? "#1e3a8a" : "#9ca3af" }
+              }),
+              valueContainer: (base) => ({ ...base, padding: "0 0.75rem" }),
+              input: (base) => ({ ...base, margin: 0, padding: 0 }),
+              placeholder: (base) => ({ ...base, color: "#9ca3af" }),
+              singleValue: (base) => ({ ...base, color: "#111827" })
+            }}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
           <input
             type="text"
-            placeholder="City"
+            placeholder="Enter your location"
             value={city}
             onChange={(e) => setCity(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
@@ -311,24 +444,28 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Region (optional)</label>
-          <input
-            type="text"
-            placeholder="State / Region"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Country (optional)</label>
-          <input
-            type="text"
-            placeholder="Country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+          <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+          <Select
+            inputId="church-currency"
+            isSearchable
+            options={currencyOptions}
+            value={selectedCurrencyOption}
+            onChange={(opt) => setCurrency(String(opt?.value || "").toUpperCase())}
+            placeholder="Select currency"
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                minHeight: "44px",
+                borderRadius: "0.5rem",
+                borderColor: state.isFocused ? "#1e3a8a" : "#d1d5db",
+                boxShadow: state.isFocused ? "0 0 0 2px rgba(30,58,138,0.2)" : "none",
+                ":hover": { borderColor: state.isFocused ? "#1e3a8a" : "#9ca3af" }
+              }),
+              valueContainer: (base) => ({ ...base, padding: "0 0.75rem" }),
+              input: (base) => ({ ...base, margin: 0, padding: 0 }),
+              placeholder: (base) => ({ ...base, color: "#9ca3af" }),
+              singleValue: (base) => ({ ...base, color: "#111827" })
+            }}
           />
         </div>
 

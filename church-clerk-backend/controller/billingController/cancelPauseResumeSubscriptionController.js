@@ -23,7 +23,16 @@ export const cancelSubscription = async (req, res) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    subscription.status = "cancelled";
+    const freeLite = await Plan.findOne({ name: { $regex: /^free\s*lite$/i } }).lean();
+
+    if (freeLite?._id) {
+      subscription.plan = freeLite._id;
+    }
+
+    subscription.pendingPlan = null;
+    subscription.status = "active";
+    subscription.trialStart = null;
+    subscription.trialEnd = null;
     subscription.gracePeriodEnd = null;
     subscription.expiryWarning.shown = false;
 
