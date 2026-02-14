@@ -847,6 +847,30 @@ function SettingsPage() {
 
   const rolePermissions = roleConfig?.roles || {};
 
+  const availableRoleModules = useMemo(
+    () => [
+      "Members",
+      "Attendance",
+      "Programs & Events",
+      "Ministries",
+      "Announcement",
+      "Tithes",
+      "Special fund",
+      "Offerings",
+      "Welfare",
+      "Pledges",
+      "Business Ventures",
+      "Expenses",
+      "Financial statement",
+      "Reports & Analytics",
+      "Billing",
+      "Referrals",
+      "Settings",
+      "Support & Help"
+    ],
+    []
+  );
+
   if (!canRead) {
     return (
       <div className="max-w-6xl">
@@ -1609,31 +1633,48 @@ function SettingsPage() {
             ) : churchRoles.length ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {churchRoles.map((r) => {
-                  const cfg = rolePermissions?.[r] || {};
-                  const modules = Object.keys(cfg)
-                    .filter((k) => k !== "__all__" && Array.isArray(cfg[k]) && cfg[k].length)
-                    .sort((a, b) => String(a).localeCompare(String(b)));
+                  const modules = availableRoleModules;
+                  const normalizedRole = String(r || "").trim().toLowerCase();
+                  const isChurchAdmin = normalizedRole === "churchadmin";
 
                   return (
                     <div key={r} className="rounded-lg border border-gray-200 p-4">
                       <div className="text-sm font-semibold text-gray-900">{r}</div>
-                      <div className="mt-3 space-y-3">
+                      <div className="mt-3">
                         {modules.length ? (
-                          modules.map((m) => (
-                            <div key={`${r}-${m}`}>
-                              <div className="text-xs font-semibold text-gray-800">{m}</div>
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                {cfg[m].map((a) => (
-                                  <span
-                                    key={`${r}-${m}-${a}`}
-                                    className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700"
-                                  >
-                                    {a}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          ))
+                          <div className="overflow-x-auto rounded-lg border border-gray-200">
+                            <table className="min-w-full text-xs">
+                              <thead className="bg-gray-50 text-gray-600">
+                                <tr>
+                                  <th className="px-3 py-1.5 text-left font-semibold">Modules</th>
+                                  <th className="px-3 py-1.5 text-center font-semibold">View</th>
+                                  <th className="px-3 py-1.5 text-center font-semibold">Create</th>
+                                  <th className="px-3 py-1.5 text-center font-semibold">Update</th>
+                                  <th className="px-3 py-1.5 text-center font-semibold">Delete</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {modules.map((m) => {
+                                  const canView = isChurchAdmin || true;
+                                  const canCreate = isChurchAdmin || true;
+                                  const canUpdate = isChurchAdmin;
+                                  const canDelete = isChurchAdmin;
+
+                                  const markClass = (ok) => (ok ? "font-bold text-green-700" : "font-bold text-gray-400");
+
+                                  return (
+                                    <tr key={`${r}-${m}`} className="hover:bg-gray-50">
+                                      <td className="px-3 py-1 text-left font-semibold text-gray-900 whitespace-nowrap">{m}</td>
+                                      <td className="px-3 py-1 text-center"><span className={markClass(canView)}>{canView ? "✓" : "×"}</span></td>
+                                      <td className="px-3 py-1 text-center"><span className={markClass(canCreate)}>{canCreate ? "✓" : "×"}</span></td>
+                                      <td className="px-3 py-1 text-center"><span className={markClass(canUpdate)}>{canUpdate ? "✓" : "×"}</span></td>
+                                      <td className="px-3 py-1 text-center"><span className={markClass(canDelete)}>{canDelete ? "✓" : "×"}</span></td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
                         ) : (
                           <div className="text-xs text-gray-600">No permissions configured.</div>
                         )}
