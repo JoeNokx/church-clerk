@@ -21,6 +21,12 @@ import SpecialFundPage from "../../specialFund/pages/SpecialFundPage.jsx";
 import ChurchProjectsPage from "../../churchProject/pages/ChurchProjectsPage.jsx";
 import ChurchProjectDetailsPage from "../../churchProject/pages/ChurchProjectDetailsPage.jsx";
 import WelfarePage from "../../welfare/pages/WelfarePage.jsx";
+import PledgesPage from "../../pledge/pages/PledgesPage.jsx";
+import PledgeDetailsPage from "../../pledge/pages/PledgeDetailsPage.jsx";
+import BusinessVenturesPage from "../../businessVenture/pages/BusinessVenturesPage.jsx";
+import BusinessVentureDetailsPage from "../../businessVenture/pages/BusinessVentureDetailsPage.jsx";
+import ExpensesPage from "../../expense/pages/ExpensesPage.jsx";
+import FinancialStatementPage from "../../financialStatement/pages/FinancialStatementPage.jsx";
 import { getSystemChurch } from "../Services/systemAdmin.api.js";
 
 function ChurchDashboardHome() {
@@ -257,6 +263,12 @@ function ChurchDetailPage() {
     if (page === "welfare") return <WelfarePage />;
     if (page === "special-funds") return <SpecialFundPage />;
     if (page === "offerings") return <OfferingPage />;
+    if (page === "pledges") return <PledgesPage />;
+    if (page === "pledge-details") return <PledgeDetailsPage />;
+    if (page === "business-ventures") return <BusinessVenturesPage />;
+    if (page === "business-venture-details") return <BusinessVentureDetailsPage />;
+    if (page === "expenses") return <ExpensesPage />;
+    if (page === "financial-statement") return <FinancialStatementPage />;
     if (page === "event-details") return <EventDetailsPage />;
     if (page === "event-create") return <EventCreatePage />;
     if (page === "event-edit") return <EventEditPage />;
