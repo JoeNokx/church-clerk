@@ -10,7 +10,15 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
   try {
     const cookies = req.cookies || {};
     const names = Array.isArray(cookieNames) ? cookieNames : [cookieNames];
-    const token = names.map((n) => cookies?.[n]).find(Boolean);
+    let token = names.map((n) => cookies?.[n]).find(Boolean);
+
+    // If request comes from the system admin app, prefer adminToken for auth.
+    // This avoids accidentally authenticating as a regular church user when both cookies exist.
+    const clientApp = String(req.headers?.["x-client-app"] || "").trim().toLowerCase();
+    const hasAdminToken = Boolean(cookies?.adminToken);
+    if (clientApp === "system-admin" && hasAdminToken && names.includes("token")) {
+      token = cookies.adminToken;
+    }
 
     if (!token) {
       return res.status(401).json({ message: "Not authorized, token missing" });

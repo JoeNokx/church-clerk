@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../Features/Auth/useAuth.js";
+import { useAuth } from "../../features/Auth/useAuth.js";
 import LoadingSpinner from "./LoadingSpinner.jsx";
 
 function ProtectedRoute({ children }) {

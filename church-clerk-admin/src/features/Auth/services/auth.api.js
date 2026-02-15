@@ -1,4 +1,4 @@
-import http from "../../../Shared/Services/http.js";
+import http from "../../../shared/services/http.js";
 
 export const loginUser = async (payload) => {
   return await http.post("/admin/login", payload);

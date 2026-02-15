@@ -3,8 +3,8 @@ export const readOnlyBranchGuard = (req, res, next) => {
     return next();
   }
 
- //  Superadmin can always edit
-  if (req.user.role === "superadmin") return next();
+ //  System admins can always edit
+  if (req.user.role === "superadmin" || req.user.role === "supportadmin") return next();
 
   
   // Support admin: read-only in finance modules only

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { getMyProfile, loginUser, logoutUser } from "../Services/auth.api.js";
+import { getMyProfile, loginUser, logoutUser } from "../services/auth.api.js";
 import ChurchContext from "../../Church/church.store.js";
+import PermissionContext from "../../Permissions/permission.store.js";
 
 const AuthContext = createContext(null);
 
@@ -9,6 +10,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const churchCtx = useContext(ChurchContext);
+  const permCtx = useContext(PermissionContext);
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -40,9 +42,17 @@ export function AuthProvider({ children }) {
         }
 
         const inViewMode = typeof window !== "undefined" && localStorage.getItem("systemAdminViewChurch") === "1";
-        if (inViewMode) {
-          churchCtx?.setActiveChurch?.(payload?.activeChurch);
+        const activeChurchId = typeof window !== "undefined" ? localStorage.getItem("systemAdminActiveChurch") : null;
+
+        if (inViewMode && activeChurchId && typeof churchCtx?.enterChurchView === "function") {
+          try {
+            const viewPayload = await churchCtx.enterChurchView(activeChurchId);
+            permCtx?.setPermissions?.(viewPayload?.permissions || { super: true });
+          } catch {
+            permCtx?.clearPermissions?.();
+          }
         } else {
+          permCtx?.clearPermissions?.();
           churchCtx?.clearActiveChurch?.();
         }
       } catch {
@@ -50,6 +60,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem("cckSystemAdminUserId");
         localStorage.removeItem("systemAdminUserIsActive");
         churchCtx?.clearActiveChurch?.();
+        permCtx?.clearPermissions?.();
       } finally {
         setLoading(false);
       }
@@ -86,9 +97,17 @@ export function AuthProvider({ children }) {
     }
 
     const inViewMode = typeof window !== "undefined" && localStorage.getItem("systemAdminViewChurch") === "1";
-    if (inViewMode) {
-      churchCtx?.setActiveChurch?.(payload?.activeChurch);
+    const activeChurchId = typeof window !== "undefined" ? localStorage.getItem("systemAdminActiveChurch") : null;
+
+    if (inViewMode && activeChurchId && typeof churchCtx?.enterChurchView === "function") {
+      try {
+        const viewPayload = await churchCtx.enterChurchView(activeChurchId);
+        permCtx?.setPermissions?.(viewPayload?.permissions || { super: true });
+      } catch {
+        permCtx?.clearPermissions?.();
+      }
     } else {
+      permCtx?.clearPermissions?.();
       churchCtx?.clearActiveChurch?.();
     }
     return userData;
@@ -108,6 +127,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem("cckSystemAdminUserId");
       localStorage.removeItem("systemAdminUserIsActive");
       churchCtx?.clearActiveChurch?.();
+      permCtx?.clearPermissions?.();
     }
   };
 

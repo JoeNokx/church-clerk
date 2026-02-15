@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState, createElement } from "react";
-import http from "../../Shared/Services/http.js";
+import http from "../../shared/services/http.js";
 
 const ChurchContext = createContext(null);
 

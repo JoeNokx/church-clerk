@@ -23,6 +23,7 @@ export const setActiveChurch = async (req, res, next) => {
     let userChurch = null;
     if (
       effectiveRole !== "superadmin" &&
+      effectiveRole !== "supportadmin" &&
       headerChurchId &&
       userChurchId &&
       headerChurchId.toString() !== userChurchId.toString()
@@ -48,6 +49,7 @@ export const setActiveChurch = async (req, res, next) => {
     // Switching church context (HQ → Branch only)
     if (
       effectiveRole !== "superadmin" &&
+      effectiveRole !== "supportadmin" &&
       userChurchId &&
       activeChurchId.toString() !== userChurchId.toString()
     ) {

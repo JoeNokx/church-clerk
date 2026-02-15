@@ -26,6 +26,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    config.headers["x-client-app"] = "system-admin";
+
     const inViewChurchMode = localStorage.getItem("systemAdminViewChurch") === "1";
     const activeChurch = localStorage.getItem("systemAdminActiveChurch");
 

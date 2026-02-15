@@ -1,22 +1,22 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AuthLayout from "../Layouts/AuthLayout.jsx";
 import DashboardLayout from "../Layouts/DashboardLayout.jsx";
-import Login from "../../Features/Auth/Pages/Login.jsx";
-import DashboardHome from "../../Features/Dashboard/Pages/DashboardHome.jsx";
-import ProtectedRoute from "../../Shared/Components/ProtectedRoute.jsx";
-import ChurchesPage from "../../Features/SystemAdmin/Pages/ChurchesPage.jsx";
-import ChurchDetailPage from "../../Features/SystemAdmin/Pages/ChurchDetailPage.jsx";
-import UsersRolesPage from "../../Features/SystemAdmin/Pages/UsersRolesPage.jsx";
-import BillingLayout from "../../Features/SystemAdmin/Pages/BillingLayout.jsx";
-import BillingPlansPage from "../../Features/SystemAdmin/Pages/BillingPlansPage.jsx";
-import BillingSubscriptionsPage from "../../Features/SystemAdmin/Pages/BillingSubscriptionsPage.jsx";
-import BillingPaymentsPage from "../../Features/SystemAdmin/Pages/BillingPaymentsPage.jsx";
-import BillingRevenuePage from "../../Features/SystemAdmin/Pages/BillingRevenuePage.jsx";
-import BillingInvoicesPage from "../../Features/SystemAdmin/Pages/BillingInvoicesPage.jsx";
-import BillingWebhookLogsPage from "../../Features/SystemAdmin/Pages/BillingWebhookLogsPage.jsx";
-import ReferralsPage from "../../Features/SystemAdmin/Pages/ReferralsPage.jsx";
-import AuditLogPage from "../../Features/SystemAdmin/Pages/AuditLogPage.jsx";
-import SystemSettingsPage from "../../Features/SystemAdmin/Pages/SystemSettingsPage.jsx";
+import Login from "../../features/Auth/pages/Login.jsx";
+import DashboardHome from "../../features/Dashboard/Pages/DashboardHome.jsx";
+import ProtectedRoute from "../../shared/components/ProtectedRoute.jsx";
+import ChurchesPage from "../../features/SystemAdmin/Pages/ChurchesPage.jsx";
+import ChurchDetailPage from "../../features/SystemAdmin/Pages/ChurchDetailPage.jsx";
+import UsersRolesPage from "../../features/SystemAdmin/Pages/UsersRolesPage.jsx";
+import BillingLayout from "../../features/SystemAdmin/Pages/BillingLayout.jsx";
+import BillingPlansPage from "../../features/SystemAdmin/Pages/BillingPlansPage.jsx";
+import BillingSubscriptionsPage from "../../features/SystemAdmin/Pages/BillingSubscriptionsPage.jsx";
+import BillingPaymentsPage from "../../features/SystemAdmin/Pages/BillingPaymentsPage.jsx";
+import BillingRevenuePage from "../../features/SystemAdmin/Pages/BillingRevenuePage.jsx";
+import BillingInvoicesPage from "../../features/SystemAdmin/Pages/BillingInvoicesPage.jsx";
+import BillingWebhookLogsPage from "../../features/SystemAdmin/Pages/BillingWebhookLogsPage.jsx";
+import ReferralsPage from "../../features/SystemAdmin/Pages/ReferralsPage.jsx";
+import AuditLogPage from "../../features/SystemAdmin/Pages/AuditLogPage.jsx";
+import SystemSettingsPage from "../../features/SystemAdmin/Pages/SystemSettingsPage.jsx";
 
 function AppRoutes() {
   return (

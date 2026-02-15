@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import DashboardHeader from "../../Features/Dashboard/Components/Header.jsx";
-import Footer from "../../Features/Dashboard/Components/Footer.jsx";
-import SystemAdminSidebar from "../../Features/SystemAdmin/Components/SystemAdminSidebar.jsx";
+import DashboardHeader from "../../features/Dashboard/Components/Header.jsx";
+import Footer from "../../features/Dashboard/Components/Footer.jsx";
+import SystemAdminSidebar from "../../features/SystemAdmin/Components/SystemAdminSidebar.jsx";
 
 function DashboardLayout() {
   const location = useLocation();

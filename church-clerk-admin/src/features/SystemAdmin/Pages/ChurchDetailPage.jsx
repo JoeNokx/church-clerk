@@ -3,12 +3,38 @@ import { NavLink, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import ChurchContext from "../../Church/church.store.js";
 import { useAuth } from "../../Auth/useAuth.js";
+import PermissionContext from "../../Permissions/permission.store.js";
+import MembersPage from "../../member/pages/MembersPage.jsx";
+import MemberFormPage from "../../member/pages/MemberFormPage.jsx";
+import MemberDetailsPage from "../../member/pages/MemberDetailsPage.jsx";
+import AttendancePage from "../../attendance/pages/AttendancePage.jsx";
+import ProgramsEventsPage from "../../event/pages/ProgramsEventsPage.jsx";
+import EventDetailsPage from "../../event/pages/EventDetailsPage.jsx";
+import EventCreatePage from "../../event/pages/EventCreatePage.jsx";
+import EventEditPage from "../../event/pages/EventEditPage.jsx";
+import MinistriesPage from "../../ministries/pages/MinistriesPage.jsx";
+import MinistryDetailsPage from "../../ministries/pages/MinistryDetailsPage.jsx";
+import BranchesOverviewPage from "../../Church/pages/BranchesOverviewPage.jsx";
+import TithePage from "../../tithe/pages/TithePage.jsx";
+import OfferingPage from "../../offering/pages/OfferingPage.jsx";
+import SpecialFundPage from "../../specialFund/pages/SpecialFundPage.jsx";
+import ChurchProjectsPage from "../../churchProject/pages/ChurchProjectsPage.jsx";
+import ChurchProjectDetailsPage from "../../churchProject/pages/ChurchProjectDetailsPage.jsx";
+import WelfarePage from "../../welfare/pages/WelfarePage.jsx";
 import { getSystemChurch } from "../Services/systemAdmin.api.js";
 
 function ChurchDashboardHome() {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
       Church dashboard view will be implemented inside the admin app.
+    </div>
+  );
+}
+
+function NotImplemented({ label }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
+      {label || "This module will be implemented inside the admin app."}
     </div>
   );
 }
@@ -48,6 +74,7 @@ function ChurchDetailPage() {
 
   const { user } = useAuth();
   const churchCtx = useContext(ChurchContext);
+  const permCtx = useContext(PermissionContext);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -55,7 +82,9 @@ function ChurchDetailPage() {
 
   const page = useMemo(() => {
     const raw = new URLSearchParams(location.search).get("page") || "dashboard";
-    return raw === "offering" ? "offerings" : raw;
+    if (raw === "offering") return "offerings";
+    if (raw === "special-fund") return "special-funds";
+    return raw;
   }, [location.search]);
 
   const isHeadquarters = String(church?.type || "") === "Headquarters";
@@ -177,7 +206,8 @@ function ChurchDetailPage() {
         if (!cancelled) setChurch(data);
 
         if (typeof churchCtx?.enterChurchView === "function") {
-          await churchCtx.enterChurchView(id);
+          const viewPayload = await churchCtx.enterChurchView(id);
+          permCtx?.setPermissions?.(viewPayload?.permissions || { super: true });
         }
       } catch (e) {
         if (cancelled) return;
@@ -198,6 +228,7 @@ function ChurchDetailPage() {
   useEffect(() => {
     return () => {
       churchCtx?.exitChurchView?.();
+      permCtx?.clearPermissions?.();
     };
   }, []);
 
@@ -213,6 +244,34 @@ function ChurchDetailPage() {
           : derivedMainTab === "branches"
             ? [{ key: "branches-overview", label: "Branches" }]
             : adminSubTabs;
+
+  const content = useMemo(() => {
+    if (page === "members") return <MembersPage />;
+    if (page === "attendance") return <AttendancePage />;
+    if (page === "programs-events") return <ProgramsEventsPage />;
+    if (page === "ministries") return <MinistriesPage />;
+    if (page === "ministry-details") return <MinistryDetailsPage />;
+    if (page === "tithe") return <TithePage />;
+    if (page === "church-projects") return <ChurchProjectsPage />;
+    if (page === "church-project-details") return <ChurchProjectDetailsPage />;
+    if (page === "welfare") return <WelfarePage />;
+    if (page === "special-funds") return <SpecialFundPage />;
+    if (page === "offerings") return <OfferingPage />;
+    if (page === "event-details") return <EventDetailsPage />;
+    if (page === "event-create") return <EventCreatePage />;
+    if (page === "event-edit") return <EventEditPage />;
+    if (page === "member-form") return <MemberFormPage />;
+    if (page === "member-details") return <MemberDetailsPage />;
+    if (page === "branches-overview") return <BranchesOverviewPage />;
+    if (page === "dashboard") return <ChurchDashboardHome />;
+
+    if (derivedMainTab === "people") return <NotImplemented label="This people module will be implemented inside the admin app." />;
+    if (derivedMainTab === "finance") return <NotImplemented label="This finance module will be implemented inside the admin app." />;
+    if (derivedMainTab === "branches") return <NotImplemented label="Branches view will be implemented inside the admin app." />;
+    if (derivedMainTab === "admin") return <NotImplemented label="This admin module will be implemented inside the admin app." />;
+
+    return <ChurchDashboardHome />;
+  }, [page, derivedMainTab]);
 
   return (
     <div className="max-w-6xl">
@@ -284,7 +343,7 @@ function ChurchDetailPage() {
         {loading ? (
           <div className="text-sm text-gray-600">Loading…</div>
         ) : (
-          <ChurchDashboardHome />
+          content
         )}
       </div>
 
