@@ -28,6 +28,9 @@ import BusinessVentureDetailsPage from "../../businessVenture/pages/BusinessVent
 import ExpensesPage from "../../expense/pages/ExpensesPage.jsx";
 import FinancialStatementPage from "../../financialStatement/pages/FinancialStatementPage.jsx";
 import ChurchDashboardPage from "../../Dashboard/Pages/ChurchDashboardPage.jsx";
+import ReportsAnalyticsPage from "../../reportsAnalytics/pages/ReportsAnalyticsPage.jsx";
+import ReferralProgramPage from "../../referral/pages/ReferralProgramPage.jsx";
+import SettingsPage from "../../settings/pages/SettingsPage.jsx";
 import { getSystemChurch } from "../Services/systemAdmin.api.js";
 
 function ChurchDashboardHome() {
@@ -148,7 +151,7 @@ function ChurchDetailPage() {
     ) {
       return "finance";
     }
-    if (["reports-analytics", "billing", "referrals", "settings", "support-help"].includes(page)) return "admin";
+    if (["reports-analytics", "billing", "referrals", "settings"].includes(page)) return "admin";
     return "dashboard";
   }, [page]);
 
@@ -183,8 +186,7 @@ function ChurchDetailPage() {
       { key: "reports-analytics", label: "Report & Analytics" },
       { key: "billing", label: "Billing" },
       { key: "referrals", label: "Referrals" },
-      { key: "settings", label: "Settings" },
-      { key: "support-help", label: "Support & Help" }
+      { key: "settings", label: "Settings" }
     ],
     []
   );
@@ -241,16 +243,20 @@ function ChurchDetailPage() {
 
   const displayName = useMemo(() => formatChurchDisplayName(church), [church]);
 
-  const activeSubTabs =
-    derivedMainTab === "dashboard"
-      ? []
-      : derivedMainTab === "people"
-        ? peopleSubTabs
-        : derivedMainTab === "finance"
-          ? financeSubTabs
-          : derivedMainTab === "branches"
-            ? [{ key: "branches-overview", label: "Branches" }]
-            : adminSubTabs;
+  const activeSubTabs = useMemo(() => {
+    switch (derivedMainTab) {
+      case "dashboard":
+        return [];
+      case "people":
+        return peopleSubTabs;
+      case "finance":
+        return financeSubTabs;
+      case "branches":
+        return [{ key: "branches-overview", label: "Branches" }];
+      default:
+        return adminSubTabs;
+    }
+  }, [adminSubTabs, derivedMainTab, financeSubTabs, peopleSubTabs]);
 
   const content = useMemo(() => {
     if (page === "members") return <MembersPage />;
@@ -277,6 +283,9 @@ function ChurchDetailPage() {
     if (page === "member-details") return <MemberDetailsPage />;
     if (page === "branches-overview") return <BranchesOverviewPage />;
     if (page === "dashboard") return <ChurchDashboardPage />;
+    if (page === "reports-analytics") return <ReportsAnalyticsPage />;
+    if (page === "referrals") return <ReferralProgramPage />;
+    if (page === "settings") return <SettingsPage />;
 
     if (derivedMainTab === "people") return <NotImplemented label="This people module will be implemented inside the admin app." />;
     if (derivedMainTab === "finance") return <NotImplemented label="This finance module will be implemented inside the admin app." />;
