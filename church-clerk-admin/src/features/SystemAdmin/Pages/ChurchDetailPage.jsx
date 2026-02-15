@@ -31,6 +31,7 @@ import ChurchDashboardPage from "../../Dashboard/Pages/ChurchDashboardPage.jsx";
 import ReportsAnalyticsPage from "../../reportsAnalytics/pages/ReportsAnalyticsPage.jsx";
 import ReferralProgramPage from "../../referral/pages/ReferralProgramPage.jsx";
 import SettingsPage from "../../settings/pages/SettingsPage.jsx";
+import ChurchBillingPage from "./ChurchBillingPage.jsx";
 import { getSystemChurch } from "../Services/systemAdmin.api.js";
 
 function ChurchDashboardHome() {
@@ -243,20 +244,16 @@ function ChurchDetailPage() {
 
   const displayName = useMemo(() => formatChurchDisplayName(church), [church]);
 
-  const activeSubTabs = useMemo(() => {
-    switch (derivedMainTab) {
-      case "dashboard":
-        return [];
-      case "people":
-        return peopleSubTabs;
-      case "finance":
-        return financeSubTabs;
-      case "branches":
-        return [{ key: "branches-overview", label: "Branches" }];
-      default:
-        return adminSubTabs;
-    }
-  }, [adminSubTabs, derivedMainTab, financeSubTabs, peopleSubTabs]);
+  const activeSubTabs =
+    derivedMainTab === "dashboard"
+      ? []
+      : derivedMainTab === "people"
+        ? peopleSubTabs
+        : derivedMainTab === "finance"
+          ? financeSubTabs
+          : derivedMainTab === "branches"
+            ? [{ key: "branches-overview", label: "Branches" }]
+            : adminSubTabs;
 
   const content = useMemo(() => {
     if (page === "members") return <MembersPage />;
@@ -284,6 +281,7 @@ function ChurchDetailPage() {
     if (page === "branches-overview") return <BranchesOverviewPage />;
     if (page === "dashboard") return <ChurchDashboardPage />;
     if (page === "reports-analytics") return <ReportsAnalyticsPage />;
+    if (page === "billing") return <ChurchBillingPage />;
     if (page === "referrals") return <ReferralProgramPage />;
     if (page === "settings") return <SettingsPage />;
 
