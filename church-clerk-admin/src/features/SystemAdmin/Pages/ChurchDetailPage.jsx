@@ -27,6 +27,7 @@ import BusinessVenturesPage from "../../businessVenture/pages/BusinessVenturesPa
 import BusinessVentureDetailsPage from "../../businessVenture/pages/BusinessVentureDetailsPage.jsx";
 import ExpensesPage from "../../expense/pages/ExpensesPage.jsx";
 import FinancialStatementPage from "../../financialStatement/pages/FinancialStatementPage.jsx";
+import ChurchDashboardPage from "../../Dashboard/Pages/ChurchDashboardPage.jsx";
 import { getSystemChurch } from "../Services/systemAdmin.api.js";
 
 function ChurchDashboardHome() {
@@ -242,7 +243,7 @@ function ChurchDetailPage() {
 
   const activeSubTabs =
     derivedMainTab === "dashboard"
-      ? [{ key: "dashboard", label: "Dashboard" }]
+      ? []
       : derivedMainTab === "people"
         ? peopleSubTabs
         : derivedMainTab === "finance"
@@ -275,7 +276,7 @@ function ChurchDetailPage() {
     if (page === "member-form") return <MemberFormPage />;
     if (page === "member-details") return <MemberDetailsPage />;
     if (page === "branches-overview") return <BranchesOverviewPage />;
-    if (page === "dashboard") return <ChurchDashboardHome />;
+    if (page === "dashboard") return <ChurchDashboardPage />;
 
     if (derivedMainTab === "people") return <NotImplemented label="This people module will be implemented inside the admin app." />;
     if (derivedMainTab === "finance") return <NotImplemented label="This finance module will be implemented inside the admin app." />;
@@ -347,7 +348,7 @@ function ChurchDetailPage() {
             }}
           />
 
-          <TabNav items={activeSubTabs} activeKey={page} getTo={makeToPage} />
+          {activeSubTabs.length ? <TabNav items={activeSubTabs} activeKey={page} getTo={makeToPage} /> : null}
         </div>
       </div>
 
