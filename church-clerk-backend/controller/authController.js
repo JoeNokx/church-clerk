@@ -2,6 +2,13 @@ import User from "../models/userModel.js";
 import Church from "../models/churchModel.js";
 import generateToken from "../utils/generateToken.js";
 import ActivityLog from "../models/activityLogModel.js";
+import crypto from "node:crypto";
+import { sendEmail } from "../services/emailService.js";
+
+function getFrontendBaseUrl() {
+  const raw = process.env.FRONTEND_BASE_URL || process.env.CLIENT_BASE_URL || process.env.CLIENT_URL || "http://localhost:5173";
+  return String(raw || "").replace(/\/$/, "");
+}
 
 function getClientIp(req) {
   const xf = req.headers["x-forwarded-for"];
@@ -48,10 +55,131 @@ function parseUserAgentMeta(uaRaw) {
   };
 }
 
+//POST: verify email
+const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: "Verification token is required" });
+    }
+
+    const user = await User.findOne({ emailVerificationToken: String(token).trim() }).populate("church", "name");
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired verification token" });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    await user.save();
+
+    const jwtToken = generateToken(user._id, "1d");
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    user.password = undefined;
+
+    return res.status(200).json({
+      status: "success",
+      message: "Email verified successfully",
+      data: { user },
+      token: jwtToken
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+//POST: forgot password
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = String(email || "").toLowerCase().trim();
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      user.passwordResetToken = resetToken;
+      user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+      await user.save();
+
+      try {
+        const baseUrl = getFrontendBaseUrl();
+        const link = `${baseUrl}/reset-password?token=${resetToken}`;
+        await sendEmail({
+          to: user.email,
+          subject: "Reset your password - Church Clerk",
+          html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+              <h2 style="margin: 0 0 12px;">Reset your password</h2>
+              <p>Hello ${user.fullName || ""},</p>
+              <p>You requested a password reset. Click the button below to set a new password. This link expires in 1 hour.</p>
+              <p><a href="${link}" style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 10px 14px; border-radius: 8px; text-decoration: none;">Reset Password</a></p>
+              <p style="color: #6b7280; font-size: 12px;">If the button doesn’t work, copy and paste this link into your browser:<br/>${link}</p>
+            </div>
+          `
+        });
+      } catch {
+        void 0;
+      }
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "If an account exists for that email, a reset link has been sent."
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+//POST: reset password
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const t = String(token || "").trim();
+    if (!t) {
+      return res.status(400).json({ message: "Reset token is required" });
+    }
+    if (!newPassword) {
+      return res.status(400).json({ message: "New password is required" });
+    }
+
+    const user = await User.findOne({
+      passwordResetToken: t,
+      passwordResetExpires: { $gt: new Date() }
+    }).select("+password");
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+
+    user.password = newPassword;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Password reset successfully"
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 //POST: register a new user
 const registerUser = async (req, res) => {
   try {
     const { fullName, email, phoneNumber, password, churchId } = req.body;
+
     if (!fullName || !email || !phoneNumber || !password) {
       try {
         const userAgent = String(req.headers["user-agent"] || "");
@@ -160,13 +288,16 @@ const registerUser = async (req, res) => {
     }
 
     //save user to databse
+    const verificationToken = crypto.randomBytes(32).toString("hex");
     const user = await User.create({
       fullName,
       email,
       phoneNumber,
       password,
       role: resolvedRole,
-      church
+      church,
+      isEmailVerified: false,
+      emailVerificationToken: verificationToken
     });
 
     console.log(user);
@@ -185,6 +316,28 @@ const registerUser = async (req, res) => {
 
     //user successful registered
     console.log("user registered successfully...");
+
+    let verificationEmailSent = false;
+    try {
+      const baseUrl = getFrontendBaseUrl();
+      const link = `${baseUrl}/verify-email?token=${verificationToken}`;
+      await sendEmail({
+        to: user.email,
+        subject: "Verify your email - Church Clerk",
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2 style="margin: 0 0 12px;">Verify your email</h2>
+            <p>Hello ${user.fullName || ""},</p>
+            <p>Thanks for signing up for Church Clerk. Please verify your email to continue.</p>
+            <p><a href="${link}" style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 10px 14px; border-radius: 8px; text-decoration: none;">Verify Email</a></p>
+            <p style="color: #6b7280; font-size: 12px;">If the button doesn’t work, copy and paste this link into your browser:<br/>${link}</p>
+          </div>
+        `
+      });
+      verificationEmailSent = true;
+    } catch {
+      verificationEmailSent = false;
+    }
 
     try {
       const userAgent = String(req.headers["user-agent"] || "");
@@ -217,7 +370,8 @@ const registerUser = async (req, res) => {
       message: "User registered successfully",
       data: {
         user,
-        nextStep: "church-registration"
+        nextStep: "email-verification",
+        verificationEmailSent
       }
     });
   } catch (error) {
@@ -231,7 +385,12 @@ const registerUser = async (req, res) => {
 //POST: login an existing user
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
+    const remember =
+      rememberMe === true ||
+      rememberMe === "true" ||
+      rememberMe === 1 ||
+      rememberMe === "1";
 
     //check if both fields are filled
     if (!email || !password) {
@@ -292,6 +451,13 @@ const loginUser = async (req, res) => {
       return res.status(403).json({ message: "Please log in via the admin portal" });
     }
 
+    if (user.isEmailVerified === false) {
+      return res.status(403).json({
+        message: "Please verify your email to continue.",
+        needsEmailVerification: true
+      });
+    }
+
     //check if password is correct
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
@@ -323,21 +489,18 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Email or password incorrect" });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
+    const tokenExpiresIn = remember ? "30d" : "1d";
+    const token = generateToken(user._id, tokenExpiresIn);
 
-    // Remove password before sending response
     user.password = undefined;
 
-    // Send token in HTTP-only cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
+      maxAge: remember ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
     });
 
-    //login successful
     try {
       const userAgent = String(req.headers["user-agent"] || "");
       const meta = parseUserAgentMeta(userAgent);
@@ -483,4 +646,4 @@ const updatePassword = async (req, res) => {
   }
 };
 
-export {registerUser, loginUser, logoutUser, updatePassword}
+export { registerUser, loginUser, logoutUser, updatePassword, verifyEmail, forgotPassword, resetPassword }

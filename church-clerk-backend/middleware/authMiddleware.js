@@ -12,6 +12,13 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
     const names = Array.isArray(cookieNames) ? cookieNames : [cookieNames];
     let token = names.map((n) => cookies?.[n]).find(Boolean);
 
+    if (!token) {
+      const authHeader = String(req.headers?.authorization || "");
+      if (authHeader.toLowerCase().startsWith("bearer ")) {
+        token = authHeader.slice(7).trim();
+      }
+    }
+
     // If request comes from the system admin app, prefer adminToken for auth.
     // This avoids accidentally authenticating as a regular church user when both cookies exist.
     const clientApp = String(req.headers?.["x-client-app"] || "").trim().toLowerCase();

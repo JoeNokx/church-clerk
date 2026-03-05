@@ -791,8 +791,13 @@ function DashboardHome() {
 
   function PageSkeletonFallback() {
     return (
-      <div className="p-5">
-        <Skeleton height={14} count={8} />
+      <div className="max-w-6xl">
+        <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <Skeleton height={16} width={220} />
+          <div className="mt-3">
+            <Skeleton height={14} count={5} />
+          </div>
+        </div>
       </div>
     );
   }

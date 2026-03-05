@@ -10,6 +10,18 @@ export const loginUser = async (payload) => {
   return await http.post("/auth/login", payload);
 };
 
+export const verifyEmail = async (payload) => {
+  return await http.post("/auth/verify-email", payload);
+};
+
+export const forgotPassword = async (payload) => {
+  return await http.post("/auth/forgot-password", payload);
+};
+
+export const resetPassword = async (payload) => {
+  return await http.post("/auth/reset-password", payload);
+};
+
 /** Logout */
 export const logoutUser = async () => {
   return await http.post("/auth/logout");

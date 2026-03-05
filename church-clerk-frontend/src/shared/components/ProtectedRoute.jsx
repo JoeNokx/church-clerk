@@ -12,6 +12,13 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  if (user?.isEmailVerified === false) {
+    if (location.pathname !== "/verify-email") {
+      const email = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
+      return <Navigate to={`/verify-email${email}`} replace />;
+    }
+  }
+
   // Logged in but no church → register church
   if (!user.church) {
     if (location.pathname !== "/register-church") {

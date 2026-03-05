@@ -39,6 +39,22 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+    emailVerificationToken: {
+        type: String,
+        default: null
+    },
+    passwordResetToken: {
+        type: String,
+        default: null
+    },
+    passwordResetExpires: {
+        type: Date,
+        default: null
+    },
     
     church: {
   type: mongoose.Schema.Types.ObjectId,

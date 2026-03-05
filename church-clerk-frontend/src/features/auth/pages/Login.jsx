@@ -9,6 +9,7 @@ function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,7 +19,7 @@ function Login() {
     setError("");
 
     try {
-      const userData = await login({ email, password });
+      const userData = await login({ email, password, rememberMe });
 
       const needsChurch = userData && !userData.church;
 
@@ -28,6 +29,11 @@ function Login() {
         navigate("/dashboard", { replace: true });
       }
     } catch (err) {
+      if (err?.response?.data?.needsEmailVerification) {
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
+        return;
+      }
+
       setError(err?.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
@@ -83,13 +89,18 @@ function Login() {
 
         <div className="flex items-center justify-between">
           <label className="inline-flex items-center gap-2 text-sm text-gray-600">
-            <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900" />
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
+            />
             Remember me
           </label>
 
-          <a href="#" className="text-sm font-medium text-blue-900 hover:underline">
+          <Link to="/forgot-password" className="text-sm font-medium text-blue-900 hover:underline">
             Forgot password?
-          </a>
+          </Link>
         </div>
 
         <button

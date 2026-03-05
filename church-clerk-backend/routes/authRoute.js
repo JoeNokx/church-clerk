@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 
-import {registerUser, loginUser, logoutUser, updatePassword} from "../controller/authController.js"
+import {registerUser, loginUser, logoutUser, updatePassword, verifyEmail, forgotPassword, resetPassword} from "../controller/authController.js"
 
 import { protect } from "../middleware/authMiddleware.js";
 import {setActiveChurch} from "../middleware/activeChurchMiddleware.js";
@@ -13,6 +13,9 @@ import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js"
 
 router.post("/register", registerUser); 
 router.post("/login",  loginUser);
+router.post("/verify-email", verifyEmail);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 router.post("/logout", protect, logoutUser);
 router.put("/password", protect, updatePassword);
 

@@ -6,6 +6,8 @@ import ChurchContext from "../church/church.store.js";
 
 const AuthContext = createContext(null);
 
+const AUTH_TOKEN_KEY = "cckAuthToken";
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +50,8 @@ export function AuthProvider({ children }) {
         churchCtx?.setActiveChurch?.(payload?.activeChurch);
       } catch {
         setUser(null);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        sessionStorage.removeItem(AUTH_TOKEN_KEY);
         localStorage.removeItem("cckUserId");
         localStorage.removeItem("userIsActive");
         localStorage.removeItem("subscriptionReadOnly");
@@ -94,8 +98,19 @@ export function AuthProvider({ children }) {
   /**
    * Login
    */
-  const login = async ({ email, password }) => {
-    await loginUser({ email, password });
+  const login = async ({ email, password, rememberMe }) => {
+    const res = await loginUser({ email, password, rememberMe });
+
+    const token = res?.data?.token;
+    if (token) {
+      if (rememberMe) {
+        localStorage.setItem(AUTH_TOKEN_KEY, String(token));
+        sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      } else {
+        sessionStorage.setItem(AUTH_TOKEN_KEY, String(token));
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+      }
+    }
 
     const userData = await refreshUser();
     return userData;
@@ -109,6 +124,8 @@ export function AuthProvider({ children }) {
       await logoutUser();
     } finally {
       setUser(null);
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem("cckUserId");
       localStorage.removeItem("userIsActive");
       localStorage.removeItem("subscriptionReadOnly");

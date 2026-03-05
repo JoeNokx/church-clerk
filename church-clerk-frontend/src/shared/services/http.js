@@ -4,6 +4,15 @@ import NProgress from "nprogress";
 let pendingRequests = 0;
 let pendingRoutes = 0;
 
+const AUTH_TOKEN_KEY = "cckAuthToken";
+
+function getStoredAuthToken() {
+  if (typeof window === "undefined") return "";
+  const ls = String(localStorage.getItem(AUTH_TOKEN_KEY) || "");
+  if (ls) return ls;
+  return String(sessionStorage.getItem(AUTH_TOKEN_KEY) || "");
+}
+
 function startProgress() {
   pendingRequests += 1;
   NProgress.start();
@@ -48,6 +57,11 @@ api.interceptors.request.use(
       config.headers["x-active-church"] = activeChurch;
     }
 
+    const token = getStoredAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     if (typeof FormData !== "undefined" && config?.data instanceof FormData) {
       if (config.headers) {
         delete config.headers["Content-Type"];
@@ -74,6 +88,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Let AuthContext + ProtectedRoute handle it
       localStorage.removeItem("activeChurch");
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
     }
 
     return Promise.reject(error);

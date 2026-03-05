@@ -10,6 +10,13 @@ function RegisterChurch() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
 
+  useEffect(() => {
+    if (user?.isEmailVerified === false) {
+      const email = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
+      navigate(`/verify-email${email}`, { replace: true });
+    }
+  }, [navigate, user]);
+
   const [name, setName] = useState("");
   const [pastor, setPastor] = useState("");
   const [type, setType] = useState("Headquarters");

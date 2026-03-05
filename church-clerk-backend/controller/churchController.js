@@ -1,6 +1,7 @@
 import Church from "../models/churchModel.js";
 import User from "../models/userModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
+import { sendEmail } from "../services/emailService.js";
 
 // referral models
 import ReferralCode from "../models/referralModel/referralCodeModel.js";
@@ -10,6 +11,13 @@ import { generateReferralCode } from "../utils/generateReferralCode.js";
 
 const createMyChurch = async (req, res) => {
   try {
+    if (req.user?.isEmailVerified === false) {
+      return res.status(403).json({
+        message: "Please verify your email to continue.",
+        needsEmailVerification: true
+      });
+    }
+
     const {
       name,
       type,
@@ -32,7 +40,7 @@ const createMyChurch = async (req, res) => {
       });
     }
 
-     let parentChurch = null;
+    let parentChurch = null;
 
     if (type === "Branch") {
       if (!parentChurchId) {
@@ -72,48 +80,45 @@ const createMyChurch = async (req, res) => {
       createdBy: req.user._id
     });
 
-      // Create permanent unique referral code for THIS church
-  const newReferralCode = generateReferralCode(name);
+    // Create permanent unique referral code for THIS church
+    const newReferralCode = generateReferralCode(name);
 
-  await ReferralCode.create({
-    church: church._id,
-    code: newReferralCode
-  });
-
-  //Handle referral input (if provided)
-  if (referralCodeInput) {
-    const referrerCode = await ReferralCode.findOne({
-      code: referralCodeInput.toUpperCase()
+    await ReferralCode.create({
+      church: church._id,
+      code: newReferralCode
     });
 
+    //Handle referral input (if provided)
+    if (referralCodeInput) {
+      const referrerCode = await ReferralCode.findOne({
+        code: referralCodeInput.toUpperCase()
+      });
 
-     if (!referrerCode) {
-    // Bounce back with error
-    return res.status(400).json({
-      message: "Invalid referral code. Please check and try again."
-    });
-  }
+      if (!referrerCode) {
+        // Bounce back with error
+        return res.status(400).json({
+          message: "Invalid referral code. Please check and try again."
+        });
+      }
 
-    if (referrerCode && referrerCode.church.toString() !== church._id.toString()) {
+      if (referrerCode && referrerCode.church.toString() !== church._id.toString()) {
 
-      //  PREVENT DOUBLE REFERRAL
-    const existingReferral = await ReferralHistory.findOne({
-      referredChurch: church._id
-    });
+        //  PREVENT DOUBLE REFERRAL
+        const existingReferral = await ReferralHistory.findOne({
+          referredChurch: church._id
+        });
 
         if (!existingReferral) {
-      await ReferralHistory.create({
-        referrerChurch: referrerCode.church,
-        referredChurch: church._id,
-        referredChurchEmail: email
-      });
+          await ReferralHistory.create({
+            referrerChurch: referrerCode.church,
+            referredChurch: church._id,
+            referredChurchEmail: email
+          });
+        }
+      }
     }
-    }
-  }
 
-  
-
-     // Update the user to belong to this church
+    // Update the user to belong to this church
     const existingUsersInChurch = await User.countDocuments({ church: church._id });
 
     const setRole =
@@ -129,8 +134,27 @@ const createMyChurch = async (req, res) => {
       { new: true }
     );
 
+    try {
+      const recipient = updatedUser?.email || req.user?.email;
+      if (recipient) {
+        await sendEmail({
+          to: recipient,
+          subject: "Welcome to Church Clerk",
+          html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+              <h2 style="margin: 0 0 12px;">Welcome to Church Clerk</h2>
+              <p>Hello ${updatedUser?.fullName || req.user?.fullName || ""},</p>
+              <p>Your church <strong>${church?.name || ""}</strong> has been set up successfully. You can now start managing members, events, finances, and more.</p>
+            </div>
+          `
+        });
+      }
+    } catch {
+      void 0;
+    }
+
     res.status(201).json({
-     message: "Church created successfully. You now belong to a church.",
+      message: "Church created successfully. You now belong to a church.",
       churchId: church._id,
       type: church.type,
       parentChurch: church.parentChurch,

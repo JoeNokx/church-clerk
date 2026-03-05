@@ -35,6 +35,7 @@ function Sidebar() {
   const toPage = (key) => {
     if (key === "dashboard") return "/dashboard";
     if (key === "billing") return "/dashboard/billing";
+    if (key === "settings") return "/dashboard/settings";
     if (key === "offerings") return "/dashboard?page=offering";
     return `/dashboard?page=${key}`;
   };

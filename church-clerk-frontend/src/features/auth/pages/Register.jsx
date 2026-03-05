@@ -37,6 +37,11 @@ function Register() {
 
       const needsChurch = effectiveUser && !effectiveUser.church;
 
+      if (nextStep === "email-verification") {
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
+        return;
+      }
+
       // Redirect to church registration if backend says nextStep
       if (nextStep === "church-registration" || needsChurch) {
         navigate("/register-church", { replace: true });
