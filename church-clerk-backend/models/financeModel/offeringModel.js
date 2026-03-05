@@ -54,5 +54,6 @@ const offeringSchema = new mongoose.Schema({
 
 // KPI optimization index
 offeringSchema.index({ church: 1, serviceDate: 1 });
+offeringSchema.index({ church: 1, createdAt: -1 });
 
 export default mongoose.model("Offering", offeringSchema);

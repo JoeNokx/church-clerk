@@ -1,5 +1,6 @@
 import { useContext, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Skeleton from "react-loading-skeleton";
 import EventContext from "../event.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { deleteEvent as apiDeleteEvent } from "../services/event.api.js";
@@ -96,7 +97,11 @@ function ProgramsEventsTable({ status, onEdit }) {
   const rows = Array.isArray(store?.events) ? store.events : [];
 
   if (store?.loading && !rows.length) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return (
+      <div className="p-5">
+        <Skeleton height={14} count={6} />
+      </div>
+    );
   }
 
   if (!rows.length) {
@@ -105,7 +110,11 @@ function ProgramsEventsTable({ status, onEdit }) {
 
   return (
     <div>
-      {store?.loading ? <div className="px-6 pt-3 text-xs font-semibold text-gray-500">Loading...</div> : null}
+      {store?.loading ? (
+        <div className="px-6 pt-3">
+          <Skeleton height={12} width={120} />
+        </div>
+      ) : null}
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-100">

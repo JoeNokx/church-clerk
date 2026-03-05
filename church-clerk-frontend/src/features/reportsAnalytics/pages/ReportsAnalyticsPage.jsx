@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import Skeleton from "react-loading-skeleton";
 import {
   ResponsiveContainer,
   XAxis,
@@ -425,7 +426,11 @@ function ReportsAnalyticsPage() {
       ) : null}
 
       {error ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
-      {loading ? <div className="mt-4 text-sm text-gray-600">Loading…</div> : null}
+      {loading ? (
+        <div className="mt-4">
+          <Skeleton height={14} count={4} />
+        </div>
+      ) : null}
 
       {activeTab === "analytics" ? (
         <>
@@ -580,7 +585,11 @@ function ReportsAnalyticsPage() {
           </div>
 
           {reportError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{reportError}</div> : null}
-          {reportLoading ? <div className="mt-4 text-sm text-gray-600">Loading…</div> : null}
+          {reportLoading ? (
+            <div className="mt-4">
+              <Skeleton height={14} count={4} />
+            </div>
+          ) : null}
 
           {report?.columns?.length ? (
             <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">

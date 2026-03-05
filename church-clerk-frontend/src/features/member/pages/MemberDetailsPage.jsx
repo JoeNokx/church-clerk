@@ -4,6 +4,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
+import Skeleton from "react-loading-skeleton";
 
 function StatusChip({ value }) {
   const v = String(value || "").toLowerCase();
@@ -200,7 +201,12 @@ function MemberDetailsPageInner() {
 
       <div className="mt-6 space-y-5">
         {loading ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">Loading...</div>
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <Skeleton height={16} width={220} />
+            <div className="mt-4">
+              <Skeleton height={14} count={6} />
+            </div>
+          </div>
         ) : error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : (

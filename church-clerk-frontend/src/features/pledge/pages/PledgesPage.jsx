@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Skeleton from "react-loading-skeleton";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
@@ -785,7 +786,11 @@ function PledgesPageInner() {
           </div>
         </div>
 
-        {store?.loading ? <div className="p-5 text-sm text-gray-600">Loading...</div> : null}
+        {store?.loading ? (
+          <div className="p-5">
+            <Skeleton height={14} count={8} />
+          </div>
+        ) : null}
         {!store?.loading && store?.error ? (
           <div className="p-5">
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{store.error}</div>

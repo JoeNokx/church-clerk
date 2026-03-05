@@ -4,6 +4,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
+import Skeleton from "react-loading-skeleton";
 import { getCells, createCell as apiCreateCell } from "../../cell/services/cell.api.js";
 import { getDepartments, createDepartment as apiCreateDepartment } from "../../department/services/department.api.js";
 import { getGroups, createGroup as apiCreateGroup } from "../../group/services/group.api.js";
@@ -423,7 +424,12 @@ function MemberFormPageInner() {
         )}
 
         {loading ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">Loading...</div>
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <Skeleton height={16} width={200} />
+            <div className="mt-4">
+              <Skeleton height={14} count={8} />
+            </div>
+          </div>
         ) : (
           <form onSubmit={submit} className="space-y-5">
             <Section title="Personal Information" subtitle="Basic information about the member">

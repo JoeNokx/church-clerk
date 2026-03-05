@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { createEvent as apiCreateEvent, getEvent as apiGetEvent, updateEvent as apiUpdateEvent } from "../services/event.api.js";
+import Skeleton from "react-loading-skeleton";
 
 const CATEGORY_OPTIONS = [
   "Conference",
@@ -299,7 +300,9 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
             ) : null)}
 
             {initialLoading ? (
-              <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading...</div>
+              <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <Skeleton height={14} count={3} />
+              </div>
             ) : null}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

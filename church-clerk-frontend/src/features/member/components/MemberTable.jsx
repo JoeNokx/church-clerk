@@ -1,5 +1,6 @@
 import { useContext, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext from "../member.store.js";
 
@@ -75,7 +76,11 @@ function MemberTable({ onEdit, onDeleted }) {
   };
 
   if (store?.loading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return (
+      <div className="p-5">
+        <Skeleton height={14} count={8} />
+      </div>
+    );
   }
 
   if (store?.error) {

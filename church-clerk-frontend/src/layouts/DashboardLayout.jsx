@@ -1,15 +1,17 @@
 import DashboardHeader from "../features/dashboard/components/Header.jsx";
 import Sidebar from "../features/dashboard/components/Sidebar.jsx";
 import Footer from "../features/dashboard/components/Footer.jsx";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useContext, useMemo } from "react";
 import { useAuth } from "../features/auth/useAuth.js";
 import ChurchContext from "../features/church/church.store.js";
 import SubscriptionStatusBanner from "../shared/components/SubscriptionStatusBanner.jsx";
+import { AnimatePresence, motion } from "framer-motion";
 
 function DashboardLayout() {
   const { user } = useAuth();
   const churchCtx = useContext(ChurchContext);
+  const location = useLocation();
 
   const homeChurchId = useMemo(() => {
     const c = user?.church;
@@ -57,7 +59,17 @@ function DashboardLayout() {
                     ) : null}
                   </div>
                 ) : null}
-                <Outlet />
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={`${location.pathname}${location.search}`}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                  >
+                    <Outlet />
+                  </motion.div>
+                </AnimatePresence>
             </main>
             
             {/* footer */}

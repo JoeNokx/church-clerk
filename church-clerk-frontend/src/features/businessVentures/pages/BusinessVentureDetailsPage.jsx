@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Skeleton from "react-loading-skeleton";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import {
@@ -758,7 +759,9 @@ function BusinessVentureDetailsPage() {
       </div>
 
       {loading ? (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <Skeleton height={14} count={4} />
+        </div>
       ) : (
         <div className="mt-8">
           <div className="flex items-center justify-between gap-4">

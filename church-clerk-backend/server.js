@@ -7,6 +7,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 
 
 
@@ -33,6 +34,8 @@ app.use(cors({
   credentials: true                // allow cookies
 }));
 
+app.use(compression());
+
 app.use(
   express.json({
     verify: (req, res, buf) => {
@@ -47,7 +50,16 @@ app.use(cookieParser());
 app.use(activityLogMiddleware);
 
 // mount all routes
-app.use("/api/v1/dashboard", Routes.dashboardRoute);
+app.use(
+  "/api/v1/dashboard",
+  (req, res, next) => {
+    if (req.method === "GET") {
+      res.setHeader("Cache-Control", "private, max-age=60");
+    }
+    next();
+  },
+  Routes.dashboardRoute
+);
 app.use("/api/v1/auth", Routes.authRoutes);
 app.use("/api/v1/admin", Routes.adminAuthRoute);
 app.use("/api/v1/user", Routes.userRoutes);

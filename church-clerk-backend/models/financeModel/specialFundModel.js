@@ -16,7 +16,7 @@ const specialFundSchema = new mongoose.Schema({
     ],
     required: true 
   },
-giverName: { type: String, trim: true },
+  giverName: { type: String, trim: true },
   
   totalAmount: { type: Number, required: true },
   description: { type: String, trim: true },
@@ -25,5 +25,7 @@ giverName: { type: String, trim: true },
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
+
+specialFundSchema.index({ church: 1, givingDate: 1 });
 
 export default mongoose.model('SpecialFund', specialFundSchema);

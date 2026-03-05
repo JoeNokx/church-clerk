@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { getGroups, createGroup, updateGroup, deleteGroup } from "../../group/services/group.api.js";
+import Skeleton from "react-loading-skeleton";
 import {
   getDepartments,
   createDepartment,
@@ -701,7 +702,9 @@ function MinistriesPage() {
         </div>
 
         {loading ? (
-          <div className="p-5 text-sm text-gray-600">Loading...</div>
+          <div className="p-5">
+            <Skeleton height={14} count={6} />
+          </div>
         ) : filteredRows.length === 0 ? (
           <div className="p-5 text-sm text-gray-600">No record found.</div>
         ) : (

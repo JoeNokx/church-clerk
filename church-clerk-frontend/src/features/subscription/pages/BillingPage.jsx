@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
+import Skeleton from "react-loading-skeleton";
 import {
   cancelMySubscription,
   changeMyPlan,
@@ -441,7 +442,9 @@ function BillingPage() {
     return (
       <div className="max-w-6xl">
         <div className="text-lg font-semibold text-gray-900">Billing & Subscription</div>
-        <div className="mt-2 text-sm text-gray-600">Loading…</div>
+        <div className="mt-2">
+          <Skeleton height={14} width={160} />
+        </div>
       </div>
     );
   }

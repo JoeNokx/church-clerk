@@ -51,4 +51,7 @@ trim: true
 {timestamps: true}
 );
 
+attendanceSchema.index({ church: 1, serviceDate: -1 });
+attendanceSchema.index({ church: 1, serviceType: 1, serviceDate: -1 });
+
 export default mongoose.model('Attendance', attendanceSchema);

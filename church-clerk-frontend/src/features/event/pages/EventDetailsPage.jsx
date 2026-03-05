@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getEvent as apiGetEvent } from "../services/event.api.js";
+import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { createEventAttendee, getEventAttendees } from "../attendees/services/eventAttendees.api.js";
@@ -502,7 +503,11 @@ function EventDetailsPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
         {loading ? (
-          <div className="text-sm text-gray-600">Loading...</div>
+          <div className="space-y-3">
+            <Skeleton height={18} width={140} />
+            <Skeleton height={26} width={280} />
+            <Skeleton height={14} count={2} />
+          </div>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : !event ? (
@@ -717,7 +722,7 @@ function EventDetailsPage() {
                       {attendeesLoading ? (
                         <tr>
                           <td colSpan={4} className="px-6 py-4 text-sm text-gray-600">
-                            Loading...
+                            <Skeleton height={14} width={180} />
                           </td>
                         </tr>
                       ) : attendeesError ? (
@@ -780,7 +785,7 @@ function EventDetailsPage() {
                       {totalLoading ? (
                         <tr>
                           <td colSpan={3} className="px-6 py-4 text-sm text-gray-600">
-                            Loading...
+                            <Skeleton height={14} width={180} />
                           </td>
                         </tr>
                       ) : totalError ? (
@@ -850,7 +855,7 @@ function EventDetailsPage() {
                       {filesLoading ? (
                         <tr>
                           <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">
-                            Loading...
+                            <Skeleton height={14} width={180} />
                           </td>
                         </tr>
                       ) : !files.length ? (

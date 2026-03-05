@@ -57,15 +57,29 @@ function formatChurchDisplayName(church) {
   return name || "—";
 }
 
-function TabNav({ items, activeKey, getTo }) {
+function TabNav({ items, activeKey, getTo, variant = "pill" }) {
   return (
-    <nav className="flex flex-wrap gap-2" aria-label="Tabs">
+    <nav
+      className={
+        variant === "underline"
+          ? "flex flex-wrap gap-2"
+          : "flex flex-wrap gap-2 rounded-xl bg-blue-50 p-1"
+      }
+      aria-label="Tabs"
+    >
       {items.map((it) => (
         <NavLink
           key={it.key}
           to={getTo(it.key)}
           className={({ isActive }) => {
             const active = Boolean(isActive) || activeKey === it.key;
+
+            if (variant === "underline") {
+              return active
+                ? "roundedrodd-md bo border-blue-200 bg-blue-50 bx-b py-2lue-50 px-3 py-2 text-sm font-semibold text-blue-800"
+                : "doun pd-mt pxt3miyo2d text-gray-500 hover:bg-gray-50 h0o hover:bg-gray-5ver:text-gray-900";
+            }
+
             return active
               ? "rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white"
               : "rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50";
@@ -355,7 +369,7 @@ function ChurchDetailPage() {
             }}
           />
 
-          {activeSubTabs.length ? <TabNav items={activeSubTabs} activeKey={page} getTo={makeToPage} /> : null}
+          {activeSubTabs.length ? <TabNav items={activeSubTabs} activeKey={page} getTo={makeToPage} variant="underline" /> : null}
         </div>
       </div>
 

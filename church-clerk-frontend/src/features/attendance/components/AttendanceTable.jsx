@@ -1,4 +1,5 @@
 import { useContext, useMemo, useState } from "react";
+import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 
@@ -54,7 +55,11 @@ function AttendanceTable({ onEdit, onDeleted }) {
   };
 
   if (store?.attendanceLoading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return (
+      <div className="p-5">
+        <Skeleton height={14} count={8} />
+      </div>
+    );
   }
 
   if (store?.attendanceError) {

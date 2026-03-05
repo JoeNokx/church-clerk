@@ -53,4 +53,7 @@ dateTo: {
 
 }, {timestamps: true});
 
+eventSchema.index({ church: 1, dateFrom: 1 });
+eventSchema.index({ church: 1, dateTo: 1 });
+
 export default mongoose.model('Event', eventSchema);

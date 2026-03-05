@@ -4,6 +4,7 @@ import { useAuth } from "../../auth/useAuth.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { getChurchProfile, searchHeadquartersChurches, updateChurchProfile } from "../../church/services/church.api.js";
+import Skeleton from "react-loading-skeleton";
 import Select from "react-select";
 import currencyCodes from "currency-codes";
 import { Country, State } from "country-state-city";
@@ -1896,7 +1897,9 @@ function SettingsPage() {
                 <tbody className="divide-y divide-gray-200">
                   {auditLoading ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-6 text-center text-gray-600">Loading...</td>
+                      <td colSpan={8} className="px-4 py-6">
+                        <Skeleton height={14} count={3} />
+                      </td>
                     </tr>
                   ) : auditLogs.length ? (
                     auditLogs.map((row) => {

@@ -1,6 +1,8 @@
 import Member from "../models/memberModel.js"
 import Attendance from "../models/attendanceModel.js"
 import Event from "../models/eventModel.js"; 
+import Offering from "../models/financeModel/offeringModel.js";
+import { withCacheJson } from "../utils/cache.js";
 
 
 
@@ -13,102 +15,110 @@ const getDashboardKPI = async (req, res) => {
       query.church = churchId;
     }
 
-    const now = new Date();
+    const cacheKey = `dashboard:kpi:${String(query.church || "global")}`;
+    const payload = await withCacheJson({
+      key: cacheKey,
+      ttlSeconds: 60,
+      getValue: async () => {
+        const now = new Date();
 
-    // --- Start of current month for new members ---
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        // --- Start of current month for new members ---
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // --- Previous month range ---
-    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        // --- Previous month range ---
+        const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    const pctChange = (current, previous) => {
-      const c = Number(current || 0);
-      const p = Number(previous || 0);
-      if (!p) return c ? 100 : 0;
-      return ((c - p) / p) * 100;
-    };
+        const pctChange = (current, previous) => {
+          const c = Number(current || 0);
+          const p = Number(previous || 0);
+          if (!p) return c ? 100 : 0;
+          return ((c - p) / p) * 100;
+        };
 
-    // --- MEMBER KPIs (parallel) ---
-    const [
-      totalMembers,
-      currentMembers,
-      newMembersThisMonth,
-      totalMembersPrev,
-      currentMembersPrev,
-      newMembersPrevMonth
-    ] = await Promise.all([
-      Member.countDocuments(query),
-      Member.countDocuments({ ...query, status: "active" }),
-      Member.countDocuments({ ...query, dateJoined: { $gte: startOfMonth, $lt: startOfNextMonth } }),
+        // --- MEMBER KPIs (parallel) ---
+        const [
+          totalMembers,
+          currentMembers,
+          newMembersThisMonth,
+          totalMembersPrev,
+          currentMembersPrev,
+          newMembersPrevMonth
+        ] = await Promise.all([
+          Member.countDocuments(query),
+          Member.countDocuments({ ...query, status: "active" }),
+          Member.countDocuments({ ...query, dateJoined: { $gte: startOfMonth, $lt: startOfNextMonth } }),
 
-      // Previous month comparators
-      Member.countDocuments({ ...query, dateJoined: { $lt: startOfMonth } }),
-      Member.countDocuments({ ...query, status: "active", dateJoined: { $lt: startOfMonth } }),
-      Member.countDocuments({ ...query, dateJoined: { $gte: startOfPrevMonth, $lt: startOfMonth } })
-    ]);
+          // Previous month comparators
+          Member.countDocuments({ ...query, dateJoined: { $lt: startOfMonth } }),
+          Member.countDocuments({ ...query, status: "active", dateJoined: { $lt: startOfMonth } }),
+          Member.countDocuments({ ...query, dateJoined: { $gte: startOfPrevMonth, $lt: startOfMonth } })
+        ]);
 
-    // --- THIS SUNDAY ATTENDANCE (vs last Sunday) ---
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // Sunday = 0
+        // --- THIS SUNDAY ATTENDANCE (vs last Sunday) ---
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // Sunday = 0
 
-    // Most recent Sunday (today if Sunday, else previous Sunday)
-    const thisSunday = new Date(today);
-    thisSunday.setDate(today.getDate() - dayOfWeek);
-    thisSunday.setHours(0, 0, 0, 0);
+        // Most recent Sunday (today if Sunday, else previous Sunday)
+        const thisSunday = new Date(today);
+        thisSunday.setDate(today.getDate() - dayOfWeek);
+        thisSunday.setHours(0, 0, 0, 0);
 
-    const thisSundayNextDay = new Date(thisSunday);
-    thisSundayNextDay.setDate(thisSunday.getDate() + 1);
+        const thisSundayNextDay = new Date(thisSunday);
+        thisSundayNextDay.setDate(thisSunday.getDate() + 1);
 
-    const lastSunday = new Date(thisSunday);
-    lastSunday.setDate(thisSunday.getDate() - 7);
-    lastSunday.setHours(0, 0, 0, 0);
+        const lastSunday = new Date(thisSunday);
+        lastSunday.setDate(thisSunday.getDate() - 7);
+        lastSunday.setHours(0, 0, 0, 0);
 
-    const lastSundayNextDay = new Date(lastSunday);
-    lastSundayNextDay.setDate(lastSunday.getDate() + 1);
+        const lastSundayNextDay = new Date(lastSunday);
+        lastSundayNextDay.setDate(lastSunday.getDate() + 1);
 
-    const [thisSundayServices, lastSundayServices] = await Promise.all([
-      Attendance.find({
-        church: query.church,
-        serviceDate: { $gte: thisSunday, $lt: thisSundayNextDay },
-        serviceType: { $regex: /^Sunday/i }
-      })
-        .select("totalNumber")
-        .lean(),
-      Attendance.find({
-        church: query.church,
-        serviceDate: { $gte: lastSunday, $lt: lastSundayNextDay },
-        serviceType: { $regex: /^Sunday/i }
-      })
-        .select("totalNumber")
-        .lean()
-    ]);
+        const [thisSundayServices, lastSundayServices] = await Promise.all([
+          Attendance.find({
+            church: query.church,
+            serviceDate: { $gte: thisSunday, $lt: thisSundayNextDay },
+            serviceType: { $regex: /^Sunday/i }
+          })
+            .select("totalNumber")
+            .lean(),
+          Attendance.find({
+            church: query.church,
+            serviceDate: { $gte: lastSunday, $lt: lastSundayNextDay },
+            serviceType: { $regex: /^Sunday/i }
+          })
+            .select("totalNumber")
+            .lean()
+        ]);
 
-    const thisSundayAttendance = thisSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
-    const lastSundayAttendancePrevWeek = lastSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
+        const thisSundayAttendance = thisSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
+        const lastSundayAttendancePrevWeek = lastSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
 
-    const serviceCount = thisSundayServices.length;
-    const thisSundayDate = thisSunday.toISOString().split("T")[0]; // YYYY-MM-DD
+        const serviceCount = thisSundayServices.length;
+        const thisSundayDate = thisSunday.toISOString().split("T")[0]; // YYYY-MM-DD
 
-    const change = {
-      totalMembers: pctChange(totalMembers, totalMembersPrev),
-      currentMembers: pctChange(currentMembers, currentMembersPrev),
-      newMembersThisMonth: pctChange(newMembersThisMonth, newMembersPrevMonth),
-      lastSundayAttendance: pctChange(thisSundayAttendance, lastSundayAttendancePrevWeek)
-    };
+        const change = {
+          totalMembers: pctChange(totalMembers, totalMembersPrev),
+          currentMembers: pctChange(currentMembers, currentMembersPrev),
+          newMembersThisMonth: pctChange(newMembersThisMonth, newMembersPrevMonth),
+          lastSundayAttendance: pctChange(thisSundayAttendance, lastSundayAttendancePrevWeek)
+        };
 
-    // --- RESPONSE ---
-    return res.status(200).json({
-      message: "Dashboard KPI fetched successfully",
-      kpis: {
-        totalMembers,
-        currentMembers,
-        newMembersThisMonth,
-        lastSundayAttendance: thisSundayAttendance,
-        change,
-        lastSundayInfo: `${serviceCount} service${serviceCount !== 1 ? 's' : ''} · ${thisSundayDate}`
+        return {
+          message: "Dashboard KPI fetched successfully",
+          kpis: {
+            totalMembers,
+            currentMembers,
+            newMembersThisMonth,
+            lastSundayAttendance: thisSundayAttendance,
+            change,
+            lastSundayInfo: `${serviceCount} service${serviceCount !== 1 ? 's' : ''} · ${thisSundayDate}`
+          }
+        };
       }
     });
+
+    return res.status(200).json(payload);
 
   } catch (error) {
     return res.status(400).json({
@@ -134,29 +144,35 @@ const getDashboardAnalytics = async (req, res) => {
     const startOfYear = new Date(year, 0, 1);
     const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
 
-    // --- Gender Distribution ---
-    const genderAgg = await Member.aggregate([
-      { $match: { ...query, status: "active" } },
-      { $group: { _id: "$gender", count: { $sum: 1 } } }
-    ]);
+    const cacheKey = `dashboard:analytics:${String(query.church || "global")}:${String(year)}`;
+    const payload = await withCacheJson({
+      key: cacheKey,
+      ttlSeconds: 60,
+      getValue: async () => {
 
-    let maleCount = 0;
-    let femaleCount = 0;
-    genderAgg.forEach(g => {
-      if (g._id === "male") maleCount = g.count;
-      if (g._id === "female") femaleCount = g.count;
-    });
+        // --- Gender Distribution ---
+        const genderAgg = await Member.aggregate([
+          { $match: { ...query, status: "active" } },
+          { $group: { _id: "$gender", count: { $sum: 1 } } }
+        ]);
 
-    const totalMembers = maleCount + femaleCount;
-    const genderData = {
-      male: maleCount,
-      female: femaleCount,
-      malePercentage: totalMembers ? ((maleCount / totalMembers) * 100).toFixed(1) : 0,
-      femalePercentage: totalMembers ? ((femaleCount / totalMembers) * 100).toFixed(1) : 0
-    };
+        let maleCount = 0;
+        let femaleCount = 0;
+        genderAgg.forEach(g => {
+          if (g._id === "male") maleCount = g.count;
+          if (g._id === "female") femaleCount = g.count;
+        });
+
+        const totalMembers = maleCount + femaleCount;
+        const genderData = {
+          male: maleCount,
+          female: femaleCount,
+          malePercentage: totalMembers ? ((maleCount / totalMembers) * 100).toFixed(1) : 0,
+          femalePercentage: totalMembers ? ((femaleCount / totalMembers) * 100).toFixed(1) : 0
+        };
 
     // --- Attendance Graph per month (sum of all Sunday services) ---
-   const attendanceAgg = await Attendance.aggregate([
+       const attendanceAgg = await Attendance.aggregate([
   {
     $match: {
       church: query.church,
@@ -183,25 +199,28 @@ const getDashboardAnalytics = async (req, res) => {
 ]);
 
 
-    // Map into all 12 months for chart (default 0 if no data)
-    const attendanceGraph = [];
-for (let m = 1; m <= 12; m++) {
-  const record = attendanceAgg.find(a => a._id === m);
-  attendanceGraph.push({
-    month: new Date(year, m - 1).toLocaleString("default", { month: "long" }),
-    totalAttendance: record ? record.totalAttendance : 0
-  });
-}
+        // Map into all 12 months for chart (default 0 if no data)
+        const attendanceGraph = [];
+        for (let m = 1; m <= 12; m++) {
+          const record = attendanceAgg.find(a => a._id === m);
+          attendanceGraph.push({
+            month: new Date(year, m - 1).toLocaleString("default", { month: "long" }),
+            totalAttendance: record ? record.totalAttendance : 0
+          });
+        }
 
 
-    // --- RESPONSE ---
-    return res.status(200).json({
-      message: `Analytics Dashboard  data for ${year} fetched successfully`,
-      analyticsDashboard : {
-        genderDistribution: genderData,
-        attendanceGraph
+        return {
+          message: `Analytics Dashboard  data for ${year} fetched successfully`,
+          analyticsDashboard : {
+            genderDistribution: genderData,
+            attendanceGraph
+          }
+        };
       }
     });
+
+    return res.status(200).json(payload);
 
   } catch (error) {
     return res.status(400).json({
@@ -233,68 +252,75 @@ const getDashboardWidget = async (req, res) => {
     }
     if (birthdaysLimit <= 0) birthdaysLimit = Number.MAX_SAFE_INTEGER;
 
-    // --- 1. Upcoming Birthdays (next 30 days) ---
-    // MongoDB cannot match by month/day directly, so we handle in JS after fetching
-    const allMembers = await Member.find({ ...query, status: "active" }, 
-      "firstName lastName dateOfBirth").lean();
+    const cacheKey = `dashboard:widgets:${String(query.church || "global")}:${String(birthdaysLimit)}`;
+    const payload = await withCacheJson({
+      key: cacheKey,
+      ttlSeconds: 60,
+      getValue: async () => {
+        // --- 1. Upcoming Birthdays (next 30 days) ---
+        // MongoDB cannot match by month/day directly, so we handle in JS after fetching
+        const allMembers = await Member.find({ ...query, status: "active" },
+          "firstName lastName dateOfBirth").lean();
 
-    const upcomingBirthdays = allMembers
-      .map(m => {
-        if (!m.dateOfBirth) return null;
-        const dob = new Date(m.dateOfBirth);
-        const nextBirthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
-        if (nextBirthday < today) {
-          nextBirthday.setFullYear(today.getFullYear() + 1);
-        }
-        const diffDays = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
-        if (diffDays <= 30) {
-          return { ...m, nextBirthday: nextBirthday.toISOString().split("T")[0], daysAway: diffDays };
-        }
-        return null;
-      })
-      .filter(Boolean)
-      .sort((a, b) => a.daysAway - b.daysAway)
-      .slice(0, birthdaysLimit);
+        const upcomingBirthdays = allMembers
+          .map(m => {
+            if (!m.dateOfBirth) return null;
+            const dob = new Date(m.dateOfBirth);
+            const nextBirthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
+            if (nextBirthday < today) {
+              nextBirthday.setFullYear(today.getFullYear() + 1);
+            }
+            const diffDays = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+            if (diffDays <= 30) {
+              return { ...m, nextBirthday: nextBirthday.toISOString().split("T")[0], daysAway: diffDays };
+            }
+            return null;
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.daysAway - b.daysAway)
+          .slice(0, birthdaysLimit);
 
-    // --- 2. Recent Members (last 10 created) ---
-    const recentMembers = await Member.find(query)
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .select("firstName lastName createdAt status")
-      .lean();
+        // --- 2. Recent Members (last 10 created) ---
+        const recentMembers = await Member.find(query)
+          .sort({ createdAt: -1 })
+          .limit(10)
+          .select("firstName lastName createdAt status")
+          .lean();
 
-    // --- 3. Upcoming Events ---
-    const upcomingEvents = await Event.find({
-      ...query,
-      $or: [
-        // Single-day future events
-        {
-          dateTo: { $exists: false },
-          dateFrom: { $gt: today }
-        },
+        // --- 3. Upcoming Events ---
+        const upcomingEvents = await Event.find({
+          ...query,
+          $or: [
+            // Single-day future events
+            {
+              dateTo: { $exists: false },
+              dateFrom: { $gt: today }
+            },
 
-        // Multi-day events that start in the future
-        {
-          dateFrom: { $gt: today },
-          dateTo: { $gt: today }
-        }
-      ]
-    })
-      .sort({ dateFrom: 1 })
-      .limit(10)
-      .select("title dateFrom venue")
-      .lean();
+            // Multi-day events that start in the future
+            {
+              dateFrom: { $gt: today },
+              dateTo: { $gt: today }
+            }
+          ]
+        })
+          .sort({ dateFrom: 1 })
+          .limit(10)
+          .select("title dateFrom venue")
+          .lean();
 
-  
-    // --- RESPONSE ---
-    return res.status(200).json({
-      message: "Dashboard widgets fetched successfully",
-      dashboardWidget: {
-        upcomingBirthdays,
-        recentMembers,
-        upcomingEvents
+        return {
+          message: "Dashboard widgets fetched successfully",
+          dashboardWidget: {
+            upcomingBirthdays,
+            recentMembers,
+            upcomingEvents
+          }
+        };
       }
     });
+
+    return res.status(200).json(payload);
 
   } catch (error) {
     return res.status(400).json({
@@ -305,7 +331,50 @@ const getDashboardWidget = async (req, res) => {
 };
 
 
-export {getDashboardKPI, getDashboardAnalytics, getDashboardWidget };
+const getDashboardSummary = async (req, res) => {
+  return getDashboardKPI(req, res);
+};
 
 
+const getDashboardChart = async (req, res) => {
+  return getDashboardAnalytics(req, res);
+};
 
+
+const getDashboardRecentOfferings = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id || req.user?.church;
+    const cid = churchId ? String(churchId) : "global";
+    const cacheKey = `dashboard:recent-offerings:${cid}`;
+
+    const payload = await withCacheJson({
+      key: cacheKey,
+      ttlSeconds: 60,
+      getValue: async () => {
+        const match = {};
+        if (churchId) match.church = churchId;
+
+        const rows = await Offering.find(match)
+          .sort({ createdAt: -1 })
+          .limit(20)
+          .select("serviceType offeringType serviceDate amount createdAt")
+          .lean();
+
+        return {
+          message: "Recent offerings fetched successfully",
+          recentOfferings: rows
+        };
+      }
+    });
+
+    return res.status(200).json(payload);
+  } catch (error) {
+    return res.status(400).json({
+      message: "Recent offerings could not be fetched",
+      error: error.message
+    });
+  }
+};
+
+
+export {getDashboardKPI, getDashboardAnalytics, getDashboardWidget, getDashboardSummary, getDashboardChart, getDashboardRecentOfferings };

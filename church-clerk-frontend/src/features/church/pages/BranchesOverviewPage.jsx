@@ -4,6 +4,7 @@ import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../church.store.js";
 import { getMyBranches } from "../services/church.api.js";
 import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
+import Skeleton from "react-loading-skeleton";
 
 function BranchesOverviewPage() {
   const navigate = useNavigate();
@@ -239,7 +240,9 @@ function BranchesOverviewPage() {
       ) : null}
 
       {canViewBranches && loading ? (
-        <div className="mt-4 text-sm text-gray-600">Loading…</div>
+        <div className="mt-4">
+          <Skeleton height={14} count={4} />
+        </div>
       ) : canViewBranches ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
           {!branches.length ? (

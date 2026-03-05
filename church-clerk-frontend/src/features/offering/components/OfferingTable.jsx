@@ -1,4 +1,5 @@
 import { useContext, useMemo, useState } from "react";
+import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import OfferingContext from "../offering.store.js";
 import ChurchContext from "../../church/church.store.js";
@@ -58,7 +59,11 @@ function OfferingTable({ onEdit, onDeleted }) {
   };
 
   if (store?.loading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return (
+      <div className="p-5">
+        <Skeleton height={14} count={8} />
+      </div>
+    );
   }
 
   if (store?.error) {

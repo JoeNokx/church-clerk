@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import Skeleton from "react-loading-skeleton";
 
 import { getMyReferralCode, getMyReferralHistory } from "../services/referral.api.js";
 
@@ -78,7 +79,9 @@ function ReferralProgramPage() {
     return (
       <div className="max-w-6xl">
         <div className="text-2xl font-semibold text-gray-900">Referral Program</div>
-        <div className="mt-2 text-sm text-gray-600">Loading…</div>
+        <div className="mt-2">
+          <Skeleton height={14} width={160} />
+        </div>
       </div>
     );
   }

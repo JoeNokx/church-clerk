@@ -4,6 +4,7 @@ import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../../church/church.store.js";
 import { getMyBranches } from "../../church/services/church.api.js";
 import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
+import Skeleton from "react-loading-skeleton";
 
 function DashboardHeader() {
 
@@ -289,7 +290,9 @@ function DashboardHeader() {
                   <div className="mt-2 px-3 py-1 text-xs font-semibold text-gray-400 tracking-wider">BRANCHES</div>
 
                   {branchesLoading ? (
-                    <div className="px-3 py-2 text-sm text-gray-600">Loading…</div>
+                    <div className="px-3 py-2">
+                      <Skeleton height={14} width={120} />
+                    </div>
                   ) : branches.length ? (
                     <div className="mt-1">
                       {branches.map((b) => (

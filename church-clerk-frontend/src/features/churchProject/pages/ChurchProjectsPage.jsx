@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Skeleton from "react-loading-skeleton";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import {
@@ -603,7 +604,9 @@ function ChurchProjectsPage() {
       </div>
 
       {loading ? (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <Skeleton height={14} count={4} />
+        </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           {projects.map((p, idx) => {

@@ -1,38 +1,41 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import Skeleton from "react-loading-skeleton";
 
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from "recharts";
-import SpecialFundPage from "../../specialFund/pages/SpecialFundPage.jsx";
-import ReferralProgramPage from "../../referral/pages/ReferralProgramPage.jsx";
-import OfferingPage from "../../offering/pages/OfferingPage.jsx";
-import TithePage from "../../tithe/pages/TithePage.jsx";
-import AttendancePage from "../../attendance/pages/AttendancePage.jsx";
-import MembersPage from "../../member/pages/MembersPage.jsx";
-import MemberFormPage from "../../member/pages/MemberFormPage.jsx";
-import MemberDetailsPage from "../../member/pages/MemberDetailsPage.jsx";
-import ChurchProjectsPage from "../../churchProject/pages/ChurchProjectsPage.jsx";
-import ChurchProjectDetailsPage from "../../churchProject/pages/ChurchProjectDetailsPage.jsx";
-import BusinessVenturesPage from "../../businessVentures/pages/BusinessVenturesPage.jsx";
-import BusinessVentureDetailsPage from "../../businessVentures/pages/BusinessVentureDetailsPage.jsx";
-import ProgramsEventsPage from "../../event/pages/ProgramsEventsPage.jsx";
-import EventDetailsPage from "../../event/pages/EventDetailsPage.jsx";
-import MinistriesPage from "../../ministries/pages/MinistriesPage.jsx";
-import MinistryDetailsPage from "../../ministries/pages/MinistryDetailsPage.jsx";
-import BranchesOverviewPage from "../../church/pages/BranchesOverviewPage.jsx";
-import WelfarePage from "../../welfare/pages/WelfarePage.jsx";
-import ExpensesPage from "../../expenses/pages/ExpensesPage.jsx";
-import PledgesPage from "../../pledge/pages/PledgesPage.jsx";
-import PledgeDetailsPage from "../../pledge/pages/PledgeDetailsPage.jsx";
-import FinancialStatementPage from "../../financialStatement/pages/FinancialStatementPage.jsx";
-import SettingsPage from "../../settings/pages/SettingsPage.jsx";
-import ReportsAnalyticsPage from "../../reportsAnalytics/pages/ReportsAnalyticsPage.jsx";
-import SupportHelpPage from "../../supportHelp/pages/SupportHelpPage.jsx";
-import BillingPage from "../../subscription/pages/BillingPage.jsx";
 import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboardWidgetsWithParams } from "../services/dashboard.api.js";
 import { getUpcomingEvents } from "../../event/services/event.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import { getMyReferralCode, getMyReferralHistory } from "../../referral/services/referral.api.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+
+const DashboardCharts = React.lazy(() => import("../components/DashboardCharts.jsx"));
+
+const SpecialFundPage = React.lazy(() => import("../../specialFund/pages/SpecialFundPage.jsx"));
+const ReferralProgramPage = React.lazy(() => import("../../referral/pages/ReferralProgramPage.jsx"));
+const OfferingPage = React.lazy(() => import("../../offering/pages/OfferingPage.jsx"));
+const TithePage = React.lazy(() => import("../../tithe/pages/TithePage.jsx"));
+const AttendancePage = React.lazy(() => import("../../attendance/pages/AttendancePage.jsx"));
+const MembersPage = React.lazy(() => import("../../member/pages/MembersPage.jsx"));
+const MemberFormPage = React.lazy(() => import("../../member/pages/MemberFormPage.jsx"));
+const MemberDetailsPage = React.lazy(() => import("../../member/pages/MemberDetailsPage.jsx"));
+const ChurchProjectsPage = React.lazy(() => import("../../churchProject/pages/ChurchProjectsPage.jsx"));
+const ChurchProjectDetailsPage = React.lazy(() => import("../../churchProject/pages/ChurchProjectDetailsPage.jsx"));
+const BusinessVenturesPage = React.lazy(() => import("../../businessVentures/pages/BusinessVenturesPage.jsx"));
+const BusinessVentureDetailsPage = React.lazy(() => import("../../businessVentures/pages/BusinessVentureDetailsPage.jsx"));
+const ProgramsEventsPage = React.lazy(() => import("../../event/pages/ProgramsEventsPage.jsx"));
+const EventDetailsPage = React.lazy(() => import("../../event/pages/EventDetailsPage.jsx"));
+const MinistriesPage = React.lazy(() => import("../../ministries/pages/MinistriesPage.jsx"));
+const MinistryDetailsPage = React.lazy(() => import("../../ministries/pages/MinistryDetailsPage.jsx"));
+const BranchesOverviewPage = React.lazy(() => import("../../church/pages/BranchesOverviewPage.jsx"));
+const WelfarePage = React.lazy(() => import("../../welfare/pages/WelfarePage.jsx"));
+const ExpensesPage = React.lazy(() => import("../../expenses/pages/ExpensesPage.jsx"));
+const PledgesPage = React.lazy(() => import("../../pledge/pages/PledgesPage.jsx"));
+const PledgeDetailsPage = React.lazy(() => import("../../pledge/pages/PledgeDetailsPage.jsx"));
+const FinancialStatementPage = React.lazy(() => import("../../financialStatement/pages/FinancialStatementPage.jsx"));
+const SettingsPage = React.lazy(() => import("../../settings/pages/SettingsPage.jsx"));
+const ReportsAnalyticsPage = React.lazy(() => import("../../reportsAnalytics/pages/ReportsAnalyticsPage.jsx"));
+const SupportHelpPage = React.lazy(() => import("../../supportHelp/pages/SupportHelpPage.jsx"));
+const BillingPage = React.lazy(() => import("../../subscription/pages/BillingPage.jsx"));
 
 function formatPercent(value) {
   const v = Number(value || 0);
@@ -409,7 +412,9 @@ function DashboardOverview({ onNavigate }) {
     return (
       <div className="max-w-6xl">
         <div className="text-2xl font-semibold text-gray-900">Dashboard Overview</div>
-        <div className="mt-2 text-sm text-gray-600">Loading…</div>
+        <div className="mt-4">
+          <Skeleton height={14} count={6} />
+        </div>
       </div>
     );
   }
@@ -488,63 +493,24 @@ function DashboardOverview({ onNavigate }) {
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-gray-900">Attendance Trends</div>
-              <div className="mt-1 text-sm text-gray-600">Sundays attendance totals by month ({year})</div>
-            </div>
-          </div>
-
-          <div className="mt-2 h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={attendanceGraph} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} tickFormatter={(v) => String(v || "").slice(0, 3)} />
-                <YAxis
-                  tick={{ fontSize: 11 }}
-                  domain={[0, (dataMax) => Math.max(10, Math.ceil((Number(dataMax || 0) || 0) * 1.25))]}
-                />
-                <Tooltip
-                  contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }}
-                  labelStyle={{ fontWeight: 600, color: "#111827" }}
-                />
-                <Line type="monotone" dataKey="totalAttendance" stroke="#2563eb" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-3">
-          <div className="text-sm font-semibold text-gray-900">Gender Distribution</div>
-          <div className="mt-1 text-sm text-gray-600">Active members breakdown</div>
-
-          <div className="mt-2 h-48 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={genderData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={80} paddingAngle={2}>
-                  {genderData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-gray-200 p-2.5">
-              <div className="text-xs font-semibold text-gray-500">Male</div>
-              <div className="mt-1 text-lg font-semibold text-gray-900">{analytics?.genderDistribution?.male ?? 0}</div>
-              <div className="mt-1 text-xs text-gray-500">{analytics?.genderDistribution?.malePercentage ?? 0}%</div>
-            </div>
-            <div className="rounded-lg border border-gray-200 p-2.5">
-              <div className="text-xs font-semibold text-gray-500">Female</div>
-              <div className="mt-1 text-lg font-semibold text-gray-900">{analytics?.genderDistribution?.female ?? 0}</div>
-              <div className="mt-1 text-xs text-gray-500">{analytics?.genderDistribution?.femalePercentage ?? 0}%</div>
-            </div>
-          </div>
-        </div>
+        <React.Suspense
+          fallback={
+            <>
+              <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-3">
+                <div className="mt-1">
+                  <Skeleton height={14} count={8} />
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white p-3">
+                <div className="mt-1">
+                  <Skeleton height={14} count={8} />
+                </div>
+              </div>
+            </>
+          }
+        >
+          <DashboardCharts attendanceGraph={attendanceGraph} genderData={genderData} analytics={analytics} year={year} />
+        </React.Suspense>
 
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
           <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
@@ -647,7 +613,9 @@ function DashboardOverview({ onNavigate }) {
 
           <div className="px-5 pb-5">
             {upcomingEventsLoading && !upcomingEvents.length ? (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-4">
+                <Skeleton height={14} count={4} />
+              </div>
             ) : upcomingEventsError ? (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{upcomingEventsError}</div>
             ) : upcomingEvents.length ? (
@@ -758,7 +726,9 @@ function DashboardOverview({ onNavigate }) {
               </div>
 
               {birthdaysModalLoading ? (
-                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-4">
+                  <Skeleton height={14} count={8} />
+                </div>
               ) : birthdaysModalError ? (
                 <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{birthdaysModalError}</div>
               ) : (
@@ -819,111 +789,50 @@ function DashboardHome() {
   const rawPage = new URLSearchParams(location.search).get("page") || "dashboard";
   const page = rawPage === "offering" ? "offerings" : rawPage;
 
-  if (page === "billing") {
-    return <BillingPage />;
+  function PageSkeletonFallback() {
+    return (
+      <div className="p-5">
+        <Skeleton height={14} count={8} />
+      </div>
+    );
   }
 
-  if (page === "special-funds") {
-    return <SpecialFundPage />;
-  }
+  let PageComponent = null;
 
-  if (page === "offerings") {
-    return <OfferingPage />;
-  }
+  if (page === "billing") PageComponent = BillingPage;
+  if (page === "special-funds") PageComponent = SpecialFundPage;
+  if (page === "offerings") PageComponent = OfferingPage;
+  if (page === "tithe") PageComponent = TithePage;
+  if (page === "referrals") PageComponent = ReferralProgramPage;
+  if (page === "attendance") PageComponent = AttendancePage;
+  if (page === "members") PageComponent = MembersPage;
+  if (page === "member-form") PageComponent = MemberFormPage;
+  if (page === "member-details") PageComponent = MemberDetailsPage;
+  if (page === "church-projects") PageComponent = ChurchProjectsPage;
+  if (page === "church-project-details") PageComponent = ChurchProjectDetailsPage;
+  if (page === "business-ventures") PageComponent = BusinessVenturesPage;
+  if (page === "business-venture-details") PageComponent = BusinessVentureDetailsPage;
+  if (page === "programs-events") PageComponent = ProgramsEventsPage;
+  if (page === "event-details") PageComponent = EventDetailsPage;
+  if (page === "ministries") PageComponent = MinistriesPage;
+  if (page === "ministry-details") PageComponent = MinistryDetailsPage;
+  if (page === "branches-overview") PageComponent = BranchesOverviewPage;
+  if (page === "welfare") PageComponent = WelfarePage;
+  if (page === "pledges") PageComponent = PledgesPage;
+  if (page === "pledge-details") PageComponent = PledgeDetailsPage;
+  if (page === "expenses") PageComponent = ExpensesPage;
+  if (page === "financial-statement") PageComponent = FinancialStatementPage;
+  if (page === "settings") PageComponent = SettingsPage;
+  if (page === "reports-analytics") PageComponent = ReportsAnalyticsPage;
+  if (page === "support-help") PageComponent = SupportHelpPage;
 
-  if (page === "tithe") {
-    return <TithePage />;
+  if (PageComponent) {
+    return (
+      <React.Suspense fallback={<PageSkeletonFallback />}>
+        <PageComponent />
+      </React.Suspense>
+    );
   }
-
-  if (page === "referrals") {
-    return <ReferralProgramPage />;
-  }
-
-  if (page === "attendance") {
-    return <AttendancePage />;
-  }
-
-  if (page === "members") {
-    return <MembersPage />;
-  }
-
-  if (page === "member-form") {
-    return <MemberFormPage />;
-  }
-
-  if (page === "member-details") {
-    return <MemberDetailsPage />;
-  }
-
-  if (page === "church-projects") {
-    return <ChurchProjectsPage />;
-  }
-
-  if (page === "church-project-details") {
-    return <ChurchProjectDetailsPage />;
-  }
-
-  if (page === "business-ventures") {
-    return <BusinessVenturesPage />;
-  }
-
-  if (page === "business-venture-details") {
-    return <BusinessVentureDetailsPage />;
-  }
-
-  if (page === "programs-events") {
-    return <ProgramsEventsPage />;
-  }
-
-  if (page === "event-details") {
-    return <EventDetailsPage />;
-  }
-
-  if (page === "ministries") {
-    return <MinistriesPage />;
-  }
-
-  if (page === "ministry-details") {
-    return <MinistryDetailsPage />;
-  }
-
-  if (page === "branches-overview") {
-    return <BranchesOverviewPage />;
-  }
-
-  if (page === "welfare") {
-    return <WelfarePage />;
-  }
-
-  if (page === "pledges") {
-    return <PledgesPage />;
-  }
-
-  if (page === "pledge-details") {
-    return <PledgeDetailsPage />;
-  }
-
-  if (page === "expenses") {
-    return <ExpensesPage />;
-  }
-
-  if (page === "financial-statement") {
-    return <FinancialStatementPage />;
-  }
-
-  if (page === "settings") {
-    return <SettingsPage />;
-  }
-
-  if (page === "reports-analytics") {
-    return <ReportsAnalyticsPage />;
-  }
-
-  if (page === "support-help") {
-    return <SupportHelpPage />;
-  }
-
-  if (page === "billing") return null;
 
   return (
     <DashboardOverview

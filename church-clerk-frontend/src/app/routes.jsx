@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 
 import AuthLayout from "../layouts/AuthLayout.jsx";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
@@ -13,9 +14,9 @@ import RegisterChurch from "../features/auth/pages/RegisterChurch.jsx";
 import DashboardHome from "../features/dashboard/pages/DashboardHome.jsx";
 import Profile from "../features/dashboard/pages/Profile.jsx";
 import LandingPage from "../features/dashboard/pages/LandingPage.jsx";
-import BillingPage from "../features/subscription/pages/BillingPage.jsx";
 
-import OfferingPage from "../features/offering/pages/OfferingPage.jsx";
+const BillingPage = lazy(() => import("../features/subscription/pages/BillingPage.jsx"));
+const OfferingPage = lazy(() => import("../features/offering/pages/OfferingPage.jsx"));
 
 function AppRoutes() {
   return (
@@ -42,7 +43,14 @@ function AppRoutes() {
         }
       >
         <Route index element={<DashboardHome />} />
-        <Route path="billing" element={<BillingPage />} />
+        <Route
+          path="billing"
+          element={
+            <Suspense fallback={<div className="p-4" />}>
+              <BillingPage />
+            </Suspense>
+          }
+        />
         <Route path="profile" element={<Profile />} />
       </Route>
 
@@ -54,7 +62,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<OfferingPage />} />
+        <Route
+          index
+          element={
+            <Suspense fallback={<div className="p-4" />}>
+              <OfferingPage />
+            </Suspense>
+          }
+        />
       </Route>
     </Routes>
   );

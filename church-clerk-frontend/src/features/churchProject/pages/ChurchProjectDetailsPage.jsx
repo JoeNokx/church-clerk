@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { getProjectContributionExpensesKPI } from "../services/churchProject.api.js";
@@ -660,7 +661,9 @@ function ChurchProjectDetailsPage() {
             Back to Projects
           </button>
 
-          <div className="mt-3 text-2xl font-semibold text-gray-900">{kpiLoading ? "Loading…" : projectName || "Project"}</div>
+          <div className="mt-3 text-2xl font-semibold text-gray-900">
+            {kpiLoading ? <Skeleton height={26} width={220} /> : projectName || "Project"}
+          </div>
           <div className="mt-2 text-sm text-gray-600">{kpi?.description || ""}</div>
         </div>
 
@@ -783,7 +786,11 @@ function ChurchProjectDetailsPage() {
 
         {tab === "contributions" ? (
           <div>
-            {contribLoading ? <div className="p-5 text-sm text-gray-600">Loading…</div> : null}
+            {contribLoading ? (
+              <div className="p-5">
+                <Skeleton height={14} count={6} />
+              </div>
+            ) : null}
             {contribError ? (
               <div className="p-5">
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{contribError}</div>
@@ -863,7 +870,11 @@ function ChurchProjectDetailsPage() {
           </div>
         ) : (
           <div>
-            {expenseLoading ? <div className="p-5 text-sm text-gray-600">Loading…</div> : null}
+            {expenseLoading ? (
+              <div className="p-5">
+                <Skeleton height={14} count={6} />
+              </div>
+            ) : null}
             {expenseError ? (
               <div className="p-5">
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{expenseError}</div>

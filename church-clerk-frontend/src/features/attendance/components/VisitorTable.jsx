@@ -1,5 +1,6 @@
 import { useContext, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 
@@ -151,7 +152,11 @@ function VisitorTable({ onEdit, onDeleted }) {
   };
 
   if (store?.visitorLoading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return (
+      <div className="p-5">
+        <Skeleton height={14} count={8} />
+      </div>
+    );
   }
 
   if (store?.visitorError) {
@@ -371,7 +376,20 @@ function VisitorTable({ onEdit, onDeleted }) {
 
             <div className="px-6 py-5">
               {detailsLoading ? (
-                <div className="text-sm text-gray-600">Loading...</div>
+                <div className="space-y-3">
+                  <Skeleton height={16} width={200} />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Skeleton height={54} />
+                    <Skeleton height={54} />
+                    <Skeleton height={54} />
+                    <Skeleton height={54} />
+                    <Skeleton height={54} />
+                    <Skeleton height={54} />
+                    <div className="sm:col-span-2">
+                      <Skeleton height={70} />
+                    </div>
+                  </div>
+                </div>
               ) : detailsError ? (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{detailsError}</div>
               ) : (

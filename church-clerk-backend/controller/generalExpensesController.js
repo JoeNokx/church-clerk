@@ -38,10 +38,7 @@ const getAllGeneralExpenses = async (req, res) => {
                   church: req.activeChurch._id
                 };
             
-                // Restrict by church for non-admins
-                // if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-                //     query.church = req.user.church;
-                // }
+                
             
                 // Filter by serviceType
                 if (category) {

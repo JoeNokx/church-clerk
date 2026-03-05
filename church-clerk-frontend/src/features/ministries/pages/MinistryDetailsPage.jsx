@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Skeleton from "react-loading-skeleton";
 
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
@@ -760,7 +761,11 @@ function MinistryDetailsPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
         {loading ? (
-          <div className="text-sm text-gray-600">Loading...</div>
+          <div className="space-y-3">
+            <Skeleton height={18} width={160} />
+            <Skeleton height={28} width={260} />
+            <Skeleton height={14} count={2} />
+          </div>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : !entity ? (
@@ -876,7 +881,9 @@ function MinistryDetailsPage() {
           {memberError ? <div className="p-5 text-sm text-red-700">{memberError}</div> : null}
 
           {memberLoading ? (
-            <div className="p-5 text-sm text-gray-600">Loading...</div>
+            <div className="p-5">
+              <Skeleton height={14} count={6} />
+            </div>
           ) : members.length === 0 ? (
             <div className="p-5 text-sm text-gray-600">No member record found.</div>
           ) : (
@@ -972,7 +979,9 @@ function MinistryDetailsPage() {
                 <div className="text-xs font-semibold text-gray-500">Results</div>
                 <div className="mt-2 rounded-xl border border-gray-200 max-h-64 overflow-y-auto">
                   {addMemberCandidatesLoading ? (
-                    <div className="px-4 py-3 text-sm text-gray-600">Loading...</div>
+                    <div className="px-4 py-3">
+                      <Skeleton height={14} count={4} />
+                    </div>
                   ) : addMemberCandidates.length === 0 ? (
                     <div className="px-4 py-3 text-sm text-gray-600">No matching members found.</div>
                   ) : (
@@ -1242,7 +1251,9 @@ function MinistryDetailsPage() {
           {attendanceError ? <div className="p-5 text-sm text-red-700">{attendanceError}</div> : null}
 
           {attendanceLoading ? (
-            <div className="p-5 text-sm text-gray-600">Loading...</div>
+            <div className="p-5">
+              <Skeleton height={14} count={6} />
+            </div>
           ) : attendances.length === 0 ? (
             <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
           ) : (
@@ -1378,7 +1389,9 @@ function MinistryDetailsPage() {
           {offeringError ? <div className="p-5 text-sm text-red-700">{offeringError}</div> : null}
 
           {offeringLoading ? (
-            <div className="p-5 text-sm text-gray-600">Loading...</div>
+            <div className="p-5">
+              <Skeleton height={14} count={6} />
+            </div>
           ) : offerings.length === 0 ? (
             <div className="p-5 text-sm text-gray-600">No offering record found.</div>
           ) : (
