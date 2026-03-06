@@ -5,7 +5,7 @@ const pledgeSchema = new mongoose.Schema({
 
   name: { type: String }, 
   phoneNumber: { type: String, trim: true },
-  serviceType: { type: String, enum:['Sunday Service', '1st Service', '2nd Service', '3rd Service', 'Special Program', 'Worship Service', 'Bible Study', 'Special Program', 'Children Service', 'Midweek Service', 'Prayer Meeting'] },
+  serviceType: { type: String, trim: true },
   amount: { type: Number, required: true },
   pledgeDate: { type: Date, required: true },
   deadline: { type: Date },

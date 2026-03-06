@@ -4,16 +4,16 @@ const welfareDisbursementSchema = new mongoose.Schema({
 
   church: { type: mongoose.Schema.Types.ObjectId, ref: 'Church', required: true },
   
-beneficiaryName: {
-  type: String,
-  required: true,
-  trim: true
-}, 
-category: {
-  type: String,
-  required: true,
-  enum: ["Birthday", "Wedding", "Funeral", "Hospital", "Emergency", "School", "Other"],
-},
+  beneficiaryName: {
+    type: String,
+    required: true,
+    trim: true
+  }, 
+  category: {
+    type: String,
+    required: true,
+    trim: true
+  },
   amount: { type: Number, required: true },
   date: { type: Date, required: true },
 

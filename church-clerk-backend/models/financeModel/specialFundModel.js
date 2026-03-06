@@ -5,16 +5,8 @@ const specialFundSchema = new mongoose.Schema({
 
   category: {
     type: String,
-    enum: [
-      'Prophetic Seed',
-      'Pastor Appreciation',
-      'Thanksgiving Offering',
-      'Missionary Support',
-      'Donation',
-      'Retreat',
-      'Scholarship Fund'
-    ],
-    required: true 
+    required: true,
+    trim: true
   },
   giverName: { type: String, trim: true },
   

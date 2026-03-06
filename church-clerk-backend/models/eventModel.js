@@ -12,7 +12,7 @@ const eventSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Conference', 'Service', 'Worship', 'Prayers', 'Outreach', 'Bible Study', 'Serminary', 'Retreat', 'Workshop', 'Camp Meeting']
+    trim: true
   },
   department: {
     type: mongoose.Schema.Types.ObjectId,

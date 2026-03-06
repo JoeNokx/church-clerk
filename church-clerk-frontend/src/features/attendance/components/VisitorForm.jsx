@@ -6,9 +6,11 @@ import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const SERVICE_TYPES = [
   "Sunday Service",
-  "1st Service",
-  "2nd Service",
-  "3rd Service",
+  "Sunday First Service",
+  "Sunday Second Service",
+  "Sunday Third Service",
+  "Sunday Fourth Service",
+  "Sunday Fifth Service",
   "Children Service",
   "Midweek Service",
   "Prayer Meeting"

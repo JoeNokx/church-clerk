@@ -36,7 +36,8 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
   if (!open) return null;
 
   const submit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
     setError("");
 
     const v = String(value || "").trim();
@@ -49,6 +50,9 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
     try {
       const mod = await import("../services/lookups.api.js");
       await mod.createLookupValue({ kind, value: v });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("cck:lookups:changed", { detail: { kind, value: v } }));
+      }
       onCreated?.(v);
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Failed to save");
@@ -74,7 +78,7 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
           </button>
         </div>
 
-        <form onSubmit={submit} className="p-5">
+        <div className="p-5">
           {error ? (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
           ) : null}
@@ -83,6 +87,11 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                void submit(e);
+              }
+            }}
             className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
             placeholder="Type and save"
           />
@@ -96,14 +105,15 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
               disabled={saving}
+              onClick={submit}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

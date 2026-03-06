@@ -5,19 +5,11 @@ const normalizeValue = (value) => String(value || "").trim().toLowerCase();
 const defaultValuesByKind = {
   serviceType: [
     "Sunday Service",
-    "Sunday 1st Service",
-    "Sunday 2nd Service",
-    "Sunday 3rd Service",
-    "Sunday 4th Service",
-    "Sunday 5th Service",
-    "First Sunday Service",
-    "Second Sunday Service",
-    "Third Sunday Service",
-    "1st Service",
-    "2nd Service",
-    "3rd Service",
-    "4th Service",
-    "5th Service",
+    "Sunday First Service",
+    "Sunday Second Service",
+    "Sunday Third Service",
+    "Sunday Fourth Service",
+    "Sunday Fifth Service",
     "Worship Service",
     "Bible Study",
     "Children Service",
@@ -93,7 +85,28 @@ export const listLookupValues = async (req, res) => {
     const rows = await LookupValue.find({ churchId, kind }).select("value").sort({ value: 1 }).lean();
     const dbValues = rows.map((r) => r?.value).filter(Boolean);
 
-    const values = uniq([...defaults, ...dbValues]).sort((a, b) => a.localeCompare(b));
+    let values = uniq([...defaults, ...dbValues]).sort((a, b) => a.localeCompare(b));
+
+    if (kind === "serviceType") {
+      const deprecated = new Set(
+        [
+          "Sunday 1st Service",
+          "Sunday 2nd Service",
+          "Sunday 3rd Service",
+          "Sunday 4th Service",
+          "Sunday 5th Service",
+          "First Sunday Service",
+          "Second Sunday Service",
+          "Third Sunday Service",
+          "1st Service",
+          "2nd Service",
+          "3rd Service",
+          "4th Service",
+          "5th Service"
+        ].map((v) => String(v).trim().toLowerCase())
+      );
+      values = values.filter((v) => !deprecated.has(String(v || "").trim().toLowerCase()));
+    }
 
     return res.status(200).json({ kind, values });
   } catch (error) {

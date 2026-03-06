@@ -42,15 +42,7 @@ const visitorSchema = new mongoose.Schema(
     serviceType: {
       type: String,
       required: true,
-     enum: [
-      'Sunday Service',
-      '1st Service',
-      '2nd Service',
-      '3rd Service',
-      'Children Service',
-      'Midweek Service',
-      'Prayer Meeting'
-    ]
+      trim: true
     },
 
     serviceDate: {

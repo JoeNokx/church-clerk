@@ -8,8 +8,6 @@ const eventOfferingSchema = new mongoose.Schema(
 
     offeringType: {
       type: String,
-      enum: ["first offering", "second offering", "third offering", "fourth offering", "fifth offering"],
-      default: "first offering",
       required: true,
       trim: true
     },

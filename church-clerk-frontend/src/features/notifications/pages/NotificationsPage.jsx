@@ -72,6 +72,14 @@ function NotificationsPage() {
     return notifications.reduce((acc, n) => acc + (n?.readStatus ? 0 : 1), 0);
   }, [notifications]);
 
+  const emitUnreadChanged = useCallback(() => {
+    try {
+      window.dispatchEvent(new Event("cck:notifications:unread-changed"));
+    } catch {
+      void 0;
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="max-w-6xl">
@@ -111,6 +119,7 @@ function NotificationsPage() {
               try {
                 await markAllNotificationsRead();
                 setNotifications((prev) => prev.map((n) => ({ ...n, readStatus: true })));
+                emitUnreadChanged();
               } catch {
                 void 0;
               }
@@ -155,6 +164,7 @@ function NotificationsPage() {
                           setNotifications((prev) =>
                             prev.map((x) => (String(x?._id) === String(n._id) ? { ...x, readStatus: true } : x))
                           );
+                          emitUnreadChanged();
                         } catch {
                           void 0;
                         }

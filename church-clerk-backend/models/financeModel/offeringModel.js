@@ -8,28 +8,12 @@ const offeringSchema = new mongoose.Schema({
   },
   serviceType: {
     type: String,
-    enum: [
-      'Sunday Service',
-      'First Sunday Service',
-      'Second Sunday Service',
-      'Third Sunday Service',
-      'Worship Service',
-      'Bible Study',
-      'Special Program',
-      'Children Service',
-      'Midweek Service',
-      'Prayer Meeting',
-      'cells Meeting',
-      'groups Meeting',
-      'department Meeting'
-
-    ],
-    required: true
-    },
+    required: true,
+    trim: true
+  },
 
   offeringType: {
     type: String,
-    enum: ["first offering", "second offering", "third offering" , "fourth offering", "fifth offering"], default: "first offering",
     required: true,
     trim: true
   },

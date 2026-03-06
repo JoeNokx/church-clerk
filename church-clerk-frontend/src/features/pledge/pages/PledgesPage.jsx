@@ -255,9 +255,11 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
 
   const SERVICE_TYPES = [
     "Sunday Service",
-    "1st Service",
-    "2nd Service",
-    "3rd Service",
+    "Sunday First Service",
+    "Sunday Second Service",
+    "Sunday Third Service",
+    "Sunday Fourth Service",
+    "Sunday Fifth Service",
     "Worship Service",
     "Bible Study",
     "Children Service",
@@ -491,9 +493,11 @@ function PledgesPageInner() {
 
   const SERVICE_TYPES = [
     "Sunday Service",
-    "1st Service",
-    "2nd Service",
-    "3rd Service",
+    "Sunday First Service",
+    "Sunday Second Service",
+    "Sunday Third Service",
+    "Sunday Fourth Service",
+    "Sunday Fifth Service",
     "Worship Service",
     "Bible Study",
     "Children Service",

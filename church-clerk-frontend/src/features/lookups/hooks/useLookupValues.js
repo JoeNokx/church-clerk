@@ -30,6 +30,34 @@ export function useLookupValues(kind, options) {
     void reload();
   }, [autoLoad, reload]);
 
+  useEffect(() => {
+    const handler = (event) => {
+      const nextKind = event?.detail?.kind;
+      if (!nextKind || String(nextKind) !== String(kind || "")) return;
+
+      const v = String(event?.detail?.value || "").trim();
+      if (!v) return;
+
+      const vNorm = v.toLowerCase();
+      setValues((prev) => {
+        const rows = Array.isArray(prev) ? prev : [];
+        const exists = rows.some((x) => String(x || "").trim().toLowerCase() === vNorm);
+        if (exists) return rows;
+        return [...rows, v].sort((a, b) => String(a).localeCompare(String(b)));
+      });
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("cck:lookups:changed", handler);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("cck:lookups:changed", handler);
+      }
+    };
+  }, [kind]);
+
   return {
     values,
     loading,

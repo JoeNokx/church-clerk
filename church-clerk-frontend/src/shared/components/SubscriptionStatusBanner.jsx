@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { getMySubscription } from "../../features/subscription/services/subscription.api.js";
 
 function normalizePlanName(plan) {
@@ -27,15 +27,20 @@ function daysLeft(dateValue) {
 }
 
 function SubscriptionStatusBanner() {
-  const location = useLocation();
-
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
   const [effectivePlan, setEffectivePlan] = useState(null);
   const [readOnly, setReadOnly] = useState(false);
 
+  const hasLoadedRef = useRef(false);
+  const inFlightRef = useRef(false);
+
   const load = async () => {
-    setLoading(true);
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    if (!hasLoadedRef.current) {
+      setLoading(true);
+    }
     try {
       const res = await getMySubscription();
       const sub = res?.data?.subscription || null;
@@ -57,23 +62,16 @@ function SubscriptionStatusBanner() {
         localStorage.removeItem("subscriptionReadOnly");
       }
     } finally {
+      hasLoadedRef.current = true;
       setLoading(false);
+      inFlightRef.current = false;
     }
   };
 
   useEffect(() => {
     load();
-
-    const t = setInterval(() => {
-      load();
-    }, 60 * 1000);
-
-    return () => clearInterval(t);
+    return () => void 0;
   }, []);
-
-  useEffect(() => {
-    load();
-  }, [location.pathname]);
 
   const status = subscription?.status;
   const statusNorm = useMemo(() => normalizeStatus(status), [status]);

@@ -9,20 +9,7 @@ const attendanceSchema = new mongoose.Schema({
   serviceType: {
     type: String,
     required: true,
-    enum: [
-      'Sunday Service',
-      'Sunday 1st Service',
-      'Sunday 2nd Service',
-      'Sunday 3rd Service',
-      'Sunday 4th Service',
-      'Sunday 5th Service',
-      'Special Program',
-      'Worship Service',
-      'Bible Study',
-      'Children Service',
-      'Midweek Service',
-      'Prayer Meeting'
-    ]
+    trim: true
   },
   serviceDate: {
     type: Date,

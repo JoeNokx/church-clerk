@@ -209,10 +209,17 @@ function DashboardHeader() {
 
     useEffect(() => {
       void loadUnreadCount();
-      const id = setInterval(() => {
+      return () => void 0;
+    }, [loadUnreadCount]);
+
+    useEffect(() => {
+      const handler = () => {
         void loadUnreadCount();
-      }, 60_000);
-      return () => clearInterval(id);
+      };
+      window.addEventListener("cck:notifications:unread-changed", handler);
+      return () => {
+        window.removeEventListener("cck:notifications:unread-changed", handler);
+      };
     }, [loadUnreadCount]);
 
     const displayUnreadCount = useMemo(() => {

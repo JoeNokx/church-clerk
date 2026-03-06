@@ -77,15 +77,13 @@ const getDashboardKPI = async (req, res) => {
         const [thisSundayServices, lastSundayServices] = await Promise.all([
           Attendance.find({
             church: query.church,
-            serviceDate: { $gte: thisSunday, $lt: thisSundayNextDay },
-            serviceType: { $regex: /^Sunday/i }
+            serviceDate: { $gte: thisSunday, $lt: thisSundayNextDay }
           })
             .select("totalNumber")
             .lean(),
           Attendance.find({
             church: query.church,
-            serviceDate: { $gte: lastSunday, $lt: lastSundayNextDay },
-            serviceType: { $regex: /^Sunday/i }
+            serviceDate: { $gte: lastSunday, $lt: lastSundayNextDay }
           })
             .select("totalNumber")
             .lean()
@@ -176,8 +174,15 @@ const getDashboardAnalytics = async (req, res) => {
   {
     $match: {
       church: query.church,
-      serviceType: { $regex: /^Sunday/i },
       serviceDate: { $gte: startOfYear, $lte: endOfYear }
+    }
+  },
+  {
+    $match: {
+      $or: [
+        { serviceType: { $regex: /^Sunday/i } },
+        { $expr: { $eq: [{ $dayOfWeek: "$serviceDate" }, 1] } }
+      ]
     }
   },
   {

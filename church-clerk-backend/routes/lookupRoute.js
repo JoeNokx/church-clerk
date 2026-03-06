@@ -19,7 +19,15 @@ const allowedReadRoles = [
   "leader"
 ];
 
-const allowedWriteRoles = ["superadmin", "supportadmin", "churchadmin"];
+const allowedWriteRoles = [
+  "superadmin",
+  "supportadmin",
+  "churchadmin",
+  "associateadmin",
+  "secretary",
+  "financialofficer",
+  "leader"
+];
 
 router.get("/", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles(...allowedReadRoles), listLookupValues);
 router.post("/", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles(...allowedWriteRoles), createLookupValue);
