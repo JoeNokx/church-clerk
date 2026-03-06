@@ -5,6 +5,9 @@ import ChurchContext from "../../church/church.store.js";
 import { getMyBranches } from "../../church/services/church.api.js";
 import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
 import Skeleton from "react-loading-skeleton";
+import {
+  getUnreadNotificationsCount
+} from "../../notifications/services/notifications.api.js";
 
 function DashboardHeader() {
 
@@ -21,6 +24,7 @@ function DashboardHeader() {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingSwitch, setPendingSwitch] = useState(null);
     const [switching, setSwitching] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const menuRef = useRef(null);
     const accountRef = useRef(null);
@@ -192,6 +196,31 @@ function DashboardHeader() {
       };
     }, [accountMenuOpen]);
 
+    const loadUnreadCount = useCallback(async () => {
+      try {
+        const res = await getUnreadNotificationsCount();
+        const count = Number(res?.data?.unreadCount || 0);
+
+        setUnreadCount(Number.isFinite(count) ? count : 0);
+      } catch {
+        void 0;
+      }
+    }, []);
+
+    useEffect(() => {
+      void loadUnreadCount();
+      const id = setInterval(() => {
+        void loadUnreadCount();
+      }, 60_000);
+      return () => clearInterval(id);
+    }, [loadUnreadCount]);
+
+    const displayUnreadCount = useMemo(() => {
+      if (!unreadCount) return "";
+      if (unreadCount > 9) return "9+";
+      return String(unreadCount);
+    }, [unreadCount]);
+
     const displayRole = user?.role
       ? user.role === "churchadmin"
         ? "Church Admin"
@@ -328,12 +357,20 @@ function DashboardHeader() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button type="button" className="relative h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50">
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard?page=notifications")}
+            className="relative h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
+          >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-600">
               <path d="M15 17H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               <path d="M18 9a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] leading-4 text-center">2</span>
+            {displayUnreadCount ? (
+              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-red-500 text-white text-[10px] leading-4 text-center">
+                {displayUnreadCount}
+              </span>
+            ) : null}
           </button>
 
           <div className="relative" ref={accountRef}>

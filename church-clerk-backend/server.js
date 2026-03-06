@@ -13,6 +13,8 @@ import compression from "compression";
 
 import * as Routes from "./routes/index.js"; // imports the named exports from routes/index.js
 import { activityLogMiddleware } from "./middleware/activityLogMiddleware.js";
+import { impersonationNotificationMiddleware } from "./middleware/impersonationNotificationMiddleware.js";
+import { startNotificationWorker } from "./services/notificationWorker.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,6 +50,7 @@ app.use(cookieParser());
 
 // Audit logging (records all write actions on protected routes)
 app.use(activityLogMiddleware);
+app.use(impersonationNotificationMiddleware);
 
 // mount all routes
 app.use(
@@ -71,6 +74,7 @@ app.use("/api/admin/billing", Routes.adminBillingRoute);
 app.use("/api/v1/admin/billing", Routes.adminBillingRoute);
 
 app.use("/api/v1/subscription", Routes.subscriptionRoute);
+app.use("/api/v1/notifications", Routes.notificationRoute);
 app.use("/api/v1/member", Routes.memberRoute);
 app.use("/api/v1/event", Routes.eventRoute);
 app.use("/api/v1/attendance", Routes.attendanceRoute);
@@ -113,3 +117,5 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 server.setTimeout(5 * 60 * 1000);
+
+startNotificationWorker({ intervalMs: 60_000 });

@@ -36,6 +36,7 @@ const SettingsPage = React.lazy(() => import("../../settings/pages/SettingsPage.
 const ReportsAnalyticsPage = React.lazy(() => import("../../reportsAnalytics/pages/ReportsAnalyticsPage.jsx"));
 const SupportHelpPage = React.lazy(() => import("../../supportHelp/pages/SupportHelpPage.jsx"));
 const BillingPage = React.lazy(() => import("../../subscription/pages/BillingPage.jsx"));
+const NotificationsPage = React.lazy(() => import("../../notifications/pages/NotificationsPage.jsx"));
 
 function formatPercent(value) {
   const v = Number(value || 0);
@@ -830,6 +831,7 @@ function DashboardHome() {
   if (page === "settings") PageComponent = SettingsPage;
   if (page === "reports-analytics") PageComponent = ReportsAnalyticsPage;
   if (page === "support-help") PageComponent = SupportHelpPage;
+  if (page === "notifications") PageComponent = NotificationsPage;
 
   if (PageComponent) {
     return (
