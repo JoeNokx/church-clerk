@@ -1,11 +1,15 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import WelfareContext from "../welfare.store.js";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const CATEGORY_OPTIONS = ["Birthday", "Wedding", "Funeral", "Hospital", "Emergency", "School", "Other"];
 
 function WelfareDisbursementFilters() {
   const store = useContext(WelfareContext);
+
+  const { values: lookupCategories } = useLookupValues("welfareDisbursementCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
 
   const [searchValue, setSearchValue] = useState(store?.disbursementFilters?.search || "");
 
@@ -118,7 +122,7 @@ function WelfareDisbursementFilters() {
           className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
         >
           <option value="">All Categories</option>
-          {CATEGORY_OPTIONS.map((c) => (
+          {categoryOptions.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>

@@ -75,6 +75,7 @@ app.use("/api/v1/admin/billing", Routes.adminBillingRoute);
 
 app.use("/api/v1/subscription", Routes.subscriptionRoute);
 app.use("/api/v1/notifications", Routes.notificationRoute);
+app.use("/api/v1/lookups", Routes.lookupRoute);
 app.use("/api/v1/member", Routes.memberRoute);
 app.use("/api/v1/event", Routes.eventRoute);
 app.use("/api/v1/attendance", Routes.attendanceRoute);

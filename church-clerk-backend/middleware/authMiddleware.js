@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import User from "../models/userModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
@@ -8,6 +9,10 @@ import Church from "../models/churchModel.js";
 
 const protectWithCookie = (cookieNames) => async (req, res, next) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Service unavailable. Database connection is not ready." });
+    }
+
     const cookies = req.cookies || {};
     const names = Array.isArray(cookieNames) ? cookieNames : [cookieNames];
     let token = names.map((n) => cookies?.[n]).find(Boolean);
@@ -182,8 +187,27 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Auth middleware error:", error.message);
-    return res.status(401).json({ message: "Not authorized, token invalid" });
+    const msg = String(error?.message || "");
+    console.error("Auth middleware error:", msg);
+
+    const jwtErrorNames = new Set(["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"]);
+    if (jwtErrorNames.has(error?.name)) {
+      return res.status(401).json({ message: "Not authorized, token invalid" });
+    }
+
+    const looksLikeDbOrTls =
+      msg.toLowerCase().includes("ssl") ||
+      msg.toLowerCase().includes("tls") ||
+      msg.toLowerCase().includes("mongodb") ||
+      msg.toLowerCase().includes("server selection") ||
+      error?.name === "MongoServerSelectionError" ||
+      error?.name === "MongoNetworkError";
+
+    if (looksLikeDbOrTls) {
+      return res.status(503).json({ message: "Service unavailable. Database connection error." });
+    }
+
+    return res.status(500).json({ message: "Server error" });
   }
 };
 

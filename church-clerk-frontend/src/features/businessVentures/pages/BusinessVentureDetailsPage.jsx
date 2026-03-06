@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
 import ChurchContext from "../../church/church.store.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import {
   getBusinessIncomeExpensesKPI,
@@ -458,6 +460,9 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
     "Other"
   ];
 
+  const { values: lookupCategories, reload: reloadCategories } = useLookupValues("businessExpenseCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : categories;
+
   return (
     <BaseModal open={open} title={title} subtitle="Business expenses" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
@@ -474,14 +479,24 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Category</label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-gray-500">Category</label>
+              <AddLookupValueButton
+                label="Add category"
+                kind="businessExpenseCategory"
+                onCreated={async (value) => {
+                  await reloadCategories();
+                  setCategory(value);
+                }}
+              />
+            </div>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
             >
               <option value="">Select category</option>
-              {categories.map((c) => (
+              {categoryOptions.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

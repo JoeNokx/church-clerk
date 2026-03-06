@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import OfferingContext from "../offering.store.js";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -19,6 +20,9 @@ const SERVICE_TYPES = [
 
 function OfferingFilters() {
   const store = useContext(OfferingContext);
+
+  const { values: lookupServiceTypes } = useLookupValues("serviceType");
+  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
 
   const datePickerRef = useRef(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -108,7 +112,7 @@ function OfferingFilters() {
           className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
         >
           <option value="">All Services</option>
-          {SERVICE_TYPES.map((c) => (
+          {serviceTypeOptions.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>

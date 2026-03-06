@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import SpecialFundContext from "../specialFund.store.js";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const CATEGORY_OPTIONS = [
   "Prophetic Seed",
@@ -13,6 +14,9 @@ const CATEGORY_OPTIONS = [
 
 function SpecialFundFilters() {
   const store = useContext(SpecialFundContext);
+
+  const { values: lookupCategories } = useLookupValues("specialFundCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
 
   const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
 
@@ -134,7 +138,7 @@ function SpecialFundFilters() {
           className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
         >
           <option value="">All Categories</option>
-          {CATEGORY_OPTIONS.map((c) => (
+          {categoryOptions.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>

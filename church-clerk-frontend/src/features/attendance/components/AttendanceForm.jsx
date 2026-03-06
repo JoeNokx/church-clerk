@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -23,6 +25,9 @@ function AttendanceForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("attendance", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("attendance", "update") : false), [can]);
+
+  const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
+  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
 
   const [serviceType, setServiceType] = useState("");
   const [serviceDate, setServiceDate] = useState("");
@@ -117,14 +122,26 @@ function AttendanceForm({ open, mode, initialData, onClose, onSuccess }) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Service Type</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-gray-500">Service Type</label>
+                {canCreate || canEdit ? (
+                  <AddLookupValueButton
+                    label="Add service"
+                    kind="serviceType"
+                    onCreated={async (value) => {
+                      await reloadServiceTypes();
+                      setServiceType(value);
+                    }}
+                  />
+                ) : null}
+              </div>
               <select
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value)}
                 className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               >
                 <option value="">Select service</option>
-                {SERVICE_TYPES.map((c) => (
+                {serviceTypeOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>

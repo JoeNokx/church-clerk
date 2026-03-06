@@ -52,7 +52,7 @@ export const ROLE_PERMISSIONS = {
     billing: ["read", "create", "update", "delete"],
     settings: ["read", "create", "update", "delete"],
     reportsAnalytics: ["read"],
-    specialFunds: ["read"],
+    specialFunds: ["read", "create", "update", "delete"],
     offerings: ["read", "create", "update", "delete"],
     welfare: ["read", "create", "update", "delete"],
     expenses: ["read", "create", "update", "delete"],

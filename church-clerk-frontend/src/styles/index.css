@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+ html,
+ body {
+  cursor: default;
+ }
+
+ button,
+ a {
+  cursor: pointer;
+ }
+
+ input,
+ textarea,
+ [contenteditable="true"] {
+  cursor: text;
+ }

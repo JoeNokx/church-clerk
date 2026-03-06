@@ -52,6 +52,7 @@ import churchProjectRoute from "./financeRoute/churchProjectRoute.js";
 import reportsAnalyticsRoute from "./reportsAnalyticsRoute.js";
 
 import notificationRoute from "./notificationRoute.js";
+import lookupRoute from "./lookupRoute.js";
 
 // export all routes
 export {
@@ -84,5 +85,6 @@ export {
   businessVenturesRoute,
   referralSystemRoute,
   reportsAnalyticsRoute,
-  notificationRoute
+  notificationRoute,
+  lookupRoute
 };

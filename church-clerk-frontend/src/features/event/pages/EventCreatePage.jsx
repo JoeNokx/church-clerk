@@ -2,6 +2,8 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { createEvent as apiCreateEvent, getEvent as apiGetEvent, updateEvent as apiUpdateEvent } from "../services/event.api.js";
 import Skeleton from "react-loading-skeleton";
 
@@ -31,6 +33,9 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
   const { can } = useContext(PermissionContext) || {};
   const canCreate = useMemo(() => (typeof can === "function" ? can("events", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("events", "update") : false), [can]);
+
+  const { values: lookupCategories, reload: reloadCategories } = useLookupValues("eventCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -315,20 +320,35 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
                 />
               </Field>
 
-              <Field label="Category">
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                >
-                  <option value="">Select category</option>
-                  {CATEGORY_OPTIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-gray-500">Category</label>
+                  {canCreate || canEdit ? (
+                    <AddLookupValueButton
+                      label="Add category"
+                      kind="eventCategory"
+                      onCreated={async (value) => {
+                        await reloadCategories();
+                        setCategory(value);
+                      }}
+                    />
+                  ) : null}
+                </div>
+                <div className="mt-2">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  >
+                    <option value="">Select category</option>
+                    {categoryOptions.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               <Field label="Date From">
                 <input

@@ -2,6 +2,8 @@ import { useContext, useEffect, useMemo, useState } from "react";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import ExpensesContext from "../expenses.store.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const CATEGORY_OPTIONS = [
   "Maintenance",
@@ -24,6 +26,9 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("expenses", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("expenses", "update") : false), [can]);
+
+  const { values: lookupCategories, reload: reloadCategories } = useLookupValues("expenseCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
 
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
@@ -123,14 +128,26 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Category</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-gray-500">Category</label>
+                {canCreate || canEdit ? (
+                  <AddLookupValueButton
+                    label="Add category"
+                    kind="expenseCategory"
+                    onCreated={async (value) => {
+                      await reloadCategories();
+                      setCategory(value);
+                    }}
+                  />
+                ) : null}
+              </div>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               >
                 <option value="">Select category</option>
-                {CATEGORY_OPTIONS.map((c) => (
+                {categoryOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>

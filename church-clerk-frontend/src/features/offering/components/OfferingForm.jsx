@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import OfferingContext from "../offering.store.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -32,6 +34,12 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("offerings", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("offerings", "update") : false), [can]);
+
+  const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
+  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
+
+  const { values: lookupOfferingTypes, reload: reloadOfferingTypes } = useLookupValues("offeringType");
+  const offeringTypeOptions = lookupOfferingTypes?.length ? lookupOfferingTypes : OFFERING_TYPES;
 
   const [serviceType, setServiceType] = useState("");
   const [offeringType, setOfferingType] = useState("first offering");
@@ -133,14 +141,26 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Service Type</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-gray-500">Service Type</label>
+                {canCreate || canEdit ? (
+                  <AddLookupValueButton
+                    label="Add service"
+                    kind="serviceType"
+                    onCreated={async (value) => {
+                      await reloadServiceTypes();
+                      setServiceType(value);
+                    }}
+                  />
+                ) : null}
+              </div>
               <select
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value)}
                 className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               >
                 <option value="">Select service</option>
-                {SERVICE_TYPES.map((c) => (
+                {serviceTypeOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -149,13 +169,25 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Offering Type</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-gray-500">Offering Type</label>
+                {canCreate || canEdit ? (
+                  <AddLookupValueButton
+                    label="Add offering type"
+                    kind="offeringType"
+                    onCreated={async (value) => {
+                      await reloadOfferingTypes();
+                      setOfferingType(value);
+                    }}
+                  />
+                ) : null}
+              </div>
               <select
                 value={offeringType}
                 onChange={(e) => setOfferingType(e.target.value)}
                 className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               >
-                {OFFERING_TYPES.map((c) => (
+                {offeringTypeOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>

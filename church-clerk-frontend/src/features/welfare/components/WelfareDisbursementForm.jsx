@@ -2,6 +2,8 @@ import { useContext, useEffect, useMemo, useState } from "react";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import WelfareContext from "../welfare.store.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const CATEGORY_OPTIONS = ["Birthday", "Wedding", "Funeral", "Hospital", "Emergency", "School", "Other"];
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque"];
@@ -12,6 +14,9 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("welfare", "update") : false), [can]);
+
+  const { values: lookupCategories, reload: reloadCategories } = useLookupValues("welfareDisbursementCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
 
   const [beneficiaryName, setBeneficiaryName] = useState("");
   const [category, setCategory] = useState("Other");
@@ -130,13 +135,25 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Category</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-gray-500">Category</label>
+                {canCreate || canEdit ? (
+                  <AddLookupValueButton
+                    label="Add category"
+                    kind="welfareDisbursementCategory"
+                    onCreated={async (value) => {
+                      await reloadCategories();
+                      setCategory(value);
+                    }}
+                  />
+                ) : null}
+              </div>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               >
-                {CATEGORY_OPTIONS.map((c) => (
+                {categoryOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>

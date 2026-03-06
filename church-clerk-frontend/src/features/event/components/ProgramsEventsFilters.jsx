@@ -1,5 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import EventContext from "../event.store.js";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const CATEGORY_OPTIONS = [
   "Conference",
@@ -16,6 +17,9 @@ const CATEGORY_OPTIONS = [
 
 function ProgramsEventsFilters({ activeStatus }) {
   const store = useContext(EventContext);
+
+  const { values: lookupCategories } = useLookupValues("eventCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
 
   const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
   const debounceRef = useRef(null);
@@ -78,7 +82,7 @@ function ProgramsEventsFilters({ activeStatus }) {
           className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
         >
           <option value="">All Categories</option>
-          {CATEGORY_OPTIONS.map((c) => (
+          {categoryOptions.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>

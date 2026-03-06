@@ -7,6 +7,8 @@ import ChurchContext from "../../church/church.store.js";
 import PledgeContext, { PledgeProvider } from "../pledge.store.js";
 import { getPledges as apiGetPledges } from "../services/pledge.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -264,6 +266,9 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
     "Special Program"
   ];
 
+  const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
+  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
@@ -345,14 +350,24 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Service Type</label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-gray-500">Service Type</label>
+              <AddLookupValueButton
+                label="Add service"
+                kind="serviceType"
+                onCreated={async (value) => {
+                  await reloadServiceTypes();
+                  setServiceType(value);
+                }}
+              />
+            </div>
             <select
               value={serviceType}
               onChange={(e) => setServiceType(e.target.value)}
               className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
             >
               <option value="">Select service type</option>
-              {SERVICE_TYPES.map((t) => (
+              {serviceTypeOptions.map((t) => (
                 <option key={t} value={t}>
                   {t}
                 </option>
@@ -486,6 +501,9 @@ function PledgesPageInner() {
     "Prayer Meeting",
     "Special Program"
   ];
+
+  const { values: lookupServiceTypes } = useLookupValues("serviceType");
+  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
 
   const STATUS_OPTIONS = ["In Progress", "Completed"];
 
@@ -753,7 +771,7 @@ function PledgesPageInner() {
                 className="mt-2 h-9 w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               >
                 <option value="">All Service Types</option>
-                {SERVICE_TYPES.map((t) => (
+                {serviceTypeOptions.map((t) => (
                   <option key={t} value={t}>
                     {t}
                   </option>
