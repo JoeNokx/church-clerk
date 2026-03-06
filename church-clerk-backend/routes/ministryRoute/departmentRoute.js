@@ -2,6 +2,13 @@ import express from "express";
 const router = express.Router();
 import {getAllDepartments, getSingleDepartment, createDepartment, updateDepartment, deleteDepartment, addMemberToDepartment, searchMembersToAddToDepartment, getDepartmentMembers, updateDepartmentMemberRole, removeMemberFromDepartment, addDepartmentMeeting, updateDepartmentMeeting, deleteDepartmentMeeting, getDepartmentMeetings} from "../../controller/ministryController/departmentController.js"    
 import { createDepartmentAttendance, updateDepartmentAttendance, deleteDepartmentAttendance, getAllDepartmentAttendances } from "../../controller/ministryController/departmentAttendanceController.js";
+import {
+  createDepartmentIndividualAttendance,
+  getAllDepartmentIndividualAttendances,
+  getSingleDepartmentIndividualAttendance,
+  updateDepartmentIndividualAttendance,
+  deleteDepartmentIndividualAttendance
+} from "../../controller/ministryController/departmentIndividualAttendanceController.js";
 import { createDepartmentOffering, updateDepartmentOffering, deleteDepartmentOffering, getAllDepartmentOfferings } from "../../controller/ministryController/departmentOfferingController.js";
 import { getMinistryKPI } from "../../controller/ministryController/groupController.js";
 import { protect } from "../../middleware/authMiddleware.js";
@@ -34,6 +41,47 @@ router.post("/departments/:departmentId/attendances", protect, setActiveChurch, 
 router.get("/departments/:departmentId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllDepartmentAttendances);
 router.put("/departments/:departmentId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), updateDepartmentAttendance);
 router.delete("/departments/:departmentId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), deleteDepartmentAttendance);
+
+router.post(
+  "/departments/:departmentId/individual-attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  createDepartmentIndividualAttendance
+);
+router.get(
+  "/departments/:departmentId/individual-attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  getAllDepartmentIndividualAttendances
+);
+router.get(
+  "/departments/:departmentId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  getSingleDepartmentIndividualAttendance
+);
+router.put(
+  "/departments/:departmentId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  updateDepartmentIndividualAttendance
+);
+router.delete(
+  "/departments/:departmentId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  deleteDepartmentIndividualAttendance
+);
 
 
 router.post("/departments/:departmentId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), createDepartmentOffering);

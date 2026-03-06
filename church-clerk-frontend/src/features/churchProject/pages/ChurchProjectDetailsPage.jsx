@@ -463,6 +463,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
 function ChurchProjectDetailsPage() {
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const canWrite = churchStore?.activeChurch?._id ? churchStore?.activeChurch?.canEdit !== false : true;
   const { can } = useContext(PermissionContext) || {};
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
@@ -747,7 +748,8 @@ function ChurchProjectDetailsPage() {
                 <button
                   type="button"
                   onClick={openCreateContribution}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+                  disabled={!canWrite}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
                 >
                   <span className="text-lg leading-none">+</span>
                   Add Contribution
@@ -774,7 +776,8 @@ function ChurchProjectDetailsPage() {
                 <button
                   type="button"
                   onClick={openCreateExpense}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+                  disabled={!canWrite}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
                 >
                   <span className="text-lg leading-none">+</span>
                   Record Expense
@@ -959,8 +962,8 @@ function ChurchProjectDetailsPage() {
         open={contributionModalOpen}
         mode={editingContribution ? "edit" : "create"}
         initialData={editingContribution}
-        projectName={project?.name || ""}
-        disabled={contribSaving}
+        projectName={projectName}
+        disabled={!canWrite}
         currency={currency}
         onClose={() => {
           setContributionModalOpen(false);
@@ -983,8 +986,8 @@ function ChurchProjectDetailsPage() {
         open={expenseModalOpen}
         mode={editingExpense ? "edit" : "create"}
         initialData={editingExpense}
-        projectName={project?.name || ""}
-        disabled={expenseSaving}
+        projectName={projectName}
+        disabled={!canWrite}
         currency={currency}
         onClose={() => {
           setExpenseModalOpen(false);

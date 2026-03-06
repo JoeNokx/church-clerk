@@ -72,6 +72,26 @@ export const deleteDepartmentAttendance = async (departmentId, attendanceId) => 
   return await http.delete(`/department/departments/${departmentId}/attendances/${attendanceId}`);
 };
 
+export const createDepartmentIndividualAttendance = async (departmentId, payload) => {
+  return await http.post(`/department/departments/${departmentId}/individual-attendances`, payload);
+};
+
+export const getDepartmentIndividualAttendances = async (departmentId, params) => {
+  return await http.get(`/department/departments/${departmentId}/individual-attendances`, { params });
+};
+
+export const getDepartmentIndividualAttendance = async (departmentId, attendanceId) => {
+  return await http.get(`/department/departments/${departmentId}/individual-attendances/${attendanceId}`);
+};
+
+export const updateDepartmentIndividualAttendance = async (departmentId, attendanceId, payload) => {
+  return await http.put(`/department/departments/${departmentId}/individual-attendances/${attendanceId}`, payload);
+};
+
+export const deleteDepartmentIndividualAttendance = async (departmentId, attendanceId) => {
+  return await http.delete(`/department/departments/${departmentId}/individual-attendances/${attendanceId}`);
+};
+
 export const createDepartmentOffering = async (departmentId, payload) => {
   return await http.post(`/department/departments/${departmentId}/offerings`, payload);
 };

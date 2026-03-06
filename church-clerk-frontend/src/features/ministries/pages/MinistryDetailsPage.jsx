@@ -16,7 +16,17 @@ import {
   updateGroup
 } from "../../group/services/group.api.js";
 
-import { createGroupAttendance, getGroupAttendances, updateGroupAttendance, deleteGroupAttendance } from "../../group/attendance/services/groupAttendance.api.js";
+import {
+  createGroupAttendance,
+  getGroupAttendances,
+  updateGroupAttendance,
+  deleteGroupAttendance,
+  createGroupIndividualAttendance,
+  getGroupIndividualAttendances,
+  getGroupIndividualAttendance,
+  updateGroupIndividualAttendance,
+  deleteGroupIndividualAttendance
+} from "../../group/attendance/services/groupAttendance.api.js";
 import { createGroupOffering, getGroupOfferings, updateGroupOffering, deleteGroupOffering } from "../../group/offering/services/groupOffering.api.js";
 
 import {
@@ -31,6 +41,11 @@ import {
   getDepartmentAttendances,
   updateDepartmentAttendance,
   deleteDepartmentAttendance,
+  createDepartmentIndividualAttendance,
+  getDepartmentIndividualAttendances,
+  getDepartmentIndividualAttendance,
+  updateDepartmentIndividualAttendance,
+  deleteDepartmentIndividualAttendance,
   createDepartmentOffering,
   getDepartmentOfferings,
   updateDepartmentOffering,
@@ -49,6 +64,11 @@ import {
   getCellAttendances,
   updateCellAttendance,
   deleteCellAttendance,
+  createCellIndividualAttendance,
+  getCellIndividualAttendances,
+  getCellIndividualAttendance,
+  updateCellIndividualAttendance,
+  deleteCellIndividualAttendance,
   createCellOffering,
   getCellOfferings,
   updateCellOffering,
@@ -128,7 +148,14 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
+function formatDay(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { weekday: "long" });
+}
+
+function ConfirmDialog({ open, title, message, confirmLabel = "Delete", onCancel, onConfirm }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -150,7 +177,7 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
             onClick={onConfirm}
             className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
           >
-            Delete
+            {confirmLabel}
           </button>
         </div>
       </div>
@@ -246,6 +273,30 @@ function MinistryDetailsPage() {
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState("");
   const [attendances, setAttendances] = useState([]);
+
+  const [attendanceView, setAttendanceView] = useState("total"); // total | individual
+
+  const [individualAttendanceLoading, setIndividualAttendanceLoading] = useState(false);
+  const [individualAttendanceError, setIndividualAttendanceError] = useState("");
+  const [individualAttendances, setIndividualAttendances] = useState([]);
+
+  const [individualAttendanceOpen, setIndividualAttendanceOpen] = useState(false);
+  const [individualAttendanceMode, setIndividualAttendanceMode] = useState("create");
+  const [individualAttendanceEditing, setIndividualAttendanceEditing] = useState(null);
+  const [individualAttendanceDate, setIndividualAttendanceDate] = useState("");
+  const [individualAttendanceSelectedIds, setIndividualAttendanceSelectedIds] = useState([]);
+  const [individualAttendanceSaving, setIndividualAttendanceSaving] = useState(false);
+  const [individualAttendanceFormError, setIndividualAttendanceFormError] = useState("");
+
+  const [individualMembersLoading, setIndividualMembersLoading] = useState(false);
+  const [individualMembersError, setIndividualMembersError] = useState("");
+  const [individualMembers, setIndividualMembers] = useState([]); // { id, name }
+  const [individualMemberSearch, setIndividualMemberSearch] = useState("");
+
+  const [individualViewOpen, setIndividualViewOpen] = useState(false);
+  const [individualViewLoading, setIndividualViewLoading] = useState(false);
+  const [individualViewing, setIndividualViewing] = useState(null);
+  const [individualViewError, setIndividualViewError] = useState("");
 
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [attendanceMode, setAttendanceMode] = useState("create");
@@ -358,6 +409,33 @@ function MinistryDetailsPage() {
     }
   }, [id, type]);
 
+  const loadIndividualAttendances = useCallback(async () => {
+    if (!id) return;
+    setIndividualAttendanceLoading(true);
+    setIndividualAttendanceError("");
+
+    try {
+      if (type === "department") {
+        const res = await getDepartmentIndividualAttendances(id);
+        const payload = res?.data?.data ?? res?.data;
+        setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      } else if (type === "cell") {
+        const res = await getCellIndividualAttendances(id);
+        const payload = res?.data?.data ?? res?.data;
+        setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      } else {
+        const res = await getGroupIndividualAttendances(id);
+        const payload = res?.data?.data ?? res?.data;
+        setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      }
+    } catch (e) {
+      setIndividualAttendanceError(e?.response?.data?.message || e?.message || "Failed to load attendance");
+      setIndividualAttendances([]);
+    } finally {
+      setIndividualAttendanceLoading(false);
+    }
+  }, [id, type]);
+
   const loadOfferings = useCallback(async () => {
     if (!id) return;
     setOfferingLoading(true);
@@ -391,9 +469,12 @@ function MinistryDetailsPage() {
 
   useEffect(() => {
     if (activeTab === "members") loadMembers();
-    if (activeTab === "attendance") loadAttendances();
+    if (activeTab === "attendance") {
+      if (attendanceView === "individual") loadIndividualAttendances();
+      else loadAttendances();
+    }
     if (activeTab === "offerings") loadOfferings();
-  }, [activeTab, loadMembers, loadAttendances, loadOfferings]);
+  }, [activeTab, loadMembers, loadAttendances, loadIndividualAttendances, loadOfferings, attendanceView]);
 
   useEffect(() => {
     if (activeTab !== "members") return;
@@ -448,6 +529,115 @@ function MinistryDetailsPage() {
     }
   };
 
+  const loadAllMembersForIndividualAttendance = useCallback(async () => {
+    if (!id) return;
+    setIndividualMembersLoading(true);
+    setIndividualMembersError("");
+    setIndividualMembers([]);
+
+    try {
+      let res;
+      const params = { page: 1, limit: 5000, search: "" };
+      if (type === "department") res = await getDepartmentMembers(id, params);
+      else if (type === "cell") res = await getCellMembers(id, params);
+      else res = await getGroupMembers(id, params);
+
+      const payload = res?.data?.data ?? res?.data;
+      const rows = Array.isArray(payload?.members) ? payload.members : [];
+      const mapped = rows
+        .map((m) => {
+          const member = m?.member || {};
+          const name = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim();
+          const id2 = String(member?._id || "");
+          if (!id2) return null;
+          return { id: id2, name: name || "-" };
+        })
+        .filter(Boolean);
+
+      mapped.sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
+      setIndividualMembers(mapped);
+    } catch (e) {
+      setIndividualMembersError(e?.response?.data?.message || e?.message || "Failed to load members");
+      setIndividualMembers([]);
+    } finally {
+      setIndividualMembersLoading(false);
+    }
+  }, [id, type]);
+
+  const openIndividualAttendanceForm = async (mode, row) => {
+    setIndividualAttendanceFormError("");
+    setIndividualAttendanceMode(mode);
+    setIndividualAttendanceEditing(row || null);
+    setIndividualAttendanceDate((row?.date || "").slice(0, 10));
+    const preSelected = Array.isArray(row?.presentMembers) ? row.presentMembers.map((x) => String(x || "")).filter(Boolean) : [];
+    setIndividualAttendanceSelectedIds(preSelected);
+    setIndividualMemberSearch("");
+    setIndividualAttendanceOpen(true);
+    await loadAllMembersForIndividualAttendance();
+  };
+
+  const submitIndividualAttendance = async (e) => {
+    e.preventDefault();
+    setIndividualAttendanceFormError("");
+
+    if (!individualAttendanceDate) {
+      setIndividualAttendanceFormError("date is required");
+      return;
+    }
+
+    const payload = {
+      date: individualAttendanceDate,
+      presentMembers: Array.isArray(individualAttendanceSelectedIds) ? individualAttendanceSelectedIds : []
+    };
+
+    setIndividualAttendanceSaving(true);
+    try {
+      if (individualAttendanceMode === "edit") {
+        const attendanceId = individualAttendanceEditing?._id;
+        if (!attendanceId) return;
+        if (type === "department") await updateDepartmentIndividualAttendance(id, attendanceId, payload);
+        else if (type === "cell") await updateCellIndividualAttendance(id, attendanceId, payload);
+        else await updateGroupIndividualAttendance(id, attendanceId, payload);
+      } else {
+        if (type === "department") await createDepartmentIndividualAttendance(id, payload);
+        else if (type === "cell") await createCellIndividualAttendance(id, payload);
+        else await createGroupIndividualAttendance(id, payload);
+      }
+
+      setIndividualAttendanceOpen(false);
+      setIndividualAttendanceEditing(null);
+      await loadIndividualAttendances();
+    } catch (e2) {
+      setIndividualAttendanceFormError(e2?.response?.data?.message || e2?.message || "Failed to save attendance");
+    } finally {
+      setIndividualAttendanceSaving(false);
+    }
+  };
+
+  const openIndividualView = async (row) => {
+    const attendanceId = row?._id;
+    if (!attendanceId) return;
+    setIndividualViewError("");
+    setIndividualViewing(null);
+    setIndividualViewOpen(true);
+    setIndividualViewLoading(true);
+
+    try {
+      let res;
+      if (type === "department") res = await getDepartmentIndividualAttendance(id, attendanceId);
+      else if (type === "cell") res = await getCellIndividualAttendance(id, attendanceId);
+      else res = await getGroupIndividualAttendance(id, attendanceId);
+
+      const payload = res?.data?.data ?? res?.data;
+      setIndividualViewing(payload?.attendance || payload);
+    } catch (e) {
+      setIndividualViewError(e?.response?.data?.message || e?.message || "Failed to load attendance");
+      setIndividualViewing(null);
+    } finally {
+      setIndividualViewLoading(false);
+    }
+  };
+
   const searchAddMemberCandidates = useCallback(async () => {
     const q = String(debouncedAddMemberValue || "").trim();
     setAddMemberCandidatesError("");
@@ -486,6 +676,25 @@ function MinistryDetailsPage() {
     setConfirmOpen(true);
   };
 
+  const confirmTitle = useMemo(() => {
+    if (confirmMeta?.kind === "remove-member") return "Confirm";
+    return "Confirm";
+  }, [confirmMeta]);
+
+  const confirmLabel = useMemo(() => {
+    if (confirmMeta?.kind === "remove-member") return "Remove";
+    return "Delete";
+  }, [confirmMeta]);
+
+  const confirmMessage = useMemo(() => {
+    if (confirmMeta?.kind === "remove-member") {
+      const name = safeText(confirmMeta?.payload?.memberName).trim();
+      if (name) return `Are you sure you want to remove ${name}`;
+      return "Are you sure you want to remove this member?";
+    }
+    return "Are you sure you want to proceed?";
+  }, [confirmMeta]);
+
   const confirmAction = async () => {
     const meta = confirmMeta;
     setConfirmOpen(false);
@@ -495,7 +704,7 @@ function MinistryDetailsPage() {
 
     try {
       if (meta.kind === "remove-member") {
-        const memberId = meta.payload;
+        const memberId = meta.payload?.memberId || meta.payload;
         if (type === "department") await removeDepartmentMember(id, memberId);
         else if (type === "cell") await removeCellMember(id, memberId);
         else await removeGroupMember(id, memberId);
@@ -508,6 +717,14 @@ function MinistryDetailsPage() {
         else if (type === "cell") await deleteCellAttendance(id, attendanceId);
         else await deleteGroupAttendance(id, attendanceId);
         await loadAttendances();
+      }
+
+      if (meta.kind === "delete-individual-attendance") {
+        const attendanceId = meta.payload;
+        if (type === "department") await deleteDepartmentIndividualAttendance(id, attendanceId);
+        else if (type === "cell") await deleteCellIndividualAttendance(id, attendanceId);
+        else await deleteGroupIndividualAttendance(id, attendanceId);
+        await loadIndividualAttendances();
       }
 
       if (meta.kind === "delete-offering") {
@@ -932,7 +1149,12 @@ function MinistryDetailsPage() {
 
                             <button
                               type="button"
-                              onClick={() => openConfirm("remove-member", member?._id)}
+                              onClick={() =>
+                                openConfirm("remove-member", {
+                                  memberId: member?._id,
+                                  memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim()
+                                })
+                              }
                               className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
                             >
                               Remove
@@ -1235,136 +1457,413 @@ function MinistryDetailsPage() {
           <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-5">
             <div>
               <div className="text-sm font-semibold text-gray-900">Attendance</div>
-              <div className="text-xs text-gray-500">Record total attendance</div>
+              <div className="text-xs text-gray-500">Record attendance</div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => openAttendanceForm("create", null)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-            >
-              <span className="text-lg leading-none">+</span>
-              Add Attendance
-            </button>
+            {attendanceView === "individual" ? (
+              <button
+                type="button"
+                onClick={() => void openIndividualAttendanceForm("create", null)}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              >
+                <span className="text-lg leading-none">+</span>
+                Record Attendance
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openAttendanceForm("create", null)}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              >
+                <span className="text-lg leading-none">+</span>
+                Add Attendance
+              </button>
+            )}
           </div>
 
-          {attendanceError ? <div className="p-5 text-sm text-red-700">{attendanceError}</div> : null}
-
-          {attendanceLoading ? (
-            <div className="p-5">
-              <Skeleton height={14} count={6} />
+          <div className="px-5 pt-4 pb-4">
+            <div className="rounded-full bg-gray-100 p-1 flex items-center gap-2 max-w-md">
+              <button
+                type="button"
+                onClick={() => {
+                  setAttendanceView("total");
+                  setAttendanceError("");
+                  setIndividualAttendanceError("");
+                }}
+                className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  attendanceView === "total" ? "bg-blue-100 text-blue-900" : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Total Attendance
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAttendanceView("individual");
+                  setAttendanceError("");
+                  setIndividualAttendanceError("");
+                }}
+                className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  attendanceView === "individual" ? "bg-blue-100 text-blue-900" : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Individual Attendance
+              </button>
             </div>
-          ) : attendances.length === 0 ? (
-            <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-slate-100">
-                  <tr className="text-left text-xs font-semibold text-gray-500">
-                    <th className="px-6 py-2">Date</th>
-                    <th className="px-6 py-2">Attendees</th>
-                    <th className="px-6 py-2">Speaker</th>
-                    <th className="px-6 py-2">Activity</th>
-                    <th className="px-6 py-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {attendances.map((r, idx) => (
-                    <tr key={r?._id || idx} className="text-sm text-gray-700">
-                      <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
-                      <td className="px-6 py-1.5">{Number(r?.numberOfAttendees || 0)}</td>
-                      <td className="px-6 py-1.5">{r?.mainSpeaker || "-"}</td>
-                      <td className="px-6 py-1.5">{r?.activity || "-"}</td>
-                      <td className="px-6 py-1.5">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openAttendanceForm("edit", r)}
-                            className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openConfirm("delete-attendance", r?._id)}
-                            className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
-                          >
-                            Delete
-                          </button>
+          </div>
+
+          {attendanceView === "individual" ? (
+            <>
+              {individualAttendanceError ? <div className="p-5 text-sm text-red-700">{individualAttendanceError}</div> : null}
+
+              {individualAttendanceLoading ? (
+                <div className="p-5">
+                  <Skeleton height={14} count={6} />
+                </div>
+              ) : individualAttendances.length === 0 ? (
+                <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
+              ) : (
+                <div className="overflow-x-auto px-5 pb-6">
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left text-xs font-semibold text-gray-500">
+                        <th className="px-6 py-2">Date</th>
+                        <th className="px-6 py-2">Day</th>
+                        <th className="px-6 py-2">Present</th>
+                        <th className="px-6 py-2">Absent</th>
+                        <th className="px-6 py-2 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {individualAttendances.map((r, idx) => (
+                        <tr key={r?._id || idx} className="text-sm text-gray-700">
+                          <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
+                          <td className="px-6 py-1.5">{formatDay(r?.date) || "-"}</td>
+                          <td className="px-6 py-1.5">{Number(r?.presentCount ?? 0)}</td>
+                          <td className="px-6 py-1.5">{Number(r?.absentCount ?? 0)}</td>
+                          <td className="px-6 py-1.5">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => void openIndividualAttendanceForm("edit", r)}
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void openIndividualView(r)}
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              >
+                                View
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openConfirm("delete-individual-attendance", r?._id)}
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <SimpleModal
+                open={individualAttendanceOpen}
+                title={individualAttendanceMode === "edit" ? "Edit Attendance" : "Record Attendance"}
+                onClose={() => setIndividualAttendanceOpen(false)}
+              >
+                <form onSubmit={submitIndividualAttendance} className="flex max-h-[75vh] flex-col">
+                  <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                    {individualAttendanceFormError ? (
+                      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{individualAttendanceFormError}</div>
+                    ) : null}
+
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500">Date</label>
+                        <input
+                          value={individualAttendanceDate}
+                          onChange={(e) => setIndividualAttendanceDate(e.target.value)}
+                          type="date"
+                          className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500">Members present</label>
+                        <input
+                          value={individualMemberSearch}
+                          onChange={(e) => setIndividualMemberSearch(e.target.value)}
+                          placeholder="Search members..."
+                          className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        />
+
+                        <div className="mt-3 rounded-xl border border-gray-200 max-h-[45vh] overflow-y-auto">
+                          {individualMembersError ? (
+                            <div className="px-4 py-3 text-sm text-red-700">{individualMembersError}</div>
+                          ) : individualMembersLoading ? (
+                            <div className="px-4 py-3">
+                              <Skeleton height={14} count={6} />
+                            </div>
+                          ) : individualMembers.length === 0 ? (
+                            <div className="px-4 py-3 text-sm text-gray-600">No members found.</div>
+                          ) : (
+                            <div className="divide-y divide-gray-200">
+                              {individualMembers
+                                .filter((m) => {
+                                  const q = String(individualMemberSearch || "").trim().toLowerCase();
+                                  if (!q) return true;
+                                  return String(m?.name || "").toLowerCase().includes(q);
+                                })
+                                .map((m) => {
+                                  const checked = individualAttendanceSelectedIds.includes(String(m.id));
+                                  return (
+                                    <label
+                                      key={m.id}
+                                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {
+                                          const mid = String(m.id);
+                                          setIndividualAttendanceSelectedIds((prev) => {
+                                            const list = Array.isArray(prev) ? prev : [];
+                                            if (list.includes(mid)) return list.filter((x) => x !== mid);
+                                            return [...list, mid];
+                                          });
+                                        }}
+                                      />
+                                      <span className="text-gray-900">{m.name}</span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                          )}
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <div className="mt-2 text-xs text-gray-500">Selected: {individualAttendanceSelectedIds.length}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIndividualAttendanceOpen(false)}
+                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={individualAttendanceSaving}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {individualAttendanceMode === "edit" ? "Update" : "Save"}
+                    </button>
+                  </div>
+                </form>
+              </SimpleModal>
+
+              <SimpleModal
+                open={individualViewOpen}
+                title="Attendance Details"
+                onClose={() => setIndividualViewOpen(false)}
+              >
+                {individualViewError ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{individualViewError}</div>
+                ) : individualViewLoading ? (
+                  <Skeleton height={14} count={8} />
+                ) : !individualViewing ? (
+                  <div className="text-sm text-gray-600">No record found.</div>
+                ) : (
+                  <div className="flex max-h-[75vh] flex-col">
+                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                        <div>
+                          <div className="text-xs font-semibold text-gray-500">Date</div>
+                          <div className="mt-1 text-sm font-semibold text-gray-900">{formatDate(individualViewing?.date)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-gray-500">Day</div>
+                          <div className="mt-1 text-sm font-semibold text-gray-900">{formatDay(individualViewing?.date) || "-"}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-gray-500">Present</div>
+                          <div className="mt-1 text-sm font-semibold text-gray-900">{Number(individualViewing?.presentCount ?? 0)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-gray-500">Absent</div>
+                          <div className="mt-1 text-sm font-semibold text-gray-900">{Number(individualViewing?.absentCount ?? 0)}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 border-b border-gray-200" />
+
+                      <div className="mt-4">
+                        <div className="text-sm font-semibold text-gray-900">Present members</div>
+                        <div className="mt-2 rounded-xl border border-gray-200 overflow-hidden">
+                          <div className="max-h-80 overflow-y-auto">
+                            {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-gray-600">No members marked present.</div>
+                            ) : (
+                              <table className="min-w-full">
+                                <thead className="bg-slate-100">
+                                  <tr className="text-left text-xs font-semibold text-gray-500">
+                                    <th className="px-4 py-2">Name</th>
+                                    <th className="px-4 py-2">Phone</th>
+                                    <th className="px-4 py-2">Email</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                  {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).map((m, idx) => {
+                                    const name = `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-";
+                                    return (
+                                      <tr key={m?._id || idx} className="text-sm text-gray-700">
+                                        <td className="px-4 py-1.5 text-gray-900">{name}</td>
+                                        <td className="px-4 py-1.5">{m?.phoneNumber || "-"}</td>
+                                        <td className="px-4 py-1.5">{m?.email || "-"}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </SimpleModal>
+            </>
+          ) : (
+            <>
+              {attendanceError ? <div className="p-5 text-sm text-red-700">{attendanceError}</div> : null}
+
+              {attendanceLoading ? (
+                <div className="p-5">
+                  <Skeleton height={14} count={6} />
+                </div>
+              ) : attendances.length === 0 ? (
+                <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
+              ) : (
+                <div className="overflow-x-auto px-5 pb-6">
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left text-xs font-semibold text-gray-500">
+                        <th className="px-6 py-2">Date</th>
+                        <th className="px-6 py-2">Attendees</th>
+                        <th className="px-6 py-2">Speaker</th>
+                        <th className="px-6 py-2">Activity</th>
+                        <th className="px-6 py-2 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {attendances.map((r, idx) => (
+                        <tr key={r?._id || idx} className="text-sm text-gray-700">
+                          <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
+                          <td className="px-6 py-1.5">{Number(r?.numberOfAttendees || 0)}</td>
+                          <td className="px-6 py-1.5">{r?.mainSpeaker || "-"}</td>
+                          <td className="px-6 py-1.5">{r?.activity || "-"}</td>
+                          <td className="px-6 py-1.5">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openAttendanceForm("edit", r)}
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openConfirm("delete-attendance", r?._id)}
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <SimpleModal
+                open={attendanceOpen}
+                title={attendanceMode === "edit" ? "Edit Attendance" : "Add Attendance"}
+                onClose={() => setAttendanceOpen(false)}
+              >
+                <form onSubmit={submitAttendance}>
+                  {attendanceFormError ? (
+                    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{attendanceFormError}</div>
+                  ) : null}
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500">Date</label>
+                      <input
+                        value={attendanceDate}
+                        onChange={(e) => setAttendanceDate(e.target.value)}
+                        type="date"
+                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500">Number of attendees</label>
+                      <input
+                        value={attendanceNumber}
+                        onChange={(e) => setAttendanceNumber(e.target.value)}
+                        type="number"
+                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500">Main speaker</label>
+                      <input
+                        value={attendanceSpeaker}
+                        onChange={(e) => setAttendanceSpeaker(e.target.value)}
+                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500">Activity</label>
+                      <input
+                        value={attendanceActivity}
+                        onChange={(e) => setAttendanceActivity(e.target.value)}
+                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceOpen(false)}
+                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={attendanceSaving}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {attendanceMode === "edit" ? "Update" : "Save"}
+                    </button>
+                  </div>
+                </form>
+              </SimpleModal>
+            </>
           )}
-
-          <SimpleModal
-            open={attendanceOpen}
-            title={attendanceMode === "edit" ? "Edit Attendance" : "Add Attendance"}
-            onClose={() => setAttendanceOpen(false)}
-          >
-            <form onSubmit={submitAttendance}>
-              {attendanceFormError ? (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{attendanceFormError}</div>
-              ) : null}
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500">Date</label>
-                  <input
-                    value={attendanceDate}
-                    onChange={(e) => setAttendanceDate(e.target.value)}
-                    type="date"
-                    className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500">Number of attendees</label>
-                  <input
-                    value={attendanceNumber}
-                    onChange={(e) => setAttendanceNumber(e.target.value)}
-                    type="number"
-                    className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500">Main speaker</label>
-                  <input
-                    value={attendanceSpeaker}
-                    onChange={(e) => setAttendanceSpeaker(e.target.value)}
-                    className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500">Activity</label>
-                  <input
-                    value={attendanceActivity}
-                    onChange={(e) => setAttendanceActivity(e.target.value)}
-                    className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAttendanceOpen(false)}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={attendanceSaving}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {attendanceMode === "edit" ? "Update" : "Save"}
-                </button>
-              </div>
-            </form>
-          </SimpleModal>
         </div>
       ) : null}
 
@@ -1499,8 +1998,9 @@ function MinistryDetailsPage() {
 
       <ConfirmDialog
         open={confirmOpen}
-        title="Confirm"
-        message="Are you sure you want to proceed?"
+        title={confirmTitle}
+        message={confirmMessage}
+        confirmLabel={confirmLabel}
         onCancel={() => {
           setConfirmOpen(false);
           setConfirmMeta(null);

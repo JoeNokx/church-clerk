@@ -3,6 +3,13 @@ const router = express.Router();
 import {getAllGroups, getSingleGroup, createGroup, updateGroup, deleteGroup, searchMembersToAddToGroup, addMemberToGroup, getGroupMembers,updateMemberRole, removeMemberFromGroup, addMeeting, updateMeeting, deleteMeeting, getMeetings, getMinistryKPI } from "../../controller/ministryController/groupController.js"
 
 import  {createGroupAttendance, updateGroupAttendance, deleteGroupAttendance, getAllGroupAttendances} from "../../controller/ministryController/groupAttendanceController.js"
+import {
+  createGroupIndividualAttendance,
+  getAllGroupIndividualAttendances,
+  getSingleGroupIndividualAttendance,
+  updateGroupIndividualAttendance,
+  deleteGroupIndividualAttendance
+} from "../../controller/ministryController/groupIndividualAttendanceController.js";
 import  {createGroupOffering, updateGroupOffering, deleteGroupOffering, getAllGroupOfferings} from "../../controller/ministryController/groupOfferingController.js"
 
 import { protect } from "../../middleware/authMiddleware.js";
@@ -37,6 +44,47 @@ router.post("/groups/:groupId/attendances", protect, setActiveChurch, readOnlyBr
 router.get("/groups/:groupId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getAllGroupAttendances);
 router.put("/groups/:groupId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateGroupAttendance);
 router.delete("/groups/:groupId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteGroupAttendance);
+
+router.post(
+  "/groups/:groupId/individual-attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin"),
+  createGroupIndividualAttendance
+);
+router.get(
+  "/groups/:groupId/individual-attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin"),
+  getAllGroupIndividualAttendances
+);
+router.get(
+  "/groups/:groupId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin"),
+  getSingleGroupIndividualAttendance
+);
+router.put(
+  "/groups/:groupId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin"),
+  updateGroupIndividualAttendance
+);
+router.delete(
+  "/groups/:groupId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin"),
+  deleteGroupIndividualAttendance
+);
 
 
 router.post("/groups/:groupId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createGroupOffering);

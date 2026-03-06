@@ -72,6 +72,26 @@ export const deleteCellAttendance = async (cellId, attendanceId) => {
   return await http.delete(`/cell/cells/${cellId}/attendances/${attendanceId}`);
 };
 
+export const createCellIndividualAttendance = async (cellId, payload) => {
+  return await http.post(`/cell/cells/${cellId}/individual-attendances`, payload);
+};
+
+export const getCellIndividualAttendances = async (cellId, params) => {
+  return await http.get(`/cell/cells/${cellId}/individual-attendances`, { params });
+};
+
+export const getCellIndividualAttendance = async (cellId, attendanceId) => {
+  return await http.get(`/cell/cells/${cellId}/individual-attendances/${attendanceId}`);
+};
+
+export const updateCellIndividualAttendance = async (cellId, attendanceId, payload) => {
+  return await http.put(`/cell/cells/${cellId}/individual-attendances/${attendanceId}`, payload);
+};
+
+export const deleteCellIndividualAttendance = async (cellId, attendanceId) => {
+  return await http.delete(`/cell/cells/${cellId}/individual-attendances/${attendanceId}`);
+};
+
 export const createCellOffering = async (cellId, payload) => {
   return await http.post(`/cell/cells/${cellId}/offerings`, payload);
 };

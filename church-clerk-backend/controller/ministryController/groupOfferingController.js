@@ -21,7 +21,7 @@ const createGroupOffering = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    const Offering = await Offering.create({
+    const offering = await Offering.create({
       group: groupId,
       church: group.church,
       createdBy: req.user._id, 
@@ -32,7 +32,7 @@ const createGroupOffering = async (req, res) => {
 
     res.status(201).json({
       message: "Offering recorded successfully", 
-      Offering
+      offering
     });
   } catch (error) {
     console.log("could not record Offering", error)

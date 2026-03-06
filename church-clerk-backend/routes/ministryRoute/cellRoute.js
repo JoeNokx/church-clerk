@@ -2,6 +2,13 @@ import express from "express";
 const router = express.Router();
 import {getAllCells, getSingleCell, createCell, updateCell, deleteCell, addMemberToCell, searchMembersToAddToCell, getCellMembers, updateCellMemberRole, removeMemberFromCell, addCellMeeting, updateCellMeeting, deleteCellMeeting, getCellMeetings} from "../../controller/ministryController/cellController.js"
 import { createCellAttendance, updateCellAttendance, deleteCellAttendance, getAllCellAttendances } from "../../controller/ministryController/cellAttendanceController.js";
+import {
+  createCellIndividualAttendance,
+  getAllCellIndividualAttendances,
+  getSingleCellIndividualAttendance,
+  updateCellIndividualAttendance,
+  deleteCellIndividualAttendance
+} from "../../controller/ministryController/cellIndividualAttendanceController.js";
 import { createCellOffering, updateCellOffering, deleteCellOffering, getAllCellOfferings } from "../../controller/ministryController/cellOfferingController.js";
 import { getMinistryKPI } from "../../controller/ministryController/groupController.js";
 import { protect } from "../../middleware/authMiddleware.js";
@@ -34,6 +41,48 @@ router.post("/cells/:cellId/attendances", protect, setActiveChurch, readOnlyBran
 router.get("/cells/:cellId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllCellAttendances);
 router.put("/cells/:cellId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), updateCellAttendance);
 router.delete("/cells/:cellId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), deleteCellAttendance);
+
+
+router.post(
+  "/cells/:cellId/individual-attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  createCellIndividualAttendance
+);
+router.get(
+  "/cells/:cellId/individual-attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  getAllCellIndividualAttendances
+);
+router.get(
+  "/cells/:cellId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  getSingleCellIndividualAttendance
+);
+router.put(
+  "/cells/:cellId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  updateCellIndividualAttendance
+);
+router.delete(
+  "/cells/:cellId/individual-attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  deleteCellIndividualAttendance
+);
 
 
 router.post("/cells/:cellId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), createCellOffering);
