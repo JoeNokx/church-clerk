@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
+import { useAuth } from "../../auth/useAuth.js";
 import { getGroups } from "../../group/services/group.api.js";
 import { getCells } from "../../cell/services/cell.api.js";
 import { getDepartments } from "../../department/services/department.api.js";
@@ -7,10 +8,14 @@ import { getMembers } from "../../member/services/member.api.js";
 import {
   createCommunicationMessage,
   fundWalletInitiate,
+  fundWalletVerify,
   getWallet,
   getWalletTransactions,
   getCommunicationMessages,
   getMessageDeliveryReport,
+  estimateMessageCost,
+  updateCommunicationMessage,
+  deleteCommunicationMessage,
   createMessageTemplate,
   deleteMessageTemplate,
   getMessageTemplates,
@@ -37,6 +42,18 @@ function ghsToCredits(ghs) {
   const n = Number(ghs || 0);
   if (!Number.isFinite(n)) return 0;
   return Math.round(n * 100);
+}
+
+function toScheduleParts(dateValue) {
+  if (!dateValue) return { scheduledDate: "", scheduledTime: "" };
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return { scheduledDate: "", scheduledTime: "" };
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return { scheduledDate: `${yyyy}-${mm}-${dd}`, scheduledTime: `${hh}:${mi}` };
 }
 
 function TabButton({ active, onClick, children }) {
@@ -96,6 +113,9 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
   if (!open) return null;
 
   const presets = [50, 100, 200];
+  const minAmount = 10;
+  const amountNum = Number(amount || 0);
+  const amountOk = Number.isFinite(amountNum) && amountNum >= minAmount;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -143,6 +163,9 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
             </div>
           </div>
 
+          <div className="mt-2 text-xs text-gray-500">Minimum deposit: ₵{minAmount}</div>
+          {!amountOk ? <div className="mt-2 text-xs font-semibold text-red-600">Enter at least ₵{minAmount} to proceed.</div> : null}
+
           <div className="mt-5 flex items-center justify-end gap-2">
             <button
               type="button"
@@ -155,10 +178,10 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
             <button
               type="button"
               onClick={() => onFund(amount)}
-              disabled={loading}
+              disabled={loading || !amountOk}
               className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
             >
-              {loading ? "Processing..." : "Proceed to Paystack"}
+              {loading ? "Processing..." : "Proceed to Pay"}
             </button>
           </div>
         </div>
@@ -246,7 +269,11 @@ function TemplatesTab({ open }) {
   const [message, setMessage] = useState("");
 
   const load = async () => {
-    if (!canRead) return;
+    if (!canRead) {
+      setRows([]);
+      setError("You do not have permission to view templates");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -263,7 +290,7 @@ function TemplatesTab({ open }) {
   useEffect(() => {
     if (!open) return;
     load();
-  }, [open]);
+  }, [open, canRead]);
 
   const resetForm = () => {
     setEditId("");
@@ -318,7 +345,7 @@ function TemplatesTab({ open }) {
     <div className="mt-5">
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <div className="text-sm font-semibold text-gray-900">Templates</div>
-        <div className="mt-1 text-xs text-gray-500">Save and reuse messages. Variables like {{first_name}} are allowed.</div>
+        <div className="mt-1 text-xs text-gray-500">Save and reuse messages. Variables like {"{{first_name}}"} are allowed.</div>
 
         {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
@@ -327,12 +354,14 @@ function TemplatesTab({ open }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Template name"
+            disabled={loading || !canWrite}
             className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
           />
 
           <select
             value={channel}
             onChange={(e) => setChannel(e.target.value)}
+            disabled={loading || !canWrite}
             className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
           >
             <option value="sms">SMS</option>
@@ -343,6 +372,7 @@ function TemplatesTab({ open }) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Message"
+            disabled={loading || !canWrite}
             className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
           />
 
@@ -350,7 +380,7 @@ function TemplatesTab({ open }) {
             <button
               type="button"
               onClick={resetForm}
-              disabled={loading}
+              disabled={loading || !canWrite}
               className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >
               Clear
@@ -358,7 +388,7 @@ function TemplatesTab({ open }) {
             <button
               type="button"
               onClick={onSave}
-              disabled={loading}
+              disabled={loading || !canWrite}
               className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
             >
               {loading ? "Saving..." : editId ? "Update Template" : "Create Template"}
@@ -433,10 +463,33 @@ function TemplatesTab({ open }) {
   );
 }
 
-function MessagesTable({ title, open, query, onOpenDeliveryReport }) {
+function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
+
+  const { can } = useContext(PermissionContext) || {};
+  const canUpdate = useMemo(() => (typeof can === "function" ? can("announcements", "update") : true), [can]);
+  const canDelete = useMemo(() => (typeof can === "function" ? can("announcements", "delete") : true), [can]);
+
+  const [menuId, setMenuId] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editRow, setEditRow] = useState(null);
+
+  const isScheduledView = String(query?.status || "") === "scheduled";
+
+  const closeEdit = () => {
+    if (actionLoadingId) return;
+    setEditOpen(false);
+    setEditRow(null);
+  };
+
+  const openEdit = (row) => {
+    setMenuId(null);
+    setEditRow(row || null);
+    setEditOpen(true);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -457,7 +510,53 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport }) {
     load();
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    setMenuId(null);
+  }, [open]);
+
   if (!open) return null;
+
+  const onSaveEdit = async (payload) => {
+    const id = String(editRow?._id || "");
+    if (!id) return;
+    setActionLoadingId(id);
+    setError("");
+    try {
+      await updateCommunicationMessage(id, payload);
+      closeEdit();
+      await load();
+      if (typeof onWalletUpdated === "function") {
+        await onWalletUpdated();
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to update message");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const onDeleteRow = async (row) => {
+    const id = String(row?._id || "");
+    if (!id) return;
+    const ok = window.confirm("Delete this scheduled message? This will refund its credits back to the wallet.");
+    if (!ok) return;
+
+    setMenuId(null);
+    setActionLoadingId(id);
+    setError("");
+    try {
+      await deleteCommunicationMessage(id);
+      await load();
+      if (typeof onWalletUpdated === "function") {
+        await onWalletUpdated();
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to delete message");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   return (
     <div className="mt-5 rounded-xl border border-gray-200 bg-white overflow-hidden">
@@ -516,6 +615,45 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport }) {
                       >
                         View Report
                       </button>
+
+                      {isScheduledView && String(m?.status || "") === "scheduled" && (canUpdate || canDelete) ? (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setMenuId((cur) => (cur === m?._id ? null : m?._id))}
+                            disabled={actionLoadingId === m?._id}
+                            className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                            aria-label="More actions"
+                          >
+                            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+                              <path d="M10 4.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 4.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 4.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                            </svg>
+                          </button>
+
+                          {menuId === m?._id ? (
+                            <div className="absolute right-0 mt-1 w-32 rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden z-10">
+                              {canUpdate ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openEdit(m)}
+                                  className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                >
+                                  Edit
+                                </button>
+                              ) : null}
+                              {canDelete ? (
+                                <button
+                                  type="button"
+                                  onClick={() => onDeleteRow(m)}
+                                  className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50"
+                                >
+                                  Delete
+                                </button>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -523,6 +661,148 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport }) {
             )}
           </tbody>
         </table>
+      </div>
+
+      <EditScheduledMessageModal
+        open={editOpen}
+        onClose={closeEdit}
+        message={editRow}
+        loading={Boolean(actionLoadingId)}
+        onSave={onSaveEdit}
+      />
+    </div>
+  );
+}
+
+function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    const parts = toScheduleParts(message?.scheduledAt);
+    setTitle(String(message?.title || ""));
+    setContent(String(message?.content || ""));
+    setScheduledDate(parts.scheduledDate);
+    setScheduledTime(parts.scheduledTime);
+    setError("");
+  }, [open, message?._id]);
+
+  if (!open) return null;
+
+  const submit = async () => {
+    const t = String(title || "").trim();
+    const c = String(content || "").trim();
+    const d = String(scheduledDate || "").trim();
+    const tm = String(scheduledTime || "").trim();
+
+    if (!t) {
+      setError("Title is required");
+      return;
+    }
+    if (!c) {
+      setError("Message content is required");
+      return;
+    }
+    if (!d || !tm) {
+      setError("Scheduled date and time are required");
+      return;
+    }
+
+    setError("");
+    await onSave({ title: t, content: c, scheduledDate: d, scheduledTime: tm });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+        <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">Edit Scheduled Message</div>
+            <div className="mt-1 text-xs text-gray-500">This will update the message before it is sent.</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="p-5">
+          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="text-xs font-semibold text-gray-600">Title</label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={loading}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+                placeholder="Message title"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="text-xs font-semibold text-gray-600">Message</label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                disabled={loading}
+                rows={5}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+                placeholder="Message content"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-600">Scheduled Date</label>
+              <input
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                disabled={loading}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-600">Scheduled Time</label>
+              <input
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                disabled={loading}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+              />
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={loading}
+              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -586,6 +866,38 @@ function DeliveryReportModal({ open, onClose, message }) {
 
         <div className="p-5">
           {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+
+          <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Title</div>
+                <div className="mt-1 text-sm font-semibold text-gray-900">{message?.title || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Channel</div>
+                <div className="mt-1 text-sm font-semibold text-gray-900">
+                  {Array.isArray(message?.channels) && message.channels.length
+                    ? message.channels.map((c) => String(c).toUpperCase()).join(", ")
+                    : "—"}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <div className="text-xs font-semibold text-gray-500">Message Content</div>
+                <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{message?.content || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Audience</div>
+                <div className="mt-1 text-sm font-semibold text-gray-900">{String(message?.audience?.type || "all")}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Send Options</div>
+                <div className="mt-1 text-sm font-semibold text-gray-900">
+                  {String(message?.status || "—")}
+                  {message?.scheduledAt ? ` • ${new Date(message.scheduledAt).toLocaleString()}` : ""}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -669,6 +981,7 @@ function CommunicationTab({ open, wallet, onSent }) {
   const [memberSearch, setMemberSearch] = useState("");
   const [memberResults, setMemberResults] = useState([]);
   const [memberIds, setMemberIds] = useState([]);
+  const [memberNameById, setMemberNameById] = useState({});
 
   const [channels, setChannels] = useState({ sms: true, whatsapp: false });
 
@@ -676,14 +989,16 @@ function CommunicationTab({ open, wallet, onSent }) {
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
 
+  const [estimateLoading, setEstimateLoading] = useState(false);
+  const [estimateError, setEstimateError] = useState("");
+  const [estimatedRecipients, setEstimatedRecipients] = useState(0);
+  const [estimatedCostPerRecipient, setEstimatedCostPerRecipient] = useState(0);
+  const [estimatedTotalCostServer, setEstimatedTotalCostServer] = useState(0);
+
   const totalRecipientsPreview = useMemo(() => {
     if (audienceType === "members") return memberIds.length;
-    if (audienceType === "groups") {
-      // This is a preview only; accurate count is computed server-side.
-      return 0;
-    }
-    return 0;
-  }, [audienceType, memberIds.length]);
+    return estimatedRecipients;
+  }, [audienceType, estimatedRecipients, memberIds.length]);
 
   const costPerRecipient = useMemo(() => {
     const smsCost = channels.sms ? 5 : 0;
@@ -692,13 +1007,85 @@ function CommunicationTab({ open, wallet, onSent }) {
   }, [channels.sms, channels.whatsapp]);
 
   const estimatedTotalCost = useMemo(() => {
-    return totalRecipientsPreview * costPerRecipient;
-  }, [costPerRecipient, totalRecipientsPreview]);
+    if (audienceType === "members") return totalRecipientsPreview * costPerRecipient;
+    return estimatedTotalCostServer;
+  }, [audienceType, costPerRecipient, estimatedTotalCostServer, totalRecipientsPreview]);
 
   const walletCredits = Number(wallet?.balanceCredits || 0);
   const hasEnoughCredits = walletCredits >= estimatedTotalCost;
 
   const messageCharCount = String(content || "").length;
+
+  useEffect(() => {
+    if (!open) return;
+
+    const selectedChannels = Object.entries(channels)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
+
+    if (!selectedChannels.length) {
+      setEstimateError("");
+      setEstimatedRecipients(0);
+      setEstimatedCostPerRecipient(0);
+      setEstimatedTotalCostServer(0);
+      return;
+    }
+
+    if (audienceType === "members") {
+      setEstimateError("");
+      setEstimatedRecipients(0);
+      setEstimatedCostPerRecipient(0);
+      setEstimatedTotalCostServer(0);
+      return;
+    }
+
+    if (audienceType === "groups" && !groupIds.length && !cellIds.length && !departmentIds.length) {
+      setEstimateError("");
+      setEstimatedRecipients(0);
+      setEstimatedCostPerRecipient(0);
+      setEstimatedTotalCostServer(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const run = async () => {
+      setEstimateLoading(true);
+      setEstimateError("");
+      try {
+        const res = await estimateMessageCost({
+          audience: {
+            type: audienceType,
+            groupIds,
+            cellIds,
+            departmentIds,
+            memberIds
+          },
+          channels: selectedChannels
+        });
+
+        if (cancelled) return;
+        setEstimatedRecipients(Number(res?.data?.recipientCount || 0));
+        setEstimatedCostPerRecipient(Number(res?.data?.costPerRecipientCredits || 0));
+        setEstimatedTotalCostServer(Number(res?.data?.totalCostCredits || 0));
+      } catch (e) {
+        if (cancelled) return;
+        setEstimatedRecipients(0);
+        setEstimatedCostPerRecipient(0);
+        setEstimatedTotalCostServer(0);
+        setEstimateError(e?.response?.data?.message || e?.message || "Failed to estimate message cost");
+      } finally {
+        if (cancelled) return;
+        setEstimateLoading(false);
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [audienceType, cellIds, channels, departmentIds, groupIds, memberIds, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -750,14 +1137,14 @@ function CommunicationTab({ open, wallet, onSent }) {
 
     const t = setTimeout(async () => {
       try {
-        const res = await getMembers({ search: q, limit: 10, page: 1 });
+        const res = await getMembers({ search: q, fastSearch: 1, limit: 10, page: 1 });
         const payload = res?.data?.data ?? res?.data;
         const rows = Array.isArray(payload?.members) ? payload.members : [];
         setMemberResults(rows);
       } catch {
         setMemberResults([]);
       }
-    }, 250);
+    }, 120);
 
     return () => clearTimeout(t);
   }, [audienceType, memberSearch, open]);
@@ -769,15 +1156,34 @@ function CommunicationTab({ open, wallet, onSent }) {
     return [...list, sid];
   };
 
-  const addMember = (m) => {
+  const memberLabel = (m) => {
+    const first = String(m?.firstName || "").trim();
+    const last = String(m?.lastName || "").trim();
+    const full = `${first} ${last}`.trim();
+    return full || String(m?.fullName || "").trim() || "—";
+  };
+
+  const toggleMember = (m) => {
     const id = String(m?._id || "");
     if (!id) return;
-    setMemberIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    const label = memberLabel(m);
+
+    setMemberIds((prev) => toggleId(prev, id));
+    setMemberNameById((prev) => ({
+      ...(prev || {}),
+      [id]: label
+    }));
   };
 
   const removeMember = (id) => {
     const sid = String(id || "");
+    if (!sid) return;
     setMemberIds((prev) => prev.filter((x) => x !== sid));
+    setMemberNameById((prev) => {
+      const next = { ...(prev || {}) };
+      delete next[sid];
+      return next;
+    });
   };
 
   const resetForm = () => {
@@ -790,10 +1196,17 @@ function CommunicationTab({ open, wallet, onSent }) {
     setMemberSearch("");
     setMemberResults([]);
     setMemberIds([]);
+    setMemberNameById({});
     setChannels({ sms: true, whatsapp: false });
     setSendMode("now");
     setScheduleDate("");
     setScheduleTime("");
+
+    setEstimateLoading(false);
+    setEstimateError("");
+    setEstimatedRecipients(0);
+    setEstimatedCostPerRecipient(0);
+    setEstimatedTotalCostServer(0);
   };
 
   const onSend = async ({ draft = false } = {}) => {
@@ -903,6 +1316,22 @@ function CommunicationTab({ open, wallet, onSent }) {
               <div>
                 <div className="text-xs font-semibold text-gray-600">Groups</div>
                 <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
+                  {groups.length ? (
+                    <label className="flex items-center gap-2 py-1 text-sm font-semibold text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={groups.every((g) => groupIds.includes(String(g?._id || "")))}
+                        onChange={() =>
+                          setGroupIds((prev) => {
+                            const allIds = groups.map((g) => String(g?._id || "")).filter(Boolean);
+                            const allSelected = allIds.length > 0 && allIds.every((id) => prev.includes(id));
+                            return allSelected ? [] : allIds;
+                          })
+                        }
+                      />
+                      Select all groups
+                    </label>
+                  ) : null}
                   {!groups.length ? <div className="text-sm text-gray-600">No groups found.</div> : null}
                   {groups.map((g) => (
                     <label key={g?._id} className="flex items-center gap-2 py-1 text-sm text-gray-700">
@@ -920,6 +1349,22 @@ function CommunicationTab({ open, wallet, onSent }) {
               <div>
                 <div className="text-xs font-semibold text-gray-600">Cells</div>
                 <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
+                  {cells.length ? (
+                    <label className="flex items-center gap-2 py-1 text-sm font-semibold text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={cells.every((c) => cellIds.includes(String(c?._id || "")))}
+                        onChange={() =>
+                          setCellIds((prev) => {
+                            const allIds = cells.map((c) => String(c?._id || "")).filter(Boolean);
+                            const allSelected = allIds.length > 0 && allIds.every((id) => prev.includes(id));
+                            return allSelected ? [] : allIds;
+                          })
+                        }
+                      />
+                      Select all cells
+                    </label>
+                  ) : null}
                   {!cells.length ? <div className="text-sm text-gray-600">No cells found.</div> : null}
                   {cells.map((c) => (
                     <label key={c?._id} className="flex items-center gap-2 py-1 text-sm text-gray-700">
@@ -937,6 +1382,22 @@ function CommunicationTab({ open, wallet, onSent }) {
               <div>
                 <div className="text-xs font-semibold text-gray-600">Departments</div>
                 <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
+                  {departments.length ? (
+                    <label className="flex items-center gap-2 py-1 text-sm font-semibold text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={departments.every((d) => departmentIds.includes(String(d?._id || "")))}
+                        onChange={() =>
+                          setDepartmentIds((prev) => {
+                            const allIds = departments.map((d) => String(d?._id || "")).filter(Boolean);
+                            const allSelected = allIds.length > 0 && allIds.every((id) => prev.includes(id));
+                            return allSelected ? [] : allIds;
+                          })
+                        }
+                      />
+                      Select all departments
+                    </label>
+                  ) : null}
                   {!departments.length ? <div className="text-sm text-gray-600">No departments found.</div> : null}
                   {departments.map((d) => (
                     <label key={d?._id} className="flex items-center gap-2 py-1 text-sm text-gray-700">
@@ -964,16 +1425,24 @@ function CommunicationTab({ open, wallet, onSent }) {
 
               {memberResults.length ? (
                 <div className="mt-2 rounded-lg border border-gray-200 bg-white">
-                  {memberResults.map((m) => (
-                    <button
-                      key={m?._id}
-                      type="button"
-                      onClick={() => addMember(m)}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      {`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}
-                    </button>
-                  ))}
+                  {memberResults.map((m) => {
+                    const id = String(m?._id || "");
+                    const checked = id ? memberIds.includes(id) : false;
+                    return (
+                      <label
+                        key={id}
+                        className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="min-w-0 truncate">{memberLabel(m)}</span>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleMember(m)}
+                          className="shrink-0"
+                        />
+                      </label>
+                    );
+                  })}
                 </div>
               ) : null}
 
@@ -988,7 +1457,7 @@ function CommunicationTab({ open, wallet, onSent }) {
                         onClick={() => removeMember(id)}
                         className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                       >
-                        {id.slice(-6)}
+                        {memberNameById?.[id] || id.slice(-6)}
                       </button>
                     ))}
                   </div>
@@ -1023,14 +1492,17 @@ function CommunicationTab({ open, wallet, onSent }) {
 
         <div className="mt-6 border-t border-gray-100 pt-5">
           <div className="text-sm font-semibold text-gray-900">Message Cost Preview</div>
+          {estimateError ? <div className="mt-2 text-xs font-semibold text-red-700">{estimateError}</div> : null}
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
               <div className="text-xs font-semibold text-gray-500">Cost per Recipient</div>
-              <div className="mt-1 text-sm font-semibold text-gray-900">{costPerRecipient} credits</div>
+              <div className="mt-1 text-sm font-semibold text-gray-900">
+                {(audienceType === "members" ? costPerRecipient : estimatedCostPerRecipient || costPerRecipient)} credits
+              </div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
               <div className="text-xs font-semibold text-gray-500">Estimated Total Cost</div>
-              <div className="mt-1 text-sm font-semibold text-gray-900">{estimatedTotalCost} credits</div>
+              <div className="mt-1 text-sm font-semibold text-gray-900">{estimateLoading ? "Calculating..." : `${estimatedTotalCost} credits`}</div>
               <div className="mt-1 text-xs text-gray-500">Wallet: {walletCredits} credits</div>
             </div>
           </div>
@@ -1042,7 +1514,7 @@ function CommunicationTab({ open, wallet, onSent }) {
           ) : null}
 
           {audienceType !== "members" ? (
-            <div className="mt-2 text-xs text-gray-500">Recipient counts for All Members and Groups are computed accurately on the server.</div>
+            <div className="mt-2 text-xs text-gray-500">Recipient counts and costs for All Members and Groups/Cells/Departments are computed accurately on the server.</div>
           ) : null}
         </div>
 
@@ -1111,6 +1583,7 @@ function CommunicationTab({ open, wallet, onSent }) {
 
 function AnnouncementPage() {
   const { can } = useContext(PermissionContext) || {};
+  const { user } = useAuth();
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
 
   const [tab, setTab] = useState("communication");
@@ -1181,8 +1654,8 @@ function AnnouncementPage() {
 
   const onFund = async (amount) => {
     const n = Number(amount || 0);
-    if (!Number.isFinite(n) || n <= 0) {
-      setFundError("Please enter a valid amount");
+    if (!Number.isFinite(n) || n < 10) {
+      setFundError("Minimum deposit is 10 GHS");
       return;
     }
 
@@ -1191,18 +1664,89 @@ function AnnouncementPage() {
 
     try {
       const res = await fundWalletInitiate({ amount: n });
-      const url = res?.data?.authorizationUrl || "";
-      if (!url) {
+      const accessCode = res?.data?.accessCode || "";
+      const initRef = res?.data?.reference || "";
+      if (!accessCode) {
         setFundError("Unable to start Paystack payment");
         return;
       }
 
-      window.location.href = url;
+      const key =
+        import.meta.env.TEST_PUBLC_KEY ||
+        import.meta.env.TEST_PUBLIC_KEY ||
+        import.meta.env.VITE_TEST_PUBLC_KEY ||
+        import.meta.env.VITE_TEST_PUBLIC_KEY ||
+        import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ||
+        "";
+      if (!key) {
+        setFundError(
+          "Paystack public key is not configured. Set VITE_TEST_PUBLC_KEY=pk_test_... (or TEST_PUBLC_KEY=pk_test_...) in frontend .env, then restart the frontend."
+        );
+        return;
+      }
+
+      const payerEmail = String(user?.email || "").trim();
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmail);
+      if (!emailOk) {
+        setFundError("Your account email is missing or invalid. Please update your profile email and try again.");
+        return;
+      }
+
+      const paystack = window?.PaystackPop;
+      if (!paystack || typeof paystack.setup !== "function") {
+        setFundError("Paystack inline script is not loaded");
+        return;
+      }
+
+      const reference = await new Promise((resolve, reject) => {
+        let settled = false;
+        const handler = paystack.setup({
+          key,
+          email: payerEmail,
+          amount: Math.round(n * 100),
+          currency: "GHS",
+          access_code: accessCode,
+          ref: initRef,
+          callback: (response) => {
+            if (settled) return;
+            settled = true;
+            resolve(response?.reference || response?.trxref || initRef);
+          },
+          onClose: () => {
+            if (settled) return;
+            settled = true;
+            reject(new Error("Payment was cancelled"));
+          }
+        });
+        handler.openIframe();
+      });
+
+      const verifyRes = await fundWalletVerify({ reference });
+      const status = String(verifyRes?.data?.status || "").toLowerCase();
+      const nextWallet = verifyRes?.data?.wallet || null;
+
+      if (nextWallet) {
+        setWallet(nextWallet);
+        setFundOpen(false);
+        await loadWallet();
+        return;
+      }
+
+      if (status === "failed") {
+        setFundError("Payment failed");
+        return;
+      }
+
+      setFundError("Payment pending. Please refresh your wallet balance shortly.");
     } catch (e) {
       setFundError(e?.response?.data?.message || e?.message || "Failed to initiate payment");
     } finally {
       setFundLoading(false);
     }
+  };
+
+  const onMessageSent = async () => {
+    await loadWallet();
   };
 
   const openDelivery = (row) => {
@@ -1248,7 +1792,7 @@ function AnnouncementPage() {
         </div>
       </div>
 
-      <CommunicationTab open={tab === "communication"} wallet={wallet} onSent={() => {}} />
+      <CommunicationTab open={tab === "communication"} wallet={wallet} onSent={onMessageSent} />
 
       <MessagesTable
         title="Sent Messages"

@@ -5,6 +5,10 @@ import Visitor from "../models/visitorsModel.js"
 import GroupMember from "../models/ministryModel/groupMembersModel.js"
 import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
 
+function escapeRegex(input) {
+  return String(input || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function normalizeHeader(h) {
   return String(h || "")
     .trim()
@@ -501,6 +505,7 @@ const getAllMembers = async (req, res) => {
       page = 1,
       limit = 10,
       search = "",
+      fastSearch = "0",
       dateFrom,
       dateTo,
       status, // active | inactive
@@ -523,7 +528,10 @@ const getAllMembers = async (req, res) => {
     const query = { ...baseQuery };
 
     if (search) {
-      const regex = { $regex: search, $options: "i" };
+      const trimmed = String(search || "").trim();
+      const isFast = String(fastSearch || "0") === "1";
+      const pattern = isFast ? `^${escapeRegex(trimmed)}` : trimmed;
+      const regex = { $regex: pattern, $options: "i" };
       query.$or = [
         { firstName: regex },
         { lastName: regex },

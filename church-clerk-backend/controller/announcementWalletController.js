@@ -193,8 +193,8 @@ export const initiateWalletFunding = async (req, res) => {
     }
 
     const amount = Number(req.body?.amount || 0);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return res.status(400).json({ message: "amount must be greater than 0" });
+    if (!Number.isFinite(amount) || amount < 10) {
+      return res.status(400).json({ message: "Minimum deposit is 10 GHS" });
     }
 
     const email = String(req.user?.email || "").trim();
@@ -244,6 +244,7 @@ export const initiateWalletFunding = async (req, res) => {
 
     return res.status(200).json({
       authorizationUrl: init?.data?.authorization_url,
+      accessCode: init?.data?.access_code,
       reference
     });
   } catch (error) {

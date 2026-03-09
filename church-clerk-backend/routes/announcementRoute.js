@@ -10,8 +10,11 @@ import {
 } from "../controller/announcementWalletController.js";
 import {
   createMessage,
+  estimateMessageCost,
   getMessages,
-  getMessageDeliveryReport
+  getMessageDeliveryReport,
+  updateScheduledMessage,
+  deleteScheduledMessage
 } from "../controller/announcementMessagingController.js";
 import {
   getTemplates,
@@ -115,6 +118,15 @@ router.post(
   createMessage
 );
 
+router.post(
+  "/messages/estimate",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  estimateMessageCost
+);
+
 router.get(
   "/messages",
   protect,
@@ -131,6 +143,24 @@ router.get(
   readOnlyBranchGuard,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   getMessageDeliveryReport
+);
+
+router.put(
+  "/messages/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  updateScheduledMessage
+);
+
+router.delete(
+  "/messages/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  deleteScheduledMessage
 );
 
 router.get(

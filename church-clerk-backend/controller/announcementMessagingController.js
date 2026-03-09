@@ -23,6 +23,54 @@ const parseSchedule = ({ scheduledDate, scheduledTime }) => {
   return dt;
 };
 
+const toScheduleParts = (dateValue) => {
+  if (!dateValue) return { scheduledDate: "", scheduledTime: "" };
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return { scheduledDate: "", scheduledTime: "" };
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return { scheduledDate: `${yyyy}-${mm}-${dd}`, scheduledTime: `${hh}:${mi}` };
+};
+
+const countUniqueMembersForAudience = async ({ churchId, audience }) => {
+  const type = String(audience?.type || "all").trim();
+
+  if (type === "members") {
+    const memberIds = Array.isArray(audience?.memberIds) ? audience.memberIds.filter(Boolean) : [];
+    if (!memberIds.length) return 0;
+    return await Member.countDocuments({ church: churchId, _id: { $in: memberIds } });
+  }
+
+  if (type === "groups") {
+    const groupIds = Array.isArray(audience?.groupIds) ? audience.groupIds.filter(Boolean) : [];
+    const cellIds = Array.isArray(audience?.cellIds) ? audience.cellIds.filter(Boolean) : [];
+    const departmentIds = Array.isArray(audience?.departmentIds) ? audience.departmentIds.filter(Boolean) : [];
+
+    if (!groupIds.length && !cellIds.length && !departmentIds.length) return 0;
+
+    const match = {
+      church: churchId,
+      $or: [
+        groupIds.length ? { group: { $in: groupIds } } : null,
+        cellIds.length ? { cell: { $in: cellIds } } : null,
+        departmentIds.length ? { department: { $in: departmentIds } } : null
+      ].filter(Boolean)
+    };
+
+    const rows = await Member.aggregate([
+      { $match: match },
+      { $group: { _id: "$_id" } },
+      { $count: "count" }
+    ]);
+    return Number(rows?.[0]?.count || 0);
+  }
+
+  return await Member.countDocuments({ church: churchId });
+};
+
 const resolveAudienceMembers = async ({ churchId, audience }) => {
   const type = String(audience?.type || "all").trim();
 
@@ -230,6 +278,136 @@ export const getMessageDeliveryReport = async (req, res) => {
     };
 
     return res.status(200).json({ deliveries, stats });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const estimateMessageCost = async (req, res) => {
+  try {
+    if (!req.activeChurch?._id) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const audience = req.body?.audience || { type: "all" };
+    const channels = Array.isArray(req.body?.channels) ? req.body.channels.map((c) => String(c)) : [];
+
+    if (!channels.length) {
+      return res.status(400).json({ message: "Please select at least one channel" });
+    }
+
+    const recipientCount = await countUniqueMembersForAudience({ churchId: req.activeChurch._id, audience });
+    const costPerRecipientCredits = computeCostPerRecipientCredits(channels);
+    const totalCostCredits = recipientCount * costPerRecipientCredits;
+
+    return res.status(200).json({
+      recipientCount,
+      costPerRecipientCredits,
+      totalCostCredits
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateScheduledMessage = async (req, res) => {
+  try {
+    if (!req.activeChurch?._id) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const id = String(req.params?.id || "").trim();
+    if (!id) return res.status(400).json({ message: "Message id is required" });
+
+    const message = await AnnouncementMessage.findOne({ _id: id, church: req.activeChurch._id });
+    if (!message) return res.status(404).json({ message: "Message not found" });
+
+    if (String(message.status) !== "scheduled") {
+      return res.status(400).json({ message: "Only scheduled messages can be edited" });
+    }
+
+    const title = req.body?.title !== undefined ? String(req.body.title || "").trim() : undefined;
+    const content = req.body?.content !== undefined ? String(req.body.content || "").trim() : undefined;
+
+    if (title !== undefined && !title) {
+      return res.status(400).json({ message: "Title is required" });
+    }
+    if (content !== undefined && !content) {
+      return res.status(400).json({ message: "Message content is required" });
+    }
+
+    const scheduleProvided = req.body?.scheduledDate !== undefined || req.body?.scheduledTime !== undefined;
+    let scheduledAt = message.scheduledAt;
+
+    if (scheduleProvided) {
+      const current = toScheduleParts(message.scheduledAt);
+      const scheduledDate = req.body?.scheduledDate !== undefined ? req.body.scheduledDate : current.scheduledDate;
+      const scheduledTime = req.body?.scheduledTime !== undefined ? req.body.scheduledTime : current.scheduledTime;
+      scheduledAt = parseSchedule({ scheduledDate, scheduledTime });
+      if (!scheduledAt) {
+        return res.status(400).json({ message: "Scheduled date and time are required" });
+      }
+    }
+
+    if (title !== undefined) message.title = title;
+    if (content !== undefined) message.content = content;
+    message.scheduledAt = scheduledAt;
+
+    const updated = await message.save();
+    return res.status(200).json({ message: "Message updated", data: updated });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteScheduledMessage = async (req, res) => {
+  try {
+    if (!req.activeChurch?._id) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const id = String(req.params?.id || "").trim();
+    if (!id) return res.status(400).json({ message: "Message id is required" });
+
+    const message = await AnnouncementMessage.findOne({ _id: id, church: req.activeChurch._id });
+    if (!message) return res.status(404).json({ message: "Message not found" });
+
+    const status = String(message.status || "");
+    if (status === "sent") {
+      return res.status(400).json({ message: "Sent messages cannot be deleted" });
+    }
+
+    let wallet = null;
+    const totalCostCredits = Number(message.totalCostCredits || 0);
+
+    if (status === "scheduled" && totalCostCredits > 0) {
+      wallet = await getOrCreateWallet({ churchId: req.activeChurch._id });
+      wallet.balanceCredits = Number(wallet.balanceCredits || 0) + totalCostCredits;
+      await wallet.save();
+
+      await AnnouncementWalletTransaction.create({
+        church: req.activeChurch._id,
+        wallet: wallet._id,
+        type: "refund",
+        status: "success",
+        amountCredits: totalCostCredits,
+        balanceAfterCredits: wallet.balanceCredits,
+        description: "Scheduled message deleted (refund)",
+        createdBy: req.user?._id || null,
+        metadata: {
+          messageId: message._id.toString()
+        }
+      });
+    }
+
+    await AnnouncementMessageDelivery.deleteMany({
+      church: req.activeChurch._id,
+      message: message._id
+    });
+
+    await AnnouncementMessage.deleteOne({ _id: message._id, church: req.activeChurch._id });
+
+    return res.status(200).json({ message: "Message deleted", wallet });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
