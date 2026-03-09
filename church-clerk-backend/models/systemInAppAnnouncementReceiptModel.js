@@ -28,6 +28,22 @@ const systemInAppAnnouncementReceiptSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    modalAcknowledgedAt: {
+      type: Date,
+      default: null
+    },
+    modalDismissedAt: {
+      type: Date,
+      default: null
+    },
+    bannerAcknowledgedAt: {
+      type: Date,
+      default: null
+    },
+    bannerDismissedAt: {
+      type: Date,
+      default: null
+    },
     acknowledgedAt: {
       type: Date,
       default: null

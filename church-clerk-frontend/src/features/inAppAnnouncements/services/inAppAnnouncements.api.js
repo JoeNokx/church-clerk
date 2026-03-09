@@ -8,10 +8,10 @@ export const markInAppAnnouncementSeen = async (id) => {
   return await http.post(`/in-app-announcements/${id}/seen`);
 };
 
-export const acknowledgeInAppAnnouncement = async (id) => {
-  return await http.post(`/in-app-announcements/${id}/acknowledge`);
+export const acknowledgeInAppAnnouncement = async (id, { displayType = "modal" } = {}) => {
+  return await http.post(`/in-app-announcements/${id}/acknowledge`, { displayType });
 };
 
-export const dismissInAppAnnouncement = async (id) => {
-  return await http.post(`/in-app-announcements/${id}/dismiss`);
+export const dismissInAppAnnouncement = async (id, { displayType = "modal" } = {}) => {
+  return await http.post(`/in-app-announcements/${id}/dismiss`, { displayType });
 };

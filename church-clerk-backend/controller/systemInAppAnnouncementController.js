@@ -10,6 +10,7 @@ const DISPLAY_TYPES = new Set(["modal", "banner", "notification"]);
 const PRIORITIES = new Set(["critical", "informational"]);
 const TARGET_TYPES = new Set(["all", "churches", "roles"]);
 const STATUSES = new Set(["draft", "sent", "scheduled", "archived"]);
+const KINDS = new Set(["message", "template"]);
 
 const toObjectId = (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) return null;
@@ -95,6 +96,7 @@ export const listSystemInAppAnnouncements = async (req, res) => {
       page = 1,
       limit = 20,
       status = "",
+      kind = "",
       search = "",
       sort = "newest"
     } = req.query;
@@ -111,6 +113,14 @@ export const listSystemInAppAnnouncements = async (req, res) => {
         return res.status(400).json({ message: "Invalid status" });
       }
       query.status = statusFilter;
+    }
+
+    const kindFilter = String(kind || "").trim();
+    if (kindFilter) {
+      if (!KINDS.has(kindFilter)) {
+        return res.status(400).json({ message: "Invalid kind" });
+      }
+      query.kind = kindFilter;
     }
 
     const q = String(search || "").trim();
@@ -165,6 +175,7 @@ export const createSystemInAppAnnouncement = async (req, res) => {
   try {
     const title = String(req.body?.title || "").trim();
     const message = String(req.body?.message || "").trim();
+    const kind = String(req.body?.kind || "message").trim();
     const priority = String(req.body?.priority || "informational").trim();
     const displayTypes = Array.isArray(req.body?.displayTypes)
       ? req.body.displayTypes.map((v) => String(v).trim())
@@ -175,6 +186,10 @@ export const createSystemInAppAnnouncement = async (req, res) => {
 
     if (!title) return res.status(400).json({ message: "Title is required" });
     if (!message) return res.status(400).json({ message: "Message is required" });
+
+    if (!KINDS.has(kind)) {
+      return res.status(400).json({ message: "Invalid kind" });
+    }
 
     if (!PRIORITIES.has(priority)) {
       return res.status(400).json({ message: "Invalid priority" });
@@ -201,21 +216,24 @@ export const createSystemInAppAnnouncement = async (req, res) => {
     let scheduledAt = null;
     let sentAt = null;
 
-    if (sendMode === "now") {
-      status = "sent";
-      sentAt = new Date();
-    } else if (sendMode === "schedule") {
-      const dt = req.body?.scheduledAt ? new Date(req.body.scheduledAt) : null;
-      if (!dt || Number.isNaN(dt.getTime())) {
-        return res.status(400).json({ message: "scheduledAt is required" });
+    if (kind === "message") {
+      if (sendMode === "now") {
+        status = "sent";
+        sentAt = new Date();
+      } else if (sendMode === "schedule") {
+        const dt = req.body?.scheduledAt ? new Date(req.body.scheduledAt) : null;
+        if (!dt || Number.isNaN(dt.getTime())) {
+          return res.status(400).json({ message: "scheduledAt is required" });
+        }
+        status = "scheduled";
+        scheduledAt = dt;
       }
-      status = "scheduled";
-      scheduledAt = dt;
     }
 
     const created = await SystemInAppAnnouncement.create({
       title,
       message,
+      kind,
       priority,
       displayTypes,
       bannerDurationMinutes,
@@ -231,7 +249,7 @@ export const createSystemInAppAnnouncement = async (req, res) => {
       updatedBy: req.user?._id || null
     });
 
-    if (status === "sent" && created.displayTypes.includes("notification")) {
+    if (created.kind === "message" && status === "sent" && created.displayTypes.includes("notification")) {
       const userQuery = resolveTargetUserQuery({ target: created.target });
       if (userQuery) {
         const users = await User.find(userQuery).select("_id").lean();
@@ -267,6 +285,12 @@ export const updateSystemInAppAnnouncement = async (req, res) => {
       const m = String(req.body.message || "").trim();
       if (!m) return res.status(400).json({ message: "Message is required" });
       patch.message = m;
+    }
+
+    if (req.body?.kind !== undefined) {
+      const k = String(req.body.kind || "").trim();
+      if (!KINDS.has(k)) return res.status(400).json({ message: "Invalid kind" });
+      patch.kind = k;
     }
 
     if (req.body?.priority !== undefined) {
@@ -320,7 +344,7 @@ export const updateSystemInAppAnnouncement = async (req, res) => {
       patch.scheduledAt = dt;
     }
 
-    if (req.body?.sendMode !== undefined) {
+    if (req.body?.sendMode !== undefined && String(patch.kind || existing.kind || "message") === "message") {
       const sendMode = String(req.body.sendMode || "").trim();
       if (sendMode === "now") {
         patch.status = "sent";
@@ -346,7 +370,7 @@ export const updateSystemInAppAnnouncement = async (req, res) => {
     existing.set(patch);
     await existing.save();
 
-    if (existing.status === "sent" && existing.displayTypes.includes("notification")) {
+    if (existing.kind === "message" && existing.status === "sent" && existing.displayTypes.includes("notification")) {
       const userQuery = resolveTargetUserQuery({ target: existing.target });
       if (userQuery) {
         const users = await User.find(userQuery).select("_id").lean();
@@ -430,13 +454,19 @@ export const listActiveInAppAnnouncementsForUser = async (req, res) => {
       const receipt = receiptById.get(String(a._id)) || null;
       const priority = String(a?.priority || "informational");
 
-      const acknowledgedAt = receipt?.acknowledgedAt || null;
-      const dismissedAt = receipt?.dismissedAt || null;
-
-      const isAcknowledged = Boolean(acknowledgedAt);
-      const isDismissed = Boolean(dismissedAt);
-
-      const isActive = priority === "critical" ? !isAcknowledged : !isDismissed;
+      const activeDisplayTypes = (Array.isArray(a?.displayTypes) ? a.displayTypes : [])
+        .filter((dt) => {
+          if (dt === "modal") {
+            if (priority === "critical") return !receipt?.modalAcknowledgedAt;
+            return !receipt?.modalDismissedAt;
+          }
+          if (dt === "banner") {
+            if (priority === "critical") return !receipt?.bannerAcknowledgedAt;
+            return !receipt?.bannerDismissedAt;
+          }
+          if (dt === "notification") return true;
+          return false;
+        });
 
       return {
         ...a,
@@ -444,13 +474,15 @@ export const listActiveInAppAnnouncementsForUser = async (req, res) => {
           ? {
               firstSeenAt: receipt.firstSeenAt,
               lastSeenAt: receipt.lastSeenAt,
-              acknowledgedAt: receipt.acknowledgedAt,
-              dismissedAt: receipt.dismissedAt
+              modalAcknowledgedAt: receipt.modalAcknowledgedAt,
+              modalDismissedAt: receipt.modalDismissedAt,
+              bannerAcknowledgedAt: receipt.bannerAcknowledgedAt,
+              bannerDismissedAt: receipt.bannerDismissedAt
             }
           : null,
-        isActive
+        activeDisplayTypes
       };
-    }).filter((a) => a.isActive);
+    }).filter((a) => (Array.isArray(a?.activeDisplayTypes) ? a.activeDisplayTypes : []).some((dt) => dt === "modal" || dt === "banner"));
 
     return res.status(200).json({ message: "Active announcements fetched", data: payload });
   } catch (error) {
@@ -502,7 +534,7 @@ export const acknowledgeInAppAnnouncement = async (req, res) => {
     if (!announcementId) return res.status(400).json({ message: "Invalid id" });
 
     const announcement = await SystemInAppAnnouncement.findById(announcementId)
-      .select("_id status priority")
+      .select("_id status priority displayTypes")
       .lean();
 
     if (!announcement || announcement.status !== "sent") {
@@ -510,6 +542,22 @@ export const acknowledgeInAppAnnouncement = async (req, res) => {
     }
 
     const now = new Date();
+
+    const displayType = String(req.body?.displayType || "modal").trim();
+    if (!DISPLAY_TYPES.has(displayType)) {
+      return res.status(400).json({ message: "Invalid displayType" });
+    }
+
+    if (!Array.isArray(announcement?.displayTypes) || !announcement.displayTypes.includes(displayType)) {
+      return res.status(400).json({ message: "Announcement does not include this displayType" });
+    }
+
+    const set = {
+      lastSeenAt: now
+    };
+
+    if (displayType === "modal") set.modalAcknowledgedAt = now;
+    if (displayType === "banner") set.bannerAcknowledgedAt = now;
 
     const receipt = await SystemInAppAnnouncementReceipt.findOneAndUpdate(
       { announcement: announcementId, user: userId },
@@ -519,8 +567,7 @@ export const acknowledgeInAppAnnouncement = async (req, res) => {
           firstSeenAt: now
         },
         $set: {
-          lastSeenAt: now,
-          acknowledgedAt: now
+          ...set
         }
       },
       { new: true, upsert: true }
@@ -541,11 +588,20 @@ export const dismissInAppAnnouncement = async (req, res) => {
     if (!announcementId) return res.status(400).json({ message: "Invalid id" });
 
     const announcement = await SystemInAppAnnouncement.findById(announcementId)
-      .select("_id status priority")
+      .select("_id status priority displayTypes")
       .lean();
 
     if (!announcement || announcement.status !== "sent") {
       return res.status(404).json({ message: "Announcement not found" });
+    }
+
+    const displayType = String(req.body?.displayType || "modal").trim();
+    if (!DISPLAY_TYPES.has(displayType)) {
+      return res.status(400).json({ message: "Invalid displayType" });
+    }
+
+    if (!Array.isArray(announcement?.displayTypes) || !announcement.displayTypes.includes(displayType)) {
+      return res.status(400).json({ message: "Announcement does not include this displayType" });
     }
 
     if (String(announcement.priority) === "critical") {
@@ -553,6 +609,13 @@ export const dismissInAppAnnouncement = async (req, res) => {
     }
 
     const now = new Date();
+
+    const set = {
+      lastSeenAt: now
+    };
+
+    if (displayType === "modal") set.modalDismissedAt = now;
+    if (displayType === "banner") set.bannerDismissedAt = now;
 
     const receipt = await SystemInAppAnnouncementReceipt.findOneAndUpdate(
       { announcement: announcementId, user: userId },
@@ -562,8 +625,7 @@ export const dismissInAppAnnouncement = async (req, res) => {
           firstSeenAt: now
         },
         $set: {
-          lastSeenAt: now,
-          dismissedAt: now
+          ...set
         }
       },
       { new: true, upsert: true }

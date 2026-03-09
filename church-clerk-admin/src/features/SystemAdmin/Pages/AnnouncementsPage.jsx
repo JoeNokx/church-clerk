@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   getGlobalAnnouncementWalletKpis,
@@ -6,6 +6,7 @@ import {
   getSystemRoles,
   listSystemInAppAnnouncements,
   createSystemInAppAnnouncement,
+  updateSystemInAppAnnouncement,
   deleteSystemInAppAnnouncement,
   getSystemSettings,
   updateSystemSettings
@@ -61,7 +62,15 @@ function AnnouncementsPage() {
   const [composeChurchIds, setComposeChurchIds] = useState([]);
   const [composeRoles, setComposeRoles] = useState([]);
   const [composeSendMode, setComposeSendMode] = useState("now");
+  const [composeKind, setComposeKind] = useState("message");
   const [composeScheduledAt, setComposeScheduledAt] = useState("");
+
+  const [composeEditingId, setComposeEditingId] = useState(null);
+
+  const [churchPickerOpen, setChurchPickerOpen] = useState(false);
+  const [rolePickerOpen, setRolePickerOpen] = useState(false);
+  const churchPickerRef = useRef(null);
+  const rolePickerRef = useRef(null);
 
   const [composeSaving, setComposeSaving] = useState(false);
   const [composeError, setComposeError] = useState("");
@@ -129,11 +138,11 @@ function AnnouncementsPage() {
   }, []);
 
   const loadAnnouncements = useCallback(
-    async ({ status } = {}) => {
+    async ({ status, kind } = {}) => {
       setAnnLoading(true);
       setAnnError("");
       try {
-        const res = await listSystemInAppAnnouncements({ page: 1, limit: 30, status: status || "" });
+        const res = await listSystemInAppAnnouncements({ page: 1, limit: 30, status: status || "", kind: kind || "" });
         setAnnRows(Array.isArray(res?.data?.data) ? res.data.data : []);
         setAnnPagination(res?.data?.pagination || null);
       } catch (e) {
@@ -158,10 +167,30 @@ function AnnouncementsPage() {
 
   useEffect(() => {
     if (tab !== "communications") return;
-    if (commTab === "sent") void loadAnnouncements({ status: "sent" });
-    else if (commTab === "scheduled") void loadAnnouncements({ status: "scheduled" });
-    else if (commTab === "history") void loadAnnouncements({ status: "" });
+    if (commTab === "scheduled") void loadAnnouncements({ status: "scheduled", kind: "message" });
+    else if (commTab === "drafts") void loadAnnouncements({ status: "draft", kind: "message" });
+    else if (commTab === "templates") void loadAnnouncements({ status: "draft", kind: "template" });
+    else if (commTab === "history") void loadAnnouncements({ status: "sent", kind: "message" });
   }, [commTab, loadAnnouncements, tab]);
+
+  useEffect(() => {
+    const handler = (event) => {
+      const churchEl = churchPickerRef.current;
+      const roleEl = rolePickerRef.current;
+
+      if (churchPickerOpen && churchEl && !churchEl.contains(event.target)) {
+        setChurchPickerOpen(false);
+      }
+      if (rolePickerOpen && roleEl && !roleEl.contains(event.target)) {
+        setRolePickerOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [churchPickerOpen, rolePickerOpen]);
 
   const selectedDisplayTypes = useMemo(() => {
     const arr = [];
@@ -206,9 +235,14 @@ function AnnouncementsPage() {
     setComposeError("");
     setComposeSuccess("");
     try {
+      const isTemplate = composeSendMode === "template" || composeKind === "template";
+      const kind = isTemplate ? "template" : "message";
+      const sendMode = isTemplate ? "draft" : composeSendMode;
+
       const payload = {
         title: String(composeTitle || "").trim(),
         message: String(composeMessage || "").trim(),
+        kind,
         priority: composePriority,
         displayTypes: selectedDisplayTypes,
         bannerDurationMinutes: composeBannerDurationMinutes === "" ? 5 : Number(composeBannerDurationMinutes),
@@ -217,13 +251,25 @@ function AnnouncementsPage() {
           churchIds: composeTargetType === "churches" ? composeChurchIds : [],
           roles: composeTargetType === "roles" ? composeRoles : []
         },
-        sendMode: composeSendMode,
-        scheduledAt: composeSendMode === "schedule" ? composeScheduledAt : undefined
+        sendMode,
+        scheduledAt: sendMode === "schedule" ? composeScheduledAt : undefined
       };
 
-      await createSystemInAppAnnouncement(payload);
+      if (composeEditingId) {
+        await updateSystemInAppAnnouncement(composeEditingId, payload);
+      } else {
+        await createSystemInAppAnnouncement(payload);
+      }
       setComposeSuccess(
-        composeSendMode === "draft" ? "Draft saved" : composeSendMode === "schedule" ? "Announcement scheduled" : "Announcement sent"
+        isTemplate
+          ? "Template saved"
+          : sendMode === "draft"
+            ? "Draft saved"
+            : sendMode === "schedule"
+              ? "Announcement scheduled"
+              : composeEditingId
+                ? "Announcement updated"
+                : "Announcement sent"
       );
       setComposeTitle("");
       setComposeMessage("");
@@ -234,10 +280,15 @@ function AnnouncementsPage() {
       setComposeChurchIds([]);
       setComposeRoles([]);
       setComposeSendMode("now");
+      setComposeKind("message");
       setComposeScheduledAt("");
+      setComposeEditingId(null);
 
       if (commTab !== "compose") {
-        void loadAnnouncements({ status: commTab === "sent" ? "sent" : commTab === "scheduled" ? "scheduled" : "" });
+        if (commTab === "scheduled") void loadAnnouncements({ status: "scheduled", kind: "message" });
+        else if (commTab === "drafts") void loadAnnouncements({ status: "draft", kind: "message" });
+        else if (commTab === "templates") void loadAnnouncements({ status: "draft", kind: "template" });
+        else if (commTab === "history") void loadAnnouncements({ status: "sent", kind: "message" });
       }
     } catch (e) {
       setComposeError(e?.response?.data?.message || e?.message || "Failed to send announcement");
@@ -245,6 +296,76 @@ function AnnouncementsPage() {
       setComposeSaving(false);
     }
   };
+
+  const populateComposeFromRow = useCallback((row, { mode } = {}) => {
+    const r = row || {};
+    setComposeTitle(String(r?.title || ""));
+    setComposeMessage(String(r?.message || ""));
+    setComposePriority(String(r?.priority || "informational"));
+
+    const dt = Array.isArray(r?.displayTypes) ? r.displayTypes : [];
+    setComposeDisplayTypes({
+      modal: dt.includes("modal"),
+      banner: dt.includes("banner"),
+      notification: dt.includes("notification")
+    });
+
+    setComposeBannerDurationMinutes(r?.bannerDurationMinutes === null || r?.bannerDurationMinutes === undefined ? "5" : String(r.bannerDurationMinutes));
+    setComposeTargetType(String(r?.target?.type || "all"));
+    setComposeChurchIds(Array.isArray(r?.target?.churchIds) ? r.target.churchIds.map((x) => String(x)) : []);
+    setComposeRoles(Array.isArray(r?.target?.roles) ? r.target.roles.map((x) => String(x)) : []);
+
+    const kind = String(r?.kind || "message");
+    setComposeKind(kind);
+
+    if (mode === "edit") {
+      setComposeEditingId(r?._id || null);
+      if (kind === "template") {
+        setComposeSendMode("template");
+        setComposeScheduledAt("");
+      } else if (String(r?.status) === "scheduled") {
+        setComposeSendMode("schedule");
+        const dtLocal = r?.scheduledAt ? new Date(r.scheduledAt) : null;
+        if (dtLocal && !Number.isNaN(dtLocal.getTime())) {
+          const pad = (n) => String(n).padStart(2, "0");
+          const y = dtLocal.getFullYear();
+          const m = pad(dtLocal.getMonth() + 1);
+          const d = pad(dtLocal.getDate());
+          const hh = pad(dtLocal.getHours());
+          const mm = pad(dtLocal.getMinutes());
+          setComposeScheduledAt(`${y}-${m}-${d}T${hh}:${mm}`);
+        } else {
+          setComposeScheduledAt("");
+        }
+      } else {
+        setComposeSendMode(String(r?.status) === "draft" ? "draft" : "now");
+        setComposeScheduledAt("");
+      }
+    } else {
+      setComposeEditingId(null);
+      setComposeKind("message");
+      setComposeSendMode("now");
+      setComposeScheduledAt("");
+    }
+
+    setTab("communications");
+    setCommTab("compose");
+    setComposeError("");
+    setComposeSuccess("");
+  }, []);
+
+  const onUseDraft = useCallback(
+    async (row) => {
+      populateComposeFromRow(row, { mode: "use" });
+      if (!row?._id) return;
+      try {
+        await deleteSystemInAppAnnouncement(row._id);
+      } catch {
+        void 0;
+      }
+    },
+    [populateComposeFromRow]
+  );
 
   const onSave = async () => {
     setSaving(true);
@@ -403,13 +524,16 @@ function AnnouncementsPage() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <TabButton active={commTab === "compose"} onClick={() => setCommTab("compose")}>
-              Communications
+              Compose
             </TabButton>
-            <TabButton active={commTab === "sent"} onClick={() => setCommTab("sent")}>
-              Sent Messages
+            <TabButton active={commTab === "templates"} onClick={() => setCommTab("templates")}>
+              Templates
+            </TabButton>
+            <TabButton active={commTab === "drafts"} onClick={() => setCommTab("drafts")}>
+              Drafts
             </TabButton>
             <TabButton active={commTab === "scheduled"} onClick={() => setCommTab("scheduled")}>
-              Scheduled Messages
+              Scheduled
             </TabButton>
             <TabButton active={commTab === "history"} onClick={() => setCommTab("history")}>
               Message History
@@ -478,14 +602,23 @@ function AnnouncementsPage() {
                     <div className="text-xs font-semibold text-gray-600">Send</div>
                     <select
                       value={composeSendMode}
-                      onChange={(e) => setComposeSendMode(e.target.value)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setComposeSendMode(v);
+                        setComposeKind(v === "template" ? "template" : "message");
+                        if (v !== "schedule") setComposeScheduledAt("");
+                      }}
                       disabled={composeSaving}
                       className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                     >
                       <option value="now">Send now</option>
                       <option value="schedule">Schedule</option>
                       <option value="draft">Save as draft</option>
+                      <option value="template">Save as template</option>
                     </select>
+                    {composeEditingId ? (
+                      <div className="mt-1 text-xs text-gray-500">Editing: {String(composeEditingId).slice(-6)}</div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -505,60 +638,108 @@ function AnnouncementsPage() {
                 {composeTargetType === "churches" ? (
                   <div>
                     <div className="text-xs font-semibold text-gray-600">Select Churches</div>
-                    <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white">
-                      {churchesLoading ? (
-                        <div className="px-3 py-3 text-sm text-gray-600">Loading…</div>
-                      ) : churches.length ? (
-                        churches.map((c) => {
-                          const id = String(c?._id || "");
-                          const checked = id ? composeChurchIds.includes(id) : false;
-                          return (
-                            <label key={id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                              <span className="min-w-0 truncate">{c?.name || "—"}</span>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => setComposeChurchIds((prev) => toggleListId(prev, id))}
-                                disabled={composeSaving}
-                              />
-                            </label>
-                          );
-                        })
-                      ) : (
-                        <div className="px-3 py-3 text-sm text-gray-600">No churches</div>
-                      )}
+                    <div ref={churchPickerRef} className="relative mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setChurchPickerOpen((v) => !v)}
+                        disabled={composeSaving}
+                        className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                      >
+                        <span className="truncate">{composeChurchIds.length ? `${composeChurchIds.length} selected` : "Choose churches"}</span>
+                        <span className="text-gray-400">▾</span>
+                      </button>
+
+                      {churchPickerOpen ? (
+                        <div className="absolute z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+                          <div className="max-h-56 overflow-y-auto">
+                            {churchesLoading ? (
+                              <div className="px-3 py-3 text-sm text-gray-600">Loading…</div>
+                            ) : churches.length ? (
+                              churches.map((c) => {
+                                const id = String(c?._id || "");
+                                const checked = id ? composeChurchIds.includes(id) : false;
+                                return (
+                                  <label key={id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                    <span className="min-w-0 truncate">{c?.name || "—"}</span>
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => setComposeChurchIds((prev) => toggleListId(prev, id))}
+                                      disabled={composeSaving}
+                                    />
+                                  </label>
+                                );
+                              })
+                            ) : (
+                              <div className="px-3 py-3 text-sm text-gray-600">No churches</div>
+                            )}
+                          </div>
+                          <div className="border-t border-gray-100 px-3 py-2 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setChurchPickerOpen(false)}
+                              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="mt-1 text-xs text-gray-500">Selected: {composeChurchIds.length}</div>
                   </div>
                 ) : null}
 
                 {composeTargetType === "roles" ? (
                   <div>
                     <div className="text-xs font-semibold text-gray-600">Select Church Roles</div>
-                    <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white">
-                      {rolesLoading ? (
-                        <div className="px-3 py-3 text-sm text-gray-600">Loading…</div>
-                      ) : churchRoles.length ? (
-                        churchRoles.map((r) => {
-                          const role = String(r || "");
-                          const checked = role ? composeRoles.includes(role) : false;
-                          return (
-                            <label key={role} className="flex items-center justify-between gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                              <span className="min-w-0 truncate">{role}</span>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => setComposeRoles((prev) => toggleListId(prev, role))}
-                                disabled={composeSaving}
-                              />
-                            </label>
-                          );
-                        })
-                      ) : (
-                        <div className="px-3 py-3 text-sm text-gray-600">No roles</div>
-                      )}
+                    <div ref={rolePickerRef} className="relative mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setRolePickerOpen((v) => !v)}
+                        disabled={composeSaving}
+                        className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                      >
+                        <span className="truncate">{composeRoles.length ? `${composeRoles.length} selected` : "Choose roles"}</span>
+                        <span className="text-gray-400">▾</span>
+                      </button>
+
+                      {rolePickerOpen ? (
+                        <div className="absolute z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+                          <div className="max-h-56 overflow-y-auto">
+                            {rolesLoading ? (
+                              <div className="px-3 py-3 text-sm text-gray-600">Loading…</div>
+                            ) : churchRoles.length ? (
+                              churchRoles.map((r) => {
+                                const role = String(r || "");
+                                const checked = role ? composeRoles.includes(role) : false;
+                                return (
+                                  <label key={role} className="flex items-center justify-between gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                    <span className="min-w-0 truncate">{role}</span>
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => setComposeRoles((prev) => toggleListId(prev, role))}
+                                      disabled={composeSaving}
+                                    />
+                                  </label>
+                                );
+                              })
+                            ) : (
+                              <div className="px-3 py-3 text-sm text-gray-600">No roles</div>
+                            )}
+                          </div>
+                          <div className="border-t border-gray-100 px-3 py-2 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setRolePickerOpen(false)}
+                              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="mt-1 text-xs text-gray-500">Selected: {composeRoles.length}</div>
                   </div>
                 ) : null}
 
@@ -615,78 +796,38 @@ function AnnouncementsPage() {
                 {composeSuccess ? <div className="text-sm text-green-600">{composeSuccess}</div> : null}
 
                 <div className="flex items-center justify-end gap-2">
+                  {composeEditingId ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setComposeEditingId(null);
+                        setComposeTitle("");
+                        setComposeMessage("");
+                        setComposePriority("informational");
+                        setComposeDisplayTypes({ modal: false, banner: false, notification: true });
+                        setComposeBannerDurationMinutes("5");
+                        setComposeTargetType("all");
+                        setComposeChurchIds([]);
+                        setComposeRoles([]);
+                        setComposeSendMode("now");
+                        setComposeKind("message");
+                        setComposeScheduledAt("");
+                      }}
+                      disabled={composeSaving}
+                      className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                    >
+                      Cancel Edit
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={onComposeSubmit}
                     disabled={composeSaving}
                     className="inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60"
                   >
-                    {composeSaving ? "Saving…" : composeSendMode === "draft" ? "Save Draft" : composeSendMode === "schedule" ? "Schedule" : "Send"}
+                    {composeSaving ? "Saving…" : composeSendMode === "template" ? "Save Template" : composeSendMode === "draft" ? "Save Draft" : composeSendMode === "schedule" ? "Schedule" : composeEditingId ? "Update" : "Send"}
                   </button>
                 </div>
-              </div>
-            ) : commTab === "sent" ? (
-              <div className="space-y-3">
-                {annError ? <div className="text-sm text-red-600">{annError}</div> : null}
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="text-xs uppercase text-gray-400">
-                      <tr className="border-b">
-                        <th className="py-3 text-left font-semibold">Title</th>
-                        <th className="py-3 text-left font-semibold">Target</th>
-                        <th className="py-3 text-left font-semibold">Display Type</th>
-                        <th className="py-3 text-left font-semibold">Date Sent</th>
-                        <th className="py-3 text-left font-semibold">Status</th>
-                        <th className="py-3 text-left font-semibold">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {annLoading ? (
-                        <tr>
-                          <td colSpan={6} className="py-6 text-center text-gray-500">
-                            Loading...
-                          </td>
-                        </tr>
-                      ) : annRows.length ? (
-                        annRows.map((r) => (
-                          <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900">{r?.title || "—"}</td>
-                            <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
-                            <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
-                            <td className="py-3 text-gray-700">{fmtDateTime(r?.sentAt)}</td>
-                            <td className="py-3 text-gray-700">{r?.status || "—"}</td>
-                            <td className="py-3">
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  if (!r?._id) return;
-                                  try {
-                                    await deleteSystemInAppAnnouncement(r._id);
-                                    void loadAnnouncements({ status: "sent" });
-                                  } catch {
-                                    void 0;
-                                  }
-                                }}
-                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className="py-6 text-center text-gray-500">
-                            No sent announcements.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {annPagination?.total ? (
-                  <div className="text-xs text-gray-500">Total: {Number(annPagination.total).toLocaleString()}</div>
-                ) : null}
               </div>
             ) : commTab === "scheduled" ? (
               <div className="space-y-3">
@@ -719,13 +860,21 @@ function AnnouncementsPage() {
                             <td className="py-3 text-gray-700">{fmtDateTime(r?.scheduledAt)}</td>
                             <td className="py-3 text-gray-700">{r?.status || "—"}</td>
                             <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => populateComposeFromRow(r, { mode: "edit" })}
+                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                  Edit
+                                </button>
                               <button
                                 type="button"
                                 onClick={async () => {
                                   if (!r?._id) return;
                                   try {
                                     await deleteSystemInAppAnnouncement(r._id);
-                                    void loadAnnouncements({ status: "scheduled" });
+                                    void loadAnnouncements({ status: "scheduled", kind: "message" });
                                   } catch {
                                     void 0;
                                   }
@@ -734,6 +883,7 @@ function AnnouncementsPage() {
                               >
                                 Delete
                               </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -750,6 +900,158 @@ function AnnouncementsPage() {
                 {annPagination?.total ? (
                   <div className="text-xs text-gray-500">Total: {Number(annPagination.total).toLocaleString()}</div>
                 ) : null}
+              </div>
+            ) : commTab === "drafts" ? (
+              <div className="space-y-3">
+                {annError ? <div className="text-sm text-red-600">{annError}</div> : null}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="text-xs uppercase text-gray-400">
+                      <tr className="border-b">
+                        <th className="py-3 text-left font-semibold">Title</th>
+                        <th className="py-3 text-left font-semibold">Target</th>
+                        <th className="py-3 text-left font-semibold">Display Type</th>
+                        <th className="py-3 text-left font-semibold">Updated</th>
+                        <th className="py-3 text-left font-semibold">Status</th>
+                        <th className="py-3 text-left font-semibold">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {annLoading ? (
+                        <tr>
+                          <td colSpan={6} className="py-6 text-center text-gray-500">
+                            Loading...
+                          </td>
+                        </tr>
+                      ) : annRows.length ? (
+                        annRows.map((r) => (
+                          <tr key={r?._id} className="border-b last:border-b-0">
+                            <td className="py-3 text-gray-900">{r?.title || "—"}</td>
+                            <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
+                            <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
+                            <td className="py-3 text-gray-700">{fmtDateTime(r?.updatedAt)}</td>
+                            <td className="py-3 text-gray-700">{r?.status || "—"}</td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => void onUseDraft(r)}
+                                  className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800"
+                                >
+                                  Use
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => populateComposeFromRow(r, { mode: "edit" })}
+                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!r?._id) return;
+                                    try {
+                                      await deleteSystemInAppAnnouncement(r._id);
+                                      void loadAnnouncements({ status: "draft", kind: "message" });
+                                    } catch {
+                                      void 0;
+                                    }
+                                  }}
+                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="py-6 text-center text-gray-500">
+                            No drafts.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="text-xs text-gray-500">Drafts are deleted automatically after you click Use.</div>
+              </div>
+            ) : commTab === "templates" ? (
+              <div className="space-y-3">
+                {annError ? <div className="text-sm text-red-600">{annError}</div> : null}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="text-xs uppercase text-gray-400">
+                      <tr className="border-b">
+                        <th className="py-3 text-left font-semibold">Title</th>
+                        <th className="py-3 text-left font-semibold">Target</th>
+                        <th className="py-3 text-left font-semibold">Display Type</th>
+                        <th className="py-3 text-left font-semibold">Updated</th>
+                        <th className="py-3 text-left font-semibold">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {annLoading ? (
+                        <tr>
+                          <td colSpan={5} className="py-6 text-center text-gray-500">
+                            Loading...
+                          </td>
+                        </tr>
+                      ) : annRows.length ? (
+                        annRows.map((r) => (
+                          <tr key={r?._id} className="border-b last:border-b-0">
+                            <td className="py-3 text-gray-900">{r?.title || "—"}</td>
+                            <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
+                            <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
+                            <td className="py-3 text-gray-700">{fmtDateTime(r?.updatedAt)}</td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => populateComposeFromRow(r, { mode: "use" })}
+                                  className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800"
+                                >
+                                  Use
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => populateComposeFromRow(r, { mode: "edit" })}
+                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!r?._id) return;
+                                    try {
+                                      await deleteSystemInAppAnnouncement(r._id);
+                                      void loadAnnouncements({ status: "draft", kind: "template" });
+                                    } catch {
+                                      void 0;
+                                    }
+                                  }}
+                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="py-6 text-center text-gray-500">
+                            No templates.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -788,7 +1090,7 @@ function AnnouncementsPage() {
                                   if (!r?._id) return;
                                   try {
                                     await deleteSystemInAppAnnouncement(r._id);
-                                    void loadAnnouncements({ status: "" });
+                                    void loadAnnouncements({ status: "sent", kind: "message" });
                                   } catch {
                                     void 0;
                                   }

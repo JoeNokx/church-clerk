@@ -4,6 +4,7 @@ const TARGET_TYPES = ["all", "churches", "roles"];
 const DISPLAY_TYPES = ["modal", "banner", "notification"];
 const PRIORITIES = ["critical", "informational"];
 const STATUSES = ["draft", "sent", "scheduled", "archived"];
+const KINDS = ["message", "template"];
 
 const systemInAppAnnouncementSchema = new mongoose.Schema(
   {
@@ -16,6 +17,12 @@ const systemInAppAnnouncementSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true
+    },
+    kind: {
+      type: String,
+      enum: KINDS,
+      default: "message",
+      index: true
     },
     priority: {
       type: String,
@@ -90,5 +97,6 @@ const systemInAppAnnouncementSchema = new mongoose.Schema(
 );
 
 systemInAppAnnouncementSchema.index({ status: 1, scheduledAt: 1 });
+systemInAppAnnouncementSchema.index({ kind: 1, status: 1, createdAt: -1 });
 
 export default mongoose.model("SystemInAppAnnouncement", systemInAppAnnouncementSchema);

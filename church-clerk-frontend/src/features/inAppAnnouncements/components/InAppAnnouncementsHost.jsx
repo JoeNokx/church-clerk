@@ -25,6 +25,8 @@ function InAppAnnouncementsHost() {
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
 
+  const [hiddenDisplayTypesById, setHiddenDisplayTypesById] = useState(() => new Map());
+
   const seenIdsRef = useRef(new Set());
   const bannerTimerRef = useRef(null);
 
@@ -53,49 +55,69 @@ function InAppAnnouncementsHost() {
     void load();
   }, [load]);
 
-  const banner = useMemo(() => {
-    return pickTop(rows, (a) => Array.isArray(a?.displayTypes) && a.displayTypes.includes("banner"));
-  }, [rows]);
+  const isHidden = useCallback(
+    (id, displayType) => {
+      const key = String(id || "");
+      if (!key) return false;
+      const set = hiddenDisplayTypesById.get(key);
+      if (!set) return false;
+      return set.has(displayType);
+    },
+    [hiddenDisplayTypesById]
+  );
 
-  const modal = useMemo(() => {
-    return pickTop(rows, (a) => Array.isArray(a?.displayTypes) && a.displayTypes.includes("modal"));
-  }, [rows]);
-
-  const dismissLocal = useCallback((id) => {
-    const s = String(id || "");
-    if (!s) return;
-    setRows((prev) => prev.filter((x) => String(x?._id || "") !== s));
+  const hideLocal = useCallback((id, displayType) => {
+    const key = String(id || "");
+    if (!key) return;
+    setHiddenDisplayTypesById((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(key) || new Set();
+      const s = new Set(existing);
+      s.add(displayType);
+      next.set(key, s);
+      return next;
+    });
   }, []);
 
-  const onDismiss = useCallback(
-    async (id) => {
-      const s = String(id || "");
-      if (!s) return;
-      try {
-        await dismissInAppAnnouncement(s);
-      } catch {
-        void 0;
-      } finally {
-        dismissLocal(s);
-      }
+  const canShowDisplayType = useCallback(
+    (a, displayType) => {
+      const types = Array.isArray(a?.activeDisplayTypes) ? a.activeDisplayTypes : Array.isArray(a?.displayTypes) ? a.displayTypes : [];
+      return types.includes(displayType) && !isHidden(a?._id, displayType);
     },
-    [dismissLocal]
+    [isHidden]
   );
 
-  const onAcknowledge = useCallback(
-    async (id) => {
-      const s = String(id || "");
-      if (!s) return;
-      try {
-        await acknowledgeInAppAnnouncement(s);
-      } catch {
-        void 0;
-      } finally {
-        dismissLocal(s);
-      }
-    },
-    [dismissLocal]
-  );
+  const banner = useMemo(() => {
+    return pickTop(rows, (a) => canShowDisplayType(a, "banner"));
+  }, [canShowDisplayType, rows]);
+
+  const modal = useMemo(() => {
+    return pickTop(rows, (a) => canShowDisplayType(a, "modal"));
+  }, [canShowDisplayType, rows]);
+
+  const onDismiss = useCallback(async (id, displayType) => {
+    const s = String(id || "");
+    if (!s) return;
+    try {
+      await dismissInAppAnnouncement(s, { displayType });
+    } catch {
+      void 0;
+    } finally {
+      hideLocal(s, displayType);
+    }
+  }, [hideLocal]);
+
+  const onAcknowledge = useCallback(async (id, displayType) => {
+    const s = String(id || "");
+    if (!s) return;
+    try {
+      await acknowledgeInAppAnnouncement(s, { displayType });
+    } catch {
+      void 0;
+    } finally {
+      hideLocal(s, displayType);
+    }
+  }, [hideLocal]);
 
   useEffect(() => {
     if (bannerTimerRef.current) {
@@ -114,7 +136,7 @@ function InAppAnnouncementsHost() {
     if (ms <= 0) return;
 
     bannerTimerRef.current = setTimeout(() => {
-      void onDismiss(banner._id);
+      void onDismiss(banner._id, "banner");
     }, ms);
 
     return () => {
@@ -141,7 +163,7 @@ function InAppAnnouncementsHost() {
               {String(banner?.priority) === "critical" ? (
                 <button
                   type="button"
-                  onClick={() => onAcknowledge(banner._id)}
+                  onClick={() => onAcknowledge(banner._id, "banner")}
                   className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-900 px-3 text-sm font-semibold text-white"
                 >
                   Acknowledge
@@ -150,7 +172,7 @@ function InAppAnnouncementsHost() {
                 <>
                   <button
                     type="button"
-                    onClick={() => onDismiss(banner._id)}
+                    onClick={() => onDismiss(banner._id, "banner")}
                     className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                   >
                     Dismiss
@@ -174,7 +196,7 @@ function InAppAnnouncementsHost() {
               {String(modal?.priority) === "critical" ? null : (
                 <button
                   type="button"
-                  onClick={() => onDismiss(modal._id)}
+                  onClick={() => onDismiss(modal._id, "modal")}
                   className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
                   aria-label="Close"
                 >
@@ -192,7 +214,7 @@ function InAppAnnouncementsHost() {
                 {String(modal?.priority) === "critical" ? (
                   <button
                     type="button"
-                    onClick={() => onAcknowledge(modal._id)}
+                    onClick={() => onAcknowledge(modal._id, "modal")}
                     className="rounded-lg bg-gray-900 px-6 py-2 text-sm font-semibold text-white shadow-sm"
                   >
                     Acknowledge
@@ -201,14 +223,14 @@ function InAppAnnouncementsHost() {
                   <>
                     <button
                       type="button"
-                      onClick={() => onDismiss(modal._id)}
+                      onClick={() => onDismiss(modal._id, "modal")}
                       className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
                     >
                       Dismiss
                     </button>
                     <button
                       type="button"
-                      onClick={() => onDismiss(modal._id)}
+                      onClick={() => onDismiss(modal._id, "modal")}
                       className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
                     >
                       OK
