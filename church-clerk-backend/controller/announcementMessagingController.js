@@ -7,15 +7,15 @@ import mongoose from "mongoose";
 import GroupMember from "../models/ministryModel/groupMembersModel.js";
 import CellMember from "../models/ministryModel/cellMembersModel.js";
 import DepartmentMember from "../models/ministryModel/departmentMembersModel.js";
+import { getSystemSettingsSnapshot } from "./systemSettingsController.js";
 
-const CHANNEL_COSTS = {
-  sms: 5,
-  whatsapp: 20
-};
-
-const computeCostPerRecipientCredits = (channels) => {
+const computeCostPerRecipientCredits = ({ channels, smsCostCredits, whatsappCostCredits }) => {
   const arr = Array.isArray(channels) ? channels : [];
-  return arr.reduce((sum, c) => sum + (CHANNEL_COSTS[String(c)] || 0), 0);
+  const costs = {
+    sms: Number.isFinite(Number(smsCostCredits)) ? Number(smsCostCredits) : 5,
+    whatsapp: Number.isFinite(Number(whatsappCostCredits)) ? Number(whatsappCostCredits) : 20
+  };
+  return arr.reduce((sum, c) => sum + (costs[String(c)] || 0), 0);
 };
 
 const parseSchedule = ({ scheduledDate, scheduledTime }) => {
@@ -171,7 +171,12 @@ export const createMessage = async (req, res) => {
     }
 
     const audience = req.body?.audience || { type: "all" };
-    const costPerRecipientCredits = computeCostPerRecipientCredits(channels);
+    const systemSettings = await getSystemSettingsSnapshot();
+    const costPerRecipientCredits = computeCostPerRecipientCredits({
+      channels,
+      smsCostCredits: systemSettings?.smsCostCredits,
+      whatsappCostCredits: systemSettings?.whatsappCostCredits
+    });
 
     const members = status === "draft"
       ? []
@@ -328,7 +333,12 @@ export const estimateMessageCost = async (req, res) => {
     }
 
     const recipientCount = await countUniqueMembersForAudience({ churchId: req.activeChurch._id, audience });
-    const costPerRecipientCredits = computeCostPerRecipientCredits(channels);
+    const systemSettings = await getSystemSettingsSnapshot();
+    const costPerRecipientCredits = computeCostPerRecipientCredits({
+      channels,
+      smsCostCredits: systemSettings?.smsCostCredits,
+      whatsappCostCredits: systemSettings?.whatsappCostCredits
+    });
     const totalCostCredits = recipientCount * costPerRecipientCredits;
 
     return res.status(200).json({

@@ -5,6 +5,9 @@ import { CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
 import ActivityLog from "../models/activityLogModel.js";
 import ReferralHistory from "../models/referralModel/referralHistoryModel.js";
 import ReferralCode from "../models/referralModel/referralCodeModel.js";
+import AnnouncementWallet from "../models/announcementWalletModel.js";
+import AnnouncementWalletTransaction from "../models/announcementWalletTransactionModel.js";
+import AnnouncementMessageDelivery from "../models/announcementMessageDeliveryModel.js";
 
 
 // GET all churches in system
@@ -447,6 +450,66 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+const getGlobalAnnouncementWalletKpis = async (req, res) => {
+  try {
+    const [walletAgg, creditsAgg, totalTx, smsAgg] = await Promise.all([
+      AnnouncementWallet.aggregate([
+        { $group: { _id: null, totalWalletBalanceCredits: { $sum: "$balanceCredits" } } }
+      ]),
+      AnnouncementWalletTransaction.aggregate([
+        {
+          $match: {
+            status: "success"
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalCreditsIssued: {
+              $sum: {
+                $cond: [{ $eq: ["$type", "fund"] }, "$amountCredits", 0]
+              }
+            },
+            totalCreditsUsed: {
+              $sum: {
+                $cond: [{ $eq: ["$type", "deduct"] }, { $multiply: ["$amountCredits", -1] }, 0]
+              }
+            }
+          }
+        }
+      ]),
+      AnnouncementWalletTransaction.countDocuments({ status: "success" }),
+      AnnouncementMessageDelivery.aggregate([
+        {
+          $match: {
+            channel: "sms",
+            status: { $ne: "failed" }
+          }
+        },
+        { $group: { _id: null, totalSmsSent: { $sum: 1 } } }
+      ])
+    ]);
+
+    const totalWalletBalanceCredits = Number(walletAgg?.[0]?.totalWalletBalanceCredits || 0);
+    const totalCreditsIssued = Number(creditsAgg?.[0]?.totalCreditsIssued || 0);
+    const totalCreditsUsed = Number(creditsAgg?.[0]?.totalCreditsUsed || 0);
+    const totalWalletTransactions = Number(totalTx || 0);
+    const totalSmsSent = Number(smsAgg?.[0]?.totalSmsSent || 0);
+
+    return res.status(200).json({
+      message: "Global wallet KPIs fetched",
+      data: {
+        totalWalletBalanceCredits,
+        totalCreditsIssued,
+        totalCreditsUsed,
+        totalWalletTransactions,
+        totalSmsSent
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 export {
   getAllChurches,
@@ -459,5 +522,6 @@ export {
   getSystemAuditLogs,
   getSystemAuditLogById,
   getSystemReferralSummary,
-  getSystemReferralHistory
+  getSystemReferralHistory,
+  getGlobalAnnouncementWalletKpis
 };

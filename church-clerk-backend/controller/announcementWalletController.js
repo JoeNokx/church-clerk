@@ -2,11 +2,14 @@ import https from "https";
 import crypto from "crypto";
 import AnnouncementWallet from "../models/announcementWalletModel.js";
 import AnnouncementWalletTransaction from "../models/announcementWalletTransactionModel.js";
+import { getSystemSettingsSnapshot } from "./systemSettingsController.js";
 
-const ghsToCredits = (ghs) => {
+const ghsToCredits = ({ ghs, creditsPerGhs }) => {
   const n = Number(ghs || 0);
   if (!Number.isFinite(n)) return 0;
-  return Math.round(n * 100);
+  const rate = Number(creditsPerGhs || 100);
+  const safeRate = Number.isFinite(rate) && rate > 0 ? rate : 100;
+  return Math.round(n * safeRate);
 };
 
 const paystackRequest = ({ path, method, body }) =>
@@ -205,7 +208,8 @@ export const initiateWalletFunding = async (req, res) => {
 
     const wallet = await getOrCreateWallet({ churchId: req.activeChurch._id });
 
-    const amountCredits = ghsToCredits(amount);
+    const systemSettings = await getSystemSettingsSnapshot();
+    const amountCredits = ghsToCredits({ ghs: amount, creditsPerGhs: systemSettings?.creditsPerGhs });
 
     const tx = await AnnouncementWalletTransaction.create({
       church: req.activeChurch._id,

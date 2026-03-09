@@ -11,8 +11,16 @@ import {
   getSystemAuditLogs,
   getSystemAuditLogById,
   getSystemReferralSummary,
-  getSystemReferralHistory
+  getSystemReferralHistory,
+  getGlobalAnnouncementWalletKpis
 } from "../controller/systemAdminController.js";
+import {
+  listSystemInAppAnnouncements,
+  getSystemInAppAnnouncementById,
+  createSystemInAppAnnouncement,
+  updateSystemInAppAnnouncement,
+  deleteSystemInAppAnnouncement
+} from "../controller/systemInAppAnnouncementController.js";
 import { getSystemSettings, updateSystemSettings } from "../controller/systemSettingsController.js";
 import { protectAdmin } from "../middleware/authMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
@@ -33,6 +41,44 @@ router.get("/audit-logs/:id", protectAdmin, authorizeRoles("superadmin", "suppor
 
 router.get("/referrals/summary", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getSystemReferralSummary);
 router.get("/referrals/history", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getSystemReferralHistory);
+
+router.get(
+  "/announcements/wallet-kpis",
+  protectAdmin,
+  authorizeRoles("superadmin", "supportadmin"),
+  getGlobalAnnouncementWalletKpis
+);
+
+router.get(
+  "/announcements/in-app",
+  protectAdmin,
+  authorizeRoles("superadmin", "supportadmin"),
+  listSystemInAppAnnouncements
+);
+router.get(
+  "/announcements/in-app/:id",
+  protectAdmin,
+  authorizeRoles("superadmin", "supportadmin"),
+  getSystemInAppAnnouncementById
+);
+router.post(
+  "/announcements/in-app",
+  protectAdmin,
+  authorizeRoles("superadmin", "supportadmin"),
+  createSystemInAppAnnouncement
+);
+router.patch(
+  "/announcements/in-app/:id",
+  protectAdmin,
+  authorizeRoles("superadmin", "supportadmin"),
+  updateSystemInAppAnnouncement
+);
+router.delete(
+  "/announcements/in-app/:id",
+  protectAdmin,
+  authorizeRoles("superadmin", "supportadmin"),
+  deleteSystemInAppAnnouncement
+);
 
 router.get("/settings", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getSystemSettings);
 router.patch("/settings", protectAdmin, authorizeRoles("superadmin", "supportadmin"), updateSystemSettings);

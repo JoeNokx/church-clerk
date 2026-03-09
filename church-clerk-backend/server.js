@@ -15,6 +15,7 @@ import * as Routes from "./routes/index.js"; // imports the named exports from r
 import { activityLogMiddleware } from "./middleware/activityLogMiddleware.js";
 import { impersonationNotificationMiddleware } from "./middleware/impersonationNotificationMiddleware.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
+import { startSystemInAppAnnouncementWorker } from "./services/systemInAppAnnouncementWorker.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,6 +76,7 @@ app.use("/api/v1/admin/billing", Routes.adminBillingRoute);
 
 app.use("/api/v1/subscription", Routes.subscriptionRoute);
 app.use("/api/v1/notifications", Routes.notificationRoute);
+app.use("/api/v1/in-app-announcements", Routes.inAppAnnouncementRoute);
 app.use("/api/v1/lookups", Routes.lookupRoute);
 app.use("/api/v1/member", Routes.memberRoute);
 app.use("/api/v1/event", Routes.eventRoute);
@@ -120,3 +122,4 @@ const server = app.listen(PORT, () => {
 server.setTimeout(5 * 60 * 1000);
 
 startNotificationWorker({ intervalMs: 60_000 });
+startSystemInAppAnnouncementWorker({ intervalMs: 60_000 });

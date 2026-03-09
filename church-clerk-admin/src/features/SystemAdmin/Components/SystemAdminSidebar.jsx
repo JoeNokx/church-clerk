@@ -36,6 +36,9 @@ function SystemAdminSidebar() {
           <NavLink to="/admin/billing/plans" className={itemClass}>
             Billing
           </NavLink>
+          <NavLink to="/admin/announcements" className={itemClass}>
+            Announcements
+          </NavLink>
           <NavLink to="/admin/referrals" className={itemClass}>
             Referrals System
           </NavLink>

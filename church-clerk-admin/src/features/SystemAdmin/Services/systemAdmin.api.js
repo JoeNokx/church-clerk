@@ -39,3 +39,27 @@ export const getSystemSettings = async () => {
 export const updateSystemSettings = async (payload) => {
   return await http.patch("/system-admin/settings", payload);
 };
+
+export const getGlobalAnnouncementWalletKpis = async () => {
+  return await http.get("/system-admin/announcements/wallet-kpis");
+};
+
+export const listSystemInAppAnnouncements = async (params) => {
+  return await http.get("/system-admin/announcements/in-app", { params });
+};
+
+export const getSystemInAppAnnouncement = async (id) => {
+  return await http.get(`/system-admin/announcements/in-app/${id}`);
+};
+
+export const createSystemInAppAnnouncement = async (payload) => {
+  return await http.post("/system-admin/announcements/in-app", payload);
+};
+
+export const updateSystemInAppAnnouncement = async (id, payload) => {
+  return await http.patch(`/system-admin/announcements/in-app/${id}`, payload);
+};
+
+export const deleteSystemInAppAnnouncement = async (id) => {
+  return await http.delete(`/system-admin/announcements/in-app/${id}`);
+};

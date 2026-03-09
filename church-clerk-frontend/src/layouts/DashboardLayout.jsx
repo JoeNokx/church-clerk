@@ -7,6 +7,7 @@ import { useAuth } from "../features/auth/useAuth.js";
 import ChurchContext from "../features/church/church.store.js";
 import SubscriptionStatusBanner from "../shared/components/SubscriptionStatusBanner.jsx";
 import { AnimatePresence, motion } from "framer-motion";
+import InAppAnnouncementsHost from "../features/inAppAnnouncements/components/InAppAnnouncementsHost.jsx";
 
 function DashboardLayout() {
   const { user } = useAuth();
@@ -50,6 +51,7 @@ function DashboardLayout() {
 
             <main className="flex-1 min-h-0 p-4 md:p-8 overflow-y-auto">
                 <SubscriptionStatusBanner />
+                <InAppAnnouncementsHost />
                 {isHqMonitoringBranch ? (
                   <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
                     <span className="font-semibold">Hello {user?.fullName || ""}</span>, you&apos;re viewing{" "}

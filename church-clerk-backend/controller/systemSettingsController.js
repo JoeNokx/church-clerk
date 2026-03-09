@@ -18,7 +18,10 @@ export const getSystemSettings = async (req, res) => {
     return res.json({
       settings: {
         trialDays: settings.trialDays,
-        gracePeriodDays: settings.gracePeriodDays
+        gracePeriodDays: settings.gracePeriodDays,
+        creditsPerGhs: settings.creditsPerGhs,
+        smsCostCredits: settings.smsCostCredits,
+        whatsappCostCredits: settings.whatsappCostCredits
       }
     });
   } catch (error) {
@@ -28,7 +31,7 @@ export const getSystemSettings = async (req, res) => {
 
 export const updateSystemSettings = async (req, res) => {
   try {
-    const { trialDays, gracePeriodDays } = req.body || {};
+    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, whatsappCostCredits } = req.body || {};
 
     const update = {};
 
@@ -48,6 +51,30 @@ export const updateSystemSettings = async (req, res) => {
       update.gracePeriodDays = n;
     }
 
+    if (creditsPerGhs !== undefined) {
+      const n = Number(creditsPerGhs);
+      if (!Number.isFinite(n) || n < 1 || !Number.isInteger(n)) {
+        return res.status(400).json({ message: "creditsPerGhs must be a whole number >= 1" });
+      }
+      update.creditsPerGhs = n;
+    }
+
+    if (smsCostCredits !== undefined) {
+      const n = Number(smsCostCredits);
+      if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
+        return res.status(400).json({ message: "smsCostCredits must be a whole number >= 0" });
+      }
+      update.smsCostCredits = n;
+    }
+
+    if (whatsappCostCredits !== undefined) {
+      const n = Number(whatsappCostCredits);
+      if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
+        return res.status(400).json({ message: "whatsappCostCredits must be a whole number >= 0" });
+      }
+      update.whatsappCostCredits = n;
+    }
+
     const settings = await getSingletonSettings();
 
     if (Object.keys(update).length === 0) {
@@ -55,7 +82,10 @@ export const updateSystemSettings = async (req, res) => {
         message: "No changes",
         settings: {
           trialDays: settings.trialDays,
-          gracePeriodDays: settings.gracePeriodDays
+          gracePeriodDays: settings.gracePeriodDays,
+          creditsPerGhs: settings.creditsPerGhs,
+          smsCostCredits: settings.smsCostCredits,
+          whatsappCostCredits: settings.whatsappCostCredits
         }
       });
     }
@@ -111,7 +141,10 @@ export const updateSystemSettings = async (req, res) => {
       message: "System settings updated",
       settings: {
         trialDays: settings.trialDays,
-        gracePeriodDays: settings.gracePeriodDays
+        gracePeriodDays: settings.gracePeriodDays,
+        creditsPerGhs: settings.creditsPerGhs,
+        smsCostCredits: settings.smsCostCredits,
+        whatsappCostCredits: settings.whatsappCostCredits
       }
     });
   } catch (error) {
@@ -123,6 +156,9 @@ export const getSystemSettingsSnapshot = async () => {
   const settings = await getSingletonSettings();
   return {
     trialDays: Number(settings.trialDays || 14),
-    gracePeriodDays: Number(settings.gracePeriodDays || 7)
+    gracePeriodDays: Number(settings.gracePeriodDays || 7),
+    creditsPerGhs: Number(settings.creditsPerGhs || 100),
+    smsCostCredits: Number(settings.smsCostCredits || 5),
+    whatsappCostCredits: Number(settings.whatsappCostCredits || 20)
   };
 };

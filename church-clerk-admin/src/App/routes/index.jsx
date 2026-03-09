@@ -17,6 +17,7 @@ import BillingWebhookLogsPage from "../../features/SystemAdmin/Pages/BillingWebh
 import ReferralsPage from "../../features/SystemAdmin/Pages/ReferralsPage.jsx";
 import AuditLogPage from "../../features/SystemAdmin/Pages/AuditLogPage.jsx";
 import SystemSettingsPage from "../../features/SystemAdmin/Pages/SystemSettingsPage.jsx";
+import AnnouncementsPage from "../../features/SystemAdmin/Pages/AnnouncementsPage.jsx";
 
 function AppRoutes() {
   return (
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route path="subscriptions" element={<Navigate to="../billing/subscriptions" replace />} />
         <Route path="billing-history" element={<Navigate to="../billing/payments" replace />} />
         <Route path="referrals" element={<ReferralsPage />} />
+        <Route path="announcements" element={<AnnouncementsPage />} />
         <Route path="audit" element={<AuditLogPage />} />
         <Route path="settings" element={<SystemSettingsPage />} />
 

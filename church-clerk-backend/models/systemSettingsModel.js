@@ -15,6 +15,21 @@ const systemSettingsSchema = new mongoose.Schema(
     gracePeriodDays: {
       type: Number,
       default: 7
+    },
+    creditsPerGhs: {
+      type: Number,
+      default: 100,
+      min: 1
+    },
+    smsCostCredits: {
+      type: Number,
+      default: 5,
+      min: 0
+    },
+    whatsappCostCredits: {
+      type: Number,
+      default: 20,
+      min: 0
     }
   },
   { timestamps: true }

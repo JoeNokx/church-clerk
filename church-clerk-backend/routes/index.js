@@ -54,6 +54,8 @@ import reportsAnalyticsRoute from "./reportsAnalyticsRoute.js";
 import notificationRoute from "./notificationRoute.js";
 import lookupRoute from "./lookupRoute.js";
 
+import inAppAnnouncementRoute from "./inAppAnnouncementRoute.js";
+
 // export all routes
 export {
   dashboardRoute,
@@ -86,5 +88,6 @@ export {
   referralSystemRoute,
   reportsAnalyticsRoute,
   notificationRoute,
-  lookupRoute
+  lookupRoute,
+  inAppAnnouncementRoute
 };
