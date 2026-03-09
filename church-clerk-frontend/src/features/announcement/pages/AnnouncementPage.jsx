@@ -28,6 +28,43 @@ function formatMoneyGhs(amount) {
   return safe.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function TemplatesAndDraftsTab({ open, onUseTemplate, onUseDraft, onOpenDeliveryReport, onWalletUpdated }) {
+  const [subTab, setSubTab] = useState("templates");
+
+  useEffect(() => {
+    if (!open) return;
+    setSubTab("templates");
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div className="mt-5">
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-1 flex-wrap">
+          <TabButton active={subTab === "templates"} onClick={() => setSubTab("templates")}>Templates</TabButton>
+          <TabButton active={subTab === "drafts"} onClick={() => setSubTab("drafts")}>Drafts</TabButton>
+        </div>
+      </div>
+
+      {subTab === "templates" ? (
+        <TemplatesTab open={open} onUseTemplate={onUseTemplate} />
+      ) : (
+        <MessagesTable
+          title="Draft Messages"
+          open={open}
+          query={{ status: "draft" }}
+          onOpenDeliveryReport={onOpenDeliveryReport}
+          onWalletUpdated={onWalletUpdated}
+          showUse
+          onUse={onUseDraft}
+          menuStatuses={["draft"]}
+        />
+      )}
+    </div>
+  );
+}
+
 function formatInt(value) {
   const n = Number(value || 0);
   if (!Number.isFinite(n)) return "0";
@@ -61,7 +98,7 @@ function TabButton({ active, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-md px-4 py-2 text-sm font-semibold ${active ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+      className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-semibold ${active ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
     >
       {children}
     </button>
@@ -254,7 +291,7 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload }) {
   );
 }
 
-function TemplatesTab({ open }) {
+function TemplatesTab({ open, onUseTemplate }) {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
   const canWrite = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
@@ -345,7 +382,6 @@ function TemplatesTab({ open }) {
     <div className="mt-5">
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <div className="text-sm font-semibold text-gray-900">Templates</div>
-        <div className="mt-1 text-xs text-gray-500">Save and reuse messages. Variables like {"{{first_name}}"} are allowed.</div>
 
         {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
@@ -438,6 +474,13 @@ function TemplatesTab({ open }) {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
+                          onClick={() => onUseTemplate?.(t)}
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
+                        >
+                          Use
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => onEdit(t)}
                           className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                         >
@@ -463,7 +506,7 @@ function TemplatesTab({ open }) {
   );
 }
 
-function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdated }) {
+function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdated, showUse = false, onUse, menuStatuses = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -477,7 +520,11 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
   const [editOpen, setEditOpen] = useState(false);
   const [editRow, setEditRow] = useState(null);
 
-  const isScheduledView = String(query?.status || "") === "scheduled";
+  const allowedMenuStatuses = Array.isArray(menuStatuses)
+    ? menuStatuses
+    : String(query?.status || "") === "scheduled"
+      ? ["scheduled"]
+      : [];
 
   const closeEdit = () => {
     if (actionLoadingId) return;
@@ -539,7 +586,12 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
   const onDeleteRow = async (row) => {
     const id = String(row?._id || "");
     if (!id) return;
-    const ok = window.confirm("Delete this scheduled message? This will refund its credits back to the wallet.");
+    const status = String(row?.status || "");
+    const ok = window.confirm(
+      status === "scheduled"
+        ? "Delete this scheduled message? This will refund its credits back to the wallet."
+        : "Delete this draft message?"
+    );
     if (!ok) return;
 
     setMenuId(null);
@@ -608,6 +660,15 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                   <td className="py-2 pr-4 text-gray-600">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
                   <td className="py-2">
                     <div className="flex items-center justify-end gap-2">
+                      {showUse ? (
+                        <button
+                          type="button"
+                          onClick={() => onUse?.(m)}
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
+                        >
+                          Use
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => onOpenDeliveryReport(m)}
@@ -616,7 +677,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                         View Report
                       </button>
 
-                      {isScheduledView && String(m?.status || "") === "scheduled" && (canUpdate || canDelete) ? (
+                      {allowedMenuStatuses.includes(String(m?.status || "")) && (canUpdate || canDelete) ? (
                         <div className="relative">
                           <button
                             type="button"
@@ -681,6 +742,8 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
   const [scheduledTime, setScheduledTime] = useState("");
   const [error, setError] = useState("");
 
+  const isScheduled = String(message?.status || "") === "scheduled";
+
   useEffect(() => {
     if (!open) return;
     const parts = toScheduleParts(message?.scheduledAt);
@@ -707,13 +770,13 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
       setError("Message content is required");
       return;
     }
-    if (!d || !tm) {
+    if (isScheduled && (!d || !tm)) {
       setError("Scheduled date and time are required");
       return;
     }
 
     setError("");
-    await onSave({ title: t, content: c, scheduledDate: d, scheduledTime: tm });
+    await onSave(isScheduled ? { title: t, content: c, scheduledDate: d, scheduledTime: tm } : { title: t, content: c });
   };
 
   return (
@@ -721,8 +784,8 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Edit Scheduled Message</div>
-            <div className="mt-1 text-xs text-gray-500">This will update the message before it is sent.</div>
+            <div className="text-sm font-semibold text-gray-900">{isScheduled ? "Edit Scheduled Message" : "Edit Draft Message"}</div>
+            <div className="mt-1 text-xs text-gray-500">{isScheduled ? "This will update the message before it is sent." : "This will update the saved draft."}</div>
           </div>
           <button
             type="button"
@@ -761,27 +824,31 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
               />
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-gray-600">Scheduled Date</label>
-              <input
-                type="date"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                disabled={loading}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
-              />
-            </div>
+            {isScheduled ? (
+              <>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Scheduled Date</label>
+                  <input
+                    type="date"
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    disabled={loading}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+                  />
+                </div>
 
-            <div>
-              <label className="text-xs font-semibold text-gray-600">Scheduled Time</label>
-              <input
-                type="time"
-                value={scheduledTime}
-                onChange={(e) => setScheduledTime(e.target.value)}
-                disabled={loading}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
-              />
-            </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">Scheduled Time</label>
+                  <input
+                    type="time"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    disabled={loading}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+                  />
+                </div>
+              </>
+            ) : null}
           </div>
 
           <div className="mt-5 flex items-center justify-end gap-2">
@@ -849,7 +916,7 @@ function DeliveryReportModal({ open, onClose, message }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-5xl rounded-xl bg-white shadow-xl">
+      <div className="w-full max-w-5xl max-h-[90vh] rounded-xl bg-white shadow-xl flex flex-col overflow-hidden">
         <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-gray-900">Delivery Report</div>
@@ -864,11 +931,11 @@ function DeliveryReportModal({ open, onClose, message }) {
           </button>
         </div>
 
-        <div className="p-5">
+        <div className="p-5 overflow-y-auto">
           {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
           <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
                 <div className="text-xs font-semibold text-gray-500">Title</div>
                 <div className="mt-1 text-sm font-semibold text-gray-900">{message?.title || "—"}</div>
@@ -881,10 +948,6 @@ function DeliveryReportModal({ open, onClose, message }) {
                     : "—"}
                 </div>
               </div>
-              <div className="md:col-span-2">
-                <div className="text-xs font-semibold text-gray-500">Message Content</div>
-                <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{message?.content || "—"}</div>
-              </div>
               <div>
                 <div className="text-xs font-semibold text-gray-500">Audience</div>
                 <div className="mt-1 text-sm font-semibold text-gray-900">{String(message?.audience?.type || "all")}</div>
@@ -895,6 +958,10 @@ function DeliveryReportModal({ open, onClose, message }) {
                   {String(message?.status || "—")}
                   {message?.scheduledAt ? ` • ${new Date(message.scheduledAt).toLocaleString()}` : ""}
                 </div>
+              </div>
+              <div className="md:col-span-4">
+                <div className="text-xs font-semibold text-gray-500">Message Content</div>
+                <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{message?.content || "—"}</div>
               </div>
             </div>
           </div>
@@ -956,12 +1023,13 @@ function DeliveryReportModal({ open, onClose, message }) {
   );
 }
 
-function CommunicationTab({ open, wallet, onSent }) {
+function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
   const canWrite = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
 
   const [loading, setLoading] = useState(false);
+  const [submitAction, setSubmitAction] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -980,6 +1048,7 @@ function CommunicationTab({ open, wallet, onSent }) {
 
   const [memberSearch, setMemberSearch] = useState("");
   const [memberResults, setMemberResults] = useState([]);
+  const [memberSearchLoading, setMemberSearchLoading] = useState(false);
   const [memberIds, setMemberIds] = useState([]);
   const [memberNameById, setMemberNameById] = useState({});
 
@@ -1015,6 +1084,37 @@ function CommunicationTab({ open, wallet, onSent }) {
   const hasEnoughCredits = walletCredits >= estimatedTotalCost;
 
   const messageCharCount = String(content || "").length;
+
+  useEffect(() => {
+    if (!open) return;
+    if (!prefillKey) return;
+    if (!prefill) return;
+
+    setError("");
+    setSuccess("");
+    setTitle(String(prefill?.title || ""));
+    setContent(String(prefill?.content || prefill?.message || ""));
+
+    const nextAudienceType = String(prefill?.audience?.type || "all");
+    setAudienceType(nextAudienceType);
+    setGroupIds(Array.isArray(prefill?.audience?.groupIds) ? prefill.audience.groupIds.map(String) : []);
+    setCellIds(Array.isArray(prefill?.audience?.cellIds) ? prefill.audience.cellIds.map(String) : []);
+    setDepartmentIds(Array.isArray(prefill?.audience?.departmentIds) ? prefill.audience.departmentIds.map(String) : []);
+    setMemberSearch("");
+    setMemberResults([]);
+    setMemberIds(Array.isArray(prefill?.audience?.memberIds) ? prefill.audience.memberIds.map(String) : []);
+    setMemberNameById({});
+
+    const arr = Array.isArray(prefill?.channels) ? prefill.channels : [];
+    setChannels({
+      sms: arr.includes("sms") || (!arr.includes("whatsapp") && String(prefill?.channel || "") === "sms"),
+      whatsapp: arr.includes("whatsapp") || String(prefill?.channel || "") === "whatsapp"
+    });
+
+    setSendMode("now");
+    setScheduleDate("");
+    setScheduleTime("");
+  }, [open, prefillKey]);
 
   useEffect(() => {
     if (!open) return;
@@ -1130,23 +1230,35 @@ function CommunicationTab({ open, wallet, onSent }) {
     if (audienceType !== "members") return;
 
     const q = String(memberSearch || "").trim();
-    if (q.length < 2) {
+    if (q.length < 1) {
       setMemberResults([]);
+      setMemberSearchLoading(false);
       return;
     }
 
+    let cancelled = false;
+
     const t = setTimeout(async () => {
+      setMemberSearchLoading(true);
       try {
-        const res = await getMembers({ search: q, fastSearch: 1, limit: 10, page: 1 });
+        const res = await getMembers({ search: q, fastSearch: 0, limit: 10, page: 1 });
+        if (cancelled) return;
         const payload = res?.data?.data ?? res?.data;
         const rows = Array.isArray(payload?.members) ? payload.members : [];
         setMemberResults(rows);
       } catch {
+        if (cancelled) return;
         setMemberResults([]);
+      } finally {
+        if (cancelled) return;
+        setMemberSearchLoading(false);
       }
-    }, 120);
+    }, 50);
 
-    return () => clearTimeout(t);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [audienceType, memberSearch, open]);
 
   const toggleId = (list, id) => {
@@ -1212,6 +1324,7 @@ function CommunicationTab({ open, wallet, onSent }) {
   const onSend = async ({ draft = false } = {}) => {
     if (!canWrite) return;
 
+    setSubmitAction(draft ? "draft" : "send");
     setLoading(true);
     setError("");
     setSuccess("");
@@ -1249,8 +1362,8 @@ function CommunicationTab({ open, wallet, onSent }) {
         },
         channels: selectedChannels,
         sendMode: draft ? "draft" : sendMode,
-        scheduledDate: sendMode === "schedule" ? scheduleDate : null,
-        scheduledTime: sendMode === "schedule" ? scheduleTime : null
+        scheduledDate: !draft && sendMode === "schedule" ? scheduleDate : null,
+        scheduledTime: !draft && sendMode === "schedule" ? scheduleTime : null
       };
 
       await createCommunicationMessage(payload);
@@ -1261,6 +1374,7 @@ function CommunicationTab({ open, wallet, onSent }) {
       setError(e?.response?.data?.message || e?.message || "Failed to send message");
     } finally {
       setLoading(false);
+      setSubmitAction("");
     }
   };
 
@@ -1423,6 +1537,12 @@ function CommunicationTab({ open, wallet, onSent }) {
                 className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               />
 
+              {String(memberSearch || "").trim().length >= 1 ? (
+                <div className="mt-1 text-xs text-gray-500">
+                  {memberSearchLoading ? "Searching..." : memberResults.length ? "" : "No members found"}
+                </div>
+              ) : null}
+
               {memberResults.length ? (
                 <div className="mt-2 rounded-lg border border-gray-200 bg-white">
                   {memberResults.map((m) => {
@@ -1502,7 +1622,7 @@ function CommunicationTab({ open, wallet, onSent }) {
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
               <div className="text-xs font-semibold text-gray-500">Estimated Total Cost</div>
-              <div className="mt-1 text-sm font-semibold text-gray-900">{estimateLoading ? "Calculating..." : `${estimatedTotalCost} credits`}</div>
+              <div className="mt-1 text-sm font-semibold text-gray-900">{`${estimatedTotalCost} credits`}</div>
               <div className="mt-1 text-xs text-gray-500">Wallet: {walletCredits} credits</div>
             </div>
           </div>
@@ -1565,7 +1685,7 @@ function CommunicationTab({ open, wallet, onSent }) {
             disabled={loading}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
           >
-            Save as Draft
+            {loading && submitAction === "draft" ? "Saving..." : "Save as Draft"}
           </button>
           <button
             type="button"
@@ -1573,7 +1693,7 @@ function CommunicationTab({ open, wallet, onSent }) {
             disabled={loading || (!hasEnoughCredits && estimatedTotalCost > 0)}
             className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
           >
-            {loading ? "Sending..." : "Send Announcement"}
+            {loading && submitAction === "send" ? "Sending..." : "Send Announcement"}
           </button>
         </div>
       </div>
@@ -1602,6 +1722,9 @@ function AnnouncementPage() {
 
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [deliveryRow, setDeliveryRow] = useState(null);
+
+  const [communicationPrefill, setCommunicationPrefill] = useState(null);
+  const [communicationPrefillKey, setCommunicationPrefillKey] = useState(0);
 
   const loadWallet = async () => {
     if (!canRead) return;
@@ -1759,6 +1882,36 @@ function AnnouncementPage() {
     setDeliveryRow(null);
   };
 
+  const useTemplate = (t) => {
+    setCommunicationPrefill({
+      title: "",
+      content: String(t?.message || ""),
+      channel: String(t?.channel || "sms"),
+      channels: [String(t?.channel || "sms")],
+      audience: { type: "all", groupIds: [], cellIds: [], departmentIds: [], memberIds: [] }
+    });
+    setCommunicationPrefillKey((k) => k + 1);
+    setTab("communication");
+  };
+
+  const useDraft = (m) => {
+    const channels = Array.isArray(m?.channels) ? m.channels.map((c) => String(c)) : [];
+    setCommunicationPrefill({
+      title: String(m?.title || ""),
+      content: String(m?.content || ""),
+      channels,
+      audience: {
+        type: String(m?.audience?.type || "all"),
+        groupIds: Array.isArray(m?.audience?.groupIds) ? m.audience.groupIds : [],
+        cellIds: Array.isArray(m?.audience?.cellIds) ? m.audience.cellIds : [],
+        departmentIds: Array.isArray(m?.audience?.departmentIds) ? m.audience.departmentIds : [],
+        memberIds: Array.isArray(m?.audience?.memberIds) ? m.audience.memberIds : []
+      }
+    });
+    setCommunicationPrefillKey((k) => k + 1);
+    setTab("communication");
+  };
+
   return (
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
@@ -1781,18 +1934,24 @@ function AnnouncementPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-1 flex-wrap">
+          <div className="flex flex-nowrap items-center gap-1 rounded-lg bg-gray-50 p-0.5 overflow-x-auto">
             <TabButton active={tab === "communication"} onClick={() => setTab("communication")}>Communication</TabButton>
             <TabButton active={tab === "sent"} onClick={() => setTab("sent")}>Sent Messages</TabButton>
             <TabButton active={tab === "scheduled"} onClick={() => setTab("scheduled")}>Scheduled Messages</TabButton>
-            <TabButton active={tab === "templates"} onClick={() => setTab("templates")}>Templates</TabButton>
+            <TabButton active={tab === "templates"} onClick={() => setTab("templates")}>Templates & Drafts</TabButton>
             <TabButton active={tab === "wallet-history"} onClick={() => setTab("wallet-history")}>Wallet History</TabButton>
             <TabButton active={tab === "message-history"} onClick={() => setTab("message-history")}>Message History</TabButton>
           </div>
         </div>
       </div>
 
-      <CommunicationTab open={tab === "communication"} wallet={wallet} onSent={onMessageSent} />
+      <CommunicationTab
+        open={tab === "communication"}
+        wallet={wallet}
+        onSent={onMessageSent}
+        prefill={communicationPrefill}
+        prefillKey={communicationPrefillKey}
+      />
 
       <MessagesTable
         title="Sent Messages"
@@ -1808,7 +1967,13 @@ function AnnouncementPage() {
         onOpenDeliveryReport={openDelivery}
       />
 
-      <TemplatesTab open={tab === "templates"} />
+      <TemplatesAndDraftsTab
+        open={tab === "templates"}
+        onUseTemplate={useTemplate}
+        onUseDraft={useDraft}
+        onOpenDeliveryReport={openDelivery}
+        onWalletUpdated={loadWallet}
+      />
 
       <WalletHistoryTab
         open={tab === "wallet-history"}

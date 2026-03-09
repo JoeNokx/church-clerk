@@ -3,6 +3,10 @@ import AnnouncementMessageDelivery from "../models/announcementMessageDeliveryMo
 import AnnouncementWallet from "../models/announcementWalletModel.js";
 import AnnouncementWalletTransaction from "../models/announcementWalletTransactionModel.js";
 import Member from "../models/memberModel.js";
+import mongoose from "mongoose";
+import GroupMember from "../models/ministryModel/groupMembersModel.js";
+import CellMember from "../models/ministryModel/cellMembersModel.js";
+import DepartmentMember from "../models/ministryModel/departmentMembersModel.js";
 
 const CHANNEL_COSTS = {
   sms: 5,
@@ -35,37 +39,69 @@ const toScheduleParts = (dateValue) => {
   return { scheduledDate: `${yyyy}-${mm}-${dd}`, scheduledTime: `${hh}:${mi}` };
 };
 
+const toObjectIdList = (ids) => {
+  const arr = Array.isArray(ids) ? ids : [];
+  return arr
+    .map((v) => String(v || "").trim())
+    .filter(Boolean)
+    .map((v) => {
+      try {
+        return new mongoose.Types.ObjectId(v);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+};
+
+const distinctMemberIdsForMinistries = async ({ churchId, groupIds, cellIds, departmentIds }) => {
+  const [g, c, d] = await Promise.all([
+    groupIds.length
+      ? GroupMember.find({ church: churchId, group: { $in: groupIds } }).distinct("member")
+      : Promise.resolve([]),
+    cellIds.length
+      ? CellMember.find({ church: churchId, cell: { $in: cellIds } }).distinct("member")
+      : Promise.resolve([]),
+    departmentIds.length
+      ? DepartmentMember.find({ church: churchId, department: { $in: departmentIds } }).distinct("member")
+      : Promise.resolve([])
+  ]);
+
+  const set = new Set([
+    ...(Array.isArray(g) ? g : []),
+    ...(Array.isArray(c) ? c : []),
+    ...(Array.isArray(d) ? d : [])
+  ].map((id) => String(id || "")).filter(Boolean));
+
+  return Array.from(set)
+    .map((id) => {
+      try {
+        return new mongoose.Types.ObjectId(id);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+};
+
 const countUniqueMembersForAudience = async ({ churchId, audience }) => {
   const type = String(audience?.type || "all").trim();
 
   if (type === "members") {
-    const memberIds = Array.isArray(audience?.memberIds) ? audience.memberIds.filter(Boolean) : [];
+    const memberIds = toObjectIdList(audience?.memberIds);
     if (!memberIds.length) return 0;
     return await Member.countDocuments({ church: churchId, _id: { $in: memberIds } });
   }
 
   if (type === "groups") {
-    const groupIds = Array.isArray(audience?.groupIds) ? audience.groupIds.filter(Boolean) : [];
-    const cellIds = Array.isArray(audience?.cellIds) ? audience.cellIds.filter(Boolean) : [];
-    const departmentIds = Array.isArray(audience?.departmentIds) ? audience.departmentIds.filter(Boolean) : [];
+    const groupIds = toObjectIdList(audience?.groupIds);
+    const cellIds = toObjectIdList(audience?.cellIds);
+    const departmentIds = toObjectIdList(audience?.departmentIds);
 
     if (!groupIds.length && !cellIds.length && !departmentIds.length) return 0;
 
-    const match = {
-      church: churchId,
-      $or: [
-        groupIds.length ? { group: { $in: groupIds } } : null,
-        cellIds.length ? { cell: { $in: cellIds } } : null,
-        departmentIds.length ? { department: { $in: departmentIds } } : null
-      ].filter(Boolean)
-    };
-
-    const rows = await Member.aggregate([
-      { $match: match },
-      { $group: { _id: "$_id" } },
-      { $count: "count" }
-    ]);
-    return Number(rows?.[0]?.count || 0);
+    const memberIds = await distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, departmentIds });
+    return memberIds.length;
   }
 
   return await Member.countDocuments({ church: churchId });
@@ -75,26 +111,21 @@ const resolveAudienceMembers = async ({ churchId, audience }) => {
   const type = String(audience?.type || "all").trim();
 
   if (type === "members") {
-    const memberIds = Array.isArray(audience?.memberIds) ? audience.memberIds.filter(Boolean) : [];
+    const memberIds = toObjectIdList(audience?.memberIds);
     if (!memberIds.length) return [];
     return await Member.find({ church: churchId, _id: { $in: memberIds } }).lean();
   }
 
   if (type === "groups") {
-    const groupIds = Array.isArray(audience?.groupIds) ? audience.groupIds.filter(Boolean) : [];
-    const cellIds = Array.isArray(audience?.cellIds) ? audience.cellIds.filter(Boolean) : [];
-    const departmentIds = Array.isArray(audience?.departmentIds) ? audience.departmentIds.filter(Boolean) : [];
+    const groupIds = toObjectIdList(audience?.groupIds);
+    const cellIds = toObjectIdList(audience?.cellIds);
+    const departmentIds = toObjectIdList(audience?.departmentIds);
 
     if (!groupIds.length && !cellIds.length && !departmentIds.length) return [];
 
-    return await Member.find({
-      church: churchId,
-      $or: [
-        groupIds.length ? { group: { $in: groupIds } } : null,
-        cellIds.length ? { cell: { $in: cellIds } } : null,
-        departmentIds.length ? { department: { $in: departmentIds } } : null
-      ].filter(Boolean)
-    }).lean();
+    const memberIds = await distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, departmentIds });
+    if (!memberIds.length) return [];
+    return await Member.find({ church: churchId, _id: { $in: memberIds } }).lean();
   }
 
   return await Member.find({ church: churchId }).lean();
@@ -322,8 +353,9 @@ export const updateScheduledMessage = async (req, res) => {
     const message = await AnnouncementMessage.findOne({ _id: id, church: req.activeChurch._id });
     if (!message) return res.status(404).json({ message: "Message not found" });
 
-    if (String(message.status) !== "scheduled") {
-      return res.status(400).json({ message: "Only scheduled messages can be edited" });
+    const currentStatus = String(message.status || "");
+    if (!["scheduled", "draft"].includes(currentStatus)) {
+      return res.status(400).json({ message: "Only scheduled or draft messages can be edited" });
     }
 
     const title = req.body?.title !== undefined ? String(req.body.title || "").trim() : undefined;
@@ -339,7 +371,7 @@ export const updateScheduledMessage = async (req, res) => {
     const scheduleProvided = req.body?.scheduledDate !== undefined || req.body?.scheduledTime !== undefined;
     let scheduledAt = message.scheduledAt;
 
-    if (scheduleProvided) {
+    if (currentStatus === "scheduled" && scheduleProvided) {
       const current = toScheduleParts(message.scheduledAt);
       const scheduledDate = req.body?.scheduledDate !== undefined ? req.body.scheduledDate : current.scheduledDate;
       const scheduledTime = req.body?.scheduledTime !== undefined ? req.body.scheduledTime : current.scheduledTime;
@@ -351,7 +383,9 @@ export const updateScheduledMessage = async (req, res) => {
 
     if (title !== undefined) message.title = title;
     if (content !== undefined) message.content = content;
-    message.scheduledAt = scheduledAt;
+    if (currentStatus === "scheduled") {
+      message.scheduledAt = scheduledAt;
+    }
 
     const updated = await message.save();
     return res.status(200).json({ message: "Message updated", data: updated });
