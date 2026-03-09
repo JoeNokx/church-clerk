@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import AuthLayout from "../Layouts/AuthLayout.jsx";
-import DashboardLayout from "../Layouts/DashboardLayout.jsx";
+import AuthLayout from "../layouts/AuthLayout.jsx";
+import DashboardLayout from "../layouts/DashboardLayout.jsx";
 import Login from "../../features/Auth/pages/Login.jsx";
 import DashboardHome from "../../features/Dashboard/Pages/DashboardHome.jsx";
 import ProtectedRoute from "../../shared/components/ProtectedRoute.jsx";
