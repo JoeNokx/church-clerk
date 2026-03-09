@@ -30,6 +30,15 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
+  const editMemberName = useMemo(() => {
+    if (mode !== "edit") return "";
+    const member = initialData?.member;
+    const raw = member?.name;
+    if (raw) return String(raw);
+    const computed = `${member?.firstName || ""} ${member?.lastName || ""}`.trim();
+    return computed;
+  }, [initialData, mode]);
+
   const canCreate = useMemo(() => (typeof can === "function" ? can("tithe", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
 
@@ -223,7 +232,12 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{mode === "edit" ? "Edit Individual Tithe" : "Record Individual Tithe"}</div>
+          <div>
+            <div className="text-sm font-semibold text-gray-900">{mode === "edit" ? "Edit Individual Tithe" : "Record Individual Tithe"}</div>
+            {mode === "edit" && editMemberName ? (
+              <div className="mt-1 text-xs text-gray-500">{editMemberName}</div>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={onClose}

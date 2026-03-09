@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
@@ -37,6 +37,7 @@ function VisitorTable({ onEdit, onDeleted }) {
   const [confirmId, setConfirmId] = useState(null);
 
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const openMenuRootRef = useRef(null);
 
   const [convertOpen, setConvertOpen] = useState(false);
   const [convertRow, setConvertRow] = useState(null);
@@ -68,6 +69,32 @@ function VisitorTable({ onEdit, onDeleted }) {
   };
 
   const closeMenu = () => setMenuOpenId(null);
+
+  useEffect(() => {
+    if (!menuOpenId) return;
+
+    const onMouseDownCapture = (e) => {
+      const root = openMenuRootRef.current;
+      if (!root) {
+        closeMenu();
+        return;
+      }
+
+      if (root.contains(e.target)) return;
+      closeMenu();
+    };
+
+    const onKeyDownCapture = (e) => {
+      if (e.key === "Escape") closeMenu();
+    };
+
+    document.addEventListener("mousedown", onMouseDownCapture, true);
+    document.addEventListener("keydown", onKeyDownCapture, true);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDownCapture, true);
+      document.removeEventListener("keydown", onKeyDownCapture, true);
+    };
+  }, [menuOpenId]);
 
   const openConfirmDelete = (id) => {
     setConfirmId(id);
@@ -175,7 +202,7 @@ function VisitorTable({ onEdit, onDeleted }) {
 
   return (
     <div>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto pb-24">
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left text-xs font-semibold text-gray-500">
@@ -190,7 +217,13 @@ function VisitorTable({ onEdit, onDeleted }) {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
-              <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
+              (() => {
+                const rowId = String(row?._id ?? row?.id ?? "");
+                const isMenuOpen = Boolean(rowId) && menuOpenId === rowId;
+                const openUp = index > 1;
+
+                return (
+              <tr key={String(row?._id ?? row?.id ?? `row-${index}`)} className="text-sm text-gray-700">
                 <td className="px-6 py-1.5 text-gray-900">{row?.fullName || "-"}</td>
                 <td className="px-6 py-1.5 text-gray-700">{row?.phoneNumber || "-"}</td>
                 <td className="px-6 py-1.5 text-gray-700">{row?.location || "-"}</td>
@@ -224,10 +257,17 @@ function VisitorTable({ onEdit, onDeleted }) {
                     )}
 
                     {(canEdit || canDelete) && (
-                      <div className="relative">
+                      <div
+                        ref={isMenuOpen ? openMenuRootRef : null}
+                        className={`relative ${isMenuOpen ? "z-[9999]" : "z-0"}`}
+                      >
                         <button
                           type="button"
-                          onClick={() => setMenuOpenId((prev) => (prev === row?._id ? null : row?._id))}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!rowId) return;
+                            setMenuOpenId((prev) => (prev === rowId ? null : rowId));
+                          }}
                           className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
                           aria-label="More actions"
                         >
@@ -236,14 +276,18 @@ function VisitorTable({ onEdit, onDeleted }) {
                           </svg>
                         </button>
 
-                        {menuOpenId === row?._id && (
-                          <div className="absolute right-0 z-20 mt-2 w-32 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+                        {isMenuOpen && (
+                          <div
+                            className={`absolute right-0 z-[9999] w-32 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg ${openUp ? "bottom-full mb-2" : "top-full mt-2"}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             {canEdit && (
                               <button
                                 type="button"
                                 onClick={() => {
                                   closeMenu();
-                                  if (!row?._id) return;
+                                  const id = row?._id ?? row?.id;
+                                  if (!id) return;
                                   onEdit?.(row);
                                 }}
                                 className="block w-full px-4 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50"
@@ -257,8 +301,9 @@ function VisitorTable({ onEdit, onDeleted }) {
                                 type="button"
                                 onClick={() => {
                                   closeMenu();
-                                  if (!row?._id) return;
-                                  openConfirmDelete(row._id);
+                                  const id = row?._id ?? row?.id;
+                                  if (!id) return;
+                                  openConfirmDelete(id);
                                 }}
                                 className="block w-full px-4 py-2 text-left text-xs font-semibold text-red-600 hover:bg-gray-50"
                               >
@@ -272,6 +317,8 @@ function VisitorTable({ onEdit, onDeleted }) {
                   </div>
                 </td>
               </tr>
+                );
+              })()
             ))}
           </tbody>
         </table>

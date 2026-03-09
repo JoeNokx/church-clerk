@@ -1,11 +1,16 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getEvent as apiGetEvent } from "../services/event.api.js";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
-import { createEventAttendee, getEventAttendees } from "../attendees/services/eventAttendees.api.js";
-import { createTotalEventAttendance, getAllTotalEventAttendances } from "../attendances/services/eventAttendances.api.js";
+import { createEventAttendee, deleteEventAttendee, getEventAttendees, updateEventAttendee } from "../attendees/services/eventAttendees.api.js";
+import {
+  createTotalEventAttendance,
+  deleteTotalEventAttendance,
+  getAllTotalEventAttendances,
+  updateTotalEventAttendance
+} from "../attendances/services/eventAttendances.api.js";
 import {
   deleteEventAttendanceFile,
   getEventAttendanceFileDownloadUrl,
@@ -128,6 +133,33 @@ function EventDetailsPage() {
 
   const [editOpen, setEditOpen] = useState(false);
 
+  const [editAttendeeOpen, setEditAttendeeOpen] = useState(false);
+  const [editAttendeeSaving, setEditAttendeeSaving] = useState(false);
+  const [editAttendeeError, setEditAttendeeError] = useState(null);
+  const [editAttendeeRow, setEditAttendeeRow] = useState(null);
+  const [editAttendeeFullName, setEditAttendeeFullName] = useState("");
+  const [editAttendeeEmail, setEditAttendeeEmail] = useState("");
+  const [editAttendeePhone, setEditAttendeePhone] = useState("");
+  const [editAttendeeLocation, setEditAttendeeLocation] = useState("");
+
+  const [editTotalOpen, setEditTotalOpen] = useState(false);
+  const [editTotalSaving, setEditTotalSaving] = useState(false);
+  const [editTotalError, setEditTotalError] = useState(null);
+  const [editTotalRow, setEditTotalRow] = useState(null);
+  const [editTotalDate, setEditTotalDate] = useState("");
+  const [editTotalNumber, setEditTotalNumber] = useState("");
+  const [editTotalSpeaker, setEditTotalSpeaker] = useState("");
+
+  const [editFileOpen, setEditFileOpen] = useState(false);
+  const [editFileSaving, setEditFileSaving] = useState(false);
+  const [editFileError, setEditFileError] = useState(null);
+  const [editFileRow, setEditFileRow] = useState(null);
+  const [editFileName, setEditFileName] = useState("");
+  const [editFileReplacement, setEditFileReplacement] = useState(null);
+
+  const [fileMenuOpenId, setFileMenuOpenId] = useState(null);
+  const openFileMenuRootRef = useRef(null);
+
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerSaving, setRegisterSaving] = useState(false);
   const [registerError, setRegisterError] = useState(null);
@@ -242,6 +274,219 @@ function EventDetailsPage() {
     }
   };
 
+  const closeFileMenu = () => setFileMenuOpenId(null);
+
+  useEffect(() => {
+    if (!fileMenuOpenId) return;
+
+    const onMouseDownCapture = (e) => {
+      const root = openFileMenuRootRef.current;
+      if (!root) {
+        closeFileMenu();
+        return;
+      }
+
+      if (root.contains(e.target)) return;
+      closeFileMenu();
+    };
+
+    const onKeyDownCapture = (e) => {
+      if (e.key === "Escape") closeFileMenu();
+    };
+
+    document.addEventListener("mousedown", onMouseDownCapture, true);
+    document.addEventListener("keydown", onKeyDownCapture, true);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDownCapture, true);
+      document.removeEventListener("keydown", onKeyDownCapture, true);
+    };
+  }, [fileMenuOpenId]);
+
+  const openEditAttendee = (row) => {
+    setEditAttendeeRow(row || null);
+    setEditAttendeeError(null);
+    setEditAttendeeFullName(row?.fullName || "");
+    setEditAttendeeEmail(row?.email || "");
+    setEditAttendeePhone(row?.phoneNumber || "");
+    setEditAttendeeLocation(row?.location || "");
+    setEditAttendeeOpen(true);
+  };
+
+  const closeEditAttendee = () => {
+    if (editAttendeeSaving) return;
+    setEditAttendeeOpen(false);
+    setEditAttendeeRow(null);
+    setEditAttendeeError(null);
+  };
+
+  const onSaveEditAttendee = async () => {
+    if (!eventId) return;
+    if (!editAttendeeRow?._id) return;
+    if (!canEdit) return;
+
+    if (!String(editAttendeeFullName || "").trim() || !String(editAttendeePhone || "").trim()) {
+      setEditAttendeeError("Name and phone number are required.");
+      return;
+    }
+
+    setEditAttendeeSaving(true);
+    setEditAttendeeError(null);
+    try {
+      await updateEventAttendee(eventId, editAttendeeRow._id, {
+        fullName: String(editAttendeeFullName || "").trim(),
+        email: String(editAttendeeEmail || "").trim() || undefined,
+        phoneNumber: String(editAttendeePhone || "").trim(),
+        location: String(editAttendeeLocation || "").trim() || undefined
+      });
+      setEditAttendeeOpen(false);
+      setEditAttendeeRow(null);
+      await loadAttendees();
+    } catch (err) {
+      setEditAttendeeError(err?.response?.data?.message || err?.message || "Failed to update attendee");
+    } finally {
+      setEditAttendeeSaving(false);
+    }
+  };
+
+  const onDeleteAttendee = async (row) => {
+    if (!eventId) return;
+    if (!row?._id) return;
+    if (!canDelete) return;
+    const ok = window.confirm(`Delete attendee "${row?.fullName || ""}"?`);
+    if (!ok) return;
+    setAttendeesLoading(true);
+    setAttendeesError(null);
+    try {
+      await deleteEventAttendee(eventId, row._id);
+      await loadAttendees();
+    } catch (err) {
+      setAttendeesError(err?.response?.data?.message || err?.message || "Failed to delete attendee");
+    } finally {
+      setAttendeesLoading(false);
+    }
+  };
+
+  const openEditTotal = (row) => {
+    setEditTotalRow(row || null);
+    setEditTotalError(null);
+    setEditTotalDate((row?.date || "").slice(0, 10));
+    setEditTotalNumber(String(row?.numberOfAttendees ?? ""));
+    setEditTotalSpeaker(row?.mainSpeaker || "");
+    setEditTotalOpen(true);
+  };
+
+  const closeEditTotal = () => {
+    if (editTotalSaving) return;
+    setEditTotalOpen(false);
+    setEditTotalRow(null);
+    setEditTotalError(null);
+  };
+
+  const onSaveEditTotal = async () => {
+    if (!eventId) return;
+    if (!editTotalRow?._id) return;
+    if (!canEdit) return;
+
+    if (!editTotalDate || !String(editTotalNumber || "").trim()) {
+      setEditTotalError("Date and total attendees are required.");
+      return;
+    }
+
+    setEditTotalSaving(true);
+    setEditTotalError(null);
+    try {
+      await updateTotalEventAttendance(eventId, editTotalRow._id, {
+        date: editTotalDate,
+        numberOfAttendees: Number(editTotalNumber),
+        mainSpeaker: String(editTotalSpeaker || "").trim() || undefined
+      });
+      setEditTotalOpen(false);
+      setEditTotalRow(null);
+      await loadTotals();
+    } catch (err) {
+      setEditTotalError(err?.response?.data?.message || err?.message || "Failed to update attendance");
+    } finally {
+      setEditTotalSaving(false);
+    }
+  };
+
+  const onDeleteTotal = async (row) => {
+    if (!eventId) return;
+    if (!row?._id) return;
+    if (!canDelete) return;
+    const ok = window.confirm(`Delete attendance record for ${formatDate(row?.date)}?`);
+    if (!ok) return;
+    setTotalLoading(true);
+    setTotalError(null);
+    try {
+      await deleteTotalEventAttendance(eventId, row._id);
+      await loadTotals();
+    } catch (err) {
+      setTotalError(err?.response?.data?.message || err?.message || "Failed to delete attendance");
+    } finally {
+      setTotalLoading(false);
+    }
+  };
+
+  const openEditFile = (file) => {
+    setEditFileRow(file || null);
+    setEditFileError(null);
+    setEditFileName(file?.originalName || "");
+    setEditFileReplacement(null);
+    setEditFileOpen(true);
+  };
+
+  const closeEditFile = () => {
+    if (editFileSaving) return;
+    setEditFileOpen(false);
+    setEditFileRow(null);
+    setEditFileError(null);
+    setEditFileReplacement(null);
+  };
+
+  const onSaveEditFile = async () => {
+    if (!eventId) return;
+    if (!editFileRow?._id) return;
+    if (!canDelete) return;
+
+    const nextName = String(editFileName || "").trim();
+    if (!nextName) {
+      setEditFileError("File name is required.");
+      return;
+    }
+
+    setEditFileSaving(true);
+    setEditFileError(null);
+    setFilesError(null);
+
+    try {
+      if (!editFileReplacement) {
+        await updateEventAttendanceFile(eventId, editFileRow._id, { originalName: nextName });
+        setEditFileOpen(false);
+        setEditFileRow(null);
+        await loadFiles();
+        return;
+      }
+
+      const uploadRes = await uploadEventAttendanceFile(eventId, editFileReplacement);
+      const created = uploadRes?.data?.file ?? uploadRes?.data?.data?.file;
+      const createdId = created?._id;
+      if (createdId && nextName) {
+        await updateEventAttendanceFile(eventId, createdId, { originalName: nextName });
+      }
+
+      await deleteEventAttendanceFile(eventId, editFileRow._id);
+
+      setEditFileOpen(false);
+      setEditFileRow(null);
+      await loadFiles();
+    } catch (err) {
+      setEditFileError(err?.response?.data?.message || err?.message || "Failed to update file");
+    } finally {
+      setEditFileSaving(false);
+    }
+  };
+
   const onAddToRegisterQueue = () => {
     if (!regFullName || !regPhone) {
       setRegisterError("Name and phone number are required.");
@@ -311,27 +556,6 @@ function EventDetailsPage() {
       setRegisterError(err?.response?.data?.message || err?.message || "Failed to register attendee(s)");
     } finally {
       setRegisterSaving(false);
-    }
-  };
-
-  const onRenameFile = async (file) => {
-    if (!eventId) return;
-    if (!file?._id) return;
-    if (!canDelete) return;
-
-    const nextName = window.prompt("Rename file", file?.originalName || "");
-    if (nextName === null) return;
-    if (!String(nextName || "").trim()) return;
-
-    setFilesLoading(true);
-    setFilesError(null);
-    try {
-      await updateEventAttendanceFile(eventId, file._id, { originalName: String(nextName).trim() });
-      await loadFiles();
-    } catch (err) {
-      setFilesError(err?.response?.data?.message || err?.message || "Failed to update file");
-    } finally {
-      setFilesLoading(false);
     }
   };
 
@@ -716,24 +940,25 @@ function EventDetailsPage() {
                         <th className="px-6 py-3">Email</th>
                         <th className="px-6 py-3">Phone</th>
                         <th className="px-6 py-3">Location</th>
+                        <th className="px-6 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {attendeesLoading ? (
                         <tr>
-                          <td colSpan={4} className="px-6 py-4 text-sm text-gray-600">
+                          <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">
                             <Skeleton height={14} width={180} />
                           </td>
                         </tr>
                       ) : attendeesError ? (
                         <tr>
-                          <td colSpan={4} className="px-6 py-4 text-sm text-red-700">
+                          <td colSpan={5} className="px-6 py-4 text-sm text-red-700">
                             {attendeesError}
                           </td>
                         </tr>
                       ) : !attendees.length ? (
                         <tr>
-                          <td colSpan={4} className="px-6 py-4 text-sm text-gray-600">
+                          <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">
                             No attendee found.
                           </td>
                         </tr>
@@ -748,6 +973,28 @@ function EventDetailsPage() {
                             <td className="px-6 py-2 text-gray-600">{r?.email || "—"}</td>
                             <td className="px-6 py-2 text-gray-600">{r?.phoneNumber || "—"}</td>
                             <td className="px-6 py-2 text-gray-600">{r?.location || "—"}</td>
+                            <td className="px-6 py-2">
+                              <div className="flex items-center justify-end gap-2">
+                                {canEdit ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditAttendee(r)}
+                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                  >
+                                    Edit
+                                  </button>
+                                ) : null}
+                                {canDelete ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => onDeleteAttendee(r)}
+                                    className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                                  >
+                                    Delete
+                                  </button>
+                                ) : null}
+                              </div>
+                            </td>
                           </tr>
                         ))
                       )}
@@ -779,24 +1026,25 @@ function EventDetailsPage() {
                         <th className="px-6 py-3">Date</th>
                         <th className="px-6 py-3">Total Attendees</th>
                         <th className="px-6 py-3">Main Speaker</th>
+                        <th className="px-6 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {totalLoading ? (
                         <tr>
-                          <td colSpan={3} className="px-6 py-4 text-sm text-gray-600">
+                          <td colSpan={4} className="px-6 py-4 text-sm text-gray-600">
                             <Skeleton height={14} width={180} />
                           </td>
                         </tr>
                       ) : totalError ? (
                         <tr>
-                          <td colSpan={3} className="px-6 py-4 text-sm text-red-700">
+                          <td colSpan={4} className="px-6 py-4 text-sm text-red-700">
                             {totalError}
                           </td>
                         </tr>
                       ) : !totals.length ? (
                         <tr>
-                          <td colSpan={3} className="px-6 py-4 text-sm text-gray-600">
+                          <td colSpan={4} className="px-6 py-4 text-sm text-gray-600">
                             No attendance found.
                           </td>
                         </tr>
@@ -810,6 +1058,28 @@ function EventDetailsPage() {
                             </td>
                             <td className="px-6 py-2 text-gray-600">{Number(r?.numberOfAttendees || 0) || "—"}</td>
                             <td className="px-6 py-2 text-gray-600">{r?.mainSpeaker || "—"}</td>
+                            <td className="px-6 py-2">
+                              <div className="flex items-center justify-end gap-2">
+                                {canEdit ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditTotal(r)}
+                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                  >
+                                    Edit
+                                  </button>
+                                ) : null}
+                                {canDelete ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => onDeleteTotal(r)}
+                                    className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                                  >
+                                    Delete
+                                  </button>
+                                ) : null}
+                              </div>
+                            </td>
                           </tr>
                         ))
                       )}
@@ -840,7 +1110,7 @@ function EventDetailsPage() {
                   <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{filesError}</div>
                 ) : null}
 
-                <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
+                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto pb-24">
                   <table className="min-w-full">
                     <thead className="bg-white">
                       <tr className="text-left text-xs font-semibold text-gray-500">
@@ -867,97 +1137,93 @@ function EventDetailsPage() {
                       ) : (
                         files.map((f, idx) => (
                           <tr key={f?._id || `f-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2">
-                              <button
-                                type="button"
-                                className="text-blue-700 hover:underline"
-                                onClick={() => {
-                                  if (!f?.url) return;
-                                  window.open(f.url, "_blank", "noopener,noreferrer");
-                                }}
-                              >
-                                {f?.originalName || "—"}
-                              </button>
-                            </td>
+                            <td className="px-6 py-2">{f?.originalName || "—"}</td>
                             <td className="px-6 py-2 text-gray-600">{guessFileType(f?.mimeType, f?.originalName)}</td>
                             <td className="px-6 py-2 text-gray-600">{formatBytes(f?.size)}</td>
                             <td className="px-6 py-2 text-gray-600">{formatDate(f?.createdAt)}</td>
                             <td className="px-6 py-2">
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     if (!f?.url) return;
                                     window.open(f.url, "_blank", "noopener,noreferrer");
                                   }}
-                                  className="text-blue-700 hover:text-blue-900"
-                                  aria-label="View"
+                                  className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
                                 >
-                                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                                    <path d="M12 15a3 3 0 100-6 3 3 0 000 6Z" stroke="currentColor" strokeWidth="1.8" />
-                                  </svg>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (!f?.url) return;
-                                    const a = document.createElement("a");
-                                    a.href = getEventAttendanceFileDownloadUrl(eventId, f._id);
-                                    a.download = f.originalName || "attendance_file";
-                                    a.target = "_blank";
-                                    a.rel = "noopener noreferrer";
-                                    a.click();
-                                  }}
-                                  className="text-green-700 hover:text-green-900"
-                                  aria-label="Download"
-                                >
-                                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                                    <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                    <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                  </svg>
+                                  View
                                 </button>
 
-                                {canDelete ? (
+                                <div
+                                  ref={fileMenuOpenId === String(f?._id || "") ? openFileMenuRootRef : null}
+                                  className={`relative ${fileMenuOpenId === String(f?._id || "") ? "z-[9999]" : "z-0"}`}
+                                >
                                   <button
                                     type="button"
-                                    onClick={() => onRenameFile(f)}
-                                    className="text-gray-700 hover:text-gray-900"
-                                    aria-label="Edit"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const id = String(f?._id || "");
+                                      if (!id) return;
+                                      setFileMenuOpenId((prev) => (prev === id ? null : id));
+                                    }}
+                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                                    aria-label="More actions"
                                   >
-                                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                                      <path
-                                        d="M4 20h4l10.5-10.5a2 2 0 000-2.8l-1.2-1.2a2 2 0 00-2.8 0L4 16v4Z"
-                                        stroke="currentColor"
-                                        strokeWidth="1.8"
-                                        strokeLinejoin="round"
-                                      />
-                                      <path d="M13.5 6.5l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                                      <path d="M12 5.5h.01M12 12h.01M12 18.5h.01" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
                                     </svg>
                                   </button>
-                                ) : null}
 
-                                {canDelete ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => onDeleteFile(f)}
-                                    className="text-red-600 hover:text-red-800"
-                                    aria-label="Delete"
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                                      <path d="M6 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                      <path d="M10 11v7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                      <path d="M14 11v7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                      <path
-                                        d="M9 7l1-2h4l1 2m-9 0l1 14h10l1-14"
-                                        stroke="currentColor"
-                                        strokeWidth="1.8"
-                                        strokeLinejoin="round"
-                                      />
-                                    </svg>
-                                  </button>
-                                ) : null}
+                                  {fileMenuOpenId === String(f?._id || "") ? (
+                                    <div
+                                      className="absolute right-0 top-full z-[9999] mt-2 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {canEdit ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            closeFileMenu();
+                                            openEditFile(f);
+                                          }}
+                                          className="block w-full px-4 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                        >
+                                          Edit
+                                        </button>
+                                      ) : null}
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          closeFileMenu();
+                                          if (!f?._id) return;
+                                          const a = document.createElement("a");
+                                          a.href = getEventAttendanceFileDownloadUrl(eventId, f._id);
+                                          a.download = f.originalName || "attendance_file";
+                                          a.target = "_blank";
+                                          a.rel = "noopener noreferrer";
+                                          a.click();
+                                        }}
+                                        className="block w-full px-4 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                      >
+                                        Download
+                                      </button>
+
+                                      {canDelete ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            closeFileMenu();
+                                            onDeleteFile(f);
+                                          }}
+                                          className="block w-full px-4 py-2 text-left text-xs font-semibold text-red-600 hover:bg-gray-50"
+                                        >
+                                          Delete
+                                        </button>
+                                      ) : null}
+                                    </div>
+                                  ) : null}
+                                </div>
                               </div>
                             </td>
                           </tr>
@@ -971,6 +1237,175 @@ function EventDetailsPage() {
           </div>
         </div>
       ) : null}
+
+      <SimpleModal
+        open={editAttendeeOpen}
+        title="Edit Attendee"
+        onClose={closeEditAttendee}
+      >
+        <div className="flex max-h-[75vh] flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+            {editAttendeeError ? (
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{editAttendeeError}</div>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-3">
+              <input
+                value={editAttendeeFullName}
+                onChange={(e) => setEditAttendeeFullName(e.target.value)}
+                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                placeholder="Full name"
+              />
+              <input
+                value={editAttendeeEmail}
+                onChange={(e) => setEditAttendeeEmail(e.target.value)}
+                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                placeholder="Email (optional)"
+              />
+              <input
+                value={editAttendeePhone}
+                onChange={(e) => setEditAttendeePhone(e.target.value)}
+                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                placeholder="Phone number"
+              />
+              <input
+                value={editAttendeeLocation}
+                onChange={(e) => setEditAttendeeLocation(e.target.value)}
+                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                placeholder="Location (optional)"
+              />
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={closeEditAttendee}
+              disabled={editAttendeeSaving}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSaveEditAttendee}
+              disabled={editAttendeeSaving}
+              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            >
+              {editAttendeeSaving ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+      </SimpleModal>
+
+      <SimpleModal
+        open={editTotalOpen}
+        title="Edit Attendance"
+        onClose={closeEditTotal}
+      >
+        {editTotalError ? (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{editTotalError}</div>
+        ) : null}
+        <div className="grid grid-cols-1 gap-3">
+          <input
+            type="date"
+            value={editTotalDate}
+            onChange={(e) => setEditTotalDate(e.target.value)}
+            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+          />
+          <input
+            value={editTotalNumber}
+            onChange={(e) => setEditTotalNumber(e.target.value)}
+            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            placeholder="Total attendees"
+          />
+          <input
+            value={editTotalSpeaker}
+            onChange={(e) => setEditTotalSpeaker(e.target.value)}
+            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            placeholder="Main speaker (optional)"
+          />
+        </div>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={closeEditTotal}
+            disabled={editTotalSaving}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSaveEditTotal}
+            disabled={editTotalSaving}
+            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+          >
+            {editTotalSaving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </SimpleModal>
+
+      <SimpleModal
+        open={editFileOpen}
+        title="Edit File"
+        onClose={closeEditFile}
+      >
+        {editFileError ? (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{editFileError}</div>
+        ) : null}
+
+        <div className="grid grid-cols-1 gap-3">
+          <input
+            value={editFileName}
+            onChange={(e) => setEditFileName(e.target.value)}
+            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            placeholder="File name"
+          />
+
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+            <div className="text-xs font-semibold text-gray-600">Replace file (optional)</div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <div className="text-xs text-gray-600 truncate">{editFileReplacement?.name || "No file selected"}</div>
+              <FileUploadButton
+                accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
+                disabled={editFileSaving}
+                onFile={(f) => {
+                  setEditFileReplacement(f || null);
+                  if (!f) return;
+                  const old = editFileRow?.originalName || "";
+                  const current = String(editFileName || "");
+                  if (!current.trim() || current === old) {
+                    setEditFileName(f.name);
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Choose File
+              </FileUploadButton>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={closeEditFile}
+            disabled={editFileSaving}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSaveEditFile}
+            disabled={editFileSaving}
+            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+          >
+            {editFileSaving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </SimpleModal>
 
       <SimpleModal
         open={registerOpen}
