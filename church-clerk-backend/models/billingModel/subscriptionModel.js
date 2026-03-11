@@ -70,6 +70,21 @@ const subscriptionSchema = new mongoose.Schema(
       required: true
     },
 
+    paystackCustomerCode: {
+      type: String,
+      default: null
+    },
+
+    paystackSubscriptionCode: {
+      type: String,
+      default: null
+    },
+
+    paystackPlanCode: {
+      type: String,
+      default: null
+    },
+
     paymentMethods: [
       {
         type: {

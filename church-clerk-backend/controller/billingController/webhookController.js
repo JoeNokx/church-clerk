@@ -7,6 +7,51 @@ import ReferralCode from "../../models/referralModel/referralCodeModel.js";
 import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
+const isCardChargeEvent = (event) => {
+  const ch = event?.data?.channel;
+  if (!ch) return false;
+  return String(ch).trim().toLowerCase() === "card";
+};
+
+const extractPaystackSubscriptionCodes = (data) => {
+  const d = data || {};
+  const customerCode = d?.customer?.customer_code || d?.customer?.code || null;
+  const planCode = d?.plan?.plan_code || d?.plan?.plan_code || (typeof d?.plan === "string" ? d.plan : null);
+  const subscriptionCode = d?.subscription?.subscription_code || d?.subscription_code || null;
+  return {
+    customerCode: customerCode ? String(customerCode) : null,
+    planCode: planCode ? String(planCode) : null,
+    subscriptionCode: subscriptionCode ? String(subscriptionCode) : null
+  };
+};
+
+const applyPaystackSubscriptionCodesToSubscription = (subscription, codes) => {
+  if (!subscription || !codes) return;
+  if (codes.customerCode) subscription.paystackCustomerCode = codes.customerCode;
+  if (codes.planCode) subscription.paystackPlanCode = codes.planCode;
+  if (codes.subscriptionCode) subscription.paystackSubscriptionCode = codes.subscriptionCode;
+};
+
+const findSubscriptionFromPaystackEvent = async (event) => {
+  const subscriptionId = event?.data?.metadata?.subscriptionId;
+  if (subscriptionId) {
+    const s = await Subscription.findById(subscriptionId);
+    if (s) return s;
+  }
+
+  const codes = extractPaystackSubscriptionCodes(event?.data);
+  if (codes.customerCode) {
+    const s = await Subscription.findOne({ paystackCustomerCode: codes.customerCode });
+    if (s) return s;
+  }
+  if (codes.subscriptionCode) {
+    const s = await Subscription.findOne({ paystackSubscriptionCode: codes.subscriptionCode });
+    if (s) return s;
+  }
+
+  return null;
+};
+
 export const paystackWebhook = async (req, res) => {
   let log = null;
   try {
@@ -53,6 +98,24 @@ export const paystackWebhook = async (req, res) => {
 
     const event = parsedEvent || JSON.parse(req.rawBody.toString());
 
+    if (event.event === "subscription.create" || event.event === "invoice.create" || event.event === "invoice.payment_failed") {
+      const subscription = await findSubscriptionFromPaystackEvent(event);
+      if (subscription) {
+        const codes = extractPaystackSubscriptionCodes(event?.data);
+        applyPaystackSubscriptionCodesToSubscription(subscription, codes);
+
+        if (event.event === "invoice.payment_failed") {
+          subscription.status = "past_due";
+          {
+            const { gracePeriodDays } = await getSystemSettingsSnapshot();
+            subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 7));
+          }
+        }
+
+        await subscription.save();
+      }
+    }
+
     // HANDLE SUCCESSFUL PAYMENT
     if (event.event === "charge.success") {
       const reference = event.data.reference;
@@ -87,6 +150,10 @@ export const paystackWebhook = async (req, res) => {
       // Load subscription
       const subscription = await Subscription.findById(billing.subscription);
       if (!subscription) return res.sendStatus(200);
+
+      if (isCardChargeEvent(event)) {
+        applyPaystackSubscriptionCodesToSubscription(subscription, extractPaystackSubscriptionCodes(event?.data));
+      }
 
       const now = new Date();
       const wasFreeTrial = subscription.status === "free trial" || subscription.status === "trialing";

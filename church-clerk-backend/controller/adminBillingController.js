@@ -6,6 +6,50 @@ import WebhookLog from "../models/billingModel/webhookLogModel.js";
 import https from "https";
 import PDFDocument from "pdfkit";
 
+const PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL = {
+  basic: {
+    monthly: "PLN_8uefis4crjcr41o",
+    halfYear: "PLN_j6oh9l7kpdeu8iy",
+    yearly: "PLN_fv0op4dygxav9de"
+  },
+  standard: {
+    monthly: "PLN_ty5113i92ozhyh7",
+    halfYear: "PLN_1fgfnonzqgaqj4q",
+    yearly: "PLN_kbhoxbyxdbxbxjz"
+  },
+  premium: {
+    monthly: "PLN_h3sbqgtqdsqbi89",
+    halfYear: "PLN_kb4lhbx563m6gj5",
+    yearly: "PLN_5wa7hr512u9i6p7"
+  }
+};
+
+const normalizeBillingIntervalKey = (billingInterval) => {
+  const v = String(billingInterval || "")
+    .trim()
+    .toLowerCase();
+  if (v === "monthly" || v === "month") return "monthly";
+  if (v === "halfyear" || v === "half_year" || v === "half-year" || v === "biannually" || v === "semiannually") return "halfYear";
+  if (v === "yearly" || v === "year" || v === "annually" || v === "annual") return "yearly";
+  return String(billingInterval || "").trim();
+};
+
+const getPaystackRecurringPlanCode = ({ planName, billingInterval }) => {
+  const name = String(planName || "")
+    .trim()
+    .toLowerCase();
+  const intervalKey = normalizeBillingIntervalKey(billingInterval);
+  return PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL?.[name]?.[intervalKey] || null;
+};
+
+const toPaystackInterval = (billingInterval) => {
+  const v = String(billingInterval || "").trim();
+  if (v === "monthly") return "monthly";
+  if (v === "halfYear") return "biannually";
+  if (v === "yearly") return "annually";
+  return null;
+};
+
 const clamp = (value, min, max) => {
   const n = Number(value);
   if (!Number.isFinite(n)) return min;
@@ -96,6 +140,20 @@ const validatePlanName = (name) => {
   }
 };
 
+const getStoredOrMappedPaystackPlanCodes = (planName, existingCodes) => {
+  const name = String(planName || "")
+    .trim()
+    .toLowerCase();
+  const codes = existingCodes && typeof existingCodes === "object" ? { ...existingCodes } : {};
+  const mapped = PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL?.[name] || null;
+  if (!mapped) return codes;
+
+  if (!codes.monthly) codes.monthly = mapped.monthly || null;
+  if (!codes.halfYear) codes.halfYear = mapped.halfYear || null;
+  if (!codes.yearly) codes.yearly = mapped.yearly || null;
+  return codes;
+};
+
 export const createPlan = async (req, res) => {
   try {
     const { name, description, memberLimit = null, features = {}, featureCategories = {}, isActive = true } = req.body;
@@ -115,9 +173,12 @@ export const createPlan = async (req, res) => {
       return res.status(400).json({ message: "Plan already exists" });
     }
 
+    const paystackPlanCodes = getStoredOrMappedPaystackPlanCodes(normalizedName, req.body?.paystackPlanCodes);
+
     const plan = await Plan.create({
       name: normalizedName,
       description,
+      paystackPlanCodes,
       memberLimit,
       features,
       featureCategories,
@@ -145,6 +206,10 @@ export const getPlans = async (req, res) => {
 
 export const updatePlan = async (req, res) => {
   try {
+    const existing = await Plan.findById(req.params.id);
+    if (!existing) return res.status(404).json({ message: "Plan not found" });
+
+    const before = typeof existing.toObject === "function" ? existing.toObject() : existing;
     const updates = { ...req.body };
 
     if (typeof updates.name === "string") {
@@ -162,6 +227,11 @@ export const updatePlan = async (req, res) => {
       updates.pricing = priceByCurrency;
     }
 
+    if (updates.name || existing?.name) {
+      const nextName = updates.name || existing.name;
+      updates.paystackPlanCodes = getStoredOrMappedPaystackPlanCodes(nextName, existing?.paystackPlanCodes);
+    }
+
     delete updates.createdBy;
 
     const plan = await Plan.findByIdAndUpdate(req.params.id, updates, {
@@ -169,7 +239,57 @@ export const updatePlan = async (req, res) => {
       runValidators: true
     });
 
-    if (!plan) return res.status(404).json({ message: "Plan not found" });
+    const after = typeof plan?.toObject === "function" ? plan.toObject() : plan;
+
+    const prevGhs = before?.priceByCurrency?.GHS || before?.pricing?.GHS || {};
+    const nextGhs = after?.priceByCurrency?.GHS || after?.pricing?.GHS || {};
+
+    const intervals = ["monthly", "halfYear", "yearly"];
+    const changedIntervals = intervals.filter((k) => {
+      const a = prevGhs?.[k];
+      const b = nextGhs?.[k];
+      if (a === undefined && b === undefined) return false;
+      return Number(a) !== Number(b);
+    });
+
+    if (changedIntervals.length) {
+      try {
+        for (const billingInterval of changedIntervals) {
+          const planCode =
+            getPaystackRecurringPlanCode({ planName: after?.name, billingInterval }) || after?.paystackPlanCodes?.[billingInterval];
+          const amountMajor = nextGhs?.[billingInterval];
+          const interval = toPaystackInterval(billingInterval);
+
+          if (!planCode) continue;
+          if (!interval) continue;
+          if (amountMajor === undefined || amountMajor === null) continue;
+
+          await paystackRequest({
+            method: "PUT",
+            path: `/plan/${encodeURIComponent(planCode)}`,
+            body: {
+              amount: Math.round(Number(amountMajor) * 100),
+              interval
+            }
+          });
+        }
+      } catch (e) {
+        const rollback = {
+          name: before?.name,
+          description: before?.description,
+          paystackPlanCodes: before?.paystackPlanCodes,
+          memberLimit: before?.memberLimit,
+          features: before?.features,
+          featureCategories: before?.featureCategories,
+          hqOnly: before?.hqOnly,
+          pricing: before?.pricing,
+          priceByCurrency: before?.priceByCurrency,
+          isActive: before?.isActive
+        };
+        await Plan.findByIdAndUpdate(req.params.id, rollback, { runValidators: true });
+        return res.status(400).json({ message: e?.message || "Failed to sync Paystack plan" });
+      }
+    }
 
     return res.status(200).json({ message: "Plan updated", plan: sanitizePlanCurrencies(plan) });
   } catch (error) {

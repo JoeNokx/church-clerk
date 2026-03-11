@@ -6,6 +6,42 @@ import https from "https";
 import { addDays, addMonths } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
+const PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL = {
+  basic: {
+    monthly: "PLN_8uefis4crjcr41o",
+    halfYear: "PLN_j6oh9l7kpdeu8iy",
+    yearly: "PLN_fv0op4dygxav9de"
+  },
+  standard: {
+    monthly: "PLN_ty5113i92ozhyh7",
+    halfYear: "PLN_1fgfnonzqgaqj4q",
+    yearly: "PLN_kbhoxbyxdbxbxjz"
+  },
+  premium: {
+    monthly: "PLN_h3sbqgtqdsqbi89",
+    halfYear: "PLN_kb4lhbx563m6gj5",
+    yearly: "PLN_5wa7hr512u9i6p7"
+  }
+};
+
+const normalizeBillingIntervalKey = (billingInterval) => {
+  const v = String(billingInterval || "")
+    .trim()
+    .toLowerCase();
+  if (v === "monthly" || v === "month") return "monthly";
+  if (v === "halfyear" || v === "half_year" || v === "half-year" || v === "biannually" || v === "semiannually") return "halfYear";
+  if (v === "yearly" || v === "year" || v === "annually" || v === "annual") return "yearly";
+  return String(billingInterval || "").trim();
+};
+
+const getPaystackRecurringPlanCode = ({ planName, billingInterval }) => {
+  const name = String(planName || "")
+    .trim()
+    .toLowerCase();
+  const intervalKey = normalizeBillingIntervalKey(billingInterval);
+  return PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL?.[name]?.[intervalKey] || null;
+};
+
 const getSupportedPaystackCurrencies = () => {
   const raw = String(process.env.PAYSTACK_SUPPORTED_CURRENCIES || "").trim();
   const parsed = raw
@@ -138,7 +174,9 @@ export const getPaystackBanks = async (req, res) => {
 
 export const initializePaystackPayment = async (req, res) => {
   try {
-    const { planId, billingInterval = "monthly", channels } = req.body;
+    const { planId, billingInterval = "monthly", channels, payment_method } = req.body;
+
+    const intervalKey = normalizeBillingIntervalKey(billingInterval) || "monthly";
 
     const email = String(req.user?.email || "").trim();
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -172,14 +210,29 @@ export const initializePaystackPayment = async (req, res) => {
           .filter(Boolean)
       : [];
 
-    const amount = plan.pricing?.GHS?.[billingInterval];
+    const normalizedPaymentMethod = payment_method ? String(payment_method).trim().toLowerCase() : "";
+    const isCardPayment =
+      normalizedPaymentMethod === "card" || (normalizedChannels.length === 1 && normalizedChannels[0] === "card");
+    const recurringPlanCode = isCardPayment
+      ? (getPaystackRecurringPlanCode({ planName: plan?.name, billingInterval: intervalKey }) || plan?.paystackPlanCodes?.[intervalKey])
+      : null;
+
+    if (isCardPayment && !recurringPlanCode) {
+      return res.status(400).json({ message: "Card subscription plan code is not configured for this plan" });
+    }
+
+    const amount = plan.pricing?.GHS?.[intervalKey];
     if (!amount) {
       return res.status(400).json({ message: "Pricing not configured" });
     }
 
-    subscription.billingInterval = billingInterval;
+    subscription.billingInterval = intervalKey;
     subscription.currency = currency;
     subscription.paymentProvider = "paystack";
+
+    if (isCardPayment && recurringPlanCode) {
+      subscription.paystackPlanCode = recurringPlanCode;
+    }
     await subscription.save();
 
     const billing = await BillingHistory.create({
@@ -193,7 +246,7 @@ export const initializePaystackPayment = async (req, res) => {
       invoiceSnapshot: {
         planId: plan._id,
         planName: plan.name,
-        billingInterval,
+        billingInterval: intervalKey,
         amount,
         currency
       }
@@ -211,6 +264,7 @@ export const initializePaystackPayment = async (req, res) => {
         amount: Math.round(amount * 100),
         currency,
         reference,
+        ...(isCardPayment && recurringPlanCode ? { plan: recurringPlanCode } : {}),
         ...(normalizedChannels.length ? { channels: normalizedChannels } : {}),
         callback_url: `${frontendUrl}/dashboard/billing`,
         metadata: {

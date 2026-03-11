@@ -9,6 +9,12 @@ const planSchema = new mongoose.Schema(
     },
     description: String,
 
+    paystackPlanCodes: {
+      monthly: { type: String, default: null },
+      halfYear: { type: String, default: null },
+      yearly: { type: String, default: null }
+    },
+
     memberLimit: {
       type: Number, // 100, 500, null for unlimited
       default: null
