@@ -5,7 +5,10 @@ import { createChurch, searchHeadquartersChurches } from "../../church/services/
 import AuthCard from "../components/AuthCard.jsx";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import Select from "react-select";
 import currencyCodes from "currency-codes";
+import { Country, State } from "country-state-city";
+import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
 
 function RegisterChurch() {
   const navigate = useNavigate();
@@ -39,6 +42,50 @@ function RegisterChurch() {
   const [currencyTouched, setCurrencyTouched] = useState(false);
   const [foundedDate, setFoundedDate] = useState("");
   const [referralCodeInput, setReferralCodeInput] = useState("");
+
+  const countryOptions = useMemo(() => {
+    const allow = new Set(AFRICAN_COUNTRY_CODES);
+    return Country.getAllCountries()
+      .filter((c) => allow.has(String(c?.isoCode || "").trim()))
+      .map((c) => ({ value: c.isoCode, label: c.name }));
+  }, []);
+
+  const selectedCountryOption = useMemo(() => {
+    const label = String(country || "").trim().toLowerCase();
+    if (!label) return null;
+    return countryOptions.find((o) => String(o.label || "").trim().toLowerCase() === label) || null;
+  }, [country, countryOptions]);
+
+  const regionOptions = useMemo(() => {
+    const code = String(selectedCountryOption?.value || "").trim();
+    if (!code) return [];
+    if (!AFRICAN_COUNTRY_CODES.includes(code)) return [];
+    return State.getStatesOfCountry(code).map((s) => ({ value: s.isoCode, label: s.name }));
+  }, [selectedCountryOption?.value]);
+
+  const selectedRegionOption = useMemo(() => {
+    const label = String(region || "").trim().toLowerCase();
+    if (!label) return null;
+    return regionOptions.find((o) => String(o.label || "").trim().toLowerCase() === label) || null;
+  }, [region, regionOptions]);
+
+  const selectStyles = useMemo(
+    () => ({
+      control: (base, state) => ({
+        ...base,
+        minHeight: "44px",
+        borderRadius: "0.5rem",
+        borderColor: state.isFocused ? "#1e3a8a" : "#d1d5db",
+        boxShadow: state.isFocused ? "0 0 0 2px rgba(30,58,138,0.2)" : "none",
+        ":hover": { borderColor: state.isFocused ? "#1e3a8a" : "#9ca3af" }
+      }),
+      valueContainer: (base) => ({ ...base, padding: "0 0.75rem" }),
+      input: (base) => ({ ...base, margin: 0, padding: 0 }),
+      placeholder: (base) => ({ ...base, color: "#9ca3af" }),
+      singleValue: (base) => ({ ...base, color: "#111827" })
+    }),
+    []
+  );
 
   const currencyOptions = useMemo(() => {
     const rows = Array.isArray(currencyCodes?.data) ? currencyCodes.data : [];
@@ -359,30 +406,52 @@ function RegisterChurch() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Region (optional)</label>
-          <input
-            type="text"
-            placeholder="State / Region"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+          <Select
+            inputId="church-region"
+            isSearchable
+            isClearable
+            options={regionOptions}
+            value={selectedRegionOption}
+            onChange={(opt) => {
+              if (!opt) {
+                setRegion("");
+                return;
+              }
+
+              setRegion(String(opt?.label || ""));
+            }}
+            placeholder={selectedCountryOption ? "Select region" : "Select country first"}
+            isDisabled={!selectedCountryOption}
+            styles={selectStyles}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Country (optional)</label>
-          <input
-            type="text"
-            placeholder="Country"
-            value={country}
-            onChange={(e) => {
-              const next = e.target.value;
-              setCountry(next);
+          <Select
+            inputId="church-country"
+            isSearchable
+            isClearable
+            options={countryOptions}
+            value={selectedCountryOption}
+            onChange={(opt) => {
+              if (!opt) {
+                setCountry("");
+                setRegion("");
+                return;
+              }
+
+              const nextLabel = String(opt?.label || "");
+              setCountry(nextLabel);
+              setRegion("");
+
               if (currencyTouched) return;
-              const normalized = String(next || "").trim().toLowerCase();
+              const normalized = String(nextLabel || "").trim().toLowerCase();
               if (!normalized) return;
               setCurrency(normalized === "ghana" ? "GHS" : "USD");
             }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            placeholder="Select country"
+            styles={selectStyles}
           />
         </div>
 
@@ -398,20 +467,7 @@ function RegisterChurch() {
               setCurrency(String(opt?.value || "").toUpperCase());
             }}
             placeholder="Select currency"
-            styles={{
-              control: (base, state) => ({
-                ...base,
-                minHeight: "44px",
-                borderRadius: "0.5rem",
-                borderColor: state.isFocused ? "#1e3a8a" : "#d1d5db",
-                boxShadow: state.isFocused ? "0 0 0 2px rgba(30,58,138,0.2)" : "none",
-                ":hover": { borderColor: state.isFocused ? "#1e3a8a" : "#9ca3af" }
-              }),
-              valueContainer: (base) => ({ ...base, padding: "0 0.75rem" }),
-              input: (base) => ({ ...base, margin: 0, padding: 0 }),
-              placeholder: (base) => ({ ...base, color: "#9ca3af" }),
-              singleValue: (base) => ({ ...base, color: "#111827" })
-            }}
+            styles={selectStyles}
           />
           <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
             <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 text-amber-700" aria-hidden="true">

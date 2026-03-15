@@ -21,6 +21,8 @@ import {
 import FileUploadButton from "../../../shared/components/FileUploadButton.jsx";
 import EventCreatePage from "./EventCreatePage.jsx";
 import EventOfferingPage from "../offerings/pages/EventOfferingPage.jsx";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -329,6 +331,11 @@ function EventDetailsPage() {
       return;
     }
 
+    if (!isValidPhoneNumber(editAttendeePhone)) {
+      setEditAttendeeError("Invalid phone number");
+      return;
+    }
+
     setEditAttendeeSaving(true);
     setEditAttendeeError(null);
     try {
@@ -493,6 +500,11 @@ function EventDetailsPage() {
       return;
     }
 
+    if (!isValidPhoneNumber(regPhone)) {
+      setRegisterError("Invalid phone number");
+      return;
+    }
+
     setRegisterError(null);
     setRegisterQueue((prev) => [
       ...prev,
@@ -518,6 +530,11 @@ function EventDetailsPage() {
     if (hasCurrent) {
       if (!regFullName || !regPhone) {
         setRegisterError("Name and phone number are required.");
+        return;
+      }
+
+      if (!isValidPhoneNumber(regPhone)) {
+        setRegisterError("Invalid phone number");
         return;
       }
       queue.push({
@@ -618,6 +635,11 @@ function EventDetailsPage() {
     if (!eventId) return;
     if (!regFullName || !regPhone) {
       setRegisterError("Name and phone number are required.");
+      return;
+    }
+
+    if (!isValidPhoneNumber(regPhone)) {
+      setRegisterError("Invalid phone number");
       return;
     }
 
@@ -1262,11 +1284,10 @@ function EventDetailsPage() {
                 className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                 placeholder="Email (optional)"
               />
-              <input
+              <PhoneNumberInput
                 value={editAttendeePhone}
-                onChange={(e) => setEditAttendeePhone(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                placeholder="Phone number"
+                onChange={setEditAttendeePhone}
+                error={Boolean(editAttendeeError && String(editAttendeeError).toLowerCase().includes("invalid phone"))}
               />
               <input
                 value={editAttendeeLocation}
@@ -1434,11 +1455,10 @@ function EventDetailsPage() {
                 className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                 placeholder="Email (optional)"
               />
-              <input
+              <PhoneNumberInput
                 value={regPhone}
-                onChange={(e) => setRegPhone(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                placeholder="Phone number"
+                onChange={setRegPhone}
+                error={Boolean(registerError && String(registerError).toLowerCase().includes("invalid phone"))}
               />
               <input
                 value={regLocation}

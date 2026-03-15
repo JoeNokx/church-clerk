@@ -97,6 +97,8 @@ function CountryMenuList(props) {
           style={{
             position: "sticky",
             top: 0,
+            left: 0,
+            right: 0,
             zIndex: 2,
             background: "white",
             padding: "8px",
@@ -291,6 +293,10 @@ function CountrySelect({
         styles={{
           menuPortal: (base) => ({ ...base, zIndex: 9999 }),
           menu: (base) => ({ ...base, minWidth: 280 }),
+          menuList: (base) => ({
+            ...base,
+            paddingTop: 0
+          }),
           control: (base) => ({
             ...base,
             minHeight: 40,
@@ -319,8 +325,8 @@ export default function PhoneNumberInput({
   error,
   inputClassName = "",
   disabled = false,
-  flagOnlySelectedCountry = false,
-  countryMenuSearchBar = false
+  flagOnlySelectedCountry = true,
+  countryMenuSearchBar = true
 }) {
   const handleChange = (phone) => {
     if (!phone) {

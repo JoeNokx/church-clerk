@@ -8,6 +8,7 @@ import Skeleton from "react-loading-skeleton";
 import Select from "react-select";
 import currencyCodes from "currency-codes";
 import { Country, State } from "country-state-city";
+import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
 import { updateMyPassword, updateMyProfile } from "../../auth/services/auth.api.js";
 import { getActivityLogs } from "../../activityLog/services/activityLog.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -190,10 +191,13 @@ function SettingsPage() {
   const [referralCodeInput, setReferralCodeInput] = useState("");
 
   const countryOptions = useMemo(() => {
-    return Country.getAllCountries().map((c) => ({
-      value: c.isoCode,
-      label: c.name
-    }));
+    const allow = new Set(AFRICAN_COUNTRY_CODES);
+    return Country.getAllCountries()
+      .filter((c) => allow.has(String(c?.isoCode || "").trim()))
+      .map((c) => ({
+        value: c.isoCode,
+        label: c.name
+      }));
   }, []);
 
   const selectedCountryOption = useMemo(() => {
@@ -210,6 +214,7 @@ function SettingsPage() {
   const regionOptions = useMemo(() => {
     const code = String(countryCode || "").trim();
     if (!code) return [];
+    if (!AFRICAN_COUNTRY_CODES.includes(code)) return [];
     return State.getStatesOfCountry(code).map((s) => ({
       value: s.isoCode,
       label: s.name
@@ -374,14 +379,18 @@ function SettingsPage() {
         setPhoneNumber(church?.phoneNumber || "");
         setEmail(church?.email || user?.email || "");
         setCity(church?.city || "");
-        setRegion(church?.region || "");
-        setCountry(church?.country || "");
-
         const nextCountry = String(church?.country || "").trim().toLowerCase();
         const matchedCountry = nextCountry
           ? countryOptions.find((o) => String(o.label || "").trim().toLowerCase() === nextCountry) || null
           : null;
-        setCountryCode(matchedCountry?.value || "");
+
+        if (matchedCountry?.value) {
+          setCountry(String(matchedCountry.label || ""));
+          setCountryCode(matchedCountry.value || "");
+        } else {
+          setCountry("");
+          setCountryCode("");
+        }
 
         if (matchedCountry?.value) {
           const nextRegion = String(church?.region || "").trim().toLowerCase();
@@ -389,8 +398,16 @@ function SettingsPage() {
           const matchedState = nextRegion
             ? (Array.isArray(states) ? states : []).find((s) => String(s.name || "").trim().toLowerCase() === nextRegion) || null
             : null;
-          setStateCode(matchedState?.isoCode || "");
+
+          if (matchedState?.isoCode) {
+            setRegion(String(matchedState.name || ""));
+            setStateCode(matchedState.isoCode || "");
+          } else {
+            setRegion("");
+            setStateCode("");
+          }
         } else {
+          setRegion("");
           setStateCode("");
         }
         setCurrency(
@@ -488,6 +505,27 @@ function SettingsPage() {
     if (!isValidPhoneNumber(phoneNumber)) {
       setProfileLoading(false);
       setProfileError("Invalid phone number");
+      return;
+    }
+
+    const hasCountry = Boolean(String(country || "").trim());
+    const hasRegion = Boolean(String(region || "").trim());
+
+    if (hasCountry && !selectedCountryOption?.value) {
+      setProfileLoading(false);
+      setProfileError("Please select a country from the dropdown list.");
+      return;
+    }
+
+    if (hasRegion && !hasCountry) {
+      setProfileLoading(false);
+      setProfileError("Please select a country first.");
+      return;
+    }
+
+    if (hasRegion && !selectedRegionOption?.value) {
+      setProfileLoading(false);
+      setProfileError("Please select a region from the dropdown list.");
       return;
     }
 
@@ -1357,7 +1395,7 @@ function SettingsPage() {
                 <PhoneNumberInput
                   value={phoneNumber}
                   onChange={setPhoneNumber}
-                  error={Boolean(churchError && String(churchError).toLowerCase().includes("invalid phone"))}
+                  error={Boolean(profileError && String(profileError).toLowerCase().includes("invalid phone"))}
                   inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                   disabled={!canWrite}
                 />
