@@ -2,6 +2,8 @@ import BusinessVentures from "../../../models/financeModel/businessModel/busines
 import BusinessIncome from "../../../models/financeModel/businessModel/businessIncomeModel.js";
 import BusinessExpenses from "../../../models/financeModel/businessModel/businessExpensesModel.js";
 
+import { validatePhoneNumber } from "../../../utils/validatePhoneNumber.js";
+
 
 const createBusinessVentures = async (req, res) => {
     
@@ -16,13 +18,27 @@ const createBusinessVentures = async (req, res) => {
                 if (!businessName || !description) {
                 return res.status(400).json({ message: "Business name and description are required." });
                 }
+
+                let validatedPhoneNumber;
+                if (phoneNumber !== undefined) {
+                  const rawPhone = String(phoneNumber || "").trim();
+                  if (rawPhone) {
+                    try {
+                      validatedPhoneNumber = validatePhoneNumber(rawPhone, "GH");
+                    } catch (e) {
+                      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+                    }
+                  } else {
+                    validatedPhoneNumber = "";
+                  }
+                }
         
 
                 const businessVentures = await BusinessVentures.create({
                 businessName,
                 description,
                 manager,
-                phoneNumber,
+                phoneNumber: validatedPhoneNumber,
                 church: req.activeChurch._id,
                 createdBy: req.user._id
                 });
@@ -169,6 +185,19 @@ const updateBusinessVentures = async (req, res) => {
         
                 if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
                     query.church = req.activeChurch._id
+                }
+
+                if (req.body?.phoneNumber !== undefined) {
+                  const rawPhone = String(req.body.phoneNumber || "").trim();
+                  if (rawPhone) {
+                    try {
+                      req.body.phoneNumber = validatePhoneNumber(rawPhone, "GH");
+                    } catch (e) {
+                      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+                    }
+                  } else {
+                    req.body.phoneNumber = "";
+                  }
                 }
         
                 const businessVentures = await BusinessVentures.findOneAndUpdate(query, req.body, {new: true, runValidators: true})

@@ -2,6 +2,7 @@ import Church from "../models/churchModel.js";
 import User from "../models/userModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import { sendEmail } from "../services/emailService.js";
+import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 
 // referral models
 import ReferralCode from "../models/referralModel/referralCodeModel.js";
@@ -11,6 +12,7 @@ import { generateReferralCode } from "../utils/generateReferralCode.js";
 
 const createMyChurch = async (req, res) => {
   try {
+
     if (req.user?.isEmailVerified === false) {
       return res.status(403).json({
         message: "Please verify your email to continue.",
@@ -40,6 +42,13 @@ const createMyChurch = async (req, res) => {
       });
     }
 
+    let validatedPhoneNumber;
+    try {
+      validatedPhoneNumber = validatePhoneNumber(phoneNumber, "GH");
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+    }
+
     let parentChurch = null;
 
     if (type === "Branch") {
@@ -67,7 +76,7 @@ const createMyChurch = async (req, res) => {
       name,
       type,
       parentChurch,
-      phoneNumber,
+      phoneNumber: validatedPhoneNumber,
       pastor,
       email,
       streetAddress,
@@ -243,6 +252,19 @@ const updateMyChurchProfile = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
+
+    if (updateData.phoneNumber !== undefined) {
+      const rawPhone = String(updateData.phoneNumber || "").trim();
+      if (rawPhone) {
+        try {
+          updateData.phoneNumber = validatePhoneNumber(rawPhone, "GH");
+        } catch (e) {
+          return res.status(400).json({ message: e?.message || "Invalid phone number" });
+        }
+      } else {
+        updateData.phoneNumber = "";
+      }
+    }
 
     // Build query based on role
     let query = {};

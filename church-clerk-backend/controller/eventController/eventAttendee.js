@@ -1,6 +1,8 @@
 import Event from "../../models/eventModel.js";
 import EventAttendees from "../../models/eventModel/eventAttendeesModel.js";
 
+import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
+
 // POST: register attendee to event
 const createEventAttendee = async (req, res) => {
   try {
@@ -21,10 +23,24 @@ const createEventAttendee = async (req, res) => {
     if (!event) return res.status(404).json({ message: "Event not found." });
 
 
+    let validatedPhoneNumber;
+    if (phoneNumber !== undefined) {
+      const rawPhone = String(phoneNumber || "").trim();
+      if (rawPhone) {
+        try {
+          validatedPhoneNumber = validatePhoneNumber(rawPhone, "GH");
+        } catch (e) {
+          return res.status(400).json({ message: e?.message || "Invalid phone number" });
+        }
+      } else {
+        validatedPhoneNumber = "";
+      }
+    }
+
     const attendees = await EventAttendees.create({ 
       fullName,
        email,
-        phoneNumber, 
+        phoneNumber: validatedPhoneNumber, 
        location,
        event: eventId,
       church: event.church,
@@ -142,6 +158,19 @@ const updateEventAttendee = async (req, res) => {
 
     const event = await Event.findOne(eventQuery);
     if (!event) return res.status(404).json({ message: "Event not found." });
+
+    if (req.body?.phoneNumber !== undefined) {
+      const rawPhone = String(req.body.phoneNumber || "").trim();
+      if (rawPhone) {
+        try {
+          req.body.phoneNumber = validatePhoneNumber(rawPhone, "GH");
+        } catch (e) {
+          return res.status(400).json({ message: e?.message || "Invalid phone number" });
+        }
+      } else {
+        req.body.phoneNumber = "";
+      }
+    }
 
     const query = { _id: attendeeId, event: eventId, church: event.church };
     const attendee = await EventAttendees.findOneAndUpdate(query, req.body, {

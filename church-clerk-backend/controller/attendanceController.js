@@ -1,5 +1,7 @@
 import Attendance from "../models/attendanceModel.js"
 
+import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
+
 
 const createAttendance = async (req, res) => {
     
@@ -198,9 +200,16 @@ const createVisitor = async (req, res) => {
       });
     }
 
+    let validatedPhoneNumber;
+    try {
+      validatedPhoneNumber = validatePhoneNumber(phoneNumber, "GH");
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+    }
+
     const data = {
       fullName,
-      phoneNumber,
+      phoneNumber: validatedPhoneNumber,
       email,
       location,
       serviceType,
@@ -379,6 +388,19 @@ const updateVisitor = async (req, res) => {
     try {
         const {id} = req.params;
         const query = { _id: id, church: req.activeChurch._id }
+
+        if (req.body?.phoneNumber !== undefined) {
+          const rawPhone = String(req.body.phoneNumber || "").trim();
+          if (rawPhone) {
+            try {
+              req.body.phoneNumber = validatePhoneNumber(rawPhone, "GH");
+            } catch (e) {
+              return res.status(400).json({ message: e?.message || "Invalid phone number" });
+            }
+          } else {
+            req.body.phoneNumber = "";
+          }
+        }
 
         const attendance = await Visitor.findOneAndUpdate(query, req.body, {
             new: true,

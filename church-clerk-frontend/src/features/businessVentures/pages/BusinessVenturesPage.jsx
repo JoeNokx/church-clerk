@@ -11,6 +11,8 @@ import {
   getBusinessVentures,
   updateBusinessVenture
 } from "../services/businessVentures.api.js";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
@@ -101,6 +103,11 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
       return;
     }
 
+    if (String(phoneNumber || "").trim() && !isValidPhoneNumber(phoneNumber)) {
+      setError("Invalid phone number");
+      return;
+    }
+
     setSaving(true);
     try {
       await createBusinessVenture({
@@ -154,12 +161,9 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500">Phone Number</label>
-            <input
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-              placeholder="Optional"
-            />
+            <div className="mt-2">
+              <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
+            </div>
           </div>
         </div>
 
@@ -269,11 +273,9 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500">Phone Number</label>
-            <input
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-            />
+            <div className="mt-2">
+              <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
+            </div>
           </div>
         </div>
 

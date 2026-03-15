@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext from "../member.store.js";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
@@ -59,6 +61,11 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
 
     if (!firstName?.trim() || !lastName?.trim() || !phoneNumber?.trim()) {
       setFormError("First name, last name and phone number are required.");
+      return;
+    }
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setFormError("Invalid phone number");
       return;
     }
 
@@ -136,12 +143,9 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500">Phone Number</label>
-              <input
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                placeholder=""
-              />
+              <div className="mt-2">
+                <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(formError)} />
+              </div>
             </div>
 
             <div>

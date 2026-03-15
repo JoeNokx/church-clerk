@@ -6,6 +6,8 @@ import https from "https";
 import { addDays, addMonths } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
+import { toGhanaNationalFromE164, validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
+
 const PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL = {
   basic: {
     monthly: "PLN_8uefis4crjcr41o",
@@ -270,7 +272,19 @@ export const initializePaystackPayment = async (req, res) => {
         metadata: {
           billingId: billing._id.toString(),
           subscriptionId: subscription._id.toString(),
-          churchId: subscription.church.toString()
+          churchId: subscription.church.toString(),
+          custom_fields: [
+            {
+              display_name: "Full Name",
+              variable_name: "full_name",
+              value: String(req.user?.fullName || req.user?.name || "").trim()
+            },
+            {
+              display_name: "Phone Number",
+              variable_name: "phone_number",
+              value: String(req.user?.phoneNumber || "").trim()
+            }
+          ]
         }
       }
     });
@@ -303,14 +317,23 @@ export const chargePaystackMobileMoney = async (req, res) => {
     }
 
     const normalizedProvider = String(provider).toLowerCase();
-    const normalizedPhone = String(phone).replace(/\D+/g, "");
+
+    let phoneE164;
+    try {
+      phoneE164 = validatePhoneNumber(phone, "GH");
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+    }
+
+    let paystackNationalPhone;
+    try {
+      paystackNationalPhone = toGhanaNationalFromE164(phoneE164);
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+    }
 
     if (!["mtn", "vod", "tgo"].includes(normalizedProvider)) {
       return res.status(400).json({ message: "Unsupported mobile money provider" });
-    }
-
-    if (!normalizedPhone || normalizedPhone.length !== 10 || !normalizedPhone.startsWith("0")) {
-      return res.status(400).json({ message: "Mobile number must be 10 digits and start with 0" });
     }
 
     const churchId = req.activeChurch?._id || req.user?.church;
@@ -344,10 +367,10 @@ export const chargePaystackMobileMoney = async (req, res) => {
 
     subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
     const exists = subscription.paymentMethods.some(
-      (m) => String(m?.type || "mobile_money") === "mobile_money" && String(m?.provider || "") === normalizedProvider && String(m?.phone || "") === normalizedPhone
+      (m) => String(m?.type || "mobile_money") === "mobile_money" && String(m?.provider || "") === normalizedProvider && String(m?.phone || "") === phoneE164
     );
     if (!exists) {
-      subscription.paymentMethods.push({ type: "mobile_money", provider: normalizedProvider, phone: normalizedPhone });
+      subscription.paymentMethods.push({ type: "mobile_money", provider: normalizedProvider, phone: phoneE164 });
     }
 
     await subscription.save();
@@ -383,13 +406,25 @@ export const chargePaystackMobileMoney = async (req, res) => {
           currency,
           reference,
           mobile_money: {
-            phone: normalizedPhone,
+            phone: paystackNationalPhone,
             provider: normalizedProvider
           },
           metadata: {
             billingId: billing._id.toString(),
             subscriptionId: subscription._id.toString(),
-            churchId: subscription.church.toString()
+            churchId: subscription.church.toString(),
+            custom_fields: [
+              {
+                display_name: "Full Name",
+                variable_name: "full_name",
+                value: String(req.user?.fullName || req.user?.name || "").trim()
+              },
+              {
+                display_name: "Phone Number",
+                variable_name: "phone_number",
+                value: String(phoneE164 || "").trim()
+              }
+            ]
           }
         }
       });

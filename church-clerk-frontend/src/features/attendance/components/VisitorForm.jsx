@@ -3,6 +3,8 @@ import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -74,6 +76,11 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
 
     if (!phoneNumber?.trim()) {
       setFormError("Phone number is required.");
+      return;
+    }
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setFormError("Invalid phone number");
       return;
     }
 
@@ -156,12 +163,15 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500">Phone Number</label>
-              <input
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                placeholder=""
-              />
+              <div className="mt-2">
+                <PhoneNumberInput
+                  value={phoneNumber}
+                  onChange={setPhoneNumber}
+                  error={Boolean(formError)}
+                  flagOnlySelectedCountry
+                  countryMenuSearchBar
+                />
+              </div>
             </div>
 
             <div>

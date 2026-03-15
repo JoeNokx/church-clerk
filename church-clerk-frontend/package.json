@@ -15,11 +15,13 @@
     "country-state-city": "^3.2.1",
     "currency-codes": "^2.2.0",
     "framer-motion": "^12.35.0",
+    "libphonenumber-js": "^1.12.39",
     "nprogress": "^0.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
     "react-loading-skeleton": "^3.5.0",
+    "react-phone-number-input": "^3.4.16",
     "react-router-dom": "^7.12.0",
     "react-select": "^5.10.2",
     "recharts": "^3.7.0"

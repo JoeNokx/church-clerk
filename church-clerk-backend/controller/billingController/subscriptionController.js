@@ -6,6 +6,8 @@ import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import PDFDocument from "pdfkit";
 import https from "https";
 
+import { toGhanaNationalFromE164, validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
+
 
 const planRank = (plan) => {
   const n = String(plan?.name || "")
@@ -235,24 +237,31 @@ export const updatePaymentMethod = async (req, res) => {
         return res.status(400).json({ message: "Mobile money is only available for churches in Ghana" });
       }
       const { provider, phone } = req.body;
+      if (!provider || !phone) {
+        return res.status(400).json({ message: "Provider and phone are required" });
+      }
+
       const normalizedProvider = String(provider || "").trim().toLowerCase();
-      let normalizedPhone = String(phone || "").replace(/\D+/g, "");
 
-      
+      let phoneE164;
+      try {
+        phoneE164 = validatePhoneNumber(phone, "GH");
+      } catch (e) {
+        return res.status(400).json({ message: e?.message || "Invalid phone number" });
+      }
 
-      if (normalizedPhone.startsWith("233") && normalizedPhone.length === 12) {
-        normalizedPhone = `0${normalizedPhone.slice(3)}`;
+      let nationalPhone;
+      try {
+        nationalPhone = toGhanaNationalFromE164(phoneE164);
+      } catch (e) {
+        return res.status(400).json({ message: e?.message || "Invalid phone number" });
       }
 
       if (!["mtn", "vod", "tgo"].includes(normalizedProvider)) {
         return res.status(400).json({ message: "Unsupported mobile money provider" });
       }
 
-      if (!normalizedPhone || normalizedPhone.length !== 10 || !normalizedPhone.startsWith("0")) {
-        return res.status(400).json({ message: "Mobile number must be 10 digits and start with 0" });
-      }
-
-      const prefix = normalizedPhone.slice(0, 3);
+      const prefix = String(nationalPhone || "").slice(0, 3);
       const prefixByProvider = {
         mtn: ["024", "054", "055", "059"],
         vod: ["020", "050"],
@@ -264,7 +273,7 @@ export const updatePaymentMethod = async (req, res) => {
       }
 
       method.provider = normalizedProvider;
-      method.phone = normalizedPhone;
+      method.phone = phoneE164;
 
       await subscription.save();
       const populated = await Subscription.findById(subscription._id).populate("plan").lean();
@@ -600,21 +609,26 @@ export const addMobileMoneyPaymentMethod = async (req, res) => {
     const currency = "GHS";
 
     const normalizedProvider = String(provider).toLowerCase();
-    let normalizedPhone = String(phone).replace(/\D+/g, "");
 
-    if (normalizedPhone.startsWith("233") && normalizedPhone.length === 12) {
-      normalizedPhone = `0${normalizedPhone.slice(3)}`;
+    let phoneE164;
+    try {
+      phoneE164 = validatePhoneNumber(phone, "GH");
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+    }
+
+    let nationalPhone;
+    try {
+      nationalPhone = toGhanaNationalFromE164(phoneE164);
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" });
     }
 
     if (!["mtn", "vod", "tgo"].includes(normalizedProvider)) {
       return res.status(400).json({ message: "Unsupported mobile money provider" });
     }
 
-    if (!normalizedPhone || normalizedPhone.length !== 10 || !normalizedPhone.startsWith("0")) {
-      return res.status(400).json({ message: "Mobile number must be 10 digits and start with 0" });
-    }
-
-    const prefix = normalizedPhone.slice(0, 3);
+    const prefix = String(nationalPhone || "").slice(0, 3);
     const prefixByProvider = {
       mtn: ["024", "054", "055", "059"],
       vod: ["020", "050"],
@@ -627,10 +641,10 @@ export const addMobileMoneyPaymentMethod = async (req, res) => {
 
     subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
     const exists = subscription.paymentMethods.some(
-      (m) => String(m?.type || "mobile_money") === "mobile_money" && String(m?.provider || "") === normalizedProvider && String(m?.phone || "") === normalizedPhone
+      (m) => String(m?.type || "mobile_money") === "mobile_money" && String(m?.provider || "") === normalizedProvider && String(m?.phone || "") === phoneE164
     );
     if (!exists) {
-      subscription.paymentMethods.push({ type: "mobile_money", provider: normalizedProvider, phone: normalizedPhone });
+      subscription.paymentMethods.push({ type: "mobile_money", provider: normalizedProvider, phone: phoneE164 });
       await subscription.save();
     }
 

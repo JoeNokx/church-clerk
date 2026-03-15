@@ -1,6 +1,10 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 import Skeleton from "react-loading-skeleton";
 import {
   cancelMySubscription,
@@ -80,12 +84,18 @@ function methodSubtitle(method) {
   return phoneEnding(method?.phone);
 }
 
-function normalizeGhanaPhone(value) {
-  let digits = String(value || "").replace(/\D+/g, "");
-  if (digits.startsWith("233") && digits.length === 12) {
-    digits = `0${digits.slice(3)}`;
-  }
-  return digits;
+function normalizeGhanaPhone(raw) {
+  const digits = String(raw || "").replace(/\D+/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("233") && digits.length === 12) return `0${digits.slice(3)}`;
+  if (digits.length === 10 && digits.startsWith("0")) return digits;
+  return "";
+}
+
+function toGhanaNationalFromE164(e164) {
+  const digits = String(e164 || "").replace(/\D+/g, "");
+  if (digits.startsWith("233") && digits.length === 12) return `0${digits.slice(3)}`;
+  return "";
 }
 
 function isValidMomo(provider, digits) {
@@ -1042,26 +1052,35 @@ function BillingPage() {
             ) : newProvider ? (
               <div className="mt-4">
                 <div className="text-xs font-semibold text-gray-700">Mobile Number</div>
-                <input
-                  value={newPhone}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setNewPhone(v);
-                    const gh = normalizeGhanaPhone(v);
-                    if (!gh) {
-                      setAddFieldError("phone", "Mobile number is required");
-                      return;
-                    }
-                    if (!isValidMomo(newProvider, gh)) {
-                      setAddFieldError("phone", "Mobile number does not match selected provider");
-                      return;
-                    }
-                    setAddFieldError("phone", "");
-                  }}
-                  placeholder="024 123 4567"
-                  disabled={methodsLoading}
-                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
-                />
+                <div className="mt-2">
+                  <PhoneNumberInput
+                    value={newPhone}
+                    onChange={(v) => {
+                      setNewPhone(v);
+                      if (!v) {
+                        setAddFieldError("phone", "Mobile number is required");
+                        return;
+                      }
+                      if (!isValidPhoneNumber(v)) {
+                        setAddFieldError("phone", "Invalid phone number");
+                        return;
+                      }
+                      const gh = toGhanaNationalFromE164(v);
+                      if (!gh) {
+                        setAddFieldError("phone", "Mobile number must be a Ghana number");
+                        return;
+                      }
+                      if (!isValidMomo(newProvider, gh)) {
+                        setAddFieldError("phone", "Mobile number does not match selected provider");
+                        return;
+                      }
+                      setAddFieldError("phone", "");
+                    }}
+                    error={Boolean(addMethodFieldErrors?.phone)}
+                    disabled={methodsLoading}
+                    inputClassName="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                  />
+                </div>
                 {addMethodFieldErrors?.phone ? (
                   <div className="mt-1 text-xs font-semibold text-red-600">{addMethodFieldErrors.phone}</div>
                 ) : null}
@@ -1157,13 +1176,21 @@ function BillingPage() {
                       if (idx >= 0) setSelectedSavedMethodIndex(idx);
                       setShowAddPaymentMethod(false);
                     } else {
-                      const phoneDigits = normalizeGhanaPhone(newPhone);
+                      if (!newPhone || !isValidPhoneNumber(newPhone)) {
+                        setAddMethodError("Invalid phone number");
+                        return;
+                      }
+                      const phoneDigits = toGhanaNationalFromE164(newPhone);
+                      if (!phoneDigits) {
+                        setAddMethodError("Mobile money is only available for Ghana phone numbers");
+                        return;
+                      }
                       if (!isValidMomo(newProvider, phoneDigits)) {
                         setAddMethodError("Mobile number does not match selected provider");
                         return;
                       }
 
-                      const res = await addMobileMoneyPaymentMethod({ provider: newProvider, phone: phoneDigits });
+                      const res = await addMobileMoneyPaymentMethod({ provider: newProvider, phone: newPhone });
                       const nextSub = res?.data?.subscription || subscription;
                       setSubscription(nextSub);
                       const nextMethods = Array.isArray(nextSub?.paymentMethods) ? nextSub.paymentMethods : [];
@@ -1171,7 +1198,7 @@ function BillingPage() {
                         (m) =>
                           String(m?.type || "").toLowerCase() === "mobile_money" &&
                           String(m?.provider || "") === String(newProvider) &&
-                          String(m?.phone || "") === String(phoneDigits)
+                          String(m?.phone || "") === String(newPhone)
                       );
                       if (idx >= 0) setSelectedSavedMethodIndex(idx);
                       setShowAddPaymentMethod(false);

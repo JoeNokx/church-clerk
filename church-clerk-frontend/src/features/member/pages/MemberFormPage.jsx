@@ -8,6 +8,8 @@ import Skeleton from "react-loading-skeleton";
 import { getCells, createCell as apiCreateCell } from "../../cell/services/cell.api.js";
 import { getDepartments, createDepartment as apiCreateDepartment } from "../../department/services/department.api.js";
 import { getGroups, createGroup as apiCreateGroup } from "../../group/services/group.api.js";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
@@ -357,6 +359,11 @@ function MemberFormPageInner() {
       return;
     }
 
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setError("Invalid phone number");
+      return;
+    }
+
     const payload = {
       firstName,
       lastName,
@@ -451,11 +458,7 @@ function MemberFormPageInner() {
                 </Field>
 
                 <Field label="Phone Number">
-                  <input
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                  />
+                  <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
                 </Field>
 
                 <Field label="Email">

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../useAuth.js";
 import { createChurch, searchHeadquartersChurches } from "../../church/services/church.api.js";
 import AuthCard from "../components/AuthCard.jsx";
-import Select from "react-select";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 import currencyCodes from "currency-codes";
 
 function RegisterChurch() {
@@ -152,6 +153,12 @@ function RegisterChurch() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setLoading(false);
+      setError("Invalid phone number");
+      return;
+    }
 
     if (type === "Branch" && !parentChurchId) {
       setLoading(false);
@@ -308,13 +315,11 @@ function RegisterChurch() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-          <input
-            type="text"
-            placeholder="+1 (555) 000-0000"
+          <PhoneNumberInput
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-            required
+            onChange={setPhoneNumber}
+            error={Boolean(error && String(error).toLowerCase().includes("invalid phone"))}
+            inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
 

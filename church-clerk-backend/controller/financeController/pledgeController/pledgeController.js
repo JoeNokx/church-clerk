@@ -1,6 +1,8 @@
 import Pledge from "../../../models/financeModel/pledgeModel/pledgeModel.js"
 import PledgePayment from "../../../models/financeModel/pledgeModel/pledgePaymentModel.js";
 
+import { validatePhoneNumber } from "../../../utils/validatePhoneNumber.js";
+
 
 const createPledge = async (req, res) => {
     
@@ -22,11 +24,18 @@ const createPledge = async (req, res) => {
                   if (!name || !phoneNumber || !amount || !pledgeDate) {
                     return res.status(400).json({ message: "name, phoneNumber, amount and pledgeDate are required." }, { message: "Amount and date are required." });
                   }
+
+                  let validatedPhoneNumber;
+                  try {
+                    validatedPhoneNumber = validatePhoneNumber(phoneNumber, "GH");
+                  } catch (e) {
+                    return res.status(400).json({ message: e?.message || "Invalid phone number" });
+                  }
         
                   const pledges = await Pledge.create({
                     church: req.activeChurch._id,
                     name,
-                    phoneNumber,
+                    phoneNumber: validatedPhoneNumber,
                     serviceType,
                     amount,
                     pledgeDate,
@@ -212,6 +221,19 @@ const updatePledge = async (req, res) => {
     try {
          const {id} = req.params;
                         const query = { _id: id, church: req.activeChurch._id }
+
+                        if (req.body?.phoneNumber !== undefined) {
+                          const rawPhone = String(req.body.phoneNumber || "").trim();
+                          if (rawPhone) {
+                            try {
+                              req.body.phoneNumber = validatePhoneNumber(rawPhone, "GH");
+                            } catch (e) {
+                              return res.status(400).json({ message: e?.message || "Invalid phone number" });
+                            }
+                          } else {
+                            req.body.phoneNumber = "";
+                          }
+                        }
                 
                         const pledges = await Pledge.findOneAndUpdate(query, req.body, {
                             new: true,

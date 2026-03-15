@@ -4,6 +4,7 @@ import Visitor from "../models/visitorsModel.js"
 
 import GroupMember from "../models/ministryModel/groupMembersModel.js"
 import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
+import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 
 function escapeRegex(input) {
   return String(input || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -101,7 +102,15 @@ async function validateMemberImportRows({ churchId, rawRows }) {
   const normalized = rows.map((r) => {
     const firstName = String(r?.firstname || r?.first || "").trim();
     const lastName = String(r?.lastname || r?.last || "").trim();
-    const phoneNumber = String(r?.phonenumber || r?.phone || "").trim();
+    const phoneNumberRaw = String(r?.phonenumber || r?.phone || "").trim();
+    let phoneNumber = "";
+    if (phoneNumberRaw) {
+      try {
+        phoneNumber = validatePhoneNumber(phoneNumberRaw, "GH");
+      } catch {
+        phoneNumber = "";
+      }
+    }
     const email = String(r?.email || "").trim().toLowerCase();
     const gender = String(r?.gender || "").trim().toLowerCase();
     const occupation = String(r?.occupation || "").trim();
@@ -120,6 +129,7 @@ async function validateMemberImportRows({ churchId, rawRows }) {
       firstName,
       lastName,
       phoneNumber,
+      phoneNumberRaw,
       email,
       gender,
       occupation,
@@ -165,7 +175,7 @@ async function validateMemberImportRows({ churchId, rawRows }) {
 
     if (!r.firstName) reasons.push("Missing firstName");
     if (!r.lastName) reasons.push("Missing lastName");
-    if (!r.phoneNumber) reasons.push("Missing phoneNumber");
+    if (!r.phoneNumberRaw) reasons.push("Missing phoneNumber");
 
     if (r.gender && !["male", "female"].includes(r.gender)) reasons.push("Invalid gender");
     if (r.status && !["active", "inactive", "visitor", "former"].includes(r.status)) reasons.push("Invalid status");
@@ -181,9 +191,12 @@ async function validateMemberImportRows({ churchId, rawRows }) {
     const joined = parseOptionalDate(r.dateJoinedRaw);
     if (joined.error) reasons.push("Invalid dateJoined");
 
-    if (r.phoneNumber) {
-      if (existingPhones.has(r.phoneNumber)) reasons.push("Duplicate phoneNumber (already exists)");
-      if (seenPhones.has(r.phoneNumber)) reasons.push("Duplicate phoneNumber (in file)");
+    if (r.phoneNumberRaw) {
+      if (!r.phoneNumber) reasons.push("Invalid phoneNumber");
+      if (r.phoneNumber) {
+        if (existingPhones.has(r.phoneNumber)) reasons.push("Duplicate phoneNumber (already exists)");
+        if (seenPhones.has(r.phoneNumber)) reasons.push("Duplicate phoneNumber (in file)");
+      }
     }
     if (emailTrimmed) {
       if (existingEmails.has(emailTrimmed)) reasons.push("Duplicate email (already exists)");
@@ -430,6 +443,13 @@ const createMember = async (req, res) => {
     const paddedNumber = String(updatedChurch.memberSerial || 0).padStart(6, "0");
     const memberId = `${prefix}-${paddedNumber}`;
 
+    let validatedPhoneNumber;
+    try {
+      validatedPhoneNumber = validatePhoneNumber(phoneNumber, "GH");
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" })
+    }
+
     let member;
     try {
       member = await Member.create({
@@ -437,7 +457,7 @@ const createMember = async (req, res) => {
         firstName,
         lastName,
         email,
-        phoneNumber,
+        phoneNumber: validatedPhoneNumber,
         gender,
         occupation,
         nationality,
@@ -496,6 +516,38 @@ const createMember = async (req, res) => {
     return res.status(201).json({ message: "member created successfully", member })
   } catch (error) {
     return res.status(400).json({ message: "member could not be created", error: error.message })
+  }
+}
+
+const updateMember = async (req, res) => {
+  try {
+    const memberId = req.params.id;
+    const query = { _id: memberId, church: req.activeChurch._id }
+
+    if (req.body?.phoneNumber !== undefined) {
+      const rawPhone = String(req.body.phoneNumber || "").trim();
+      if (rawPhone) {
+        try {
+          req.body.phoneNumber = validatePhoneNumber(rawPhone, "GH");
+        } catch (e) {
+          return res.status(400).json({ message: e?.message || "Invalid phone number" })
+        }
+      } else {
+        req.body.phoneNumber = "";
+      }
+    }
+
+    const member = await Member.findOneAndUpdate(query, req.body, { new: true, runValidators: true })
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+    return res.status(200).json({
+      message: "member updated successfully",
+      member
+    })
+  } catch (error) {
+    return res.status(400).json({ message: "member could not be updated", error: error.message })
   }
 }
 
@@ -633,25 +685,6 @@ const getSingleMember = async (req, res) => {
     });
   } catch (error) {
     return res.status(400).json({ message: "member could not be created", error: error.message })
-  }
-}
-
-const updateMember = async (req, res) => {
-  try {
-    const memberId = req.params.id;
-    const query = { _id: memberId, church: req.activeChurch._id }
-
-    const member = await Member.findOneAndUpdate(query, req.body, { new: true, runValidators: true })
-
-    if (!member) {
-      return res.status(404).json({ message: "Member not found" });
-    }
-    return res.status(200).json({
-      message: "member updated successfully",
-      member
-    })
-  } catch (error) {
-    return res.status(400).json({ message: "member could not be updated", error: error.message })
   }
 }
 

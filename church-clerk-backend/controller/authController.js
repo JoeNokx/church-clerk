@@ -4,6 +4,7 @@ import generateToken from "../utils/generateToken.js";
 import ActivityLog from "../models/activityLogModel.js";
 import crypto from "node:crypto";
 import { sendEmail } from "../services/emailService.js";
+import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 
 function getFrontendBaseUrl() {
   const raw = process.env.FRONTEND_BASE_URL || process.env.CLIENT_BASE_URL || process.env.CLIENT_URL || "http://localhost:5173";
@@ -207,6 +208,13 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "all fields are required" });
     }
 
+    let validatedPhoneNumber;
+    try {
+      validatedPhoneNumber = validatePhoneNumber(phoneNumber, "GH");
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+    }
+
     //check if user exist
     const userExisting = await User.findOne({ email });
     if (userExisting) {
@@ -239,7 +247,7 @@ const registerUser = async (req, res) => {
     }
 
     //Check if user already exists
-    const phoneNumberExisting = await User.findOne({ phoneNumber });
+    const phoneNumberExisting = await User.findOne({ phoneNumber: validatedPhoneNumber });
     if (phoneNumberExisting) {
       try {
         const userAgent = String(req.headers["user-agent"] || "");
@@ -292,7 +300,7 @@ const registerUser = async (req, res) => {
     const user = await User.create({
       fullName,
       email,
-      phoneNumber,
+      phoneNumber: validatedPhoneNumber,
       password,
       role: resolvedRole,
       church,

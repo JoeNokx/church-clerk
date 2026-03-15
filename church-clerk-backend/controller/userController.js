@@ -1,6 +1,7 @@
 import User from "../models/userModel.js";
 import { ROLE_PERMISSIONS, CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
 import cloudinary from "../config/cloudinary.js";
+import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 
 //GET: fetch my profile
 const myProfile =  async (req, res) => {
@@ -39,6 +40,20 @@ const updateMyProfile = async (req, res) => {
         const userId = req.user._id;
         const { email } = req.body;
 
+        let validatedPhoneNumber;
+        if (req.body?.phoneNumber !== undefined) {
+            const rawPhone = String(req.body.phoneNumber || "").trim();
+            if (rawPhone) {
+                try {
+                    validatedPhoneNumber = validatePhoneNumber(rawPhone, "GH");
+                } catch (e) {
+                    return res.status(400).json({ message: e?.message || "Invalid phone number" });
+                }
+            } else {
+                validatedPhoneNumber = "";
+            }
+        }
+
         if (email) {
             const normalizedEmail = String(email).toLowerCase().trim();
             const emailExisting = await User.findOne({ email: normalizedEmail });
@@ -50,7 +65,7 @@ const updateMyProfile = async (req, res) => {
         const update = {};
         if (req.body?.fullName !== undefined) update.fullName = String(req.body.fullName || "").trim();
         if (req.body?.email !== undefined) update.email = String(req.body.email || "").toLowerCase().trim();
-        if (req.body?.phoneNumber !== undefined) update.phoneNumber = String(req.body.phoneNumber || "").trim();
+        if (req.body?.phoneNumber !== undefined) update.phoneNumber = validatedPhoneNumber;
 
         const file = req.file;
         if (file) {
@@ -200,6 +215,13 @@ const createChurchUser = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    let validatedPhoneNumber;
+    try {
+      validatedPhoneNumber = validatePhoneNumber(phoneNumber, "GH");
+    } catch (e) {
+      return res.status(400).json({ message: e?.message || "Invalid phone number" });
+    }
+
     if (!CHURCH_ROLES.includes(role)) {
       return res.status(400).json({ message: "Invalid role selected" });
     }
@@ -209,7 +231,7 @@ const createChurchUser = async (req, res) => {
       return res.status(400).json({ message: "email already registered." });
     }
 
-    const phoneExisting = await User.findOne({ phoneNumber: String(phoneNumber).trim() }).lean();
+    const phoneExisting = await User.findOne({ phoneNumber: validatedPhoneNumber }).lean();
     if (phoneExisting) {
       return res.status(400).json({ message: "Phone number already registered" });
     }
@@ -217,7 +239,7 @@ const createChurchUser = async (req, res) => {
     const user = await User.create({
       fullName,
       email,
-      phoneNumber,
+      phoneNumber: validatedPhoneNumber,
       password,
       role,
       church: churchId,
@@ -246,6 +268,20 @@ const updateChurchUser = async (req, res) => {
     const { id } = req.params;
     const { fullName, email, phoneNumber, role } = req.body;
 
+    let validatedPhoneNumber;
+    if (phoneNumber !== undefined) {
+      const rawPhone = String(phoneNumber || "").trim();
+      if (rawPhone) {
+        try {
+          validatedPhoneNumber = validatePhoneNumber(rawPhone, "GH");
+        } catch (e) {
+          return res.status(400).json({ message: e?.message || "Invalid phone number" });
+        }
+      } else {
+        validatedPhoneNumber = "";
+      }
+    }
+
     const existing = await User.findOne({ _id: id, church: churchId }).lean();
     if (!existing) {
       return res.status(404).json({ message: "User not found" });
@@ -258,8 +294,8 @@ const updateChurchUser = async (req, res) => {
       }
     }
 
-    if (phoneNumber) {
-      const phoneExisting = await User.findOne({ phoneNumber }).lean();
+    if (validatedPhoneNumber) {
+      const phoneExisting = await User.findOne({ phoneNumber: validatedPhoneNumber }).lean();
       if (phoneExisting && String(phoneExisting._id) !== String(id)) {
         return res.status(400).json({ message: "Phone number already in use by another user." });
       }
@@ -268,7 +304,7 @@ const updateChurchUser = async (req, res) => {
     const update = {};
     if (fullName !== undefined) update.fullName = fullName;
     if (email !== undefined) update.email = email;
-    if (phoneNumber !== undefined) update.phoneNumber = phoneNumber;
+    if (phoneNumber !== undefined) update.phoneNumber = validatedPhoneNumber;
     if (role !== undefined) {
       if (!CHURCH_ROLES.includes(role)) {
         return res.status(400).json({ message: "Invalid role selected" });

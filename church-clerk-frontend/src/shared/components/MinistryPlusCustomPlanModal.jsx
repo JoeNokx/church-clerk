@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import PhoneNumberInput from "../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 
 function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = "max-w-2xl" }) {
   if (!open) return null;
@@ -69,6 +71,11 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
             return;
           }
 
+          if (!isValidPhoneNumber(nextPhone)) {
+            setSubmitMessage("Invalid phone number");
+            return;
+          }
+
           try {
             setSubmitting(true);
             await new Promise((r) => setTimeout(r, 600));
@@ -94,13 +101,14 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Mobile number</label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              type="tel"
-              placeholder="0546022758"
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
-            />
+            <div className="mt-1">
+              <PhoneNumberInput
+                value={phone}
+                onChange={setPhone}
+                error={Boolean(submitMessage && String(submitMessage).toLowerCase().includes("invalid phone"))}
+                inputClassName="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+              />
+            </div>
           </div>
         </div>
 

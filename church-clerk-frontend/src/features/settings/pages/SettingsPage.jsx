@@ -10,6 +10,8 @@ import currencyCodes from "currency-codes";
 import { Country, State } from "country-state-city";
 import { updateMyPassword, updateMyProfile } from "../../auth/services/auth.api.js";
 import { getActivityLogs } from "../../activityLog/services/activityLog.api.js";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 import {
   createChurchUser,
   getChurchUsers,
@@ -269,6 +271,11 @@ function SettingsPage() {
     setMyProfileError("");
     setMyProfileSuccess("");
 
+    if (!isValidPhoneNumber(myPhone)) {
+      setMyProfileError("Invalid phone number");
+      return;
+    }
+
     try {
       setMyProfileLoading(true);
 
@@ -475,6 +482,12 @@ function SettingsPage() {
     if (type === "Branch" && !parentChurchId) {
       setProfileLoading(false);
       setProfileError("Please select a headquarters church from the list");
+      return;
+    }
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setProfileLoading(false);
+      setProfileError("Invalid phone number");
       return;
     }
 
@@ -781,6 +794,12 @@ function SettingsPage() {
     setAddLoading(true);
     setAddError("");
 
+    if (!isValidPhoneNumber(newPhone)) {
+      setAddLoading(false);
+      setAddError("Invalid phone number");
+      return;
+    }
+
     try {
       const res = await createChurchUser({
         fullName: newFullName,
@@ -821,6 +840,12 @@ function SettingsPage() {
 
     setEditLoading(true);
     setEditError("");
+
+    if (!isValidPhoneNumber(editPhone)) {
+      setEditLoading(false);
+      setEditError("Invalid phone number");
+      return;
+    }
 
     try {
       const res = await updateChurchUser(editUser._id, {
@@ -1005,12 +1030,11 @@ function SettingsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                  <input
-                    type="text"
+                  <PhoneNumberInput
                     value={myPhone}
-                    onChange={(e) => setMyPhone(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-                    required
+                    onChange={setMyPhone}
+                    error={Boolean(myProfileError && String(myProfileError).toLowerCase().includes("invalid phone"))}
+                    inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                     disabled={!isUserActive}
                   />
                 </div>
@@ -1330,13 +1354,11 @@ function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                  type="text"
-                  placeholder="+1 (555) 000-0000"
+                <PhoneNumberInput
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-                  required
+                  onChange={setPhoneNumber}
+                  error={Boolean(churchError && String(churchError).toLowerCase().includes("invalid phone"))}
+                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                   disabled={!canWrite}
                 />
               </div>
@@ -2064,13 +2086,11 @@ function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                  type="text"
-                  placeholder="+1 (555) 000-0000"
+                <PhoneNumberInput
                   value={newPhone}
-                  onChange={(e) => setNewPhone(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-                  required
+                  onChange={setNewPhone}
+                  error={Boolean(addError && String(addError).toLowerCase().includes("invalid phone"))}
+                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                 />
               </div>
 
@@ -2167,12 +2187,11 @@ function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                  type="text"
+                <PhoneNumberInput
                   value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
-                  required
+                  onChange={setEditPhone}
+                  error={Boolean(editError && String(editError).toLowerCase().includes("invalid phone"))}
+                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                 />
               </div>
 

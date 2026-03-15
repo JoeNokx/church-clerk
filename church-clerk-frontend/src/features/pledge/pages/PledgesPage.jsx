@@ -9,6 +9,8 @@ import { getPledges as apiGetPledges } from "../services/pledge.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
+import { isValidPhoneNumber } from "react-phone-number-input";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -285,6 +287,11 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
       return;
     }
 
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setError("Invalid phone number");
+      return;
+    }
+
     if (!amount || Number(amount) <= 0) {
       setError("Amount is required.");
       return;
@@ -343,12 +350,9 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
 
           <div>
             <label className="block text-xs font-semibold text-gray-500">Phone Number</label>
-            <input
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-              placeholder="e.g., +233..."
-            />
+            <div className="mt-2">
+              <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
+            </div>
           </div>
 
           <div>
