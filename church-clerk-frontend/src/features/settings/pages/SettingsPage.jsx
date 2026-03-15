@@ -9,6 +9,7 @@ import Select from "react-select";
 import currencyCodes from "currency-codes";
 import { Country, State } from "country-state-city";
 import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
+import { AFRICAN_CURRENCY_CODES } from "../../../shared/utils/africanCurrencies.js";
 import { updateMyPassword, updateMyProfile } from "../../auth/services/auth.api.js";
 import { getActivityLogs } from "../../activityLog/services/activityLog.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -187,6 +188,7 @@ function SettingsPage() {
   const [countryCode, setCountryCode] = useState("");
   const [stateCode, setStateCode] = useState("");
   const [currency, setCurrency] = useState("");
+  const [currencyLocked, setCurrencyLocked] = useState(false);
   const [foundedDate, setFoundedDate] = useState("");
   const [referralCodeInput, setReferralCodeInput] = useState("");
 
@@ -233,10 +235,11 @@ function SettingsPage() {
   }, [region, regionOptions, stateCode]);
 
   const currencyOptions = useMemo(() => {
+    const allow = new Set(AFRICAN_CURRENCY_CODES);
     const rows = Array.isArray(currencyCodes?.data) ? currencyCodes.data : [];
     if (rows.length) {
       return rows
-        .filter((r) => r?.code)
+        .filter((r) => r?.code && allow.has(String(r.code).toUpperCase()))
         .map((r) => ({
           value: String(r.code).toUpperCase(),
           label: `${String(r.code).toUpperCase()} - ${String(r.currency || "").trim() || String(r.code).toUpperCase()}`
@@ -244,17 +247,20 @@ function SettingsPage() {
     }
 
     const codes = typeof currencyCodes?.codes === "function" ? currencyCodes.codes() : [];
-    return (Array.isArray(codes) ? codes : []).map((c) => ({
-      value: String(c).toUpperCase(),
-      label: String(c).toUpperCase()
-    }));
+    return (Array.isArray(codes) ? codes : [])
+      .map((c) => String(c).toUpperCase())
+      .filter((c) => allow.has(c))
+      .map((c) => ({ value: c, label: c }));
   }, []);
 
   const selectedCurrencyOption = useMemo(() => {
     const cur = String(currency || "").trim().toUpperCase();
     if (!cur) return null;
+    if (!AFRICAN_CURRENCY_CODES.includes(cur)) {
+      return currencyLocked ? { value: cur, label: cur } : null;
+    }
     return currencyOptions.find((o) => String(o.value) === cur) || { value: cur, label: cur };
-  }, [currency, currencyOptions]);
+  }, [currency, currencyLocked, currencyOptions]);
 
   const isBranch = type === "Branch";
 
@@ -410,10 +416,10 @@ function SettingsPage() {
           setRegion("");
           setStateCode("");
         }
-        setCurrency(
-          String(church?.currency || "").trim().toUpperCase() ||
-            (String(church?.country || "").trim().toLowerCase() === "ghana" ? "GHS" : "USD")
-        );
+        const nextCurrency = String(church?.currency || "").trim().toUpperCase();
+        const lockFlag = Boolean(church?.currencyLocked);
+        setCurrencyLocked(lockFlag);
+        setCurrency(lockFlag ? (nextCurrency || "GHS") : (AFRICAN_CURRENCY_CODES.includes(nextCurrency) ? nextCurrency : "GHS"));
         setFoundedDate(formatYmdLocal(church?.foundedDate));
         setReferralCodeInput("");
       } catch (e) {
@@ -540,9 +546,12 @@ function SettingsPage() {
         city,
         region,
         country,
-        currency: String(currency || "").trim().toUpperCase(),
         foundedDate: foundedDate || null
       };
+
+      if (!currencyLocked) {
+        payload.currency = String(currency || "").trim().toUpperCase();
+      }
 
       await updateChurchProfile(activeChurch._id, payload);
 
@@ -1513,7 +1522,7 @@ function SettingsPage() {
                   value={selectedCurrencyOption}
                   onChange={(opt) => setCurrency(String(opt?.value || "").toUpperCase())}
                   placeholder="Select currency"
-                  isDisabled={!canWrite}
+                  isDisabled={!canWrite || currencyLocked}
                   styles={{
                     control: (base, state) => ({
                       ...base,

@@ -3,16 +3,16 @@ import User from "../models/userModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import { sendEmail } from "../services/emailService.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
+import { AFRICAN_CURRENCY_CODES } from "../utils/africanCurrencies.js";
+import { isCurrencyLockedForChurch } from "../utils/isCurrencyLockedForChurch.js";
 
 // referral models
 import ReferralCode from "../models/referralModel/referralCodeModel.js";
 import ReferralHistory from "../models/referralModel/referralHistoryModel.js";
 import { generateReferralCode } from "../utils/generateReferralCode.js";
 
-
 const createMyChurch = async (req, res) => {
   try {
-
     if (req.user?.isEmailVerified === false) {
       return res.status(403).json({
         message: "Please verify your email to continue.",
@@ -50,11 +50,11 @@ const createMyChurch = async (req, res) => {
     }
 
     let parentChurch = null;
-
     if (type === "Branch") {
       if (!parentChurchId) {
         return res.status(400).json({ message: "Branch must belong to HQ" });
       }
+
       const hq = await Church.findById(parentChurchId);
       if (!hq || hq.type !== "Headquarters") {
         return res.status(400).json({ message: "Invalid HQ selected" });
@@ -62,15 +62,15 @@ const createMyChurch = async (req, res) => {
       parentChurch = hq._id;
     }
 
-    // HQ & Independent should NOT have parent
     if (type !== "Branch") {
       parentChurch = null;
     }
 
-    const normalizedCountry = String(country || "").trim();
     const requestedCurrency = String(currency || "").trim().toUpperCase();
-    const derivedCurrency = normalizedCountry.toLowerCase() === "ghana" ? "GHS" : "USD";
-    const finalCurrency = requestedCurrency || derivedCurrency;
+    const finalCurrency = requestedCurrency || "GHS";
+    if (!AFRICAN_CURRENCY_CODES.includes(finalCurrency)) {
+      return res.status(400).json({ message: "Currency must be an African currency" });
+    }
 
     const church = await Church.create({
       name,
@@ -89,30 +89,24 @@ const createMyChurch = async (req, res) => {
       createdBy: req.user._id
     });
 
-    // Create permanent unique referral code for THIS church
     const newReferralCode = generateReferralCode(name);
-
     await ReferralCode.create({
       church: church._id,
       code: newReferralCode
     });
 
-    //Handle referral input (if provided)
     if (referralCodeInput) {
       const referrerCode = await ReferralCode.findOne({
-        code: referralCodeInput.toUpperCase()
+        code: String(referralCodeInput || "").toUpperCase()
       });
 
       if (!referrerCode) {
-        // Bounce back with error
         return res.status(400).json({
           message: "Invalid referral code. Please check and try again."
         });
       }
 
       if (referrerCode && referrerCode.church.toString() !== church._id.toString()) {
-
-        //  PREVENT DOUBLE REFERRAL
         const existingReferral = await ReferralHistory.findOne({
           referredChurch: church._id
         });
@@ -127,7 +121,6 @@ const createMyChurch = async (req, res) => {
       }
     }
 
-    // Update the user to belong to this church
     const existingUsersInChurch = await User.countDocuments({ church: church._id });
 
     const setRole =
@@ -162,7 +155,7 @@ const createMyChurch = async (req, res) => {
       void 0;
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Church created successfully. You now belong to a church.",
       churchId: church._id,
       type: church.type,
@@ -172,46 +165,38 @@ const createMyChurch = async (req, res) => {
         fullName: updatedUser.fullName,
         church: updatedUser.church
       }
-    })
-
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
-
-
-// Search Headquarters (Autocomplete)
 const searchHeadquartersChurches = async (req, res) => {
   try {
     const { search = "" } = req.query;
-    if (!search.trim()) return res.status(200).json([]);
+    if (!String(search || "").trim()) return res.status(200).json([]);
 
     const churches = await Church.find({
       type: "Headquarters",
       name: { $regex: search, $options: "i" }
     })
-    .select("_id name city region createdBy")
-    .populate("createdBy", "fullName")
-    .limit(10)
-    .lean();
+      .select("_id name city region createdBy")
+      .populate("createdBy", "fullName")
+      .limit(10)
+      .lean();
 
-    if(!churches.length) return res.status(200).json({message: "No church matched your search"});
+    if (!churches.length) return res.status(200).json({ message: "No church matched your search" });
 
-    res.status(200).json(churches);
-
+    return res.status(200).json(churches);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
-
-
-
 
 // GET My Church Profile
 const getMyChurchProfile = async (req, res) => {
   try {
-     const query = {};
+    const query = {};
 
     //  Only superadmin and supportadmin can choose which church to view
     if (req.user.role === "superadmin" || req.user.role === "supportadmin") {
@@ -225,7 +210,6 @@ const getMyChurchProfile = async (req, res) => {
       query._id = req.activeChurch._id;
     }
 
-
     const church = await Church.findOne(query)
      .populate("createdBy", "fullName email")
      .populate("parentChurch", "name city region type")
@@ -235,17 +219,20 @@ const getMyChurchProfile = async (req, res) => {
       return res.status(404).json({ message: "Church not found" });
     }
 
+    const currencyLocked = await isCurrencyLockedForChurch(church._id);
+
     res.status(200).json({
       message: "Church profile fetched successfully",
-      church
+      church: {
+        ...church,
+        currencyLocked
+      }
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
-
-
 
 // UPDATE My Church Profile
 const updateMyChurchProfile = async (req, res) => {
@@ -299,7 +286,27 @@ const updateMyChurchProfile = async (req, res) => {
       if (!cur || !/^[A-Z]{3}$/.test(cur)) {
         return res.status(400).json({ message: "Invalid currency" });
       }
-      updateData.currency = cur;
+
+      const lockId = query?._id;
+      const locked = await isCurrencyLockedForChurch(lockId);
+      if (locked) {
+        const current = await Church.findById(lockId).select("currency").lean();
+        const currentCur = String(current?.currency || "").trim().toUpperCase();
+
+        if (currentCur !== cur) {
+          return res.status(403).json({
+            message: "Currency cannot be changed after transactions have been recorded"
+          });
+        }
+
+        // Allow keeping legacy non-African currencies (do not force migration when locked)
+        updateData.currency = currentCur;
+      } else {
+        if (!AFRICAN_CURRENCY_CODES.includes(cur)) {
+          return res.status(400).json({ message: "Currency must be an African currency" });
+        }
+        updateData.currency = cur;
+      }
     }
 
     /**
@@ -340,7 +347,10 @@ const updateMyChurchProfile = async (req, res) => {
 
     return res.status(200).json({
       message: "Church profile updated successfully",
-      church: updatedChurch
+      church: {
+        ...updatedChurch,
+        currencyLocked: await isCurrencyLockedForChurch(updatedChurch?._id)
+      }
     });
 
   } catch (error) {

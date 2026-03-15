@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { AFRICAN_CURRENCY_CODES } from "../../utils/africanCurrencies.js";
 
 const billingHistorySchema = new mongoose.Schema(
   {
@@ -27,7 +28,7 @@ const billingHistorySchema = new mongoose.Schema(
 
     currency: {
       type: String,
-      enum: ["GHS", "NGN", "USD"]
+      enum: AFRICAN_CURRENCY_CODES
     },
 
     status: {

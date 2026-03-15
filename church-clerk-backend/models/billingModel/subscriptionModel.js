@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { AFRICAN_CURRENCY_CODES } from "../../utils/africanCurrencies.js";
 
 const normalizeSubscriptionStatus = (value) => {
   const v = String(value || "")
@@ -59,7 +60,7 @@ const subscriptionSchema = new mongoose.Schema(
 
     currency: {
       type: String,
-      enum: ["GHS", "NGN", "USD"],
+      enum: AFRICAN_CURRENCY_CODES,
       default: "GHS",
       required: true
     },

@@ -9,6 +9,7 @@ import Select from "react-select";
 import currencyCodes from "currency-codes";
 import { Country, State } from "country-state-city";
 import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
+import { AFRICAN_CURRENCY_CODES } from "../../../shared/utils/africanCurrencies.js";
 
 function RegisterChurch() {
   const navigate = useNavigate();
@@ -87,11 +88,23 @@ function RegisterChurch() {
     []
   );
 
+  const countryCurrencyByIso = useMemo(() => {
+    const map = new Map();
+    Country.getAllCountries().forEach((c) => {
+      const iso = String(c?.isoCode || "").trim();
+      const cur = String(c?.currency || "").trim().toUpperCase();
+      if (!iso || !cur) return;
+      map.set(iso, cur);
+    });
+    return map;
+  }, []);
+
   const currencyOptions = useMemo(() => {
+    const allow = new Set(AFRICAN_CURRENCY_CODES);
     const rows = Array.isArray(currencyCodes?.data) ? currencyCodes.data : [];
     if (rows.length) {
       return rows
-        .filter((r) => r?.code)
+        .filter((r) => r?.code && allow.has(String(r.code).toUpperCase()))
         .map((r) => ({
           value: String(r.code).toUpperCase(),
           label: `${String(r.code).toUpperCase()} - ${String(r.currency || "").trim() || String(r.code).toUpperCase()}`
@@ -99,15 +112,16 @@ function RegisterChurch() {
     }
 
     const codes = typeof currencyCodes?.codes === "function" ? currencyCodes.codes() : [];
-    return (Array.isArray(codes) ? codes : []).map((c) => ({
-      value: String(c).toUpperCase(),
-      label: String(c).toUpperCase()
-    }));
+    return (Array.isArray(codes) ? codes : [])
+      .map((c) => String(c).toUpperCase())
+      .filter((c) => allow.has(c))
+      .map((c) => ({ value: c, label: c }));
   }, []);
 
   const selectedCurrencyOption = useMemo(() => {
     const cur = String(currency || "").trim().toUpperCase();
     if (!cur) return null;
+    if (!AFRICAN_CURRENCY_CODES.includes(cur)) return null;
     return currencyOptions.find((o) => String(o.value) === cur) || { value: cur, label: cur };
   }, [currency, currencyOptions]);
 
@@ -438,6 +452,9 @@ function RegisterChurch() {
               if (!opt) {
                 setCountry("");
                 setRegion("");
+                if (!currencyTouched) {
+                  setCurrency("");
+                }
                 return;
               }
 
@@ -446,9 +463,11 @@ function RegisterChurch() {
               setRegion("");
 
               if (currencyTouched) return;
-              const normalized = String(nextLabel || "").trim().toLowerCase();
-              if (!normalized) return;
-              setCurrency(normalized === "ghana" ? "GHS" : "USD");
+              const iso = String(opt?.value || "").trim();
+              const nextCurrency = String(countryCurrencyByIso.get(iso) || "").trim().toUpperCase();
+              if (!nextCurrency) return;
+              if (!AFRICAN_CURRENCY_CODES.includes(nextCurrency)) return;
+              setCurrency(nextCurrency);
             }}
             placeholder="Select country"
             styles={selectStyles}
