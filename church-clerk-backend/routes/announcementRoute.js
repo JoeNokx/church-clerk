@@ -26,6 +26,8 @@ import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
+import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../middleware/permissionMiddleware.js";
 
 router.post(
   "/wallet/webhooks/paystack",
@@ -37,7 +39,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "read"),
   getAllAnnouncements
 );
 router.get(
@@ -45,7 +49,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "read"),
   getSingleAnnouncement
 );
 router.post(
@@ -53,7 +59,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "create"),
   createAnnouncement
 );
 router.put(
@@ -61,7 +69,9 @@ router.put(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "update"),
   updateAnnouncement
 );
 router.delete(
@@ -69,7 +79,9 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "delete"),
   deleteAnnouncement
 );
 
@@ -78,7 +90,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "read"),
   getWallet
 );
 
@@ -87,7 +101,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "read"),
   getWalletTransactions
 );
 
@@ -96,7 +112,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "create"),
   initiateWalletFunding
 );
 
@@ -105,7 +123,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "create"),
   verifyWalletFunding
 );
 
@@ -114,7 +134,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "create"),
   createMessage
 );
 
@@ -123,7 +145,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "read"),
   estimateMessageCost
 );
 
@@ -132,7 +156,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "read"),
   getMessages
 );
 
@@ -141,7 +167,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "read"),
   getMessageDeliveryReport
 );
 
@@ -150,7 +178,9 @@ router.put(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "update"),
   updateScheduledMessage
 );
 
@@ -159,7 +189,9 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "delete"),
   deleteScheduledMessage
 );
 
@@ -168,7 +200,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "read"),
   getTemplates
 );
 
@@ -177,7 +211,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "create"),
   createTemplate
 );
 
@@ -186,7 +222,9 @@ router.put(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "update"),
   updateTemplate
 );
 
@@ -195,9 +233,10 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "delete"),
   deleteTemplate
 );
-
 
 export default router

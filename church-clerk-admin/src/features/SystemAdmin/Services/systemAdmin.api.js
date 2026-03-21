@@ -16,6 +16,30 @@ export const getSystemRoles = async () => {
   return await http.get("/system-admin/roles");
 };
 
+export const getPermissionCatalog = async () => {
+  return await http.get("/system-admin/permission-catalog");
+};
+
+export const listCustomRoles = async (params) => {
+  return await http.get("/system-admin/custom-roles", { params });
+};
+
+export const createCustomRole = async (payload) => {
+  return await http.post("/system-admin/custom-roles", payload);
+};
+
+export const updateCustomRole = async (id, payload) => {
+  return await http.patch(`/system-admin/custom-roles/${id}`, payload);
+};
+
+export const getCustomRole = async (id) => {
+  return await http.get(`/system-admin/custom-roles/${id}`);
+};
+
+export const deleteCustomRole = async (id) => {
+  return await http.delete(`/system-admin/custom-roles/${id}`);
+};
+
 export const updateSystemUser = async (id, payload) => {
   return await http.patch(`/system-admin/users/${id}`, payload);
 };

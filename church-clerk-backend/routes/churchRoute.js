@@ -5,12 +5,51 @@ import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";   
+import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../middleware/permissionMiddleware.js";
 
-router.get("/churches/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getMyChurchProfile); 
+router.get(
+  "/churches/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("settings", "read"),
+  getMyChurchProfile
+); 
 router.post("/churches", protect, createMyChurch);
-router.put("/churches/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), updateMyChurchProfile);
-router.get("/branches", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getMyBranches);
-router.get("/active-context", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getActiveChurchContext);
+router.put(
+  "/churches/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("settings", "update"),
+  updateMyChurchProfile
+);
+router.get(
+  "/branches",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("branches", "read"),
+  getMyBranches
+);
+router.get(
+  "/active-context",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("settings", "read"),
+  getActiveChurchContext
+);
+
 router.get("/churches", searchHeadquartersChurches);
 
 export default router

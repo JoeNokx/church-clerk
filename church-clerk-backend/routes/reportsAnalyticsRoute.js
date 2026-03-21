@@ -13,13 +13,17 @@ import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
+import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../middleware/permissionMiddleware.js";
 
 router.get(
   "/kpi",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "read"),
   getReportsAnalyticsKpi
 );
 
@@ -28,7 +32,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "read"),
   getReportsAnalytics
 );
 
@@ -37,7 +43,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "read"),
   exportReportsAnalytics
 );
 
@@ -46,7 +54,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "read"),
   getReportsAnalyticsReport
 );
 
@@ -55,7 +65,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "read"),
   exportReportsAnalyticsReport
 );
 

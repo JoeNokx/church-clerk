@@ -16,11 +16,11 @@ import { activityLogMiddleware } from "./middleware/activityLogMiddleware.js";
 import { impersonationNotificationMiddleware } from "./middleware/impersonationNotificationMiddleware.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
 import { startSystemInAppAnnouncementWorker } from "./services/systemInAppAnnouncementWorker.js";
+import { seedDefaultRoles } from "./services/roleSeeder.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, ".env") });
-connectDB();   // connects to the database
 
 const app = express();   
 
@@ -115,11 +115,22 @@ app.use((err, req, res, next) => {
  
  
 // start the server
-const PORT = process.env.PORT || 5100;
-const server = app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-server.setTimeout(5 * 60 * 1000);
+const startServer = async () => {
+  await connectDB();
+  try {
+    await seedDefaultRoles();
+  } catch (e) {
+    console.error(e);
+  }
 
-startNotificationWorker({ intervalMs: 60_000 });
-startSystemInAppAnnouncementWorker({ intervalMs: 60_000 });
+  const PORT = process.env.PORT || 5100;
+  const server = app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+  server.setTimeout(5 * 60 * 1000);
+
+  startNotificationWorker({ intervalMs: 60_000 });
+  startSystemInAppAnnouncementWorker({ intervalMs: 60_000 });
+};
+
+startServer();

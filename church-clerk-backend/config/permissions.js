@@ -4,6 +4,7 @@ export const MODULES = {
   dashboard: ACTIONS,
   branches: ACTIONS,
   members: ACTIONS,
+  ministry: ACTIONS,
   events: ACTIONS,
   visitors: ACTIONS,
   attendance: ACTIONS,

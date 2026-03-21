@@ -2,6 +2,7 @@ import Church from "../models/churchModel.js";
 import User from "../models/userModel.js";
 import Member from "../models/memberModel.js";
 import { CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
+import Role from "../models/roleModel.js";
 import ActivityLog from "../models/activityLogModel.js";
 import ReferralHistory from "../models/referralModel/referralHistoryModel.js";
 import ReferralCode from "../models/referralModel/referralCodeModel.js";
@@ -157,17 +158,25 @@ const getAllSystemUsers = async (req, res) => {
 
 const getSystemRoles = async (req, res) => {
   try {
-    const enumRoles = User?.schema?.path("role")?.enumValues;
-    const allRoles = Array.isArray(enumRoles) && enumRoles.length
-      ? Array.from(new Set(enumRoles))
-      : Array.from(new Set([...(SYSTEM_ROLES || []), ...(CHURCH_ROLES || [])]));
+    const hasAnyDbRole = Boolean(await Role.exists({}));
+    const dbRoles = await Role.find({ isActive: true }).select("key scope").lean();
+    const dbSystemRoles = (dbRoles || [])
+      .filter((r) => r?.scope === "system")
+      .map((r) => String(r?.key || "").trim().toLowerCase())
+      .filter(Boolean);
+    const dbChurchRoles = (dbRoles || [])
+      .filter((r) => r?.scope === "church")
+      .map((r) => String(r?.key || "").trim().toLowerCase())
+      .filter(Boolean);
 
-    const churchRoles = allRoles.filter((r) => !SYSTEM_ROLES.includes(r));
+    const systemRoles = hasAnyDbRole ? Array.from(new Set(dbSystemRoles)) : Array.from(new Set(SYSTEM_ROLES || []));
+    const churchRoles = hasAnyDbRole ? Array.from(new Set(dbChurchRoles)) : Array.from(new Set(CHURCH_ROLES || []));
+    const allRoles = Array.from(new Set([...(systemRoles || []), ...(churchRoles || [])]));
 
     res.status(200).json({
       message: "Roles fetched successfully",
       data: {
-        systemRoles: SYSTEM_ROLES,
+        systemRoles,
         churchRoles,
         allRoles
       }
@@ -203,17 +212,29 @@ const updateSystemUser = async (req, res) => {
 
     const update = {};
     if (role !== undefined) {
-      const nextRole = String(role);
-      const enumRoles = User?.schema?.path("role")?.enumValues;
-      const allowed = new Set(
-        Array.isArray(enumRoles) && enumRoles.length
-          ? enumRoles
-          : [...SYSTEM_ROLES, ...CHURCH_ROLES]
-      );
-      if (!allowed.has(nextRole)) {
+      const nextRole = String(role || "").trim().toLowerCase();
+      if (!nextRole) {
         return res.status(400).json({ message: "Invalid role" });
       }
-      update.role = nextRole;
+
+      const isLegacy = [...SYSTEM_ROLES, ...CHURCH_ROLES].includes(nextRole);
+      if (isLegacy) {
+        const expectedScope = SYSTEM_ROLES.includes(nextRole) ? "system" : "church";
+        const dbRole = await Role.findOne({ key: nextRole, scope: expectedScope }).select("_id isActive").lean();
+        if (dbRole?._id && dbRole?.isActive === false) {
+          return res.status(400).json({ message: "Invalid role" });
+        }
+        update.role = nextRole;
+        update.roleRef = dbRole?._id || null;
+      } else {
+        const dbRole = await Role.findOne({ key: nextRole, scope: "system", isActive: true }).select("_id").lean();
+        if (!dbRole?._id) {
+          return res.status(400).json({ message: "Invalid role" });
+        }
+
+        update.role = nextRole;
+        update.roleRef = dbRole._id;
+      }
     }
 
     if (isActive !== undefined) {

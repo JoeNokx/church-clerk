@@ -16,6 +16,7 @@ import {attachBillingBanner} from "../middleware/expiryWarningMiddleware.js";
 import {readOnlyBranchGuard} from "../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";   
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../middleware/permissionMiddleware.js";
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 
 // router.use(authorizeRoles("superadmin", "churchadmin", "financialofficer"));
@@ -28,15 +29,6 @@ import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 router.get(
   "/me",
   protect,
-  authorizeRoles(
-    "superadmin",
-    "supportadmin",
-    "churchadmin",
-    "financialofficer",
-    "secretary",
-    "leader",
-    "associateadmin"
-  ),
   setActiveChurch,
   attachPermissions,
   myProfile
@@ -47,45 +39,50 @@ router.put("/me/password", protect, updateMyPassword);
 router.get(
   "/role-permissions",
   protect,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settings", "read"),
   getRolePermissionMatrix
 );
 
 router.get(
   "/church-users",
   protect,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settings", "read"),
   listChurchUsers
 );
 
 router.post(
   "/church-users",
   protect,
-  authorizeRoles("churchadmin"),
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settings", "create"),
   createChurchUser
 );
 
 router.put(
   "/church-users/:id",
   protect,
-  authorizeRoles("churchadmin"),
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settings", "update"),
   updateChurchUser
 );
 
 router.patch(
   "/church-users/:id/status",
   protect,
-  authorizeRoles("churchadmin"),
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
+  requirePermission("settings", "update"),
   setChurchUserActiveStatus
 );
 

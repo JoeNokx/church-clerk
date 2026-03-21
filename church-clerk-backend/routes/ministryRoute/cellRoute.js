@@ -15,32 +15,196 @@ import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
+import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../../middleware/permissionMiddleware.js";
 
 
-router.get("/cells", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllCells);
-router.get("/cells/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), getSingleCell); 
-router.post("/cells", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), createCell);
-router.put("/cells/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), updateCell);
-router.delete("/cells/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), deleteCell);
+router.get(
+  "/cells",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
+  getAllCells
+);
+router.get(
+  "/cells/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  getSingleCell
+); 
+router.post(
+  "/cells",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "create"),
+  createCell
+);
+router.put(
+  "/cells/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  updateCell
+);
+router.delete(
+  "/cells/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "delete"),
+  deleteCell
+);
 
 
-router.post("/cells/:id/members", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), addMemberToCell);
-router.get("/cells/:id/members/search", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), searchMembersToAddToCell);
-router.get("/cells/:id/members", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), getCellMembers);
-router.put("/cells/:id/members/:memberId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), updateCellMemberRole);
-router.delete("/cells/:id/members/:memberId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), removeMemberFromCell);
+router.post(
+  "/cells/:id/members",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  addMemberToCell
+);
+router.get(
+  "/cells/:id/members/search",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  searchMembersToAddToCell
+);
+router.get(
+  "/cells/:id/members",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  getCellMembers
+);
+router.put(
+  "/cells/:id/members/:memberId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  updateCellMemberRole
+);
+router.delete(
+  "/cells/:id/members/:memberId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  removeMemberFromCell
+);
 
 
-router.post("/cells/:id/meetings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), addCellMeeting);
-router.get("/cells/:id/meetings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), getCellMeetings);
-router.put("/cells/:id/meetings/:meetingId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), updateCellMeeting);
-router.delete("/cells/:id/meetings/:meetingId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), deleteCellMeeting);
+router.post(
+  "/cells/:id/meetings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "create"),
+  addCellMeeting
+);
+router.get(
+  "/cells/:id/meetings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  getCellMeetings
+);
+router.put(
+  "/cells/:id/meetings/:meetingId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  updateCellMeeting
+);
+router.delete(
+  "/cells/:id/meetings/:meetingId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "delete"),
+  deleteCellMeeting
+);
 
 
-router.post("/cells/:cellId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), createCellAttendance);
-router.get("/cells/:cellId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllCellAttendances);
-router.put("/cells/:cellId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), updateCellAttendance);
-router.delete("/cells/:cellId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), deleteCellAttendance);
+router.post(
+  "/cells/:cellId/attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "create"),
+  createCellAttendance
+);
+router.get(
+  "/cells/:cellId/attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
+  getAllCellAttendances
+);
+router.put(
+  "/cells/:cellId/attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "update"),
+  updateCellAttendance
+);
+router.delete(
+  "/cells/:cellId/attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "delete"),
+  deleteCellAttendance
+);
 
 
 router.post(
@@ -48,7 +212,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "create"),
   createCellIndividualAttendance
 );
 router.get(
@@ -56,7 +222,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
   getAllCellIndividualAttendances
 );
 router.get(
@@ -64,7 +232,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
   getSingleCellIndividualAttendance
 );
 router.put(
@@ -72,7 +242,9 @@ router.put(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "update"),
   updateCellIndividualAttendance
 );
 router.delete(
@@ -80,18 +252,65 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "delete"),
   deleteCellIndividualAttendance
 );
 
 
-router.post("/cells/:cellId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), createCellOffering);
-router.get("/cells/:cellId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllCellOfferings);
-router.put("/cells/:cellId/offerings/:offeringId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), updateCellOffering);
-router.delete("/cells/:cellId/offerings/:offeringId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), deleteCellOffering);
+router.post(
+  "/cells/:cellId/offerings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "create"),
+  createCellOffering
+);
+router.get(
+  "/cells/:cellId/offerings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
+  getAllCellOfferings
+);
+router.put(
+  "/cells/:cellId/offerings/:offeringId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "update"),
+  updateCellOffering
+);
+router.delete(
+  "/cells/:cellId/offerings/:offeringId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "delete"),
+  deleteCellOffering
+);
 
 
-router.get("/cells/stats/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), getMinistryKPI);
+router.get(
+  "/cells/stats/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  getMinistryKPI
+);
 
 
 export default router

@@ -1705,7 +1705,7 @@ function SettingsPage() {
                 {churchRoles.map((r) => {
                   const modules = availableRoleModules;
                   const normalizedRole = String(r || "").trim().toLowerCase();
-                  const isChurchAdmin = normalizedRole === "churchadmin";
+                  const perms = rolePermissions?.[normalizedRole] || {};
 
                   return (
                     <div key={r} className="rounded-lg border border-gray-200 p-4">
@@ -1725,10 +1725,10 @@ function SettingsPage() {
                               </thead>
                               <tbody className="divide-y divide-gray-200">
                                 {modules.map((m) => {
-                                  const canView = isChurchAdmin || true;
-                                  const canCreate = isChurchAdmin || true;
-                                  const canUpdate = isChurchAdmin;
-                                  const canDelete = isChurchAdmin;
+                                  const canView = Boolean(perms?.[m]?.read);
+                                  const canCreate = Boolean(perms?.[m]?.create);
+                                  const canUpdate = Boolean(perms?.[m]?.update);
+                                  const canDelete = Boolean(perms?.[m]?.delete);
 
                                   const markClass = (ok) => (ok ? "font-bold text-green-700" : "font-bold text-gray-400");
 

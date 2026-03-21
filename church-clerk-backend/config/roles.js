@@ -1,6 +1,8 @@
 export const SYSTEM_ROLES = ["superadmin", "supportadmin"];
 export const CHURCH_ROLES = [
   "churchadmin",
+  "associateadmin",
+  "admin",
   "financialofficer",
   "secretary",
   "leader"
@@ -50,6 +52,7 @@ export const ROLE_PERMISSIONS = {
     announcements: ["read", "create", "update", "delete"],
     finance: ["read"],
     billing: ["read", "create", "update", "delete"],
+    referrals: ["read"],
     settings: ["read", "create", "update", "delete"],
     reportsAnalytics: ["read"],
     specialFunds: ["read", "create", "update", "delete"],
@@ -62,12 +65,26 @@ export const ROLE_PERMISSIONS = {
 
   financialofficer: {
     dashboard: ["read"],
+    members: ["read"],
+    attendance: ["read"],
+    visitors: ["read"],
+    announcements: ["read", "create"],
     tithe: ["read", "create"],
     offerings: ["read", "create"],
     welfare: ["read"],
     expenses: ["read", "create", "update"],
     financialStatement: ["read"],
-    reportsAnalytics: ["read"]
+    reportsAnalytics: ["read"],
+    referrals: ["read"]
+  },
+
+  associateadmin: {
+    dashboard: ["read"],
+    billing: ["read"]
+  },
+
+  admin: {
+    ministry: ["read", "create", "update", "delete"]
   },
 
   secretary: {

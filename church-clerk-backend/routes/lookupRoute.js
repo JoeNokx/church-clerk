@@ -4,6 +4,8 @@ import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
+import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../middleware/permissionMiddleware.js";
 
 import { listLookupValues, createLookupValue } from "../controller/lookupController.js";
 
@@ -29,7 +31,25 @@ const allowedWriteRoles = [
   "leader"
 ];
 
-router.get("/", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles(...allowedReadRoles), listLookupValues);
-router.post("/", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles(...allowedWriteRoles), createLookupValue);
+router.get(
+  "/",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles(...allowedReadRoles),
+  requirePermission("settings", "read"),
+  listLookupValues
+);
+router.post(
+  "/",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles(...allowedWriteRoles),
+  requirePermission("settings", "create"),
+  createLookupValue
+);
 
 export default router;

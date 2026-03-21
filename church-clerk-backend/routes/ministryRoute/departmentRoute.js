@@ -15,39 +15,205 @@ import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
+import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../../middleware/permissionMiddleware.js";
 
 
-router.get("/departments", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllDepartments);
-router.get("/departments/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), getSingleDepartment); 
-router.post("/departments", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), createDepartment);
-router.put("/departments/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), updateDepartment);
-router.delete("/departments/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), deleteDepartment);
+router.get(
+  "/departments",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
+  getAllDepartments
+);
+router.get(
+  "/departments/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  getSingleDepartment
+); 
+router.post(
+  "/departments",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "create"),
+  createDepartment
+);
+router.put(
+  "/departments/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  updateDepartment
+);
+router.delete(
+  "/departments/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "delete"),
+  deleteDepartment
+);
 
 
-router.post("/departments/:id/members", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), addMemberToDepartment);
-router.get("/departments/:id/members/search", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), searchMembersToAddToDepartment);
-router.get("/departments/:id/members", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), getDepartmentMembers);
-router.put("/departments/:id/members/:memberId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), updateDepartmentMemberRole);
-router.delete("/departments/:id/members/:memberId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), removeMemberFromDepartment);
+router.post(
+  "/departments/:id/members",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  addMemberToDepartment
+);
+router.get(
+  "/departments/:id/members/search",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  searchMembersToAddToDepartment
+);
+router.get(
+  "/departments/:id/members",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  getDepartmentMembers
+);
+router.put(
+  "/departments/:id/members/:memberId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  updateDepartmentMemberRole
+);
+router.delete(
+  "/departments/:id/members/:memberId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  removeMemberFromDepartment
+);
 
 
-router.post("/departments/:id/meetings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), addDepartmentMeeting);
-router.get("/departments/:id/meetings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), getDepartmentMeetings);
-router.put("/departments/:id/meetings/:meetingId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), updateDepartmentMeeting);
-router.delete("/departments/:id/meetings/:meetingId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), deleteDepartmentMeeting);
+router.post(
+  "/departments/:id/meetings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "create"),
+  addDepartmentMeeting
+);
+router.get(
+  "/departments/:id/meetings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  getDepartmentMeetings
+);
+router.put(
+  "/departments/:id/meetings/:meetingId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "update"),
+  updateDepartmentMeeting
+);
+router.delete(
+  "/departments/:id/meetings/:meetingId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "delete"),
+  deleteDepartmentMeeting
+);
 
 
-router.post("/departments/:departmentId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), createDepartmentAttendance);
-router.get("/departments/:departmentId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllDepartmentAttendances);
-router.put("/departments/:departmentId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), updateDepartmentAttendance);
-router.delete("/departments/:departmentId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), deleteDepartmentAttendance);
+router.post(
+  "/departments/:departmentId/attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "create"),
+  createDepartmentAttendance
+);
+router.get(
+  "/departments/:departmentId/attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
+  getAllDepartmentAttendances
+);
+router.put(
+  "/departments/:departmentId/attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "update"),
+  updateDepartmentAttendance
+);
+router.delete(
+  "/departments/:departmentId/attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "delete"),
+  deleteDepartmentAttendance
+);
 
 router.post(
   "/departments/:departmentId/individual-attendances",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "create"),
   createDepartmentIndividualAttendance
 );
 router.get(
@@ -55,7 +221,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
   getAllDepartmentIndividualAttendances
 );
 router.get(
@@ -63,7 +231,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
   getSingleDepartmentIndividualAttendance
 );
 router.put(
@@ -71,7 +241,9 @@ router.put(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "update"),
   updateDepartmentIndividualAttendance
 );
 router.delete(
@@ -79,17 +251,64 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "delete"),
   deleteDepartmentIndividualAttendance
 );
 
 
-router.post("/departments/:departmentId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), createDepartmentOffering);
-router.get("/departments/:departmentId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), getAllDepartmentOfferings);
-router.put("/departments/:departmentId/offerings/:offeringId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), updateDepartmentOffering);
-router.delete("/departments/:departmentId/offerings/:offeringId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"), deleteDepartmentOffering);
+router.post(
+  "/departments/:departmentId/offerings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "create"),
+  createDepartmentOffering
+);
+router.get(
+  "/departments/:departmentId/offerings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "read"),
+  getAllDepartmentOfferings
+);
+router.put(
+  "/departments/:departmentId/offerings/:offeringId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "update"),
+  updateDepartmentOffering
+);
+router.delete(
+  "/departments/:departmentId/offerings/:offeringId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("ministry", "delete"),
+  deleteDepartmentOffering
+);
 
 
-router.get("/departments/stats/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "admin"), getMinistryKPI);
+router.get(
+  "/departments/stats/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin"),
+  requirePermission("ministry", "read"),
+  getMinistryKPI
+);
 
 export default router

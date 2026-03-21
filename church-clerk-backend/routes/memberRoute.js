@@ -15,6 +15,8 @@ import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
+import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../middleware/permissionMiddleware.js";
 import {blockMemberCreationIfOverdue} from "../middleware/blockMemberCreationMiddleware.js"
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 
@@ -33,15 +35,35 @@ const uploadMemberCsv = (req, res, next) => {
 };
 
 
-router.get("/members", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"), getAllMembers);
-router.get("/members/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "supportadmin", "churchadmin"), getSingleMember); 
+router.get(
+  "/members",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("members", "read"),
+  getAllMembers
+);
+router.get(
+  "/members/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("members", "read"),
+  getSingleMember
+); 
 router.post(
   "/members",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   blockMemberCreationIfOverdue,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("members", "create"),
   createMember
 );
 
@@ -50,7 +72,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("members", "read"),
   downloadMembersImportTemplate
 );
 
@@ -59,7 +83,9 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("members", "create"),
   uploadMemberCsv,
   previewMembersImport
 );
@@ -69,19 +95,41 @@ router.post(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   blockMemberCreationIfOverdue,
   authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("members", "create"),
   uploadMemberCsv,
   importMembersCsv
 );
-router.put("/members/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateMember);
-router.delete("/members/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteMember);
+router.put(
+  "/members/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("members", "update"),
+  updateMember
+);
+router.delete(
+  "/members/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("members", "delete"),
+  deleteMember
+);
 router.get(
   "/members/stats/kpi",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  requirePermission("members", "read"),
   getAllMembersKPI
 );
 

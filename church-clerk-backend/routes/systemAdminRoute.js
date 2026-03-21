@@ -22,6 +22,14 @@ import {
   deleteSystemInAppAnnouncement
 } from "../controller/systemInAppAnnouncementController.js";
 import { getSystemSettings, updateSystemSettings } from "../controller/systemSettingsController.js";
+import {
+  getPermissionCatalog,
+  listRoles,
+  createRole,
+  updateRole,
+  getRoleById,
+  deleteRole
+} from "../controller/roleController.js";
 import { protectAdmin } from "../middleware/authMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
 
@@ -30,6 +38,13 @@ import authorizeRoles from "../middleware/roleMiddleware.js";
 router.get("/churches", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getAllChurches);
 router.get("/churches/:id", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getSystemChurchById);
 router.get("/roles", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getSystemRoles);
+
+router.get("/permission-catalog", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getPermissionCatalog);
+router.get("/custom-roles", protectAdmin, authorizeRoles("superadmin", "supportadmin"), listRoles);
+router.get("/custom-roles/:id", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getRoleById);
+router.post("/custom-roles", protectAdmin, authorizeRoles("superadmin", "supportadmin"), createRole);
+router.patch("/custom-roles/:id", protectAdmin, authorizeRoles("superadmin", "supportadmin"), updateRole);
+router.delete("/custom-roles/:id", protectAdmin, authorizeRoles("superadmin", "supportadmin"), deleteRole);
 
 router.get("/users", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getAllSystemUsers);
 router.get("/users/:id", protectAdmin, authorizeRoles("superadmin", "supportadmin"), getSystemUserById);

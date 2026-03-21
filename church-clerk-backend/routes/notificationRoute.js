@@ -2,6 +2,8 @@ import express from "express";
 
 import { protect } from "../middleware/authMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
+import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../middleware/permissionMiddleware.js";
 
 import {
   listMyNotifications,
@@ -22,9 +24,37 @@ const allowedRoles = [
   "leader"
 ];
 
-router.get("/", protect, authorizeRoles(...allowedRoles), listMyNotifications);
-router.get("/unread-count", protect, authorizeRoles(...allowedRoles), getMyUnreadCount);
-router.patch("/:id/read", protect, authorizeRoles(...allowedRoles), markNotificationRead);
-router.post("/read-all", protect, authorizeRoles(...allowedRoles), markAllNotificationsRead);
+router.get(
+  "/",
+  protect,
+  attachPermissions,
+  authorizeRoles(...allowedRoles),
+  requirePermission("dashboard", "read"),
+  listMyNotifications
+);
+router.get(
+  "/unread-count",
+  protect,
+  attachPermissions,
+  authorizeRoles(...allowedRoles),
+  requirePermission("dashboard", "read"),
+  getMyUnreadCount
+);
+router.patch(
+  "/:id/read",
+  protect,
+  attachPermissions,
+  authorizeRoles(...allowedRoles),
+  requirePermission("dashboard", "read"),
+  markNotificationRead
+);
+router.post(
+  "/read-all",
+  protect,
+  attachPermissions,
+  authorizeRoles(...allowedRoles),
+  requirePermission("dashboard", "read"),
+  markAllNotificationsRead
+);
 
 export default router;

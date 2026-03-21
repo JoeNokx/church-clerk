@@ -16,41 +16,216 @@ import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js";
+import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
+import { requirePermission } from "../../middleware/permissionMiddleware.js";
 
 
-router.get("/groups", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin", "financialofficer"), getAllGroups);
-router.get("/groups/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getSingleGroup); 
-router.post("/groups", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createGroup);
-router.put("/groups/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateGroup);
-router.delete("/groups/:id", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteGroup);
+router.get(
+  "/groups",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  requirePermission("ministry", "read"),
+  getAllGroups
+);
+router.get(
+  "/groups/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
+  getSingleGroup
+); 
+router.post(
+  "/groups",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "create"),
+  createGroup
+);
+router.put(
+  "/groups/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "update"),
+  updateGroup
+);
+router.delete(
+  "/groups/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "delete"),
+  deleteGroup
+);
 
 
-router.post("/groups/:id/members", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), addMemberToGroup);
-router.get("/groups/:id/members/search", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), searchMembersToAddToGroup);
-router.get("/groups/:id/members", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getGroupMembers);
-router.put("/groups/:id/members/:memberId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateMemberRole);
-router.delete("/groups/:id/members/:memberId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), removeMemberFromGroup);
+router.post(
+  "/groups/:id/members",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "update"),
+  addMemberToGroup
+);
+router.get(
+  "/groups/:id/members/search",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
+  searchMembersToAddToGroup
+);
+router.get(
+  "/groups/:id/members",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
+  getGroupMembers
+);
+router.put(
+  "/groups/:id/members/:memberId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "update"),
+  updateMemberRole
+);
+router.delete(
+  "/groups/:id/members/:memberId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "update"),
+  removeMemberFromGroup
+);
 
 
-router.post("/groups/:id/meetings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), addMeeting);
-router.get("/groups/:id/meetings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getMeetings);
-router.put("/groups/:id/meetings/:meetingId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateMeeting);
-router.delete("/groups/:id/meetings/:meetingId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteMeeting);
+router.post(
+  "/groups/:id/meetings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "create"),
+  addMeeting
+);
+router.get(
+  "/groups/:id/meetings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
+  getMeetings
+);
+router.put(
+  "/groups/:id/meetings/:meetingId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "update"),
+  updateMeeting
+);
+router.delete(
+  "/groups/:id/meetings/:meetingId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "delete"),
+  deleteMeeting
+);
 
 
-router.get("/groups/stats/kpi", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getMinistryKPI);
+router.get(
+  "/groups/stats/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
+  getMinistryKPI
+);
 
-router.post("/groups/:groupId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createGroupAttendance);
-router.get("/groups/:groupId/attendances", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getAllGroupAttendances);
-router.put("/groups/:groupId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateGroupAttendance);
-router.delete("/groups/:groupId/attendances/:attendanceId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteGroupAttendance);
+router.post(
+  "/groups/:groupId/attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "create"),
+  createGroupAttendance
+);
+router.get(
+  "/groups/:groupId/attendances",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
+  getAllGroupAttendances
+);
+router.put(
+  "/groups/:groupId/attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "update"),
+  updateGroupAttendance
+);
+router.delete(
+  "/groups/:groupId/attendances/:attendanceId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "delete"),
+  deleteGroupAttendance
+);
 
 router.post(
   "/groups/:groupId/individual-attendances",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "create"),
   createGroupIndividualAttendance
 );
 router.get(
@@ -58,7 +233,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
   getAllGroupIndividualAttendances
 );
 router.get(
@@ -66,7 +243,9 @@ router.get(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
   getSingleGroupIndividualAttendance
 );
 router.put(
@@ -74,7 +253,9 @@ router.put(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "update"),
   updateGroupIndividualAttendance
 );
 router.delete(
@@ -82,14 +263,52 @@ router.delete(
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
+  attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "delete"),
   deleteGroupIndividualAttendance
 );
 
 
-router.post("/groups/:groupId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), createGroupOffering);
-router.get("/groups/:groupId/offerings", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), getAllGroupOfferings);
-router.put("/groups/:groupId/offerings/:offeringId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), updateGroupOffering);
-router.delete("/groups/:groupId/offerings/:offeringId", protect, setActiveChurch, readOnlyBranchGuard, authorizeRoles("superadmin", "churchadmin"), deleteGroupOffering);
+router.post(
+  "/groups/:groupId/offerings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "create"),
+  createGroupOffering
+);
+router.get(
+  "/groups/:groupId/offerings",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "read"),
+  getAllGroupOfferings
+);
+router.put(
+  "/groups/:groupId/offerings/:offeringId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "update"),
+  updateGroupOffering
+);
+router.delete(
+  "/groups/:groupId/offerings/:offeringId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("ministry", "delete"),
+  deleteGroupOffering
+);
 
 export default router

@@ -2,6 +2,9 @@ import User from "../models/userModel.js";
 import { ROLE_PERMISSIONS, CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
 import cloudinary from "../config/cloudinary.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
+import Role from "../models/roleModel.js";
+import { MODULES } from "../config/permissions.js";
+import { resolvePermissions } from "../utils/resolvePermissions.js";
 
 //GET: fetch my profile
 const myProfile =  async (req, res) => {
@@ -201,10 +204,6 @@ const listChurchUsers = async (req, res) => {
 
 const createChurchUser = async (req, res) => {
   try {
-    if (req.user?.role !== "churchadmin") {
-      return res.status(403).json({ message: "Only a church admin can add users" });
-    }
-
     const churchId = req.activeChurch?._id;
     if (!churchId) {
       return res.status(400).json({ message: "Active church context is required" });
@@ -222,7 +221,15 @@ const createChurchUser = async (req, res) => {
       return res.status(400).json({ message: e?.message || "Invalid phone number" });
     }
 
-    if (!CHURCH_ROLES.includes(role)) {
+    const roleKey = String(role || "").trim().toLowerCase();
+    let roleRef = null;
+    const dbRole = await Role.findOne({ key: roleKey, scope: "church" }).select("_id isActive").lean();
+    if (dbRole?._id) {
+      if (dbRole?.isActive === false) {
+        return res.status(400).json({ message: "Invalid role selected" });
+      }
+      roleRef = dbRole._id;
+    } else if (!CHURCH_ROLES.includes(roleKey)) {
       return res.status(400).json({ message: "Invalid role selected" });
     }
 
@@ -241,7 +248,8 @@ const createChurchUser = async (req, res) => {
       email,
       phoneNumber: validatedPhoneNumber,
       password,
-      role,
+      role: roleKey,
+      roleRef,
       church: churchId,
       isActive: true
     });
@@ -256,10 +264,6 @@ const createChurchUser = async (req, res) => {
 
 const updateChurchUser = async (req, res) => {
   try {
-    if (req.user?.role !== "churchadmin") {
-      return res.status(403).json({ message: "Only a church admin can update users" });
-    }
-
     const churchId = req.activeChurch?._id;
     if (!churchId) {
       return res.status(400).json({ message: "Active church context is required" });
@@ -306,10 +310,19 @@ const updateChurchUser = async (req, res) => {
     if (email !== undefined) update.email = email;
     if (phoneNumber !== undefined) update.phoneNumber = validatedPhoneNumber;
     if (role !== undefined) {
-      if (!CHURCH_ROLES.includes(role)) {
+      const roleKey = String(role || "").trim().toLowerCase();
+      let roleRef = null;
+      const dbRole = await Role.findOne({ key: roleKey, scope: "church" }).select("_id isActive").lean();
+      if (dbRole?._id) {
+        if (dbRole?.isActive === false) {
+          return res.status(400).json({ message: "Invalid role selected" });
+        }
+        roleRef = dbRole._id;
+      } else if (!CHURCH_ROLES.includes(roleKey)) {
         return res.status(400).json({ message: "Invalid role selected" });
       }
-      update.role = role;
+      update.role = roleKey;
+      update.roleRef = roleRef;
     }
 
     const user = await User.findOneAndUpdate(
@@ -363,13 +376,30 @@ const setChurchUserActiveStatus = async (req, res) => {
 
 const getRolePermissionMatrix = async (req, res) => {
   try {
-    const roles = { ...ROLE_PERMISSIONS };
+    const dbChurchRoles = await Role.find({ scope: "church", isActive: true })
+      .select("key")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const dbChurchRoleKeys = Array.isArray(dbChurchRoles)
+      ? dbChurchRoles.map((r) => String(r?.key || "").trim().toLowerCase()).filter(Boolean)
+      : [];
+
+    const churchRoles = dbChurchRoleKeys.length
+      ? Array.from(new Set(dbChurchRoleKeys))
+      : Array.from(new Set(CHURCH_ROLES || []));
+
+    const roles = {};
+    for (const roleKey of churchRoles) {
+      roles[roleKey] = await resolvePermissions(roleKey, null, "church");
+    }
+
     const roleList = {
       systemRoles: SYSTEM_ROLES,
-      churchRoles: CHURCH_ROLES
+      churchRoles
     };
 
-    return res.status(200).json({ roles, roleList });
+    return res.status(200).json({ roles, roleList, modules: MODULES });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
