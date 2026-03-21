@@ -4,6 +4,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import Skeleton from "react-loading-skeleton";
 
 import ChurchContext from "../../church/church.store.js";
+import PermissionContext from "../../permissions/permission.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
 import {
@@ -216,6 +217,8 @@ function MinistryDetailsPage() {
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   const churchStore = useContext(ChurchContext);
+  const { can } = useContext(PermissionContext) || {};
+  const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const id = params.get("id") || "";
@@ -1127,17 +1130,19 @@ function MinistryDetailsPage() {
                         <td className="px-6 py-1.5">{m?.role || "member"}</td>
                         <td className="px-6 py-1.5">
                           <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const memberId = member?._id;
-                                if (!memberId) return;
-                                toPage("member-details", { id: memberId });
-                              }}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                            >
-                              View
-                            </button>
+                            {canViewMembers ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const memberId = member?._id;
+                                  if (!memberId) return;
+                                  toPage("member-details", { id: memberId });
+                                }}
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              >
+                                View
+                              </button>
+                            ) : null}
 
                             <button
                               type="button"

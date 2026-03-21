@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { getGroups, createGroup, updateGroup, deleteGroup } from "../../group/services/group.api.js";
 import Skeleton from "react-loading-skeleton";
+import PermissionContext from "../../permissions/permission.store.js";
 import {
   getDepartments,
   createDepartment,
@@ -77,7 +78,7 @@ function Chip({ color = "gray", children }) {
   return <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${styles}`}>{children}</span>;
 }
 
-function MinistryCard({ row, type, onView, onEdit, onDelete }) {
+function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
   const meetings = normalizeMeetingSchedule(row);
   const firstMeeting = meetings?.[0] || null;
 
@@ -121,13 +122,15 @@ function MinistryCard({ row, type, onView, onEdit, onDelete }) {
       ) : null}
 
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <button
-          type="button"
-          onClick={onView}
-          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-        >
-          View
-        </button>
+        {canView ? (
+          <button
+            type="button"
+            onClick={onView}
+            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            View
+          </button>
+        ) : null}
 
         <button
           type="button"
@@ -457,6 +460,9 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
 function MinistriesPage() {
   const { toPage } = useDashboardNavigator();
 
+  const { can } = useContext(PermissionContext) || {};
+  const canView = useMemo(() => (typeof can === "function" ? can("ministry", "view") : false), [can]);
+
   const [activeTab, setActiveTab] = useState("groups");
   const [kpiLoading, setKpiLoading] = useState(false);
   const [kpi, setKpi] = useState(null);
@@ -717,6 +723,7 @@ function MinistriesPage() {
                     key={row?._id ?? `row-${index}`}
                     row={row}
                     type={ministryType}
+                    canView={canView}
                     onView={() => {
                       if (!row?._id) return;
 

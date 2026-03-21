@@ -37,7 +37,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
-  requirePermission("ministry", "read"),
+  requirePermission("ministry", "view"),
   getSingleGroup
 ); 
 router.post(

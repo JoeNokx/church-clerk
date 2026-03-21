@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { useContext } from "react";
 import Skeleton from "react-loading-skeleton";
+import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import {
@@ -321,6 +322,9 @@ function BusinessVenturesPage() {
   const currency = String(activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const canEdit = activeChurch?._id ? activeChurch?.canEdit !== false : true;
 
+  const { can } = useContext(PermissionContext) || {};
+  const canView = useMemo(() => (typeof can === "function" ? can("businessVentures", "view") : false), [can]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [ventures, setVentures] = useState([]);
@@ -493,29 +497,33 @@ function BusinessVenturesPage() {
               </div>
 
               <div className="mt-5 flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                <button
-                  type="button"
-                  onClick={() => viewIncome(v)}
-                  className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-green-700 shadow-sm hover:bg-gray-50"
-                >
-                  Income
-                </button>
+                {canView ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => viewIncome(v)}
+                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-green-700 shadow-sm hover:bg-gray-50"
+                    >
+                      Income
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => viewExpenses(v)}
-                  className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-orange-600 shadow-sm hover:bg-gray-50"
-                >
-                  Expenses
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => viewExpenses(v)}
+                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-orange-600 shadow-sm hover:bg-gray-50"
+                    >
+                      Expenses
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => viewDetails(v)}
-                  className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                >
-                  View
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => viewDetails(v)}
+                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                    >
+                      View
+                    </button>
+                  </>
+                ) : null}
 
                 {canEdit ? (
                   <>

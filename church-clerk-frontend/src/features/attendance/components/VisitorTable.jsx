@@ -47,9 +47,10 @@ function VisitorTable({ onEdit, onDeleted }) {
   const [detailsError, setDetailsError] = useState(null);
   const [detailsVisitor, setDetailsVisitor] = useState(null);
 
+  const canView = useMemo(() => (typeof can === "function" ? can("visitors", "view") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("visitors", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("visitors", "delete") : false), [can]);
-  const canCreateMember = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
+  const canConvert = useMemo(() => (typeof can === "function" ? can("visitors", "convert") : false), [can]);
 
   const onPrev = async () => {
     const prevPage = store?.visitorPagination?.prevPage;
@@ -234,15 +235,17 @@ function VisitorTable({ onEdit, onDeleted }) {
                 <td className="px-6 py-1.5">{formatDate(row?.serviceDate)}</td>
                 <td className="px-6 py-1.5">
                   <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openDetails(row)}
-                      className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                    >
-                      view
-                    </button>
+                    {canView && (
+                      <button
+                        type="button"
+                        onClick={() => openDetails(row)}
+                        className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                      >
+                        view
+                      </button>
+                    )}
 
-                    {canCreateMember && (
+                    {canConvert && (
                       <button
                         type="button"
                         onClick={() => {

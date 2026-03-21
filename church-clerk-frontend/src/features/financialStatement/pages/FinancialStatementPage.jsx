@@ -74,6 +74,7 @@ function FinancialStatementPage() {
   const money = useMemo(() => (value) => formatCurrency(value, currency), [currency]);
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("financialStatement", "read") : true), [can]);
+  const canExport = useMemo(() => (typeof can === "function" ? can("financialStatement", "export") : false), [can]);
 
   const now = useMemo(() => new Date(), []);
   const currentYear = now.getFullYear();
@@ -240,21 +241,23 @@ function FinancialStatementPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setExportError("");
-              setExportOpen(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              <path d="M8 9l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            Export
-          </button>
+          {canExport ? (
+            <button
+              type="button"
+              onClick={() => {
+                setExportError("");
+                setExportOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M8 9l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              Export
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -525,7 +528,7 @@ function FinancialStatementPage() {
               </div>
             </div>
           </div>
-        </>
+       canExport &&  </>
       ) : null}
 
       {exportOpen ? (

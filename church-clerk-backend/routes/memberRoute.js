@@ -52,7 +52,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("members", "read"),
+  requirePermission("members", "view"),
   getSingleMember
 ); 
 router.post(
@@ -63,7 +63,12 @@ router.post(
   attachPermissions,
   blockMemberCreationIfOverdue,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("members", "create"),
+  (req, res, next) => {
+    if (req.body?.visitorId) {
+      return requirePermission("visitors", "convert")(req, res, next);
+    }
+    return requirePermission("members", "create")(req, res, next);
+  },
   createMember
 );
 
@@ -74,7 +79,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
-  requirePermission("members", "read"),
+  requirePermission("members", "import"),
   downloadMembersImportTemplate
 );
 
@@ -85,7 +90,7 @@ router.post(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
-  requirePermission("members", "create"),
+  requirePermission("members", "import"),
   uploadMemberCsv,
   previewMembersImport
 );
@@ -98,7 +103,7 @@ router.post(
   attachPermissions,
   blockMemberCreationIfOverdue,
   authorizeRoles("superadmin", "churchadmin"),
-  requirePermission("members", "create"),
+  requirePermission("members", "import"),
   uploadMemberCsv,
   importMembersCsv
 );

@@ -31,10 +31,24 @@ router.get(
   protect,
   setActiveChurch,
   attachPermissions,
+  requirePermission("settingsMyProfile", "read"),
   myProfile
 );
-router.put("/me/profile", protect, uploadMemoryFile.single("avatar"), updateMyProfile);
-router.put("/me/password", protect, updateMyPassword);
+router.put(
+  "/me/profile",
+  protect,
+  attachPermissions,
+  requirePermission("settingsMyProfile", "update"),
+  uploadMemoryFile.single("avatar"),
+  updateMyProfile
+);
+router.put(
+  "/me/password",
+  protect,
+  attachPermissions,
+  requirePermission("settingsMyProfile", "update"),
+  updateMyPassword
+);
 
 router.get(
   "/role-permissions",
@@ -42,7 +56,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  requirePermission("settings", "read"),
+  requirePermission("settingsUsersRoles", "read"),
   getRolePermissionMatrix
 );
 
@@ -52,7 +66,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  requirePermission("settings", "read"),
+  requirePermission("settingsUsersRoles", "read"),
   listChurchUsers
 );
 
@@ -62,7 +76,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  requirePermission("settings", "create"),
+  requirePermission("settingsUsersRoles", "create"),
   createChurchUser
 );
 
@@ -72,7 +86,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  requirePermission("settings", "update"),
+  requirePermission("settingsUsersRoles", "view"),
   updateChurchUser
 );
 
@@ -82,7 +96,7 @@ router.patch(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  requirePermission("settings", "update"),
+  requirePermission("settingsUsersRoles", "deactivate"),
   setChurchUserActiveStatus
 );
 

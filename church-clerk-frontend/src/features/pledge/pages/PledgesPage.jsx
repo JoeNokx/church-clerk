@@ -476,12 +476,15 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
 
 function PledgesPageInner() {
   const { toPage } = useDashboardNavigator();
-  const churchStore = useContext(ChurchContext);
-  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+
+  const churchCtx = useContext(ChurchContext);
+  const currency = String(churchCtx?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const store = useContext(PledgeContext);
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("pledge", "read") : true), [can]);
+  const canView = useMemo(() => (typeof can === "function" ? can("pledges", "view") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("pledges", "create") : true), [can]);
+
   const canEdit = useMemo(() => (typeof can === "function" ? can("pledges", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("pledges", "delete") : false), [can]);
   const [kpi, setKpi] = useState({ total: 0, pledged: 0, paid: 0, outstanding: 0 });
@@ -855,13 +858,15 @@ function PledgesPageInner() {
                       </td>
                       <td className="px-6 py-1.5 whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => viewDetails(row)}
-                            className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                          >
-                            View
-                          </button>
+                          {canView && (
+                            <button
+                              type="button"
+                              onClick={() => viewDetails(row)}
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              View
+                            </button>
+                          )}
 
                           {(canEdit || canDelete) ? (
                             <div className="relative" ref={menuRef}>

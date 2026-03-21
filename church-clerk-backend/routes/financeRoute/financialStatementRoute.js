@@ -51,7 +51,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("financialStatement", "read"),
+  requirePermission("financialStatement", "export"),
   exportFinancialStatement
 );
 

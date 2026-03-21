@@ -45,7 +45,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
-  requirePermission("reportsAnalytics", "read"),
+  requirePermission("reportsAnalytics", "export"),
   exportReportsAnalytics
 );
 
@@ -56,7 +56,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
-  requirePermission("reportsAnalytics", "read"),
+  requirePermission("reportsAnalytics", "generate"),
   getReportsAnalyticsReport
 );
 
@@ -67,7 +67,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
-  requirePermission("reportsAnalytics", "read"),
+  requirePermission("reportsAnalytics", "export"),
   exportReportsAnalyticsReport
 );
 

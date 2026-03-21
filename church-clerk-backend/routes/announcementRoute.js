@@ -51,7 +51,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("announcements", "read"),
+  requirePermission("announcements", "view"),
   getSingleAnnouncement
 );
 router.post(
@@ -169,7 +169,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("announcements", "read"),
+  requirePermission("announcements", "view"),
   getMessageDeliveryReport
 );
 

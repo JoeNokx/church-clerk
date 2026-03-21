@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 
@@ -7,6 +7,7 @@ import { getUpcomingEvents } from "../../event/services/event.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import { getMyReferralCode, getMyReferralHistory } from "../../referral/services/referral.api.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import PermissionContext from "../../permissions/permission.store.js";
 
 const DashboardCharts = React.lazy(() => import("../components/DashboardCharts.jsx"));
 
@@ -172,6 +173,9 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
 
 function DashboardOverview({ onNavigate }) {
   const { toPage } = useDashboardNavigator();
+  const { can } = useContext(PermissionContext) || {};
+  const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
+  const canViewEvents = useMemo(() => (typeof can === "function" ? can("events", "view") : false), [can]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [kpis, setKpis] = useState(null);
@@ -383,12 +387,14 @@ function DashboardOverview({ onNavigate }) {
   };
 
   const goToMemberDetails = (id) => {
+    if (!canViewMembers) return;
     if (!id) return;
     closeBirthdaysModal();
     toPage("member-details", { id }, { state: { from: "dashboard" } });
   };
 
   const goToEventDetails = (id) => {
+    if (!canViewEvents) return;
     if (!id) return;
     toPage("event-details", { id }, { state: { from: "dashboard" } });
   };
@@ -533,29 +539,40 @@ function DashboardOverview({ onNavigate }) {
           <div className="px-5 pb-5">
             <div className="mt-4 divide-y divide-gray-200">
               {upcomingBirthdays.length ? (
-                upcomingBirthdays.map((m, idx) => (
-                  <button
-                    key={`${m?._id || "b"}-${idx}`}
-                    type="button"
-                    onClick={() => goToMemberDetails(m?._id)}
-                    className="w-full text-left flex items-center justify-between gap-3 py-1.5 hover:bg-gray-50"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
-                      <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                upcomingBirthdays.map((m, idx) =>
+                  canViewMembers ? (
+                    <button
+                      key={`${m?._id || "b"}-${idx}`}
+                      type="button"
+                      onClick={() => goToMemberDetails(m?._id)}
+                      className="w-full text-left flex items-center justify-between gap-3 py-1.5 hover:bg-gray-50"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                      </div>
+                      <div className="text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                    </button>
+                  ) : (
+                    <div
+                      key={`${m?._id || "b"}-${idx}`}
+                      className="w-full text-left flex items-center justify-between gap-3 py-1.5"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                      </div>
+                      <div className="text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
                     </div>
-                    <div className="text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
-                  </button>
-                ))
+                  )
+                )
               ) : (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No birthdays in the next 30 days.</div>
               )}
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
           <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
             <div>
@@ -574,20 +591,32 @@ function DashboardOverview({ onNavigate }) {
           <div className="px-5 pb-5">
             <div className="mt-4 divide-y divide-gray-200">
               {recentMembers.length ? (
-                recentMembers.map((m, idx) => (
-                  <button
-                    key={`${m?._id || "rm"}-${idx}`}
-                    type="button"
-                    onClick={() => goToMemberDetails(m?._id)}
-                    className="w-full text-left flex items-center justify-between gap-3 py-2 hover:bg-gray-50"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
-                      <div className="mt-0.5 text-sm text-gray-500">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                recentMembers.map((m, idx) =>
+                  canViewMembers ? (
+                    <button
+                      key={`${m?._id || "rm"}-${idx}`}
+                      type="button"
+                      onClick={() => goToMemberDetails(m?._id)}
+                      className="w-full text-left flex items-center justify-between gap-3 py-2 hover:bg-gray-50"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
+                        <div className="mt-0.5 text-sm text-gray-500">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                      </div>
+                      <div className="shrink-0 text-sm font-semibold text-gray-700">View</div>
+                    </button>
+                  ) : (
+                    <div
+                      key={`${m?._id || "rm"}-${idx}`}
+                      className="w-full text-left flex items-center justify-between gap-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
+                        <div className="mt-0.5 text-sm text-gray-500">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                      </div>
                     </div>
-                    <div className="shrink-0 text-sm font-semibold text-gray-700">View</div>
-                  </button>
-                ))
+                  )
+                )
               ) : (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No recent members.</div>
               )}
@@ -620,28 +649,48 @@ function DashboardOverview({ onNavigate }) {
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{upcomingEventsError}</div>
               ) : upcomingEvents.length ? (
                 <div className="divide-y divide-gray-200 rounded-lg border border-gray-200">
-                  {upcomingEvents.map((ev, idx) => (
-                    <button
-                      key={`${ev?._id || "ev"}-${idx}`}
-                      type="button"
-                      onClick={() => goToEventDetails(ev?._id)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-base font-semibold text-gray-900 truncate">{ev?.title || ev?.name || "—"}</div>
-                          <div className="mt-0.5 text-sm text-gray-500">
-                            {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
+                  {upcomingEvents.map((ev, idx) =>
+                    canViewEvents ? (
+                      <button
+                        key={`${ev?._id || "ev"}-${idx}`}
+                        type="button"
+                        onClick={() => goToEventDetails(ev?._id)}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-base font-semibold text-gray-900 truncate">{ev?.title || ev?.name || "—"}</div>
+                            <div className="mt-0.5 text-sm text-gray-500">
+                              {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
+                            </div>
+                            <div className="mt-0.5 text-sm text-gray-500">
+                              {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
+                              {ev?.location ? ` • ${ev.location}` : ""}
+                            </div>
                           </div>
-                          <div className="mt-0.5 text-sm text-gray-500">
-                            {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
-                            {ev?.location ? ` • ${ev.location}` : ""}
+                          <div className="shrink-0 text-sm font-semibold text-gray-700">View</div>
+                        </div>
+                      </button>
+                    ) : (
+                      <div
+                        key={`${ev?._id || "ev"}-${idx}`}
+                        className="w-full text-left px-4 py-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-base font-semibold text-gray-900 truncate">{ev?.title || ev?.name || "—"}</div>
+                            <div className="mt-0.5 text-sm text-gray-500">
+                              {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
+                            </div>
+                            <div className="mt-0.5 text-sm text-gray-500">
+                              {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
+                              {ev?.location ? ` • ${ev.location}` : ""}
+                            </div>
                           </div>
                         </div>
-                        <div className="shrink-0 text-sm font-semibold text-gray-700">View</div>
                       </div>
-                    </button>
-                  ))}
+                    )
+                  )}
                 </div>
               ) : (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No upcoming events.</div>
@@ -760,20 +809,33 @@ function DashboardOverview({ onNavigate }) {
                   </div>
                 ) : birthdaysSlice.length ? (
                   <div className="divide-y divide-gray-200 rounded-lg border border-gray-200">
-                    {birthdaysSlice.map((m, idx) => (
-                      <button
-                        key={`${m?._id || "bd"}-${idx}`}
-                        type="button"
-                        onClick={() => goToMemberDetails(m?._id)}
-                        className="w-full text-left flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
-                          <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                    {birthdaysSlice.map((m, idx) =>
+                      canViewMembers ? (
+                        <button
+                          key={`${m?._id || "bd"}-${idx}`}
+                          type="button"
+                          onClick={() => goToMemberDetails(m?._id)}
+                          className="w-full text-left flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                            <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                          </div>
+                          <div className="shrink-0 text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                        </button>
+                      ) : (
+                        <div
+                          key={`${m?._id || "bd"}-${idx}`}
+                          className="w-full text-left flex items-center justify-between gap-3 px-4 py-3"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                            <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                          </div>
+                          <div className="shrink-0 text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
                         </div>
-                        <div className="shrink-0 text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
-                      </button>
-                    ))}
+                      )
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No birthdays found.</div>

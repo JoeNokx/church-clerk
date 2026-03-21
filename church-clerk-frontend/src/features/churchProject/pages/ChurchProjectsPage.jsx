@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
+import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import {
@@ -442,13 +443,16 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
   );
 }
 
-function ChurchProjectsPage() {
+function ChurchProjectsPageInner() {
   const { toPage } = useDashboardNavigator();
 
   const churchCtx = useContext(ChurchContext);
   const currency = String(churchCtx?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const activeChurch = churchCtx?.activeChurch;
   const canEdit = activeChurch?._id ? activeChurch?.canEdit !== false : true;
+
+  const { can } = useContext(PermissionContext) || {};
+  const canView = useMemo(() => (typeof can === "function" ? can("churchProjects", "view") : false), [can]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -675,13 +679,15 @@ function ChurchProjectsPage() {
                     </>
                   ) : null}
 
-                  <button
-                    type="button"
-                    onClick={() => viewDetails(p)}
-                    className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                  >
-                    View
-                  </button>
+                  {canView && (
+                    <button
+                      type="button"
+                      onClick={() => viewDetails(p)}
+                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                    >
+                      View
+                    </button>
+                  )}
 
                   {canEdit ? (
                     <>

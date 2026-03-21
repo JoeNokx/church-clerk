@@ -35,6 +35,65 @@ const resolveFromPermissionObject = (permissionObject) => {
   return resolved;
 };
 
+const ensureBoolMatrix = (resolved) => {
+  const out = resolved && typeof resolved === "object" ? { ...resolved } : {};
+  for (const moduleKey of Object.keys(MODULES)) {
+    out[moduleKey] = out[moduleKey] && typeof out[moduleKey] === "object" ? { ...out[moduleKey] } : {};
+    for (const action of MODULES[moduleKey]) {
+      out[moduleKey][action] = Boolean(out?.[moduleKey]?.[action]);
+    }
+  }
+  return out;
+};
+
+const expandLegacyPermissions = (resolved) => {
+  const out = ensureBoolMatrix(resolved);
+
+  // Legacy settings -> new sub-modules
+  const s = out?.settings || {};
+  if (Object.keys(s).length) {
+    if (MODULES.settingsMyProfile) {
+      if (s.read) out.settingsMyProfile.read = true;
+      if (s.update) out.settingsMyProfile.update = true;
+    }
+    if (MODULES.settingsChurchProfile) {
+      if (s.read) out.settingsChurchProfile.read = true;
+      if (s.update) out.settingsChurchProfile.update = true;
+    }
+    if (MODULES.settingsUsersRoles) {
+      if (s.read) out.settingsUsersRoles.read = true;
+      if (s.create) out.settingsUsersRoles.create = true;
+    }
+    if (MODULES.settingsAuditLog) {
+      if (s.read) out.settingsAuditLog.read = true;
+    }
+  }
+
+  // New settings sub-modules -> legacy settings (transition compatibility)
+  if (MODULES.settings?.length) {
+    const legacy = out.settings || {};
+
+    if (out?.settingsMyProfile?.read || out?.settingsChurchProfile?.read || out?.settingsUsersRoles?.read || out?.settingsAuditLog?.read) {
+      legacy.read = true;
+    }
+    if (out?.settingsUsersRoles?.create) {
+      legacy.create = true;
+    }
+    if (out?.settingsMyProfile?.update || out?.settingsChurchProfile?.update || out?.settingsUsersRoles?.deactivate) {
+      legacy.update = true;
+    }
+
+    out.settings = legacy;
+  }
+
+  // System admin actions historically using settings
+  if (MODULES.support && out?.support?.read) {
+    if (out?.support?.read && MODULES.support.includes("view")) out.support.view = true;
+  }
+
+  return out;
+};
+
 export const resolvePermissions = async (role, roleRef = null, scope = "") => {
   const effectiveRole = normalizeRoleKey(role);
   if (!effectiveRole) return {};
@@ -45,7 +104,7 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
       if (dbRole?._id && dbRole?.isActive === false) return {};
       if (dbRole?.permissions && typeof dbRole.permissions === "object") {
         const resolved = resolveFromPermissionObject(dbRole.permissions);
-        if (Object.keys(resolved).length) return resolved;
+        if (Object.keys(resolved).length) return expandLegacyPermissions(resolved);
       }
     } else if (scope) {
       const dbRole = await Role.findOne({ key: effectiveRole, scope: String(scope) })
@@ -55,7 +114,7 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
       if (dbRole?._id && dbRole?.isActive === false) return {};
       if (dbRole?.permissions && typeof dbRole.permissions === "object") {
         const resolved = resolveFromPermissionObject(dbRole.permissions);
-        if (Object.keys(resolved).length) return resolved;
+        if (Object.keys(resolved).length) return expandLegacyPermissions(resolved);
       }
     }
   } catch (e) {
@@ -63,5 +122,5 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
   }
 
   const roleConfig = ROLE_PERMISSIONS[effectiveRole];
-  return resolveFromPermissionObject(roleConfig);
+  return expandLegacyPermissions(resolveFromPermissionObject(roleConfig));
 };

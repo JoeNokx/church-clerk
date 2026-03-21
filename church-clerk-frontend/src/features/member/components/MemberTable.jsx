@@ -38,6 +38,7 @@ function MemberTable({ onEdit, onDeleted }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
 
+  const canView = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("members", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("members", "delete") : false), [can]);
 
@@ -128,16 +129,18 @@ function MemberTable({ onEdit, onDeleted }) {
                   <td className="px-6 py-1.5">{formatDate(row?.createdAt || row?.dateJoined)}</td>
                   <td className="px-6 py-1.5">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!row?._id) return;
-                          toPage("member-details", { id: row._id }, { state: { from: "members" } });
-                        }}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                      >
-                        View
-                      </button>
+                      {canView && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!row?._id) return;
+                            toPage("member-details", { id: row._id }, { state: { from: "members" } });
+                          }}
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                        >
+                          View
+                        </button>
+                      )}
 
                       {canEdit && (
                         <button

@@ -7,6 +7,36 @@ const normalizeRoleKey = (val) => {
   return key;
 };
 
+const normalizeActionKey = (val) => {
+  const a = String(val || "").trim().toLowerCase();
+  if (a === "edit") return "update";
+  return a;
+};
+
+const getAllowedActionList = (allowed, moduleKey) => {
+  if (Array.isArray(allowed)) {
+    return allowed
+      .map(normalizeActionKey)
+      .filter((a) => MODULES[moduleKey].includes(a));
+  }
+
+  if (allowed && typeof allowed === "object") {
+    return Object.keys(allowed)
+      .filter((k) => Boolean(allowed[k]))
+      .map(normalizeActionKey)
+      .filter((a) => MODULES[moduleKey].includes(a));
+  }
+
+  return [];
+};
+
+const applyAllowedActionList = (out, moduleKey, actionList) => {
+  out[moduleKey] = out[moduleKey] && typeof out[moduleKey] === "object" ? out[moduleKey] : {};
+  for (const action of MODULES[moduleKey]) {
+    out[moduleKey][action] = actionList.includes(action);
+  }
+};
+
 const sanitizePermissions = (permissions) => {
   const src = permissions && typeof permissions === "object" ? permissions : {};
 
@@ -15,26 +45,49 @@ const sanitizePermissions = (permissions) => {
   }
 
   const out = {};
+
+  // Allow legacy settings to populate the new settings sub-modules.
+  const legacySettingsActions = MODULES.settings ? getAllowedActionList(src.settings, "settings") : [];
+  if (legacySettingsActions.length) {
+    if (MODULES.settingsMyProfile) {
+      const list = [];
+      if (legacySettingsActions.includes("read")) list.push("read");
+      if (legacySettingsActions.includes("update")) list.push("update");
+      applyAllowedActionList(out, "settingsMyProfile", list);
+    }
+    if (MODULES.settingsChurchProfile) {
+      const list = [];
+      if (legacySettingsActions.includes("read")) list.push("read");
+      if (legacySettingsActions.includes("update")) list.push("update");
+      applyAllowedActionList(out, "settingsChurchProfile", list);
+    }
+    if (MODULES.settingsUsersRoles) {
+      const list = [];
+      if (legacySettingsActions.includes("read")) list.push("read");
+      if (legacySettingsActions.includes("create")) list.push("create");
+      applyAllowedActionList(out, "settingsUsersRoles", list);
+    }
+    if (MODULES.settingsAuditLog) {
+      const list = [];
+      if (legacySettingsActions.includes("read")) list.push("read");
+      applyAllowedActionList(out, "settingsAuditLog", list);
+    }
+  }
+
   for (const moduleKey of Object.keys(MODULES)) {
+    // If already set (from legacy settings expansion), respect it unless explicit permissions are provided for the same module.
     const allowed = src[moduleKey];
-
-    if (Array.isArray(allowed)) {
-      out[moduleKey] = allowed.filter((a) => MODULES[moduleKey].includes(a));
+    const actionList = getAllowedActionList(allowed, moduleKey);
+    if (actionList.length) {
+      applyAllowedActionList(out, moduleKey, actionList);
       continue;
     }
 
-    if (allowed && typeof allowed === "object") {
-      out[moduleKey] = {};
-      for (const action of MODULES[moduleKey]) {
-        out[moduleKey][action] = Boolean(allowed[action]);
-      }
+    if (out[moduleKey] && typeof out[moduleKey] === "object" && Object.keys(out[moduleKey]).length) {
       continue;
     }
 
-    out[moduleKey] = {};
-    for (const action of MODULES[moduleKey]) {
-      out[moduleKey][action] = false;
-    }
+    applyAllowedActionList(out, moduleKey, []);
   }
 
   return out;
@@ -42,7 +95,9 @@ const sanitizePermissions = (permissions) => {
 
 const getPermissionCatalog = async (req, res) => {
   try {
-    return res.status(200).json({ modules: MODULES });
+    const modules = { ...MODULES };
+    delete modules.settings;
+    return res.status(200).json({ modules });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -58,7 +113,11 @@ const listRoles = async (req, res) => {
     if (!include) filter.isActive = true;
 
     const roles = await Role.find(filter).sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ roles });
+    const normalized = (roles || []).map((r) => ({
+      ...r,
+      permissions: sanitizePermissions(r?.permissions)
+    }));
+    return res.status(200).json({ roles: normalized });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -127,7 +186,7 @@ const getRoleById = async (req, res) => {
     if (!role) {
       return res.status(404).json({ message: "Role not found" });
     }
-    return res.status(200).json({ role });
+    return res.status(200).json({ role: { ...role, permissions: sanitizePermissions(role?.permissions) } });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

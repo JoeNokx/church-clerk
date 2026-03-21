@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import {createChurchProjects, getAllChurchProjects, updateChurchProjects, deleteChurchProjects } from "../../controller/financeController/projectController/churchProjectController.js";
+import {createChurchProjects, getAllChurchProjects, updateChurchProjects, deleteChurchProjects, getSingleChurchProjects } from "../../controller/financeController/projectController/churchProjectController.js";
 import  {createProjectContributions, getAllProjectContributions, updateProjectContributions, deleteProjectContributions } from "../../controller/financeController/projectController/projectContribution.js"
 import{ createProjectExpenses, getAllProjectExpenses, updateProjectExpenses, deleteProjectExpenses } from "../../controller/financeController/projectController/projectExpense.js"
 import getProjectContributionExpensesKPI from "../../controller/financeController/projectController/projectContributionExpensesKPI.js"
@@ -32,6 +32,17 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("churchProjects", "read"),
   getAllChurchProjects
+);
+
+router.get(
+  "/church-projects/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("churchProjects", "view"),
+  getSingleChurchProjects
 );
 router.put(
   "/church-projects/:id",
@@ -71,7 +82,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("churchProjects", "read"),
+  requirePermission("churchProjects", "view"),
   getAllProjectContributions
 );
 router.put(
@@ -112,7 +123,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("churchProjects", "read"),
+  requirePermission("churchProjects", "view"),
   getAllProjectExpenses
 );
 router.put(
@@ -144,7 +155,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("churchProjects", "read"),
+  requirePermission("churchProjects", "view"),
   getProjectContributionExpensesKPI
 );
 

@@ -90,7 +90,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("visitors", "read"),
+  requirePermission("visitors", "view"),
   getSingleVisitor
 );
 router.get(

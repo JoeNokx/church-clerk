@@ -86,6 +86,10 @@ function SettingsPage() {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("settings", "read") : true), [can]);
   const canWrite = useMemo(() => (typeof can === "function" ? can("settings", "update") : true), [can]);
+  const canDeactivateUsers = useMemo(
+    () => (typeof can === "function" ? can("settingsUsersRoles", "deactivate") : false),
+    [can]
+  );
 
   const [tab, setTab] = useState("my-profile");
 
@@ -1666,14 +1670,15 @@ function SettingsPage() {
                                 >
                                   Edit
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => openDeactivateConfirm(row)}
-                                  disabled={!canWrite}
-                                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}`}
-                                >
-                                  {isActive ? "Deactivate" : "Activate"}
-                                </button>
+                                {canDeactivateUsers ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => openDeactivateConfirm(row)}
+                                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}`}
+                                  >
+                                    {isActive ? "Deactivate" : "Activate"}
+                                  </button>
+                                ) : null}
                               </div>
                             </td>
                           </tr>

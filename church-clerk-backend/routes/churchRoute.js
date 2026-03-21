@@ -15,7 +15,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("settings", "read"),
+  requirePermission("settingsChurchProfile", "read"),
   getMyChurchProfile
 ); 
 router.post("/churches", protect, createMyChurch);
@@ -26,7 +26,7 @@ router.put(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("settings", "update"),
+  requirePermission("settingsChurchProfile", "update"),
   updateMyChurchProfile
 );
 router.get(
@@ -46,7 +46,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("settings", "read"),
+  requirePermission("settingsChurchProfile", "read"),
   getActiveChurchContext
 );
 

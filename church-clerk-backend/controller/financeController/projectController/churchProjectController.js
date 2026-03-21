@@ -140,6 +140,52 @@ const getAllChurchProjects = async (req, res) => {
 }
 
 
+const getSingleChurchProjects = async (req, res) => {
+
+    try {
+        const { id } = req.params;
+        const query = { _id: id };
+
+        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+            query.church = req.activeChurch._id;
+        }
+
+        const churchProject = await ChurchProject.findOne(query)
+            .select("name description targetAmount status church createdBy createdAt")
+            .lean();
+
+        if (!churchProject) {
+            return res.status(404).json({ message: "church projects not found" });
+        }
+
+        const subQuery = {};
+        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+            subQuery.church = req.activeChurch._id;
+        }
+
+        const [contributions, expenses] = await Promise.all([
+            ProjectContribution.find({ ...subQuery, churchProject: id }).lean(),
+            ProjectExpenses.find({ ...subQuery, churchProject: id }).lean()
+        ]);
+
+        const totalContributions = (Array.isArray(contributions) ? contributions : []).reduce((sum, r) => sum + Number(r?.amount || 0), 0);
+        const totalExpenses = (Array.isArray(expenses) ? expenses : []).reduce((sum, r) => sum + Number(r?.amount || 0), 0);
+
+        return res.status(200).json({
+            message: "church projects fetched successfully",
+            churchProject: {
+                ...churchProject,
+                totalContributions,
+                totalExpenses,
+                balance: totalContributions - totalExpenses
+            }
+        });
+    } catch (error) {
+        return res.status(400).json({ message: "church projects could not be fetched", error: error.message });
+    }
+}
+
+
 const updateChurchProjects = async (req, res) => {
     
     try {
@@ -189,4 +235,4 @@ const deleteChurchProjects = async (req, res) => {
 
 
 
-export {createChurchProjects, getAllChurchProjects, updateChurchProjects, deleteChurchProjects }
+export {createChurchProjects, getAllChurchProjects, getSingleChurchProjects, updateChurchProjects, deleteChurchProjects }

@@ -113,7 +113,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("events", "read"),
+  requirePermission("events", "view"),
   getSingleEvent
 );
 router.post(
@@ -164,7 +164,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("events", "read"),
+  requirePermission("events", "view"),
   getEventAttendees
 );
 router.put(
@@ -205,7 +205,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("events", "read"),
+  requirePermission("events", "view"),
   getAllTotalEventAttendances
 );
 router.put(
@@ -248,7 +248,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("events", "read"),
+  requirePermission("events", "view"),
   listEventAttendanceFiles
 );
 
@@ -259,7 +259,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("events", "read"),
+  requirePermission("events", "view"),
   downloadEventAttendanceFile
 );
 
@@ -303,7 +303,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("events", "read"),
+  requirePermission("events", "view"),
   getEventOfferings
 );
 

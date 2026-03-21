@@ -512,6 +512,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
   const [rows, setRows] = useState([]);
 
   const { can } = useContext(PermissionContext) || {};
+  const canView = useMemo(() => (typeof can === "function" ? can("announcements", "view") : false), [can]);
   const canUpdate = useMemo(() => (typeof can === "function" ? can("announcements", "update") : true), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("announcements", "delete") : true), [can]);
 
@@ -669,13 +670,15 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                           Use
                         </button>
                       ) : null}
-                      <button
-                        type="button"
-                        onClick={() => onOpenDeliveryReport(m)}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
-                      >
-                        View Report
-                      </button>
+                      {canView ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenDeliveryReport(m)}
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
+                        >
+                          View Report
+                        </button>
+                      ) : null}
 
                       {allowedMenuStatuses.includes(String(m?.status || "")) && (canUpdate || canDelete) ? (
                         <div className="relative">

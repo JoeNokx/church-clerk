@@ -38,7 +38,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles(...allowedReadRoles),
-  requirePermission("settings", "read"),
+  requirePermission("settingsChurchProfile", "read"),
   listLookupValues
 );
 router.post(
@@ -48,7 +48,7 @@ router.post(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles(...allowedWriteRoles),
-  requirePermission("settings", "create"),
+  requirePermission("settingsChurchProfile", "update"),
   createLookupValue
 );
 

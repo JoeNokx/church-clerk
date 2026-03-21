@@ -40,7 +40,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "read"),
+  requirePermission("businessVentures", "view"),
   getSingleBusinessVentures
 ); 
 router.put(
@@ -92,7 +92,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "read"),
+  requirePermission("businessVentures", "view"),
   getAllBusinessIncome
 );
 router.put(
@@ -133,7 +133,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "read"),
+  requirePermission("businessVentures", "view"),
   getAllBusinessExpenses
 );
 router.put(
@@ -164,7 +164,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("businessVentures", "read"),
+  requirePermission("businessVentures", "view"),
   getIncomeExpensesKPI
 );
 

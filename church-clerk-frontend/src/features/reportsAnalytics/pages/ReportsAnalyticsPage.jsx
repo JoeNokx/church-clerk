@@ -186,6 +186,10 @@ function ReportsAnalyticsPage() {
     () => (typeof can === "function" ? can("reportsAnalytics", "read") : true),
     [can]
   );
+  const canExport = useMemo(
+    () => (typeof can === "function" ? can("reportsAnalytics", "export") : false),
+    [can]
+  );
 
   const [activeTab, setActiveTab] = useState("analytics");
 
@@ -570,16 +574,18 @@ function ReportsAnalyticsPage() {
                   {reportLoading ? "Generating…" : "Generate"}
                 </button>
 
-                <button
-                  type="button"
-                  disabled={!lastGenerated?.module || reportExportLoading}
-                  onClick={() => {
-                    openExportModal();
-                  }}
-                  className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Export
-                </button>
+                {canExport ? (
+                  <button
+                    type="button"
+                    disabled={!lastGenerated?.module || reportExportLoading}
+                    onClick={() => {
+                      openExportModal();
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Export
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
@@ -627,7 +633,7 @@ function ReportsAnalyticsPage() {
             </div>
           ) : null}
 
-          {reportExportOpen ? (
+          {canExport && reportExportOpen ? (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
               <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
                 <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">

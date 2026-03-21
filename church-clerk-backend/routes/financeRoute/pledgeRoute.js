@@ -37,7 +37,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("pledges", "read"),
+  requirePermission("pledges", "view"),
   getSinglePledge
 ); 
 router.put(
@@ -79,7 +79,7 @@ router.get(
   readOnlyBranchGuard,
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("pledges", "read"),
+  requirePermission("pledges", "view"),
   getAllPledgePayments
 );
 router.put(

@@ -28,6 +28,7 @@ function MembersPageInner() {
   const { toPage } = useDashboardNavigator();
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
+  const canImport = useMemo(() => (typeof can === "function" ? can("members", "import") : false), [can]);
 
   const [importOpen, setImportOpen] = useState(false);
   const [importStep, setImportStep] = useState("upload");
@@ -173,7 +174,7 @@ function MembersPageInner() {
         </div>
 
         <div className="flex items-center gap-3">
-          {canCreate && (
+          {canImport && (
             <button
               type="button"
               onClick={openImport}
@@ -223,7 +224,7 @@ function MembersPageInner() {
         <MemberTable onDeleted={refreshMembers} />
       </div>
 
-      {importOpen ? (
+      {canImport && importOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-3xl rounded-xl bg-white shadow-xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
