@@ -156,7 +156,7 @@ const getStoredOrMappedPaystackPlanCodes = (planName, existingCodes) => {
 
 export const createPlan = async (req, res) => {
   try {
-    const { name, description, memberLimit = null, features = {}, featureCategories = {}, isActive = true } = req.body;
+    const { name, description, memberLimit = null, userLimit = null, features = {}, featureCategories = {}, isActive = true } = req.body;
     const rawPriceByCurrency = normalizePriceByCurrency(req.body);
     const priceByCurrency = sanitizePriceByCurrency(rawPriceByCurrency);
 
@@ -180,6 +180,7 @@ export const createPlan = async (req, res) => {
       description,
       paystackPlanCodes,
       memberLimit,
+      userLimit,
       features,
       featureCategories,
       isActive,
@@ -279,6 +280,7 @@ export const updatePlan = async (req, res) => {
           description: before?.description,
           paystackPlanCodes: before?.paystackPlanCodes,
           memberLimit: before?.memberLimit,
+          userLimit: before?.userLimit,
           features: before?.features,
           featureCategories: before?.featureCategories,
           hqOnly: before?.hqOnly,

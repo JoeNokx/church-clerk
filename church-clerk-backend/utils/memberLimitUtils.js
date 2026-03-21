@@ -13,7 +13,7 @@ export const checkAndHandleMemberLimit = async ({
   if (!plan || plan.memberLimit === null) return; // unlimited
 
   // Over limit
-  if (totalMembers > plan.memberLimit) {
+  if (totalMembers >= plan.memberLimit) {
     if (!subscription.overage?.isOverLimit) {
       subscription.overage = {
         isOverLimit: true,

@@ -77,14 +77,28 @@ export const setActiveChurch = async (req, res, next) => {
       .populate("plan")
       .lean();
 
+    req.subscription = subscription || null;
+    req.plan = subscription?.plan || null;
+
     const isTrial = subscription?.status === "free trial" || subscription?.status === "trialing";
-    const planName = isTrial ? "premium" : (subscription?.plan?.name || "basic");
+    const features = subscription?.plan?.features || {};
+
+    const featureEnabled = (key) => {
+      if (isTrial) return true;
+
+      if (key === "announcements") return Boolean(features?.announcements || features?.announcement);
+      if (key === "specialFunds") return Boolean(features?.specialFunds || features?.specialFund);
+      if (key === "dashboard") return features?.dashboard !== false;
+
+      return Boolean(features?.[key]);
+    };
 
     const baseModules = {
       Dashboard: true,
       Branches: false,
       Members: true,
       Attendance: true,
+      ProgramsEvents: true,
       Ministries: true,
       Announcements: true,
       Tithe: false,
@@ -103,22 +117,29 @@ export const setActiveChurch = async (req, res, next) => {
       support: true
     };
 
-    if (planName === "standard" || planName === "premium") {
-      baseModules.Tithe = true;
-      baseModules.ChurchProjects = true;
-      baseModules.SpecialFunds = true;
-      baseModules.Offerings = true;
-      baseModules.Welfare = true;
-      baseModules.Pledges = true;
-      baseModules.BusinessVentures = true;
-      baseModules.Expenses = true;
-      baseModules.FinancialStatement = true;
-    }
+    baseModules.Dashboard = featureEnabled("dashboard");
+    baseModules.Branches = req.activeChurch.type === "Headquarters" && featureEnabled("branchesOverview");
+    baseModules.Members = featureEnabled("members");
+    baseModules.Attendance = featureEnabled("attendance");
+    baseModules.ProgramsEvents = featureEnabled("programsEvents");
+    baseModules.Ministries = featureEnabled("ministries");
+    baseModules.Announcements = featureEnabled("announcements");
+    baseModules.Tithe = featureEnabled("tithes");
 
-    if (planName === "premium") {
-      baseModules.Branches = req.activeChurch.type === "Headquarters";
-      baseModules.ReportsAnalytics = true;
-    }
+    baseModules.ChurchProjects = featureEnabled("churchProjects");
+    baseModules.SpecialFunds = featureEnabled("specialFunds");
+    baseModules.Offerings = featureEnabled("offerings");
+    baseModules.Welfare = featureEnabled("welfare");
+    baseModules.Pledges = featureEnabled("pledges");
+    baseModules.BusinessVentures = featureEnabled("businessVentures");
+    baseModules.Expenses = featureEnabled("expenses");
+    baseModules.FinancialStatement = featureEnabled("financialStatement");
+    baseModules.ReportsAnalytics = featureEnabled("reportsAnalytics");
+
+    baseModules.Billing = featureEnabled("billing");
+    baseModules.Referrals = featureEnabled("referrals");
+    baseModules.Settings = featureEnabled("settings");
+    baseModules.support = featureEnabled("supportHelp");
 
     req.activeChurch.modules = baseModules;
 

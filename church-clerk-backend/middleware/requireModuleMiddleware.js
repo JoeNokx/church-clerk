@@ -1,17 +1,36 @@
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 
-const isPlanAllowedForModule = ({ moduleKey, planName }) => {
-  if (moduleKey === "finance") {
-    return planName === "standard" || planName === "premium";
+const isPlanAllowedForModule = ({ moduleKey, subscription, plan }) => {
+  const normalizedModule = String(moduleKey || "").trim().toLowerCase();
+  const status = String(subscription?.status || "").trim().toLowerCase();
+  const isTrial = status === "free trial" || status === "trialing";
+  if (isTrial) return true;
+
+  const features = plan?.features || {};
+
+  if (normalizedModule === "finance") {
+    return Boolean(
+      features?.financeModule ||
+        features?.tithes ||
+        features?.specialFunds ||
+        features?.specialFund ||
+        features?.offerings ||
+        features?.welfare ||
+        features?.pledges ||
+        features?.businessVentures ||
+        features?.expenses ||
+        features?.financialStatement ||
+        features?.churchProjects
+    );
   }
 
-  if (moduleKey === "reports") {
-    return planName === "premium";
+  if (normalizedModule === "reports") {
+    return Boolean(features?.reportsAnalytics);
   }
 
-  if (moduleKey === "branches") {
-    return planName === "premium";
+  if (normalizedModule === "branches") {
+    return Boolean(features?.branchesOverview);
   }
 
   return true;
@@ -26,16 +45,8 @@ export const requireModule = (moduleKey) => {
       const subscription = await Subscription.findOne({ church: churchId }).lean();
       if (!subscription) return next();
 
-      let planName = "basic";
-
-      if (subscription.status === "free trial" || subscription.status === "trialing") {
-        planName = "premium";
-      } else if (subscription.plan) {
-        const plan = await Plan.findById(subscription.plan).lean();
-        planName = plan?.name || "basic";
-      }
-
-      const allowed = isPlanAllowedForModule({ moduleKey, planName });
+      const plan = subscription.plan ? await Plan.findById(subscription.plan).lean() : null;
+      const allowed = isPlanAllowedForModule({ moduleKey, subscription, plan });
 
       if (!allowed) {
         return res.status(403).json({

@@ -11,13 +11,20 @@ const safeString = (v) => (typeof v === "string" ? v : "");
 
 const FEATURE_GROUPS = [
   {
+    label: "CORE",
+    items: [
+      { key: "dashboard", label: "Dashboard" },
+      { key: "branchesOverview", label: "Branches Overview" }
+    ]
+  },
+  {
     label: "PEOPLE & MINISTRIES",
     items: [
       { key: "members", label: "Members" },
       { key: "attendance", label: "Attendance" },
       { key: "programsEvents", label: "Programs & Events" },
       { key: "ministries", label: "Ministries" },
-      { key: "announcement", label: "Announcement" }
+      { key: "announcements", label: "Announcements" }
     ]
   },
   {
@@ -30,7 +37,9 @@ const FEATURE_GROUPS = [
       { key: "pledges", label: "Pledges" },
       { key: "businessVentures", label: "Business Ventures" },
       { key: "expenses", label: "Expenses" },
-      { key: "financialStatement", label: "Financial statement" }
+      { key: "financialStatement", label: "Financial statement" },
+      { key: "churchProjects", label: "Church Projects" },
+      { key: "specialFunds", label: "Special funds" }
     ]
   },
   {
@@ -44,6 +53,8 @@ const FEATURE_GROUPS = [
     ]
   }
 ];
+
+const ALL_FEATURE_KEYS = FEATURE_GROUPS.flatMap((g) => g.items.map((i) => i.key));
 
 const getEmptyFeatures = () => {
   const obj = {};
@@ -75,6 +86,9 @@ function BillingPlansPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
+
+  const [memberLimit, setMemberLimit] = useState("");
+  const [userLimit, setUserLimit] = useState("");
 
   const [features, setFeatures] = useState(getEmptyFeatures);
 
@@ -138,6 +152,8 @@ function BillingPlansPage() {
     setName("free lite");
     setDescription("");
     setIsActive(true);
+    setMemberLimit("");
+    setUserLimit("");
     setFeatures(getEmptyFeatures());
     setPrices({
       GHS: { monthly: "", halfYear: "", yearly: "" }
@@ -155,6 +171,9 @@ function BillingPlansPage() {
     setDescription(safeString(p?.description));
     setIsActive(p?.isActive !== false);
 
+    setMemberLimit(p?.memberLimit === null || p?.memberLimit === undefined ? "" : String(p.memberLimit));
+    setUserLimit(p?.userLimit === null || p?.userLimit === undefined ? "" : String(p.userLimit));
+
     const by = p?.priceByCurrency || p?.pricing || {};
     const nextPrices = {
       GHS: {
@@ -168,12 +187,14 @@ function BillingPlansPage() {
     const savedFeatures = p?.features || {};
     const nextFeatures = getEmptyFeatures();
     for (const key of Object.keys(nextFeatures)) {
-      if (key === "announcement") {
-        nextFeatures.announcement = Boolean(savedFeatures?.announcement || savedFeatures?.announcements);
-        continue;
-      }
       nextFeatures[key] = Boolean(savedFeatures?.[key]);
     }
+
+    nextFeatures.announcements = Boolean(savedFeatures?.announcements || savedFeatures?.announcement);
+    nextFeatures.specialFunds = Boolean(savedFeatures?.specialFunds || savedFeatures?.specialFund);
+    nextFeatures.churchProjects = Boolean(savedFeatures?.churchProjects);
+    nextFeatures.dashboard = savedFeatures?.dashboard !== undefined ? Boolean(savedFeatures.dashboard) : true;
+    nextFeatures.branchesOverview = Boolean(savedFeatures?.branchesOverview);
     setFeatures(nextFeatures);
 
     setFormOpen(true);
@@ -191,6 +212,17 @@ function BillingPlansPage() {
       const n = Number(v);
       return Number.isFinite(n) ? n : NaN;
     };
+
+    const memberLimitNum = toNumberOrNull(memberLimit);
+    const userLimitNum = toNumberOrNull(userLimit);
+    if (Number.isNaN(memberLimitNum) || Number.isNaN(userLimitNum)) {
+      setError("Limits must be numbers");
+      return;
+    }
+    if ((memberLimitNum !== null && memberLimitNum < 0) || (userLimitNum !== null && userLimitNum < 0)) {
+      setError("Limits must be 0 or greater");
+      return;
+    }
 
     const priceByCurrency = {};
     const row = prices?.GHS || {};
@@ -217,15 +249,18 @@ function BillingPlansPage() {
     }
 
     const featuresPayload = { ...(features || {}) };
-    const peopleKeys = FEATURE_GROUPS[0].items.map((x) => x.key);
-    const financeKeys = FEATURE_GROUPS[1].items.map((x) => x.key);
-    const adminKeys = FEATURE_GROUPS[2].items.map((x) => x.key);
+    const peopleKeys = FEATURE_GROUPS.find((g) => g.label === "PEOPLE & MINISTRIES")?.items.map((x) => x.key) || [];
+    const financeKeys = FEATURE_GROUPS.find((g) => g.label === "FINANCE")?.items.map((x) => x.key) || [];
+    const adminKeys = FEATURE_GROUPS.find((g) => g.label === "ADMINISTRATION")?.items.map((x) => x.key) || [];
 
     const peopleMinistriesEnabled = peopleKeys.some((k) => Boolean(featuresPayload?.[k]));
     const financeEnabled = financeKeys.some((k) => Boolean(featuresPayload?.[k]));
     const adminEnabled = adminKeys.some((k) => Boolean(featuresPayload?.[k]));
 
-    featuresPayload.announcements = Boolean(featuresPayload.announcement);
+    featuresPayload.announcements = Boolean(featuresPayload.announcements);
+    featuresPayload.announcement = Boolean(featuresPayload.announcements);
+    featuresPayload.specialFunds = Boolean(featuresPayload.specialFunds);
+    featuresPayload.specialFund = Boolean(featuresPayload.specialFunds || featuresPayload.specialFund);
     featuresPayload.financeModule = financeEnabled;
 
     const featureCategories = {
@@ -242,6 +277,8 @@ function BillingPlansPage() {
           name: normalizedName,
           description,
           isActive,
+          memberLimit: memberLimitNum,
+          userLimit: userLimitNum,
           priceByCurrency,
           features: featuresPayload,
           featureCategories
@@ -251,6 +288,8 @@ function BillingPlansPage() {
           name: normalizedName,
           description,
           isActive,
+          memberLimit: memberLimitNum,
+          userLimit: userLimitNum,
           priceByCurrency,
           features: featuresPayload,
           featureCategories
@@ -441,6 +480,29 @@ function BillingPlansPage() {
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600">Member Limit</div>
+                    <input
+                      value={memberLimit}
+                      onChange={(e) => setMemberLimit(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                      placeholder="Leave empty for unlimited"
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600">User Limit</div>
+                    <input
+                      value={userLimit}
+                      onChange={(e) => setUserLimit(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                      placeholder="Leave empty for unlimited"
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <div className="text-xs font-semibold text-gray-600">Pricing</div>
                   <div className="mt-2 grid gap-3">
@@ -508,6 +570,24 @@ function BillingPlansPage() {
 
                 <div>
                   <div className="text-xs font-semibold text-gray-600">Modules</div>
+                  <label className="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={ALL_FEATURE_KEYS.every((k) => Boolean(features?.[k]))}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        const next = getEmptyFeatures();
+                        for (const k of Object.keys(next)) {
+                          next[k] = checked;
+                        }
+                        if (checked && next.dashboard !== undefined) {
+                          next.dashboard = true;
+                        }
+                        setFeatures(next);
+                      }}
+                    />
+                    Select all modules
+                  </label>
                   <div className="mt-2 grid gap-4">
                     {FEATURE_GROUPS.map((group) => (
                       <div key={group.label} className="rounded-lg border border-gray-200 p-3">

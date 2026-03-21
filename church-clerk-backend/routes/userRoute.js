@@ -18,6 +18,7 @@ import authorizeRoles from "../middleware/roleMiddleware.js";
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../middleware/permissionMiddleware.js";
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
+import { blockUserCreationIfOverLimit } from "../middleware/blockUserCreationMiddleware.js";
 
 // router.use(authorizeRoles("superadmin", "churchadmin", "financialofficer"));
 // router.use(setActiveChurch);
@@ -76,6 +77,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
+  blockUserCreationIfOverLimit,
   requirePermission("settingsUsersRoles", "create"),
   createChurchUser
 );

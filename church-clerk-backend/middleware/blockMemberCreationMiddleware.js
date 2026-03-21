@@ -1,17 +1,25 @@
 import Subscription from "../models/billingModel/subscriptionModel.js";
+import Plan from "../models/billingModel/planModel.js";
 
 export const blockMemberCreationIfOverdue = async (req, res, next) => {
   const subscription = await Subscription.findOne({
     church: req.activeChurch._id
-  });
+  }).lean();
 
-  if (
-    subscription?.overage?.isOverLimit &&
-    new Date() > new Date(subscription.overage.graceEndsAt)
-  ) {
+  let memberLimit = null;
+  if (subscription?.plan) {
+    const plan = await Plan.findById(subscription.plan).select("memberLimit").lean();
+    if (plan && plan.memberLimit !== undefined) memberLimit = plan.memberLimit;
+  }
+
+  if (subscription?.overage?.isOverLimit) {
+    const formattedLimit =
+      memberLimit === null || memberLimit === undefined
+        ? ""
+        : ` {${Number(memberLimit).toLocaleString()}}`;
+
     return res.status(403).json({
-      message:
-        "Member limit exceeded. Please upgrade your plan to add more members."
+      message: `You’ve reached your member limit${formattedLimit}. Upgrade to add more members.`
     });
   }
 

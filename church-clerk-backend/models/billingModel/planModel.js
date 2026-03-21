@@ -20,9 +20,17 @@ const planSchema = new mongoose.Schema(
       default: null
     },
 
+    userLimit: {
+      type: Number,
+      default: null
+    },
+
     features: {
       financeModule: { type: Boolean, default: false },
       announcements: { type: Boolean, default: false },
+
+      dashboard: { type: Boolean, default: true },
+      branchesOverview: { type: Boolean, default: false },
 
       // PEOPLE & MINISTRIES
       members: { type: Boolean, default: false },
@@ -34,12 +42,14 @@ const planSchema = new mongoose.Schema(
       // FINANCE
       tithes: { type: Boolean, default: false },
       specialFund: { type: Boolean, default: false },
+      specialFunds: { type: Boolean, default: false },
       offerings: { type: Boolean, default: false },
       welfare: { type: Boolean, default: false },
       pledges: { type: Boolean, default: false },
       businessVentures: { type: Boolean, default: false },
       expenses: { type: Boolean, default: false },
       financialStatement: { type: Boolean, default: false },
+      churchProjects: { type: Boolean, default: false },
 
       // ADMINISTRATION
       reportsAnalytics: { type: Boolean, default: false },
