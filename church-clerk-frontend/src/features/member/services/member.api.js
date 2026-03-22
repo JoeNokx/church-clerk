@@ -41,3 +41,7 @@ export const importMembersCsv = async (file) => {
   fd.append("file", file);
   return await http.post("/member/members/import", fd);
 };
+
+export const canCreateMember = async () => {
+  return await http.get("/member/members/can-create");
+};

@@ -15,12 +15,23 @@ import { getActivityLogs } from "../../activityLog/services/activityLog.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import {
-  createChurchUser,
-  getChurchUsers,
   getRolePermissions,
+  getChurchUsers,
+  createChurchUser,
+  updateChurchUser,
   setChurchUserStatus,
-  updateChurchUser
+  canCreateChurchUser
 } from "../services/settings.api.js";
+
+const humanizeKey = (key) => {
+  const raw = String(key || "").trim();
+  if (!raw) return "—";
+  const label = raw
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .toLowerCase();
+  return label.replace(/\b\w/g, (c) => c.toUpperCase());
+};
 
 function formatYmdLocal(value) {
   if (!value) return "";
@@ -625,6 +636,9 @@ function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("");
 
+  const [userLimitModalOpen, setUserLimitModalOpen] = useState(false);
+  const [userLimitMessage, setUserLimitMessage] = useState("");
+
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
@@ -829,14 +843,26 @@ function SettingsPage() {
     }
   };
 
-  const handleOpenAdd = () => {
-    setAddError("");
-    setNewFullName("");
-    setNewEmail("");
-    setNewPhone("");
-    setNewPassword("");
-    setNewRole("");
-    setAddOpen(true);
+  const handleOpenAdd = async () => {
+    try {
+      const res = await canCreateChurchUser();
+      if (res?.data?.allowed !== false) {
+        setAddError("");
+        setNewFullName("");
+        setNewEmail("");
+        setNewPhone("");
+        setNewPassword("");
+        setNewRole("");
+        setAddOpen(true);
+      } else {
+        setUserLimitMessage(res?.data?.message || "You cannot add more users.");
+        setUserLimitModalOpen(true);
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || "Failed to check limit";
+      setUserLimitMessage(msg);
+      setUserLimitModalOpen(true);
+    }
   };
 
   const handleCreateUser = async (e) => {
@@ -924,29 +950,11 @@ function SettingsPage() {
 
   const rolePermissions = roleConfig?.roles || {};
 
-  const availableRoleModules = useMemo(
-    () => [
-      "Members",
-      "Attendance",
-      "Programs & Events",
-      "Ministries",
-      "Announcement",
-      "Tithes",
-      "Special fund",
-      "Offerings",
-      "Welfare",
-      "Pledges",
-      "Business Ventures",
-      "Expenses",
-      "Financial statement",
-      "Reports & Analytics",
-      "Billing",
-      "Referrals",
-      "Settings",
-      "Support & Help"
-    ],
-    []
-  );
+  const availableRoleModules = useMemo(() => {
+    const modules = roleConfig?.modules;
+    if (!modules || typeof modules !== "object") return [];
+    return Object.keys(modules);
+  }, [roleConfig]);
 
   if (!canRead) {
     return (
@@ -1700,6 +1708,9 @@ function SettingsPage() {
               <div>
                 <div className="text-sm font-semibold text-gray-900">Available Roles</div>
                 <div className="mt-1 text-xs text-gray-500">Roles and what they can do in the system</div>
+                <div className="mt-2 text-[11px] text-gray-500">
+                  ✓ = has permission, × = no permission, - = not supported
+                </div>
               </div>
             </div>
 
@@ -1711,6 +1722,7 @@ function SettingsPage() {
                   const modules = availableRoleModules;
                   const normalizedRole = String(r || "").trim().toLowerCase();
                   const perms = rolePermissions?.[normalizedRole] || {};
+                  const moduleCatalog = roleConfig?.modules || {};
 
                   return (
                     <div key={r} className="rounded-lg border border-gray-200 p-4">
@@ -1730,7 +1742,13 @@ function SettingsPage() {
                               </thead>
                               <tbody className="divide-y divide-gray-200">
                                 {modules.map((m) => {
-                                  const canView = Boolean(perms?.[m]?.read);
+                                  const supported = Array.isArray(moduleCatalog?.[m]) ? moduleCatalog[m] : [];
+                                  const supportsView = supported.includes("read") || supported.includes("view");
+                                  const supportsCreate = supported.includes("create");
+                                  const supportsUpdate = supported.includes("update");
+                                  const supportsDelete = supported.includes("delete");
+
+                                  const canView = Boolean(perms?.[m]?.read || perms?.[m]?.view);
                                   const canCreate = Boolean(perms?.[m]?.create);
                                   const canUpdate = Boolean(perms?.[m]?.update);
                                   const canDelete = Boolean(perms?.[m]?.delete);
@@ -1739,11 +1757,19 @@ function SettingsPage() {
 
                                   return (
                                     <tr key={`${r}-${m}`} className="hover:bg-gray-50">
-                                      <td className="px-3 py-1 text-left font-semibold text-gray-900 whitespace-nowrap">{m}</td>
-                                      <td className="px-3 py-1 text-center"><span className={markClass(canView)}>{canView ? "✓" : "×"}</span></td>
-                                      <td className="px-3 py-1 text-center"><span className={markClass(canCreate)}>{canCreate ? "✓" : "×"}</span></td>
-                                      <td className="px-3 py-1 text-center"><span className={markClass(canUpdate)}>{canUpdate ? "✓" : "×"}</span></td>
-                                      <td className="px-3 py-1 text-center"><span className={markClass(canDelete)}>{canDelete ? "✓" : "×"}</span></td>
+                                      <td className="px-3 py-1 text-left font-semibold text-gray-900 whitespace-nowrap">{humanizeKey(m)}</td>
+                                      <td className="px-3 py-1 text-center">
+                                        {supportsView ? <span className={markClass(canView)}>{canView ? "✓" : "×"}</span> : <span className="font-bold text-gray-300">-</span>}
+                                      </td>
+                                      <td className="px-3 py-1 text-center">
+                                        {supportsCreate ? <span className={markClass(canCreate)}>{canCreate ? "✓" : "×"}</span> : <span className="font-bold text-gray-300">-</span>}
+                                      </td>
+                                      <td className="px-3 py-1 text-center">
+                                        {supportsUpdate ? <span className={markClass(canUpdate)}>{canUpdate ? "✓" : "×"}</span> : <span className="font-bold text-gray-300">-</span>}
+                                      </td>
+                                      <td className="px-3 py-1 text-center">
+                                        {supportsDelete ? <span className={markClass(canDelete)}>{canDelete ? "✓" : "×"}</span> : <span className="font-bold text-gray-300">-</span>}
+                                      </td>
                                     </tr>
                                   );
                                 })}
@@ -2279,6 +2305,26 @@ function SettingsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {/* User limit modal */}
+      {userLimitModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setUserLimitModalOpen(false)} />
+          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
+            <div className="text-lg font-semibold text-gray-900">Limit Reached</div>
+            <p className="mt-2 text-sm text-gray-600">{userLimitMessage}</p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setUserLimitModalOpen(false)}
+                className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

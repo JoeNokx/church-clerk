@@ -18,7 +18,7 @@ export const blockUserCreationIfOverLimit = async (req, res, next) => {
 
     if (totalUsers >= Number(userLimit)) {
       return res.status(403).json({
-        message: "User limit reached. Upgrade to add more team members."
+        message: "User limit reached. Upgrade to add more users to manage your church."
       });
     }
 

@@ -1,6 +1,8 @@
 import Member from "../models/memberModel.js"
 import Church from "../models/churchModel.js"
 import Visitor from "../models/visitorsModel.js"
+import Subscription from "../models/billingModel/subscriptionModel.js";
+import Plan from "../models/billingModel/planModel.js";
 
 import GroupMember from "../models/ministryModel/groupMembersModel.js"
 import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
@@ -515,7 +517,7 @@ const createMember = async (req, res) => {
 
     return res.status(201).json({ message: "member created successfully", member })
   } catch (error) {
-    return res.status(400).json({ message: "member could not be created", error: error.message })
+    return res.status(400).json({ message: "member could not be created, you have reached your limit. upgrade to add more members to your church.", error: error.message })
   }
 }
 
@@ -684,7 +686,7 @@ const getSingleMember = async (req, res) => {
       memberStatus: memberStatus
     });
   } catch (error) {
-    return res.status(400).json({ message: "member could not be created", error: error.message })
+    return res.status(400).json({ message: "member could not be retrieved", error: error.message })
   }
 }
 
@@ -758,6 +760,43 @@ const getAllMembersKPI = async (req, res) => {
   }
 };
 
+const canCreateMember = async (req, res) => {
+  try {
+    if (!req.activeChurch?._id) {
+      return res.status(400).json({ message: "Church context not found" });
+    }
+
+    const churchId = req.activeChurch._id;
+
+    const subscription = await Subscription.findOne({
+      church: churchId
+    }).lean();
+
+    if (!subscription?.plan) return res.status(200).json({ allowed: true, memberLimit: null, totalMembers: null });
+
+    const plan = await Plan.findById(subscription.plan).select("memberLimit").lean();
+    const memberLimit = plan?.memberLimit;
+    if (memberLimit === null || memberLimit === undefined) {
+      return res.status(200).json({ allowed: true, memberLimit: null, totalMembers: null });
+    }
+
+    const totalMembers = await Member.countDocuments({ church: churchId });
+    if (totalMembers >= Number(memberLimit)) {
+      const formattedLimit = ` ${Number(memberLimit).toLocaleString()}`;
+      return res.status(403).json({
+        allowed: false,
+        totalMembers,
+        memberLimit: Number(memberLimit),
+        message: `You’ve reached your member limit${formattedLimit}. Upgrade to add more members to your church.`
+      });
+    }
+
+    return res.status(200).json({ allowed: true, totalMembers, memberLimit: Number(memberLimit) });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || "Failed to check member creation limit" });
+  }
+};
+
 export {
   createMember,
   getAllMembers,
@@ -767,5 +806,6 @@ export {
   getAllMembersKPI,
   downloadMembersImportTemplate,
   previewMembersImport,
-  importMembersCsv
+  importMembersCsv,
+  canCreateMember
 }

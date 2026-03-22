@@ -8,7 +8,8 @@ import {
   createChurchUser,
   updateChurchUser,
   setChurchUserActiveStatus,
-  getRolePermissionMatrix
+  getRolePermissionMatrix,
+  canCreateChurchUser
 } from "../controller/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import {setActiveChurch} from "../middleware/activeChurchMiddleware.js";
@@ -100,6 +101,17 @@ router.patch(
   attachPermissions,
   requirePermission("settingsUsersRoles", "deactivate"),
   setChurchUserActiveStatus
+);
+
+router.get(
+  "/church-users/can-create",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin"),
+  requirePermission("settingsUsersRoles", "create"),
+  canCreateChurchUser
 );
 
 

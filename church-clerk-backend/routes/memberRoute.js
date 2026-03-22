@@ -9,7 +9,8 @@ import {
   getAllMembersKPI,
   downloadMembersImportTemplate,
   previewMembersImport,
-  importMembersCsv
+  importMembersCsv,
+  canCreateMember
 } from "../controller/memberController.js"
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
@@ -45,6 +46,17 @@ router.get(
   requirePermission("members", "read"),
   getAllMembers
 );
+
+ router.get(
+   "/members/can-create",
+   protect,
+   setActiveChurch,
+   readOnlyBranchGuard,
+   attachPermissions,
+   authorizeRoles("superadmin", "churchadmin"),
+   requirePermission("members", "create"),
+   canCreateMember
+ );
 router.get(
   "/members/:id",
   protect,

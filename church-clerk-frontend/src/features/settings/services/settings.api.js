@@ -19,3 +19,7 @@ export const updateChurchUser = async (id, payload) => {
 export const setChurchUserStatus = async (id, isActive) => {
   return await http.patch(`/user/church-users/${id}/status`, { isActive });
 };
+
+export const canCreateChurchUser = async () => {
+  return await http.get("/user/church-users/can-create");
+};

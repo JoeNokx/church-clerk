@@ -53,6 +53,122 @@ function StatusPill({ value }) {
   return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${cls}`}>{displayValue || "—"}</span>;
 }
 
+function humanizeFeatureKey(key) {
+  const raw = String(key || "").trim();
+  if (!raw) return "—";
+  const label = raw
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .toLowerCase();
+  return label.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function PlanComparisonTable({ plans }) {
+  const rows = Array.isArray(plans) ? plans : [];
+  if (rows.length === 0) return null;
+
+  const featureAliases = {
+    announcement: "announcements",
+    specialFund: "specialFunds"
+  };
+
+  const featureLabels = {
+    financeModule: "Finance Module",
+    branchesOverview: "Branches Overview",
+    programsEvents: "Programs & Events",
+    reportsAnalytics: "Reports & Analytics",
+    supportHelp: "Support & Help"
+  };
+
+  const toKey = (k) => featureAliases[String(k || "")] || String(k || "");
+  const getFeatures = (p) => (p?.features && typeof p.features === "object" ? p.features : {});
+
+  const allKeys = Array.from(
+    new Set(
+      rows.flatMap((p) =>
+        Object.keys(getFeatures(p))
+          .map(toKey)
+          .filter(Boolean)
+      )
+    )
+  ).filter((k) => rows.some((p) => Boolean(getFeatures(p)?.[k] ?? getFeatures(p)?.[Object.keys(featureAliases).find((a) => featureAliases[a] === k)])));
+
+  const sortedKeys = allKeys
+    .slice()
+    .sort((a, b) => {
+      const aLabel = featureLabels[a] || humanizeFeatureKey(a);
+      const bLabel = featureLabels[b] || humanizeFeatureKey(b);
+      return aLabel.localeCompare(bLabel);
+    });
+
+  const renderLimit = (limit) => {
+    if (limit === null || limit === undefined) return "Unlimited";
+    const n = Number(limit);
+    if (!Number.isFinite(n)) return "—";
+    return n.toLocaleString();
+  };
+
+  const renderBool = (value, label) => {
+    const v = Boolean(value);
+    return (
+      <span className={v ? "text-green-700" : "text-gray-400"} aria-label={label}>
+        {v ? "Yes" : "—"}
+      </span>
+    );
+  };
+
+  return (
+    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="text-sm font-semibold text-gray-900">Compare packages</div>
+      <div className="mt-1 text-xs text-gray-500">Feature availability and limits update automatically as plans change.</div>
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-[720px] w-full border-separate border-spacing-0">
+          <thead>
+            <tr>
+              <th className="sticky left-0 z-10 bg-white px-4 py-3 text-left text-xs font-semibold text-gray-600 border-b border-gray-200">Feature</th>
+              {rows.map((p) => (
+                <th key={p?._id || p?.name} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 border-b border-gray-200">
+                  {p?.name || "—"}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="sticky left-0 z-10 bg-white px-4 py-3 text-xs font-semibold text-gray-700 border-b border-gray-100">Member limit</td>
+              {rows.map((p) => (
+                <td key={`${p?._id || p?.name}-memberLimit`} className="px-4 py-3 text-xs text-gray-700 border-b border-gray-100">
+                  <span className="font-semibold">{renderLimit(p?.memberLimit)}</span>
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="sticky left-0 z-10 bg-white px-4 py-3 text-xs font-semibold text-gray-700 border-b border-gray-200">User limit</td>
+              {rows.map((p) => (
+                <td key={`${p?._id || p?.name}-userLimit`} className="px-4 py-3 text-xs text-gray-700 border-b border-gray-200">
+                  <span className="font-semibold">{renderLimit(p?.userLimit)}</span>
+                </td>
+              ))}
+            </tr>
+
+            {sortedKeys.map((k) => (
+              <tr key={k}>
+                <td className="sticky left-0 z-10 bg-white px-4 py-3 text-xs text-gray-700 border-b border-gray-100">{featureLabels[k] || humanizeFeatureKey(k)}</td>
+                {rows.map((p) => (
+                  <td key={`${p?._id || p?.name}-${k}`} className="px-4 py-3 text-xs text-gray-700 border-b border-gray-100">
+                    {renderBool(getFeatures(p)?.[k], `${k} ${getFeatures(p)?.[k] ? "enabled" : "disabled"}`)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function limitValue(limit) {
   if (limit === null || limit === undefined) return Number.POSITIVE_INFINITY;
   const n = Number(limit);
@@ -334,6 +450,17 @@ function BillingPage() {
       return aName.localeCompare(bName);
     });
   }, [plans]);
+
+  const plansForComparison = useMemo(() => {
+    const rows = Array.isArray(plansSorted) ? plansSorted.filter((p) => p?.isActive !== false) : [];
+    const byName = (name) => rows.find((p) => String(p?.name || "").trim().toLowerCase() === name) || null;
+
+    const picked = [byName("basic"), byName("standard"), byName("premium")].filter(Boolean);
+    if (picked.length > 0) return picked;
+
+    const withoutFreeLite = rows.filter((p) => String(p?.name || "").trim().toLowerCase() !== "free lite");
+    return withoutFreeLite.slice(0, 3);
+  }, [plansSorted]);
 
   const load = useCallback(async () => {
     setError("");
@@ -665,6 +792,8 @@ function BillingPage() {
           </button>
         </div>
       </div>
+
+      <PlanComparisonTable plans={plansForComparison} />
 
     </div>
   );

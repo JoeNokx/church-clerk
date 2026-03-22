@@ -9,7 +9,8 @@ import {
   downloadMembersImportTemplate,
   getMembersKPI,
   importMembersCsv,
-  previewMembersImport
+  previewMembersImport,
+  canCreateMember
 } from "../services/member.api.js";
 
 function KpiCard({ label, value }) {
@@ -40,6 +41,8 @@ function MembersPageInner() {
 
   const [kpiLoading, setKpiLoading] = useState(false);
   const [memberKPI, setMemberKPI] = useState(null);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [limitMessage, setLimitMessage] = useState("");
 
   const refreshMembers = useCallback(async () => {
     await store?.fetchMembers?.();
@@ -77,6 +80,30 @@ function MembersPageInner() {
     };
   }, [store?.activeChurch]);
 
+  const renderLimitMessage = (message) => {
+    const msg = String(message || "");
+    const m = msg.match(/member limit\s+(\d[\d,]*)/i);
+    if (!m) return msg;
+
+    const full = m[0];
+    const num = m[1];
+    const idx = m.index ?? -1;
+    if (idx < 0) return msg;
+
+    const before = msg.slice(0, idx);
+    const after = msg.slice(idx + full.length);
+    const prefix = full.slice(0, full.length - num.length);
+
+    return (
+      <>
+        {before}
+        {prefix}
+        <span className="font-semibold">{num}</span>
+        {after}
+      </>
+    );
+  };
+
   useEffect(() => {
     const state = location.state;
     const prefill = state?.prefillMember || null;
@@ -94,8 +121,20 @@ function MembersPageInner() {
     );
   }, [location.pathname, location.search, location.state, toPage]);
 
-  const openCreate = () => {
-    toPage("member-form");
+  const openCreate = async () => {
+    try {
+      const res = await canCreateMember();
+      if (res?.data?.allowed !== false) {
+        toPage("member-form");
+      } else {
+        setLimitMessage(res?.data?.message || "You cannot add more members.");
+        setLimitModalOpen(true);
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || "Failed to check limit";
+      setLimitMessage(msg);
+      setLimitModalOpen(true);
+    }
   };
 
   const openImport = () => {
@@ -433,6 +472,26 @@ function MembersPageInner() {
                   ) : null}
                 </div>
               ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Member limit modal */}
+      {limitModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setLimitModalOpen(false)} />
+          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
+            <div className="text-lg font-semibold text-gray-900">Limit Reached</div>
+            <p className="mt-2 text-sm text-gray-600">{renderLimitMessage(limitMessage)}</p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setLimitModalOpen(false)}
+                className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

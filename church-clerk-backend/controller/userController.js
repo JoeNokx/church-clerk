@@ -1,10 +1,12 @@
-import User from "../models/userModel.js";
-import { ROLE_PERMISSIONS, CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
-import cloudinary from "../config/cloudinary.js";
-import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
-import Role from "../models/roleModel.js";
-import { MODULES } from "../config/permissions.js";
-import { resolvePermissions } from "../utils/resolvePermissions.js";
+import User from "../models/userModel.js"
+import { ROLE_PERMISSIONS, CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js"
+import cloudinary from "../config/cloudinary.js"
+import { validatePhoneNumber } from "../utils/validatePhoneNumber.js"
+import Role from "../models/roleModel.js"
+import { MODULES } from "../config/permissions.js"
+import { resolvePermissions } from "../utils/resolvePermissions.js"
+import Subscription from "../models/billingModel/subscriptionModel.js"
+import Plan from "../models/billingModel/planModel.js"
 
 //GET: fetch my profile
 const myProfile =  async (req, res) => {
@@ -405,6 +407,32 @@ const getRolePermissionMatrix = async (req, res) => {
   }
 };
 
+const canCreateChurchUser = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Active church context is required" });
+
+    const subscription = await Subscription.findOne({ church: churchId }).lean();
+    if (!subscription?.plan) return res.status(200).json({ allowed: true });
+
+    const plan = await Plan.findById(subscription.plan).select("userLimit").lean();
+    const userLimit = plan?.userLimit;
+    if (userLimit === null || userLimit === undefined) return res.status(200).json({ allowed: true });
+
+    const totalUsers = await User.countDocuments({ church: churchId });
+
+    if (totalUsers >= Number(userLimit)) {
+      return res.status(403).json({
+        message: "User limit reached. Upgrade to add more users to manage your church."
+      });
+    }
+
+    return res.status(200).json({ allowed: true });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   myProfile,
   updateMyProfile,
@@ -413,5 +441,6 @@ export {
   createChurchUser,
   updateChurchUser,
   setChurchUserActiveStatus,
-  getRolePermissionMatrix
-}
+  getRolePermissionMatrix,
+  canCreateChurchUser
+};

@@ -16,11 +16,24 @@ const resolveFromPermissionObject = (permissionObject) => {
     return { super: true };
   }
 
+  const normalizeModuleKey = (k) =>
+    String(k || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
+
+  const moduleKeyLookup = {};
+  for (const k of Object.keys(permissionObject)) {
+    moduleKeyLookup[normalizeModuleKey(k)] = k;
+  }
+
   const resolved = {};
   for (const moduleName of Object.keys(MODULES)) {
     resolved[moduleName] = {};
 
-    const allowed = permissionObject[moduleName];
+    const allowed =
+      permissionObject[moduleName] ??
+      permissionObject[moduleKeyLookup[normalizeModuleKey(moduleName)]];
     for (const action of MODULES[moduleName]) {
       if (Array.isArray(allowed)) {
         resolved[moduleName][action] = allowed.includes(action);
@@ -37,10 +50,12 @@ const resolveFromPermissionObject = (permissionObject) => {
 
 const ensureBoolMatrix = (resolved) => {
   const out = resolved && typeof resolved === "object" ? { ...resolved } : {};
+
+  const hasAllAccess = out?.__all__ === true || out?.super === true;
   for (const moduleKey of Object.keys(MODULES)) {
     out[moduleKey] = out[moduleKey] && typeof out[moduleKey] === "object" ? { ...out[moduleKey] } : {};
     for (const action of MODULES[moduleKey]) {
-      out[moduleKey][action] = Boolean(out?.[moduleKey]?.[action]);
+      out[moduleKey][action] = hasAllAccess ? true : Boolean(out?.[moduleKey]?.[action]);
     }
   }
   return out;
