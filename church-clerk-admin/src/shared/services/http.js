@@ -1,4 +1,5 @@
 import axios from "axios";
+import { showError, showSuccess } from "../../utils/toast.js";
 
 const envBaseURL = import.meta.env.VITE_API_BASE_URL;
 
@@ -48,8 +49,35 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = String(response?.config?.method || "get").toLowerCase();
+    const shouldToastSuccess = method !== "get" && response?.config?.toastSuccess !== false;
+    if (shouldToastSuccess) {
+      const msg =
+        typeof response?.data?.message === "string" && response.data.message.trim()
+          ? response.data.message
+          : "Operation successful";
+      showSuccess(msg);
+    }
+
+    return response;
+  },
   (error) => {
+    if (error?.code !== "ERR_CANCELED") {
+      const data = error?.response?.data;
+      const backendMsg =
+        (typeof data?.message === "string" && data.message.trim() ? data.message : "") ||
+        (Array.isArray(data?.errors) && data.errors.length
+          ? String(data.errors[0]?.message || data.errors[0] || "")
+          : "") ||
+        (typeof data?.error === "string" && data.error.trim() ? data.error : "") ||
+        "Request failed";
+
+      if (error?.config?.toastError !== false) {
+        showError(backendMsg);
+      }
+    }
+
     if (error.response?.status === 401) {
       localStorage.removeItem("systemAdminActiveChurch");
       localStorage.removeItem("systemAdminViewChurch");

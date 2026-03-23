@@ -4,6 +4,8 @@ import App from "./App/App.jsx";
 import { AuthProvider } from "./features/Auth/store/auth.store.jsx";
 import { ChurchProvider } from "./features/Church/church.store.js";
 import { PermissionProvider } from "./features/Permissions/permission.store.js";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./styles/index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -12,6 +14,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <PermissionProvider>
         <AuthProvider>
           <App />
+          <ToastContainer position="top-right" autoClose={3000} limit={3} />
         </AuthProvider>
       </PermissionProvider>
     </ChurchProvider>

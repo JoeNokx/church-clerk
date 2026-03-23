@@ -1,5 +1,6 @@
 import axios from "axios";
 import NProgress from "nprogress";
+import { showError, showSuccess } from "../../utils/toast.js";
 
 let pendingRequests = 0;
 let pendingRoutes = 0;
@@ -81,10 +82,39 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     stopProgress();
+
+    const method = String(response?.config?.method || "get").toLowerCase();
+    const shouldToastSuccess = method !== "get" && response?.config?.toastSuccess !== false;
+    if (shouldToastSuccess) {
+      const msg =
+        typeof response?.data?.message === "string" && response.data.message.trim()
+          ? response.data.message
+          : "Operation successful";
+      showSuccess(msg);
+    }
+
     return response;
   },
   (error) => {
     stopProgress();
+
+    if (error?.code === "ERR_CANCELED") {
+      return Promise.reject(error);
+    }
+
+    const data = error?.response?.data;
+    const backendMsg =
+      (typeof data?.message === "string" && data.message.trim() ? data.message : "") ||
+      (Array.isArray(data?.errors) && data.errors.length
+        ? String(data.errors[0]?.message || data.errors[0] || "")
+        : "") ||
+      (typeof data?.error === "string" && data.error.trim() ? data.error : "") ||
+      "Request failed";
+
+    if (error?.config?.toastError !== false) {
+      showError(backendMsg);
+    }
+
     if (error.response?.status === 401) {
       // Let AuthContext + ProtectedRoute handle it
       localStorage.removeItem("activeChurch");
