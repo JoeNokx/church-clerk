@@ -14,6 +14,10 @@ export const verifyEmail = async (payload) => {
   return await http.post("/auth/verify-email", payload);
 };
 
+export const resendEmailVerification = async (payload) => {
+  return await http.post("/auth/resend-verification", payload);
+};
+
 export const forgotPassword = async (payload) => {
   return await http.post("/auth/forgot-password", payload);
 };

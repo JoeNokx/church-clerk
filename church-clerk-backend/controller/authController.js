@@ -114,6 +114,14 @@ function parseUserAgentMeta(uaRaw) {
 
 
 
+function normalizeEmail(value) {
+
+  return String(value || "").toLowerCase().trim();
+
+}
+
+
+
 //POST: verify email
 
 const verifyEmail = async (req, res) => {
@@ -190,6 +198,112 @@ const verifyEmail = async (req, res) => {
 
 
 
+//POST: resend email verification
+
+const resendEmailVerification = async (req, res) => {
+
+  try {
+
+    const normalizedEmail = normalizeEmail(req.body?.email);
+
+    if (!normalizedEmail) {
+
+      return res.status(400).json({ message: "Email is required" });
+
+    }
+
+
+
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+
+      return res.status(200).json({
+
+        status: "success",
+
+        message: "If an account exists for that email, a verification link has been sent."
+
+      });
+
+    }
+
+
+
+    if (user.isEmailVerified === true) {
+
+      return res.status(200).json({
+
+        status: "success",
+
+        message: "Your email is already verified."
+
+      });
+
+    }
+
+
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    user.emailVerificationToken = verificationToken;
+
+    await user.save();
+
+
+
+    const baseUrl = getFrontendBaseUrl();
+
+    const link = `${baseUrl}/verify-email?token=${verificationToken}`;
+
+    await sendEmail({
+
+      to: user.email,
+
+      subject: "Verify your email - Church Clerk",
+
+      html: `
+
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+
+          <h2 style="margin: 0 0 12px;">Verify your email</h2>
+
+          <p>Hello ${user.fullName || ""},</p>
+
+          <p>Please verify your email to continue using Church Clerk.</p>
+
+          <p><a href="${link}" style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 10px 14px; border-radius: 8px; text-decoration: none;">Verify Email</a></p>
+
+          <p style="color: #6b7280; font-size: 12px;">If the button doesn’t work, copy and paste this link into your browser:<br/>${link}</p>
+
+        </div>
+
+      `
+
+    });
+
+
+
+    return res.status(200).json({
+
+      status: "success",
+
+      message: "Verification email sent."
+
+    });
+
+  } catch (error) {
+
+    console.error("[auth] resendEmailVerification failed", error);
+
+    return res.status(500).json({ message: error.message || "Failed to resend verification email" });
+
+  }
+
+};
+
+
+
 //POST: forgot password
 
 const forgotPassword = async (req, res) => {
@@ -198,7 +312,11 @@ const forgotPassword = async (req, res) => {
 
     const { email } = req.body;
 
-    const normalizedEmail = String(email || "").toLowerCase().trim();
+    const normalizedEmail = normalizeEmail(email);
+
+    let emailSent = false;
+
+
 
     if (!normalizedEmail) {
 
@@ -254,9 +372,21 @@ const forgotPassword = async (req, res) => {
 
         });
 
-      } catch {
+        emailSent = true;
 
-        void 0;
+      } catch (err) {
+
+        console.error("[auth] forgotPassword email failed", err);
+
+        if (process.env.NODE_ENV !== "production") {
+
+          const baseUrl = getFrontendBaseUrl();
+
+          const link = `${baseUrl}/reset-password?token=${resetToken}`;
+
+          console.warn("[auth] forgotPassword link (dev fallback):", link);
+
+        }
 
       }
 
@@ -264,13 +394,21 @@ const forgotPassword = async (req, res) => {
 
 
 
-    return res.status(200).json({
+    const payload = {
 
       status: "success",
 
       message: "If an account exists for that email, a reset link has been sent."
 
-    });
+    };
+
+    if (process.env.NODE_ENV !== "production") {
+
+      payload.emailSent = emailSent;
+
+    }
+
+    return res.status(200).json(payload);
 
   } catch (error) {
 
@@ -362,7 +500,7 @@ const registerUser = async (req, res) => {
 
     const { fullName, email, phoneNumber, password, churchId } = req.body;
 
-
+    const normalizedEmail = normalizeEmail(email);
 
     if (!fullName || !email || !phoneNumber || !password) {
 
@@ -434,7 +572,7 @@ const registerUser = async (req, res) => {
 
     //check if user exist
 
-    const userExisting = await User.findOne({ email });
+    const userExisting = await User.findOne({ email: normalizedEmail });
 
     if (userExisting) {
 
@@ -600,7 +738,7 @@ const registerUser = async (req, res) => {
 
       fullName,
 
-      email,
+      email: normalizedEmail,
 
       phoneNumber: validatedPhoneNumber,
 
@@ -688,9 +826,21 @@ const registerUser = async (req, res) => {
 
       verificationEmailSent = true;
 
-    } catch {
+    } catch (err) {
 
       verificationEmailSent = false;
+
+      console.error("[auth] verification email failed", err);
+
+      if (process.env.NODE_ENV !== "production") {
+
+        const baseUrl = getFrontendBaseUrl();
+
+        const link = `${baseUrl}/verify-email?token=${verificationToken}`;
+
+        console.warn("[auth] verification link (dev fallback):", link);
+
+      }
 
     }
 
@@ -790,6 +940,8 @@ const loginUser = async (req, res) => {
 
     const { email, password, rememberMe } = req.body;
 
+    const normalizedEmail = normalizeEmail(email);
+
     const remember =
 
       rememberMe === true ||
@@ -804,7 +956,7 @@ const loginUser = async (req, res) => {
 
     //check if both fields are filled
 
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
 
       try {
 
@@ -858,7 +1010,7 @@ const loginUser = async (req, res) => {
 
     //check if user exist
 
-    const user = await User.findOne({ email }).select("+password").populate("church", "name");
+    const user = await User.findOne({ email: normalizedEmail }).select("+password").populate("church", "name");
 
     if (!user) {
 
@@ -1310,4 +1462,4 @@ const updatePassword = async (req, res) => {
 
 
 
-export { registerUser, loginUser, logoutUser, updatePassword, verifyEmail, forgotPassword, resetPassword }
+export { registerUser, loginUser, logoutUser, updatePassword, verifyEmail, forgotPassword, resetPassword, resendEmailVerification }

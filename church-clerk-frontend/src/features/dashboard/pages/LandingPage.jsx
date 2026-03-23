@@ -6,7 +6,9 @@ import LandingFooter from "../components/landing/LandingFooter.jsx";
 import http from "../../../shared/services/http.js";
 import MinistryPlusCustomPlanModal from "../../../shared/components/MinistryPlusCustomPlanModal.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
-import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
+import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
+import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
+import PlanComparisonTable from "../../subscription/components/PlanComparisonTable.jsx";
 
 function formatCurrency(amount, currency) {
   return formatMoney(amount, currency);
@@ -17,8 +19,9 @@ function LandingPage() {
   const [billingInterval, setBillingInterval] = useState("monthly");
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
-  const [visitorIsGhana, setVisitorIsGhana] = useState(true);
-  const [usdToGhs, setUsdToGhs] = useState(null);
+  const [visitorCurrency, setVisitorCurrency] = useState("GHS");
+  const [ghsToVisitorRate, setGhsToVisitorRate] = useState(1);
+  const [fxLoading, setFxLoading] = useState(false);
   const [faqOpen, setFaqOpen] = useState("security");
 
   useEffect(() => {
@@ -46,25 +49,25 @@ function LandingPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (visitorIsGhana) {
-        setUsdToGhs(null);
-        return;
-      }
-
+      setFxLoading(true);
       try {
-        const rate = await getUsdToGhsRate();
+        const rate = await convertGhsToCurrency(1, visitorCurrency);
         if (cancelled) return;
-        setUsdToGhs(rate);
+        const n = Number(rate);
+        setGhsToVisitorRate(Number.isFinite(n) && n > 0 ? n : 1);
       } catch {
         if (cancelled) return;
-        setUsdToGhs(null);
+        setGhsToVisitorRate(1);
+      } finally {
+        if (cancelled) return;
+        setFxLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [visitorIsGhana]);
+  }, [visitorCurrency]);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,13 +77,12 @@ function LandingPage() {
         if (!res.ok) throw new Error("geo lookup failed");
         const json = await res.json();
         if (cancelled) return;
-        const code = String(json?.country || "").trim().toUpperCase();
-        const name = String(json?.country_name || "").trim().toLowerCase();
-        const isGhana = code === "GH" || name === "ghana";
-        setVisitorIsGhana(isGhana);
+        const code = String(json?.country_code || json?.country || "").trim().toUpperCase();
+        const resolved = resolveCurrencyFromCountryCode(code);
+        setVisitorCurrency(resolved?.currency || "GHS");
       } catch {
         if (cancelled) return;
-        setVisitorIsGhana(true);
+        setVisitorCurrency("GHS");
       }
     })();
 
@@ -102,7 +104,18 @@ function LandingPage() {
     });
   }, [plans]);
 
-  const displayCurrency = visitorIsGhana || !usdToGhs ? "GHS" : "USD";
+  const displayCurrency = String(visitorCurrency || "USD").trim().toUpperCase() || "USD";
+
+  const plansForComparison = useMemo(() => {
+    const rows = Array.isArray(plansSorted) ? plansSorted.filter((p) => p?.isActive !== false) : [];
+    const byName = (name) => rows.find((p) => String(p?.name || "").trim().toLowerCase() === name) || null;
+
+    const picked = [byName("basic"), byName("standard"), byName("premium")].filter(Boolean);
+    if (picked.length > 0) return picked;
+
+    const withoutFreeLite = rows.filter((p) => String(p?.name || "").trim().toLowerCase() !== "free lite");
+    return withoutFreeLite.slice(0, 3);
+  }, [plansSorted]);
 
   const sectionFade = {
     hidden: { opacity: 0, y: 14 },
@@ -112,8 +125,8 @@ function LandingPage() {
   const features = useMemo(() => {
     return [
       {
-        title: "Members & Families",
-        desc: "Keep member records complete: contacts, groups, roles, and branch assignments.",
+        title: "People & Community",
+        desc: "Members, families, groups, visitors, follow-ups, and clear records—so no one is missed.",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
             <path d="M16 11a4 4 0 10-8 0 4 4 0 008 0Z" stroke="currentColor" strokeWidth="1.8" />
@@ -123,7 +136,7 @@ function LandingPage() {
       },
       {
         title: "Attendance Tracking",
-        desc: "Track services, meetings, and follow-ups with reliable reporting.",
+        desc: "Track services and meetings, see trends, and know who is staying consistent and who needs care.",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
             <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -135,7 +148,7 @@ function LandingPage() {
       },
       {
         title: "Announcements & Communication",
-        desc: "Send and manage announcements with subscription-based access control.",
+        desc: "Share updates with your church easily—services, meetings, and important notices.",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
             <path d="M4 10v4a2 2 0 002 2h1l5 4V4L7 8H6a2 2 0 00-2 2Z" stroke="currentColor" strokeWidth="1.8" />
@@ -145,7 +158,7 @@ function LandingPage() {
       },
       {
         title: "Finance & Giving",
-        desc: "Tithes, offerings, income and expenses—all in one consistent system.",
+        desc: "Tithes, offerings, income, expenses, welfare, projects, and reports—organized and accountable.",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
             <path d="M12 1v22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -155,7 +168,7 @@ function LandingPage() {
       },
       {
         title: "Budgeting",
-        desc: "Plan your spending and compare planned vs actual expenses across modules.",
+        desc: "Create budgets and compare what you planned vs what was actually spent—without confusion.",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
             <path d="M4 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -167,8 +180,19 @@ function LandingPage() {
         )
       },
       {
+        title: "Headquarters & Branches",
+        desc: "Manage branches under one headquarters, with clean oversight and clear reporting.",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+            <path d="M4 10l8-6 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M6 10v10h12V10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M10 20v-6h4v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        )
+      },
+      {
         title: "Roles, Permissions & Audit Log",
-        desc: "Stay accountable: role-based access and searchable activity logs.",
+        desc: "Control who can do what, and see a clear record of changes—so leaders can trust the system.",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
             <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -178,6 +202,35 @@ function LandingPage() {
       }
     ];
   }, []);
+
+  const getPlanHighlights = (plan) => {
+    const rows = [];
+    const memberLimit = plan?.memberLimit;
+    rows.push(memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`);
+
+    const featuresObj = plan?.features && typeof plan.features === "object" ? plan.features : {};
+    const financeEnabled = Boolean(featuresObj?.financeModule);
+    const budgetingEnabled = featuresObj?.budgeting !== undefined ? Boolean(featuresObj.budgeting) : Boolean(featuresObj?.financeModule);
+
+    const candidates = [
+      { on: financeEnabled, label: "Finance & giving" },
+      { on: budgetingEnabled, label: "Budgeting" },
+      { on: Boolean(featuresObj?.branchesOverview), label: "Headquarters & branches" },
+      { on: Boolean(featuresObj?.programsEvents), label: "Programs & events" },
+      { on: Boolean(featuresObj?.announcements ?? featuresObj?.announcement), label: "Announcements" },
+      { on: Boolean(featuresObj?.reportsAnalytics), label: "Reports" }
+    ];
+
+    for (const c of candidates) {
+      if (c.on && rows.length < 5) rows.push(c.label);
+    }
+
+    if (rows.length < 4) {
+      rows.push("Member records & attendance");
+    }
+
+    return rows.slice(0, 5);
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -195,7 +248,7 @@ function LandingPage() {
               <motion.div initial="hidden" animate="show" variants={sectionFade} transition={{ duration: 0.6 }}>
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
                   <span className="inline-flex h-2 w-2 rounded-full bg-blue-700" />
-                  Modern church management, built for real ministry admin
+                  Built by African pastors and church leaders—made for African churches
                 </div>
 
                 <h1 className="mt-5 text-3xl sm:text-5xl font-semibold text-gray-900 tracking-tight">
@@ -203,7 +256,7 @@ function LandingPage() {
                 </h1>
 
                 <p className="mt-4 text-base sm:text-lg text-gray-600 max-w-xl">
-                  Manage members, attendance, communication, and finance in one secure system—so your team spends less time on spreadsheets and more time on ministry.
+                  ChurchClerk helps you keep your people, finances, and branches organized in one place—so you spend less time chasing records and more time doing ministry.
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
@@ -222,7 +275,7 @@ function LandingPage() {
                 </div>
 
                 <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {["Fast setup", "Role-based access", "Audit-ready records"].map((t) => (
+                  {["Fast setup", "Headquarters & branches", "Clear accountability"].map((t) => (
                     <div key={t} className="rounded-xl border border-gray-200 bg-white/70 px-4 py-3 text-sm font-semibold text-gray-700">
                       {t}
                     </div>
@@ -247,6 +300,7 @@ function LandingPage() {
                       "Attendance",
                       "Events",
                       "Announcements",
+                      "Headquarters & Branches",
                       "Tithes & Offerings",
                       "Income & Expenses",
                       "Budgeting",
@@ -259,9 +313,9 @@ function LandingPage() {
                   </div>
 
                   <div className="mt-5 rounded-2xl bg-blue-900 px-5 py-4 text-white">
-                    <div className="text-sm font-semibold">Built-in controls</div>
+                    <div className="text-sm font-semibold">A striking truth</div>
                     <div className="mt-1 text-xs text-white/80">
-                      Permissions, plan gating, and audit logs help you keep data secure and teams aligned.
+                      African pastors built this for you—because we understand African church administration: branches, welfare, projects, accountability, and real-life ministry needs.
                     </div>
                   </div>
                 </div>
@@ -301,7 +355,7 @@ function LandingPage() {
                 <div className="lg:col-span-2">
                   <div className="text-lg font-semibold text-gray-900">Designed for trust</div>
                   <div className="mt-2 text-sm text-gray-600">
-                    Your data matters. ChurchClerk supports role-based permissions, plan feature gating, and activity logs to help leaders stay accountable.
+                    Your church deserves clarity. With roles and permissions, and a record of changes, leaders can trust what they see.
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 justify-start lg:justify-end">
@@ -311,6 +365,24 @@ function LandingPage() {
                   <Link to="/login" className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50">
                     Sign in
                   </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-gray-200 bg-white p-6 sm:p-8">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <div className="text-lg font-semibold text-gray-900">Why choose ChurchClerk?</div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    We built this around how churches actually work in Africa: headquarters oversight, branches, welfare support, projects, and accountability.
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm text-gray-700">
+                  {["Headquarters + branch oversight", "Clear giving & spending records", "Simple for admins and leaders", "Grow without losing control"].map((t) => (
+                    <div key={t} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-semibold">
+                      {t}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -399,6 +471,7 @@ function LandingPage() {
 
               <div className="text-xs text-gray-500">
                 Display currency: <span className="font-semibold text-gray-700">{displayCurrency}</span>
+                {fxLoading ? <span className="ml-2">(updating…)</span> : null}
               </div>
             </div>
 
@@ -418,15 +491,10 @@ function LandingPage() {
                     const name = String(p?.name || "");
                     const isMostPopular = name.toLowerCase() === "standard";
                     const ghsPrice = p?.pricing?.GHS?.[billingInterval] ?? p?.priceByCurrency?.GHS?.[billingInterval] ?? 0;
-                    const displayPrice = !visitorIsGhana && usdToGhs ? Number(ghsPrice || 0) / Number(usdToGhs || 1) : ghsPrice;
+                    const displayPrice = Number(ghsPrice || 0) * Number(ghsToVisitorRate || 1);
                     const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
 
-                    const highlights = [
-                      p?.memberLimit === null ? "Unlimited members" : `Up to ${Number(p?.memberLimit || 0).toLocaleString()} members`,
-                      "Member management",
-                      "Attendance tracking",
-                      "Finance & budgeting"
-                    ];
+                    const highlights = getPlanHighlights(p);
 
                     return (
                       <motion.div
@@ -483,6 +551,15 @@ function LandingPage() {
               ) : null}
             </div>
 
+            <PlanComparisonTable
+              plans={plansForComparison}
+              title="Compare packages"
+              subtitle="This table updates automatically as plans change. Tap “See more” to view all features."
+              collapsible
+              collapsedCount={7}
+              priorityKeys={["financeModule", "budgeting", "branchesOverview", "programsEvents", "announcements", "reportsAnalytics"]}
+            />
+
             <div className="mt-10 rounded-2xl border border-indigo-200 bg-indigo-50 p-6">
               <div className="text-base font-semibold text-gray-900">Need a fully customized church management solution?</div>
               <div className="mt-2 text-sm text-gray-700">
@@ -515,17 +592,32 @@ function LandingPage() {
                 {
                   key: "security",
                   q: "Is our data secure?",
-                  a: "ChurchClerk uses role-based permissions and maintains activity logs for write actions to support accountability and safe operations."
+                  a: "Yes. You can control who can view, create, or edit records—and you can see a clear activity log of important changes."
                 },
                 {
                   key: "setup",
                   q: "How fast can we set this up?",
-                  a: "Most churches can create their church profile, add core users, and start recording members and attendance in minutes."
+                  a: "Most churches can set up their profile, add leaders, create branches, and start recording members within minutes."
+                },
+                {
+                  key: "hq",
+                  q: "Can our headquarters oversee multiple branches?",
+                  a: "Yes. You can manage branches under one headquarters and still keep reports clear and organized."
+                },
+                {
+                  key: "finance",
+                  q: "Can we track giving and expenses without confusion?",
+                  a: "Yes. Giving, income, expenses, welfare support, and project spending can be recorded in one place with clear reports."
+                },
+                {
+                  key: "budgeting",
+                  q: "Can we set a budget and check what we actually spent?",
+                  a: "Yes. Create budgets and compare planned vs actual spending—so the church stays disciplined and accountable."
                 },
                 {
                   key: "pricing",
                   q: "Can we upgrade later?",
-                  a: "Yes. Choose a plan that fits today and upgrade at any time as your team and needs grow."
+                  a: "Yes. Start with what fits today and upgrade anytime as your church grows."
                 },
                 {
                   key: "custom",

@@ -4,7 +4,7 @@ const router = express.Router();
 
 
 
-import {registerUser, loginUser, logoutUser, updatePassword, verifyEmail, forgotPassword, resetPassword} from "../controller/authController.js"
+import {registerUser, loginUser, logoutUser, updatePassword, verifyEmail, resendEmailVerification, forgotPassword, resetPassword} from "../controller/authController.js"
 
 
 
@@ -29,6 +29,8 @@ router.post("/register", registerUser);
 router.post("/login",  loginUser);
 
 router.post("/verify-email", verifyEmail);
+
+router.post("/resend-verification", resendEmailVerification);
 
 router.post("/forgot-password", forgotPassword);
 
