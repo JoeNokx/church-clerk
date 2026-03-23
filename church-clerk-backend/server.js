@@ -87,6 +87,7 @@ app.use("/api/v1/cell", Routes.cellRoute);
 app.use("/api/v1/group", Routes.groupRoute);
 app.use("/api/v1/department", Routes.departmentRoute);
 app.use("/api/v1/tithe", Routes.titheRoute);
+app.use("/api/v1/budgeting", Routes.budgetingRoute);
 app.use("/api/v1/pledge", Routes.pledgeRoute);
 app.use("/api/v1/general-expenses", Routes.generalExpensesRoute);
 app.use("/api/v1/income", Routes.incomeRoute);

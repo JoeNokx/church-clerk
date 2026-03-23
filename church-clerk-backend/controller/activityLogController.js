@@ -126,5 +126,22 @@ const getSingleActivityLog = async (req, res) => {
 };
 
 
+const getActivityLogMeta = async (req, res) => {
+    try {
+        const churchId = req.activeChurch?._id || null;
 
-export {getAllActivityLogs, getSingleActivityLog}
+        const query = {};
+        if (churchId) query.church = churchId;
+
+        const distinctModules = await activityLogModel.distinct("module", query);
+        const safe = Array.isArray(distinctModules) ? distinctModules.filter(Boolean).map((v) => String(v).trim()).filter(Boolean) : [];
+
+        const modules = Array.from(new Set(safe)).sort((a, b) => a.localeCompare(b));
+        return res.status(200).json({ modules });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+
+export { getAllActivityLogs, getSingleActivityLog, getActivityLogMeta };

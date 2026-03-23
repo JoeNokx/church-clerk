@@ -72,8 +72,14 @@ function PlanComparisonTable({ plans }) {
     specialFund: "specialFunds"
   };
 
+  const reverseAliases = {
+    announcements: ["announcement"],
+    specialFunds: ["specialFund"]
+  };
+
   const featureLabels = {
     financeModule: "Finance Module",
+    budgeting: "Budgeting",
     branchesOverview: "Branches Overview",
     programsEvents: "Programs & Events",
     reportsAnalytics: "Reports & Analytics",
@@ -83,7 +89,27 @@ function PlanComparisonTable({ plans }) {
   const toKey = (k) => featureAliases[String(k || "")] || String(k || "");
   const getFeatures = (p) => (p?.features && typeof p.features === "object" ? p.features : {});
 
-  const allKeys = Array.from(
+  const getFeatureValue = (plan, key) => {
+    const features = getFeatures(plan);
+
+    if (key === "budgeting") {
+      if (features?.budgeting !== undefined) return features.budgeting;
+      return features?.financeModule;
+    }
+
+    if (features?.[key] !== undefined) return features[key];
+
+    const candidates = reverseAliases?.[key] || [];
+    for (const alt of candidates) {
+      if (features?.[alt] !== undefined) return features[alt];
+    }
+
+    return undefined;
+  };
+
+  const labeledKeys = Object.keys(featureLabels);
+
+  const discoveredKeys = Array.from(
     new Set(
       rows.flatMap((p) =>
         Object.keys(getFeatures(p))
@@ -91,7 +117,9 @@ function PlanComparisonTable({ plans }) {
           .filter(Boolean)
       )
     )
-  ).filter((k) => rows.some((p) => Boolean(getFeatures(p)?.[k] ?? getFeatures(p)?.[Object.keys(featureAliases).find((a) => featureAliases[a] === k)])));
+  );
+
+  const allKeys = Array.from(new Set([...labeledKeys, ...discoveredKeys])).filter(Boolean);
 
   const sortedKeys = allKeys
     .slice()
@@ -157,7 +185,7 @@ function PlanComparisonTable({ plans }) {
                 <td className="sticky left-0 z-10 bg-white px-4 py-3 text-xs text-gray-700 border-b border-gray-100">{featureLabels[k] || humanizeFeatureKey(k)}</td>
                 {rows.map((p) => (
                   <td key={`${p?._id || p?.name}-${k}`} className="px-4 py-3 text-xs text-gray-700 border-b border-gray-100">
-                    {renderBool(getFeatures(p)?.[k], `${k} ${getFeatures(p)?.[k] ? "enabled" : "disabled"}`)}
+                    {renderBool(Boolean(getFeatureValue(p, k)), `${k} ${getFeatureValue(p, k) ? "enabled" : "disabled"}`)}
                   </td>
                 ))}
               </tr>

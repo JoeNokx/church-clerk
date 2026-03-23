@@ -13,6 +13,7 @@ export const requirePermission = (moduleKey, actionKey) => {
       m === "members" ||
       m === "attendance" ||
       m === "announcements" ||
+      m === "budgeting" ||
       m === "churchProjects" ||
       m === "specialFunds" ||
       m === "offerings" ||
@@ -56,6 +57,11 @@ export const requirePermission = (moduleKey, actionKey) => {
     if (!featureKey) return true;
 
     const features = plan?.features || {};
+
+    if (featureKey === "budgeting") {
+      if (features?.budgeting !== undefined) return Boolean(features.budgeting);
+      return Boolean(features?.financeModule);
+    }
 
     if (featureKey === "dashboard") return features?.dashboard !== false;
     if (featureKey === "announcements") return Boolean(features?.announcements || features?.announcement);

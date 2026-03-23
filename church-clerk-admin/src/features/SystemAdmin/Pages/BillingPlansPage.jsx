@@ -31,6 +31,7 @@ const FEATURE_GROUPS = [
     label: "FINANCE",
     items: [
       { key: "tithes", label: "Tithes" },
+      { key: "budgeting", label: "Budgeting" },
       { key: "specialFund", label: "Special fund" },
       { key: "offerings", label: "Offerings" },
       { key: "welfare", label: "Welfare" },

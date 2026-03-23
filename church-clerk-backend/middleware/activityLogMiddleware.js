@@ -67,6 +67,7 @@ function inferModule(req) {
     ["/api/v1/general-expenses", "GeneralExpenses"],
     ["/api/v1/special-fund", "SpecialFunds"],
     ["/api/v1/offering", "Offerings"],
+    ["/api/v1/budgeting", "Budgeting"],
     ["/api/v1/financial-statement", "FinancialStatement"],
     ["/api/v1/church-project", "ChurchProjects"],
     ["/api/v1/welfare", "Welfare"],

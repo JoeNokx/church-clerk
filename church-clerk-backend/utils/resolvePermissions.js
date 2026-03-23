@@ -113,12 +113,15 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
   const effectiveRole = normalizeRoleKey(role);
   if (!effectiveRole) return {};
 
+  const roleDefaults = ROLE_PERMISSIONS?.[effectiveRole] && typeof ROLE_PERMISSIONS[effectiveRole] === "object" ? ROLE_PERMISSIONS[effectiveRole] : null;
+
   try {
     if (roleRef) {
       const dbRole = await Role.findOne({ _id: roleRef }).select("permissions isActive").lean();
       if (dbRole?._id && dbRole?.isActive === false) return {};
       if (dbRole?.permissions && typeof dbRole.permissions === "object") {
-        const resolved = resolveFromPermissionObject(dbRole.permissions);
+        const merged = roleDefaults ? { ...roleDefaults, ...dbRole.permissions } : dbRole.permissions;
+        const resolved = resolveFromPermissionObject(merged);
         if (Object.keys(resolved).length) return expandLegacyPermissions(resolved);
       }
     } else if (scope) {
@@ -128,7 +131,8 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
 
       if (dbRole?._id && dbRole?.isActive === false) return {};
       if (dbRole?.permissions && typeof dbRole.permissions === "object") {
-        const resolved = resolveFromPermissionObject(dbRole.permissions);
+        const merged = roleDefaults ? { ...roleDefaults, ...dbRole.permissions } : dbRole.permissions;
+        const resolved = resolveFromPermissionObject(merged);
         if (Object.keys(resolved).length) return expandLegacyPermissions(resolved);
       }
     }

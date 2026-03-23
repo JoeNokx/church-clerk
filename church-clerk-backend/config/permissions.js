@@ -13,6 +13,7 @@ export const MODULES = {
   attendance: CRUD_VIEW,
   announcements: CRUD_VIEW,
   tithe: CRUD_VIEW,
+  budgeting: CRUD_VIEW,
   churchProjects: CRUD_VIEW,
   specialFunds: CRUD_VIEW,
   offerings: CRUD_VIEW,

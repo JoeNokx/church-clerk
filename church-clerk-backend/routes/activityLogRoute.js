@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import {getAllActivityLogs, getSingleActivityLog } from "../controller/activityLogController.js"
+import {getAllActivityLogs, getSingleActivityLog, getActivityLogMeta } from "../controller/activityLogController.js"
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
@@ -18,6 +18,17 @@ router.get(
   authorizeRoles("churchadmin"),
   requirePermission("settingsAuditLog", "read"),
   getAllActivityLogs
+);
+
+router.get(
+  "/meta",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("churchadmin"),
+  requirePermission("settingsAuditLog", "read"),
+  getActivityLogMeta
 );
 router.get(
   "/activity-logs/:id",

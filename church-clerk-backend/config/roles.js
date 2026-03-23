@@ -31,6 +31,7 @@ export const ROLE_PERMISSIONS = {
 
     // Finance modules (view-only)
     tithe: ["read"],
+    budgeting: ["read"],
     churchProjects: ["read"],
     specialFunds: ["read"],
     offerings: ["read"],
@@ -49,6 +50,7 @@ export const ROLE_PERMISSIONS = {
     visitors: ["read", "create", "update", "delete"],
     events: ["read", "create", "update", "delete"],
     tithe: ["read", "create", "update", "delete"],
+    budgeting: ["read", "create", "update", "delete"],
     announcements: ["read", "create", "update", "delete"],
     finance: ["read"],
     billing: ["read", "create", "update", "delete"],
@@ -70,6 +72,7 @@ export const ROLE_PERMISSIONS = {
     visitors: ["read"],
     announcements: ["read", "create"],
     tithe: ["read", "create"],
+    budgeting: ["read", "create"],
     offerings: ["read", "create"],
     welfare: ["read"],
     expenses: ["read", "create", "update"],

@@ -41,6 +41,7 @@ const planSchema = new mongoose.Schema(
 
       // FINANCE
       tithes: { type: Boolean, default: false },
+      budgeting: { type: Boolean, default: false },
       specialFund: { type: Boolean, default: false },
       specialFunds: { type: Boolean, default: false },
       offerings: { type: Boolean, default: false },

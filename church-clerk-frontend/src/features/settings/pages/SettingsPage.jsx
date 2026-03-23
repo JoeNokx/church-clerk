@@ -11,7 +11,7 @@ import { Country, State } from "country-state-city";
 import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
 import { AFRICAN_CURRENCY_CODES } from "../../../shared/utils/africanCurrencies.js";
 import { updateMyPassword, updateMyProfile } from "../../auth/services/auth.api.js";
-import { getActivityLogs } from "../../activityLog/services/activityLog.api.js";
+import { getActivityLogMeta, getActivityLogs } from "../../activityLog/services/activityLog.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import {
@@ -611,6 +611,7 @@ function SettingsPage() {
   const [auditModule, setAuditModule] = useState("");
   const [auditAction, setAuditAction] = useState("");
   const [auditRole, setAuditRole] = useState("");
+  const [auditModuleOptions, setAuditModuleOptions] = useState([]);
   const [auditDateFrom, setAuditDateFrom] = useState("");
   const [auditDateTo, setAuditDateTo] = useState("");
   const [auditPage, setAuditPage] = useState(1);
@@ -793,6 +794,44 @@ function SettingsPage() {
     if (tab !== "audit") return;
 
     fetchAuditLogs({ page: 1 });
+  }, [tab, canRead]);
+
+  useEffect(() => {
+    if (!canRead) return;
+    if (tab !== "audit") return;
+
+    const fallback = [
+      "Authentication",
+      "Members",
+      "Attendance",
+      "Events",
+      "Announcements",
+      "Tithe",
+      "Income",
+      "Expense",
+      "SpecialFunds",
+      "Offerings",
+      "Welfare",
+      "Church",
+      "Settings",
+      "ReportsAnalytics",
+      "Dashboard",
+      "System"
+    ];
+
+    (async () => {
+      try {
+        const res = await getActivityLogMeta();
+        const mods = Array.isArray(res?.data?.modules) ? res.data.modules : [];
+        const cleaned = mods
+          .map((m) => String(m || "").trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+        setAuditModuleOptions(cleaned.length ? cleaned : fallback);
+      } catch (e) {
+        setAuditModuleOptions(fallback);
+      }
+    })();
   }, [tab, canRead]);
 
   useEffect(() => {
@@ -1824,22 +1863,11 @@ function SettingsPage() {
                   className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                 >
                   <option value="">All Modules</option>
-                  <option value="Authentication">Authentication</option>
-                  <option value="Members">Members</option>
-                  <option value="Attendance">Attendance</option>
-                  <option value="Events">Events</option>
-                  <option value="Announcements">Announcements</option>
-                  <option value="Tithe">Tithe</option>
-                  <option value="Income">Income</option>
-                  <option value="Expense">Expense</option>
-                  <option value="SpecialFunds">SpecialFunds</option>
-                  <option value="Offerings">Offerings</option>
-                  <option value="Welfare">Welfare</option>
-                  <option value="Church">Church</option>
-                  <option value="Settings">Settings</option>
-                  <option value="ReportsAnalytics">ReportsAnalytics</option>
-                  <option value="Dashboard">Dashboard</option>
-                  <option value="System">System</option>
+                  {auditModuleOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
                 </select>
               </div>
 

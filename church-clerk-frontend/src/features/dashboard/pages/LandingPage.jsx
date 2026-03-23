@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
 import http from "../../../shared/services/http.js";
@@ -18,6 +19,7 @@ function LandingPage() {
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
   const [visitorIsGhana, setVisitorIsGhana] = useState(true);
   const [usdToGhs, setUsdToGhs] = useState(null);
+  const [faqOpen, setFaqOpen] = useState("security");
 
   useEffect(() => {
     let cancelled = false;
@@ -102,77 +104,267 @@ function LandingPage() {
 
   const displayCurrency = visitorIsGhana || !usdToGhs ? "GHS" : "USD";
 
+  const sectionFade = {
+    hidden: { opacity: 0, y: 14 },
+    show: { opacity: 1, y: 0 }
+  };
+
+  const features = useMemo(() => {
+    return [
+      {
+        title: "Members & Families",
+        desc: "Keep member records complete: contacts, groups, roles, and branch assignments.",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+            <path d="M16 11a4 4 0 10-8 0 4 4 0 008 0Z" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M4 20a8 8 0 0116 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        )
+      },
+      {
+        title: "Attendance Tracking",
+        desc: "Track services, meetings, and follow-ups with reliable reporting.",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+            <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M8 12l2.2 2.2L16 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )
+      },
+      {
+        title: "Announcements & Communication",
+        desc: "Send and manage announcements with subscription-based access control.",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+            <path d="M4 10v4a2 2 0 002 2h1l5 4V4L7 8H6a2 2 0 00-2 2Z" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M16 8a4 4 0 010 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        )
+      },
+      {
+        title: "Finance & Giving",
+        desc: "Tithes, offerings, income and expenses—all in one consistent system.",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+            <path d="M12 1v22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M17 5.5c0-1.9-1.8-3.5-5-3.5S7 3.6 7 5.5 8.8 9 12 9s5 1.6 5 3.5S15.2 16 12 16s-5-1.6-5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        )
+      },
+      {
+        title: "Budgeting",
+        desc: "Plan your spending and compare planned vs actual expenses across modules.",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+            <path d="M4 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M8 19V10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M12 19V7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M16 19V13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M20 19V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        )
+      },
+      {
+        title: "Roles, Permissions & Audit Log",
+        desc: "Stay accountable: role-based access and searchable activity logs.",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+            <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M9 12l2 2 4-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )
+      }
+    ];
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       <LandingHeader />
 
       <main>
-        <section className="bg-white">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20 text-center">
-            <h1 className="text-3xl sm:text-5xl font-semibold text-gray-900 tracking-tight">
-              Run your church admin in one simple system
-            </h1>
-            <p className="mt-4 text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-              Manage members, attendance, and giving with clear records your team can trust—without spreadsheets.
-            </p>
+        <section className="relative overflow-hidden bg-white">
+          <div className="absolute inset-0">
+            <div className="absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-blue-600/10 blur-3xl" />
+            <div className="absolute -bottom-56 right-0 h-[520px] w-[520px] rounded-full bg-indigo-600/10 blur-3xl" />
+          </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                to="/register"
-                className="w-full sm:w-auto inline-flex justify-center items-center rounded-lg bg-blue-900 text-white text-sm font-semibold px-5 py-3 shadow-sm hover:bg-blue-800"
+          <div className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-center">
+              <motion.div initial="hidden" animate="show" variants={sectionFade} transition={{ duration: 0.6 }}>
+                <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-blue-700" />
+                  Modern church management, built for real ministry admin
+                </div>
+
+                <h1 className="mt-5 text-3xl sm:text-5xl font-semibold text-gray-900 tracking-tight">
+                  Run your church operations with clarity, accountability, and speed.
+                </h1>
+
+                <p className="mt-4 text-base sm:text-lg text-gray-600 max-w-xl">
+                  Manage members, attendance, communication, and finance in one secure system—so your team spends less time on spreadsheets and more time on ministry.
+                </p>
+
+                <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
+                  <Link
+                    to="/register"
+                    className="w-full sm:w-auto inline-flex justify-center items-center rounded-lg bg-blue-900 text-white text-sm font-semibold px-5 py-3 shadow-sm hover:bg-blue-800"
+                  >
+                    Start Free Trial
+                  </Link>
+                  <a
+                    href="#pricing"
+                    className="w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 text-gray-800 text-sm font-semibold px-5 py-3 hover:bg-gray-50"
+                  >
+                    View Pricing
+                  </a>
+                </div>
+
+                <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {["Fast setup", "Role-based access", "Audit-ready records"].map((t) => (
+                    <div key={t} className="rounded-xl border border-gray-200 bg-white/70 px-4 py-3 text-sm font-semibold text-gray-700">
+                      {t}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="rounded-3xl border border-gray-200 bg-white shadow-sm"
               >
-                Get Started
-              </Link>
-              <Link
-                to="/login"
-                className="w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 text-gray-800 text-sm font-semibold px-5 py-3 hover:bg-gray-50"
-              >
-                Login
-              </Link>
+                <div className="border-b border-gray-200 p-6">
+                  <div className="text-sm font-semibold text-gray-900">What you can manage</div>
+                  <div className="mt-1 text-xs text-gray-500">A unified system that scales with your church.</div>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      "Members",
+                      "Attendance",
+                      "Events",
+                      "Announcements",
+                      "Tithes & Offerings",
+                      "Income & Expenses",
+                      "Budgeting",
+                      "Reports"
+                    ].map((item) => (
+                      <div key={item} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 rounded-2xl bg-blue-900 px-5 py-4 text-white">
+                    <div className="text-sm font-semibold">Built-in controls</div>
+                    <div className="mt-1 text-xs text-white/80">
+                      Permissions, plan gating, and audit logs help you keep data secure and teams aligned.
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        <section className="bg-gray-50 border-t border-gray-200">
+        <section id="features" className="bg-gray-50 border-t border-gray-200">
           <div className="mx-auto w-full max-w-6xl px-4 py-14">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-900">Built for real ministry admin</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Everything you need to stay organized, accountable, and consistent.
+            <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={sectionFade} transition={{ duration: 0.5 }} className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">Everything you need—organized by real church workflows</h2>
+              <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-3xl mx-auto">
+                Built for staff and leaders: clear records, consistent reports, and the flexibility to grow from a small team to multiple branches.
               </p>
-            </div>
+            </motion.div>
 
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
-                <h3 className="text-base font-semibold text-gray-900">Member records that stay clean</h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Capture profiles, contacts, and church assignments so your data stays complete and easy to find.
-                </p>
-              </div>
+              {features.map((f, idx) => (
+                <motion.div
+                  key={f.title}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.45, delay: idx * 0.05 }}
+                  className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 p-6"
+                >
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-900">{f.icon}</div>
+                  <h3 className="mt-4 text-base font-semibold text-gray-900">{f.title}</h3>
+                  <p className="mt-2 text-sm text-gray-600">{f.desc}</p>
+                </motion.div>
+              ))}
+            </div>
 
-              <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
-                <h3 className="text-base font-semibold text-gray-900">Attendance you can trust</h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Track service attendance and follow-ups with consistent reporting for leaders and teams.
-                </p>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
-                <h3 className="text-base font-semibold text-gray-900">Simple giving and finance tracking</h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Record tithes and offerings with clear summaries so you can report with confidence.
-                </p>
+            <div className="mt-10 rounded-3xl border border-gray-200 bg-white p-6 sm:p-8">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
+                <div className="lg:col-span-2">
+                  <div className="text-lg font-semibold text-gray-900">Designed for trust</div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    Your data matters. ChurchClerk supports role-based permissions, plan feature gating, and activity logs to help leaders stay accountable.
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 justify-start lg:justify-end">
+                  <Link to="/register" className="inline-flex items-center justify-center rounded-lg bg-blue-900 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">
+                    Create account
+                  </Link>
+                  <Link to="/login" className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+                    Sign in
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="bg-white border-t border-gray-200">
+        <section id="how" className="bg-white border-t border-gray-200">
           <div className="mx-auto w-full max-w-6xl px-4 py-14">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-900">Pricing that scales with your team</h2>
-              <p className="mt-2 text-sm text-gray-600">Start simple, upgrade when you’re ready.</p>
+            <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={sectionFade} transition={{ duration: 0.5 }} className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">How it works</h2>
+              <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">Get started quickly. Your team can be productive in minutes.</p>
+            </motion.div>
+
+            <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+              {[
+                {
+                  step: "01",
+                  title: "Create your church",
+                  desc: "Register, set up church profile, branches, and your core team roles."
+                },
+                {
+                  step: "02",
+                  title: "Add members & services",
+                  desc: "Capture member records and track attendance with clear, consistent data."
+                },
+                {
+                  step: "03",
+                  title: "Track giving & spending",
+                  desc: "Record finance activity, build budgets, and report with confidence."
+                }
+              ].map((item, idx) => (
+                <motion.div
+                  key={item.step}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.45, delay: idx * 0.05 }}
+                  className="rounded-2xl border border-gray-200 bg-gray-50 p-6"
+                >
+                  <div className="text-xs font-semibold text-blue-900">STEP {item.step}</div>
+                  <div className="mt-2 text-base font-semibold text-gray-900">{item.title}</div>
+                  <div className="mt-2 text-sm text-gray-600">{item.desc}</div>
+                </motion.div>
+              ))}
             </div>
+          </div>
+        </section>
+
+        <section id="pricing" className="bg-white border-t border-gray-200">
+          <div className="mx-auto w-full max-w-6xl px-4 py-14">
+            <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={sectionFade} transition={{ duration: 0.5 }} className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">Pricing that scales with your church</h2>
+              <p className="mt-2 text-sm sm:text-base text-gray-600">Start simple, upgrade when you’re ready.</p>
+            </motion.div>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3">
               <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
@@ -204,6 +396,10 @@ function LandingPage() {
                   Yearly
                 </button>
               </div>
+
+              <div className="text-xs text-gray-500">
+                Display currency: <span className="font-semibold text-gray-700">{displayCurrency}</span>
+              </div>
             </div>
 
             <div className="mt-10">
@@ -217,7 +413,7 @@ function LandingPage() {
 
               {!loadingPlans && plansSorted.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
-                  {plansSorted.map((p) => {
+                  {plansSorted.map((p, idx) => {
                     const id = p?._id;
                     const name = String(p?.name || "");
                     const isMostPopular = name.toLowerCase() === "standard";
@@ -225,9 +421,20 @@ function LandingPage() {
                     const displayPrice = !visitorIsGhana && usdToGhs ? Number(ghsPrice || 0) / Number(usdToGhs || 1) : ghsPrice;
                     const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
 
+                    const highlights = [
+                      p?.memberLimit === null ? "Unlimited members" : `Up to ${Number(p?.memberLimit || 0).toLocaleString()} members`,
+                      "Member management",
+                      "Attendance tracking",
+                      "Finance & budgeting"
+                    ];
+
                     return (
-                      <div
+                      <motion.div
                         key={id}
+                        initial={{ opacity: 0, y: 14 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-60px" }}
+                        transition={{ duration: 0.45, delay: idx * 0.04 }}
                         className={`relative rounded-2xl bg-white p-6 flex flex-col ${
                           isMostPopular ? "shadow-md ring-2 ring-blue-900" : "shadow-sm ring-1 ring-gray-200"
                         }`}
@@ -245,10 +452,16 @@ function LandingPage() {
                         </div>
 
                         <div className="mt-6 space-y-2 text-sm text-gray-600">
-                          <div>{p?.memberLimit === null ? "Unlimited members" : `Up to ${Number(p?.memberLimit || 0).toLocaleString()} members`}</div>
-                          <div>Member management</div>
-                          <div>Attendance tracking</div>
-                          <div>Finance module access</div>
+                          {highlights.map((h) => (
+                            <div key={h} className="flex items-center gap-2">
+                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-50 text-green-700">
+                                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                                  <path d="M6 12.5l3.2 3.2L18 7.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </span>
+                              <span>{h}</span>
+                            </div>
+                          ))}
                         </div>
 
                         <div className="mt-6">
@@ -263,7 +476,7 @@ function LandingPage() {
                             Get started
                           </Link>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -290,17 +503,91 @@ function LandingPage() {
           </div>
         </section>
 
+        <section className="bg-gray-50 border-t border-gray-200">
+          <div className="mx-auto w-full max-w-6xl px-4 py-14">
+            <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={sectionFade} transition={{ duration: 0.5 }} className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">Frequently asked questions</h2>
+              <p className="mt-2 text-sm sm:text-base text-gray-600">Quick answers for leaders and admins.</p>
+            </motion.div>
+
+            <div id="faq" className="mt-10 mx-auto max-w-3xl space-y-3">
+              {[
+                {
+                  key: "security",
+                  q: "Is our data secure?",
+                  a: "ChurchClerk uses role-based permissions and maintains activity logs for write actions to support accountability and safe operations."
+                },
+                {
+                  key: "setup",
+                  q: "How fast can we set this up?",
+                  a: "Most churches can create their church profile, add core users, and start recording members and attendance in minutes."
+                },
+                {
+                  key: "pricing",
+                  q: "Can we upgrade later?",
+                  a: "Yes. Choose a plan that fits today and upgrade at any time as your team and needs grow."
+                },
+                {
+                  key: "custom",
+                  q: "Do you offer custom solutions?",
+                  a: "Yes. Ministry Plus provides custom workflows, integrations, and tailored features for your church." 
+                }
+              ].map((row) => {
+                const isOpen = faqOpen === row.key;
+                return (
+                  <div key={row.key} className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setFaqOpen((v) => (v === row.key ? "" : row.key))}
+                      className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                    >
+                      <div className="text-sm font-semibold text-gray-900">{row.q}</div>
+                      <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                          <path
+                            d={isOpen ? "M6 12h12" : "M6 12h12M12 6v12"}
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </div>
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {isOpen ? (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.25 }}
+                        >
+                          <div className="px-5 pb-5 text-sm text-gray-600">{row.a}</div>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         <section className="bg-blue-900">
           <div className="mx-auto w-full max-w-6xl px-4 py-14 text-center">
-            <p className="text-white text-lg font-medium">
-              Ready to set up your church and start organizing your records today?
-            </p>
-            <div className="mt-6">
+            <p className="text-white text-lg font-medium">Ready to organize your church records and operations today?</p>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 to="/register"
                 className="inline-flex justify-center items-center rounded-lg bg-white text-blue-900 text-sm font-semibold px-6 py-3 shadow-sm hover:bg-gray-100"
               >
                 Create your account
+              </Link>
+              <Link
+                to="/login"
+                className="inline-flex justify-center items-center rounded-lg border border-white/30 bg-white/10 text-white text-sm font-semibold px-6 py-3 shadow-sm hover:bg-white/15"
+              >
+                Sign in
               </Link>
             </div>
           </div>

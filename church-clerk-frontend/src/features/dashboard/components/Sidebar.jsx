@@ -49,6 +49,7 @@ function Sidebar() {
 
   const showFinance =
     (planAllows("Tithe") && canRead("tithe")) ||
+    (planAllows("Budgeting") && canRead("budgeting")) ||
     (planAllows("ChurchProjects") && canRead("churchProjects")) ||
     (planAllows("SpecialFunds") && canRead("specialFunds")) ||
     (planAllows("Offerings") && canRead("offerings")) ||
@@ -216,6 +217,18 @@ function Sidebar() {
                       </svg>
                     </span>
                     Tithe
+                  </NavLink>
+                ) : null}
+
+                {planAllows("Budgeting") && canRead("budgeting") ? (
+                  <NavLink to={toPage("budgeting")} className={itemClass("budgeting")}>
+                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                        <path d="M7 4h10v16H7V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                    </span>
+                    Budgeting
                   </NavLink>
                 ) : null}
 

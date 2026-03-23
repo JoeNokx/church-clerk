@@ -38,6 +38,7 @@ import departmentRoute from "./ministryRoute/departmentRoute.js";
 
 // finance routes
 import titheRoute from "./financeRoute/titheRoute.js";
+import budgetingRoute from "./financeRoute/budgetingRoute.js";
 import incomeRoute from "./financeRoute/incomeExpenseRoute/incomeRoute.js";
 import expenseRoute from "./financeRoute/incomeExpenseRoute/expenseRoute.js";
 import specialFundRoute from "./financeRoute/specialFundRoute.js";
@@ -75,6 +76,7 @@ export {
   groupRoute,
   departmentRoute,
   titheRoute,
+  budgetingRoute,
   pledgeRoute,
   welfareRoute,
   generalExpensesRoute,

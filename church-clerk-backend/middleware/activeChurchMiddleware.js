@@ -89,6 +89,10 @@ export const setActiveChurch = async (req, res, next) => {
       if (key === "announcements") return Boolean(features?.announcements || features?.announcement);
       if (key === "specialFunds") return Boolean(features?.specialFunds || features?.specialFund);
       if (key === "dashboard") return features?.dashboard !== false;
+      if (key === "budgeting") {
+        if (features?.budgeting !== undefined) return Boolean(features.budgeting);
+        return Boolean(features?.financeModule);
+      }
 
       return Boolean(features?.[key]);
     };
@@ -102,6 +106,7 @@ export const setActiveChurch = async (req, res, next) => {
       Ministries: true,
       Announcements: true,
       Tithe: false,
+      Budgeting: false,
       ChurchProjects: false,
       SpecialFunds: false,
       Offerings: false,
@@ -125,6 +130,7 @@ export const setActiveChurch = async (req, res, next) => {
     baseModules.Ministries = featureEnabled("ministries");
     baseModules.Announcements = featureEnabled("announcements");
     baseModules.Tithe = featureEnabled("tithes");
+    baseModules.Budgeting = featureEnabled("budgeting");
 
     baseModules.ChurchProjects = featureEnabled("churchProjects");
     baseModules.SpecialFunds = featureEnabled("specialFunds");

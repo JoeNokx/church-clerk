@@ -7,3 +7,7 @@ export const getActivityLogs = async (params) => {
 export const getActivityLog = async (id) => {
   return await http.get(`/activity-log/activity-logs/${id}`);
 };
+
+export const getActivityLogMeta = async () => {
+  return await http.get("/activity-log/meta");
+};

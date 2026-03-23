@@ -30,6 +30,7 @@ const MinistryDetailsPage = React.lazy(() => import("../../ministries/pages/Mini
 const BranchesOverviewPage = React.lazy(() => import("../../church/pages/BranchesOverviewPage.jsx"));
 const WelfarePage = React.lazy(() => import("../../welfare/pages/WelfarePage.jsx"));
 const ExpensesPage = React.lazy(() => import("../../expenses/pages/ExpensesPage.jsx"));
+const BudgetingPage = React.lazy(() => import("../../budgeting/pages/BudgetingPage.jsx"));
 const PledgesPage = React.lazy(() => import("../../pledge/pages/PledgesPage.jsx"));
 const PledgeDetailsPage = React.lazy(() => import("../../pledge/pages/PledgeDetailsPage.jsx"));
 const FinancialStatementPage = React.lazy(() => import("../../financialStatement/pages/FinancialStatementPage.jsx"));
@@ -893,6 +894,7 @@ function DashboardHome() {
   if (page === "pledges") PageComponent = PledgesPage;
   if (page === "pledge-details") PageComponent = PledgeDetailsPage;
   if (page === "expenses") PageComponent = ExpensesPage;
+  if (page === "budgeting") PageComponent = BudgetingPage;
   if (page === "financial-statement") PageComponent = FinancialStatementPage;
   if (page === "settings") PageComponent = SettingsPage;
   if (page === "reports-analytics") PageComponent = ReportsAnalyticsPage;
