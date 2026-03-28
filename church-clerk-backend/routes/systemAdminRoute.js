@@ -12,7 +12,10 @@ import {
   getSystemAuditLogById,
   getSystemReferralSummary,
   getSystemReferralHistory,
-  getGlobalAnnouncementWalletKpis
+  getGlobalAnnouncementWalletKpis,
+  listChurchSenderIdRequests,
+  approveChurchSenderId,
+  rejectChurchSenderId
 } from "../controller/systemAdminController.js";
 import {
   listSystemInAppAnnouncements,
@@ -52,6 +55,33 @@ router.get(
   authorizeRoles("superadmin", "supportadmin"),
   requirePermission("settingsChurchProfile", "read"),
   getSystemChurchById
+);
+
+router.get(
+  "/sender-id/requests",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  requirePermission("settingsChurchProfile", "read"),
+  listChurchSenderIdRequests
+);
+
+router.patch(
+  "/churches/:id/sender-id/approve",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  requirePermission("settingsChurchProfile", "update"),
+  approveChurchSenderId
+);
+
+router.patch(
+  "/churches/:id/sender-id/reject",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  requirePermission("settingsChurchProfile", "update"),
+  rejectChurchSenderId
 );
 router.get(
   "/roles",

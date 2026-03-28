@@ -45,6 +45,25 @@ const churchSchema = new mongoose.Schema({
   phoneNumber: { type: String, trim: true },
   email: { type: String, lowercase: true, trim: true },
 
+  sender_id: {
+    type: String,
+    default: null,
+    trim: true
+  },
+  sender_id_status: {
+    type: String,
+    enum: ["none", "pending", "approved", "rejected"],
+    default: "none"
+  },
+  sender_id_requested_at: {
+    type: Date,
+    default: null
+  },
+  sender_id_approved_at: {
+    type: Date,
+    default: null
+  },
+
   referralCodeInput: {
   type: String,
   trim: true,

@@ -447,18 +447,17 @@ const getSystemReferralHistory = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
-// GET dashboard stats for superadmin
 const getDashboardStats = async (req, res) => {
   try {
     const totalChurches = await Church.countDocuments();
     const totalMembers = await Member.countDocuments();
     const totalUsers = await User.countDocuments();
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Dashboard stats fetched successfully",
       data: {
         totalChurches,
@@ -467,7 +466,7 @@ const getDashboardStats = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -532,6 +531,129 @@ const getGlobalAnnouncementWalletKpis = async (req, res) => {
   }
 };
 
+const listChurchSenderIdRequests = async (req, res) => {
+  try {
+    const { status = "pending", search = "", page = 1, limit = 25 } = req.query;
+
+    const safeStatus = String(status || "").trim().toLowerCase();
+    const safeSearch = String(search || "").trim();
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(200, Math.max(1, parseInt(limit, 10) || 25));
+    const skip = (pageNum - 1) * limitNum;
+
+    const filter = {
+      sender_id: { $exists: true, $nin: [null, ""] }
+    };
+
+    if (safeStatus && safeStatus !== "all") {
+      filter.sender_id_status = safeStatus;
+    } else {
+      filter.sender_id_status = { $in: ["pending", "approved", "rejected"] };
+    }
+
+    if (safeSearch) {
+      const regex = new RegExp(safeSearch, "i");
+      filter.$or = [
+        { name: regex },
+        { email: regex },
+        { phoneNumber: regex },
+        { city: regex },
+        { region: regex },
+        { sender_id: regex }
+      ];
+    }
+
+    const totalResult = await Church.countDocuments(filter);
+    const totalPages = Math.max(1, Math.ceil(totalResult / limitNum));
+
+    const rows = await Church.find(filter)
+      .select(
+        "name type email phoneNumber city region sender_id sender_id_status sender_id_requested_at sender_id_approved_at createdAt"
+      )
+      .sort({ sender_id_requested_at: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    return res.status(200).json({
+      message: "Sender ID requests fetched",
+      data: rows,
+      pagination: {
+        totalResult,
+        totalPages,
+        currentPage: pageNum,
+        hasPrev: pageNum > 1,
+        hasNext: pageNum < totalPages,
+        prevPage: pageNum > 1 ? pageNum - 1 : null,
+        nextPage: pageNum < totalPages ? pageNum + 1 : null,
+        limit: limitNum
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const approveChurchSenderId = async (req, res) => {
+  try {
+    const id = String(req.params?.id || "").trim();
+    if (!id) return res.status(400).json({ message: "Church id is required" });
+
+    const church = await Church.findById(id);
+    if (!church) return res.status(404).json({ message: "Church not found" });
+
+    const senderId = String(church?.sender_id || "").trim();
+    if (!senderId) {
+      return res.status(400).json({ message: "Church has no sender ID to approve" });
+    }
+
+    const normalized = senderId.replace(/\s+/g, "").toUpperCase();
+    if (normalized.length > 11) {
+      return res.status(400).json({ message: "Sender ID must be at most 11 characters" });
+    }
+    if (!/^[A-Z0-9]{1,11}$/.test(normalized)) {
+      return res.status(400).json({ message: "Sender ID must contain letters and numbers only (no spaces or symbols)" });
+    }
+
+    if (normalized !== senderId) {
+      church.sender_id = normalized;
+    }
+
+    church.sender_id_status = "approved";
+    church.sender_id_approved_at = new Date();
+    await church.save();
+
+    return res.status(200).json({
+      message: "Sender ID approved",
+      data: church
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const rejectChurchSenderId = async (req, res) => {
+  try {
+    const id = String(req.params?.id || "").trim();
+    if (!id) return res.status(400).json({ message: "Church id is required" });
+
+    const church = await Church.findById(id);
+    if (!church) return res.status(404).json({ message: "Church not found" });
+
+    church.sender_id_status = "rejected";
+    church.sender_id_approved_at = null;
+    await church.save();
+
+    return res.status(200).json({
+      message: "Sender ID rejected",
+      data: church
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   getAllChurches,
   getSystemChurchById,
@@ -544,5 +666,8 @@ export {
   getSystemAuditLogById,
   getSystemReferralSummary,
   getSystemReferralHistory,
-  getGlobalAnnouncementWalletKpis
+  getGlobalAnnouncementWalletKpis,
+  listChurchSenderIdRequests,
+  approveChurchSenderId,
+  rejectChurchSenderId
 };

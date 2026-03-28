@@ -64,6 +64,18 @@ export const updateSystemSettings = async (payload) => {
   return await http.patch("/system-admin/settings", payload);
 };
 
+export const listSenderIdRequests = async (params) => {
+  return await http.get("/system-admin/sender-id/requests", { params });
+};
+
+export const approveChurchSenderId = async (churchId) => {
+  return await http.patch(`/system-admin/churches/${churchId}/sender-id/approve`);
+};
+
+export const rejectChurchSenderId = async (churchId) => {
+  return await http.patch(`/system-admin/churches/${churchId}/sender-id/reject`);
+};
+
 export const getGlobalAnnouncementWalletKpis = async () => {
   return await http.get("/system-admin/announcements/wallet-kpis");
 };

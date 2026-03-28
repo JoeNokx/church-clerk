@@ -31,6 +31,16 @@ const announcementMessageSchema = new mongoose.Schema(
         message: "Invalid channels"
       }
     },
+    smsSenderId: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    sender_id_used: {
+      type: String,
+      default: null,
+      trim: true
+    },
     status: {
       type: String,
       enum: ["draft", "sent", "scheduled"],

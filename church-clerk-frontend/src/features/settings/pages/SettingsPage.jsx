@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
-import { getChurchProfile, searchHeadquartersChurches, updateChurchProfile } from "../../church/services/church.api.js";
+import { getChurchProfile, requestMyChurchSenderId, searchHeadquartersChurches, updateChurchProfile } from "../../church/services/church.api.js";
 import Skeleton from "react-loading-skeleton";
 import Select from "react-select";
 import currencyCodes from "currency-codes";
@@ -207,6 +207,15 @@ function SettingsPage() {
   const [foundedDate, setFoundedDate] = useState("");
   const [referralCodeInput, setReferralCodeInput] = useState("");
 
+  const [senderIdStatus, setSenderIdStatus] = useState("none");
+  const [senderIdCurrent, setSenderIdCurrent] = useState("");
+  const [senderIdRequestedAt, setSenderIdRequestedAt] = useState(null);
+  const [senderIdApprovedAt, setSenderIdApprovedAt] = useState(null);
+  const [senderIdInput, setSenderIdInput] = useState("");
+  const [senderIdLoading, setSenderIdLoading] = useState(false);
+  const [senderIdError, setSenderIdError] = useState("");
+  const [senderIdSuccess, setSenderIdSuccess] = useState("");
+
   const countryOptions = useMemo(() => {
     const allow = new Set(AFRICAN_COUNTRY_CODES);
     return Country.getAllCountries()
@@ -367,6 +376,77 @@ function SettingsPage() {
     };
   }, [hqDropdownOpen]);
 
+  const formatDateTimeShort = (value) => {
+    if (!value) return "—";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleString();
+  };
+
+  const senderStatusMeta = useMemo(() => {
+    const raw = String(senderIdStatus || "none").trim().toLowerCase();
+    const label =
+      raw === "approved"
+        ? "Approved: Active"
+        : raw === "pending"
+          ? "Pending: Under review"
+          : raw === "rejected"
+            ? "Rejected: Try again"
+            : "Not requested: Default (CHURCHCLERK)";
+    const cls =
+      raw === "approved"
+        ? "bg-green-100 text-green-700"
+        : raw === "pending"
+          ? "bg-blue-100 text-blue-700"
+          : raw === "rejected"
+            ? "bg-red-100 text-red-700"
+            : "bg-gray-100 text-gray-700";
+    return { raw, label, cls };
+  }, [senderIdStatus]);
+
+  const senderIdInputLen = useMemo(() => {
+    return String(senderIdInput || "").length;
+  }, [senderIdInput]);
+
+  const senderIdCharsLeft = useMemo(() => {
+    return Math.max(0, 11 - senderIdInputLen);
+  }, [senderIdInputLen]);
+
+  const handleRequestSenderId = async () => {
+    if (!activeChurch?._id) return;
+    if (!canWrite) return;
+
+    setSenderIdLoading(true);
+    setSenderIdError("");
+    setSenderIdSuccess("");
+
+    try {
+      const res = await requestMyChurchSenderId({ senderId: senderIdInput });
+      const updated = res?.data?.church || null;
+      if (updated) {
+        setSenderIdStatus(String(updated?.sender_id_status || "none"));
+        setSenderIdCurrent(String(updated?.sender_id || "").trim());
+        setSenderIdRequestedAt(updated?.sender_id_requested_at || null);
+        setSenderIdApprovedAt(updated?.sender_id_approved_at || null);
+      }
+
+      if (typeof switchChurch === "function") {
+        try {
+          await switchChurch(activeChurch._id);
+        } catch (e) {
+          void e;
+        }
+      }
+
+      setSenderIdInput("");
+      setSenderIdSuccess("Sender ID request submitted");
+    } catch (e) {
+      setSenderIdError(e?.response?.data?.message || e?.message || "Failed to submit sender ID request");
+    } finally {
+      setSenderIdLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!canRead) return;
     if (!activeChurch?._id) return;
@@ -437,6 +517,15 @@ function SettingsPage() {
         setCurrency(lockFlag ? (nextCurrency || "GHS") : (AFRICAN_CURRENCY_CODES.includes(nextCurrency) ? nextCurrency : "GHS"));
         setFoundedDate(formatYmdLocal(church?.foundedDate));
         setReferralCodeInput("");
+
+        const sStatus = String(church?.sender_id_status || "none").trim() || "none";
+        setSenderIdStatus(sStatus);
+        setSenderIdCurrent(String(church?.sender_id || "").trim());
+        setSenderIdRequestedAt(church?.sender_id_requested_at || null);
+        setSenderIdApprovedAt(church?.sender_id_approved_at || null);
+        setSenderIdInput("");
+        setSenderIdError("");
+        setSenderIdSuccess("");
       } catch (e) {
         if (cancelled) return;
         setProfileError(e?.response?.data?.message || e?.message || "Failed to load church profile");
@@ -1624,6 +1713,69 @@ function SettingsPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                   disabled
                 />
+              </div>
+
+              <div className="border-t border-gray-100 pt-5">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">SMS Sender ID</div>
+                    <div className="mt-1 text-xs text-gray-500">Request a custom sender ID for your church (requires manual approval).</div>
+                  </div>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${senderStatusMeta.cls}`}>{senderStatusMeta.label}</span>
+                </div>
+
+                {senderIdError ? <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{senderIdError}</div> : null}
+                {senderIdSuccess ? <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{senderIdSuccess}</div> : null}
+
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="text-xs font-semibold text-gray-500">Requested Sender ID</div>
+                    <div className="mt-1 text-sm font-semibold text-gray-900">{senderIdCurrent || "Default (CHURCHCLERK)"}</div>
+                    <div className="mt-1 text-xs text-gray-500">Requested: {formatDateTimeShort(senderIdRequestedAt)}</div>
+                    <div className="mt-1 text-xs text-gray-500">Approved: {formatDateTimeShort(senderIdApprovedAt)}</div>
+                    <div className="mt-2 text-xs text-gray-600">
+                      Your members will see your sender ID as: {senderStatusMeta.raw === "approved" ? (senderIdCurrent || "CHURCHCLERK") : "CHURCHCLERK"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">New Sender ID</label>
+                    <input
+                      value={senderIdInput}
+                      onChange={(e) => setSenderIdInput(String(e.target.value || "").toUpperCase())}
+                      maxLength={11}
+                      placeholder="E.g. MYCHURCH"
+                      className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                      disabled={!canWrite || senderIdLoading}
+                    />
+                    <div className="mt-1 text-xs text-gray-500">
+                      Max 11 characters. Letters and numbers only. {senderIdInputLen}/11 ({senderIdCharsLeft} left)
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRequestSenderId}
+                        disabled={!canWrite || senderIdLoading || !String(senderIdInput || "").trim()}
+                        className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                      >
+                        {senderIdLoading ? "Submitting..." : senderStatusMeta.raw === "pending" ? "Resubmit Request" : "Request Sender ID"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSenderIdError("");
+                          setSenderIdSuccess("");
+                          setSenderIdInput("");
+                        }}
+                        disabled={senderIdLoading}
+                        className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <button

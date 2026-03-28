@@ -16,6 +16,7 @@ import { activityLogMiddleware } from "./middleware/activityLogMiddleware.js";
 import { impersonationNotificationMiddleware } from "./middleware/impersonationNotificationMiddleware.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
 import { startSystemInAppAnnouncementWorker } from "./services/systemInAppAnnouncementWorker.js";
+import { startAnnouncementMessagingWorker } from "./services/announcementMessagingWorker.js";
 import { seedDefaultRoles } from "./services/roleSeeder.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -132,6 +133,7 @@ const startServer = async () => {
 
   startNotificationWorker({ intervalMs: 60_000 });
   startSystemInAppAnnouncementWorker({ intervalMs: 60_000 });
+  startAnnouncementMessagingWorker({ intervalMs: 60_000 });
 };
 
 startServer();

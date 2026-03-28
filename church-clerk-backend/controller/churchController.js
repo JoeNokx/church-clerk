@@ -373,7 +373,6 @@ const getMyBranches = async (req, res) => {
     const limitNum = Math.max(1, parseInt(limit));
     const skip = (pageNum - 1) * limitNum;
 
-    
     // ALWAYS use active church
     const headquarters = req.activeChurch;
 
@@ -438,51 +437,50 @@ const getMyBranches = async (req, res) => {
         })
       : 0;
 
-   
-      const pagination = {
-        totalResult: totalBranches,
-        totalPages,
-        currentPage: pageNum,
-        hasPrev: pageNum > 1,
-        hasNext: pageNum < totalPages,
-        prevPage: pageNum > 1 ? pageNum - 1 : null,
-        nextPage: pageNum < totalPages ? pageNum + 1 : null
-      }
+    const pagination = {
+      totalResult: totalBranches,
+      totalPages,
+      currentPage: pageNum,
+      hasPrev: pageNum > 1,
+      hasNext: pageNum < totalPages,
+      prevPage: pageNum > 1 ? pageNum - 1 : null,
+      nextPage: pageNum < totalPages ? pageNum + 1 : null
+    }
 
-     if (!branches || branches.length === 0) {
-            return res.status(200).json({
-              message: "No branches church found.",
-              kpis: {
-                totalBranches: totalBranchesAll,
-                totalMembers: totalMembersAll,
-                activeBranches
-              },
-              pagination: {
-                totalResult: 0,
-                totalPages: 0,
-                currentPage: pageNum,
-                hasPrev: false,
-                hasNext: false,
-                prevPage: null,
-                nextPage: null,
-              },
-              count: 0,
-              branches: [],
-            });
-          }
+    if (!branches || branches.length === 0) {
+      return res.status(200).json({
+        message: "No branches church found.",
+        kpis: {
+          totalBranches: totalBranchesAll,
+          totalMembers: totalMembersAll,
+          activeBranches
+        },
+        pagination: {
+          totalResult: 0,
+          totalPages: 0,
+          currentPage: pageNum,
+          hasPrev: false,
+          hasNext: false,
+          prevPage: null,
+          nextPage: null,
+        },
+        count: 0,
+        branches: [],
+      });
+    }
 
-            // SUCCESS RESPONSE
-          return res.status(200).json({
-            message: "branches fetched successfully",
-            kpis: {
-              totalBranches: totalBranchesAll,
-              totalMembers: totalMembersAll,
-              activeBranches
-            },
-            pagination,
-            count: branches.length,
-            branches
-          })
+    // SUCCESS RESPONSE
+    return res.status(200).json({
+      message: "branches fetched successfully",
+      kpis: {
+        totalBranches: totalBranchesAll,
+        totalMembers: totalMembersAll,
+        activeBranches
+      },
+      pagination,
+      count: branches.length,
+      branches
+    })
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -496,9 +494,83 @@ const getActiveChurchContext = (req, res) => {
 
   res.status(200).json({
     message: "Church context fetched",
-    activeChurch: { _id, name, type, parentChurch: parentChurch || null, canEdit, visibleModules, titheRecordingMode, currency },
+    activeChurch: {
+      _id,
+      name,
+      type,
+      parentChurch: parentChurch || null,
+      canEdit,
+      visibleModules,
+      titheRecordingMode,
+      currency
+    }
   });
 };
 
 
-export { createMyChurch, searchHeadquartersChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getActiveChurchContext }
+const requestMyChurchSenderId = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const planName = String(req.plan?.name || "").trim().toLowerCase();
+    const subscriptionStatus = String(req.subscription?.status || "").trim().toLowerCase();
+    const isTrial = subscriptionStatus === "free trial" || subscriptionStatus === "trialing";
+    const allowedByPlan = isTrial || planName === "standard" || planName === "premium";
+
+    if (!allowedByPlan) {
+      return res.status(403).json({
+        message: "Sender ID requests are available on Standard and Premium plans only"
+      });
+    }
+
+    const raw = String(req.body?.senderId || "").trim();
+    if (!raw) {
+      return res.status(400).json({ message: "senderId is required" });
+    }
+
+    const normalized = raw.replace(/\s+/g, "").toUpperCase();
+
+    if (normalized.length > 11) {
+      return res.status(400).json({ message: "Sender ID must be at most 11 characters" });
+    }
+
+    if (!/^[A-Z0-9]{1,11}$/.test(normalized)) {
+      return res.status(400).json({
+        message: "Sender ID must contain letters and numbers only (no spaces or symbols)"
+      });
+    }
+
+    const updated = await Church.findByIdAndUpdate(
+      churchId,
+      {
+        $set: {
+          sender_id: normalized,
+          sender_id_status: "pending",
+          sender_id_requested_at: new Date(),
+          sender_id_approved_at: null
+        }
+      },
+      { new: true, runValidators: true }
+    ).lean();
+
+    return res.status(200).json({
+      message: "Sender ID request submitted",
+      church: updated
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export {
+  createMyChurch,
+  searchHeadquartersChurches,
+  getMyChurchProfile,
+  updateMyChurchProfile,
+  getMyBranches,
+  getActiveChurchContext,
+  requestMyChurchSenderId
+}

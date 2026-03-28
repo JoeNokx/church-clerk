@@ -23,6 +23,10 @@ export const getActiveChurchContext = async () => {
   return await http.get("/church/active-context");
 };
 
+export const requestMyChurchSenderId = async (payload) => {
+  return await http.post("/church/sender-id/request", payload);
+};
+
 export const searchHeadquartersChurches = async (params) => {
   return await http.get("/church/churches", { params });
 };

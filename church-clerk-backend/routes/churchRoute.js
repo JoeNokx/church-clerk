@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { createMyChurch, searchHeadquartersChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getActiveChurchContext } from "../controller/churchController.js"
+import { createMyChurch, searchHeadquartersChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getActiveChurchContext, requestMyChurchSenderId } from "../controller/churchController.js"
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
@@ -48,6 +48,17 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("settingsChurchProfile", "read"),
   getActiveChurchContext
+);
+
+router.post(
+  "/sender-id/request",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("settingsChurchProfile", "update"),
+  requestMyChurchSenderId
 );
 
 router.get("/churches", searchHeadquartersChurches);

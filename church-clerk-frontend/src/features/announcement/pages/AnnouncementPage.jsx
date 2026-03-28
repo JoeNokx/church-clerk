@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useAuth } from "../../auth/useAuth.js";
+import ChurchContext from "../../church/church.store.js";
+import { requestMyChurchSenderId } from "../../church/services/church.api.js";
 import { getGroups } from "../../group/services/group.api.js";
 import { getCells } from "../../cell/services/cell.api.js";
 import { getDepartments } from "../../department/services/department.api.js";
@@ -26,6 +28,90 @@ function formatMoneyGhs(amount) {
   const n = Number(amount || 0);
   const safe = Number.isFinite(n) ? n : 0;
   return safe.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function SenderIdWarningModal({
+  open,
+  onClose,
+  onContinue,
+  onRequest,
+  loading,
+  error,
+  senderIdCurrent,
+  senderIdStatus,
+  remember,
+  onRememberChange
+}) {
+  if (!open) return null;
+
+  const status = String(senderIdStatus || "none").trim().toLowerCase();
+  const requested = String(senderIdCurrent || "").trim();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
+        <div className="border-b border-gray-200 px-5 py-4 flex items-start justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">Sender ID not approved</div>
+            <div className="mt-1 text-xs text-gray-500">
+              You can still send with the default sender ID (CHURCHCLERK), or request approval for your custom Sender ID.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="px-5 py-4">
+          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+            <div className="text-xs font-semibold text-gray-500">Current Sender ID status</div>
+            <div className="mt-1 text-sm font-semibold text-gray-900">
+              {status === "pending" ? "Pending: Under review" : status === "rejected" ? "Rejected" : "Not requested"}
+            </div>
+            <div className="mt-1 text-xs text-gray-500">Requested Sender ID: {requested || "—"}</div>
+            <div className="mt-2 text-xs text-gray-600">Your members will see your sender ID as: CHURCHCLERK</div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+            <input
+              type="checkbox"
+              checked={Boolean(remember)}
+              onChange={(e) => onRememberChange?.(e.target.checked)}
+              id="remember-sender-warning"
+              disabled={loading}
+            />
+            <label htmlFor="remember-sender-warning">Don&apos;t show this again (this session)</label>
+          </div>
+
+          <div className="mt-4 flex items-center justify-end gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={onRequest}
+              disabled={loading}
+              className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60"
+            >
+              {loading ? "Requesting..." : status === "pending" ? "Resubmit Request" : "Request Sender ID"}
+            </button>
+            <button
+              type="button"
+              onClick={onContinue}
+              disabled={loading}
+              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            >
+              Continue with Default Sender (CHURCHCLERK)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function TemplatesAndDraftsTab({ open, onUseTemplate, onUseDraft, onOpenDeliveryReport, onWalletUpdated }) {
@@ -1031,10 +1117,20 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
   const canWrite = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
 
+  const churchCtx = useContext(ChurchContext);
+  const activeChurch = churchCtx?.activeChurch;
+  const switchChurch = churchCtx?.switchChurch;
+
   const [loading, setLoading] = useState(false);
   const [submitAction, setSubmitAction] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [senderWarnOpen, setSenderWarnOpen] = useState(false);
+  const [senderWarnLoading, setSenderWarnLoading] = useState(false);
+  const [senderWarnError, setSenderWarnError] = useState("");
+  const [senderWarnRemember, setSenderWarnRemember] = useState(false);
+  const [pendingSendDraftFlag, setPendingSendDraftFlag] = useState(false);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -1324,7 +1420,32 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
     setEstimatedTotalCostServer(0);
   };
 
-  const onSend = async ({ draft = false } = {}) => {
+  const validateBeforeSend = ({ selectedChannels }) => {
+    if (!title.trim()) {
+      setError("Title is required");
+      return false;
+    }
+    if (!content.trim()) {
+      setError("Message content is required");
+      return false;
+    }
+    if (!Array.isArray(selectedChannels) || !selectedChannels.length) {
+      setError("Please select at least one channel");
+      return false;
+    }
+    return true;
+  };
+
+  const shouldWarnSenderId = ({ selectedChannels, isDraft }) => {
+    if (isDraft) return false;
+    if (!Array.isArray(selectedChannels) || !selectedChannels.includes("sms")) return false;
+    const status = String(activeChurch?.sender_id_status || "").trim().toLowerCase();
+    if (status === "approved") return false;
+    const suppressed = sessionStorage.getItem("cckSenderIdWarnSuppressed") === "1";
+    return !suppressed;
+  };
+
+  const runSendNow = async ({ draft }) => {
     if (!canWrite) return;
 
     setSubmitAction(draft ? "draft" : "send");
@@ -1381,12 +1502,94 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
     }
   };
 
+  const onSend = async ({ draft = false } = {}) => {
+    if (!canWrite) return;
+
+    setError("");
+    setSuccess("");
+
+    const selectedChannels = Object.entries(channels)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
+
+    if (!validateBeforeSend({ selectedChannels })) {
+      return;
+    }
+
+    if (shouldWarnSenderId({ selectedChannels, isDraft: draft })) {
+      setPendingSendDraftFlag(Boolean(draft));
+      setSenderWarnError("");
+      setSenderWarnRemember(false);
+      setSenderWarnOpen(true);
+      return;
+    }
+
+    await runSendNow({ draft });
+  };
+
+  const closeSenderWarn = () => {
+    if (senderWarnLoading) return;
+    setSenderWarnOpen(false);
+    setSenderWarnError("");
+  };
+
+  const continueWithDefaultSender = async () => {
+    if (senderWarnRemember) {
+      sessionStorage.setItem("cckSenderIdWarnSuppressed", "1");
+    }
+    setSenderWarnOpen(false);
+    await runSendNow({ draft: pendingSendDraftFlag });
+  };
+
+  const requestSenderIdFromModal = async () => {
+    if (!activeChurch?._id) return;
+
+    setSenderWarnLoading(true);
+    setSenderWarnError("");
+
+    try {
+      const current = String(activeChurch?.sender_id || "").trim();
+      if (!current) {
+        setSenderWarnError("No sender ID has been set for this church. Please request one from Settings > Church Profile.");
+        return;
+      }
+
+      await requestMyChurchSenderId({ senderId: current });
+
+      if (typeof switchChurch === "function") {
+        try {
+          await switchChurch(activeChurch._id);
+        } catch (e) {
+          void e;
+        }
+      }
+      setSenderWarnError("");
+    } catch (e) {
+      setSenderWarnError(e?.response?.data?.message || e?.message || "Failed to request sender ID");
+    } finally {
+      setSenderWarnLoading(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
     <div className="mt-5">
       {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
       {success ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{success}</div> : null}
+
+      <SenderIdWarningModal
+        open={senderWarnOpen}
+        onClose={closeSenderWarn}
+        onContinue={continueWithDefaultSender}
+        onRequest={requestSenderIdFromModal}
+        loading={senderWarnLoading}
+        error={senderWarnError}
+        senderIdCurrent={activeChurch?.sender_id}
+        senderIdStatus={activeChurch?.sender_id_status}
+        remember={senderWarnRemember}
+        onRememberChange={setSenderWarnRemember}
+      />
 
       <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
         <div className="text-sm font-semibold text-gray-900">Announcement Info</div>
