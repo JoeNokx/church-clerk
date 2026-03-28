@@ -9,6 +9,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
 import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
 import PlanComparisonTable from "../../subscription/components/PlanComparisonTable.jsx";
+import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
 
 function formatCurrency(amount, currency) {
   return formatMoney(amount, currency);
@@ -125,8 +126,8 @@ function LandingPage() {
   const features = useMemo(() => {
     return [
       {
-        title: "People & Community",
-        desc: "Members, families, groups, visitors, follow-ups, and clear records—so no one is missed.",
+        title: "Member & Family Records",
+        desc: "Keep member details, groups, attendance, and family connections organized with ease.",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
             <path d="M16 11a4 4 0 10-8 0 4 4 0 008 0Z" stroke="currentColor" strokeWidth="1.8" />
@@ -202,35 +203,6 @@ function LandingPage() {
       }
     ];
   }, []);
-
-  const getPlanHighlights = (plan) => {
-    const rows = [];
-    const memberLimit = plan?.memberLimit;
-    rows.push(memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`);
-
-    const featuresObj = plan?.features && typeof plan.features === "object" ? plan.features : {};
-    const financeEnabled = Boolean(featuresObj?.financeModule);
-    const budgetingEnabled = featuresObj?.budgeting !== undefined ? Boolean(featuresObj.budgeting) : Boolean(featuresObj?.financeModule);
-
-    const candidates = [
-      { on: financeEnabled, label: "Finance & giving" },
-      { on: budgetingEnabled, label: "Budgeting" },
-      { on: Boolean(featuresObj?.branchesOverview), label: "Headquarters & branches" },
-      { on: Boolean(featuresObj?.programsEvents), label: "Programs & events" },
-      { on: Boolean(featuresObj?.announcements ?? featuresObj?.announcement), label: "Announcements" },
-      { on: Boolean(featuresObj?.reportsAnalytics), label: "Reports" }
-    ];
-
-    for (const c of candidates) {
-      if (c.on && rows.length < 5) rows.push(c.label);
-    }
-
-    if (rows.length < 4) {
-      rows.push("Member records & attendance");
-    }
-
-    return rows.slice(0, 5);
-  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -494,7 +466,11 @@ function LandingPage() {
                     const displayPrice = Number(ghsPrice || 0) * Number(ghsToVisitorRate || 1);
                     const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
 
-                    const highlights = getPlanHighlights(p);
+                    const memberLimit = p?.memberLimit;
+                    const memberLine =
+                      memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`;
+                    const descriptionFeatures = getPlanDescriptionFeatures(p, { max: 5 });
+                    const highlights = [memberLine, ...descriptionFeatures];
 
                     return (
                       <motion.div
@@ -519,19 +495,6 @@ function LandingPage() {
                           <span className="text-sm text-gray-500">{per}</span>
                         </div>
 
-                        <div className="mt-6 space-y-2 text-sm text-gray-600">
-                          {highlights.map((h) => (
-                            <div key={h} className="flex items-center gap-2">
-                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-50 text-green-700">
-                                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                                  <path d="M6 12.5l3.2 3.2L18 7.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </span>
-                              <span>{h}</span>
-                            </div>
-                          ))}
-                        </div>
-
                         <div className="mt-6">
                           <Link
                             to="/register"
@@ -543,6 +506,19 @@ function LandingPage() {
                           >
                             Get started
                           </Link>
+                        </div>
+
+                        <div className="mt-6 space-y-2 text-sm text-gray-600">
+                          {highlights.map((h) => (
+                            <div key={h} className="flex items-center gap-2">
+                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-50 text-green-700">
+                                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                                  <path d="M6 12.5l3.2 3.2L18 7.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </span>
+                              <span>{h}</span>
+                            </div>
+                          ))}
                         </div>
                       </motion.div>
                     );

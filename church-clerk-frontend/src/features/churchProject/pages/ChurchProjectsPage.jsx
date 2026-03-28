@@ -947,4 +947,20 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
   );
 }
 
+function ChurchProjectsPage() {
+  const { can } = useContext(PermissionContext) || {};
+  const canRead = useMemo(() => (typeof can === "function" ? can("churchProjects", "view") : false), [can]);
+
+  if (!canRead) {
+    return (
+      <div className="max-w-6xl">
+        <div className="text-2xl font-semibold text-gray-900">Church Projects</div>
+        <p className="mt-2 text-sm text-gray-600">You do not have permission to view this page.</p>
+      </div>
+    );
+  }
+
+  return <ChurchProjectsPageInner />;
+}
+
 export default ChurchProjectsPage;

@@ -111,8 +111,29 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({ status: "error", message: err.message || "Server error" });
+  const status = Number(err?.status) || 500;
+  const msg = String(err?.message || "");
+
+  const lower = msg.toLowerCase();
+  const looksLikeDbOrTls =
+    lower.includes("ssl") ||
+    lower.includes("tls") ||
+    lower.includes("mongodb") ||
+    lower.includes("mongo") ||
+    lower.includes("server selection") ||
+    err?.name === "MongoServerSelectionError" ||
+    err?.name === "MongoNetworkError";
+
+  if (looksLikeDbOrTls) {
+    console.error("DB/TLS error:", msg);
+    return res.status(503).json({ status: "error", message: "Service unavailable. Database connection error." });
+  }
+
+  console.error(err?.stack || err);
+  if (status >= 500) {
+    return res.status(status).json({ status: "error", message: "Server error" });
+  }
+  return res.status(status).json({ status: "error", message: msg || "Request failed" });
 });
  
  

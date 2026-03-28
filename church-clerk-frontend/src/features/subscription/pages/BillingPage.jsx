@@ -1,8 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
-import { useLookupValues } from "../../lookups/hooks/useLookupValues";
-import AddLookupValueButton from "../../lookups/components/AddLookupValueButton";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import Skeleton from "react-loading-skeleton";
@@ -26,6 +24,7 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
+import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
 
 function formatCurrency(amount, currency) {
   return formatMoney(amount, currency);
@@ -528,6 +527,8 @@ function BillingPage() {
     setShowCancelConfirm(true);
   };
 
+  const currentPlanFeatures = getPlanDescriptionFeatures(currentPlan, { max: 6 });
+
   const planManagementCard = (
     <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
       <div>
@@ -540,12 +541,26 @@ function BillingPage() {
         <div className="mt-1 text-xs text-gray-600">
           {currentPlan?.memberLimit === null ? "Unlimited members" : `Up to ${Number(currentPlan?.memberLimit || 0).toLocaleString()} members`}
         </div>
-        <div className="mt-3 grid grid-cols-1 gap-1 text-xs text-gray-700 sm:grid-cols-2">
-          <div>Advanced reporting</div>
-          <div>Priority support</div>
-          <div>Custom branding</div>
-          <div>Finance module access</div>
-        </div>
+        {currentPlanFeatures.length ? (
+          <div className="mt-3 space-y-2 text-xs text-gray-700">
+            {currentPlanFeatures.map((item) => (
+              <div key={item} className="flex items-center gap-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-50 text-green-700">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                    <path
+                      d="M6 12.5l3.2 3.2L18 7.8"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-6">
@@ -598,6 +613,8 @@ function BillingPage() {
           const priceDisplay = displayCurrency === "USD" && usdToGhs ? Number(priceGhs || 0) / Number(usdToGhs || 1) : priceGhs;
           const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
 
+          const planFeatures = getPlanDescriptionFeatures(p, { max: 5 });
+
           const isFreeLite = name.toLowerCase() === "free lite";
           const isFreeLiteDuringTrial = Boolean(isFreeLite && isFreeTrial);
 
@@ -634,13 +651,6 @@ function BillingPage() {
               <div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrency(priceDisplay, displayCurrency)}</div>
               <div className="text-xs text-gray-500">{per}</div>
 
-              <div className="mt-4 space-y-2 text-xs text-gray-700">
-                <div>{p?.memberLimit === null ? "Unlimited members" : `Up to ${Number(p?.memberLimit || 0).toLocaleString()} members`}</div>
-                <div>Basic analytics</div>
-                <div>Finance module access</div>
-                <div>Member management</div>
-              </div>
-
               <button
                 type="button"
                 onClick={() => onPlanAction(p)}
@@ -655,6 +665,26 @@ function BillingPage() {
               >
                 {actionLabel}
               </button>
+
+              <div className="mt-4 space-y-2 text-xs text-gray-700">
+                <div>{p?.memberLimit === null ? "Unlimited members" : `Up to ${Number(p?.memberLimit || 0).toLocaleString()} members`}</div>
+                {planFeatures.map((item) => (
+                  <div key={item} className="flex items-center gap-2">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-50 text-green-700">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                        <path
+                          d="M6 12.5l3.2 3.2L18 7.8"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })}
