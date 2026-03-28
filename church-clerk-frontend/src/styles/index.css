@@ -2,7 +2,30 @@
 
  html,
  body {
+  font-size: 16px !important;
+  height: 100%;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   cursor: default;
+ }
+
+ body {
+  font-size: 1rem !important;
+ }
+
+ #root {
+  width: 100%;
+  min-height: 100vh;
+  height: 100%;
+ }
+
+ .cck-dashboard-outlet > .max-w-4xl,
+ .cck-dashboard-outlet > .max-w-5xl,
+ .cck-dashboard-outlet > .max-w-6xl,
+ .cck-dashboard-outlet > .max-w-7xl {
+  max-width: none !important;
+  width: 100% !important;
  }
 
  button,

@@ -269,7 +269,7 @@ function DashboardHeader() {
       <div className="h-16 px-4 md:px-8 flex items-center justify-between gap-4">
         <div className="min-w-0">
           <div className="text-xl font-semibold text-gray-900">Dashboard</div>
-          <div className="text-sm text-gray-600 truncate">Welcome back! Here’s what’s happening with your church</div>
+          <div className="text-[15px] text-gray-600 truncate">Welcome back! Here’s what’s happening with your church</div>
         </div>
 
         <div className="hidden md:flex items-center justify-center flex-1">
@@ -280,9 +280,9 @@ function DashboardHeader() {
                 onClick={() => setChurchMenuOpen((v) => !v)}
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm hover:bg-gray-50"
               >
-                <span className="text-xs text-gray-500">Viewing:</span>
+                <span className="text-[13px] text-gray-500">Viewing:</span>
                 <div className="inline-flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">{viewingChurchName}</span>
+                  <span className="text-[15px] font-medium text-gray-900">{viewingChurchName}</span>
                   {activeChurch?._id && activeChurch?.canEdit === false ? (
                     <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
                       Read-only
@@ -295,8 +295,8 @@ function DashboardHeader() {
               </button>
             ) : (
               <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
-                <span className="text-xs text-gray-500">Viewing:</span>
-                <span className="text-sm font-medium text-gray-900">{viewingChurchName}</span>
+                <span className="text-[13px] text-gray-500">Viewing:</span>
+                <span className="text-[15px] font-medium text-gray-900">{viewingChurchName}</span>
               </div>
             )}
 
@@ -304,7 +304,7 @@ function DashboardHeader() {
               <div className="absolute left-0 top-full mt-2 w-[360px] rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                   <div className="text-xs font-semibold text-gray-500">Currently viewing</div>
-                  <div className="mt-1 text-sm font-semibold text-gray-900 truncate">{viewingChurchName}</div>
+                <div className="mt-1 text-sm font-semibold text-gray-900 truncate">{viewingChurchName}</div>
                 </div>
 
                 {branchesError ? (
@@ -340,7 +340,8 @@ function DashboardHeader() {
                         >
                           <div className="text-sm font-semibold text-gray-900 truncate">{b?.name || "—"}</div>
                           <div className="mt-0.5 text-xs text-gray-500 truncate">
-                            {`${b?.city || ""}${b?.region ? `, ${b.region}` : ""}`.trim() || "—"}</div>
+                            {`${b?.city || ""}${b?.region ? `, ${b.region}` : ""}`.trim() || "—"}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -399,8 +400,8 @@ function DashboardHeader() {
               )}
 
               <div className="hidden sm:block leading-tight text-left">
-                <div className="text-sm font-semibold text-gray-900">{user?.fullName || "User"}</div>
-                <div className="text-xs text-gray-500">{displayRole}</div>
+                <div className="text-[15px] font-semibold text-gray-900">{user?.fullName || "User"}</div>
+                <div className="text-[13px] text-gray-500">{displayRole}</div>
               </div>
 
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-gray-500">

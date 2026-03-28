@@ -420,7 +420,7 @@ function DashboardOverview({ onNavigate }) {
 
   if (loading) {
     return (
-      <div className="max-w-7xl">
+      <div className="w-full max-w-none">
         <div className="text-2xl font-semibold text-gray-900">Dashboard Overview</div>
         <div className="mt-4">
           <Skeleton height={14} count={6} />
@@ -430,11 +430,11 @@ function DashboardOverview({ onNavigate }) {
   }
 
   return (
-    <div className="max-w-7xl">
+    <div className="w-full max-w-none">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-2xl font-semibold text-gray-900">Dashboard Overview</div>
-          <div className="mt-1 text-sm text-gray-600">Track key metrics, attendance trends, and member insights.</div>
+          <div className="mt-2 text-sm text-gray-600">A quick summary of what’s happening with your church.</div>
         </div>
       </div>
 
@@ -859,11 +859,11 @@ function DashboardHome() {
 
   function PageSkeletonFallback() {
     return (
-      <div className="max-w-7xl">
+      <div className="w-full max-w-none">
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <Skeleton height={16} width={220} />
           <div className="mt-3">
-            <Skeleton height={14} count={6} />
+            <Skeleton height={12} count={6} />
           </div>
         </div>
       </div>

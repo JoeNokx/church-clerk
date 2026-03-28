@@ -81,7 +81,7 @@ function BudgetingPageInner() {
   const items = Array.isArray(viewBudget?.items) ? viewBudget.items : [];
 
   return (
-    <div className="max-w-6xl">
+    <div className="w-full max-w-none">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">Budgeting</h2>

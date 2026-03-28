@@ -78,7 +78,7 @@ function Sidebar() {
         ? "offerings"
         : rawPage;
 
-  const linkBase = "flex items-center gap-3 px-3 py-2 rounded-lg text-sm";
+  const linkBase = "flex items-center gap-3 px-3 py-2 rounded-lg text-[15px]";
   const linkInactive = "text-gray-700 hover:bg-gray-50";
   const linkActive = "bg-blue-50 text-blue-900 font-medium";
 
@@ -101,7 +101,7 @@ function Sidebar() {
             <path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
           </svg>
         </div>
-        <div className="text-sm font-semibold text-blue-900">ChurchClerk</div>
+        <div className="text-[15px] font-semibold text-blue-900">ChurchClerk</div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
