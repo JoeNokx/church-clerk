@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../useAuth.js";
-import AuthCard from "../Components/AuthCard.jsx";
+import AuthCard from "../components/AuthCard.jsx";
 
 function Login() {
   const { login } = useAuth();
