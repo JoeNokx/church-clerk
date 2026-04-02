@@ -25,21 +25,18 @@ export const cancelSubscription = async (req, res) => {
 
     const freeLite = await Plan.findOne({ name: { $regex: /^free\s*lite$/i } }).lean();
 
-    if (freeLite?._id) {
-      subscription.plan = freeLite._id;
+    if (!freeLite?._id) {
+      return res.status(404).json({ message: "Free Lite plan not found" });
     }
 
-    subscription.pendingPlan = null;
-    subscription.status = "active";
-    subscription.trialStart = null;
-    subscription.trialEnd = null;
-    subscription.gracePeriodEnd = null;
-    subscription.expiryWarning.shown = false;
+    subscription.pendingPlan = freeLite._id;
+    subscription.pendingPlanEffectiveDate = subscription.nextBillingDate;
+    subscription.pendingPlanAction = "cancel";
 
     await subscription.save();
 
     return res.json({
-      message: "Subscription cancelled successfully"
+      message: "Cancellation scheduled"
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -120,11 +117,16 @@ export const changePlan = async (req, res) => {
     if (isUpgrade) {
       // IMMEDIATE
       subscription.plan = newPlan._id;
+      subscription.pendingPlan = null;
+      subscription.pendingPlanEffectiveDate = null;
+      subscription.pendingPlanAction = null;
       subscription.status = "active";
       subscription.expiryWarning.shown = false;
     } else {
       // DOWNGRADE AT NEXT CYCLE
       subscription.pendingPlan = newPlan._id;
+      subscription.pendingPlanEffectiveDate = subscription.nextBillingDate;
+      subscription.pendingPlanAction = "downgrade";
     }
 
     await subscription.save();

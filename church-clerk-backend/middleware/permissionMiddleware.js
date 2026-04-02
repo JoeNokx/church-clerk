@@ -2,6 +2,13 @@ export const requirePermission = (moduleKey, actionKey) => {
   const mod = String(moduleKey || "").trim();
   const action = String(actionKey || "").trim();
 
+  const isReadAction = (a) => {
+    const k = String(a || "")
+      .trim()
+      .toLowerCase();
+    return k === "read" || k === "view";
+  };
+
   const normalize = (v) => String(v || "").trim();
 
   const planFeatureForModule = (moduleName) => {
@@ -76,7 +83,7 @@ export const requirePermission = (moduleKey, actionKey) => {
     if (perms?.super) return next();
 
     const allowedByPlan = isPlanAllowed(req, mod);
-    if (!allowedByPlan) {
+    if (!allowedByPlan && !isReadAction(action)) {
       return res.status(403).json({
         message: "Your subscription plan does not include access to this module. Please upgrade to continue."
       });

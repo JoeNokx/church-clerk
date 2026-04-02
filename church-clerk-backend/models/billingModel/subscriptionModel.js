@@ -38,6 +38,17 @@ const subscriptionSchema = new mongoose.Schema(
       default: null
     },
 
+    pendingPlanEffectiveDate: {
+      type: Date,
+      default: null
+    },
+
+    pendingPlanAction: {
+      type: String,
+      enum: ["downgrade", "cancel"],
+      default: null
+    },
+
     status: {
       type: String,
       enum: ["free trial", "trialing", "active", "past_due", "suspended", "cancelled"],

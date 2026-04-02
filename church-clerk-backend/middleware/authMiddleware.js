@@ -147,10 +147,12 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
             }
 
             if (planName === "basic") {
-              return res.status(403).json({
-                message:
-                  "Your subscription plan does not include access to this module. Please upgrade to continue."
-              });
+              if (isWrite) {
+                return res.status(403).json({
+                  message:
+                    "Your subscription plan does not include access to this module. Please upgrade to continue."
+                });
+              }
             }
           }
         }

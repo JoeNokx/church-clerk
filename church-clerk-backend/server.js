@@ -33,9 +33,27 @@ app.use(morgan("dev"));
 // Security headers
 app.use(helmet());
 
+// app.use(cors({
+//   origin: ["http://localhost:5173", "http://localhost:5174"],  // frontend URLs
+//   credentials: true                // allow cookies
+// }));
+
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"],  // frontend URLs
-  credentials: true                // allow cookies
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const isLocal = origin.includes("localhost");
+    const isMainApp = origin === "https://app.churchclerkapp.com";
+    const isAdmin = origin === "https://admin.churchclerkapp.com";
+    const isSubdomain = /^https:\/\/.*\.churchclerkapp\.com$/.test(origin);
+
+    if (isLocal || isMainApp || isAdmin || isSubdomain) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true
 }));
 
 app.use(compression());

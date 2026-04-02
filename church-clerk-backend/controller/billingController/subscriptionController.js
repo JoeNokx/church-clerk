@@ -393,7 +393,10 @@ export const getMySubscription = async (req, res) => {
       return res.status(400).json({ message: "Active church is required" });
     }
 
-    let subscription = await Subscription.findOne({ church: churchId }).populate("plan").lean();
+    let subscription = await Subscription.findOne({ church: churchId })
+      .populate("plan")
+      .populate("pendingPlan")
+      .lean();
 
     if (!subscription) {
       const church = await Church.findById(churchId).lean();
@@ -408,7 +411,10 @@ export const getMySubscription = async (req, res) => {
         billingInterval: "monthly"
       });
 
-      subscription = await Subscription.findOne({ church: churchId }).populate("plan").lean();
+      subscription = await Subscription.findOne({ church: churchId })
+        .populate("plan")
+        .populate("pendingPlan")
+        .lean();
     }
 
     if (!subscription) {
@@ -427,9 +433,16 @@ export const getMySubscription = async (req, res) => {
       subscription.gracePeriodEnd &&
       now > new Date(subscription.gracePeriodEnd);
 
-    const effectivePlan = (subscription.status === "free trial" || subscription.status === "trialing")
+    let effectivePlan = (subscription.status === "free trial" || subscription.status === "trialing")
       ? await Plan.findOne({ name: { $regex: /^premium$/i }, isActive: true }).lean()
       : subscription.plan;
+
+    if (subscription?.pendingPlan) {
+      const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
+      if (effectiveAt && new Date(effectiveAt) <= now) {
+        effectivePlan = subscription.pendingPlan;
+      }
+    }
 
     const readOnly = Boolean(
       isTrialExpired ||
@@ -440,6 +453,9 @@ export const getMySubscription = async (req, res) => {
     res.json({
       subscription,
       effectivePlan: effectivePlan || subscription.plan || null,
+      pendingPlan: subscription?.pendingPlan || null,
+      pendingPlanEffectiveDate: subscription?.pendingPlanEffectiveDate || null,
+      pendingPlanAction: subscription?.pendingPlanAction || null,
       readOnly
     });
   } catch (error) {
