@@ -7,7 +7,7 @@ import {
   rejectChurchSenderId,
   updateSystemSettings
 } from "../Services/systemAdmin.api.js";
-import { updateMyPassword, updateMyProfile } from "../../Auth/Services/auth.api.js";
+import { updateMyPassword, updateMyProfile } from "../../Auth/services/auth.api.js";
 
 function SystemSettingsPage() {
   const { user, refreshUser } = useAuth();
