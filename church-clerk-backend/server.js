@@ -73,6 +73,18 @@ app.use(activityLogMiddleware);
 app.use(impersonationNotificationMiddleware);
 
 // mount all routes
+
+// health check
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", message: "ChurchClerk API is running"})
+})
+
+//Root redirect to frontend
+app.get("/", (req, res) => {
+  res.redirect("https://app.churchclerkapp.com")
+})
+
+
 app.use(
   "/api/v1/dashboard",
   (req, res, next) => {
@@ -154,7 +166,7 @@ app.use((err, req, res, next) => {
   return res.status(status).json({ status: "error", message: msg || "Request failed" });
 });
  
- 
+
 // start the server
 const startServer = async () => {
   await connectDB();
