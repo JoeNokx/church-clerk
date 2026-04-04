@@ -204,7 +204,7 @@ router.post(
   cancelSubscription
 );
 
-router.post("/webhooks/paystack", paystackWebhook);
+router.post("/webhooks/paystack", express.raw({ type: "application/json" }), paystackWebhook);
 
 
 // Paystack webhook
