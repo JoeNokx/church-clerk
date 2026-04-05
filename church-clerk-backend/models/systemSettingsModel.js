@@ -30,6 +30,11 @@ const systemSettingsSchema = new mongoose.Schema(
       type: Number,
       default: 20,
       min: 0
+    },
+    referralBonusDays: {
+      type: Number,
+      default: 30,
+      min: 1
     }
   },
   { timestamps: true }

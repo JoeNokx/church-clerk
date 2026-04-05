@@ -630,7 +630,9 @@ function DashboardOverview({ onNavigate }) {
 
           totalFreeMonthsUsed: Number(code.totalFreeMonthsUsed || 0),
 
-          freeMonthsRemaining: Number(code.freeMonthsRemaining || 0)
+          freeMonthsRemaining: Number(code.freeMonthsRemaining || 0),
+
+          referralBonusDays: Number(code.referralBonusDays || 30)
 
         });
 
@@ -1412,7 +1414,7 @@ function DashboardOverview({ onNavigate }) {
 
             <div className="text-base font-semibold text-gray-900">Referral Program</div>
 
-            <div className="mt-1 text-sm text-gray-600">Invite members and earn free months</div>
+            <div className="mt-1 text-sm text-gray-600">Invite members and earn free days</div>
 
           </div>
 
@@ -1448,25 +1450,25 @@ function DashboardOverview({ onNavigate }) {
 
             <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2 sm:w-44">
 
-              <div className="text-sm font-semibold text-blue-900/70">Free Months Earned</div>
+              <div className="text-sm font-semibold text-blue-900/70">Free Days Earned</div>
 
-              <div className="mt-1 text-base font-semibold text-blue-900">{referral?.totalFreeMonthsEarned ?? 0}</div>
-
-            </div>
-
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2 sm:w-44">
-
-              <div className="text-sm font-semibold text-blue-900/70">Free Months Used</div>
-
-              <div className="mt-1 text-base font-semibold text-blue-900">{referral?.totalFreeMonthsUsed ?? 0}</div>
+              <div className="mt-1 text-base font-semibold text-blue-900">{(referral?.totalFreeMonthsEarned ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
 
             </div>
 
             <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2 sm:w-44">
 
-              <div className="text-sm font-semibold text-blue-900/70">Free Months Remaining</div>
+              <div className="text-sm font-semibold text-blue-900/70">Free Days Used</div>
 
-              <div className="mt-1 text-base font-semibold text-blue-900">{referral?.freeMonthsRemaining ?? 0}</div>
+              <div className="mt-1 text-base font-semibold text-blue-900">{(referral?.totalFreeMonthsUsed ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
+
+            </div>
+
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2 sm:w-44">
+
+              <div className="text-sm font-semibold text-blue-900/70">Free Days Remaining</div>
+
+              <div className="mt-1 text-base font-semibold text-blue-900">{(referral?.freeMonthsRemaining ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
 
             </div>
 

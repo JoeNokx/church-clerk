@@ -1,8 +1,9 @@
 import Plan from "../../models/billingModel/planModel.js";
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
-import { addMonths } from "../../utils/dateBillingUtils.js";
+import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
 import Church from "../../models/churchModel.js";
+import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
 const normalizeLegacyCurrency = (currency) => {
   const cur = String(currency || "")
@@ -19,15 +20,12 @@ export const processBillingForSubscription = async (subscription) => {
   // 1️⃣ USE FREE MONTH IF AVAILABLE
   // =============================
   if (subscription.freeMonths.earned > subscription.freeMonths.used) {
+    const { referralBonusDays } = await getSystemSettingsSnapshot();
     subscription.freeMonths.used += 1;
 
-    subscription.nextBillingDate = addMonths(
+    subscription.nextBillingDate = addDays(
       subscription.nextBillingDate,
-      subscription.billingInterval === "monthly"
-        ? 1
-        : subscription.billingInterval === "halfYear"
-        ? 6
-        : 12
+      Number(referralBonusDays || 30)
     );
 
     subscription.status = "active";

@@ -11,6 +11,7 @@ function ReferralProgramPage() {
   const [used, setUsed] = useState(0);
   const [history, setHistory] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [referralBonusDays, setReferralBonusDays] = useState(30);
 
   const remaining = useMemo(() => Math.max(0, Number(earned || 0) - Number(used || 0)), [earned, used]);
 
@@ -40,6 +41,7 @@ function ReferralProgramPage() {
       setReferralCode(codePayload.referralCode || "");
       setEarned(Number(codePayload.totalFreeMonthsEarned || 0));
       setUsed(Number(codePayload.totalFreeMonthsUsed || 0));
+      setReferralBonusDays(Number(codePayload.referralBonusDays || 30));
       setHistory(Array.isArray(historyPayload.referrals) ? historyPayload.referrals : []);
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to load referral program");
@@ -90,7 +92,7 @@ function ReferralProgramPage() {
     <div className="max-w-6xl">
       <div>
         <div className="text-2xl font-semibold text-gray-900">Referral Program</div>
-        <div className="mt-1 text-sm text-gray-600">Earn free subscription months by inviting churches to join.</div>
+        <div className="mt-1 text-sm text-gray-600">Earn free subscription days by inviting churches to join.</div>
       </div>
 
       {error ? (
@@ -122,7 +124,7 @@ function ReferralProgramPage() {
                     <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.2 7.2a1 1 0 01-1.415 0l-3.2-3.2a1 1 0 011.415-1.415l2.492 2.492 6.492-6.492a1 1 0 011.416 0z" clipRule="evenodd" />
                   </svg>
                 </span>
-                <div>When a referred church subscribes, you earn one free subscription month.</div>
+                <div>When a referred church subscribes, you earn {referralBonusDays} free subscription day{referralBonusDays === 1 ? "" : "s"}.</div>
               </div>
               <div className="flex items-start gap-2">
                 <span className="mt-0.5 h-5 w-5 inline-flex items-center justify-center rounded-full bg-white ring-1 ring-blue-100 text-green-600">
@@ -241,7 +243,7 @@ function ReferralProgramPage() {
                         </div>
 
                         <div className={`text-xs font-semibold ${isRewarded ? "text-green-700" : "text-yellow-700"}`}>
-                          +1 month
+                          +{referralBonusDays} day{referralBonusDays === 1 ? "" : "s"}
                           <div className="text-[11px] font-medium text-gray-500 text-right">{isRewarded ? "Earned" : "Pending"}</div>
                         </div>
                       </div>
@@ -258,29 +260,29 @@ function ReferralProgramPage() {
         <div className="space-y-4">
           <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="text-sm font-semibold text-gray-900">Reward Wallet</div>
-            <div className="mt-1 text-sm text-gray-600">Your free subscription months</div>
+            <div className="mt-1 text-sm text-gray-600">Your free subscription days</div>
 
             <div className="mt-4 grid grid-cols-1 gap-3">
               <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="text-xs font-semibold text-gray-500">Total Free Months Earned</div>
-                <div className="mt-2 text-3xl font-semibold text-gray-900">{earned}</div>
-                <div className="mt-1 text-xs text-gray-500">months</div>
+                <div className="text-xs font-semibold text-gray-500">Total Free Days Earned</div>
+                <div className="mt-2 text-3xl font-semibold text-gray-900">{earned * referralBonusDays}</div>
+                <div className="mt-1 text-xs text-gray-500">days ({earned} referral{earned === 1 ? "" : "s"})</div>
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="text-xs font-semibold text-gray-500">Free Months Used</div>
-                <div className="mt-2 text-3xl font-semibold text-gray-900">{used}</div>
-                <div className="mt-1 text-xs text-gray-500">months</div>
+                <div className="text-xs font-semibold text-gray-500">Free Days Used</div>
+                <div className="mt-2 text-3xl font-semibold text-gray-900">{used * referralBonusDays}</div>
+                <div className="mt-1 text-xs text-gray-500">days ({used} referral{used === 1 ? "" : "s"})</div>
               </div>
 
               <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-                <div className="text-xs font-semibold text-green-800">Free Months Remaining</div>
-                <div className="mt-2 text-3xl font-semibold text-green-900">{remaining}</div>
-                <div className="mt-1 text-xs text-green-800">months available</div>
+                <div className="text-xs font-semibold text-green-800">Free Days Remaining</div>
+                <div className="mt-2 text-3xl font-semibold text-green-900">{remaining * referralBonusDays}</div>
+                <div className="mt-1 text-xs text-green-800">days available</div>
               </div>
 
               <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-800">
-                Free months are applied automatically to future billing cycles.
+                Free days are applied automatically to future billing cycles.
               </div>
             </div>
           </div>
@@ -294,11 +296,11 @@ function ReferralProgramPage() {
               </div>
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 h-6 w-6 rounded-full bg-blue-50 ring-1 ring-blue-100 text-blue-900 flex items-center justify-center text-xs font-bold">2</div>
-                <div>Free months accumulate without limit.</div>
+                <div>Free days accumulate without limit.</div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 h-6 w-6 rounded-full bg-blue-50 ring-1 ring-blue-100 text-blue-900 flex items-center justify-center text-xs font-bold">3</div>
-                <div>Free months are automatically applied before paid billing.</div>
+                <div>Free days are automatically applied before paid billing.</div>
               </div>
             </div>
           </div>

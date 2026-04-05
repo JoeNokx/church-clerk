@@ -19,6 +19,7 @@ import {
   verifyPaystackPayment
 } from "../services/subscription.api.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import { getMyReferralCode } from "../../referral/services/referral.api.js";
 import MinistryPlusCustomPlanModal from "../../../shared/components/MinistryPlusCustomPlanModal.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
@@ -232,6 +233,7 @@ function BillingPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
+  const [referralBonusDays, setReferralBonusDays] = useState(30);
 
   const setAddFieldError = useCallback((field, message) => {
     setAddMethodFieldErrors((prev) => ({
@@ -350,10 +352,11 @@ function BillingPage() {
     setError("");
     setLoading(true);
     try {
-      const [subRes, plansRes, historyRes] = await Promise.all([
+      const [subRes, plansRes, historyRes, referralCodeRes] = await Promise.all([
         getMySubscription(),
         getAvailablePlans(),
-        getMyBillingHistory({ page: 1, limit: 8 })
+        getMyBillingHistory({ page: 1, limit: 8 }),
+        getMyReferralCode().catch(() => null)
       ]);
 
       const sub = subRes?.data?.subscription;
@@ -367,6 +370,9 @@ function BillingPage() {
       setSubscription(sub);
       setEffectivePlan(eff || null);
       setReadOnly(Boolean(subRes?.data?.readOnly));
+      if (referralCodeRes?.data?.referralBonusDays) {
+        setReferralBonusDays(Number(referralCodeRes.data.referralBonusDays || 30));
+      }
       setHistory(Array.isArray(fetchedHistory) ? fetchedHistory : []);
       setHistoryPagination(fetchedPagination);
 
@@ -748,7 +754,7 @@ function BillingPage() {
                 Payment Required
               </div>
               <div className="mt-1 text-sm text-red-700/90">
-                Your free months have ended. Complete payment to continue enjoying all features.
+                Your free days have ended. Complete payment to continue enjoying all features.
               </div>
             </div>
           </div>
@@ -800,7 +806,7 @@ function BillingPage() {
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Free Months Earned</div>
+            <div className="text-sm font-semibold text-gray-900">Free Days Earned</div>
             <div className="text-xs text-gray-500">Rewards from your successful referrals</div>
           </div>
           <button
@@ -815,25 +821,25 @@ function BillingPage() {
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-green-200 bg-green-50 p-4">
             <div className="text-xs font-semibold text-gray-500">Total Earned</div>
-            <div className="mt-2 text-2xl font-semibold text-green-700">{Number(freeMonths?.earned || 0)}</div>
-            <div className="text-xs text-gray-500">months</div>
+            <div className="mt-2 text-2xl font-semibold text-green-700">{Number(freeMonths?.earned || 0) * referralBonusDays}</div>
+            <div className="text-xs text-gray-500">days ({Number(freeMonths?.earned || 0)} referral{Number(freeMonths?.earned || 0) === 1 ? "" : "s"})</div>
           </div>
 
           <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
             <div className="text-xs font-semibold text-gray-500">Used</div>
-            <div className="mt-2 text-2xl font-semibold text-orange-700">{Number(freeMonths?.used || 0)}</div>
-            <div className="text-xs text-gray-500">months</div>
+            <div className="mt-2 text-2xl font-semibold text-orange-700">{Number(freeMonths?.used || 0) * referralBonusDays}</div>
+            <div className="text-xs text-gray-500">days ({Number(freeMonths?.used || 0)} referral{Number(freeMonths?.used || 0) === 1 ? "" : "s"})</div>
           </div>
 
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
             <div className="text-xs font-semibold text-gray-500">Remaining</div>
-            <div className="mt-2 text-2xl font-semibold text-blue-700">{freeRemaining}</div>
-            <div className="text-xs text-gray-500">months</div>
+            <div className="mt-2 text-2xl font-semibold text-blue-700">{freeRemaining * referralBonusDays}</div>
+            <div className="text-xs text-gray-500">days</div>
           </div>
         </div>
 
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
-          <span className="font-semibold">How it works:</span> Each successful subscribed church you refer earns you 1 free month. Free months are cumulative with no limit and apply automatically.
+          <span className="font-semibold">How it works:</span> Each successful subscribed church you refer earns you {referralBonusDays} free day{referralBonusDays === 1 ? "" : "s"}. Free days are cumulative with no limit and apply automatically.
         </div>
       </div>
 
@@ -1266,7 +1272,7 @@ function BillingPage() {
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
         <div>
           <div className="text-sm font-semibold text-gray-900">Billing History</div>
-          <div className="text-xs text-gray-500">Complete record of all transactions and free month usage</div>
+          <div className="text-xs text-gray-500">Complete record of all transactions and free day usage</div>
         </div>
 
         <div className="mt-4 overflow-x-auto">
@@ -1285,7 +1291,7 @@ function BillingPage() {
               {(Array.isArray(history) ? history : []).map((row, idx) => (
                 <tr key={row?._id || idx} className="text-sm text-gray-700">
                   <td className="px-6 py-2">{row?.createdAt ? formatShortDate(row.createdAt) : "—"}</td>
-                  <td className="px-6 py-2">{row?.type === "free_month" ? "Free Month" : "Payment"}</td>
+                  <td className="px-6 py-2">{row?.type === "free_month" ? "Free Days" : "Payment"}</td>
                   <td className="px-6 py-2">{row?.type === "free_month" ? "—" : formatCurrency(row?.amount || 0, row?.currency)}</td>
                   <td className="px-6 py-2">{row?.currency || "—"}</td>
                   <td className="px-6 py-2">
@@ -1413,7 +1419,7 @@ function BillingPage() {
               <div className="font-semibold text-gray-900">{billingInterval === "halfYear" ? "6 Months" : billingInterval === "yearly" ? "Yearly" : "Monthly"}</div>
             </div>
             <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="text-gray-700">Free Months Applied</div>
+              <div className="text-gray-700">Free Days Applied</div>
               <div className="font-semibold text-gray-900">0</div>
             </div>
           </div>

@@ -3,7 +3,7 @@ import ReferralHistory from "../models/referralModel/referralHistoryModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import BillingHistory from "../models/billingModel/billingHistoryModel.js";
 import Church from "../models/churchModel.js";
-
+import { getSystemSettingsSnapshot } from "./systemSettingsController.js";
 
 /**
  * GET /api/referrals/my-code
@@ -23,12 +23,15 @@ if (!referralCode) {
   return res.status(404).json({ message: "Referral code not found" });
 }
 
+const { referralBonusDays } = await getSystemSettingsSnapshot();
+
 res.json({
   referralCode: referralCode.code,
   totalFreeMonthsEarned: referralCode.totalFreeMonthsEarned,
   totalFreeMonthsUsed: referralCode.totalFreeMonthsUsed,
   freeMonthsRemaining:
-    referralCode.totalFreeMonthsEarned - referralCode.totalFreeMonthsUsed
+    referralCode.totalFreeMonthsEarned - referralCode.totalFreeMonthsUsed,
+  referralBonusDays: Number(referralBonusDays || 30)
 });
 
   } catch (error) {

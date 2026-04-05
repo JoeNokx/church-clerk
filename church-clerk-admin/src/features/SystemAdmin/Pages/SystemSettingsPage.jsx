@@ -53,6 +53,7 @@ function SystemSettingsPage() {
 
   const [trialDays, setTrialDays] = useState(14);
   const [gracePeriodDays, setGracePeriodDays] = useState("7");
+  const [referralBonusDays, setReferralBonusDays] = useState("30");
 
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -76,9 +77,11 @@ function SystemSettingsPage() {
       const s = res?.data?.settings || null;
       const td = Number(s?.trialDays);
       const gd = s?.gracePeriodDays;
+      const rbd = s?.referralBonusDays;
 
       setTrialDays(Number.isFinite(td) ? td : 14);
       setGracePeriodDays(gd === null || gd === undefined ? "7" : String(gd));
+      setReferralBonusDays(rbd === null || rbd === undefined ? "30" : String(rbd));
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to load system settings");
     } finally {
@@ -156,7 +159,8 @@ function SystemSettingsPage() {
     try {
       const payload = {
         trialDays,
-        gracePeriodDays: gracePeriodDays === "" ? 0 : Number(gracePeriodDays)
+        gracePeriodDays: gracePeriodDays === "" ? 0 : Number(gracePeriodDays),
+        referralBonusDays: referralBonusDays === "" ? 30 : Number(referralBonusDays)
       };
 
       await updateSystemSettings(payload);
@@ -182,7 +186,7 @@ function SystemSettingsPage() {
     <div className="space-y-5">
       <div>
         <div className="text-2xl font-semibold text-gray-900">System Settings</div>
-        <div className="text-sm text-gray-600">Configure trial and grace period behavior for all churches.</div>
+        <div className="text-sm text-gray-600">Configure duration settings for all churches.</div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -193,7 +197,7 @@ function SystemSettingsPage() {
             tab === "billing" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
           }`}
         >
-          Trial & Grace
+          Configure Durations
         </button>
         <button
           type="button"
@@ -266,6 +270,27 @@ function SystemSettingsPage() {
                 step={1}
                 value={gracePeriodDays}
                 onChange={(e) => setGracePeriodDays(e.target.value)}
+                disabled={!canSave || saving}
+                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm disabled:opacity-60"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="text-sm font-semibold text-gray-900">Referral Bonus Duration</div>
+            <div className="mt-1 text-xs text-gray-500">
+              How many free days a church earns when someone they referred subscribes.
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Referral bonus days</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step={1}
+                value={referralBonusDays}
+                onChange={(e) => setReferralBonusDays(e.target.value)}
                 disabled={!canSave || saving}
                 className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm disabled:opacity-60"
               />

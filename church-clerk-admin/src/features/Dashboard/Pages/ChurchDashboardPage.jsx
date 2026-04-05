@@ -292,7 +292,8 @@ function ChurchDashboardPage() {
           totalReferrals: referrals.length,
           totalFreeMonthsEarned: Number(code.totalFreeMonthsEarned || 0),
           totalFreeMonthsUsed: Number(code.totalFreeMonthsUsed || 0),
-          freeMonthsRemaining: Number(code.freeMonthsRemaining || 0)
+          freeMonthsRemaining: Number(code.freeMonthsRemaining || 0),
+          referralBonusDays: Number(code.referralBonusDays || 30)
         });
       } catch (e) {
         if (cancelled) return;
@@ -668,9 +669,9 @@ function ChurchDashboardPage() {
             </div>
             <div>
               <div className="text-sm font-semibold text-blue-900">Referral Program</div>
-              <div className="mt-1 text-sm text-blue-900/80">Free 1 month per referral</div>
+              <div className="mt-1 text-sm text-blue-900/80">Free {referral?.referralBonusDays ?? 30} day{(referral?.referralBonusDays ?? 30) === 1 ? "" : "s"} per referral</div>
               <div className="mt-2 text-sm text-blue-900/80">
-                Share church clerk management system with other churches and earn a reward of going free month without paying, and help grow the kingdom of God and establish a good church management system across churches
+                Share church clerk management system with other churches and earn free days without paying, and help grow the kingdom of God and establish a good church management system across churches
               </div>
 
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -679,12 +680,12 @@ function ChurchDashboardPage() {
                   <div className="mt-1 text-base font-semibold text-blue-900">{referral?.totalReferrals ?? 0}</div>
                 </div>
                 <div className="rounded-lg border border-blue-100 bg-white/70 px-2 py-1.5 sm:w-40">
-                  <div className="text-xs font-semibold text-blue-900/70">Total Free Months</div>
-                  <div className="mt-1 text-base font-semibold text-blue-900">{referral?.totalFreeMonthsEarned ?? 0}</div>
+                  <div className="text-xs font-semibold text-blue-900/70">Total Free Days</div>
+                  <div className="mt-1 text-base font-semibold text-blue-900">{(referral?.totalFreeMonthsEarned ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
                 </div>
                 <div className="rounded-lg border border-blue-100 bg-white/70 px-2 py-1.5 sm:w-44">
-                  <div className="text-xs font-semibold text-blue-900/70">Free Months Remaining</div>
-                  <div className="mt-1 text-base font-semibold text-blue-900">{referral?.freeMonthsRemaining ?? 0}</div>
+                  <div className="text-xs font-semibold text-blue-900/70">Free Days Remaining</div>
+                  <div className="mt-1 text-base font-semibold text-blue-900">{(referral?.freeMonthsRemaining ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
                 </div>
               </div>
             </div>

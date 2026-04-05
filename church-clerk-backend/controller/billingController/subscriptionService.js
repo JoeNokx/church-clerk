@@ -228,13 +228,15 @@ export const processSubscriptionBillings = async (subscription) => {
 
   if (subscription.freeMonths.earned > subscription.freeMonths.used) {
 
+    const { referralBonusDays } = await getSystemSettingsSnapshot();
+
     subscription.freeMonths.used += 1;
 
-    subscription.nextBillingDate = addMonths(
+    subscription.nextBillingDate = addDays(
 
       subscription.nextBillingDate,
 
-      getIntervalMonths(subscription.billingInterval)
+      Number(referralBonusDays || 30)
 
     );
 

@@ -15,7 +15,9 @@ function getResendClient() {
 }
 
 export const sendEmail = async ({ to, subject, html }) => {
-  const from = process.env.RESEND_FROM || "Church Clerk <onboarding@resend.dev>";
+  const fromName = process.env.FROM_NAME || "Church Clerk";
+  const fromEmail = process.env.FROM_EMAIL || "onboarding@resend.dev";
+  const from = `${fromName} <${fromEmail}>`;
   const resend = getResendClient();
   await resend.emails.send({
     from,
