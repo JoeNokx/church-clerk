@@ -16,7 +16,7 @@ import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 
 function getFrontendBaseUrl() {
 
-  const raw = process.env.FRONTEND_BASE_URL || process.env.CLIENT_BASE_URL || process.env.CLIENT_URL || "http://localhost:5173";
+  const raw = process.env.FRONTEND_URL || process.env.CLIENT_BASE_URL || process.env.CLIENT_URL || "http://localhost:5173";
 
   return String(raw || "").replace(/\/$/, "");
 
