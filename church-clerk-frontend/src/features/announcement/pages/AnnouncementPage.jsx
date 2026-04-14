@@ -340,11 +340,11 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload }) {
           <table className="min-w-full">
             <thead>
               <tr className="text-left text-xs font-semibold text-gray-500">
-                <th className="py-2 pr-4">Date</th>
-                <th className="py-2 pr-4">Type</th>
-                <th className="py-2 pr-4">Description</th>
-                <th className="py-2 pr-4">Amount</th>
-                <th className="py-2">Balance After</th>
+                <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Date</th>
+                <th className="py-2 pr-4 whitespace-nowrap">Type</th>
+                <th className="py-2 pr-4 whitespace-nowrap">Description</th>
+                <th className="py-2 pr-4 whitespace-nowrap">Amount</th>
+                <th className="py-2 whitespace-nowrap">Balance After</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -359,10 +359,10 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload }) {
               ) : (
                 transactions.map((t, idx) => (
                   <tr key={t?._id || `tx-${idx}`} className="text-sm text-gray-700">
-                    <td className="py-2 pr-4 text-gray-600">{t?.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}</td>
-                    <td className="py-2 pr-4">{t?.type || "—"}</td>
+                    <td className="sticky left-0 z-10 bg-white py-2 pr-4 text-gray-600 whitespace-nowrap">{t?.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}</td>
+                    <td className="py-2 pr-4 whitespace-nowrap">{t?.type || "—"}</td>
                     <td className="py-2 pr-4 text-gray-600">{t?.description || "—"}</td>
-                    <td className="py-2 pr-4 font-semibold">
+                    <td className="py-2 pr-4 font-semibold whitespace-nowrap">
                       {typeof t?.amountCredits === "number" ? `${t.amountCredits >= 0 ? "+" : "-"}${Math.abs(t.amountCredits)} credits` : "—"}
                     </td>
                     <td className="py-2 font-semibold text-gray-900">{typeof t?.balanceAfterCredits === "number" ? `${t.balanceAfterCredits} credits` : "—"}</td>
@@ -535,10 +535,10 @@ function TemplatesTab({ open, onUseTemplate }) {
           <table className="min-w-full">
             <thead>
               <tr className="text-left text-xs font-semibold text-gray-500">
-                <th className="py-2 pr-4">Template Name</th>
-                <th className="py-2 pr-4">Channel</th>
-                <th className="py-2 pr-4">Message Preview</th>
-                <th className="py-2">Actions</th>
+                <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Template Name</th>
+                <th className="py-2 pr-4 whitespace-nowrap">Channel</th>
+                <th className="py-2 pr-4 whitespace-nowrap">Message Preview</th>
+                <th className="py-2 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -553,8 +553,8 @@ function TemplatesTab({ open, onUseTemplate }) {
               ) : (
                 rows.map((t, idx) => (
                   <tr key={t?._id || `tpl-${idx}`} className="text-sm text-gray-700">
-                    <td className="py-2 pr-4 font-semibold text-gray-900">{t?.name || "—"}</td>
-                    <td className="py-2 pr-4 text-gray-600">{String(t?.channel || "").toUpperCase() || "—"}</td>
+                    <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{t?.name || "—"}</td>
+                    <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{String(t?.channel || "").toUpperCase() || "—"}</td>
                     <td className="py-2 pr-4 text-gray-600">{String(t?.message || "").slice(0, 60) || "—"}</td>
                     <td className="py-2">
                       <div className="flex items-center justify-end gap-2">
@@ -718,13 +718,13 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
         <table className="min-w-full">
           <thead>
             <tr className="text-left text-xs font-semibold text-gray-500">
-              <th className="py-2 pr-4">Title</th>
-              <th className="py-2 pr-4">Channel</th>
-              <th className="py-2 pr-4">Recipients</th>
-              <th className="py-2 pr-4">Delivered</th>
-              <th className="py-2 pr-4">Failed</th>
-              <th className="py-2 pr-4">Date</th>
-              <th className="py-2">Actions</th>
+              <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Title</th>
+              <th className="py-2 pr-4 whitespace-nowrap">Channel</th>
+              <th className="py-2 pr-4 whitespace-nowrap">Recipients</th>
+              <th className="py-2 pr-4 whitespace-nowrap">Delivered</th>
+              <th className="py-2 pr-4 whitespace-nowrap">Failed</th>
+              <th className="py-2 pr-4 whitespace-nowrap">Date</th>
+              <th className="py-2 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -739,7 +739,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
             ) : (
               rows.map((m, idx) => (
                 <tr key={m?._id || `m-${idx}`} className="text-sm text-gray-700">
-                  <td className="py-2 pr-4 font-semibold text-gray-900">{m?.title || "—"}</td>
+                  <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{m?.title || "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{Array.isArray(m?.channels) ? m.channels.map((c) => String(c).toUpperCase()).join(", ") : "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{typeof m?.recipientCount === "number" ? m.recipientCount : "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{typeof m?.deliveredCount === "number" ? m.deliveredCount : "—"}</td>
@@ -1078,10 +1078,10 @@ function DeliveryReportModal({ open, onClose, message }) {
             <table className="min-w-full">
               <thead>
                 <tr className="text-left text-xs font-semibold text-gray-500">
-                  <th className="py-2 pr-4">Member</th>
-                  <th className="py-2 pr-4">Phone</th>
-                  <th className="py-2 pr-4">Status</th>
-                  <th className="py-2">Time</th>
+                  <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Member</th>
+                  <th className="py-2 pr-4 whitespace-nowrap">Phone</th>
+                  <th className="py-2 pr-4 whitespace-nowrap">Status</th>
+                  <th className="py-2 whitespace-nowrap">Time</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -1096,9 +1096,9 @@ function DeliveryReportModal({ open, onClose, message }) {
                 ) : (
                   rows.map((d, idx) => (
                     <tr key={d?._id || `d-${idx}`} className="text-sm text-gray-700">
-                      <td className="py-2 pr-4 font-semibold text-gray-900">{d?.memberName || "—"}</td>
-                      <td className="py-2 pr-4 text-gray-600">{d?.phone || "—"}</td>
-                      <td className="py-2 pr-4 text-gray-600">{d?.status || "—"}</td>
+                      <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{d?.memberName || "—"}</td>
+                      <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{d?.phone || "—"}</td>
+                      <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{d?.status || "—"}</td>
                       <td className="py-2 text-gray-600">{d?.updatedAt ? new Date(d.updatedAt).toLocaleString() : d?.createdAt ? new Date(d.createdAt).toLocaleString() : "—"}</td>
                     </tr>
                   ))

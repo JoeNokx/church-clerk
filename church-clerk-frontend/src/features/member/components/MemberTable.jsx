@@ -103,14 +103,14 @@ function MemberTable({ onEdit, onDeleted }) {
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-100">
-            <tr className="text-left text-xs font-semibold text-gray-500">
-              <th className="px-6 py-2">Name</th>
-              <th className="px-6 py-2">Phone</th>
-              <th className="px-6 py-2">Email</th>
-              <th className="px-6 py-2">City</th>
-              <th className="px-6 py-2">Status</th>
-              <th className="px-6 py-2">Date Added</th>
-              <th className="px-6 py-2 text-right">Actions</th>
+            <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+              <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Name</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Phone</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Email</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">City</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Status</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date Added</th>
+              <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -118,16 +118,16 @@ function MemberTable({ onEdit, onDeleted }) {
               const name = row?.fullName || [row?.firstName, row?.lastName].filter(Boolean).join(" ") || "-";
 
               return (
-                <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                  <td className="px-6 py-1.5 text-gray-900">{name}</td>
-                  <td className="px-6 py-1.5 text-gray-700">{row?.phoneNumber || "-"}</td>
-                  <td className="px-6 py-1.5 text-gray-700">{row?.email || "-"}</td>
-                  <td className="px-6 py-1.5 text-gray-700">{row?.city || "-"}</td>
-                  <td className="px-6 py-1.5 text-gray-700">
+                <tr key={row?._id ?? `row-${index}`} className="text-sm max-sm:text-xs text-gray-700">
+                  <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{name}</td>
+                  <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.phoneNumber || "-"}</td>
+                  <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.email || "-"}</td>
+                  <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.city || "-"}</td>
+                  <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">
                     <StatusChip value={row?.status} />
                   </td>
-                  <td className="px-6 py-1.5">{formatDate(row?.createdAt || row?.dateJoined)}</td>
-                  <td className="px-6 py-1.5">
+                  <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.createdAt || row?.dateJoined)}</td>
+                  <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                     <div className="flex items-center justify-end gap-2">
                       {canView && (
                         <button

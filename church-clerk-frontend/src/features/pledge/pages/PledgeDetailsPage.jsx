@@ -515,22 +515,22 @@ function PledgeDetailsPageInner() {
               <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
-                    <tr className="text-left text-xs font-semibold text-gray-500">
-                      <th className="px-6 py-2">Date</th>
-                      <th className="px-6 py-2">Amount</th>
-                      <th className="px-6 py-2">Method</th>
-                      <th className="px-6 py-2">Note</th>
-                      <th className="px-6 py-2 text-right">Actions</th>
+                    <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                      <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                      <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
+                      <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Method</th>
+                      <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Note</th>
+                      <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {payments.map((p, idx) => (
-                      <tr key={p?._id ?? `p-${idx}`} className="text-sm text-gray-700">
-                        <td className="px-6 py-1.5 text-gray-900">{formatDate(p?.paymentDate)}</td>
-                        <td className="px-6 py-1.5 text-green-700 font-semibold">{formatCurrency(p?.amount || 0, currency)}</td>
-                        <td className="px-6 py-1.5 text-gray-600">{p?.paymentMethod || "—"}</td>
-                        <td className="px-6 py-1.5 text-gray-600">{p?.note || "—"}</td>
-                        <td className="px-6 py-1.5">
+                      <tr key={p?._id ?? `p-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                        <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{formatDate(p?.paymentDate)}</td>
+                        <td className="px-6 max-sm:px-4 py-1.5 text-green-700 font-semibold whitespace-nowrap">{formatCurrency(p?.amount || 0, currency)}</td>
+                        <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 whitespace-nowrap">{p?.paymentMethod || "—"}</td>
+                        <td className="px-6 max-sm:px-4 py-1.5 text-gray-600">{p?.note || "—"}</td>
+                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
                             {canEditPayment ? (
                               <button

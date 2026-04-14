@@ -100,15 +100,15 @@ function BudgetingTable({ onView, onEdit }) {
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-100">
-            <tr className="text-left text-xs font-semibold text-gray-500">
-              <th className="px-6 py-2">Budget</th>
-              <th className="px-6 py-2">Year</th>
-              <th className="px-6 py-2">Status</th>
-              <th className="px-6 py-2">Period</th>
-              <th className="px-6 py-2">Planned Income</th>
-              <th className="px-6 py-2">Planned Expenses</th>
-              <th className="px-6 py-2">Created</th>
-              <th className="px-6 py-2 text-right">Actions</th>
+            <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+              <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Budget</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Year</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Status</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Period</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Planned Income</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Planned Expenses</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Created</th>
+              <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -117,19 +117,19 @@ function BudgetingTable({ onView, onEdit }) {
               const plannedExpense = sumPlanned(row?.items, "expense");
 
               return (
-                <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                  <td className="px-6 py-2 text-gray-900 font-semibold">{row?.name || "-"}</td>
-                  <td className="px-6 py-2">{row?.fiscalYear || "-"}</td>
-                  <td className="px-6 py-2">
+                <tr key={row?._id ?? `row-${index}`} className="text-sm max-sm:text-xs text-gray-700">
+                  <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 text-gray-900 font-semibold whitespace-nowrap">{row?.name || "-"}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.fiscalYear || "-"}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadge(row?.status)}`}>
                       {String(row?.status || "draft").toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-6 py-2 text-gray-600">{formatPeriod(row?.periodFrom, row?.periodTo)}</td>
-                  <td className="px-6 py-2 text-green-700 font-semibold">{plannedIncome.toLocaleString()}</td>
-                  <td className="px-6 py-2 text-orange-700 font-semibold">{plannedExpense.toLocaleString()}</td>
-                  <td className="px-6 py-2 text-gray-600">{formatDate(row?.createdAt)}</td>
-                  <td className="px-6 py-2">
+                  <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{formatPeriod(row?.periodFrom, row?.periodTo)}</td>
+                  <td className="px-6 max-sm:px-4 py-2 text-green-700 font-semibold whitespace-nowrap">{plannedIncome.toLocaleString()}</td>
+                  <td className="px-6 max-sm:px-4 py-2 text-orange-700 font-semibold whitespace-nowrap">{plannedExpense.toLocaleString()}</td>
+                  <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{formatDate(row?.createdAt)}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
@@ -167,7 +167,7 @@ function BudgetingTable({ onView, onEdit }) {
         </table>
       </div>
 
-      <div className="flex items-center justify-end gap-3 px-6 py-2">
+      <div className="flex items-center justify-end gap-3 px-6 max-sm:px-4 py-2">
         <button
           type="button"
           onClick={onPrev}

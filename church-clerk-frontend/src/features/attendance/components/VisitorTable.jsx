@@ -206,14 +206,14 @@ function VisitorTable({ onEdit, onDeleted }) {
       <div className="relative overflow-x-auto pb-24">
         <table className="min-w-full">
           <thead className="bg-slate-100">
-            <tr className="text-left text-xs font-semibold text-gray-500">
-              <th className="px-6 py-2">Full Name</th>
-              <th className="px-6 py-2">Phone</th>
-              <th className="px-6 py-2">Location</th>
-              <th className="px-6 py-2">Invited By</th>
-              <th className="px-6 py-2">Status</th>
-              <th className="px-6 py-2">Date</th>
-              <th className="px-6 py-2 text-right">Actions</th>
+            <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+              <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Full Name</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Phone</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Location</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Invited By</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Status</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+              <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -224,16 +224,16 @@ function VisitorTable({ onEdit, onDeleted }) {
                 const openUp = index > 1;
 
                 return (
-              <tr key={String(row?._id ?? row?.id ?? `row-${index}`)} className="text-sm text-gray-700">
-                <td className="px-6 py-1.5 text-gray-900">{row?.fullName || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-700">{row?.phoneNumber || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-700">{row?.location || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-700">{row?.invitedBy || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-700">
+              <tr key={String(row?._id ?? row?.id ?? `row-${index}`)} className="text-sm max-sm:text-xs text-gray-700">
+                <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.fullName || "-"}</td>
+                <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.phoneNumber || "-"}</td>
+                <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.location || "-"}</td>
+                <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.invitedBy || "-"}</td>
+                <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">
                   <StatusChip value={row?.status} />
                 </td>
-                <td className="px-6 py-1.5">{formatDate(row?.serviceDate)}</td>
-                <td className="px-6 py-1.5">
+                <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.serviceDate)}</td>
+                <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                   <div className="flex items-center justify-end gap-2">
                     {canView && (
                       <button

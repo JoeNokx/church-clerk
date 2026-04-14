@@ -957,12 +957,12 @@ function EventDetailsPage() {
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
                   <table className="min-w-full">
                     <thead className="bg-white">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-3">Name</th>
-                        <th className="px-6 py-3">Email</th>
-                        <th className="px-6 py-3">Phone</th>
-                        <th className="px-6 py-3">Location</th>
-                        <th className="px-6 py-3 text-right">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-white px-6 max-sm:px-4 py-3 whitespace-nowrap">Name</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Email</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Phone</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Location</th>
+                        <th className="px-6 max-sm:px-4 py-3 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -986,16 +986,16 @@ function EventDetailsPage() {
                         </tr>
                       ) : (
                         attendees.map((r, idx) => (
-                          <tr key={r?._id || `att-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2">
+                          <tr key={r?._id || `att-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                            <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">
                               <button type="button" className="text-blue-700 hover:underline">
                                 {r?.fullName || "—"}
                               </button>
                             </td>
-                            <td className="px-6 py-2 text-gray-600">{r?.email || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600">{r?.phoneNumber || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600">{r?.location || "—"}</td>
-                            <td className="px-6 py-2">
+                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{r?.email || "—"}</td>
+                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{r?.phoneNumber || "—"}</td>
+                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{r?.location || "—"}</td>
+                            <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
                               <div className="flex items-center justify-end gap-2">
                                 {canEdit ? (
                                   <button
@@ -1044,11 +1044,11 @@ function EventDetailsPage() {
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
                   <table className="min-w-full">
                     <thead className="bg-white">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-3">Date</th>
-                        <th className="px-6 py-3">Total Attendees</th>
-                        <th className="px-6 py-3">Main Speaker</th>
-                        <th className="px-6 py-3 text-right">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-white px-6 max-sm:px-4 py-3 whitespace-nowrap">Date</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Total Attendees</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Main Speaker</th>
+                        <th className="px-6 max-sm:px-4 py-3 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -1072,15 +1072,15 @@ function EventDetailsPage() {
                         </tr>
                       ) : (
                         totals.map((r, idx) => (
-                          <tr key={r?._id || `tot-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2">
+                          <tr key={r?._id || `tot-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                            <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">
                               <button type="button" className="text-blue-700 hover:underline">
                                 {formatDate(r?.date)}
                               </button>
                             </td>
-                            <td className="px-6 py-2 text-gray-600">{Number(r?.numberOfAttendees || 0) || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600">{r?.mainSpeaker || "—"}</td>
-                            <td className="px-6 py-2">
+                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{Number(r?.numberOfAttendees || 0) || "—"}</td>
+                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{r?.mainSpeaker || "—"}</td>
+                            <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
                               <div className="flex items-center justify-end gap-2">
                                 {canEdit ? (
                                   <button
@@ -1135,12 +1135,12 @@ function EventDetailsPage() {
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto pb-24">
                   <table className="min-w-full">
                     <thead className="bg-white">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-3">File Name</th>
-                        <th className="px-6 py-3">File Type</th>
-                        <th className="px-6 py-3">File Size</th>
-                        <th className="px-6 py-3">Uploaded On</th>
-                        <th className="px-6 py-3">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-white px-6 max-sm:px-4 py-3 whitespace-nowrap">File Name</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">File Type</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">File Size</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Uploaded On</th>
+                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -1158,12 +1158,12 @@ function EventDetailsPage() {
                         </tr>
                       ) : (
                         files.map((f, idx) => (
-                          <tr key={f?._id || `f-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2">{f?.originalName || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600">{guessFileType(f?.mimeType, f?.originalName)}</td>
-                            <td className="px-6 py-2 text-gray-600">{formatBytes(f?.size)}</td>
-                            <td className="px-6 py-2 text-gray-600">{formatDate(f?.createdAt)}</td>
-                            <td className="px-6 py-2">
+                          <tr key={f?._id || `f-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                            <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">{f?.originalName || "—"}</td>
+                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{guessFileType(f?.mimeType, f?.originalName)}</td>
+                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{formatBytes(f?.size)}</td>
+                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{formatDate(f?.createdAt)}</td>
+                            <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"

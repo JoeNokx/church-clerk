@@ -639,7 +639,7 @@ function MinistriesPage() {
           <h2 className="text-2xl font-semibold text-gray-900">Ministries</h2>
           <p className="mt-2 text-sm text-gray-600">Manage groups, departments and cells in your church</p>
 
-          <div className="mt-4 inline-flex rounded-lg border border-gray-200 bg-white p-1">
+          <div className="mt-4 inline-flex max-w-full overflow-x-auto rounded-lg border border-gray-200 bg-white p-1">
             <button type="button" onClick={() => setActiveTab("groups")} className={tabClass("groups")}>
               Groups
               <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-semibold text-white">

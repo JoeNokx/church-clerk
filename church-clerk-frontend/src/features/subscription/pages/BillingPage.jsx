@@ -1278,26 +1278,26 @@ function BillingPage() {
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-slate-100">
-              <tr className="text-left text-xs font-semibold text-gray-500">
-                <th className="px-6 py-2">Date</th>
-                <th className="px-6 py-2">Type</th>
-                <th className="px-6 py-2">Amount</th>
-                <th className="px-6 py-2">Currency</th>
-                <th className="px-6 py-2">Status</th>
-                <th className="px-6 py-2 text-right">Invoice</th>
+              <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Type</th>
+                <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
+                <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Currency</th>
+                <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Status</th>
+                <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Invoice</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {(Array.isArray(history) ? history : []).map((row, idx) => (
-                <tr key={row?._id || idx} className="text-sm text-gray-700">
-                  <td className="px-6 py-2">{row?.createdAt ? formatShortDate(row.createdAt) : "—"}</td>
-                  <td className="px-6 py-2">{row?.type === "free_month" ? "Free Days" : "Payment"}</td>
-                  <td className="px-6 py-2">{row?.type === "free_month" ? "—" : formatCurrency(row?.amount || 0, row?.currency)}</td>
-                  <td className="px-6 py-2">{row?.currency || "—"}</td>
-                  <td className="px-6 py-2">
-                    <StatusPill value={row?.status || "—"} />
+                <tr key={row?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
+                  <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.createdAt ? formatShortDate(row.createdAt) : "—"}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.type === "free_month" ? "Free Days" : "Payment"}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.type === "free_month" ? "—" : formatCurrency(row?.amount || 0, row?.currency)}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.currency || "—"}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
+                    <StatusPill value={row?.status || "—"}/>
                   </td>
-                  <td className="px-6 py-2 text-right">
+                  <td className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">
                     {row?._id ? (
                       <a
                         href={getBillingInvoiceDownloadUrl(row._id)}

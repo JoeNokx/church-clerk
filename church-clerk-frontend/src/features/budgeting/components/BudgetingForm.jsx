@@ -245,12 +245,12 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-100">
-                  <tr className="text-left text-xs font-semibold text-gray-500">
-                    <th className="px-4 py-2">Type</th>
-                    <th className="px-4 py-2">Category</th>
-                    <th className="px-4 py-2">Amount</th>
-                    <th className="px-4 py-2">Notes</th>
-                    <th className="px-4 py-2 text-right">Actions</th>
+                  <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                    <th className="sticky left-0 z-20 bg-slate-100 px-4 sm:max-lg:px-6 py-2 whitespace-nowrap">Type</th>
+                    <th className="px-4 sm:max-lg:px-6 py-2 whitespace-nowrap">Category</th>
+                    <th className="px-4 sm:max-lg:px-6 py-2 whitespace-nowrap">Amount</th>
+                    <th className="px-4 sm:max-lg:px-6 py-2 whitespace-nowrap">Notes</th>
+                    <th className="px-4 sm:max-lg:px-6 py-2 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -259,8 +259,8 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                     const category = String(row?.category || "");
 
                     return (
-                      <tr key={`item-${idx}`} className="text-sm text-gray-700">
-                        <td className="px-4 py-2">
+                      <tr key={`item-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                        <td className="sticky left-0 z-10 bg-white px-4 sm:max-lg:px-6 py-2 whitespace-nowrap">
                           <select
                             value={type}
                             onChange={(e) => updateItem(idx, { type: e.target.value })}
@@ -271,7 +271,7 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                           </select>
                         </td>
 
-                        <td className="px-4 py-2">
+                        <td className="px-4 sm:max-lg:px-6 py-2">
                           <div className="flex items-center gap-2">
                             {type === "expense" ? (
                               <select
@@ -308,27 +308,27 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                           </div>
                         </td>
 
-                        <td className="px-4 py-2">
+                        <td className="px-4 sm:max-lg:px-6 py-2">
                           <input
+                            type="number"
                             value={row?.amount ?? ""}
                             onChange={(e) => updateItem(idx, { amount: e.target.value })}
-                            type="number"
                             className="h-9 w-40 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                            placeholder="0"
+                            placeholder="0.00"
                           />
                         </td>
 
-                        <td className="px-4 py-2">
+                        <td className="px-4 sm:max-lg:px-6 py-2">
                           <input
-                            value={row?.notes ?? ""}
+                            value={row?.notes || ""}
                             onChange={(e) => updateItem(idx, { notes: e.target.value })}
-                            className="h-9 w-72 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                            className="h-9 w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                             placeholder="Optional"
                           />
                         </td>
 
-                        <td className="px-4 py-2">
-                          <div className="flex justify-end">
+                        <td className="px-4 sm:max-lg:px-6 py-2 whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => removeItem(idx)}

@@ -81,18 +81,18 @@ function TitheAggregateTable({ onEdit, onDeleted }) {
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-100">
-            <tr className="text-left text-xs font-semibold text-gray-500">
-              <th className="px-6 py-2">Total Amount</th>
-              <th className="px-6 py-2">Date</th>
-              <th className="px-6 py-2">Recorded By</th>
-              <th className="px-6 py-2">Notes</th>
-              <th className="px-6 py-2 text-right">Actions</th>
+            <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+              <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Total Amount</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Recorded By</th>
+              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Notes</th>
+              <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
-              <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                <td className="px-6 py-3">
+              <tr key={row?._id ?? `row-${index}`} className="text-sm max-sm:text-xs text-gray-700">
+                <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-3 whitespace-nowrap">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-green-50 text-green-700 flex items-center justify-center">
                       <span className="text-[10px] font-semibold leading-none">{currency}</span>
@@ -100,10 +100,10 @@ function TitheAggregateTable({ onEdit, onDeleted }) {
                     <div className="text-blue-700">{formatMoney(row?.amount || 0, currency)}</div>
                   </div>
                 </td>
-                <td className="px-6 py-3">{formatDate(row?.date)}</td>
-                <td className="px-6 py-3">{row?.createdBy?.fullName || row?.createdBy?.email || "-"}</td>
-                <td className="px-6 py-3 text-gray-900">{row?.description || "-"}</td>
-                <td className="px-6 py-1.5">
+                <td className="px-6 max-sm:px-4 py-3 whitespace-nowrap">{formatDate(row?.date)}</td>
+                <td className="px-6 max-sm:px-4 py-3 whitespace-nowrap">{row?.createdBy?.fullName || row?.createdBy?.email || "-"}</td>
+                <td className="px-6 max-sm:px-4 py-3 text-gray-900">{row?.description || "-"}</td>
+                <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                   <div className="flex items-center justify-end gap-2">
                     {canEdit && (
                       <button

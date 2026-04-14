@@ -870,22 +870,22 @@ function BusinessVentureDetailsPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-2">Received From</th>
-                        <th className="px-6 py-2">Note</th>
-                        <th className="px-6 py-2">Date</th>
-                        <th className="px-6 py-2">Amount</th>
-                        <th className="px-6 py-2 text-right">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Received From</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Note</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
+                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {incomeRows.map((row, idx) => (
-                        <tr key={row?._id ?? `i-${idx}`} className="text-sm text-gray-700">
-                          <td className="px-6 py-1.5 text-gray-900">{row?.recievedFrom || "—"}</td>
-                          <td className="px-6 py-1.5 text-gray-600">{row?.note || "—"}</td>
-                          <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
-                          <td className="px-6 py-1.5 text-green-700">{formatCurrency(row?.amount, currency)}</td>
-                          <td className="px-6 py-1.5">
+                        <tr key={row?._id ?? `i-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.recievedFrom || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600">{row?.note || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.date)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.amount, currency)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                             <div className="flex items-center justify-end gap-2">
                               {canEdit ? (
                                 <>
@@ -948,24 +948,24 @@ function BusinessVentureDetailsPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-2">Spent By</th>
-                        <th className="px-6 py-2">Category</th>
-                        <th className="px-6 py-2">Description</th>
-                        <th className="px-6 py-2">Date</th>
-                        <th className="px-6 py-2">Amount</th>
-                        <th className="px-6 py-2 text-right">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Spent By</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Category</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Description</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
+                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {expenseRows.map((row, idx) => (
-                        <tr key={row?._id ?? `e-${idx}`} className="text-sm text-gray-700">
-                          <td className="px-6 py-1.5 text-gray-900">{row?.spentBy || "—"}</td>
-                          <td className="px-6 py-1.5 text-gray-600">{row?.category || "—"}</td>
-                          <td className="px-6 py-1.5 text-gray-600">{row?.description || "—"}</td>
-                          <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
-                          <td className="px-6 py-1.5 text-orange-600">{formatCurrency(row?.amount, currency)}</td>
-                          <td className="px-6 py-1.5">
+                        <tr key={row?._id ?? `e-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.spentBy || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 whitespace-nowrap">{row?.category || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600">{row?.description || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.date)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-orange-600 whitespace-nowrap">{formatCurrency(row?.amount, currency)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                             <div className="flex items-center justify-end gap-2">
                               {canEdit ? (
                                 <>

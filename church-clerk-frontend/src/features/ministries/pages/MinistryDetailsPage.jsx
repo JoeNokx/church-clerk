@@ -1110,12 +1110,12 @@ function MinistryDetailsPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-100">
-                  <tr className="text-left text-xs font-semibold text-gray-500">
-                    <th className="px-6 py-2">Name</th>
-                    <th className="px-6 py-2">Phone</th>
-                    <th className="px-6 py-2">Email</th>
-                    <th className="px-6 py-2">Role</th>
-                    <th className="px-6 py-2 text-right">Actions</th>
+                  <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                    <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Name</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Phone</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Email</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Role</th>
+                    <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1123,12 +1123,12 @@ function MinistryDetailsPage() {
                     const member = m?.member || {};
                     const name = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() || "-";
                     return (
-                      <tr key={m?._id || idx} className="text-sm text-gray-700">
-                        <td className="px-6 py-1.5 text-gray-900">{name}</td>
-                        <td className="px-6 py-1.5">{member?.phoneNumber || "-"}</td>
-                        <td className="px-6 py-1.5">{member?.email || "-"}</td>
-                        <td className="px-6 py-1.5">{m?.role || "member"}</td>
-                        <td className="px-6 py-1.5">
+                      <tr key={m?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
+                        <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{name}</td>
+                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{member?.phoneNumber || "-"}</td>
+                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{member?.email || "-"}</td>
+                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{m?.role || "member"}</td>
+                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
                             {canViewMembers ? (
                               <button
@@ -1531,22 +1531,22 @@ function MinistryDetailsPage() {
                 <div className="overflow-x-auto px-5 pb-6">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-2">Date</th>
-                        <th className="px-6 py-2">Day</th>
-                        <th className="px-6 py-2">Present</th>
-                        <th className="px-6 py-2">Absent</th>
-                        <th className="px-6 py-2 text-right">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Day</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Present</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Absent</th>
+                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {individualAttendances.map((r, idx) => (
-                        <tr key={r?._id || idx} className="text-sm text-gray-700">
-                          <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
-                          <td className="px-6 py-1.5">{formatDay(r?.date) || "-"}</td>
-                          <td className="px-6 py-1.5">{Number(r?.presentCount ?? 0)}</td>
-                          <td className="px-6 py-1.5">{Number(r?.absentCount ?? 0)}</td>
-                          <td className="px-6 py-1.5">
+                        <tr key={r?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
+                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{formatDate(r?.date)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDay(r?.date) || "-"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{Number(r?.presentCount ?? 0)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{Number(r?.absentCount ?? 0)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
@@ -1721,9 +1721,9 @@ function MinistryDetailsPage() {
                               <table className="min-w-full">
                                 <thead className="bg-slate-100">
                                   <tr className="text-left text-xs font-semibold text-gray-500">
-                                    <th className="px-4 py-2">Name</th>
-                                    <th className="px-4 py-2">Phone</th>
-                                    <th className="px-4 py-2">Email</th>
+                                    <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 whitespace-nowrap">Name</th>
+                                    <th className="px-4 py-2 whitespace-nowrap">Phone</th>
+                                    <th className="px-4 py-2 whitespace-nowrap">Email</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
@@ -1731,9 +1731,9 @@ function MinistryDetailsPage() {
                                     const name = `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-";
                                     return (
                                       <tr key={m?._id || idx} className="text-sm text-gray-700">
-                                        <td className="px-4 py-1.5 text-gray-900">{name}</td>
-                                        <td className="px-4 py-1.5">{m?.phoneNumber || "-"}</td>
-                                        <td className="px-4 py-1.5">{m?.email || "-"}</td>
+                                        <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{name}</td>
+                                        <td className="px-4 py-1.5 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
+                                        <td className="px-4 py-1.5 whitespace-nowrap">{m?.email || "-"}</td>
                                       </tr>
                                     );
                                   })}
@@ -1762,22 +1762,22 @@ function MinistryDetailsPage() {
                 <div className="overflow-x-auto px-5 pb-6">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-2">Date</th>
-                        <th className="px-6 py-2">Attendees</th>
-                        <th className="px-6 py-2">Speaker</th>
-                        <th className="px-6 py-2">Activity</th>
-                        <th className="px-6 py-2 text-right">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Attendees</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Speaker</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Activity</th>
+                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {attendances.map((r, idx) => (
-                        <tr key={r?._id || idx} className="text-sm text-gray-700">
-                          <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
-                          <td className="px-6 py-1.5">{Number(r?.numberOfAttendees || 0)}</td>
-                          <td className="px-6 py-1.5">{r?.mainSpeaker || "-"}</td>
-                          <td className="px-6 py-1.5">{r?.activity || "-"}</td>
-                          <td className="px-6 py-1.5">
+                        <tr key={r?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
+                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{formatDate(r?.date)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{Number(r?.numberOfAttendees || 0)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{r?.mainSpeaker || "-"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{r?.activity || "-"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
@@ -1902,20 +1902,20 @@ function MinistryDetailsPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-100">
-                  <tr className="text-left text-xs font-semibold text-gray-500">
-                    <th className="px-6 py-2">Date</th>
-                    <th className="px-6 py-2">Amount</th>
-                    <th className="px-6 py-2">Note</th>
-                    <th className="px-6 py-2 text-right">Actions</th>
+                  <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                    <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Note</th>
+                    <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {offerings.map((r, idx) => (
-                    <tr key={r?._id || idx} className="text-sm text-gray-700">
-                      <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
-                      <td className="px-6 py-1.5 text-blue-700">{formatMoney(r?.amount || 0, currency)}</td>
-                      <td className="px-6 py-1.5 text-gray-600 max-w-[420px] break-words">{r?.note || "-"}</td>
-                      <td className="px-6 py-1.5">
+                    <tr key={r?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
+                      <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{formatDate(r?.date)}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 text-blue-700 whitespace-nowrap">{formatMoney(r?.amount || 0, currency)}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 max-w-[420px] break-words">{r?.note || "-"}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"

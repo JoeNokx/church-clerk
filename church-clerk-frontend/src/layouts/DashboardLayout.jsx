@@ -41,7 +41,7 @@ function DashboardLayout() {
   const bannerName = `${activeChurch?.name || ""}${activeChurch?.city ? ` - ${activeChurch.city}` : ""}`.toUpperCase();
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50 text-[16px]">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 text-[16px] max-sm:text-sm max-sm:leading-6 sm:max-lg:text-base sm:max-lg:leading-7">
       {isSidebarOpen ? (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
@@ -53,7 +53,7 @@ function DashboardLayout() {
       <div
         className={`fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:static md:z-auto md:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <Sidebar />
+        <Sidebar onNavigate={() => setIsSidebarOpen(false)} />
       </div>
 
       {/* main content*/}
@@ -62,7 +62,7 @@ function DashboardLayout() {
         {/* header */}
         <DashboardHeader onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
 
-        <main className="flex-1 min-h-0 min-w-0 w-full p-4 md:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 min-h-0 min-w-0 w-full p-4 lg:p-8 max-sm:px-4 max-sm:py-3 sm:max-lg:px-6 sm:max-lg:py-4 overflow-y-auto">
           <SubscriptionStatusBanner />
           <InAppAnnouncementsHost />
           {isHqMonitoringBranch ? (
@@ -74,6 +74,7 @@ function DashboardLayout() {
               ) : null}
             </div>
           ) : null}
+
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}

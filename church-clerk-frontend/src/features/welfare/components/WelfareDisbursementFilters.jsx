@@ -103,23 +103,23 @@ function WelfareDisbursementFilters() {
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
         <span className="text-xs font-semibold text-gray-500">Search:</span>
         <input
           value={searchValue}
           onChange={onSearchChange}
-          className="h-9 w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+          className="h-10 w-full sm:w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
           placeholder="Beneficiary name"
         />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
         <span className="text-xs font-semibold text-gray-500">Category:</span>
         <select
           value={store?.disbursementFilters?.category || ""}
           onChange={onCategoryChange}
-          className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+          className="h-10 w-full sm:w-auto rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
         >
           <option value="">All Categories</option>
           {categoryOptions.map((c) => (
@@ -134,7 +134,7 @@ function WelfareDisbursementFilters() {
         <button
           type="button"
           onClick={() => setDatePickerOpen((v) => !v)}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+          className="inline-flex h-10 w-full sm:w-auto items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
             <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

@@ -833,30 +833,30 @@ function PledgesPageInner() {
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-100">
-                  <tr className="text-left text-xs font-semibold text-gray-500">
-                    <th className="px-6 py-2">Name</th>
-                    <th className="px-6 py-2">Phone</th>
-                    <th className="px-6 py-2">Pledged</th>
-                    <th className="px-6 py-2">Paid</th>
-                    <th className="px-6 py-2">Balance</th>
-                    <th className="px-6 py-2">Deadline</th>
-                    <th className="px-6 py-2">Status</th>
-                    <th className="px-6 py-2 text-right">Actions</th>
+                  <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                    <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Name</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Phone</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Pledged</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Paid</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Balance</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Deadline</th>
+                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Status</th>
+                    <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {rows.map((row, index) => (
-                    <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                      <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{row?.name || "—"}</td>
-                      <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap">{row?.phoneNumber || "—"}</td>
-                      <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(row?.amount || 0, currency)}</td>
-                      <td className="px-6 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.totalPaid || 0, currency)}</td>
-                      <td className="px-6 py-1.5 text-red-600 whitespace-nowrap">{formatCurrency(row?.remainingBalance || 0, currency)}</td>
-                      <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap">{formatDate(row?.deadline)}</td>
-                      <td className="px-6 py-1.5 whitespace-nowrap">
+                    <tr key={row?._id ?? `row-${index}`} className="text-sm max-sm:text-xs text-gray-700">
+                      <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{row?.name || "—"}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 whitespace-nowrap">{row?.phoneNumber || "—"}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(row?.amount || 0, currency)}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.totalPaid || 0, currency)}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 text-red-600 whitespace-nowrap">{formatCurrency(row?.remainingBalance || 0, currency)}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 whitespace-nowrap">{formatDate(row?.deadline)}</td>
+                      <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                         <StatusChip value={row?.status} />
                       </td>
-                      <td className="px-6 py-1.5 whitespace-nowrap">
+                      <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           {canView && (
                             <button

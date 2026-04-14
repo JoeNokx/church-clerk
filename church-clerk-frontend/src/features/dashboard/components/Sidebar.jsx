@@ -12,7 +12,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 
 
 
-function Sidebar() {
+function Sidebar({ onNavigate = () => {} }) {
 
 
 
@@ -212,7 +212,16 @@ function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
 
-        <div className="space-y-6">
+        <div
+          className="space-y-6"
+          onClick={(e) => {
+            const el = e.target;
+            if (!el || typeof el.closest !== "function") return;
+            const link = el.closest("a");
+            if (!link) return;
+            onNavigate?.();
+          }}
+        >
 
           <div className="space-y-1">
 

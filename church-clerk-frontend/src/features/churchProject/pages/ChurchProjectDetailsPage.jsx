@@ -805,24 +805,24 @@ function ChurchProjectDetailsPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-2">Contributor</th>
-                        <th className="px-6 py-2">Amount</th>
-                        <th className="px-6 py-2">Date</th>
-                        <th className="px-6 py-2">Notes</th>
-                        <th className="px-6 py-2">Recorded By</th>
-                        <th className="px-6 py-2 text-right">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Contributor</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Notes</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Recorded By</th>
+                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {contribRows.map((row, idx) => (
-                        <tr key={row?._id ?? `c-${idx}`} className="text-sm text-gray-700">
-                          <td className="px-6 py-1.5 text-gray-900">{row?.contributorName || "—"}</td>
-                          <td className="px-6 py-1.5 text-green-700">{formatCurrency(row?.amount || 0, currency)}</td>
-                          <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
-                          <td className="px-6 py-1.5 text-gray-600 max-w-[320px] break-words">{row?.notes || "—"}</td>
-                          <td className="px-6 py-1.5">{row?.createdBy?.fullName || "—"}</td>
-                          <td className="px-6 py-1.5">
+                        <tr key={row?._id ?? `c-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.contributorName || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.amount || 0, currency)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.date)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 max-w-[320px] break-words">{row?.notes || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
@@ -851,7 +851,7 @@ function ChurchProjectDetailsPage() {
               )
             ) : null}
 
-            <div className="flex items-center justify-end gap-3 px-6 py-3">
+            <div className="flex items-center justify-end gap-3 px-6 max-sm:px-4 py-3">
               <button
                 type="button"
                 onClick={() => setContribPage((p) => Math.max(1, p - 1))}
@@ -889,24 +889,24 @@ function ChurchProjectDetailsPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-2">Spent On</th>
-                        <th className="px-6 py-2">Amount</th>
-                        <th className="px-6 py-2">Date</th>
-                        <th className="px-6 py-2">Description</th>
-                        <th className="px-6 py-2">Recorded By</th>
-                        <th className="px-6 py-2 text-right">Actions</th>
+                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Spent On</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Description</th>
+                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Recorded By</th>
+                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {expenseRows.map((row, idx) => (
-                        <tr key={row?._id ?? `e-${idx}`} className="text-sm text-gray-700">
-                          <td className="px-6 py-1.5 text-gray-900">{row?.spentOn || "—"}</td>
-                          <td className="px-6 py-1.5 text-orange-600">{formatCurrency(row?.amount || 0, currency)}</td>
-                          <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
-                          <td className="px-6 py-1.5 text-gray-600 max-w-[320px] break-words">{row?.description || "—"}</td>
-                          <td className="px-6 py-1.5">{row?.createdBy?.fullName || "—"}</td>
-                          <td className="px-6 py-1.5">
+                        <tr key={row?._id ?? `e-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
+                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.spentOn || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-orange-600 whitespace-nowrap">{formatCurrency(row?.amount || 0, currency)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.date)}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 max-w-[320px] break-words">{row?.description || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
@@ -935,7 +935,7 @@ function ChurchProjectDetailsPage() {
               )
             ) : null}
 
-            <div className="flex items-center justify-end gap-3 px-6 py-3">
+            <div className="flex items-center justify-end gap-3 px-6 max-sm:px-4 py-3">
               <button
                 type="button"
                 onClick={() => setExpensePage((p) => Math.max(1, p - 1))}
