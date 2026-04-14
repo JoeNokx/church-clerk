@@ -8,7 +8,7 @@ function SystemAdminSidebar() {
   const itemClass = ({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`;
 
   return (
-    <aside className="w-72 bg-white border-r border-gray-200 h-screen flex flex-col">
+    <aside className="hidden lg:flex w-72 bg-white border-r border-gray-200 h-screen flex-col">
       <div className="h-16 px-4 flex items-center gap-3 border-b border-gray-200">
         <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center ring-1 ring-blue-100">
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-blue-900">
