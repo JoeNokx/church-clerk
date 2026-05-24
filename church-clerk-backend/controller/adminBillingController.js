@@ -5,48 +5,39 @@ import Church from "../models/churchModel.js";
 import WebhookLog from "../models/billingModel/webhookLogModel.js";
 import https from "https";
 import PDFDocument from "pdfkit";
+import { sendSuspensionEmail } from "../utils/subscriptionEmails.js";
 
-const PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL = {
-  basic: {
-    monthly: "PLN_8uefis4crjcr41o",
-    halfYear: "PLN_j6oh9l7kpdeu8iy",
-    yearly: "PLN_fv0op4dygxav9de"
-  },
-  standard: {
-    monthly: "PLN_ty5113i92ozhyh7",
-    halfYear: "PLN_1fgfnonzqgaqj4q",
-    yearly: "PLN_kbhoxbyxdbxbxjz"
-  },
-  premium: {
-    monthly: "PLN_h3sbqgtqdsqbi89",
-    halfYear: "PLN_kb4lhbx563m6gj5",
-    yearly: "PLN_5wa7hr512u9i6p7"
+const BILLING_INTERVALS = ["hourly", "daily", "weekly", "monthly", "quarterly", "halfYear", "yearly"];
+
+const getPaystackSecretKey = () => {
+  if (process.env.PAYSTACK_SECRET_KEY) return process.env.PAYSTACK_SECRET_KEY;
+  if (String(process.env.PAYSTACK_MODE || "").toLowerCase() === "live") {
+    return process.env.LIVE_SECRET_KEY || null;
   }
+  return process.env.TEST_SECRET_KEY || null;
 };
 
 const normalizeBillingIntervalKey = (billingInterval) => {
-  const v = String(billingInterval || "")
-    .trim()
-    .toLowerCase();
+  const v = String(billingInterval || "").trim().toLowerCase();
+  if (v === "hourly")    return "hourly";
+  if (v === "daily")     return "daily";
+  if (v === "weekly")    return "weekly";
   if (v === "monthly" || v === "month") return "monthly";
+  if (v === "quarterly") return "quarterly";
   if (v === "halfyear" || v === "half_year" || v === "half-year" || v === "biannually" || v === "semiannually") return "halfYear";
   if (v === "yearly" || v === "year" || v === "annually" || v === "annual") return "yearly";
   return String(billingInterval || "").trim();
 };
 
-const getPaystackRecurringPlanCode = ({ planName, billingInterval }) => {
-  const name = String(planName || "")
-    .trim()
-    .toLowerCase();
-  const intervalKey = normalizeBillingIntervalKey(billingInterval);
-  return PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL?.[name]?.[intervalKey] || null;
-};
-
 const toPaystackInterval = (billingInterval) => {
   const v = String(billingInterval || "").trim();
-  if (v === "monthly") return "monthly";
-  if (v === "halfYear") return "biannually";
-  if (v === "yearly") return "annually";
+  if (v === "hourly")    return "hourly";
+  if (v === "daily")     return "daily";
+  if (v === "weekly")    return "weekly";
+  if (v === "monthly")   return "monthly";
+  if (v === "quarterly") return "quarterly";
+  if (v === "halfYear")  return "biannually";
+  if (v === "yearly")    return "annually";
   return null;
 };
 
@@ -59,7 +50,7 @@ const clamp = (value, min, max) => {
 const paystackRequest = ({ path, method, body }) =>
   new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : "";
-    const secretKey = process.env.PAYSTACK_SECRET_KEY || process.env.TEST_SECRET_KEY;
+    const secretKey = getPaystackSecretKey();
     if (!secretKey) {
       return reject(new Error("Paystack secret key is not configured"));
     }
@@ -140,18 +131,49 @@ const validatePlanName = (name) => {
   }
 };
 
-const getStoredOrMappedPaystackPlanCodes = (planName, existingCodes) => {
-  const name = String(planName || "")
-    .trim()
-    .toLowerCase();
-  const codes = existingCodes && typeof existingCodes === "object" ? { ...existingCodes } : {};
-  const mapped = PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL?.[name] || null;
-  if (!mapped) return codes;
+const createOrUpdatePaystackPlansForInterval = async ({ planName, paystackPlanCodes, ghsPrices }) => {
+  const codes = { ...(paystackPlanCodes || {}) };
+  const errors = [];
 
-  if (!codes.monthly) codes.monthly = mapped.monthly || null;
-  if (!codes.halfYear) codes.halfYear = mapped.halfYear || null;
-  if (!codes.yearly) codes.yearly = mapped.yearly || null;
-  return codes;
+  for (const interval of BILLING_INTERVALS) {
+    const amount = ghsPrices?.[interval];
+    if (amount === undefined || amount === null) continue;
+
+    const paystackInterval = toPaystackInterval(interval);
+    if (!paystackInterval) continue;
+
+    const amountKobo = Math.round(Number(amount) * 100);
+    if (!Number.isFinite(amountKobo) || amountKobo <= 0) continue;
+
+    const existingCode = codes?.[interval];
+
+    try {
+      if (existingCode) {
+        await paystackRequest({
+          method: "PUT",
+          path: `/plan/${encodeURIComponent(existingCode)}`,
+          body: { amount: amountKobo, interval: paystackInterval }
+        });
+      } else {
+        const result = await paystackRequest({
+          method: "POST",
+          path: "/plan",
+          body: {
+            name: `${planName} - ${interval}`,
+            amount: amountKobo,
+            interval: paystackInterval,
+            currency: "GHS"
+          }
+        });
+        const newCode = result?.data?.plan_code || null;
+        if (newCode) codes[interval] = newCode;
+      }
+    } catch (e) {
+      errors.push(`${interval}: ${e?.message || String(e)}`);
+    }
+  }
+
+  return { codes, errors };
 };
 
 export const createPlan = async (req, res) => {
@@ -173,7 +195,11 @@ export const createPlan = async (req, res) => {
       return res.status(400).json({ message: "Plan already exists" });
     }
 
-    const paystackPlanCodes = getStoredOrMappedPaystackPlanCodes(normalizedName, req.body?.paystackPlanCodes);
+    const { codes: paystackPlanCodes, errors: paystackErrors } = await createOrUpdatePaystackPlansForInterval({
+      planName: normalizedName,
+      paystackPlanCodes: {},
+      ghsPrices: priceByCurrency?.GHS || {}
+    });
 
     const plan = await Plan.create({
       name: normalizedName,
@@ -189,7 +215,11 @@ export const createPlan = async (req, res) => {
       createdBy: req.user._id
     });
 
-    return res.status(201).json({ message: "Plan created successfully", plan: sanitizePlanCurrencies(plan) });
+    return res.status(201).json({
+      message: "Plan created successfully",
+      plan: sanitizePlanCurrencies(plan),
+      ...(paystackErrors.length ? { paystackWarnings: paystackErrors } : {})
+    });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }
@@ -228,11 +258,6 @@ export const updatePlan = async (req, res) => {
       updates.pricing = priceByCurrency;
     }
 
-    if (updates.name || existing?.name) {
-      const nextName = updates.name || existing.name;
-      updates.paystackPlanCodes = getStoredOrMappedPaystackPlanCodes(nextName, existing?.paystackPlanCodes);
-    }
-
     delete updates.createdBy;
 
     const plan = await Plan.findByIdAndUpdate(req.params.id, updates, {
@@ -245,55 +270,36 @@ export const updatePlan = async (req, res) => {
     const prevGhs = before?.priceByCurrency?.GHS || before?.pricing?.GHS || {};
     const nextGhs = after?.priceByCurrency?.GHS || after?.pricing?.GHS || {};
 
-    const intervals = ["monthly", "halfYear", "yearly"];
-    const changedIntervals = intervals.filter((k) => {
+    const changedIntervals = BILLING_INTERVALS.filter((k) => {
       const a = prevGhs?.[k];
       const b = nextGhs?.[k];
       if (a === undefined && b === undefined) return false;
       return Number(a) !== Number(b);
     });
 
+    let paystackWarnings = [];
     if (changedIntervals.length) {
-      try {
-        for (const billingInterval of changedIntervals) {
-          const planCode =
-            getPaystackRecurringPlanCode({ planName: after?.name, billingInterval }) || after?.paystackPlanCodes?.[billingInterval];
-          const amountMajor = nextGhs?.[billingInterval];
-          const interval = toPaystackInterval(billingInterval);
+      const planName = after?.name || existing?.name || "";
+      const partialPrices = {};
+      for (const k of changedIntervals) partialPrices[k] = nextGhs?.[k];
 
-          if (!planCode) continue;
-          if (!interval) continue;
-          if (amountMajor === undefined || amountMajor === null) continue;
+      const { codes: updatedCodes, errors } = await createOrUpdatePaystackPlansForInterval({
+        planName,
+        paystackPlanCodes: after?.paystackPlanCodes || {},
+        ghsPrices: partialPrices
+      });
 
-          await paystackRequest({
-            method: "PUT",
-            path: `/plan/${encodeURIComponent(planCode)}`,
-            body: {
-              amount: Math.round(Number(amountMajor) * 100),
-              interval
-            }
-          });
-        }
-      } catch (e) {
-        const rollback = {
-          name: before?.name,
-          description: before?.description,
-          paystackPlanCodes: before?.paystackPlanCodes,
-          memberLimit: before?.memberLimit,
-          userLimit: before?.userLimit,
-          features: before?.features,
-          featureCategories: before?.featureCategories,
-          hqOnly: before?.hqOnly,
-          pricing: before?.pricing,
-          priceByCurrency: before?.priceByCurrency,
-          isActive: before?.isActive
-        };
-        await Plan.findByIdAndUpdate(req.params.id, rollback, { runValidators: true });
-        return res.status(400).json({ message: e?.message || "Failed to sync Paystack plan" });
-      }
+      paystackWarnings = errors;
+
+      await Plan.findByIdAndUpdate(req.params.id, { paystackPlanCodes: updatedCodes }, { runValidators: false });
     }
 
-    return res.status(200).json({ message: "Plan updated", plan: sanitizePlanCurrencies(plan) });
+    const finalPlan = await Plan.findById(req.params.id).lean();
+    return res.status(200).json({
+      message: "Plan updated",
+      plan: sanitizePlanCurrencies(finalPlan),
+      ...(paystackWarnings.length ? { paystackWarnings } : {})
+    });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }
@@ -351,6 +357,46 @@ export const updateSubscription = async (req, res) => {
     return res.json({ message: "Subscription updated", subscription: sub });
   } catch (error) {
     return res.status(400).json({ message: error.message });
+  }
+};
+
+export const adminSuspendSubscription = async (req, res) => {
+  try {
+    const id = req.params?.id;
+    if (!id) return res.status(400).json({ message: "Subscription id is required" });
+
+    const sub = await Subscription.findById(id).populate("church plan");
+    if (!sub) return res.status(404).json({ message: "Subscription not found" });
+
+    sub.status = "suspended";
+    await sub.save();
+
+    try {
+      const church = await Church.findById(sub.church).lean();
+      await sendSuspensionEmail(church);
+    } catch { /* email failure must not abort */ }
+
+    return res.json({ message: "Subscription suspended", subscription: sub });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const adminResumeSubscription = async (req, res) => {
+  try {
+    const id = req.params?.id;
+    if (!id) return res.status(400).json({ message: "Subscription id is required" });
+
+    const sub = await Subscription.findByIdAndUpdate(
+      id,
+      { status: "active", gracePeriodEnd: null },
+      { new: true, runValidators: true }
+    ).populate("church plan");
+
+    if (!sub) return res.status(404).json({ message: "Subscription not found" });
+    return res.json({ message: "Subscription resumed", subscription: sub });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 

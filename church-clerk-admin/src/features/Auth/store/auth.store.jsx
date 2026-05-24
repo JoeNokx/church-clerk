@@ -1,13 +1,17 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { getMyProfile, loginUser, logoutUser } from "../services/auth.api.js";
 import ChurchContext from "../../Church/church.store.js";
 import PermissionContext from "../../Permissions/permission.store.js";
+import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets } from "../../Dashboard/services/dashboard.api.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const queryClient = useQueryClient();
 
   const churchCtx = useContext(ChurchContext);
   const permCtx = useContext(PermissionContext);
@@ -34,6 +38,7 @@ export function AuthProvider({ children }) {
         }
 
         setUser(nextUser);
+        queryClient.setQueryData(["user"], nextUser);
 
         if (nextUser) {
           localStorage.setItem("systemAdminUserIsActive", nextUser?.isActive === false ? "0" : "1");
@@ -55,8 +60,36 @@ export function AuthProvider({ children }) {
           permCtx?.clearPermissions?.();
           churchCtx?.clearActiveChurch?.();
         }
+
+        if (nextUser) {
+          const year = new Date().getFullYear();
+          await Promise.allSettled([
+            queryClient.prefetchQuery({
+              queryKey: ["dashboard", "kpi"],
+              queryFn: async () => {
+                const res = await getDashboardKPI();
+                return res?.data?.kpis || null;
+              }
+            }),
+            queryClient.prefetchQuery({
+              queryKey: ["dashboard", "widgets"],
+              queryFn: async () => {
+                const res = await getDashboardWidgets();
+                return res?.data?.dashboardWidget || null;
+              }
+            }),
+            queryClient.prefetchQuery({
+              queryKey: ["dashboard", "analytics", year],
+              queryFn: async () => {
+                const res = await getDashboardAnalytics({ year });
+                return res?.data?.analyticsDashboard || null;
+              }
+            })
+          ]);
+        }
       } catch {
         setUser(null);
+        queryClient.clear();
         localStorage.removeItem("cckSystemAdminUserId");
         localStorage.removeItem("systemAdminUserIsActive");
         churchCtx?.clearActiveChurch?.();
@@ -89,6 +122,7 @@ export function AuthProvider({ children }) {
     }
 
     setUser(userData);
+    queryClient.setQueryData(["user"], userData);
 
     if (userData) {
       localStorage.setItem("systemAdminUserIsActive", userData?.isActive === false ? "0" : "1");
@@ -116,6 +150,33 @@ export function AuthProvider({ children }) {
   const login = async ({ email, password }) => {
     await loginUser({ email, password });
     const userData = await refreshUser();
+
+    if (userData) {
+      const year = new Date().getFullYear();
+      await Promise.allSettled([
+        queryClient.prefetchQuery({
+          queryKey: ["dashboard", "kpi"],
+          queryFn: async () => {
+            const res = await getDashboardKPI();
+            return res?.data?.kpis || null;
+          }
+        }),
+        queryClient.prefetchQuery({
+          queryKey: ["dashboard", "widgets"],
+          queryFn: async () => {
+            const res = await getDashboardWidgets();
+            return res?.data?.dashboardWidget || null;
+          }
+        }),
+        queryClient.prefetchQuery({
+          queryKey: ["dashboard", "analytics", year],
+          queryFn: async () => {
+            const res = await getDashboardAnalytics({ year });
+            return res?.data?.analyticsDashboard || null;
+          }
+        })
+      ]);
+    }
     return userData;
   };
 
@@ -124,6 +185,7 @@ export function AuthProvider({ children }) {
       await logoutUser();
     } finally {
       setUser(null);
+      queryClient.clear();
       localStorage.removeItem("cckSystemAdminUserId");
       localStorage.removeItem("systemAdminUserIsActive");
       churchCtx?.clearActiveChurch?.();

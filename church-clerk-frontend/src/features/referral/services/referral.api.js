@@ -7,3 +7,7 @@ export const getMyReferralCode = async () => {
 export const getMyReferralHistory = async () => {
   return await http.get("/referral/my-referral-history");
 };
+
+export const getMyReferrer = async () => {
+  return await http.get("/referral/my-referrer");
+};

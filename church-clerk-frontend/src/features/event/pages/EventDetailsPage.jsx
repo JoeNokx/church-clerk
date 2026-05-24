@@ -749,10 +749,17 @@ function EventDetailsPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
         {loading ? (
-          <div className="space-y-3">
-            <Skeleton height={18} width={140} />
-            <Skeleton height={26} width={280} />
-            <Skeleton height={14} count={2} />
+          <div className="space-y-4 animate-pulse">
+            <div className="h-4 w-28 rounded bg-gray-200" />
+            <div className="h-7 w-56 rounded bg-gray-200" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div key={i}>
+                  <div className="h-3 w-16 rounded bg-gray-200" />
+                  <div className="mt-1 h-4 w-24 rounded bg-gray-200" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -967,11 +974,17 @@ function EventDetailsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {attendeesLoading ? (
-                        <tr>
-                          <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">
-                            <Skeleton height={14} width={180} />
-                          </td>
-                        </tr>
+                        <>
+                          {[0, 1, 2, 3].map((i) => (
+                            <tr key={i} className="animate-pulse">
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                            </tr>
+                          ))}
+                        </>
                       ) : attendeesError ? (
                         <tr>
                           <td colSpan={5} className="px-6 py-4 text-sm text-red-700">
@@ -1053,11 +1066,16 @@ function EventDetailsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {totalLoading ? (
-                        <tr>
-                          <td colSpan={4} className="px-6 py-4 text-sm text-gray-600">
-                            <Skeleton height={14} width={180} />
-                          </td>
-                        </tr>
+                        <>
+                          {[0, 1, 2, 3].map((i) => (
+                            <tr key={i} className="animate-pulse">
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                            </tr>
+                          ))}
+                        </>
                       ) : totalError ? (
                         <tr>
                           <td colSpan={4} className="px-6 py-4 text-sm text-red-700">
@@ -1145,11 +1163,17 @@ function EventDetailsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {filesLoading ? (
-                        <tr>
-                          <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">
-                            <Skeleton height={14} width={180} />
-                          </td>
-                        </tr>
+                        <>
+                          {[0, 1, 2, 3].map((i) => (
+                            <tr key={i} className="animate-pulse">
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                            </tr>
+                          ))}
+                        </>
                       ) : !files.length ? (
                         <tr>
                           <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">

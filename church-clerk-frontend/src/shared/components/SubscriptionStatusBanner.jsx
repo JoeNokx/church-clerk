@@ -140,7 +140,7 @@ function SubscriptionStatusBanner() {
       return null;
     }
 
-    if (planName === "free lite" || planName === "basic" || planName === "standard") {
+    if (planName === "free lite") {
       return {
         variant: "info",
         title: "Upgrade",

@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { loginUser, logoutUser, getMyProfile } from "./services/auth.api.js";
 import PermissionContext from "../permissions/permission.store.js";
 import ChurchContext from "../church/church.store.js";
+import { getDashboardAnalytics, getDashboardKPI, getDashboardSummary, getDashboardWidgets } from "../dashboard/services/dashboard.api.js";
 
 
 const AuthContext = createContext(null);
@@ -11,6 +13,8 @@ const AUTH_TOKEN_KEY = "cckAuthToken";
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const queryClient = useQueryClient();
 
   const permissionCtx = useContext(PermissionContext);
   const churchCtx = useContext(ChurchContext);
@@ -41,6 +45,7 @@ export function AuthProvider({ children }) {
         }
 
         setUser(nextUser);
+        queryClient.setQueryData(["user"], nextUser);
         if (nextUser) {
           localStorage.setItem("userIsActive", nextUser?.isActive === false ? "0" : "1");
         } else {
@@ -48,8 +53,43 @@ export function AuthProvider({ children }) {
         }
         permissionCtx?.setPermissions?.(payload?.permissions);
         churchCtx?.setActiveChurch?.(payload?.activeChurch);
+
+        if (nextUser) {
+          const year = new Date().getFullYear();
+          void Promise.allSettled([
+            queryClient.prefetchQuery({
+              queryKey: ["dashboard", "kpi"],
+              queryFn: async () => {
+                const res = await getDashboardKPI();
+                return res?.data?.kpis || null;
+              }
+            }),
+            queryClient.prefetchQuery({
+              queryKey: ["dashboard", "widgets"],
+              queryFn: async () => {
+                const res = await getDashboardWidgets();
+                return res?.data?.dashboardWidget || null;
+              }
+            }),
+            queryClient.prefetchQuery({
+              queryKey: ["dashboard", "summary"],
+              queryFn: async () => {
+                const res = await getDashboardSummary();
+                return res?.data || null;
+              }
+            }),
+            queryClient.prefetchQuery({
+              queryKey: ["dashboard", "analytics", year],
+              queryFn: async () => {
+                const res = await getDashboardAnalytics({ year });
+                return res?.data?.analyticsDashboard || null;
+              }
+            })
+          ]);
+        }
       } catch {
         setUser(null);
+        queryClient.clear();
         localStorage.removeItem(AUTH_TOKEN_KEY);
         sessionStorage.removeItem(AUTH_TOKEN_KEY);
         localStorage.removeItem("cckUserId");
@@ -85,6 +125,7 @@ export function AuthProvider({ children }) {
     }
 
     setUser(userData);
+    queryClient.setQueryData(["user"], userData);
     if (userData) {
       localStorage.setItem("userIsActive", userData?.isActive === false ? "0" : "1");
     } else {
@@ -113,6 +154,40 @@ export function AuthProvider({ children }) {
     }
 
     const userData = await refreshUser();
+
+    if (userData) {
+      const year = new Date().getFullYear();
+      await Promise.allSettled([
+        queryClient.prefetchQuery({
+          queryKey: ["dashboard", "kpi"],
+          queryFn: async () => {
+            const res = await getDashboardKPI();
+            return res?.data?.kpis || null;
+          }
+        }),
+        queryClient.prefetchQuery({
+          queryKey: ["dashboard", "widgets"],
+          queryFn: async () => {
+            const res = await getDashboardWidgets();
+            return res?.data?.dashboardWidget || null;
+          }
+        }),
+        queryClient.prefetchQuery({
+          queryKey: ["dashboard", "summary"],
+          queryFn: async () => {
+            const res = await getDashboardSummary();
+            return res?.data || null;
+          }
+        }),
+        queryClient.prefetchQuery({
+          queryKey: ["dashboard", "analytics", year],
+          queryFn: async () => {
+            const res = await getDashboardAnalytics({ year });
+            return res?.data?.analyticsDashboard || null;
+          }
+        })
+      ]);
+    }
     return userData;
   };
 
@@ -124,6 +199,7 @@ export function AuthProvider({ children }) {
       await logoutUser();
     } finally {
       setUser(null);
+      queryClient.clear();
       localStorage.removeItem(AUTH_TOKEN_KEY);
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem("cckUserId");

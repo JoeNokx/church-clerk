@@ -7,6 +7,8 @@ import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../../middleware/permissionMiddleware.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import { createSpecialFundSchema } from "../../validators/donations.js";
 
 router.post(
   "/special-funds",
@@ -16,6 +18,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("specialFunds", "create"),
+  validateRequest(createSpecialFundSchema),
   createSpecialFund
 );
 router.get(

@@ -1,4 +1,5 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 import EventContext from "../event.store.js";
 
 const CATEGORY_OPTIONS = [
@@ -18,7 +19,6 @@ function ProgramsEventsFilters({ activeStatus }) {
   const store = useContext(EventContext);
 
   const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
-  const debounceRef = useRef(null);
 
   useEffect(() => {
     setSearchValue(store?.filters?.search || "");
@@ -28,6 +28,19 @@ function ProgramsEventsFilters({ activeStatus }) {
     await store?.fetchEventStats?.(partial);
     await store?.fetchEvents?.({ status: activeStatus, ...(partial || {}) });
   };
+
+  const debouncedSearch = useMemo(() => {
+    return debounce((next) => {
+      store?.fetchEventStats?.({ search: next, page: 1 });
+      store?.fetchEvents?.({ status: activeStatus, search: next, page: 1 });
+    }, 400);
+  }, [activeStatus, store]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   const onCategoryChange = async (e) => {
     const value = e.target.value;
@@ -40,23 +53,8 @@ function ProgramsEventsFilters({ activeStatus }) {
     setSearchValue(next);
     store?.setFilters({ search: next, page: 1 });
 
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    debounceRef.current = setTimeout(() => {
-      refreshAll({ search: next, page: 1 });
-    }, 400);
+    debouncedSearch(next);
   };
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-        debounceRef.current = null;
-      }
-    };
-  }, []);
 
   return (
     <div className="flex flex-wrap items-end gap-3">

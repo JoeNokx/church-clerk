@@ -20,6 +20,8 @@ import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js"
 import { requirePermission } from "../middleware/permissionMiddleware.js";
 import {blockMemberCreationIfOverdue} from "../middleware/blockMemberCreationMiddleware.js"
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
+import { validateRequest } from "../middleware/validateRequest.js";
+import { createMemberSchema, getMembersQuerySchema, updateMemberSchema } from "../validators/members.js";
 
 const uploadMemberCsv = (req, res, next) => {
   uploadMemoryFile.single("file")(req, res, (err) => {
@@ -44,6 +46,7 @@ router.get(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("members", "read"),
+  validateRequest(getMembersQuerySchema, "query"),
   getAllMembers
 );
 
@@ -81,6 +84,7 @@ router.post(
     }
     return requirePermission("members", "create")(req, res, next);
   },
+  validateRequest(createMemberSchema),
   createMember
 );
 
@@ -127,6 +131,7 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("members", "update"),
+  validateRequest(updateMemberSchema),
   updateMember
 );
 router.delete(

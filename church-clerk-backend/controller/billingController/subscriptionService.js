@@ -6,11 +6,18 @@ import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
 
-import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
+import { addDays, addInterval } from "../../utils/dateBillingUtils.js";
 
 import Church from "../../models/churchModel.js";
 
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
+
+import { chargeWithPaystack } from "./paystackController.js";
+
+import {
+  sendCancellationAppliedEmail,
+  sendDowngradeAppliedEmail
+} from "../../utils/subscriptionEmails.js";
 
 
 
@@ -30,17 +37,6 @@ const normalizeLegacyCurrency = (currency) => {
 
 
 
-const getIntervalMonths = (billingInterval) => {
-
-  if (billingInterval === "monthly") return 1;
-
-  if (billingInterval === "halfYear") return 6;
-
-  if (billingInterval === "yearly") return 12;
-
-  return 1;
-
-};
 
 
 
@@ -148,7 +144,7 @@ export const createSubscriptionForChurch = async ({
 
     subscriptionData.status = "active";
 
-    subscriptionData.nextBillingDate = addMonths(new Date(), getIntervalMonths(billingInterval));
+    subscriptionData.nextBillingDate = addInterval(new Date(), billingInterval);
 
   }
 
@@ -194,7 +190,7 @@ export const upgradeTrialToPlans = async (church, planId) => {
 
   subscription.trialEnd = null;
 
-  subscription.nextBillingDate = addMonths(new Date(), getIntervalMonths(subscription.billingInterval));
+  subscription.nextBillingDate = addInterval(new Date(), subscription.billingInterval);
 
   subscription.gracePeriodEnd = null;
 
@@ -380,39 +376,65 @@ export const runBillingCycles = async () => {
 
   for (const subscription of subscriptions) {
 
+    // -------------------------------------------------------
+    // STEP 1: Apply pending cancel/downgrade BEFORE charging.
+    // Idempotency: pendingPlan is cleared after first apply.
+    // -------------------------------------------------------
+    let pendingActionApplied = false;
+    let pendingAction = null;
+    let newPlan = null;
+
+    if (subscription.pendingPlan) {
+      const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
+      if (effectiveAt && new Date(effectiveAt) <= today) {
+        pendingAction = subscription.pendingPlanAction;
+        newPlan = await Plan.findById(subscription.pendingPlan).lean();
+
+        subscription.plan = subscription.pendingPlan;
+        subscription.pendingPlan = null;
+        subscription.pendingPlanEffectiveDate = null;
+        subscription.pendingPlanAction = null;
+        pendingActionApplied = true;
+
+        await subscription.save();
+
+        // Notify church
+        try {
+          const church = await Church.findById(subscription.church).lean();
+          if (pendingAction === "cancel") {
+            await sendCancellationAppliedEmail(church);
+          } else if (pendingAction === "downgrade") {
+            await sendDowngradeAppliedEmail(church, newPlan?.name || "new plan");
+          }
+        } catch { /* email failure must not abort billing cycle */ }
+      }
+    }
+
+    // -------------------------------------------------------
+    // STEP 2: Skip charging if subscription was just cancelled.
+    // -------------------------------------------------------
+    if (pendingActionApplied && pendingAction === "cancel") {
+      continue;
+    }
+
+    // -------------------------------------------------------
+    // STEP 3: Process billing (free months or paid charge).
+    // -------------------------------------------------------
     const result = await processSubscriptionBillings(subscription);
-
-
 
     if (result.charged) {
 
-      const { gracePeriodDays } = await getSystemSettingsSnapshot();
+      try {
 
-      subscription.status = "past_due";
+        await chargeWithPaystack(subscription);
 
-      subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
+      } catch {
 
-      await subscription.save();
+        const { gracePeriodDays } = await getSystemSettingsSnapshot();
 
-    }
+        subscription.status = "past_due";
 
-
-
-    // Apply scheduled plan change (downgrade/cancel)
-
-    if (subscription.pendingPlan) {
-
-      const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
-
-      if (effectiveAt && new Date(effectiveAt) <= today) {
-
-        subscription.plan = subscription.pendingPlan;
-
-        subscription.pendingPlan = null;
-
-        subscription.pendingPlanEffectiveDate = null;
-
-        subscription.pendingPlanAction = null;
+        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
 
         await subscription.save();
 

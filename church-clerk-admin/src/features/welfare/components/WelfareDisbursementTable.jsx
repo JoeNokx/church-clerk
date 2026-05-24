@@ -55,7 +55,32 @@ function WelfareDisbursementTable({ onEdit, onDeleted }) {
   };
 
   if (store?.loading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return (
+      <div className="overflow-x-auto animate-pulse">
+        <table className="min-w-full">
+          <thead className="bg-slate-100">
+            <tr className="text-left text-xs font-semibold text-gray-500">
+              <th className="px-4 py-2"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+              <th className="px-4 py-2"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+              <th className="px-4 py-2"><div className="h-3 w-10 rounded bg-gray-200" /></th>
+              <th className="px-4 py-2"><div className="h-3 w-10 rounded bg-gray-200" /></th>
+              <th className="px-4 py-2"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <tr key={i}>
+                <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
   }
 
   if (store?.error) {

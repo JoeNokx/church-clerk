@@ -1,11 +1,11 @@
 import http from "../../../shared/services/http.js";
 
-export const getEvents = async (params) => {
-  return await http.get("/event/events", { params });
+export const getEvents = async (params, config = {}) => {
+  return await http.get("/event/events", { params, ...(config || {}) });
 };
 
-export const getEventStats = async (params) => {
-  return await http.get("/event/events/stats", { params });
+export const getEventStats = async (params, config = {}) => {
+  return await http.get("/event/events/stats", { params, ...(config || {}) });
 };
 
 export const getUpcomingEvents = async (params) => {

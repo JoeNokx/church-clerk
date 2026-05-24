@@ -7,11 +7,12 @@ export const createSpecialFund = async (payload, churchId) => {
   });
 };
 
-export const getSpecialFunds = async (params, churchId) => {
+export const getSpecialFunds = async (params, churchId, config = {}) => {
   if (!churchId) throw new Error("Active church not selected");
   return await http.get("/special-fund/special-funds", {
     params,
-    headers: { "x-active-church": churchId }
+    headers: { "x-active-church": churchId },
+    ...(config || {})
   });
 };
 

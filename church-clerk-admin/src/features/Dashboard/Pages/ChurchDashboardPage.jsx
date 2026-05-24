@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, useContext } from "react";
+import { useMemo, useState, useContext } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from "recharts";
 
 import PermissionContext from "../../Permissions/permission.store.js";
 import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboardWidgetsWithParams } from "../services/dashboard.api.js";
 import { getUpcomingEvents } from "../../event/services/event.api.js";
-import { getMembers } from "../../member/services/member.api.js";
 import { getMyReferralCode, getMyReferralHistory } from "../../referral/services/referral.api.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
@@ -155,18 +155,104 @@ function ChurchDashboardPage() {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("dashboard", "read") : true), [can]);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [kpis, setKpis] = useState(null);
-  const [analytics, setAnalytics] = useState(null);
-  const [widgets, setWidgets] = useState(null);
-  const [referral, setReferral] = useState(null);
+  const year = useMemo(() => new Date().getFullYear(), []);
 
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [upcomingEventsLoading, setUpcomingEventsLoading] = useState(false);
-  const [upcomingEventsError, setUpcomingEventsError] = useState("");
+  const kpiQuery = useQuery({
+    queryKey: ["dashboard", "kpi"],
+    enabled: canRead,
+    queryFn: async () => {
+      const res = await getDashboardKPI();
+      return res?.data?.kpis || null;
+    }
+  });
 
-  const [newMembersThisMonthCount, setNewMembersThisMonthCount] = useState(null);
+  const analyticsQuery = useQuery({
+    queryKey: ["dashboard", "analytics", year],
+    enabled: canRead,
+    queryFn: async () => {
+      const res = await getDashboardAnalytics({ year });
+      return res?.data?.analyticsDashboard || null;
+    }
+  });
+
+  const widgetsQuery = useQuery({
+    queryKey: ["dashboard", "widgets"],
+    enabled: canRead,
+    queryFn: async () => {
+      const res = await getDashboardWidgets();
+      return res?.data?.dashboardWidget || null;
+    }
+  });
+
+  const referralCodeQuery = useQuery({
+    queryKey: ["referral", "code"],
+    enabled: canRead,
+    queryFn: async () => {
+      const res = await getMyReferralCode();
+      return res?.data || {};
+    }
+  });
+
+  const referralHistoryQuery = useQuery({
+    queryKey: ["referral", "history"],
+    enabled: canRead,
+    queryFn: async () => {
+      const res = await getMyReferralHistory();
+      return res?.data || {};
+    }
+  });
+
+  const upcomingEventsQuery = useQuery({
+    queryKey: ["dashboard", "upcoming-events"],
+    enabled: canRead,
+    queryFn: async () => {
+      const res = await getUpcomingEvents({ page: 1, limit: 6 });
+      const payload = res?.data?.data ?? res?.data;
+      const data = payload?.data ?? payload;
+      const events = Array.isArray(data?.events) ? data.events : [];
+      return events.slice(0, 6);
+    }
+  });
+
+  const loading =
+    kpiQuery.isLoading ||
+    analyticsQuery.isLoading ||
+    widgetsQuery.isLoading ||
+    referralCodeQuery.isLoading ||
+    referralHistoryQuery.isLoading ||
+    upcomingEventsQuery.isLoading;
+  const error =
+    (kpiQuery.error && (kpiQuery.error?.response?.data?.message || kpiQuery.error?.message)) ||
+    (analyticsQuery.error && (analyticsQuery.error?.response?.data?.message || analyticsQuery.error?.message)) ||
+    (widgetsQuery.error && (widgetsQuery.error?.response?.data?.message || widgetsQuery.error?.message)) ||
+    (referralCodeQuery.error && (referralCodeQuery.error?.response?.data?.message || referralCodeQuery.error?.message)) ||
+    (referralHistoryQuery.error && (referralHistoryQuery.error?.response?.data?.message || referralHistoryQuery.error?.message)) ||
+    (upcomingEventsQuery.error && (upcomingEventsQuery.error?.response?.data?.message || upcomingEventsQuery.error?.message)) ||
+    "";
+
+  const kpis = kpiQuery.data;
+  const analytics = analyticsQuery.data;
+  const widgets = widgetsQuery.data;
+
+  const referral = useMemo(() => {
+    const code = referralCodeQuery.data || {};
+    const history = referralHistoryQuery.data || {};
+    const referrals = Array.isArray(history?.referrals) ? history.referrals : [];
+    return {
+      totalReferrals: referrals.length,
+      totalFreeMonthsEarned: Number(code?.totalFreeMonthsEarned || 0),
+      totalFreeMonthsUsed: Number(code?.totalFreeMonthsUsed || 0),
+      freeMonthsRemaining: Number(code?.freeMonthsRemaining || 0),
+      referralBonusDays: Number(code?.referralBonusDays || 30)
+    };
+  }, [referralCodeQuery.data, referralHistoryQuery.data]);
+
+  const upcomingEvents = Array.isArray(upcomingEventsQuery.data) ? upcomingEventsQuery.data : [];
+  const upcomingEventsLoading = upcomingEventsQuery.isLoading;
+  const upcomingEventsError =
+    upcomingEventsQuery.error?.response?.data?.message ||
+    upcomingEventsQuery.error?.message ||
+    "";
 
   const [birthdaysModalOpen, setBirthdaysModalOpen] = useState(false);
   const [birthdaysModalLoading, setBirthdaysModalLoading] = useState(false);
@@ -175,141 +261,7 @@ function ChurchDashboardPage() {
   const [birthdaysSearch, setBirthdaysSearch] = useState("");
   const [birthdaysPage, setBirthdaysPage] = useState(1);
 
-  const year = useMemo(() => new Date().getFullYear(), []);
 
-  useEffect(() => {
-    if (!canRead) return;
-
-    let cancelled = false;
-
-    const load = async () => {
-      setError("");
-      setLoading(true);
-
-      setUpcomingEventsLoading(true);
-      setUpcomingEventsError("");
-      setNewMembersThisMonthCount(null);
-
-      const fetchNewMembersThisMonth = async () => {
-        const now = new Date();
-        const from = new Date(now.getFullYear(), now.getMonth(), 1);
-
-        const dateFrom = formatYmdLocal(from);
-        const dateTo = formatYmdLocal(now);
-
-        const limit = 1000;
-        let page = 1;
-        let total = 0;
-
-        while (true) {
-          const res = await getMembers({ page, limit, dateFrom, dateTo });
-          const payload = res?.data?.data ?? res?.data;
-          const rows = Array.isArray(payload?.members) ? payload.members : [];
-          total += rows.length;
-
-          const pagination = payload?.pagination || {};
-          const nextPage = pagination?.nextPage;
-          const totalPages = Number(pagination?.totalPages || 0);
-
-          if (nextPage) {
-            page = nextPage;
-            continue;
-          }
-
-          if (totalPages && page < totalPages) {
-            page += 1;
-            continue;
-          }
-
-          break;
-        }
-
-        return total;
-      };
-
-      try {
-        const [
-          kpiResult,
-          analyticsResult,
-          widgetsResult,
-          referralCodeResult,
-          referralHistoryResult,
-          upcomingEventsResult,
-          newMembersThisMonthResult
-        ] = await Promise.allSettled([
-          getDashboardKPI(),
-          getDashboardAnalytics({ year }),
-          getDashboardWidgets(),
-          getMyReferralCode(),
-          getMyReferralHistory(),
-          getUpcomingEvents({ page: 1, limit: 6 }),
-          fetchNewMembersThisMonth()
-        ]);
-
-        if (cancelled) return;
-
-        if (kpiResult.status !== "fulfilled") throw kpiResult.reason;
-        if (analyticsResult.status !== "fulfilled") throw analyticsResult.reason;
-        if (widgetsResult.status !== "fulfilled") throw widgetsResult.reason;
-
-        const kpiRes = kpiResult.value;
-        const analyticsRes = analyticsResult.value;
-        const widgetsRes = widgetsResult.value;
-
-        setKpis(kpiRes?.data?.kpis || null);
-        setAnalytics(analyticsRes?.data?.analyticsDashboard || null);
-        setWidgets(widgetsRes?.data?.dashboardWidget || null);
-
-        if (!cancelled) {
-          if (newMembersThisMonthResult.status === "fulfilled") {
-            setNewMembersThisMonthCount(Number(newMembersThisMonthResult.value || 0));
-          } else {
-            setNewMembersThisMonthCount(null);
-          }
-        }
-
-        if (!cancelled) {
-          if (upcomingEventsResult.status === "fulfilled") {
-            const res = upcomingEventsResult.value;
-            const payload = res?.data?.data ?? res?.data;
-            const data = payload?.data ?? payload;
-            const events = Array.isArray(data?.events) ? data.events : [];
-            setUpcomingEvents(events.slice(0, 6));
-          } else {
-            setUpcomingEvents([]);
-            setUpcomingEventsError(
-              upcomingEventsResult?.reason?.response?.data?.message ||
-                upcomingEventsResult?.reason?.message ||
-                "Failed to load upcoming events"
-            );
-          }
-        }
-
-        const code = referralCodeResult.status === "fulfilled" ? referralCodeResult.value?.data || {} : {};
-        const history = referralHistoryResult.status === "fulfilled" ? referralHistoryResult.value?.data || {} : {};
-        const referrals = Array.isArray(history.referrals) ? history.referrals : [];
-        setReferral({
-          totalReferrals: referrals.length,
-          totalFreeMonthsEarned: Number(code.totalFreeMonthsEarned || 0),
-          totalFreeMonthsUsed: Number(code.totalFreeMonthsUsed || 0),
-          freeMonthsRemaining: Number(code.freeMonthsRemaining || 0),
-          referralBonusDays: Number(code.referralBonusDays || 30)
-        });
-      } catch (e) {
-        if (cancelled) return;
-        setError(e?.response?.data?.message || e?.message || "Failed to load dashboard");
-      } finally {
-        if (cancelled) return;
-        setLoading(false);
-        setUpcomingEventsLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [canRead, year]);
 
   const attendanceGraph = useMemo(() => {
     const rows = analytics?.attendanceGraph;

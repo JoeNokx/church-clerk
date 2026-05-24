@@ -134,11 +134,20 @@ function AuditLogPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-6 text-center text-gray-500">
-                    Loading...
-                  </td>
-                </tr>
+                <>
+                  {[0, 1, 2, 3].map((i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                      <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                      <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                      <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                      <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                      <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                      <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                      <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                    </tr>
+                  ))}
+                </>
               ) : rows.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-6 text-center text-gray-500">

@@ -4,8 +4,8 @@ export const createWelfareContribution = async (payload) => {
   return await http.post("/welfare/welfare-contributions", payload);
 };
 
-export const getWelfareContributions = async (params) => {
-  return await http.get("/welfare/welfare-contributions", { params });
+export const getWelfareContributions = async (params, config = {}) => {
+  return await http.get("/welfare/welfare-contributions", { params, ...(config || {}) });
 };
 
 export const updateWelfareContribution = async (id, payload) => {

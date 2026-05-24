@@ -1,7 +1,7 @@
 import http from "../../../shared/services/http.js";
 
-export const getLookupValues = async (kind) => {
-  return await http.get("/lookups", { params: { kind } });
+export const getLookupValues = async (kind, config = {}) => {
+  return await http.get(`/lookups/${kind}`, { ...config });
 };
 
 export const createLookupValue = async ({ kind, value }) => {

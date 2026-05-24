@@ -33,7 +33,7 @@ const billingHistorySchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["paid", "failed", "pending", "rewarded", "unpaid"],
+      enum: ["paid", "failed", "pending", "rewarded", "unpaid", "cancelled"],
       required: true
     },
 
@@ -48,7 +48,10 @@ const billingHistorySchema = new mongoose.Schema(
   planName: String,
   billingInterval: String,
   amount: Number,
-  currency: String
+  currency: String,
+  isProration: { type: Boolean, default: false },
+  retainNextBillingDate: { type: Date, default: null },
+  proratedBreakdown: { type: mongoose.Schema.Types.Mixed, default: null }
 },
 
     invoiceNumber: {

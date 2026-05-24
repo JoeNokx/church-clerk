@@ -385,8 +385,34 @@ function PledgeDetailsPageInner() {
 
   if (loading) {
     return (
-      <div className="p-5">
-        <Skeleton height={14} count={8} />
+      <div className="max-w-6xl animate-pulse">
+        <div className="h-7 w-40 rounded bg-gray-200" />
+        <div className="mt-6 space-y-5">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+            <div className="h-4 w-1/2 rounded bg-gray-200" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="h-3 w-16 rounded bg-gray-200" />
+                  <div className="mt-1 h-5 w-20 rounded bg-gray-200" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
+              <div className="h-4 w-32 rounded bg-gray-200" />
+            </div>
+            <div className="p-5 space-y-3">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between gap-3 py-2">
+                  <div className="h-4 w-24 rounded bg-gray-200" />
+                  <div className="h-4 w-16 rounded bg-gray-200" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

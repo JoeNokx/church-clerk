@@ -20,12 +20,20 @@ export const initializePaystackPayment = async (payload) => {
   return await http.post("/subscription/payments/paystack/initialize", payload);
 };
 
+export const getAdminExchangeRate = async () => {
+  return await http.get("/subscription/public/exchange-rate");
+};
+
 export const chargePaystackMobileMoney = async (payload) => {
   return await http.post("/subscription/payments/paystack/mobile-money", payload);
 };
 
 export const verifyPaystackPayment = async (payload) => {
   return await http.post("/subscription/payments/paystack/verify", payload);
+};
+
+export const cancelPaystackPayment = async (payload) => {
+  return await http.post("/subscription/payments/paystack/cancel", payload, { toastSuccess: false });
 };
 
 export const getPaystackBanks = async (params) => {
@@ -66,6 +74,14 @@ export const cancelMySubscription = async () => {
   return await http.post("/subscription/subscriptions/cancel");
 };
 
+export const undoMyCancellation = async () => {
+  return await http.post("/subscription/subscriptions/undo-cancel");
+};
+
 export const changeMyPlan = async (payload) => {
   return await http.post("/subscription/subscriptions/change-plan", payload);
+};
+
+export const calculateUpgradeProration = async (params) => {
+  return await http.get("/subscription/subscriptions/upgrade/prorate", { params, toastSuccess: false });
 };

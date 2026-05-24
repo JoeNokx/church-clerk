@@ -1,6 +1,11 @@
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
+import Church from "../../models/churchModel.js";
 import { validatePlanForChurch } from "../../utils/headquartersPremiumUtils.js";
+import {
+  sendCancellationScheduledEmail,
+  sendDowngradeScheduledEmail
+} from "../../utils/subscriptionEmails.js";
 
 const planRank = (name) => {
   const n = String(name || "")
@@ -35,14 +40,45 @@ export const cancelSubscription = async (req, res) => {
 
     await subscription.save();
 
+    try {
+      const church = await Church.findById(subscription.church).lean();
+      await sendCancellationScheduledEmail(church, subscription.nextBillingDate);
+    } catch { /* email failure must not abort cancellation */ }
+
     return res.json({
-      message: "Cancellation scheduled"
+      message: "Cancellation scheduled",
+      pendingPlanEffectiveDate: subscription.pendingPlanEffectiveDate
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
 
+
+
+export const undoCancellation = async (req, res) => {
+  try {
+    const subscription = await Subscription.findOne({ church: req.activeChurch._id });
+
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found" });
+    }
+
+    if (subscription.pendingPlanAction !== "cancel") {
+      return res.status(400).json({ message: "No pending cancellation to undo" });
+    }
+
+    subscription.pendingPlan = null;
+    subscription.pendingPlanEffectiveDate = null;
+    subscription.pendingPlanAction = null;
+
+    await subscription.save();
+
+    return res.json({ message: "Cancellation undone. Your subscription will continue as normal." });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 
 export const pauseSubscription = async (req, res) => {
@@ -131,8 +167,21 @@ export const changePlan = async (req, res) => {
 
     await subscription.save();
 
+    if (!isUpgrade) {
+      try {
+        const church = await Church.findById(subscription.church).lean();
+        await sendDowngradeScheduledEmail(
+          church,
+          currentName,
+          newPlan.name,
+          subscription.pendingPlanEffectiveDate
+        );
+      } catch { /* email failure must not abort downgrade */ }
+    }
+
     return res.json({
-      message: isUpgrade ? "Plan upgraded successfully" : "Plan downgrade scheduled"
+      message: isUpgrade ? "Plan upgraded successfully" : "Plan downgrade scheduled",
+      pendingPlanEffectiveDate: isUpgrade ? null : subscription.pendingPlanEffectiveDate
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });

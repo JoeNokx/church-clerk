@@ -86,8 +86,17 @@ function NotificationsPage() {
         <div className="flex items-center justify-between gap-3">
           <div className="text-2xl font-semibold text-gray-900">Notifications</div>
         </div>
-        <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-          <Skeleton height={14} count={8} />
+        <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden animate-pulse">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
+              <div className="h-8 w-8 rounded-full bg-gray-200" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-4 w-3/4 rounded bg-gray-200" />
+                <div className="h-3 w-1/2 rounded bg-gray-200" />
+              </div>
+              <div className="h-3 w-12 rounded bg-gray-200" />
+            </div>
+          ))}
         </div>
       </div>
     );

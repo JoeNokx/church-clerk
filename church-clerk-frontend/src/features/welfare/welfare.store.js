@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import ChurchContext from "../church/church.store.js";
 import {
@@ -58,6 +58,11 @@ export function WelfareProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const contributionRequestIdRef = useRef(0);
+  const contributionAbortRef = useRef(null);
+  const disbursementRequestIdRef = useRef(0);
+  const disbursementAbortRef = useRef(null);
+
   useEffect(() => {
     const id = churchStore?.activeChurch?._id || null;
     setActiveChurchId(id);
@@ -73,6 +78,7 @@ export function WelfareProvider({ children }) {
 
   const fetchContributions = useCallback(
     async (partial) => {
+      const requestId = (contributionRequestIdRef.current += 1);
       const nextFilters = { ...contributionFilters, ...(partial || {}) };
       const params = {
         page: nextFilters.page,
@@ -88,16 +94,27 @@ export function WelfareProvider({ children }) {
       setError(null);
 
       try {
-        const res = await apiGetWelfareContributions(params);
+        if (contributionAbortRef.current) {
+          contributionAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        contributionAbortRef.current = controller;
+
+        const res = await apiGetWelfareContributions(params, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
+
+        if (requestId !== contributionRequestIdRef.current) return;
 
         setContributions(Array.isArray(payload?.welfareContribution) ? payload.welfareContribution : []);
         setContributionPagination(payload?.pagination || emptyPagination);
       } catch (e) {
+        if (requestId !== contributionRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         setError(e?.response?.data?.message || e?.message || "Failed to fetch welfare contributions");
         setContributions([]);
         setContributionPagination(emptyPagination);
       } finally {
+        if (requestId !== contributionRequestIdRef.current) return;
         setLoading(false);
       }
     },
@@ -106,6 +123,7 @@ export function WelfareProvider({ children }) {
 
   const fetchDisbursements = useCallback(
     async (partial) => {
+      const requestId = (disbursementRequestIdRef.current += 1);
       const nextFilters = { ...disbursementFilters, ...(partial || {}) };
       const params = {
         page: nextFilters.page,
@@ -122,16 +140,27 @@ export function WelfareProvider({ children }) {
       setError(null);
 
       try {
-        const res = await apiGetWelfareDisbursements(params);
+        if (disbursementAbortRef.current) {
+          disbursementAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        disbursementAbortRef.current = controller;
+
+        const res = await apiGetWelfareDisbursements(params, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
+
+        if (requestId !== disbursementRequestIdRef.current) return;
 
         setDisbursements(Array.isArray(payload?.welfareDisbursement) ? payload.welfareDisbursement : []);
         setDisbursementPagination(payload?.pagination || emptyPagination);
       } catch (e) {
+        if (requestId !== disbursementRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         setError(e?.response?.data?.message || e?.message || "Failed to fetch welfare disbursements");
         setDisbursements([]);
         setDisbursementPagination(emptyPagination);
       } finally {
+        if (requestId !== disbursementRequestIdRef.current) return;
         setLoading(false);
       }
     },

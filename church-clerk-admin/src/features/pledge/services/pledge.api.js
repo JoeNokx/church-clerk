@@ -4,8 +4,8 @@ export const createPledge = async (payload) => {
   return await http.post("/pledge/pledges", payload);
 };
 
-export const getPledges = async (params) => {
-  return await http.get("/pledge/pledges", { params });
+export const getPledges = async (params, config = {}) => {
+  return await http.get("/pledge/pledges", { params, ...(config || {}) });
 };
 
 export const getPledge = async (id) => {

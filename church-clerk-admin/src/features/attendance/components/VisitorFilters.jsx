@@ -1,19 +1,32 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 import AttendanceContext from "../attendance.store.js";
 
 function VisitorFilters() {
   const store = useContext(AttendanceContext);
   const [value, setValue] = useState(store?.visitorFilters?.search || "");
 
+  const debouncedSearch = useMemo(() => {
+    return debounce((next) => {
+      store?.fetchVisitors({ search: next, page: 1 });
+    }, 400);
+  }, [store]);
+
   useEffect(() => {
     setValue(store?.visitorFilters?.search || "");
   }, [store?.visitorFilters?.search]);
 
-  const onChange = async (e) => {
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
+  const onChange = (e) => {
     const next = e.target.value;
     setValue(next);
     store?.setVisitorFilters({ search: next, page: 1 });
-    await store?.fetchVisitors({ search: next, page: 1 });
+    debouncedSearch(next);
   };
 
   return (

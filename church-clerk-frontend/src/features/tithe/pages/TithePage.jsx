@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import TitheContext, { TitheProvider } from "../tithe.store.js";
@@ -467,10 +468,22 @@ function TithePageInner() {
     [mode, store, view]
   );
 
-  const onSearchChange = async (value) => {
+  const debouncedSearch = useMemo(() => {
+    return debounce((value) => {
+      if (mode === "aggregate") store?.fetchAggregates?.({ search: value, page: 1 });
+      else store?.fetchIndividuals?.({ search: value, page: 1 });
+    }, 400);
+  }, [mode, store]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
+  const onSearchChange = (value) => {
     setSearchValue(value);
-    if (mode === "aggregate") await applyFilters({ search: value, page: 1 });
-    else await applyFilters({ search: value, page: 1 });
+    debouncedSearch(value);
   };
 
   const applyDateRange = async (range) => {

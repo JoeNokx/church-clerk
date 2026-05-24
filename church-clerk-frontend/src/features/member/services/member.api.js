@@ -1,11 +1,11 @@
 import http from "../../../shared/services/http.js";
 
-export const getMembers = async (params) => {
-  return await http.get("/member/members", { params });
+export const getMembers = async (params, config = {}) => {
+  return await http.get("/member/members", { params, ...(config || {}) });
 };
 
-export const getMember = async (id) => {
-  return await http.get(`/member/members/${id}`);
+export const getMember = async (id, config = {}) => {
+  return await http.get(`/member/members/${id}`, { ...(config || {}) });
 };
 
 export const createMember = async (payload) => {
@@ -20,8 +20,8 @@ export const deleteMember = async (id) => {
   return await http.delete(`/member/members/${id}`);
 };
 
-export const getMembersKPI = async () => {
-  return await http.get("/member/members/stats/kpi");
+export const getMembersKPI = async (config = {}) => {
+  return await http.get("/member/members/stats/kpi", { ...(config || {}) });
 };
 
 export const downloadMembersImportTemplate = async () => {

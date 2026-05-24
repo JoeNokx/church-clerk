@@ -696,7 +696,15 @@ function MinistriesPage() {
         </div>
 
         {loading ? (
-          <div className="p-5 text-sm text-gray-600">Loading...</div>
+          <div className="p-5 space-y-3 animate-pulse">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center gap-3 py-1.5">
+                <div className="h-8 w-8 rounded-lg bg-gray-200" />
+                <div className="h-4 w-24 rounded bg-gray-200" />
+                <div className="ml-auto h-4 w-16 rounded bg-gray-200" />
+              </div>
+            ))}
+          </div>
         ) : filteredRows.length === 0 ? (
           <div className="p-5 text-sm text-gray-600">No record found.</div>
         ) : (

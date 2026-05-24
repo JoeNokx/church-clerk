@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -6,7 +6,9 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import Skeleton from "react-loading-skeleton";
 import {
   cancelMySubscription,
+  undoMyCancellation,
   changeMyPlan,
+  calculateUpgradeProration,
   addCardPaymentMethod,
   addMobileMoneyPaymentMethod,
   getAvailablePlans,
@@ -16,7 +18,8 @@ import {
   initializePaystackPayment,
   removePaymentMethod,
   updatePaymentMethod,
-  verifyPaystackPayment
+  verifyPaystackPayment,
+  cancelPaystackPayment
 } from "../services/subscription.api.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { getMyReferralCode } from "../../referral/services/referral.api.js";
@@ -144,9 +147,20 @@ function computeNextBillingDate(sub) {
   const base = sub?.updatedAt || sub?.createdAt || null;
   if (!base) return null;
 
-  const interval = sub?.billingInterval || "monthly";
-  const months = interval === "halfYear" ? 6 : interval === "yearly" ? 12 : 1;
-  return addMonths(new Date(base), months);
+  const interval = String(sub?.billingInterval || "monthly").toLowerCase();
+  if (interval === "hourly") {
+    return new Date(new Date(base).getTime() + 60 * 60 * 1000);
+  }
+  if (interval === "daily") {
+    const d = new Date(base); d.setDate(d.getDate() + 1); return d;
+  }
+  if (interval === "weekly") {
+    const d = new Date(base); d.setDate(d.getDate() + 7); return d;
+  }
+  if (interval === "quarterly") return addMonths(new Date(base), 3);
+  if (interval === "halfyear" || interval === "biannually") return addMonths(new Date(base), 6);
+  if (interval === "yearly" || interval === "annually") return addMonths(new Date(base), 12);
+  return addMonths(new Date(base), 1);
 }
 
 function phoneEnding(phone) {
@@ -223,6 +237,11 @@ function BillingPage() {
   const [newCardExpiry, setNewCardExpiry] = useState("");
   const [newCardCvv, setNewCardCvv] = useState("");
   const [newCardHolderName, setNewCardHolderName] = useState("");
+
+  const cardNumberRef = useRef(null);
+  const cardExpiryRef = useRef(null);
+  const cardCvvRef = useRef(null);
+  const cardHolderRef = useRef(null);
   const [editingMethodId, setEditingMethodId] = useState(null);
   const [addMethodError, setAddMethodError] = useState("");
   const [addMethodFieldErrors, setAddMethodFieldErrors] = useState({});
@@ -231,6 +250,10 @@ function BillingPage() {
   const [methodsLoading, setMethodsLoading] = useState(false);
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showResumeConfirm, setShowResumeConfirm] = useState(false);
+  const [showProrationModal, setShowProrationModal] = useState(false);
+  const [prorationData, setProrationData] = useState(null);
+  const [prorationLoading, setProrationLoading] = useState(false);
 
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
   const [referralBonusDays, setReferralBonusDays] = useState(30);
@@ -269,7 +292,7 @@ function BillingPage() {
     };
   }, [isGhana]);
 
-  const displayCurrency = isGhana || !usdToGhs ? "GHS" : "USD";
+  const displayCurrency = isGhana ? "GHS" : "USD";
   const freeMonths = useMemo(() => subscription?.freeMonths || { earned: 0, used: 0 }, [subscription]);
   const freeRemaining = Math.max(0, Number(freeMonths?.earned || 0) - Number(freeMonths?.used || 0));
 
@@ -336,6 +359,28 @@ function BillingPage() {
       return aName.localeCompare(bName);
     });
   }, [plans]);
+
+  const savingsByInterval = useMemo(() => {
+    const MONTHLY_EQUIV = { quarterly: 3, halfYear: 6, yearly: 12 };
+    const paidPlans = plansSorted.filter((p) => String(p?.name || "").trim().toLowerCase() !== "free lite");
+    const result = {};
+    for (const [interval, months] of Object.entries(MONTHLY_EQUIV)) {
+      const percentages = paidPlans
+        .map((p) => {
+          const ghsPrices = p?.pricing?.GHS || p?.priceByCurrency?.GHS || {};
+          const mprice = Number(ghsPrices?.monthly || 0);
+          const iprice = Number(ghsPrices?.[interval] || 0);
+          if (!mprice || !iprice) return null;
+          const pct = Math.round((1 - iprice / (mprice * months)) * 100);
+          return pct > 0 ? pct : null;
+        })
+        .filter((v) => v !== null);
+      if (percentages.length > 0) {
+        result[interval] = Math.round(percentages.reduce((a, b) => a + b, 0) / percentages.length);
+      }
+    }
+    return result;
+  }, [plansSorted]);
 
   const plansForComparison = useMemo(() => {
     const rows = Array.isArray(plansSorted) ? plansSorted.filter((p) => p?.isActive !== false) : [];
@@ -467,25 +512,36 @@ function BillingPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl">
+      <div className="max-w-6xl animate-pulse">
         <div className="text-lg font-semibold text-gray-900">Billing & Subscription</div>
-        <div className="mt-2">
-          <Skeleton height={14} width={160} />
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+              <div className="h-4 w-24 rounded bg-gray-200" />
+              <div className="h-6 w-20 rounded bg-gray-200" />
+              <div className="h-3 w-32 rounded bg-gray-200" />
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
   const overviewInterval = subscription?.billingInterval || "monthly";
-  const overviewIntervalLabel = overviewInterval === "halfYear" ? "6 months" : overviewInterval === "yearly" ? "12 months" : "month";
+  const intervalLabelMap = { hourly: "hour", daily: "day", weekly: "week", monthly: "month", quarterly: "3 months", halfYear: "6 months", yearly: "year" };
+  const overviewIntervalLabel = intervalLabelMap[overviewInterval] || overviewInterval;
+
+  const toDisplayPrice = (ghsAmount) => {
+    if (ghsAmount === null || ghsAmount === undefined) return null;
+    if (displayCurrency === "USD") return usdToGhs ? Number(ghsAmount) / Number(usdToGhs) : null;
+    return Number(ghsAmount);
+  };
 
   const currentPriceGhs = currentPlan?.pricing?.GHS?.[overviewInterval] ?? currentPlan?.priceByCurrency?.GHS?.[overviewInterval] ?? null;
-  const currentPriceDisplay =
-    displayCurrency === "USD" && usdToGhs ? Number(currentPriceGhs || 0) / Number(usdToGhs || 1) : currentPriceGhs;
+  const currentPriceDisplay = toDisplayPrice(currentPriceGhs);
 
   const selectedPriceGhs = selectedPlan?.pricing?.GHS?.[billingInterval] ?? selectedPlan?.priceByCurrency?.GHS?.[billingInterval] ?? null;
-  const selectedPriceDisplay =
-    displayCurrency === "USD" && usdToGhs ? Number(selectedPriceGhs || 0) / Number(usdToGhs || 1) : selectedPriceGhs;
+  const selectedPriceDisplay = toDisplayPrice(selectedPriceGhs);
   const nextBillingDate = computeNextBillingDate(subscription);
   const nextBillingText = nextBillingDate ? formatShortDate(nextBillingDate) : "—";
 
@@ -525,8 +581,22 @@ function BillingPage() {
       return;
     }
 
-    setPlanId(String(nextId));
-    onPay();
+    // UPGRADE with proration preview
+    setProrationLoading(true);
+    setError("");
+    try {
+      const res = await calculateUpgradeProration({
+        newPlanId: nextId,
+        billingInterval
+      });
+      setProrationData({ ...res.data, newPlanId: nextId });
+      setPlanId(String(nextId));
+      setShowProrationModal(true);
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to calculate upgrade cost");
+    } finally {
+      setProrationLoading(false);
+    }
   };
 
   const onCancel = async () => {
@@ -534,6 +604,9 @@ function BillingPage() {
   };
 
   const currentPlanFeatures = getPlanDescriptionFeatures(currentPlan, { max: 6 });
+  const currentPlanName = String(currentPlan?.name || "").trim().toLowerCase();
+  const isFreeLitePlan = currentPlanName === "free lite";
+  const isPaidPlan = ["basic", "standard", "premium"].includes(currentPlanName);
 
   const planManagementCard = (
     <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
@@ -574,34 +647,27 @@ function BillingPage() {
           <div className="text-xs font-semibold text-gray-500">Available Plans</div>
 
           <div className="inline-flex flex-wrap items-center justify-center gap-2">
-            <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
-              <button
-                type="button"
-                onClick={() => setBillingInterval("monthly")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                  billingInterval === "monthly" ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingInterval("halfYear")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                  billingInterval === "halfYear" ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                6 months
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingInterval("yearly")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                  billingInterval === "yearly" ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Yearly
-              </button>
+            <div className="inline-flex flex-wrap rounded-lg border border-gray-200 bg-white p-1 gap-0.5">
+              {[
+                { key: "hourly",    label: "Hourly" },
+                { key: "daily",     label: "Daily" },
+                { key: "weekly",    label: "Weekly" },
+                { key: "monthly",   label: "Monthly" },
+                { key: "quarterly", label: "Quarterly" },
+                { key: "halfYear",  label: "6 Months" },
+                { key: "yearly",    label: "Yearly" }
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setBillingInterval(key)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                    billingInterval === key ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             
@@ -615,9 +681,21 @@ function BillingPage() {
           const isCurrent = id && String(id) === String(subscribedPlanId || "");
           const name = String(p?.name || "");
           const isMostPopular = name.toLowerCase() === "standard";
-          const priceGhs = p?.pricing?.GHS?.[billingInterval] ?? p?.priceByCurrency?.GHS?.[billingInterval] ?? 0;
-          const priceDisplay = displayCurrency === "USD" && usdToGhs ? Number(priceGhs || 0) / Number(usdToGhs || 1) : priceGhs;
-          const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
+          const priceGhs = p?.pricing?.GHS?.[billingInterval] ?? p?.priceByCurrency?.GHS?.[billingInterval] ?? null;
+          const priceDisplay = toDisplayPrice(priceGhs);
+          const perMap = { hourly: "/hour", daily: "/day", weekly: "/week", monthly: "/month", quarterly: "/quarter", halfYear: "/6 months", yearly: "/year" };
+          const per = perMap[billingInterval] || `/${billingInterval}`;
+          const SAVINGS_MONTHS = { quarterly: 3, halfYear: 6, yearly: 12 };
+          const intervalMonths = SAVINGS_MONTHS[billingInterval] || null;
+          const planSavingsPct = (() => {
+            if (!intervalMonths) return null;
+            const ghsPrices = p?.pricing?.GHS || p?.priceByCurrency?.GHS || {};
+            const mprice = Number(ghsPrices?.monthly || 0);
+            const iprice = Number(priceGhs || 0);
+            if (!mprice || !iprice) return null;
+            const pct = Math.round((1 - iprice / (mprice * intervalMonths)) * 100);
+            return pct > 0 ? pct : null;
+          })();
 
           const planFeatures = getPlanDescriptionFeatures(p, { max: 5 });
 
@@ -653,15 +731,24 @@ function BillingPage() {
                 </div>
               ) : null}
 
-              <div className="text-sm font-semibold text-gray-900">{name || "—"}</div>
-              <div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrency(priceDisplay, displayCurrency)}</div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="text-sm font-semibold text-gray-900">{name || "—"}</div>
+                {planSavingsPct ? (
+                  <span className="inline-flex shrink-0 items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">
+                    Save {planSavingsPct}%
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-2 text-2xl font-semibold text-gray-900">
+                {priceDisplay !== null ? formatCurrency(priceDisplay, displayCurrency) : "—"}
+              </div>
               <div className="text-xs text-gray-500">{per}</div>
 
               <button
                 type="button"
                 onClick={() => onPlanAction(p)}
-                disabled={payLoading || manageLoading || isFreeLiteDuringTrial || (isCurrent && !paymentRequired)}
-                className={`mt-5 w-full rounded-lg px-4 py-2 text-xs font-semibold shadow-sm disabled:opacity-60 ${
+                disabled={payLoading || manageLoading || prorationLoading || isFreeLiteDuringTrial || (isCurrent && !paymentRequired)}
+                className={`mt-5 w-full rounded-lg px-4 py-2 text-xs font-semibold shadow-sm disabled:opacity-60 flex items-center justify-center gap-2 ${
                   isCurrent
                     ? "bg-gray-100 text-gray-600"
                     : isUpgrade
@@ -669,6 +756,12 @@ function BillingPage() {
                       : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
+                {prorationLoading && isUpgrade && String(id) === String(planId) && (
+                  <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                )}
                 {actionLabel}
               </button>
 
@@ -714,26 +807,45 @@ function BillingPage() {
         </div>
       </div>
 
-      <PlanComparisonTable plans={plansForComparison} />
+      <PlanComparisonTable plans={plansForComparison} collapsible={true} collapsedCount={4} />
 
     </div>
   );
+
+  const hasPendingCancel = subscription?.pendingPlanAction === "cancel";
 
   const cancelSubscriptionCard = (
     <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-sm font-semibold text-gray-900">Cancel Subscription</div>
-          <div className="text-xs text-gray-500">You can cancel anytime. Your access continues until the end of the current billing period.</div>
+          <div className="text-sm font-semibold text-gray-900">
+            {hasPendingCancel ? "Cancellation Scheduled" : "Cancel Subscription"}
+          </div>
+          <div className="text-xs text-gray-500">
+            {hasPendingCancel
+              ? "Your subscription is set to cancel at the end of the billing period. You can resume anytime before then."
+              : "You can cancel anytime. Your access continues until the end of the current billing period."}
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={manageLoading}
-          className="rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-        >
-          Cancel Subscription
-        </button>
+        {hasPendingCancel ? (
+          <button
+            type="button"
+            onClick={() => setShowResumeConfirm(true)}
+            disabled={manageLoading}
+            className="rounded-lg border border-green-200 bg-white px-4 py-2 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-60"
+          >
+            Resume Subscription
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={manageLoading}
+            className="rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+          >
+            Cancel Subscription
+          </button>
+        )}
       </div>
     </div>
   );
@@ -750,13 +862,51 @@ function BillingPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2 text-sm font-semibold text-red-700">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100">!</span>
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600 text-xs font-bold">!</span>
                 Payment Required
               </div>
               <div className="mt-1 text-sm text-red-700/90">
                 Your free days have ended. Complete payment to continue enjoying all features.
               </div>
             </div>
+          </div>
+        </div>
+      ) : isFreeTrial && !isPaidPlan ? (
+        <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-blue-700">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs">i</span>
+              You're on a free trial
+            </div>
+            <div className="text-xs text-blue-600">
+              {subscription?.trialEnd ? `Trial ends ${formatShortDate(subscription.trialEnd)}` : "Upgrade anytime to access all features"}
+            </div>
+          </div>
+        </div>
+      ) : isFreeLitePlan && !isFreeTrial ? (
+        <div className="mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-orange-700">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-orange-600 text-xs">↑</span>
+                You're on Free Lite
+              </div>
+              <div className="mt-1 text-xs text-orange-600">
+                Unlock more members, features, and tools by upgrading to a paid plan.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const firstPaid = plansSorted.find(
+                  (p) => String(p?.name || "").trim().toLowerCase() !== "free lite" && p?.isActive !== false
+                );
+                if (firstPaid) onPlanAction(firstPaid);
+              }}
+              className="shrink-0 rounded-lg bg-orange-600 px-4 py-2 text-xs font-semibold text-white hover:bg-orange-700"
+            >
+              Upgrade Now
+            </button>
           </div>
         </div>
       ) : null}
@@ -778,12 +928,51 @@ function BillingPage() {
           <StatusPill value={paymentRequired ? "Payment Required" : subscription?.status || "—"} />
         </div>
 
+        {subscription?.status === "past_due" && (
+          <div className="mt-4 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <div className="text-xs text-red-800">
+                <strong>Payment overdue.</strong> Your subscription is past due.
+                {subscription?.gracePeriodEnd
+                  ? <> Grace period ends <strong>{new Date(subscription.gracePeriodEnd).toLocaleDateString()}</strong>. After that, all write actions will be locked.</>
+                  : <> Please renew to avoid losing access.</>
+                }
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setPlanId(String(currentPlanId)); onPay(); }}
+              disabled={!currentPlanId || manageLoading}
+              className="ml-2 flex-shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              Renew Now
+            </button>
+          </div>
+        )}
+
+        {subscription?.pendingPlanAction && subscription?.pendingPlanEffectiveDate && (
+          <div className="mt-4 flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3">
+            <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <div className="text-xs text-yellow-800">
+              {subscription.pendingPlanAction === "cancel"
+                ? <>Your subscription will be <strong>cancelled</strong> on <strong>{new Date(subscription.pendingPlanEffectiveDate).toLocaleDateString()}</strong>. You will move to the Free Lite plan and retain all your data.</>
+                : <>Your plan will be <strong>downgraded</strong> on <strong>{new Date(subscription.pendingPlanEffectiveDate).toLocaleDateString()}</strong>. You will retain all existing data but actions will be limited to your new plan.</>
+              }
+            </div>
+          </div>
+        )}
+
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <div className="text-xs font-semibold text-gray-500">Current Plan</div>
             <div className="mt-1 text-lg font-semibold text-gray-900">{isFreeTrial ? "Free trial" : currentPlan?.name || "—"}</div>
             <div className="text-xs text-gray-500">
-              {currentPriceGhs ? `${formatCurrency(currentPriceDisplay, displayCurrency)}/${overviewIntervalLabel}` : ""}
+              {currentPriceGhs && currentPriceDisplay !== null ? `${formatCurrency(currentPriceDisplay, displayCurrency)}/${overviewIntervalLabel}` : ""}
             </div>
           </div>
 
@@ -797,7 +986,11 @@ function BillingPage() {
             <div className="text-xs font-semibold text-gray-500">Next Billing Date</div>
             <div className="mt-2 text-sm font-semibold text-gray-900">{nextBillingText}</div>
             <div className="text-xs text-gray-500">
-              You will be charged {currentPriceGhs ? formatCurrency(currentPriceGhs, "GHS") : "—"} on this date
+              You will be charged {currentPriceGhs
+                ? currentPriceDisplay !== null
+                  ? formatCurrency(currentPriceDisplay, displayCurrency)
+                  : "—"
+                : "—"} on this date
             </div>
           </div>
         </div>
@@ -996,26 +1189,35 @@ function BillingPage() {
 
             {newProvider === "card" ? (
               <div className="mt-4">
+                {!editingMethodId && savedPaymentMethods.some((m) => m?.type === "card") ? (
+                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                    <span className="font-semibold">One card allowed.</span> Saving this card will replace your existing saved card.
+                  </div>
+                ) : null}
                 <div className="text-xs font-semibold text-gray-700">Card Number</div>
                 <input
+                  ref={cardNumberRef}
                   value={newCardNumber}
+                  inputMode="numeric"
+                  maxLength={19}
                   onChange={(e) => {
-                    const v = e.target.value;
-                    setNewCardNumber(v);
-                    const digits = String(v || "").replace(/\D+/g, "");
-                    if (!digits) {
+                    const raw = e.target.value.replace(/\D+/g, "").slice(0, 16);
+                    const formatted = raw.replace(/(.{4})/g, "$1 ").trim();
+                    setNewCardNumber(formatted);
+                    if (!raw) {
                       setAddFieldError("cardNumber", "Card number is required");
-                    } else if (digits.length < 13 || digits.length > 19) {
+                    } else if (raw.length < 13) {
                       setAddFieldError("cardNumber", "Card number length is invalid");
-                    } else if (!luhnCheck(digits)) {
+                    } else if (!luhnCheck(raw)) {
                       setAddFieldError("cardNumber", "Card number is invalid");
                     } else {
                       setAddFieldError("cardNumber", "");
+                      if (raw.length >= 16) cardExpiryRef.current?.focus();
                     }
                   }}
                   placeholder="1234 5678 9012 3456"
                   disabled={methodsLoading}
-                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tracking-widest"
                 />
                 {addMethodFieldErrors?.cardNumber ? (
                   <div className="mt-1 text-xs font-semibold text-red-600">{addMethodFieldErrors.cardNumber}</div>
@@ -1025,22 +1227,32 @@ function BillingPage() {
                   <div>
                     <div className="text-xs font-semibold text-gray-700">Expiry</div>
                     <input
+                      ref={cardExpiryRef}
                       value={newCardExpiry}
+                      inputMode="numeric"
+                      maxLength={5}
                       onChange={(e) => {
-                        const v = e.target.value;
-                        setNewCardExpiry(v);
-                        const m = String(v || "").trim().match(/^(\d{2})\s*\/\s*(\d{2})$/);
-                        if (!m) {
+                        const prev = newCardExpiry;
+                        let raw = e.target.value.replace(/\D+/g, "").slice(0, 4);
+                        let formatted = raw;
+                        if (raw.length >= 3) {
+                          formatted = raw.slice(0, 2) + "/" + raw.slice(2);
+                        } else if (raw.length === 2 && prev.length < 3) {
+                          formatted = raw + "/";
+                        }
+                        setNewCardExpiry(formatted);
+                        const match = formatted.match(/^(\d{2})\/(\d{2})$/);
+                        if (!match) {
                           setAddFieldError("expiry", "Use MM/YY");
                           return;
                         }
-                        const mm = Number(m[1]);
-                        const yy = Number(m[2]);
-                        if (!Number.isInteger(mm) || mm < 1 || mm > 12 || !Number.isInteger(yy)) {
+                        const mm = Number(match[1]);
+                        if (mm < 1 || mm > 12) {
                           setAddFieldError("expiry", "Expiry is invalid");
                           return;
                         }
                         setAddFieldError("expiry", "");
+                        cardCvvRef.current?.focus();
                       }}
                       placeholder="MM/YY"
                       disabled={methodsLoading}
@@ -1053,17 +1265,20 @@ function BillingPage() {
                   <div>
                     <div className="text-xs font-semibold text-gray-700">CVV</div>
                     <input
+                      ref={cardCvvRef}
                       value={newCardCvv}
+                      inputMode="numeric"
+                      maxLength={4}
                       onChange={(e) => {
-                        const v = e.target.value;
-                        setNewCardCvv(v);
-                        const digits = String(v || "").replace(/\D+/g, "");
+                        const digits = e.target.value.replace(/\D+/g, "").slice(0, 4);
+                        setNewCardCvv(digits);
                         if (!digits) {
                           setAddFieldError("cvv", "CVV is required");
                         } else if (digits.length !== 3 && digits.length !== 4) {
                           setAddFieldError("cvv", "CVV must be 3 or 4 digits");
                         } else {
                           setAddFieldError("cvv", "");
+                          if (digits.length >= 3) cardHolderRef.current?.focus();
                         }
                       }}
                       placeholder="123"
@@ -1079,6 +1294,7 @@ function BillingPage() {
                 <div className="mt-4">
                   <div className="text-xs font-semibold text-gray-700">Cardholder Name</div>
                   <input
+                    ref={cardHolderRef}
                     value={newCardHolderName}
                     onChange={(e) => {
                       const v = e.target.value;
@@ -1292,8 +1508,8 @@ function BillingPage() {
                 <tr key={row?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
                   <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.createdAt ? formatShortDate(row.createdAt) : "—"}</td>
                   <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.type === "free_month" ? "Free Days" : "Payment"}</td>
-                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.type === "free_month" ? "—" : formatCurrency(row?.amount || 0, row?.currency)}</td>
-                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.currency || "—"}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.type === "free_month" ? "—" : (isGhana || !usdToGhs ? formatCurrency(row?.amount || 0, row?.currency || "GHS") : formatCurrency((row?.amount || 0) / Number(usdToGhs), "USD"))}</td>
+                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{isGhana || !usdToGhs ? (row?.currency || "—") : "USD"}</td>
                   <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
                     <StatusPill value={row?.status || "—"}/>
                   </td>
@@ -1388,6 +1604,129 @@ function BillingPage() {
         </div>
       </ModalShell>
 
+      <ModalShell
+        open={showResumeConfirm}
+        title="Resume Subscription"
+        subtitle="Are you sure you want to keep your subscription active?"
+        onClose={() => setShowResumeConfirm(false)}
+        maxWidthClass="max-w-xl"
+      >
+        <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="text-sm text-gray-700">
+            The scheduled cancellation will be removed. Your subscription will automatically renew as normal on the next billing date.
+          </div>
+        </div>
+        <div className="mt-5 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setShowResumeConfirm(false)}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            Keep Cancellation
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              setManageLoading(true);
+              setError("");
+              try {
+                await undoMyCancellation();
+                setShowResumeConfirm(false);
+                await load();
+              } catch (e) {
+                setError(e?.response?.data?.message || e?.message || "Failed to resume subscription");
+              } finally {
+                setManageLoading(false);
+              }
+            }}
+            disabled={manageLoading}
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+          >
+            Confirm Resume
+          </button>
+        </div>
+      </ModalShell>
+
+      {showProrationModal && prorationData && (() => {
+        const bd = prorationData.breakdown || {};
+        const proratedGhs = Number(bd.proratedAmount ?? 0);
+        const usdRate = Number(prorationData.usdRate || 0);
+        const showUsd = !prorationData.isGhana && usdRate > 0;
+        const fmt = (ghs, cur) => {
+          const v = cur === "USD" ? ghs / usdRate : ghs;
+          return new Intl.NumberFormat("en-US", { style: "currency", currency: cur, minimumFractionDigits: 2 }).format(v);
+        };
+        const display = (ghs) => showUsd ? fmt(ghs, "USD") : fmt(ghs, "GHS");
+        const pctRemaining = Math.round((bd.remainingFraction ?? 0) * 100);
+        const renewDate = bd.retainNextBillingDate ? new Date(bd.retainNextBillingDate).toLocaleDateString() : "—";
+
+        return (
+          <ModalShell
+            open={showProrationModal}
+            title="Upgrade Plan"
+            subtitle="Review your prorated upgrade charge before confirming"
+            onClose={() => { setShowProrationModal(false); setProrationData(null); }}
+            maxWidthClass="max-w-xl"
+          >
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Current Plan</div>
+                <div className="mt-1 text-base font-bold text-gray-900">{prorationData.currentPlan?.name || "—"}</div>
+                <div className="mt-1 text-xs text-gray-500">{display(bd.currentPlanPrice ?? 0)}/{billingInterval}</div>
+              </div>
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide">New Plan</div>
+                <div className="mt-1 text-base font-bold text-blue-900">{prorationData.newPlan?.name || "—"}</div>
+                <div className="mt-1 text-xs text-blue-700">{display(bd.newPlanPrice ?? 0)}/{billingInterval}</div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100 text-sm">
+              <div className="flex justify-between px-4 py-3">
+                <span className="text-gray-600">Remaining billing period</span>
+                <span className="font-semibold text-gray-900">{bd.remainingDays ?? 0} / {bd.totalDays ?? 0} days ({pctRemaining}%)</span>
+              </div>
+              <div className="flex justify-between px-4 py-3 text-green-700">
+                <span>Credit from {prorationData.currentPlan?.name}</span>
+                <span className="font-semibold">− {display(bd.currentPlanCredit ?? 0)}</span>
+              </div>
+              <div className="flex justify-between px-4 py-3 text-gray-700">
+                <span>{prorationData.newPlan?.name} for remaining period</span>
+                <span className="font-semibold">+ {display(bd.newPlanCost ?? 0)}</span>
+              </div>
+              <div className="flex justify-between px-4 py-3 bg-blue-50 rounded-b-xl">
+                <span className="font-bold text-gray-900">You pay today</span>
+                <span className="text-xl font-bold text-blue-700">{display(proratedGhs)}</span>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
+              Your plan upgrades <strong>immediately</strong> on payment. Next renewal on <strong>{renewDate}</strong> at the full {prorationData.newPlan?.name} price ({display(bd.newPlanPrice ?? 0)}).
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => { setShowProrationModal(false); setProrationData(null); }}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProrationModal(false);
+                  onPay();
+                }}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Proceed to Payment — {display(proratedGhs)}
+              </button>
+            </div>
+          </ModalShell>
+        );
+      })()}
+
       <MinistryPlusCustomPlanModal
         open={showCustomPlanModal}
         onClose={() => setShowCustomPlanModal(false)}
@@ -1400,39 +1739,64 @@ function BillingPage() {
         subtitle="Review your payment details before proceeding"
         onClose={() => setShowPaymentSummary(false)}
       >
-        <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="text-gray-700">Plan</div>
-              <div className="font-semibold text-gray-900">{selectedPlan?.name || "—"}</div>
-            </div>
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="text-gray-700">Amount (Display)</div>
-              <div className="font-semibold text-gray-900">{formatCurrency(selectedPriceDisplay ?? 0, displayCurrency)}</div>
-            </div>
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="text-gray-700">Amount (Charged)</div>
-              <div className="font-semibold text-gray-900">{formatCurrency(selectedPriceGhs ?? 0, "GHS")}</div>
-            </div>
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="text-gray-700">Billing Cycle</div>
-              <div className="font-semibold text-gray-900">{billingInterval === "halfYear" ? "6 Months" : billingInterval === "yearly" ? "Yearly" : "Monthly"}</div>
-            </div>
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <div className="text-gray-700">Free Days Applied</div>
-              <div className="font-semibold text-gray-900">0</div>
-            </div>
-          </div>
+        {(() => {
+          const isProration = Boolean(prorationData?.breakdown?.proratedAmount >= 0);
+          const bd = prorationData?.breakdown || {};
+          const proratedGhs = isProration ? Number(bd.proratedAmount ?? 0) : null;
+          const proratedDisplay = proratedGhs !== null ? toDisplayPrice(proratedGhs) : null;
+          const displayAmt = isProration
+            ? (isGhana ? formatCurrency(proratedGhs, "GHS") : proratedDisplay !== null ? formatCurrency(proratedDisplay, "USD") : "—")
+            : (isGhana ? formatCurrency(selectedPriceGhs ?? 0, "GHS") : selectedPriceDisplay !== null ? formatCurrency(selectedPriceDisplay, "USD") : "—");
 
-          <div className="mt-4 border-t border-blue-100 pt-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="text-sm font-semibold text-gray-700">Total Due Now</div>
-              <div className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(selectedPriceGhs ?? 0, "GHS")}
+          return (
+            <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <div className="text-gray-700">Plan</div>
+                  <div className="font-semibold text-gray-900">{selectedPlan?.name || "—"}</div>
+                </div>
+                {isProration && (
+                  <>
+                    <div className="flex items-center justify-between gap-4 text-sm text-green-700">
+                      <div>Credit from {prorationData.currentPlan?.name}</div>
+                      <div className="font-semibold">
+                        − {isGhana ? formatCurrency(bd.currentPlanCredit ?? 0, "GHS") : toDisplayPrice(bd.currentPlanCredit ?? 0) !== null ? formatCurrency(toDisplayPrice(bd.currentPlanCredit ?? 0), "USD") : "—"}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 text-sm">
+                      <div className="text-gray-700">{selectedPlan?.name} for remaining period</div>
+                      <div className="font-semibold text-gray-900">
+                        + {isGhana ? formatCurrency(bd.newPlanCost ?? 0, "GHS") : toDisplayPrice(bd.newPlanCost ?? 0) !== null ? formatCurrency(toDisplayPrice(bd.newPlanCost ?? 0), "USD") : "—"}
+                      </div>
+                    </div>
+                  </>
+                )}
+                {!isProration && (
+                  <div className="flex items-center justify-between gap-4 text-sm">
+                    <div className="text-gray-700">Amount</div>
+                    <div className="font-semibold text-gray-900">{displayAmt}</div>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <div className="text-gray-700">Billing Cycle</div>
+                  <div className="font-semibold text-gray-900">{({ hourly: "Hourly", daily: "Daily", weekly: "Weekly", monthly: "Monthly", quarterly: "Quarterly", halfYear: "6 Months", yearly: "Yearly" })[billingInterval] || billingInterval}</div>
+                </div>
+              </div>
+
+              <div className="mt-4 border-t border-blue-100 pt-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="text-sm font-semibold text-gray-700">{isProration ? "Prorated Amount Due Now" : "Total Due Now"}</div>
+                  <div className="text-2xl font-semibold text-gray-900">{displayAmt}</div>
+                </div>
+                {isProration && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    Next renewal on {bd.retainNextBillingDate ? new Date(bd.retainNextBillingDate).toLocaleDateString() : "—"} at full price.
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
           <div className="flex items-start gap-2">
@@ -1446,7 +1810,11 @@ function BillingPage() {
             <div className="min-w-0">
               <div className="text-sm font-semibold text-gray-900">What happens next:</div>
               <div className="mt-2 space-y-1 text-sm text-gray-600">
-                <div>- You'll be charged {formatCurrency(selectedPriceGhs ?? 0, "GHS")} today</div>
+                <div>- You'll be charged {isGhana
+                    ? formatCurrency(selectedPriceGhs ?? 0, "GHS")
+                    : selectedPriceDisplay !== null
+                      ? formatCurrency(selectedPriceDisplay, "USD")
+                      : "—"} today</div>
                 <div>- Your subscription will be activated immediately</div>
                 <div>- Next billing date will be {nextBillingText}</div>
                 <div>- You can cancel anytime before the next billing cycle</div>
@@ -1492,6 +1860,25 @@ function BillingPage() {
           {checkoutError ? (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{checkoutError}</div>
           ) : null}
+
+          <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+            <div className="text-sm">
+              <span className="text-gray-500">Plan: </span>
+              <span className="font-semibold text-gray-900">{selectedPlan?.name || "—"}</span>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-semibold text-gray-900">
+                {isGhana
+                  ? formatCurrency(selectedPriceGhs ?? 0, "GHS")
+                  : selectedPriceDisplay !== null
+                    ? formatCurrency(selectedPriceDisplay, "USD")
+                    : "—"}
+              </div>
+              <div className="text-xs text-gray-500">
+                {({ hourly: "/hour", daily: "/day", weekly: "/week", monthly: "/month", quarterly: "/quarter", halfYear: "/6 months", yearly: "/year" })[billingInterval] || `/${billingInterval}`}
+              </div>
+            </div>
+          </div>
 
           <div className="text-sm font-semibold text-gray-900">Saved Payment Methods</div>
           <div className="mt-3 space-y-3">
@@ -1583,7 +1970,11 @@ function BillingPage() {
                   return;
                 }
 
-                const amount = selectedPriceGhs ?? 0;
+                const isProrationPayment = Boolean(prorationData?.breakdown?.proratedAmount >= 0);
+                const amount = isProrationPayment
+                  ? (prorationData.breakdown.proratedAmount ?? selectedPriceGhs ?? 0)
+                  : (selectedPriceGhs ?? 0);
+                const checkoutCurrency = "GHS";
 
                 const amountMajor = Number(amount);
                 if (!Number.isFinite(amountMajor) || amountMajor <= 0) {
@@ -1649,7 +2040,9 @@ function BillingPage() {
                   const res = await initializePaystackPayment({
                     planId,
                     billingInterval,
-                    channels
+                    channels,
+                    currency: "GHS",
+                    isUpgrade: isProrationPayment
                   });
                   const accessCode = res?.data?.accessCode;
                   const initRef = res?.data?.reference;
@@ -1666,33 +2059,40 @@ function BillingPage() {
                     return;
                   }
 
-                  const reference = await new Promise((resolve, reject) => {
+                  const { reference, wasCancelled } = await new Promise((resolve) => {
                     let settled = false;
                     const handler = paystack.setup({
                       key,
                       email: payerEmail,
                       amount: amountMinor,
-                      currency: "GHS",
+                      currency: checkoutCurrency,
                       ...(channels.length ? { channels } : {}),
                       access_code: accessCode,
                       ref: initRef,
                       callback: (response) => {
                         if (settled) return;
                         settled = true;
-                        resolve(response?.reference || response?.trxref || initRef);
+                        resolve({ reference: response?.reference || response?.trxref || initRef, wasCancelled: false });
                       },
                       onClose: () => {
                         if (settled) return;
                         settled = true;
-                        reject(new Error("Payment was cancelled"));
+                        resolve({ reference: initRef, wasCancelled: true });
                       }
                     });
                     handler.openIframe();
                   });
 
+                  if (wasCancelled) {
+                    try { await cancelPaystackPayment({ reference }); } catch {}
+                    setCheckoutError("Payment was cancelled");
+                    return;
+                  }
+
                   const st = await pollVerify(reference);
                   if (st === "paid") {
-                    setPaymentResult({ status: "success", amount });
+                    setProrationData(null);
+                    setPaymentResult({ status: "success", amount: amountMajor });
                     setShowPaymentMethod(false);
                     setShowPaymentResult(true);
                     setToastMessage("Payment successful! Your subscription has been activated.");
@@ -1720,7 +2120,11 @@ function BillingPage() {
             >
               {checkoutLoading
                 ? "Processing…"
-                : `Proceed to Pay ${formatCurrency(selectedPriceGhs ?? 0, "GHS")}`}
+                : `Proceed to Pay ${
+                    !isGhana && selectedPriceDisplay !== null
+                      ? formatCurrency(selectedPriceDisplay, "USD")
+                      : formatCurrency(selectedPriceGhs ?? 0, "GHS")
+                  }`}
             </button>
           </div>
         </div>

@@ -35,6 +35,11 @@ const systemSettingsSchema = new mongoose.Schema(
       type: Number,
       default: 30,
       min: 1
+    },
+    usdToGhsRate: {
+      type: Number,
+      default: 10,
+      min: 0
     }
   },
   { timestamps: true }

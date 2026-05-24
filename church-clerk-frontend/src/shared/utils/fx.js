@@ -1,9 +1,11 @@
 const USD_TO_GHS_CACHE_KEY = "cck_fx_usd_to_ghs_v1";
 const USD_RATES_CACHE_KEY = "cck_fx_usd_rates_v1";
 const USD_TO_GHS_CACHE_TTL_MS = 1000 * 60 * 60;
+const ADMIN_RATE_TTL_MS = 1000 * 60 * 5;
 
 let memUsdToGhs = null;
 let memUsdRates = null;
+let memAdminRate = null;
 
 const nowMs = () => Date.now();
 
@@ -68,7 +70,51 @@ const writeRatesCache = (rates) => {
   }
 };
 
+const getAdminUsdToGhsRate = async () => {
+  const now = nowMs();
+  if (memAdminRate && (now - memAdminRate.ts) < ADMIN_RATE_TTL_MS) {
+    return memAdminRate.rate > 0 ? memAdminRate.rate : null;
+  }
+  try {
+    const baseUrl = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL)
+      ? String(import.meta.env.VITE_API_BASE_URL).replace(/\/$/, "")
+      : "";
+    if (!baseUrl) return null;
+    const res = await fetch(`${baseUrl}/subscription/public/exchange-rate`, { credentials: "include" });
+    if (!res.ok) {
+      memAdminRate = { rate: 0, ts: now };
+      return null;
+    }
+    const json = await res.json();
+    const rate = Number(json?.usdToGhsRate);
+    const valid = Number.isFinite(rate) && rate > 0 ? rate : 0;
+    memAdminRate = { rate: valid, ts: now };
+    return valid > 0 ? valid : null;
+  } catch {
+    memAdminRate = { rate: 0, ts: now };
+    return null;
+  }
+};
+
+export async function getAdminConfiguredRate() {
+  return await getAdminUsdToGhsRate();
+}
+
+export function clearAdminRateCache() {
+  memAdminRate = null;
+  memUsdToGhs = null;
+  try {
+    if (typeof window !== "undefined") window.localStorage.removeItem(USD_TO_GHS_CACHE_KEY);
+  } catch { /* ignore */ }
+}
+
 export async function getUsdToGhsRate() {
+  const adminRate = await getAdminUsdToGhsRate();
+  if (adminRate) {
+    memUsdToGhs = { rate: adminRate, ts: nowMs() };
+    return adminRate;
+  }
+
   if (memUsdToGhs && Number.isFinite(memUsdToGhs.rate)) return memUsdToGhs.rate;
 
   const cached = readCache();

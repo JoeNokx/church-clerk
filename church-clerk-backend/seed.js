@@ -14,7 +14,10 @@ const seedSuperAdmin = async () => {
   try {
     await connectDB();
 
-    const email = "superadmin@test.com";
+    const fullName = process.env.SEED_ADMIN_FULLNAME ;
+    const email = process.env.SEED_ADMIN_EMAIL ;
+    const phoneNumber = process.env.SEED_ADMIN_PHONE ;
+    const password = process.env.SEED_ADMIN_PASSWORD ;
 
     const exists = await User.findOne({ email }).lean();
     if (exists) {
@@ -23,10 +26,10 @@ const seedSuperAdmin = async () => {
     }
 
     const superAdmin = await User.create({
-      fullName: "Super Admin",
+      fullName,
       email,
-      phoneNumber: "0546022758",
-      password: "@Password1864",
+      phoneNumber,
+      password,
       role: "superadmin",
       church: null,
       isActive: true
@@ -34,7 +37,7 @@ const seedSuperAdmin = async () => {
 
     console.log("Superadmin created successfully:");
     console.log(`- email: ${superAdmin.email}`);
-    console.log(`- password: @Password1864`);
+    console.log(`- password: ${password}`);
 
     process.exit(0);
   } catch (error) {

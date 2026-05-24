@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createAttendance as apiCreateAttendance,
@@ -52,6 +52,11 @@ export function AttendanceProvider({ children }) {
   const [visitorLoading, setVisitorLoading] = useState(false);
   const [visitorError, setVisitorError] = useState(null);
 
+  const attendancesRequestIdRef = useRef(0);
+  const attendancesAbortRef = useRef(null);
+  const visitorsRequestIdRef = useRef(0);
+  const visitorsAbortRef = useRef(null);
+
   const churchStore = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
 
@@ -70,6 +75,7 @@ export function AttendanceProvider({ children }) {
 
   const fetchAttendances = useCallback(
     async (partial) => {
+      const requestId = (attendancesRequestIdRef.current += 1);
       const nextFilters = { ...attendanceFilters, ...(partial || {}) };
 
       const params = {
@@ -87,16 +93,28 @@ export function AttendanceProvider({ children }) {
 
       try {
         if (!activeChurch) throw new Error("Active church not selected");
-        const res = await getAttendances(params);
+
+        if (attendancesAbortRef.current) {
+          attendancesAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        attendancesAbortRef.current = controller;
+
+        const res = await getAttendances(params, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
+
+        if (requestId !== attendancesRequestIdRef.current) return;
 
         setAttendances(payload?.attendances || []);
         setAttendancePagination(payload?.pagination || emptyPagination);
       } catch (e) {
+        if (requestId !== attendancesRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         setAttendanceError(e?.response?.data?.message || e?.message || "Failed to fetch attendances");
         setAttendances([]);
         setAttendancePagination(emptyPagination);
       } finally {
+        if (requestId !== attendancesRequestIdRef.current) return;
         setAttendanceLoading(false);
       }
     },
@@ -162,6 +180,7 @@ export function AttendanceProvider({ children }) {
 
   const fetchVisitors = useCallback(
     async (partial) => {
+      const requestId = (visitorsRequestIdRef.current += 1);
       const nextFilters = { ...visitorFilters, ...(partial || {}) };
 
       const params = {
@@ -177,18 +196,30 @@ export function AttendanceProvider({ children }) {
 
       try {
         if (!activeChurch) throw new Error("Active church not selected");
-        const res = await getVisitors(params);
+
+        if (visitorsAbortRef.current) {
+          visitorsAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        visitorsAbortRef.current = controller;
+
+        const res = await getVisitors(params, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
+
+        if (requestId !== visitorsRequestIdRef.current) return;
 
         setVisitors(payload?.visitors || []);
         setVisitorPagination(payload?.pagination || emptyPagination);
         setVisitorStats(payload?.stats || { totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
       } catch (e) {
+        if (requestId !== visitorsRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         setVisitorError(e?.response?.data?.message || e?.message || "Failed to fetch visitors");
         setVisitors([]);
         setVisitorPagination(emptyPagination);
         setVisitorStats({ totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
       } finally {
+        if (requestId !== visitorsRequestIdRef.current) return;
         setVisitorLoading(false);
       }
     },

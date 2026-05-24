@@ -1,7 +1,7 @@
 import http from "../../../shared/services/http.js";
 
-export const getAttendances = async (params) => {
-  return await http.get("/attendance/attendances", { params });
+export const getAttendances = async (params, config = {}) => {
+  return await http.get("/attendance/attendances", { params, ...(config || {}) });
 };
 
 export const createAttendance = async (payload) => {
@@ -32,6 +32,6 @@ export const getVisitor = async (id) => {
   return await http.get(`/attendance/visitors/${id}`);
 };
 
-export const getVisitors = async (params) => {
-  return await http.get("/attendance/visitors", { params });
+export const getVisitors = async (params, config = {}) => {
+  return await http.get("/attendance/visitors", { params, ...(config || {}) });
 };

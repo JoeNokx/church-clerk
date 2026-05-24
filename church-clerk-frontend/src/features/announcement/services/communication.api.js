@@ -29,7 +29,7 @@ export const getMessageDeliveryReport = async (id, params) => {
 };
 
 export const estimateMessageCost = async (payload) => {
-  return await http.post("/announcement/messages/estimate", payload);
+  return await http.post("/announcement/messages/estimate", payload, { toastSuccess: false });
 };
 
 export const updateCommunicationMessage = async (id, payload) => {

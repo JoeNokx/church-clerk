@@ -18,6 +18,8 @@ import {
   downloadInvoice,
   getWebhookLogs,
   updateSubscription,
+  adminSuspendSubscription,
+  adminResumeSubscription,
   verifyPayment,
   updatePlan
 } from "../controller/adminBillingController.js";
@@ -36,6 +38,8 @@ router.delete("/plans/:id", requirePermission("billing", "delete"), deletePlan);
 router.get("/subscriptions", requirePermission("billing", "read"), getSubscriptions);
 
 router.put("/subscriptions/:id", requirePermission("billing", "update"), updateSubscription);
+router.post("/subscriptions/:id/suspend", requirePermission("billing", "update"), adminSuspendSubscription);
+router.post("/subscriptions/:id/resume", requirePermission("billing", "update"), adminResumeSubscription);
 
 router.get("/payments", requirePermission("billing", "read"), getPayments);
 router.post("/payments/:id/verify", requirePermission("billing", "update"), verifyPayment);

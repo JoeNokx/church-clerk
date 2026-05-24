@@ -1,7 +1,7 @@
 import http from "../../../shared/services/http.js";
 
 export const getUnreadNotificationsCount = async () => {
-  return await http.get("/notifications/unread-count");
+  return await http.get("/notifications/unread-count", { toastError: false });
 };
 
 export const getMyNotifications = async (params) => {

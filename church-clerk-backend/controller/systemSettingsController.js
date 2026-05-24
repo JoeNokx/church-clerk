@@ -22,7 +22,8 @@ export const getSystemSettings = async (req, res) => {
         creditsPerGhs: settings.creditsPerGhs,
         smsCostCredits: settings.smsCostCredits,
         whatsappCostCredits: settings.whatsappCostCredits,
-        referralBonusDays: settings.referralBonusDays
+        referralBonusDays: settings.referralBonusDays,
+        usdToGhsRate: settings.usdToGhsRate
       }
     });
   } catch (error) {
@@ -32,7 +33,7 @@ export const getSystemSettings = async (req, res) => {
 
 export const updateSystemSettings = async (req, res) => {
   try {
-    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, whatsappCostCredits, referralBonusDays } = req.body || {};
+    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, whatsappCostCredits, referralBonusDays, usdToGhsRate } = req.body || {};
 
     const update = {};
 
@@ -84,6 +85,14 @@ export const updateSystemSettings = async (req, res) => {
       update.referralBonusDays = n;
     }
 
+    if (usdToGhsRate !== undefined) {
+      const n = Number(usdToGhsRate);
+      if (!Number.isFinite(n) || n < 0) {
+        return res.status(400).json({ message: "usdToGhsRate must be a number >= 0 (0 = use live rate)" });
+      }
+      update.usdToGhsRate = n;
+    }
+
     const settings = await getSingletonSettings();
 
     if (Object.keys(update).length === 0) {
@@ -95,7 +104,8 @@ export const updateSystemSettings = async (req, res) => {
           creditsPerGhs: settings.creditsPerGhs,
           smsCostCredits: settings.smsCostCredits,
           whatsappCostCredits: settings.whatsappCostCredits,
-          referralBonusDays: settings.referralBonusDays
+          referralBonusDays: settings.referralBonusDays,
+          usdToGhsRate: settings.usdToGhsRate
         }
       });
     }
@@ -155,7 +165,8 @@ export const updateSystemSettings = async (req, res) => {
         creditsPerGhs: settings.creditsPerGhs,
         smsCostCredits: settings.smsCostCredits,
         whatsappCostCredits: settings.whatsappCostCredits,
-        referralBonusDays: settings.referralBonusDays
+        referralBonusDays: settings.referralBonusDays,
+        usdToGhsRate: settings.usdToGhsRate
       }
     });
   } catch (error) {
@@ -171,6 +182,17 @@ export const getSystemSettingsSnapshot = async () => {
     creditsPerGhs: Number(settings.creditsPerGhs || 100),
     smsCostCredits: Number(settings.smsCostCredits || 5),
     whatsappCostCredits: Number(settings.whatsappCostCredits || 20),
-    referralBonusDays: Number(settings.referralBonusDays || 30)
+    referralBonusDays: Number(settings.referralBonusDays || 30),
+    usdToGhsRate: Number(settings.usdToGhsRate || 0)
   };
+};
+
+export const getPublicExchangeRate = async (req, res) => {
+  try {
+    const settings = await getSingletonSettings();
+    const rate = Number(settings.usdToGhsRate || 0);
+    return res.json({ usdToGhsRate: rate > 0 ? rate : null });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
 };

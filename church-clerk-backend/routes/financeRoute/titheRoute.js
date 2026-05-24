@@ -6,6 +6,8 @@ import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../../middleware/permissionMiddleware.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import { createTitheAggregateSchema, createTitheIndividualSchema } from "../../validators/donations.js";
 import { searchMembersForTithe, createTitheIndividual, getAllTitheIndividual, updateTitheIndividual, deleteTitheIndividual, getTitheIndividualKPI } from "../../controller/financeController/tithes/titheIndividualController.js";
 import { createTitheAggregate, getAllTitheAggregates, updateTitheAggregate, deleteTitheAggregate, getTitheAggregateKPI } from "../../controller/financeController/tithes/titheAggregateController.js";
 
@@ -29,6 +31,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("tithe", "create"),
+  validateRequest(createTitheIndividualSchema),
   createTitheIndividual
 );
 router.get(
@@ -81,6 +84,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("tithe", "create"),
+  validateRequest(createTitheAggregateSchema),
   createTitheAggregate
 );
 router.get(

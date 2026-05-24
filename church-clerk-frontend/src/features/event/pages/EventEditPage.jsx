@@ -189,8 +189,15 @@ function EventEditPage() {
           ) : null}
 
           {loading ? (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <Skeleton height={14} count={3} />
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 animate-pulse">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div key={i}>
+                    <div className="h-3 w-16 rounded bg-gray-200" />
+                    <div className="mt-1 h-10 w-full rounded-lg bg-gray-200" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

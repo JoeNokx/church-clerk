@@ -1,17 +1,18 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
-  createAttendance as apiCreateAttendance,
-  createVisitor as apiCreateVisitor,
-  deleteAttendance as apiDeleteAttendance,
-  deleteVisitor as apiDeleteVisitor,
-  getAttendances,
-  getVisitor as apiGetVisitor,
-  getVisitors,
-  updateAttendance as apiUpdateAttendance,
-  updateVisitor as apiUpdateVisitor
+  getVisitor as apiGetVisitor
 } from "./services/attendance.api.js";
 import ChurchContext from "../church/church.store.js";
+import {
+  attendanceQueryKeys,
+  useAttendanceMutations,
+  useAttendancesQuery,
+  useVisitorMutations,
+  useVisitorStatsQuery,
+  useVisitorsQuery
+} from "./hooks/useAttendance.js";
 
 const AttendanceContext = createContext(null);
 
@@ -37,20 +38,9 @@ const emptyVisitorFilters = {
 };
 
 export function AttendanceProvider({ children }) {
-  const [attendances, setAttendances] = useState([]);
-  const [attendancePagination, setAttendancePagination] = useState(emptyPagination);
   const [attendanceFilters, setAttendanceFiltersState] = useState(emptyAttendanceFilters);
-
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [attendanceError, setAttendanceError] = useState(null);
-
-  const [visitors, setVisitors] = useState([]);
-  const [visitorPagination, setVisitorPagination] = useState(emptyPagination);
   const [visitorFilters, setVisitorFiltersState] = useState(emptyVisitorFilters);
-  const [visitorStats, setVisitorStats] = useState({ totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
-
-  const [visitorLoading, setVisitorLoading] = useState(false);
-  const [visitorError, setVisitorError] = useState(null);
+  const queryClient = useQueryClient();
 
   const churchStore = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
@@ -68,204 +58,147 @@ export function AttendanceProvider({ children }) {
     setVisitorFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
   }, []);
 
+  const attendancesQuery = useAttendancesQuery({
+    activeChurchId: activeChurch,
+    filters: attendanceFilters,
+    enabled: true
+  });
+
+  const visitorsQuery = useVisitorsQuery({
+    activeChurchId: activeChurch,
+    filters: visitorFilters,
+    enabled: true
+  });
+
+  const visitorStatsQuery = useVisitorStatsQuery({
+    activeChurchId: activeChurch,
+    filters: visitorFilters,
+    enabled: true
+  });
+
+  const attendances = Array.isArray(attendancesQuery?.data?.attendances) ? attendancesQuery.data.attendances : [];
+  const attendancePagination = attendancesQuery?.data?.pagination || emptyPagination;
+  const attendanceLoading = Boolean(attendancesQuery?.isLoading);
+  const attendanceError =
+    attendancesQuery?.error?.response?.data?.message ||
+    attendancesQuery?.error?.message ||
+    null;
+
+  const visitors = Array.isArray(visitorsQuery?.data?.visitors) ? visitorsQuery.data.visitors : [];
+  const visitorPagination = visitorsQuery?.data?.pagination || emptyPagination;
+  const visitorLoading = Boolean(visitorsQuery?.isLoading);
+  const visitorError =
+    visitorsQuery?.error?.response?.data?.message ||
+    visitorsQuery?.error?.message ||
+    null;
+
+  const visitorStatsPayload = visitorStatsQuery?.data || visitorsQuery?.data?.stats || null;
+  const visitorStats = {
+    totalVisitors: Number(visitorStatsPayload?.totalVisitors || 0),
+    thisWeekVisitors: Number(visitorStatsPayload?.thisWeekVisitors || 0),
+    thisMonthVisitors: Number(visitorStatsPayload?.thisMonthVisitors || 0),
+    convertedVisitors: Number(visitorStatsPayload?.convertedVisitors || 0)
+  };
+
+  const attendanceMutations = useAttendanceMutations(activeChurch);
+  const visitorMutations = useVisitorMutations(activeChurch);
+
   const fetchAttendances = useCallback(
     async (partial) => {
-      const nextFilters = { ...attendanceFilters, ...(partial || {}) };
-
-      const params = {
-        page: nextFilters.page,
-        limit: nextFilters.limit
-      };
-
-      if (nextFilters.serviceType) params.serviceType = nextFilters.serviceType;
-      if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
-      if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
-
-      setAttendanceFiltersState(nextFilters);
-      setAttendanceLoading(true);
-      setAttendanceError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        const res = await getAttendances(params);
-        const payload = res?.data?.data ?? res?.data;
-
-        setAttendances(payload?.attendances || []);
-        setAttendancePagination(payload?.pagination || emptyPagination);
-      } catch (e) {
-        setAttendanceError(e?.response?.data?.message || e?.message || "Failed to fetch attendances");
-        setAttendances([]);
-        setAttendancePagination(emptyPagination);
-      } finally {
-        setAttendanceLoading(false);
+      if (!activeChurch) return;
+      const patch = partial || {};
+      if (Object.keys(patch).length) {
+        setAttendanceFiltersState((prev) => ({ ...prev, ...patch }));
       }
+      await queryClient.invalidateQueries({
+        queryKey: attendanceQueryKeys.attendancesPrefix(activeChurch),
+        exact: false
+      });
     },
-    [attendanceFilters, activeChurch]
-  );
-
-  const createAttendance = useCallback(
-    async (payload) => {
-      setAttendanceLoading(true);
-      setAttendanceError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiCreateAttendance(payload);
-        await fetchAttendances();
-      } catch (e) {
-        setAttendanceError(e?.response?.data?.message || e?.message || "Failed to create attendance");
-        throw e;
-      } finally {
-        setAttendanceLoading(false);
-      }
-    },
-    [fetchAttendances, activeChurch]
-  );
-
-  const updateAttendance = useCallback(
-    async (id, payload) => {
-      setAttendanceLoading(true);
-      setAttendanceError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiUpdateAttendance(id, payload);
-        await fetchAttendances();
-      } catch (e) {
-        setAttendanceError(e?.response?.data?.message || e?.message || "Failed to update attendance");
-        throw e;
-      } finally {
-        setAttendanceLoading(false);
-      }
-    },
-    [fetchAttendances, activeChurch]
-  );
-
-  const deleteAttendance = useCallback(
-    async (id) => {
-      setAttendanceLoading(true);
-      setAttendanceError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiDeleteAttendance(id);
-        await fetchAttendances();
-      } catch (e) {
-        setAttendanceError(e?.response?.data?.message || e?.message || "Failed to delete attendance");
-        throw e;
-      } finally {
-        setAttendanceLoading(false);
-      }
-    },
-    [fetchAttendances, activeChurch]
+    [activeChurch, queryClient]
   );
 
   const fetchVisitors = useCallback(
     async (partial) => {
-      const nextFilters = { ...visitorFilters, ...(partial || {}) };
-
-      const params = {
-        page: nextFilters.page,
-        limit: nextFilters.limit
-      };
-
-      if (nextFilters.search) params.search = nextFilters.search;
-
-      setVisitorFiltersState(nextFilters);
-      setVisitorLoading(true);
-      setVisitorError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        const res = await getVisitors(params);
-        const payload = res?.data?.data ?? res?.data;
-
-        setVisitors(payload?.visitors || []);
-        setVisitorPagination(payload?.pagination || emptyPagination);
-        setVisitorStats(payload?.stats || { totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
-      } catch (e) {
-        setVisitorError(e?.response?.data?.message || e?.message || "Failed to fetch visitors");
-        setVisitors([]);
-        setVisitorPagination(emptyPagination);
-        setVisitorStats({ totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
-      } finally {
-        setVisitorLoading(false);
+      if (!activeChurch) return;
+      const patch = partial || {};
+      if (Object.keys(patch).length) {
+        setVisitorFiltersState((prev) => ({ ...prev, ...patch }));
       }
+      await queryClient.invalidateQueries({
+        queryKey: attendanceQueryKeys.visitorsPrefix(activeChurch),
+        exact: false
+      });
     },
-    [visitorFilters, activeChurch]
+    [activeChurch, queryClient]
   );
 
-  const fetchVisitorStats = useCallback(async () => {
-    try {
+  const fetchVisitorStats = useCallback(
+    async ({ force = false } = {}) => {
       if (!activeChurch) return;
-      const res = await getVisitors({ page: 1, limit: 1 });
-      const payload = res?.data?.data ?? res?.data;
-      setVisitorStats(payload?.stats || { totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
-    } catch {
-      setVisitorStats({ totalVisitors: 0, thisWeekVisitors: 0, thisMonthVisitors: 0, convertedVisitors: 0 });
-    }
-  }, [activeChurch]);
+      if (!force && visitorStatsQuery?.data) return;
+      await queryClient.invalidateQueries({
+        queryKey: attendanceQueryKeys.visitorStats(activeChurch),
+        exact: false
+      });
+    },
+    [activeChurch, queryClient, visitorStatsQuery?.data]
+  );
+
+  const createAttendance = useCallback(
+    async (payload) => {
+      if (!activeChurch) throw new Error("Active church not selected");
+      await attendanceMutations.createAttendance.mutateAsync(payload);
+    },
+    [activeChurch, attendanceMutations.createAttendance]
+  );
+
+  const updateAttendance = useCallback(
+    async (id, payload) => {
+      if (!activeChurch) throw new Error("Active church not selected");
+      await attendanceMutations.updateAttendance.mutateAsync({ id, payload });
+    },
+    [activeChurch, attendanceMutations.updateAttendance]
+  );
+
+  const deleteAttendance = useCallback(
+    async (id) => {
+      if (!activeChurch) throw new Error("Active church not selected");
+      await attendanceMutations.deleteAttendance.mutateAsync(id);
+    },
+    [activeChurch, attendanceMutations.deleteAttendance]
+  );
 
   const createVisitor = useCallback(
     async (payload) => {
-      setVisitorLoading(true);
-      setVisitorError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiCreateVisitor(payload);
-        await fetchVisitors();
-      } catch (e) {
-        setVisitorError(e?.response?.data?.message || e?.message || "Failed to create visitor");
-        throw e;
-      } finally {
-        setVisitorLoading(false);
-      }
+      if (!activeChurch) throw new Error("Active church not selected");
+      await visitorMutations.createVisitor.mutateAsync(payload);
     },
-    [fetchVisitors, activeChurch]
+    [activeChurch, visitorMutations.createVisitor]
   );
 
-  const getVisitor = useCallback(async (id) => {
-    if (!activeChurch) throw new Error("Active church not selected");
-    return await apiGetVisitor(id);
-  }, [activeChurch]);
+  const getVisitor = useCallback(
+    async (id) => {
+      if (!activeChurch) throw new Error("Active church not selected");
+      return await apiGetVisitor(id);
+    },
+    [activeChurch]
+  );
 
   const updateVisitor = useCallback(
     async (id, payload) => {
-      setVisitorLoading(true);
-      setVisitorError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiUpdateVisitor(id, payload);
-        await fetchVisitors();
-      } catch (e) {
-        setVisitorError(e?.response?.data?.message || e?.message || "Failed to update visitor");
-        throw e;
-      } finally {
-        setVisitorLoading(false);
-      }
+      if (!activeChurch) throw new Error("Active church not selected");
+      await visitorMutations.updateVisitor.mutateAsync({ id, payload });
     },
-    [fetchVisitors, activeChurch]
+    [activeChurch, visitorMutations.updateVisitor]
   );
 
   const deleteVisitor = useCallback(
     async (id) => {
-      setVisitorLoading(true);
-      setVisitorError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiDeleteVisitor(id);
-        await fetchVisitors();
-      } catch (e) {
-        setVisitorError(e?.response?.data?.message || e?.message || "Failed to delete visitor");
-        throw e;
-      } finally {
-        setVisitorLoading(false);
-      }
+      if (!activeChurch) throw new Error("Active church not selected");
+      await visitorMutations.deleteVisitor.mutateAsync(id);
     },
-    [fetchVisitors, activeChurch]
+    [activeChurch, visitorMutations.deleteVisitor]
   );
 
   const value = useMemo(() => {

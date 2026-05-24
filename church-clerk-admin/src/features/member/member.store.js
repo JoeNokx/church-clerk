@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { createMember as apiCreateMember, deleteMember as apiDeleteMember, getMembers, updateMember as apiUpdateMember } from "./services/member.api.js";
 import ChurchContext from "../Church/church.store.js";
@@ -32,6 +32,9 @@ export function MemberProvider({ children }) {
   const churchStore = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
 
+  const fetchRequestIdRef = useRef(0);
+  const fetchAbortRef = useRef(null);
+
   useEffect(() => {
     const churchId = churchStore?.activeChurch?._id || null;
     setActiveChurch(churchId);
@@ -43,6 +46,8 @@ export function MemberProvider({ children }) {
 
   const fetchMembers = useCallback(
     async (partial) => {
+      const requestId = (fetchRequestIdRef.current += 1);
+
       const nextFilters = { ...filters, ...(partial || {}) };
 
       const params = {
@@ -62,16 +67,27 @@ export function MemberProvider({ children }) {
       try {
         if (!activeChurch) throw new Error("Active church not selected");
 
-        const res = await getMembers(params);
+        if (fetchAbortRef.current) {
+          fetchAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        fetchAbortRef.current = controller;
+
+        const res = await getMembers(params, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
+
+        if (requestId !== fetchRequestIdRef.current) return;
 
         setMembers(payload?.members || []);
         setPagination(payload?.pagination || emptyPagination);
       } catch (e) {
+        if (requestId !== fetchRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         setError(e?.response?.data?.message || e?.message || "Failed to fetch members");
         setMembers([]);
         setPagination(emptyPagination);
       } finally {
+        if (requestId !== fetchRequestIdRef.current) return;
         setLoading(false);
       }
     },

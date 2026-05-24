@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
+import debounce from "../../../shared/utils/debounce.js";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
@@ -518,10 +519,28 @@ function PledgesPageInner() {
 
   const STATUS_OPTIONS = ["In Progress", "Completed"];
 
+  const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
+
+  const debouncedSearch = useMemo(() => {
+    return debounce((value) => {
+      store?.fetchPledges?.({ search: value, page: 1 });
+    }, 400);
+  }, [store]);
+
   useEffect(() => {
     if (!store?.activeChurchId) return;
     store?.fetchPledges?.();
   }, [store?.activeChurchId]);
+
+  useEffect(() => {
+    setSearchValue(store?.filters?.search || "");
+  }, [store?.filters?.search]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   useEffect(() => {
     if (!menuOpenId) return;
@@ -629,10 +648,11 @@ function PledgesPageInner() {
     await computeKpi();
   };
 
-  const onSearchChange = async (e) => {
+  const onSearchChange = (e) => {
     const value = e.target.value;
+    setSearchValue(value);
     store?.setFilters?.({ search: value, page: 1 });
-    await store?.fetchPledges?.({ search: value, page: 1 });
+    debouncedSearch(value);
   };
 
   const onServiceTypeChange = async (e) => {
@@ -767,7 +787,7 @@ function PledgesPageInner() {
             <div>
               <div className="text-xs font-semibold text-gray-500">Search</div>
               <input
-                value={store?.filters?.search || ""}
+                value={searchValue}
                 onChange={onSearchChange}
                 className="mt-2 h-9 w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                 placeholder="Search name or phone"
@@ -816,8 +836,29 @@ function PledgesPageInner() {
         </div>
 
         {store?.loading ? (
-          <div className="p-5">
-            <Skeleton height={14} count={8} />
+          <div className="overflow-x-auto animate-pulse">
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left text-xs font-semibold text-gray-500">
+                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-10 rounded bg-gray-200" /></th>
+                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <tr key={i} className="text-sm">
+                    <td className="px-6 max-sm:px-4 py-3 whitespace-nowrap"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="px-6 max-sm:px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                    <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : null}
         {!store?.loading && store?.error ? (

@@ -2,15 +2,14 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 
 import { useLocation } from "react-router-dom";
 
-import Skeleton from "react-loading-skeleton";
+import { useQuery } from "@tanstack/react-query";
 
+import Skeleton from "react-loading-skeleton";
 
 
 import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboardWidgetsWithParams } from "../services/dashboard.api.js";
 
 import { getUpcomingEvents } from "../../event/services/event.api.js";
-
-import { getMembers } from "../../member/services/member.api.js";
 
 import { getMyReferralCode, getMyReferralHistory } from "../../referral/services/referral.api.js";
 
@@ -19,9 +18,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../permissions/permission.store.js";
 
 
-
 const DashboardCharts = React.lazy(() => import("../components/DashboardCharts.jsx"));
-
 
 
 const SpecialFundPage = React.lazy(() => import("../../specialFund/pages/SpecialFundPage.jsx"));
@@ -83,7 +80,6 @@ const NotificationsPage = React.lazy(() => import("../../notifications/pages/Not
 const AnnouncementPage = React.lazy(() => import("../../announcement/pages/AnnouncementPage.jsx"));
 
 
-
 function formatPercent(value) {
 
   const v = Number(value || 0);
@@ -99,7 +95,6 @@ function formatPercent(value) {
 }
 
 
-
 function formatShortDate(value) {
 
   if (!value) return "—";
@@ -113,7 +108,6 @@ function formatShortDate(value) {
 }
 
 
-
 function formatLongDate(value) {
 
   if (!value) return "—";
@@ -125,7 +119,6 @@ function formatLongDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
 }
-
 
 
 function formatYmdLocal(value) {
@@ -147,7 +140,6 @@ function formatYmdLocal(value) {
 }
 
 
-
 function formatRelativeTime(value) {
 
   if (!value) return "—";
@@ -156,15 +148,11 @@ function formatRelativeTime(value) {
 
   if (Number.isNaN(d.getTime())) return "—";
 
-
-
   const now = new Date();
 
   const diffMs = now.getTime() - d.getTime();
 
   if (diffMs < 0) return "—";
-
-
 
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
@@ -172,26 +160,19 @@ function formatRelativeTime(value) {
 
   if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
 
-
-
   const diffWeeks = Math.floor(diffDays / 7);
 
   if (diffDays < 30) return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ago`;
 
-
-
   const diffMonths = Math.floor(diffDays / 30);
 
   if (diffDays < 365) return `${diffMonths} month${diffMonths === 1 ? "" : "s"} ago`;
-
-
 
   const diffYears = Math.floor(diffDays / 365);
 
   return `${diffYears} year${diffYears === 1 ? "" : "s"} ago`;
 
 }
-
 
 
 function formatRange(from, to) {
@@ -203,8 +184,6 @@ function formatRange(from, to) {
   if (f && Number.isNaN(f.getTime())) return "—";
 
   if (t && Number.isNaN(t.getTime())) return "—";
-
-
 
   if (f && t) {
 
@@ -225,7 +204,6 @@ function formatRange(from, to) {
 }
 
 
-
 function formatTimeRange(from, to, legacy) {
 
   const f = String(from || "").trim();
@@ -243,7 +221,6 @@ function formatTimeRange(from, to, legacy) {
 }
 
 
-
 function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }) {
 
   const delta = Number(change || 0);
@@ -253,7 +230,6 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
   const deltaText = formatPercent(delta);
 
   const deltaClass = isUp ? "text-green-700 bg-green-50" : "text-red-700 bg-red-50";
-
 
 
   const arrow = isUp ? (
@@ -273,7 +249,6 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
     </svg>
 
   );
-
 
 
   return (
@@ -305,11 +280,9 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
           </div>
 
 
-
           <div className="mt-3 text-3xl font-semibold text-gray-900">{value ?? "—"}</div>
 
           {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
-
 
 
           <div className="mt-3 flex items-center gap-2">
@@ -329,7 +302,6 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
         </div>
 
 
-
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-gray-300">
 
           <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 111.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z" clipRule="evenodd" />
@@ -345,7 +317,6 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
 }
 
 
-
 function DashboardOverview({ onNavigate }) {
 
   const { toPage } = useDashboardNavigator();
@@ -356,31 +327,98 @@ function DashboardOverview({ onNavigate }) {
 
   const canViewEvents = useMemo(() => (typeof can === "function" ? can("events", "view") : false), [can]);
 
-  const [loading, setLoading] = useState(true);
+  const year = useMemo(() => new Date().getFullYear(), []);
 
-  const [error, setError] = useState("");
+  const kpiQuery = useQuery({
+    queryKey: ["dashboard", "kpi"],
+    queryFn: async () => {
+      const res = await getDashboardKPI();
+      return res?.data?.kpis || null;
+    }
+  });
 
-  const [kpis, setKpis] = useState(null);
+  const analyticsQuery = useQuery({
+    queryKey: ["dashboard", "analytics", year],
+    queryFn: async () => {
+      const res = await getDashboardAnalytics({ year });
+      return res?.data?.analyticsDashboard || null;
+    }
+  });
 
-  const [analytics, setAnalytics] = useState(null);
+  const widgetsQuery = useQuery({
+    queryKey: ["dashboard", "widgets"],
+    queryFn: async () => {
+      const res = await getDashboardWidgets();
+      return res?.data?.dashboardWidget || null;
+    }
+  });
 
-  const [widgets, setWidgets] = useState(null);
+  const referralCodeQuery = useQuery({
+    queryKey: ["referral", "code"],
+    queryFn: async () => {
+      const res = await getMyReferralCode();
+      return res?.data || {};
+    }
+  });
 
-  const [referral, setReferral] = useState(null);
+  const referralHistoryQuery = useQuery({
+    queryKey: ["referral", "history"],
+    queryFn: async () => {
+      const res = await getMyReferralHistory();
+      return res?.data || {};
+    }
+  });
 
+  const upcomingEventsQuery = useQuery({
+    queryKey: ["dashboard", "upcoming-events"],
+    queryFn: async () => {
+      const res = await getUpcomingEvents({ page: 1, limit: 6 });
+      const payload = res?.data?.data ?? res?.data;
+      const data = payload?.data ?? payload;
+      const events = Array.isArray(data?.events) ? data.events : [];
+      return events.slice(0, 6);
+    }
+  });
 
+  const loading =
+    kpiQuery.isLoading ||
+    analyticsQuery.isLoading ||
+    widgetsQuery.isLoading ||
+    referralCodeQuery.isLoading ||
+    referralHistoryQuery.isLoading ||
+    upcomingEventsQuery.isLoading;
+  const error =
+    (kpiQuery.error && (kpiQuery.error?.response?.data?.message || kpiQuery.error?.message)) ||
+    (analyticsQuery.error && (analyticsQuery.error?.response?.data?.message || analyticsQuery.error?.message)) ||
+    (widgetsQuery.error && (widgetsQuery.error?.response?.data?.message || widgetsQuery.error?.message)) ||
+    (referralCodeQuery.error && (referralCodeQuery.error?.response?.data?.message || referralCodeQuery.error?.message)) ||
+    (referralHistoryQuery.error && (referralHistoryQuery.error?.response?.data?.message || referralHistoryQuery.error?.message)) ||
+    (upcomingEventsQuery.error && (upcomingEventsQuery.error?.response?.data?.message || upcomingEventsQuery.error?.message)) ||
+    "";
 
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const kpis = kpiQuery.data;
+  const analytics = analyticsQuery.data;
+  const widgets = widgetsQuery.data;
 
-  const [upcomingEventsLoading, setUpcomingEventsLoading] = useState(false);
+  const referral = useMemo(() => {
+    const code = referralCodeQuery.data || {};
+    const history = referralHistoryQuery.data || {};
+    const referrals = Array.isArray(history?.referrals) ? history.referrals : [];
+    return {
+      totalReferrals: referrals.length,
+      totalFreeMonthsEarned: Number(code?.totalFreeMonthsEarned || 0),
+      totalFreeMonthsUsed: Number(code?.totalFreeMonthsUsed || 0),
+      freeMonthsRemaining: Number(code?.freeMonthsRemaining || 0),
+      referralBonusDays: Number(code?.referralBonusDays || 30)
+    };
+  }, [referralCodeQuery.data, referralHistoryQuery.data]);
 
-  const [upcomingEventsError, setUpcomingEventsError] = useState("");
-
-
-
-  const [newMembersThisMonthCount, setNewMembersThisMonthCount] = useState(null);
-
-
+  const upcomingEvents = Array.isArray(upcomingEventsQuery.data) ? upcomingEventsQuery.data : [];
+  const upcomingEventsLoading = upcomingEventsQuery.isLoading;
+  const upcomingEventsError =
+    upcomingEventsQuery.error?.response?.data?.message ||
+    upcomingEventsQuery.error?.message ||
+    "";
 
   const [birthdaysModalOpen, setBirthdaysModalOpen] = useState(false);
 
@@ -393,279 +431,6 @@ function DashboardOverview({ onNavigate }) {
   const [birthdaysSearch, setBirthdaysSearch] = useState("");
 
   const [birthdaysPage, setBirthdaysPage] = useState(1);
-
-
-
-  const year = useMemo(() => new Date().getFullYear(), []);
-
-
-
-  useEffect(() => {
-
-    let cancelled = false;
-
-
-
-    const load = async () => {
-
-      setError("");
-
-      setLoading(true);
-
-
-
-      setUpcomingEventsLoading(true);
-
-      setUpcomingEventsError("");
-
-      setNewMembersThisMonthCount(null);
-
-
-
-      const fetchNewMembersThisMonth = async () => {
-
-        const now = new Date();
-
-        const from = new Date(now.getFullYear(), now.getMonth(), 1);
-
-
-
-        const dateFrom = formatYmdLocal(from);
-
-        const dateTo = formatYmdLocal(now);
-
-
-
-        const limit = 1000;
-
-        let page = 1;
-
-        let total = 0;
-
-
-
-        // We rely on backend paging shape (totalPages/currentPage/nextPage/prevPage).
-
-        // This avoids fetching all members, only the current month.
-
-        while (true) {
-
-          const res = await getMembers({ page, limit, dateFrom, dateTo });
-
-          const payload = res?.data?.data ?? res?.data;
-
-          const rows = Array.isArray(payload?.members) ? payload.members : [];
-
-          total += rows.length;
-
-
-
-          const pagination = payload?.pagination || {};
-
-          const nextPage = pagination?.nextPage;
-
-          const totalPages = Number(pagination?.totalPages || 0);
-
-
-
-          if (nextPage) {
-
-            page = nextPage;
-
-            continue;
-
-          }
-
-
-
-          if (totalPages && page < totalPages) {
-
-            page += 1;
-
-            continue;
-
-          }
-
-
-
-          break;
-
-        }
-
-
-
-        return total;
-
-      };
-
-
-
-      try {
-
-        const [
-
-          kpiResult,
-
-          analyticsResult,
-
-          widgetsResult,
-
-          referralCodeResult,
-
-          referralHistoryResult,
-
-          upcomingEventsResult,
-
-          newMembersThisMonthResult
-
-        ] = await Promise.allSettled([
-
-          getDashboardKPI(),
-
-          getDashboardAnalytics({ year }),
-
-          getDashboardWidgets(),
-
-          getMyReferralCode(),
-
-          getMyReferralHistory(),
-
-          getUpcomingEvents({ page: 1, limit: 6 }),
-
-          fetchNewMembersThisMonth()
-
-        ]);
-
-
-
-        if (cancelled) return;
-
-
-
-        if (kpiResult.status !== "fulfilled") throw kpiResult.reason;
-
-        if (analyticsResult.status !== "fulfilled") throw analyticsResult.reason;
-
-        if (widgetsResult.status !== "fulfilled") throw widgetsResult.reason;
-
-
-
-        const kpiRes = kpiResult.value;
-
-        const analyticsRes = analyticsResult.value;
-
-        const widgetsRes = widgetsResult.value;
-
-
-
-        setKpis(kpiRes?.data?.kpis || null);
-
-        setAnalytics(analyticsRes?.data?.analyticsDashboard || null);
-
-        setWidgets(widgetsRes?.data?.dashboardWidget || null);
-
-
-
-        if (!cancelled) {
-
-          if (newMembersThisMonthResult.status === "fulfilled") {
-
-            setNewMembersThisMonthCount(Number(newMembersThisMonthResult.value || 0));
-
-          } else {
-
-            setNewMembersThisMonthCount(null);
-
-          }
-
-        }
-
-
-
-        if (!cancelled) {
-
-          if (upcomingEventsResult.status === "fulfilled") {
-
-            const res = upcomingEventsResult.value;
-
-            const payload = res?.data?.data ?? res?.data;
-
-            const data = payload?.data ?? payload;
-
-            const events = Array.isArray(data?.events) ? data.events : [];
-
-            setUpcomingEvents(events.slice(0, 6));
-
-          } else {
-
-            setUpcomingEvents([]);
-
-            setUpcomingEventsError(
-
-              upcomingEventsResult?.reason?.response?.data?.message ||
-
-                upcomingEventsResult?.reason?.message ||
-
-                "Failed to load upcoming events"
-
-            );
-
-          }
-
-        }
-
-
-
-        const code = referralCodeResult.status === "fulfilled" ? referralCodeResult.value?.data || {} : {};
-
-        const history = referralHistoryResult.status === "fulfilled" ? referralHistoryResult.value?.data || {} : {};
-
-        const referrals = Array.isArray(history.referrals) ? history.referrals : [];
-
-        setReferral({
-
-          totalReferrals: referrals.length,
-
-          totalFreeMonthsEarned: Number(code.totalFreeMonthsEarned || 0),
-
-          totalFreeMonthsUsed: Number(code.totalFreeMonthsUsed || 0),
-
-          freeMonthsRemaining: Number(code.freeMonthsRemaining || 0),
-
-          referralBonusDays: Number(code.referralBonusDays || 30)
-
-        });
-
-      } catch (e) {
-
-        if (cancelled) return;
-
-        setError(e?.response?.data?.message || e?.message || "Failed to load dashboard");
-
-      } finally {
-
-        if (cancelled) return;
-
-        setLoading(false);
-
-        setUpcomingEventsLoading(false);
-
-      }
-
-    };
-
-
-
-    load();
-
-    return () => {
-
-      cancelled = true;
-
-    };
-
-  }, [year]);
-
 
 
   const attendanceGraph = useMemo(() => {
@@ -848,9 +613,91 @@ function DashboardOverview({ onNavigate }) {
 
         <div className="text-2xl font-semibold text-gray-900">Dashboard Overview</div>
 
-        <div className="mt-4">
+        <div className="mt-2 text-sm text-gray-600">A quick summary of what's happening with your church.</div>
 
-          <Skeleton height={14} count={6} />
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+          {[0, 1, 2, 3].map((i) => (
+
+            <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+
+              <div className="flex items-center gap-2">
+
+                <div className="h-8 w-8 rounded-lg bg-gray-200" />
+
+                <div className="h-4 w-24 rounded bg-gray-200" />
+
+              </div>
+
+              <div className="mt-3 h-8 w-20 rounded bg-gray-200" />
+
+              <div className="mt-3 h-6 w-28 rounded-full bg-gray-200" />
+
+            </div>
+
+          ))}
+
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+
+            <div className="h-4 w-32 rounded bg-gray-200" />
+
+            <div className="mt-4 h-64 rounded-lg bg-gray-200" />
+
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+
+            <div className="h-4 w-32 rounded bg-gray-200" />
+
+            <div className="mt-4 h-64 rounded-lg bg-gray-200" />
+
+          </div>
+
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {[0, 1, 2].map((i) => (
+
+            <div key={i} className="rounded-xl border border-gray-200 bg-white overflow-hidden animate-pulse">
+
+              <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
+
+                <div className="h-4 w-32 rounded bg-gray-200" />
+
+                <div className="mt-1 h-3 w-20 rounded bg-gray-200" />
+
+              </div>
+
+              <div className="px-5 pb-5 mt-4 space-y-3">
+
+                {[0, 1, 2, 3].map((j) => (
+
+                  <div key={j} className="flex items-center justify-between gap-3 py-1.5">
+
+                    <div className="min-w-0">
+
+                      <div className="h-4 w-24 rounded bg-gray-200" />
+
+                      <div className="mt-1 h-3 w-16 rounded bg-gray-200" />
+
+                    </div>
+
+                    <div className="h-3 w-12 rounded bg-gray-200" />
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            </div>
+
+          ))}
 
         </div>
 
@@ -872,7 +719,7 @@ function DashboardOverview({ onNavigate }) {
 
           <div className="text-2xl font-semibold text-gray-900">Dashboard Overview</div>
 
-          <div className="mt-2 text-sm text-gray-600">A quick summary of what’s happening with your church.</div>
+          <div className="mt-2 text-sm text-gray-600">A quick summary of what's happening with your church.</div>
 
         </div>
 
@@ -980,7 +827,7 @@ function DashboardOverview({ onNavigate }) {
 
           title="New Members This Month"
 
-          value={typeof newMembersThisMonthCount === "number" ? newMembersThisMonthCount : kpis?.newMembersThisMonth ?? 0}
+          value={kpis?.newMembersThisMonth ?? 0}
 
           change={kpis?.change?.newMembersThisMonth}
 
@@ -1016,23 +863,19 @@ function DashboardOverview({ onNavigate }) {
 
             <>
 
-              <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5">
+              <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
 
-                <div className="mt-1">
+                <div className="h-4 w-32 rounded bg-gray-200" />
 
-                  <Skeleton height={14} count={8} />
-
-                </div>
+                <div className="mt-4 h-64 rounded-lg bg-gray-200" />
 
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
 
-                <div className="mt-1">
+                <div className="h-4 w-32 rounded bg-gray-200" />
 
-                  <Skeleton height={14} count={8} />
-
-                </div>
+                <div className="mt-4 h-64 rounded-lg bg-gray-200" />
 
               </div>
 
@@ -1290,9 +1133,25 @@ function DashboardOverview({ onNavigate }) {
 
               {upcomingEventsLoading ? (
 
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4">
+                <div className="divide-y divide-gray-200 rounded-lg border border-gray-200 animate-pulse">
 
-                  <Skeleton height={14} count={6} />
+                  {[0, 1, 2, 3].map((i) => (
+
+                    <div key={i} className="px-4 py-3 flex items-start justify-between gap-3">
+
+                      <div className="min-w-0">
+
+                        <div className="h-4 w-28 rounded bg-gray-200" />
+
+                        <div className="mt-1 h-3 w-20 rounded bg-gray-200" />
+
+                      </div>
+
+                      <div className="h-3 w-10 rounded bg-gray-200" />
+
+                    </div>
+
+                  ))}
 
                 </div>
 
@@ -1614,9 +1473,15 @@ function DashboardOverview({ onNavigate }) {
 
                 {birthdaysModalLoading ? (
 
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 animate-pulse space-y-3">
 
-                    <Skeleton height={14} count={8} />
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex items-center gap-3 py-1">
+                        <div className="h-8 w-8 rounded-full bg-gray-200" />
+                        <div className="h-4 w-24 rounded bg-gray-200" />
+                        <div className="ml-auto h-3 w-16 rounded bg-gray-200" />
+                      </div>
+                    ))}
 
                   </div>
 
@@ -1700,47 +1565,45 @@ function DashboardOverview({ onNavigate }) {
 
   );
 
+
+
+
+
 }
-
-
 
 function DashboardHome() {
 
-  const location = useLocation();
+    const location = useLocation();
 
-  const { toPage } = useDashboardNavigator();
-
-
-
-  const rawPage = new URLSearchParams(location.search).get("page") || "dashboard";
-
-  const page = rawPage === "offering" ? "offerings" : rawPage;
+    const { toPage } = useDashboardNavigator();
 
 
 
-  function PageSkeletonFallback() {
+    const rawPage = new URLSearchParams(location.search).get("page") || "dashboard";
 
-    return (
+    const page = rawPage === "offering" ? "offerings" : rawPage;
 
-      <div className="w-full max-w-none">
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
 
-          <Skeleton height={16} width={220} />
+    function PageSkeletonFallback() {
 
-          <div className="mt-3">
+      return (
 
-            <Skeleton height={12} count={6} />
+        <div className="w-full max-w-none">
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+
+            <div className="h-5 w-48 rounded bg-gray-200" />
+
+            <div className="mt-4 h-64 rounded-lg bg-gray-200" />
 
           </div>
 
         </div>
 
-      </div>
+      );
 
-    );
-
-  }
+    }
 
 
 

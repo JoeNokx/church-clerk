@@ -38,6 +38,9 @@ export function EventProvider({ children }) {
   const lastEventsKeyRef = useRef(null);
   const lastStatsKeyRef = useRef(null);
 
+  const eventsAbortRef = useRef(null);
+  const statsAbortRef = useRef(null);
+
   const store = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
 
@@ -107,7 +110,13 @@ export function EventProvider({ children }) {
       }
 
       try {
-        const res = await apiGetEvents(params);
+        if (eventsAbortRef.current) {
+          eventsAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        eventsAbortRef.current = controller;
+
+        const res = await apiGetEvents(params, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
         const data = payload?.data ?? payload;
 
@@ -116,6 +125,7 @@ export function EventProvider({ children }) {
         setPagination(data?.pagination || emptyPagination);
       } catch (e) {
         if (requestId !== eventsRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         lastEventsKeyRef.current = null;
         setError(e?.response?.data?.message || e?.message || "Failed to fetch events");
       } finally {
@@ -145,7 +155,13 @@ export function EventProvider({ children }) {
       const requestId = (statsRequestIdRef.current += 1);
 
       try {
-        const res = await apiGetEventStats(params);
+        if (statsAbortRef.current) {
+          statsAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        statsAbortRef.current = controller;
+
+        const res = await apiGetEventStats(params, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
         const data = payload?.data ?? payload;
         const nextStats = data?.stats || emptyStats;
@@ -156,8 +172,9 @@ export function EventProvider({ children }) {
           ongoingEvents: Number(nextStats?.ongoingEvents || 0),
           pastEvents: Number(nextStats?.pastEvents || 0)
         });
-      } catch {
+      } catch (e) {
         if (requestId !== statsRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         lastStatsKeyRef.current = null;
         setStats(emptyStats);
       }

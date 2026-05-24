@@ -1,6 +1,7 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import ChurchContext from "../church/church.store.js";
-import { getEvents as apiGetEvents, getEventStats as apiGetEventStats } from "./services/event.api.js";
+import { eventQueryKeys, useEventStatsQuery, useEventsListQuery } from "./hooks/useEvents.js";
 
 const EventContext = createContext(null);
 
@@ -25,18 +26,12 @@ const emptyFilters = {
 };
 
 export function EventProvider({ children }) {
-  const [events, setEvents] = useState([]);
-  const [pagination, setPagination] = useState(emptyPagination);
   const [filters, setFiltersState] = useState(emptyFilters);
-  const [stats, setStats] = useState(emptyStats);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+
+  const queryClient = useQueryClient();
 
   const filtersRef = useRef(emptyFilters);
-  const eventsRequestIdRef = useRef(0);
-  const statsRequestIdRef = useRef(0);
-  const lastEventsKeyRef = useRef(null);
-  const lastStatsKeyRef = useRef(null);
+  const activeStatusRef = useRef("upcoming");
 
   const store = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
@@ -64,66 +59,59 @@ export function EventProvider({ children }) {
     });
   }, []);
 
+  const eventsQuery = useEventsListQuery({
+    activeChurchId: activeChurch,
+    status: activeStatusRef.current,
+    filters,
+    enabled: true
+  });
+
+  const statsQuery = useEventStatsQuery({
+    activeChurchId: activeChurch,
+    filters,
+    enabled: true
+  });
+
+  const events = Array.isArray(eventsQuery?.data?.events) ? eventsQuery.data.events : [];
+  const pagination = eventsQuery?.data?.pagination || emptyPagination;
+
+  const statsPayload = statsQuery?.data || emptyStats;
+  const stats = {
+    upcomingEvents: Number(statsPayload?.upcomingEvents || 0),
+    ongoingEvents: Number(statsPayload?.ongoingEvents || 0),
+    pastEvents: Number(statsPayload?.pastEvents || 0)
+  };
+
+  const error =
+    eventsQuery?.error?.response?.data?.message ||
+    eventsQuery?.error?.message ||
+    null;
+
+  const loading = Boolean(eventsQuery?.isLoading);
+
   const fetchEvents = useCallback(
     async ({ status, force = false, ...partial } = {}) => {
       if (!activeChurch) return;
 
+      if (status) {
+        activeStatusRef.current = status;
+      }
+
       const patch = partial || {};
-      const baseFilters = filtersRef.current || emptyFilters;
-      const nextFilters = { ...baseFilters, ...patch };
-
-      const params = {
-        page: nextFilters.page,
-        limit: nextFilters.limit,
-        status
-      };
-
-      if (nextFilters.search) params.search = nextFilters.search;
-      if (nextFilters.category) params.category = nextFilters.category;
-
-      const eventsKey = JSON.stringify({ church: activeChurch, ...params });
-      if (!force && eventsKey === lastEventsKeyRef.current) return;
-      lastEventsKeyRef.current = eventsKey;
-
-      const requestId = (eventsRequestIdRef.current += 1);
-
-      setLoading(true);
-      setError(null);
 
       if (Object.keys(patch).length) {
-        filtersRef.current = nextFilters;
-        setFiltersState((prev) => {
-          const next = { ...prev, ...patch };
+        filtersRef.current = { ...(filtersRef.current || emptyFilters), ...patch };
+        setFiltersState((prev) => ({ ...prev, ...patch }));
+      }
 
-          const same =
-            prev.page === next.page &&
-            prev.limit === next.limit &&
-            prev.search === next.search &&
-            prev.category === next.category;
-
-          if (same) return prev;
-          return next;
+      if (force) {
+        await queryClient.invalidateQueries({
+          queryKey: eventQueryKeys.eventsPrefix(activeChurch),
+          exact: false
         });
       }
-
-      try {
-        const res = await apiGetEvents(params);
-        const payload = res?.data?.data ?? res?.data;
-        const data = payload?.data ?? payload;
-
-        if (requestId !== eventsRequestIdRef.current) return;
-        setEvents(Array.isArray(data?.events) ? data.events : []);
-        setPagination(data?.pagination || emptyPagination);
-      } catch (e) {
-        if (requestId !== eventsRequestIdRef.current) return;
-        lastEventsKeyRef.current = null;
-        setError(e?.response?.data?.message || e?.message || "Failed to fetch events");
-      } finally {
-        if (requestId !== eventsRequestIdRef.current) return;
-        setLoading(false);
-      }
     },
-    [activeChurch]
+    [activeChurch, queryClient]
   );
 
   const fetchEventStats = useCallback(
@@ -131,38 +119,19 @@ export function EventProvider({ children }) {
       if (!activeChurch) return;
 
       const patch = partial || {};
-      const baseFilters = filtersRef.current || emptyFilters;
-      const nextFilters = { ...baseFilters, ...patch };
+      if (Object.keys(patch).length) {
+        filtersRef.current = { ...(filtersRef.current || emptyFilters), ...patch };
+        setFiltersState((prev) => ({ ...prev, ...patch }));
+      }
 
-      const params = {};
-      if (nextFilters.search) params.search = nextFilters.search;
-      if (nextFilters.category) params.category = nextFilters.category;
-
-      const statsKey = JSON.stringify({ church: activeChurch, ...params });
-      if (!force && statsKey === lastStatsKeyRef.current) return;
-      lastStatsKeyRef.current = statsKey;
-
-      const requestId = (statsRequestIdRef.current += 1);
-
-      try {
-        const res = await apiGetEventStats(params);
-        const payload = res?.data?.data ?? res?.data;
-        const data = payload?.data ?? payload;
-        const nextStats = data?.stats || emptyStats;
-
-        if (requestId !== statsRequestIdRef.current) return;
-        setStats({
-          upcomingEvents: Number(nextStats?.upcomingEvents || 0),
-          ongoingEvents: Number(nextStats?.ongoingEvents || 0),
-          pastEvents: Number(nextStats?.pastEvents || 0)
+      if (force) {
+        await queryClient.invalidateQueries({
+          queryKey: eventQueryKeys.eventsPrefix(activeChurch),
+          exact: false
         });
-      } catch {
-        if (requestId !== statsRequestIdRef.current) return;
-        lastStatsKeyRef.current = null;
-        setStats(emptyStats);
       }
     },
-    [activeChurch]
+    [activeChurch, queryClient]
   );
 
   const value = useMemo(() => {

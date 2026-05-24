@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 
-import { getMyReferralCode, getMyReferralHistory } from "../services/referral.api.js";
+import { getMyReferralCode, getMyReferralHistory, getMyReferrer } from "../services/referral.api.js";
 
 function ReferralProgramPage() {
   const [loading, setLoading] = useState(true);
@@ -12,6 +12,7 @@ function ReferralProgramPage() {
   const [history, setHistory] = useState([]);
   const [copied, setCopied] = useState(false);
   const [referralBonusDays, setReferralBonusDays] = useState(30);
+  const [myReferrer, setMyReferrer] = useState(null);
 
   const remaining = useMemo(() => Math.max(0, Number(earned || 0) - Number(used || 0)), [earned, used]);
 
@@ -33,7 +34,11 @@ function ReferralProgramPage() {
     setLoading(true);
 
     try {
-      const [codeRes, historyRes] = await Promise.all([getMyReferralCode(), getMyReferralHistory()]);
+      const [codeRes, historyRes, referrerRes] = await Promise.all([
+        getMyReferralCode(),
+        getMyReferralHistory(),
+        getMyReferrer().catch(() => null)
+      ]);
 
       const codePayload = codeRes?.data || {};
       const historyPayload = historyRes?.data || {};
@@ -43,6 +48,7 @@ function ReferralProgramPage() {
       setUsed(Number(codePayload.totalFreeMonthsUsed || 0));
       setReferralBonusDays(Number(codePayload.referralBonusDays || 30));
       setHistory(Array.isArray(historyPayload.referrals) ? historyPayload.referrals : []);
+      setMyReferrer(referrerRes?.data?.referrer || null);
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to load referral program");
     } finally {
@@ -79,10 +85,15 @@ function ReferralProgramPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl">
+      <div className="max-w-6xl animate-pulse">
         <div className="text-2xl font-semibold text-gray-900">Referral Program</div>
-        <div className="mt-2">
-          <Skeleton height={14} width={160} />
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+              <div className="h-4 w-24 rounded bg-gray-200" />
+              <div className="h-6 w-16 rounded bg-gray-200" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -138,6 +149,26 @@ function ReferralProgramPage() {
           </div>
         </div>
       </div>
+
+      {myReferrer ? (
+        <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-5 py-4 flex items-center gap-3">
+          <div className="h-8 w-8 shrink-0 rounded-full bg-green-100 ring-1 ring-green-200 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-700">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-green-800">You were referred by</div>
+            <div className="text-sm font-bold text-green-900">{myReferrer.name || "A church"}</div>
+            {myReferrer.referredAt ? (
+              <div className="text-xs text-green-700">on {new Date(myReferrer.referredAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}</div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">

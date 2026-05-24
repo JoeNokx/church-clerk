@@ -4,8 +4,16 @@ import Subscription from "../../models/billingModel/subscriptionModel.js";
 import WebhookLog from "../../models/billingModel/webhookLogModel.js";
 import ReferralHistory from "../../models/referralModel/referralHistoryModel.js";
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
-import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
+import { addDays, addInterval } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
+
+const getPaystackSecretKey = () => {
+  if (process.env.PAYSTACK_SECRET_KEY) return process.env.PAYSTACK_SECRET_KEY;
+  if (String(process.env.PAYSTACK_MODE || "").toLowerCase() === "live") {
+    return process.env.LIVE_SECRET_KEY || "";
+  }
+  return process.env.TEST_SECRET_KEY || "";
+};
 
 const isCardChargeEvent = (event) => {
   const ch = event?.data?.channel;
@@ -83,7 +91,7 @@ export const paystackWebhook = async (req, res) => {
     });
 
     const hash = crypto
-      .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY || process.env.TEST_SECRET_KEY || "")
+      .createHmac("sha512", getPaystackSecretKey())
       .update(req.rawBody)
       .digest("hex");
 
@@ -177,14 +185,11 @@ export const paystackWebhook = async (req, res) => {
 
       subscription.paymentProvider = "paystack";
 
-      subscription.nextBillingDate = addMonths(
-        now,
-        subscription.billingInterval === "monthly"
-          ? 1
-          : subscription.billingInterval === "halfYear"
-          ? 6
-          : 12
-      );
+      if (billing.invoiceSnapshot?.isProration && billing.invoiceSnapshot?.retainNextBillingDate) {
+        subscription.nextBillingDate = new Date(billing.invoiceSnapshot.retainNextBillingDate);
+      } else {
+        subscription.nextBillingDate = addInterval(now, subscription.billingInterval);
+      }
 
       await subscription.save();
 

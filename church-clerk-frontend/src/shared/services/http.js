@@ -5,6 +5,9 @@ import { showError, showSuccess } from "../../utils/toast.js";
 let pendingRequests = 0;
 let pendingRoutes = 0;
 
+let csrfToken = "";
+let csrfTokenPromise = null;
+
 const AUTH_TOKEN_KEY = "cckAuthToken";
 
 function getStoredAuthToken() {
@@ -48,9 +51,27 @@ const api = axios.create({
   }
 });
 
+async function fetchCsrfToken() {
+  if (csrfToken) return csrfToken;
+  if (csrfTokenPromise) return csrfTokenPromise;
+
+  csrfTokenPromise = api
+    .get("/csrf-token", { skipCsrf: true, toastError: false })
+    .then((res) => {
+      const token = String(res?.data?.csrfToken || "").trim();
+      csrfToken = token;
+      return csrfToken;
+    })
+    .finally(() => {
+      csrfTokenPromise = null;
+    });
+
+  return csrfTokenPromise;
+}
+
 // Request interceptor: attach activeChurch if exists
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     startProgress();
     // Active church from localStorage
     const activeChurch = localStorage.getItem("activeChurch");
@@ -67,6 +88,18 @@ api.interceptors.request.use(
       if (config.headers) {
         delete config.headers["Content-Type"];
         delete config.headers["content-type"];
+      }
+    }
+
+    const method = String(config?.method || "get").toLowerCase();
+    const isStateChanging = ["post", "put", "patch", "delete"].includes(method);
+    if (isStateChanging && config?.skipCsrf !== true) {
+      const token = await fetchCsrfToken();
+      if (token) {
+        config.headers = config.headers || {};
+        if (!config.headers["CSRF-Token"] && !config.headers["csrf-token"]) {
+          config.headers["CSRF-Token"] = token;
+        }
       }
     }
 
@@ -111,8 +144,18 @@ api.interceptors.response.use(
       (typeof data?.error === "string" && data.error.trim() ? data.error : "") ||
       "Request failed";
 
-    if (error?.config?.toastError !== false) {
+    const isNotFound =
+      error?.response?.status === 404 &&
+      backendMsg.toLowerCase().endsWith("not found");
+    if (error?.config?.toastError !== false && !isNotFound) {
       showError(backendMsg);
+    }
+
+    if (error?.response?.status === 403) {
+      const msg = String(data?.message || "").toLowerCase();
+      if (msg.includes("csrf")) {
+        csrfToken = "";
+      }
     }
 
     if (error.response?.status === 401) {
@@ -120,6 +163,12 @@ api.interceptors.response.use(
       localStorage.removeItem("activeChurch");
       localStorage.removeItem(AUTH_TOKEN_KEY);
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+
+    if (error.response?.status === 402 && error.response?.data?.locked) {
+      window.dispatchEvent(new CustomEvent("subscriptionLocked", {
+        detail: { message: error.response.data.message || "Your subscription is suspended. Please contact support." }
+      }));
     }
 
     return Promise.reject(error);

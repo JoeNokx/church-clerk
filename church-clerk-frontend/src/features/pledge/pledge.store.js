@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import ChurchContext from "../church/church.store.js";
 import {
@@ -38,6 +38,9 @@ export function PledgeProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const fetchRequestIdRef = useRef(0);
+  const fetchAbortRef = useRef(null);
+
   useEffect(() => {
     const id = churchStore?.activeChurch?._id || null;
     setActiveChurchId(id);
@@ -49,6 +52,7 @@ export function PledgeProvider({ children }) {
 
   const fetchPledges = useCallback(
     async (partial) => {
+      const requestId = (fetchRequestIdRef.current += 1);
       const nextFilters = { ...filters, ...(partial || {}) };
 
       const params = {
@@ -67,16 +71,27 @@ export function PledgeProvider({ children }) {
       setError(null);
 
       try {
-        const res = await apiGetPledges(params);
+        if (fetchAbortRef.current) {
+          fetchAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        fetchAbortRef.current = controller;
+
+        const res = await apiGetPledges(params, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
+
+        if (requestId !== fetchRequestIdRef.current) return;
 
         setPledges(Array.isArray(payload?.pledges) ? payload.pledges : []);
         setPagination(payload?.pagination || emptyPagination);
       } catch (e) {
+        if (requestId !== fetchRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         setError(e?.response?.data?.message || e?.message || "Failed to fetch pledges");
         setPledges([]);
         setPagination(emptyPagination);
       } finally {
+        if (requestId !== fetchRequestIdRef.current) return;
         setLoading(false);
       }
     },

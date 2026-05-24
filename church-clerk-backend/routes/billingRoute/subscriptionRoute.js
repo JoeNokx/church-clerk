@@ -5,10 +5,12 @@ import { protect } from "../../middleware/authMiddleware.js";
 import authorizeRoles from "../../middleware/roleMiddleware.js"; 
 import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../../middleware/permissionMiddleware.js";
-import { chargePaystackMobileMoney, initializePaystackPayment, verifyPaystackPayment, getPaystackBanks } from "../../controller/billingController/paystackController.js";
+import { chargePaystackMobileMoney, initializePaystackPayment, verifyPaystackPayment, cancelPaystackPayment, getPaystackBanks } from "../../controller/billingController/paystackController.js";
 import { paystackWebhook } from "../../controller/billingController/webhookController.js";
-import { cancelSubscription, changePlan } from "../../controller/billingController/cancelPauseResumeSubscriptionController.js";
+import { cancelSubscription, changePlan, undoCancellation } from "../../controller/billingController/cancelPauseResumeSubscriptionController.js";
+import { calculateUpgradeProration } from "../../controller/billingController/prorationController.js";
 
+import { getPublicExchangeRate } from "../../controller/systemSettingsController.js";
 import {
   chooseSubscription,
   upgradeTrialToPlan,
@@ -36,10 +38,8 @@ const churchDashboardRoles = [
   "supportadmin"
 ];
 
-router.get(
-  "/public/plans",
-  getPublicPlans
-);
+router.get("/public/plans", getPublicPlans);
+router.get("/public/exchange-rate", getPublicExchangeRate);
 
 
 // -----------------------------
@@ -112,6 +112,15 @@ router.post(
   authorizeRoles(...churchDashboardRoles),
   requirePermission("billing", "create"),
   verifyPaystackPayment
+);
+
+router.post(
+  "/payments/paystack/cancel",
+  protect,
+  attachPermissions,
+  authorizeRoles(...churchDashboardRoles),
+  requirePermission("billing", "create"),
+  cancelPaystackPayment
 );
 
 router.get(
@@ -204,7 +213,34 @@ router.post(
   cancelSubscription
 );
 
-router.post("/webhooks/paystack", express.raw({ type: "application/json" }), paystackWebhook);
+router.post(
+  "/subscriptions/undo-cancel",
+  protect,
+  attachPermissions,
+  authorizeRoles(...churchDashboardRoles),
+  requirePermission("billing", "update"),
+  undoCancellation
+);
+
+router.get(
+  "/subscriptions/upgrade/prorate",
+  protect,
+  attachPermissions,
+  authorizeRoles(...churchDashboardRoles),
+  requirePermission("billing", "read"),
+  calculateUpgradeProration
+);
+
+router.post(
+  "/webhooks/paystack",
+  express.raw({
+    type: "application/json",
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    }
+  }),
+  paystackWebhook
+);
 
 
 // Paystack webhook

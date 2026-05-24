@@ -2176,11 +2176,20 @@ function SettingsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {auditLoading ? (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-6">
-                        <Skeleton height={14} count={3} />
-                      </td>
-                    </tr>
+                    <>
+                      {[0, 1, 2, 3].map((i) => (
+                        <tr key={i} className="animate-pulse">
+                          <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                          <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                          <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                          <td className="px-4 py-3"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                          <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                          <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                          <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                          <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                        </tr>
+                      ))}
+                    </>
                   ) : auditLogs.length ? (
                     auditLogs.map((row) => {
                       const userName = row?.user?.fullName || row?.userName || "—";

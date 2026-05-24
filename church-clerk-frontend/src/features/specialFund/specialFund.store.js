@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   createSpecialFund as apiCreateSpecialFund,
   deleteSpecialFund as apiDeleteSpecialFund,
@@ -36,6 +36,9 @@ export function SpecialFundProvider({ children }) {
   const store = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
 
+  const fetchRequestIdRef = useRef(0);
+  const fetchAbortRef = useRef(null);
+
   useEffect(() => {
     const churchId = store?.activeChurch?._id || null;
     setActiveChurch(churchId);
@@ -46,6 +49,7 @@ export function SpecialFundProvider({ children }) {
   }, []);
 
   const fetchSpecialFunds = useCallback(async (partial) => {
+    const requestId = (fetchRequestIdRef.current += 1);
     const nextFilters = { ...filters, ...(partial || {}) };
 
     const params = {
@@ -63,16 +67,27 @@ export function SpecialFundProvider({ children }) {
     setError(null);
 
     try {
-      const res = await getSpecialFunds(params, activeChurch);
+      if (fetchAbortRef.current) {
+        fetchAbortRef.current.abort();
+      }
+      const controller = new AbortController();
+      fetchAbortRef.current = controller;
+
+      const res = await getSpecialFunds(params, activeChurch, { signal: controller.signal });
       const payload = res?.data?.data ?? res?.data;
+
+      if (requestId !== fetchRequestIdRef.current) return;
 
       setSpecialFunds(payload?.specialFund || []);
       setPagination(payload?.pagination || emptyPagination);
     } catch (e) {
+      if (requestId !== fetchRequestIdRef.current) return;
+      if (e?.code === "ERR_CANCELED") return;
       setError(e?.response?.data?.message || e?.message || "Failed to fetch special funds");
       setSpecialFunds([]);
       setPagination(emptyPagination);
     } finally {
+      if (requestId !== fetchRequestIdRef.current) return;
       setLoading(false);
     }
   }, [filters, activeChurch]);

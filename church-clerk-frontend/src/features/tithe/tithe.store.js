@@ -1,21 +1,21 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
-  createTitheAggregate as apiCreateTitheAggregate,
-  createTitheIndividual as apiCreateTitheIndividual,
-  deleteTitheAggregate as apiDeleteTitheAggregate,
-  deleteTitheIndividual as apiDeleteTitheIndividual,
-  getTitheAggregateKPI as apiGetTitheAggregateKPI,
-  getTitheAggregates as apiGetTitheAggregates,
-  getTitheIndividualKPI as apiGetTitheIndividualKPI,
-  getTitheIndividuals as apiGetTitheIndividuals,
   searchTitheMembers as apiSearchTitheMembers,
-  updateTitheAggregate as apiUpdateTitheAggregate,
-  updateTitheIndividual as apiUpdateTitheIndividual
+  getTitheAggregateKPI as apiGetTitheAggregateKPI,
+  getTitheIndividualKPI as apiGetTitheIndividualKPI
 } from "./services/tithe.api.js";
 import { updateChurchProfile } from "../church/services/church.api.js";
 import ChurchContext from "../church/church.store.js";
 import http from "../../shared/services/http.js";
+
+import {
+  titheQueryKeys,
+  useTitheAggregatesQuery,
+  useTitheIndividualsQuery,
+  useTitheMutations
+} from "./hooks/useTithe.js";
 
 const TitheContext = createContext(null);
 
@@ -45,14 +45,10 @@ const emptyAggregateFilters = {
 export function TitheProvider({ children }) {
   const churchStore = useContext(ChurchContext);
 
+  const queryClient = useQueryClient();
+
   const [activeChurchId, setActiveChurchId] = useState(null);
   const [recordingMode, setRecordingModeState] = useState(null);
-
-  const [individuals, setIndividuals] = useState([]);
-  const [aggregates, setAggregates] = useState([]);
-
-  const [individualPagination, setIndividualPagination] = useState(emptyPagination);
-  const [aggregatePagination, setAggregatePagination] = useState(emptyPagination);
 
   const [individualFilters, setIndividualFiltersState] = useState(emptyIndividualFilters);
   const [aggregateFilters, setAggregateFiltersState] = useState(emptyAggregateFilters);
@@ -90,196 +86,122 @@ export function TitheProvider({ children }) {
     [activeChurchId, churchStore]
   );
 
+  const individualsQuery = useTitheIndividualsQuery({
+    activeChurchId,
+    filters: individualFilters,
+    enabled: true
+  });
+
+  const aggregatesQuery = useTitheAggregatesQuery({
+    activeChurchId,
+    filters: aggregateFilters,
+    enabled: true
+  });
+
+  const individuals = Array.isArray(individualsQuery?.data?.titheIndividuals) ? individualsQuery.data.titheIndividuals : [];
+  const aggregates = Array.isArray(aggregatesQuery?.data?.titheAggregates) ? aggregatesQuery.data.titheAggregates : [];
+
+  const individualPagination = individualsQuery?.data?.pagination || emptyPagination;
+  const aggregatePagination = aggregatesQuery?.data?.pagination || emptyPagination;
+
+  const queryError =
+    individualsQuery?.error?.response?.data?.message ||
+    individualsQuery?.error?.message ||
+    aggregatesQuery?.error?.response?.data?.message ||
+    aggregatesQuery?.error?.message ||
+    null;
+
+  const queryLoading = Boolean(individualsQuery?.isLoading || aggregatesQuery?.isLoading);
+
+  const storeError = error || queryError;
+  const storeLoading = Boolean(loading || queryLoading);
+
+  const titheMutations = useTitheMutations(activeChurchId);
+
   const fetchIndividuals = useCallback(
     async (partial) => {
-      const nextFilters = { ...individualFilters, ...(partial || {}) };
-
-      const params = {
-        page: nextFilters.page,
-        limit: nextFilters.limit
-      };
-
-      if (nextFilters.search) params.search = nextFilters.search;
-      if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
-      if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
-
-      setIndividualFiltersState(nextFilters);
-      setLoading(true);
-      setError(null);
-
-      try {
-        const res = await apiGetTitheIndividuals(params, activeChurchId);
-        const payload = res?.data?.data ?? res?.data;
-        const data = payload?.data ?? payload;
-
-        setIndividuals(Array.isArray(data?.titheIndividuals) ? data.titheIndividuals : []);
-        setIndividualPagination(data?.pagination || emptyPagination);
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to fetch tithe individuals");
-        setIndividuals([]);
-        setIndividualPagination(emptyPagination);
-      } finally {
-        setLoading(false);
+      if (!activeChurchId) return;
+      const patch = partial || {};
+      if (Object.keys(patch).length) {
+        setIndividualFiltersState((prev) => ({ ...prev, ...patch }));
       }
+      await queryClient.invalidateQueries({
+        queryKey: titheQueryKeys.individualsPrefix(activeChurchId),
+        exact: false
+      });
     },
-    [individualFilters, activeChurchId]
+    [activeChurchId, queryClient]
   );
 
   const fetchAggregates = useCallback(
     async (partial) => {
-      const nextFilters = { ...aggregateFilters, ...(partial || {}) };
-
-      const params = {
-        page: nextFilters.page,
-        limit: nextFilters.limit
-      };
-
-      if (nextFilters.search) params.search = nextFilters.search;
-      if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
-      if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
-
-      setAggregateFiltersState(nextFilters);
-      setLoading(true);
-      setError(null);
-
-      try {
-        const res = await apiGetTitheAggregates(params, activeChurchId);
-        const payload = res?.data?.data ?? res?.data;
-        const data = payload?.data ?? payload;
-
-        setAggregates(Array.isArray(data?.titheAggregates) ? data.titheAggregates : []);
-        setAggregatePagination(data?.pagination || emptyPagination);
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to fetch tithe aggregates");
-        setAggregates([]);
-        setAggregatePagination(emptyPagination);
-      } finally {
-        setLoading(false);
+      if (!activeChurchId) return;
+      const patch = partial || {};
+      if (Object.keys(patch).length) {
+        setAggregateFiltersState((prev) => ({ ...prev, ...patch }));
       }
+      await queryClient.invalidateQueries({
+        queryKey: titheQueryKeys.aggregatesPrefix(activeChurchId),
+        exact: false
+      });
     },
-    [aggregateFilters, activeChurchId]
+    [activeChurchId, queryClient]
   );
 
   const createTitheIndividuals = useCallback(
     async (payload) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await apiCreateTitheIndividual(payload, activeChurchId);
-        await fetchIndividuals();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to create tithe record");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurchId) throw new Error("Active church not selected");
+      await titheMutations.createIndividual.mutateAsync(payload);
     },
-    [activeChurchId, fetchIndividuals]
+    [activeChurchId, titheMutations.createIndividual]
   );
 
   const createTitheIndividualsBulk = useCallback(
     async (payloads) => {
-      const rows = Array.isArray(payloads) ? payloads.filter(Boolean) : [];
-      if (!rows.length) return;
-
-      setLoading(true);
-      setError(null);
-      try {
-        await Promise.all(rows.map((p) => apiCreateTitheIndividual(p, activeChurchId)));
-        await fetchIndividuals();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to create tithe records");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurchId) throw new Error("Active church not selected");
+      await titheMutations.createIndividualsBulk.mutateAsync(payloads);
     },
-    [activeChurchId, fetchIndividuals]
+    [activeChurchId, titheMutations.createIndividualsBulk]
   );
 
   const updateTitheIndividual = useCallback(
     async (id, payload) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await apiUpdateTitheIndividual(id, payload, activeChurchId);
-        await fetchIndividuals();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to update tithe record");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurchId) throw new Error("Active church not selected");
+      await titheMutations.updateIndividual.mutateAsync({ id, payload });
     },
-    [activeChurchId, fetchIndividuals]
+    [activeChurchId, titheMutations.updateIndividual]
   );
 
   const deleteTitheIndividual = useCallback(
     async (id) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await apiDeleteTitheIndividual(id, activeChurchId);
-        await fetchIndividuals();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to delete tithe record");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurchId) throw new Error("Active church not selected");
+      await titheMutations.deleteIndividual.mutateAsync(id);
     },
-    [activeChurchId, fetchIndividuals]
+    [activeChurchId, titheMutations.deleteIndividual]
   );
 
   const createTitheAggregate = useCallback(
     async (payload) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await apiCreateTitheAggregate(payload, activeChurchId);
-        await fetchAggregates();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to create tithe aggregate");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurchId) throw new Error("Active church not selected");
+      await titheMutations.createAggregate.mutateAsync(payload);
     },
-    [activeChurchId, fetchAggregates]
+    [activeChurchId, titheMutations.createAggregate]
   );
 
   const updateTitheAggregate = useCallback(
     async (id, payload) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await apiUpdateTitheAggregate(id, payload, activeChurchId);
-        await fetchAggregates();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to update tithe aggregate");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurchId) throw new Error("Active church not selected");
+      await titheMutations.updateAggregate.mutateAsync({ id, payload });
     },
-    [activeChurchId, fetchAggregates]
+    [activeChurchId, titheMutations.updateAggregate]
   );
 
   const deleteTitheAggregate = useCallback(
     async (id) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await apiDeleteTitheAggregate(id, activeChurchId);
-        await fetchAggregates();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to delete tithe aggregate");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurchId) throw new Error("Active church not selected");
+      await titheMutations.deleteAggregate.mutateAsync(id);
     },
-    [activeChurchId, fetchAggregates]
+    [activeChurchId, titheMutations.deleteAggregate]
   );
 
   const getIndividualKPI = useCallback(async () => {
@@ -323,8 +245,8 @@ export function TitheProvider({ children }) {
       getIndividualKPI,
       getAggregateKPI,
       searchMembers,
-      loading,
-      error
+      loading: storeLoading,
+      error: storeError
     };
   }, [
     activeChurchId,
@@ -348,8 +270,8 @@ export function TitheProvider({ children }) {
     getIndividualKPI,
     getAggregateKPI,
     searchMembers,
-    loading,
-    error
+    storeLoading,
+    storeError
   ]);
 
   return createElement(

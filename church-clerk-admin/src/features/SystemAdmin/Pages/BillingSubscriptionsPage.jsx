@@ -3,7 +3,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   adminGetPlans,
   adminGetSubscriptions,
-  adminUpdateSubscription
+  adminUpdateSubscription,
+  adminSuspendSubscription,
+  adminResumeSubscription
 } from "../Services/adminBilling.api.js";
 
 const fmtDate = (v) => {
@@ -18,6 +20,9 @@ function BillingSubscriptionsPage() {
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [changePlanModal, setChangePlanModal] = useState(null);
+  const [changePlanId, setChangePlanId] = useState("");
+  const [actionLoading, setActionLoading] = useState("");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -86,72 +91,55 @@ function BillingSubscriptionsPage() {
     load();
   }, [load]);
 
-  const onQuickAction = async (sub, action) => {
+  const runAction = async (label, fn) => {
+    setActionLoading(label);
+    setError("");
+    try {
+      await fn();
+      await load();
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || `Failed: ${label}`);
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  const onQuickAction = (sub, action) => {
     const id = sub?._id;
     if (!id) return;
 
-    if (action === "cancel") {
-      if (!window.confirm("Force cancel this subscription?")) return;
-      setLoading(true);
-      setError("");
-      try {
-        await adminUpdateSubscription(id, { status: "canceled" });
-        await load();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to update subscription");
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
     if (action === "activate") {
-      setLoading(true);
-      setError("");
-      try {
-        await adminUpdateSubscription(id, { status: "active", gracePeriodEnd: null });
-        await load();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to update subscription");
-      } finally {
-        setLoading(false);
-      }
+      runAction("activate", () => adminUpdateSubscription(id, { status: "active", gracePeriodEnd: null }));
       return;
     }
-
+    if (action === "suspend") {
+      runAction("suspend", () => adminSuspendSubscription(id));
+      return;
+    }
+    if (action === "resume") {
+      runAction("resume", () => adminResumeSubscription(id));
+      return;
+    }
     if (action === "extend") {
       const current = sub?.nextBillingDate ? new Date(sub.nextBillingDate) : new Date();
       if (Number.isNaN(current.getTime())) return;
       const next = new Date(current);
       next.setDate(next.getDate() + 30);
-
-      setLoading(true);
-      setError("");
-      try {
-        await adminUpdateSubscription(id, { nextBillingDate: next.toISOString() });
-        await load();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to extend subscription");
-      } finally {
-        setLoading(false);
-      }
+      runAction("extend", () => adminUpdateSubscription(id, { nextBillingDate: next.toISOString() }));
       return;
     }
-
     if (action === "changePlan") {
-      const planId = window.prompt("Enter plan id to set (copy from Plans list)");
-      if (!planId) return;
-      setLoading(true);
-      setError("");
-      try {
-        await adminUpdateSubscription(id, { planId });
-        await load();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to update plan");
-      } finally {
-        setLoading(false);
-      }
+      setChangePlanModal(sub);
+      setChangePlanId(sub?.plan?._id || "");
+      return;
     }
+  };
+
+  const submitChangePlan = async () => {
+    const id = changePlanModal?._id;
+    if (!id || !changePlanId) return;
+    await runAction("changePlan", () => adminUpdateSubscription(id, { planId: changePlanId }));
+    setChangePlanModal(null);
   };
 
   return (
@@ -213,18 +201,25 @@ function BillingSubscriptionsPage() {
               <th className="py-3 text-left font-semibold">Church</th>
               <th className="py-3 text-left font-semibold">Plan</th>
               <th className="py-3 text-left font-semibold">Status</th>
-              <th className="py-3 text-left font-semibold">Start</th>
+              <th className="py-3 text-left font-semibold">Pending</th>
               <th className="py-3 text-left font-semibold">Next Billing</th>
               <th className="py-3 text-right font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={6} className="py-6 text-center text-gray-500">
-                  Loading...
-                </td>
-              </tr>
+              <>
+                {[0, 1, 2, 3].map((i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                  </tr>
+                ))}
+              </>
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-6 text-center text-gray-500">
@@ -232,55 +227,105 @@ function BillingSubscriptionsPage() {
                 </td>
               </tr>
             ) : (
-              filtered.map((s) => (
-                <tr key={s?._id} className="border-b last:border-b-0">
-                  <td className="py-3 text-gray-900">{s?.church?.name || "—"}</td>
-                  <td className="py-3 text-gray-700">{s?.plan?.name || "—"}</td>
-                  <td className="py-3 text-gray-700">{s?.status || "—"}</td>
-                  <td className="py-3 text-gray-700">{fmtDate(s?.createdAt)}</td>
-                  <td className="py-3 text-gray-700">{fmtDate(s?.nextBillingDate)}</td>
-                  <td className="py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onQuickAction(s, "activate")}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                      >
-                        Activate
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onQuickAction(s, "extend")}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                      >
-                        Extend
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onQuickAction(s, "changePlan")}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                      >
-                        Change Plan
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onQuickAction(s, "cancel")}
-                        className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              filtered.map((s) => {
+                const isSuspended = s?.status === "suspended";
+                const pendingAction = s?.pendingPlanAction;
+                const pendingDate = s?.pendingPlanEffectiveDate ? fmtDate(s.pendingPlanEffectiveDate) : null;
+                return (
+                  <tr key={s?._id} className="border-b last:border-b-0">
+                    <td className="py-3 text-gray-900">
+                      <div>{s?.church?.name || "—"}</div>
+                      <div className="text-xs text-gray-400">{s?.church?.email || ""}</div>
+                    </td>
+                    <td className="py-3 text-gray-700">{s?.plan?.name || "—"}</td>
+                    <td className="py-3">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        s?.status === "active" ? "bg-green-100 text-green-700" :
+                        s?.status === "suspended" ? "bg-red-100 text-red-700" :
+                        s?.status === "past_due" ? "bg-orange-100 text-orange-700" :
+                        s?.status === "free trial" || s?.status === "trialing" ? "bg-blue-100 text-blue-700" :
+                        "bg-gray-100 text-gray-600"
+                      }`}>{s?.status || "—"}</span>
+                    </td>
+                    <td className="py-3 text-xs text-gray-500">
+                      {pendingAction ? (
+                        <span className="inline-block rounded bg-yellow-50 border border-yellow-200 px-2 py-0.5 font-semibold text-yellow-700">
+                          {pendingAction === "cancel" ? "Cancel" : "Downgrade"} on {pendingDate || "next cycle"}
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className="py-3 text-gray-700">{fmtDate(s?.nextBillingDate)}</td>
+                    <td className="py-3 text-right">
+                      <div className="flex flex-wrap justify-end gap-1">
+                        {!isSuspended && (
+                          <button type="button" onClick={() => onQuickAction(s, "activate")}
+                            disabled={!!actionLoading}
+                            className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                            Activate
+                          </button>
+                        )}
+                        {!isSuspended ? (
+                          <button type="button" onClick={() => onQuickAction(s, "suspend")}
+                            disabled={!!actionLoading}
+                            className="rounded-md border border-orange-200 bg-white px-2 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50">
+                            Suspend
+                          </button>
+                        ) : (
+                          <button type="button" onClick={() => onQuickAction(s, "resume")}
+                            disabled={!!actionLoading}
+                            className="rounded-md border border-green-200 bg-white px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
+                            Resume
+                          </button>
+                        )}
+                        <button type="button" onClick={() => onQuickAction(s, "extend")}
+                          disabled={!!actionLoading}
+                          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                          +30 Days
+                        </button>
+                        <button type="button" onClick={() => onQuickAction(s, "changePlan")}
+                          disabled={!!actionLoading}
+                          className="rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">
+                          Change Plan
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-4 text-xs text-gray-500">
-        Plans loaded: {Array.isArray(plans) ? plans.length : 0}. (Use Plans list to copy plan IDs for now.)
-      </div>
+      {changePlanModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <div className="text-base font-semibold text-gray-900 mb-1">Change Plan</div>
+            <div className="text-xs text-gray-500 mb-4">{changePlanModal?.church?.name}</div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Select Plan</label>
+            <select
+              value={changePlanId}
+              onChange={(e) => setChangePlanId(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 mb-4"
+            >
+              <option value="">— select a plan —</option>
+              {plans.map((p) => (
+                <option key={p._id} value={p._id}>{p.name}</option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setChangePlanModal(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+              <button type="button" onClick={submitChangePlan} disabled={!changePlanId || !!actionLoading}
+                className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
+                {actionLoading === "changePlan" ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -91,7 +91,14 @@ function BillingRevenuePage() {
         </div>
       </div>
 
-      {loading ? <div className="text-sm text-gray-500">Loading...</div> : null}
+      {loading ? (
+        <div className="mt-4 animate-pulse">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+            <div className="h-4 w-24 rounded bg-gray-200" />
+            <div className="h-64 rounded-lg bg-gray-200" />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -10,9 +10,13 @@ const planSchema = new mongoose.Schema(
     description: String,
 
     paystackPlanCodes: {
-      monthly: { type: String, default: null },
-      halfYear: { type: String, default: null },
-      yearly: { type: String, default: null }
+      hourly:    { type: String, default: null },
+      daily:     { type: String, default: null },
+      weekly:    { type: String, default: null },
+      monthly:   { type: String, default: null },
+      quarterly: { type: String, default: null },
+      halfYear:  { type: String, default: null },
+      yearly:    { type: String, default: null }
     },
 
     memberLimit: {
@@ -74,15 +78,15 @@ const planSchema = new mongoose.Schema(
 
     // Pricing per country & interval
     pricing: {
-      GHS: { monthly: Number, halfYear: Number, yearly: Number },
-      NGN: { monthly: Number, halfYear: Number, yearly: Number },
-      USD: { monthly: Number, halfYear: Number, yearly: Number }
+      GHS: { hourly: Number, daily: Number, weekly: Number, monthly: Number, quarterly: Number, halfYear: Number, yearly: Number },
+      NGN: { hourly: Number, daily: Number, weekly: Number, monthly: Number, quarterly: Number, halfYear: Number, yearly: Number },
+      USD: { hourly: Number, daily: Number, weekly: Number, monthly: Number, quarterly: Number, halfYear: Number, yearly: Number }
     },
 
     priceByCurrency: {
-      GHS: { monthly: Number, halfYear: Number, yearly: Number },
-      NGN: { monthly: Number, halfYear: Number, yearly: Number },
-      USD: { monthly: Number, halfYear: Number, yearly: Number }
+      GHS: { hourly: Number, daily: Number, weekly: Number, monthly: Number, quarterly: Number, halfYear: Number, yearly: Number },
+      NGN: { hourly: Number, daily: Number, weekly: Number, monthly: Number, quarterly: Number, halfYear: Number, yearly: Number },
+      USD: { hourly: Number, daily: Number, weekly: Number, monthly: Number, quarterly: Number, halfYear: Number, yearly: Number }
     },
 
     createdBy: {

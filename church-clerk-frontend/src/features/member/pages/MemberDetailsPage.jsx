@@ -201,11 +201,37 @@ function MemberDetailsPageInner() {
 
       <div className="mt-6 space-y-5">
         {loading ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <Skeleton height={16} width={220} />
-            <div className="mt-4">
-              <Skeleton height={14} count={6} />
+          <div className="space-y-5 animate-pulse">
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-200 px-5 py-4">
+                <div className="h-6 w-48 rounded bg-gray-200" />
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <div className="h-6 w-16 rounded-full bg-gray-200" />
+                  <div className="h-6 w-16 rounded-full bg-gray-200" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i}>
+                    <div className="h-3 w-12 rounded bg-gray-200" />
+                    <div className="mt-1 h-4 w-24 rounded bg-gray-200" />
+                  </div>
+                ))}
+              </div>
             </div>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+                <div className="h-4 w-1/2 rounded bg-gray-200" />
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {[0, 1, 2].map((j) => (
+                    <div key={j}>
+                      <div className="h-3 w-12 rounded bg-gray-200" />
+                      <div className="mt-1 h-4 w-20 rounded bg-gray-200" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>

@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 
 import WelfareContext from "../welfare.store.js";
 
@@ -6,6 +7,12 @@ function WelfareContributionFilters() {
   const store = useContext(WelfareContext);
 
   const [searchValue, setSearchValue] = useState(store?.contributionFilters?.search || "");
+
+  const debouncedSearch = useMemo(() => {
+    return debounce((next) => {
+      store?.fetchContributions?.({ search: next, page: 1 });
+    }, 400);
+  }, [store]);
 
   const datePickerRef = useRef(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -18,6 +25,12 @@ function WelfareContributionFilters() {
   useEffect(() => {
     setSearchValue(store?.contributionFilters?.search || "");
   }, [store?.contributionFilters?.search]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   useEffect(() => {
     setDraftFrom(appliedDateFrom || "");
@@ -46,11 +59,11 @@ function WelfareContributionFilters() {
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, [datePickerOpen]);
 
-  const onSearchChange = async (e) => {
+  const onSearchChange = (e) => {
     const next = e.target.value;
     setSearchValue(next);
     store?.setContributionFilters?.({ search: next, page: 1 });
-    await store?.fetchContributions?.({ search: next, page: 1 });
+    debouncedSearch(next);
   };
 
   const clearDates = async () => {

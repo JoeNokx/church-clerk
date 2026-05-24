@@ -5,13 +5,13 @@ export const getActiveInAppAnnouncements = async () => {
 };
 
 export const markInAppAnnouncementSeen = async (id) => {
-  return await http.post(`/in-app-announcements/${id}/seen`);
+  return await http.post(`/in-app-announcements/${id}/seen`, {}, { toastSuccess: false });
 };
 
 export const acknowledgeInAppAnnouncement = async (id, { displayType = "modal" } = {}) => {
-  return await http.post(`/in-app-announcements/${id}/acknowledge`, { displayType });
+  return await http.post(`/in-app-announcements/${id}/acknowledge`, { displayType }, { toastSuccess: false });
 };
 
 export const dismissInAppAnnouncement = async (id, { displayType = "modal" } = {}) => {
-  return await http.post(`/in-app-announcements/${id}/dismiss`, { displayType });
+  return await http.post(`/in-app-announcements/${id}/dismiss`, { displayType }, { toastSuccess: false });
 };

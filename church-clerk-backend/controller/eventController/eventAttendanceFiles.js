@@ -120,7 +120,9 @@ const downloadEventAttendanceFile = async (req, res) => {
     const downloadUrl = cloudinary.url(doc.publicId, {
       resource_type: doc.resourceType || "raw",
       flags: "attachment",
-      secure: true
+      secure: true,
+      sign_url: true,
+      expires_at: Math.floor(Date.now() / 1000) + 3600
     });
 
     return res.redirect(downloadUrl);

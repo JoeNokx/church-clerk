@@ -463,92 +463,105 @@ function BusinessVenturesPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <Skeleton height={14} count={4} />
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-100">
+              <tr className="text-left text-xs font-semibold text-gray-500">
+                <th className="px-6 py-3 whitespace-nowrap">Business Name</th>
+                <th className="px-6 py-3 whitespace-nowrap">Description</th>
+                <th className="px-6 py-3 whitespace-nowrap">Manager</th>
+                <th className="px-6 py-3 whitespace-nowrap">Phone</th>
+                <th className="px-6 py-3 whitespace-nowrap">Income</th>
+                <th className="px-6 py-3 whitespace-nowrap">Expenses</th>
+                <th className="px-6 py-3 whitespace-nowrap">Net</th>
+                <th className="px-6 py-3 text-right whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {loading ? (
+                [0, 1, 2, 3].map((i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-6 py-3"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-3"><div className="h-4 w-36 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-3"><div className="h-4 w-20 rounded bg-gray-200 ml-auto" /></td>
+                  </tr>
+                ))
+              ) : ventures.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
+                    No business ventures found. Click <span className="font-semibold">Add Venture</span> to get started.
+                  </td>
+                </tr>
+              ) : (
+                ventures.map((v, idx) => (
+                  <tr key={v?._id ?? `v-${idx}`} className="text-sm text-gray-700 hover:bg-gray-50">
+                    <td className="px-6 py-3 font-semibold text-gray-900 whitespace-nowrap">{v?.businessName || "—"}</td>
+                    <td className="px-6 py-3 text-gray-600 max-w-xs truncate">{v?.description || "—"}</td>
+                    <td className="px-6 py-3 whitespace-nowrap">{v?.manager || "—"}</td>
+                    <td className="px-6 py-3 whitespace-nowrap">{v?.phoneNumber || "—"}</td>
+                    <td className="px-6 py-3 font-semibold text-green-700 whitespace-nowrap">{formatMoney(v?.totalIncome, currency)}</td>
+                    <td className="px-6 py-3 font-semibold text-orange-600 whitespace-nowrap">{formatMoney(v?.totalExpenses, currency)}</td>
+                    <td className="px-6 py-3 font-semibold text-blue-900 whitespace-nowrap">{formatMoney(v?.net, currency)}</td>
+                    <td className="px-6 py-3 whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        {canView ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => viewIncome(v)}
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-green-700 hover:bg-gray-50"
+                            >
+                              Income
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => viewExpenses(v)}
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-orange-600 hover:bg-gray-50"
+                            >
+                              Expenses
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => viewDetails(v)}
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              View
+                            </button>
+                          </>
+                        ) : null}
+                        {canEdit ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(v)}
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openDelete(v)}
+                              className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {ventures.map((v, idx) => (
-            <div key={v?._id ?? `v-${idx}`} className="rounded-xl border border-gray-200 bg-white p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-gray-900 truncate">{v?.businessName || "—"}</div>
-                  <div className="mt-1 text-xs text-gray-500 truncate">{v?.description || "—"}</div>
-                  <div className="mt-2 text-xs text-gray-500">
-                    Manager: {v?.manager || "—"} | Phone: {v?.phoneNumber || "—"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 grid grid-cols-3 gap-3">
-                <div>
-                  <div className="text-xs font-semibold text-gray-500">Income</div>
-                  <div className="mt-1 text-sm font-semibold text-green-700">{formatMoney(v?.totalIncome, currency)}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-500">Expenses</div>
-                  <div className="mt-1 text-sm font-semibold text-orange-600">{formatMoney(v?.totalExpenses, currency)}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-500">Net</div>
-                  <div className="mt-1 text-sm font-semibold text-blue-900">{formatMoney(v?.net, currency)}</div>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                {canView ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => viewIncome(v)}
-                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-green-700 shadow-sm hover:bg-gray-50"
-                    >
-                      Income
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => viewExpenses(v)}
-                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-orange-600 shadow-sm hover:bg-gray-50"
-                    >
-                      Expenses
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => viewDetails(v)}
-                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                    >
-                      View
-                    </button>
-                  </>
-                ) : null}
-
-                {canEdit ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => openEdit(v)}
-                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => openDelete(v)}
-                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 shadow-sm hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
-                  </>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
 
       <AddBusinessModal
         open={addOpen}

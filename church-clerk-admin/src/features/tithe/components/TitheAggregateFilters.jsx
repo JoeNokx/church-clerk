@@ -1,4 +1,5 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 import TitheContext from "../tithe.store.js";
 
 function TitheAggregateFilters() {
@@ -7,18 +8,30 @@ function TitheAggregateFilters() {
 
   const [searchValue, setSearchValue] = useState(filters.search || "");
 
+  const debouncedSearch = useMemo(() => {
+    return debounce((next) => {
+      store?.fetchAggregates?.({ search: next, page: 1 });
+    }, 400);
+  }, [store]);
+
   useEffect(() => {
     setSearchValue(filters.search || "");
   }, [filters.search]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <input
         value={searchValue}
-        onChange={async (e) => {
+        onChange={(e) => {
           const next = e.target.value;
           setSearchValue(next);
-          await store?.fetchAggregates?.({ search: next, page: 1 });
+          debouncedSearch(next);
         }}
         placeholder="Search recorded by..."
         className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"

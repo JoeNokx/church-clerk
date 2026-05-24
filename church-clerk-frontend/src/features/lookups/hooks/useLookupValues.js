@@ -1,34 +1,31 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getLookupValues } from "../services/lookups.api.js";
 
 export function useLookupValues(kind, options) {
   const autoLoad = options?.autoLoad !== false;
 
-  const [values, setValues] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["lookups", String(kind || "")],
+    enabled: Boolean(kind) && autoLoad,
+    queryFn: async ({ signal }) => {
+      const res = await getLookupValues(kind, { signal });
+      const rows = Array.isArray(res?.data?.values) ? res.data.values : [];
+      return rows;
+    }
+  });
+
+  const values = Array.isArray(query?.data) ? query.data : [];
+  const loading = Boolean(query?.isLoading);
+  const error = query?.error?.response?.data?.message || query?.error?.message || "";
 
   const reload = useCallback(async () => {
     if (!kind) return;
-    setLoading(true);
-    setError("");
-    try {
-      const res = await getLookupValues(kind);
-      const rows = Array.isArray(res?.data?.values) ? res.data.values : [];
-      setValues(rows);
-    } catch (e) {
-      setValues([]);
-      setError(e?.response?.data?.message || e?.message || "Failed to load");
-    } finally {
-      setLoading(false);
-    }
-  }, [kind]);
-
-  useEffect(() => {
-    if (!autoLoad) return;
-    void reload();
-  }, [autoLoad, reload]);
+    await query.refetch();
+  }, [kind, query]);
 
   useEffect(() => {
     const handler = (event) => {
@@ -39,7 +36,7 @@ export function useLookupValues(kind, options) {
       if (!v) return;
 
       const vNorm = v.toLowerCase();
-      setValues((prev) => {
+      queryClient.setQueryData(["lookups", String(kind || "")], (prev) => {
         const rows = Array.isArray(prev) ? prev : [];
         const exists = rows.some((x) => String(x || "").trim().toLowerCase() === vNorm);
         if (exists) return rows;
@@ -56,7 +53,7 @@ export function useLookupValues(kind, options) {
         window.removeEventListener("cck:lookups:changed", handler);
       }
     };
-  }, [kind]);
+  }, [kind, queryClient]);
 
   return {
     values,

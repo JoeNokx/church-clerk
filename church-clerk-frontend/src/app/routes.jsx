@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
-import Skeleton from "react-loading-skeleton";
 
 import AuthLayout from "../layouts/AuthLayout.jsx";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
@@ -25,10 +24,18 @@ const SettingsPage = lazy(() => import("../features/settings/pages/SettingsPage.
 
 function RouteSkeletonFallback() {
   return (
-    <div className="p-4">
-      <Skeleton height={20} width={180} />
-      <div className="mt-4">
-        <Skeleton height={14} count={6} />
+    <div className="p-4 space-y-4 animate-pulse">
+      <div className="h-7 w-48 rounded bg-gray-200" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-24 rounded-lg bg-gray-200" />
+        ))}
+      </div>
+      <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+        <div className="h-4 w-1/2 rounded bg-gray-200" />
+        <div className="h-3 w-full rounded bg-gray-200" />
+        <div className="h-3 w-full rounded bg-gray-200" />
+        <div className="h-3 w-3/4 rounded bg-gray-200" />
       </div>
     </div>
   );

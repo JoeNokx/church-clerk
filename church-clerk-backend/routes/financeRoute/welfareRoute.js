@@ -10,6 +10,8 @@ import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../../middleware/permissionMiddleware.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import { createWelfareContributionSchema, createWelfareDisbursementSchema } from "../../validators/donations.js";
 
 router.get(
   "/members/search",
@@ -30,6 +32,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("welfare", "create"),
+  validateRequest(createWelfareContributionSchema),
   createWelfareContribution
 );
 router.get(
@@ -72,6 +75,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("welfare", "create"),
+  validateRequest(createWelfareDisbursementSchema),
   createWelfareDisbursement
 );
 router.get(

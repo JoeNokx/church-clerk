@@ -60,7 +60,7 @@ const subscriptionSchema = new mongoose.Schema(
 
     billingInterval: {
       type: String,
-      enum: ["monthly", "halfYear", "yearly"],
+      enum: ["hourly", "daily", "weekly", "monthly", "quarterly", "halfYear", "yearly"],
       default: "monthly"
     },
 

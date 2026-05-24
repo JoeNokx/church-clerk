@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createTitheAggregate as apiCreateTitheAggregate,
@@ -60,6 +60,11 @@ export function TitheProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const individualRequestIdRef = useRef(0);
+  const individualAbortRef = useRef(null);
+  const aggregateRequestIdRef = useRef(0);
+  const aggregateAbortRef = useRef(null);
+
   useEffect(() => {
     const id = churchStore?.activeChurch?._id || null;
     setActiveChurchId(id);
@@ -92,6 +97,7 @@ export function TitheProvider({ children }) {
 
   const fetchIndividuals = useCallback(
     async (partial) => {
+      const requestId = (individualRequestIdRef.current += 1);
       const nextFilters = { ...individualFilters, ...(partial || {}) };
 
       const params = {
@@ -108,17 +114,28 @@ export function TitheProvider({ children }) {
       setError(null);
 
       try {
-        const res = await apiGetTitheIndividuals(params, activeChurchId);
+        if (individualAbortRef.current) {
+          individualAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        individualAbortRef.current = controller;
+
+        const res = await apiGetTitheIndividuals(params, activeChurchId, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
         const data = payload?.data ?? payload;
+
+        if (requestId !== individualRequestIdRef.current) return;
 
         setIndividuals(Array.isArray(data?.titheIndividuals) ? data.titheIndividuals : []);
         setIndividualPagination(data?.pagination || emptyPagination);
       } catch (e) {
+        if (requestId !== individualRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         setError(e?.response?.data?.message || e?.message || "Failed to fetch tithe individuals");
         setIndividuals([]);
         setIndividualPagination(emptyPagination);
       } finally {
+        if (requestId !== individualRequestIdRef.current) return;
         setLoading(false);
       }
     },
@@ -127,6 +144,7 @@ export function TitheProvider({ children }) {
 
   const fetchAggregates = useCallback(
     async (partial) => {
+      const requestId = (aggregateRequestIdRef.current += 1);
       const nextFilters = { ...aggregateFilters, ...(partial || {}) };
 
       const params = {
@@ -143,17 +161,28 @@ export function TitheProvider({ children }) {
       setError(null);
 
       try {
-        const res = await apiGetTitheAggregates(params, activeChurchId);
+        if (aggregateAbortRef.current) {
+          aggregateAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        aggregateAbortRef.current = controller;
+
+        const res = await apiGetTitheAggregates(params, activeChurchId, { signal: controller.signal });
         const payload = res?.data?.data ?? res?.data;
         const data = payload?.data ?? payload;
+
+        if (requestId !== aggregateRequestIdRef.current) return;
 
         setAggregates(Array.isArray(data?.titheAggregates) ? data.titheAggregates : []);
         setAggregatePagination(data?.pagination || emptyPagination);
       } catch (e) {
+        if (requestId !== aggregateRequestIdRef.current) return;
+        if (e?.code === "ERR_CANCELED") return;
         setError(e?.response?.data?.message || e?.message || "Failed to fetch tithe aggregates");
         setAggregates([]);
         setAggregatePagination(emptyPagination);
       } finally {
+        if (requestId !== aggregateRequestIdRef.current) return;
         setLoading(false);
       }
     },

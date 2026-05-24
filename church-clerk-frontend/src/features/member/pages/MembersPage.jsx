@@ -7,11 +7,11 @@ import MemberFilters from "../components/MemberFilters.jsx";
 import MemberTable from "../components/MemberTable.jsx";
 import {
   downloadMembersImportTemplate,
-  getMembersKPI,
   importMembersCsv,
   previewMembersImport,
   canCreateMember
 } from "../services/member.api.js";
+import { useMembersKpiQuery } from "../hooks/useMembers.js";
 
 function KpiCard({ label, value }) {
   return (
@@ -39,8 +39,6 @@ function MembersPageInner() {
   const [importPreview, setImportPreview] = useState(null);
   const [importResult, setImportResult] = useState(null);
 
-  const [kpiLoading, setKpiLoading] = useState(false);
-  const [memberKPI, setMemberKPI] = useState(null);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [limitMessage, setLimitMessage] = useState("");
 
@@ -53,32 +51,10 @@ function MembersPageInner() {
     refreshMembers();
   }, [store?.activeChurch]);
 
-  useEffect(() => {
-    if (!store?.activeChurch) return;
-
-    let cancelled = false;
-
-    (async () => {
-      setKpiLoading(true);
-      try {
-        const res = await getMembersKPI();
-        const payload = res?.data?.data ?? res?.data;
-        const kpi = payload?.memberKPI || payload;
-        if (cancelled) return;
-        setMemberKPI(kpi || null);
-      } catch (e) {
-        if (cancelled) return;
-        setMemberKPI(null);
-      } finally {
-        if (cancelled) return;
-        setKpiLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [store?.activeChurch]);
+  const {
+    data: memberKPI,
+    isLoading: kpiLoading
+  } = useMembersKpiQuery({ activeChurchId: store?.activeChurch, enabled: true });
 
   const renderLimitMessage = (message) => {
     const msg = String(message || "");

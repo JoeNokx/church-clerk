@@ -4,7 +4,8 @@ import {
   adminCreatePlan,
   adminDeletePlan,
   adminGetPlans,
-  adminUpdatePlan
+  adminUpdatePlan,
+  getPublicExchangeRate
 } from "../Services/adminBilling.api.js";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
@@ -78,6 +79,8 @@ function BillingPlansPage() {
   const [error, setError] = useState("");
   const [plans, setPlans] = useState([]);
 
+  const [usdToGhsRate, setUsdToGhsRate] = useState(0);
+
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
 
@@ -94,7 +97,7 @@ function BillingPlansPage() {
   const [features, setFeatures] = useState(getEmptyFeatures);
 
   const [prices, setPrices] = useState({
-    GHS: { monthly: "", halfYear: "", yearly: "" }
+    GHS: { hourly: "", daily: "", weekly: "", monthly: "", quarterly: "", halfYear: "", yearly: "" }
   });
 
   const planOptions = useMemo(
@@ -134,11 +137,17 @@ function BillingPlansPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await adminGetPlans();
-      setPlans(Array.isArray(res?.data?.plans) ? res.data.plans : []);
-    } catch (e) {
-      setPlans([]);
-      setError(e?.response?.data?.message || e?.message || "Failed to load plans");
+      const [plansRes, rateRes] = await Promise.allSettled([adminGetPlans(), getPublicExchangeRate()]);
+      if (plansRes.status === "fulfilled") {
+        setPlans(Array.isArray(plansRes.value?.data?.plans) ? plansRes.value.data.plans : []);
+      } else {
+        setPlans([]);
+        setError(plansRes.reason?.response?.data?.message || plansRes.reason?.message || "Failed to load plans");
+      }
+      if (rateRes.status === "fulfilled") {
+        const r = Number(rateRes.value?.data?.usdToGhsRate);
+        setUsdToGhsRate(Number.isFinite(r) && r > 0 ? r : 0);
+      }
     } finally {
       setLoading(false);
     }
@@ -157,7 +166,7 @@ function BillingPlansPage() {
     setUserLimit("");
     setFeatures(getEmptyFeatures());
     setPrices({
-      GHS: { monthly: "", halfYear: "", yearly: "" }
+      GHS: { hourly: "", daily: "", weekly: "", monthly: "", quarterly: "", halfYear: "", yearly: "" }
     });
   };
 
@@ -176,11 +185,16 @@ function BillingPlansPage() {
     setUserLimit(p?.userLimit === null || p?.userLimit === undefined ? "" : String(p.userLimit));
 
     const by = p?.priceByCurrency || p?.pricing || {};
+    const toStr = (v) => (v !== undefined && v !== null ? String(v) : "");
     const nextPrices = {
       GHS: {
-        monthly: by?.GHS?.monthly !== undefined && by?.GHS?.monthly !== null ? String(by.GHS.monthly) : "",
-        halfYear: by?.GHS?.halfYear !== undefined && by?.GHS?.halfYear !== null ? String(by.GHS.halfYear) : "",
-        yearly: by?.GHS?.yearly !== undefined && by?.GHS?.yearly !== null ? String(by.GHS.yearly) : ""
+        hourly:    toStr(by?.GHS?.hourly),
+        daily:     toStr(by?.GHS?.daily),
+        weekly:    toStr(by?.GHS?.weekly),
+        monthly:   toStr(by?.GHS?.monthly),
+        quarterly: toStr(by?.GHS?.quarterly),
+        halfYear:  toStr(by?.GHS?.halfYear),
+        yearly:    toStr(by?.GHS?.yearly)
       }
     };
     setPrices(nextPrices);
@@ -227,27 +241,18 @@ function BillingPlansPage() {
 
     const priceByCurrency = {};
     const row = prices?.GHS || {};
-    const monthly = toNumberOrNull(row.monthly);
-    const halfYear = toNumberOrNull(row.halfYear);
-    const yearly = toNumberOrNull(row.yearly);
-
-    if (Number.isNaN(monthly) || Number.isNaN(halfYear) || Number.isNaN(yearly)) {
-      setError("Plan prices must be numbers");
+    const INTERVALS = ["hourly", "daily", "weekly", "monthly", "quarterly", "halfYear", "yearly"];
+    const ghsPrices = {};
+    for (const k of INTERVALS) {
+      const parsed = toNumberOrNull(row[k]);
+      if (Number.isNaN(parsed)) { setError(`${k} price must be a number`); return; }
+      if (parsed !== null) ghsPrices[k] = parsed;
+    }
+    if (Object.keys(ghsPrices).length === 0) {
+      setError("At least one interval price is required");
       return;
     }
-
-    if (monthly !== null || halfYear !== null || yearly !== null) {
-      priceByCurrency.GHS = {
-        ...(monthly !== null ? { monthly } : {}),
-        ...(halfYear !== null ? { halfYear } : {}),
-        ...(yearly !== null ? { yearly } : {})
-      };
-    }
-
-    if (Object.keys(priceByCurrency).length === 0) {
-      setError("At least one currency price is required");
-      return;
-    }
+    priceByCurrency.GHS = ghsPrices;
 
     const featuresPayload = { ...(features || {}) };
     const peopleKeys = FEATURE_GROUPS.find((g) => g.label === "PEOPLE & MINISTRIES")?.items.map((x) => x.key) || [];
@@ -360,23 +365,43 @@ function BillingPlansPage() {
 
       {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
 
+      <div className="mt-3 flex items-center gap-2">
+        {usdToGhsRate > 0 ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-100">
+            USD rate: 1 USD = GHS {usdToGhsRate.toFixed(2)}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-500">
+            USD rate not set — USD column uses live market rate
+          </span>
+        )}
+      </div>
+
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="text-xs uppercase text-gray-400">
             <tr className="border-b">
               <th className="py-3 text-left font-semibold">Name</th>
-              <th className="py-3 text-left font-semibold">GHS (M / 6M / Y)</th>
+              <th className="py-3 text-left font-semibold">GHS (Hr / Day / Wk / Mo / Qtr / 6M / Yr)</th>
+              {usdToGhsRate > 0 && (
+                <th className="py-3 text-left font-semibold text-blue-700">USD equiv. (Hr / Day / Wk / Mo / Qtr / 6M / Yr)</th>
+              )}
               <th className="py-3 text-left font-semibold">Status</th>
               <th className="py-3 text-right font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={4} className="py-6 text-center text-gray-500">
-                  Loading...
-                </td>
-              </tr>
+              <>
+                {[0, 1, 2, 3].map((i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                  </tr>
+                ))}
+              </>
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={4} className="py-6 text-center text-gray-500">
@@ -385,20 +410,31 @@ function BillingPlansPage() {
               </tr>
             ) : (
               filtered.map((p) => {
-                const fmt = (row) => {
-                  const m = row?.monthly;
-                  const h = row?.halfYear;
-                  const y = row?.yearly;
-                  const show = (v) => (v === undefined || v === null ? "—" : v);
-                  return `${show(m)} / ${show(h)} / ${show(y)}`;
-                };
-
+                const INTERVALS = ["hourly","daily","weekly","monthly","quarterly","halfYear","yearly"];
                 const by = p?.priceByCurrency || p?.pricing || {};
                 const ghs = by?.GHS || {};
+
+                const fmtGhs = () => {
+                  const show = (v) => (v === undefined || v === null || v === "" ? "—" : v);
+                  return INTERVALS.map((k) => show(ghs?.[k])).join(" / ");
+                };
+
+                const fmtUsd = () => {
+                  if (!usdToGhsRate) return null;
+                  return INTERVALS.map((k) => {
+                    const g = Number(ghs?.[k]);
+                    if (!g || !Number.isFinite(g)) return "—";
+                    return "$" + (g / usdToGhsRate).toFixed(2);
+                  }).join(" / ");
+                };
+
                 return (
                   <tr key={p?._id} className="border-b last:border-b-0">
                     <td className="py-3 text-gray-900">{p?.name || "—"}</td>
-                    <td className="py-3 text-gray-700">{fmt(ghs)}</td>
+                    <td className="py-3 text-gray-700">{fmtGhs()}</td>
+                    {usdToGhsRate > 0 && (
+                      <td className="py-3 text-blue-700 font-medium">{fmtUsd()}</td>
+                    )}
                     <td className="py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -508,62 +544,34 @@ function BillingPlansPage() {
                   <div className="text-xs font-semibold text-gray-600">Pricing</div>
                   <div className="mt-2 grid gap-3">
                     <div className="rounded-lg border border-gray-200 p-3">
-                      <div className="text-sm font-semibold text-gray-900">Ghana Cedi (GHS)</div>
-                      <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                          <div className="text-xs font-semibold text-gray-600">Monthly</div>
-                          <input
-                            value={prices?.GHS?.monthly || ""}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              setPrices((prev) => ({
-                                ...(prev || {}),
-                                GHS: {
-                                  ...(prev?.GHS || {}),
-                                  monthly: v
-                                }
-                              }));
-                            }}
-                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                            placeholder="e.g. 50"
-                          />
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-gray-600">6 months</div>
-                          <input
-                            value={prices?.GHS?.halfYear || ""}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              setPrices((prev) => ({
-                                ...(prev || {}),
-                                GHS: {
-                                  ...(prev?.GHS || {}),
-                                  halfYear: v
-                                }
-                              }));
-                            }}
-                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                            placeholder="e.g. 270"
-                          />
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-gray-600">Yearly</div>
-                          <input
-                            value={prices?.GHS?.yearly || ""}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              setPrices((prev) => ({
-                                ...(prev || {}),
-                                GHS: {
-                                  ...(prev?.GHS || {}),
-                                  yearly: v
-                                }
-                              }));
-                            }}
-                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                            placeholder="e.g. 500"
-                          />
-                        </div>
+                      <div className="text-sm font-semibold text-gray-900">Ghana Cedi (GHS) — leave blank to skip that interval</div>
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {[
+                          { key: "hourly",    label: "Hourly",      placeholder: "e.g. 2" },
+                          { key: "daily",     label: "Daily",       placeholder: "e.g. 10" },
+                          { key: "weekly",    label: "Weekly",      placeholder: "e.g. 50" },
+                          { key: "monthly",   label: "Monthly",     placeholder: "e.g. 150" },
+                          { key: "quarterly", label: "Quarterly (3M)", placeholder: "e.g. 400" },
+                          { key: "halfYear",  label: "Half-Yearly (6M)", placeholder: "e.g. 750" },
+                          { key: "yearly",    label: "Yearly",      placeholder: "e.g. 1400" }
+                        ].map(({ key, label, placeholder }) => (
+                          <div key={key}>
+                            <div className="text-xs font-semibold text-gray-600">{label}</div>
+                            <input
+                              value={prices?.GHS?.[key] || ""}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setPrices((prev) => ({
+                                  ...(prev || {}),
+                                  GHS: { ...(prev?.GHS || {}), [key]: v }
+                                }));
+                              }}
+                              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                              placeholder={placeholder}
+                              inputMode="decimal"
+                            />
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>

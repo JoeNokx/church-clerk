@@ -4,9 +4,9 @@ const ensureChurch = (churchId, argsLength) => {
   if (argsLength > 1 && !churchId) throw new Error("Active church not selected");
 };
 
-export async function getTitheIndividuals(params, churchId) {
+export async function getTitheIndividuals(params, churchId, config = {}) {
   ensureChurch(churchId, arguments.length);
-  return await http.get("/tithe/tithe-individuals", { params });
+  return await http.get("/tithe/tithe-individuals", { params, ...(config || {}) });
 }
 
 export async function createTitheIndividual(payload, churchId) {
@@ -29,9 +29,9 @@ export async function getTitheIndividualKPI(churchId) {
   return await http.get("/tithe/tithe-individuals/stats/kpi");
 }
 
-export async function getTitheAggregates(params, churchId) {
+export async function getTitheAggregates(params, churchId, config = {}) {
   ensureChurch(churchId, arguments.length);
-  return await http.get("/tithe/tithe-aggregates", { params });
+  return await http.get("/tithe/tithe-aggregates", { params, ...(config || {}) });
 }
 
 export async function createTitheAggregate(payload, churchId) {

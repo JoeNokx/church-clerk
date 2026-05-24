@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 
 import WelfareContext from "../welfare.store.js";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
@@ -13,6 +14,12 @@ function WelfareDisbursementFilters() {
 
   const [searchValue, setSearchValue] = useState(store?.disbursementFilters?.search || "");
 
+  const debouncedSearch = useMemo(() => {
+    return debounce((next) => {
+      store?.fetchDisbursements?.({ search: next, page: 1 });
+    }, 400);
+  }, [store]);
+
   const datePickerRef = useRef(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [draftFrom, setDraftFrom] = useState("");
@@ -24,6 +31,12 @@ function WelfareDisbursementFilters() {
   useEffect(() => {
     setSearchValue(store?.disbursementFilters?.search || "");
   }, [store?.disbursementFilters?.search]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   useEffect(() => {
     setDraftFrom(appliedDateFrom || "");
@@ -58,11 +71,11 @@ function WelfareDisbursementFilters() {
     await store?.fetchDisbursements?.({ category: value, page: 1 });
   };
 
-  const onSearchChange = async (e) => {
+  const onSearchChange = (e) => {
     const next = e.target.value;
     setSearchValue(next);
     store?.setDisbursementFilters?.({ search: next, page: 1 });
-    await store?.fetchDisbursements?.({ search: next, page: 1 });
+    debouncedSearch(next);
   };
 
   const clearDates = async () => {

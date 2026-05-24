@@ -481,10 +481,19 @@ function MemberFormPageInner() {
         )}
 
         {loading ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <Skeleton height={16} width={200} />
-            <div className="mt-4">
-              <Skeleton height={14} count={8} />
+          <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+            <div className="h-5 w-40 rounded bg-gray-200" />
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i}>
+                  <div className="h-3 w-16 rounded bg-gray-200" />
+                  <div className="mt-1 h-10 w-full rounded-lg bg-gray-200" />
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <div className="h-10 w-full rounded-lg bg-gray-200 sm:w-24" />
+              <div className="h-10 w-full rounded-lg bg-gray-200 sm:w-32" />
             </div>
           </div>
         ) : (

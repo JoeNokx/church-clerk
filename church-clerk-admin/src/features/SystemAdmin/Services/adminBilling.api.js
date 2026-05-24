@@ -4,6 +4,10 @@ export const adminGetPlans = async () => {
   return await http.get("/admin/billing/plans");
 };
 
+export const getPublicExchangeRate = async () => {
+  return await http.get("/subscription/public/exchange-rate", { toastError: false });
+};
+
 export const adminCreatePlan = async (payload) => {
   return await http.post("/admin/billing/plans", payload);
 };
@@ -22,6 +26,14 @@ export const adminGetSubscriptions = async () => {
 
 export const adminUpdateSubscription = async (id, payload) => {
   return await http.put(`/admin/billing/subscriptions/${id}`, payload);
+};
+
+export const adminSuspendSubscription = async (id) => {
+  return await http.post(`/admin/billing/subscriptions/${id}/suspend`);
+};
+
+export const adminResumeSubscription = async (id) => {
+  return await http.post(`/admin/billing/subscriptions/${id}/resume`);
 };
 
 export const adminGetPayments = async (params) => {

@@ -1,6 +1,7 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { createMember as apiCreateMember, deleteMember as apiDeleteMember, getMembers, updateMember as apiUpdateMember } from "./services/member.api.js";
+import { memberQueryKeys, useMemberMutations, useMembersListQuery } from "./hooks/useMembers.js";
 import ChurchContext from "../church/church.store.js";
 
 const MemberContext = createContext(null);
@@ -22,12 +23,9 @@ const emptyFilters = {
 };
 
 export function MemberProvider({ children }) {
-  const [members, setMembers] = useState([]);
-  const [pagination, setPagination] = useState(emptyPagination);
   const [filters, setFiltersState] = useState(emptyFilters);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
   const churchStore = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
@@ -41,98 +39,71 @@ export function MemberProvider({ children }) {
     setFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
   }, []);
 
+  const membersQuery = useMembersListQuery({
+    activeChurchId: activeChurch,
+    filters,
+    enabled: true
+  });
+
+  const mutations = useMemberMutations(activeChurch);
+
+  const membersPayload = membersQuery?.data || {};
+  const members = Array.isArray(membersPayload?.members) ? membersPayload.members : [];
+  const pagination = membersPayload?.pagination || emptyPagination;
+
+  const error =
+    membersQuery?.error?.response?.data?.message ||
+    membersQuery?.error?.message ||
+    null;
+
+  const loading = Boolean(
+    membersQuery?.isLoading ||
+      mutations?.createMember?.isPending ||
+      mutations?.updateMember?.isPending ||
+      mutations?.deleteMember?.isPending
+  );
+
   const fetchMembers = useCallback(
     async (partial) => {
-      const nextFilters = { ...filters, ...(partial || {}) };
+      if (!activeChurch) return;
 
-      const params = {
-        page: nextFilters.page,
-        limit: nextFilters.limit
-      };
-
-      if (nextFilters.search) params.search = nextFilters.search;
-      if (nextFilters.status && nextFilters.status !== "all") params.status = nextFilters.status;
-      if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
-      if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
-
-      setFiltersState(nextFilters);
-      setLoading(true);
-      setError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-
-        const res = await getMembers(params);
-        const payload = res?.data?.data ?? res?.data;
-
-        setMembers(payload?.members || []);
-        setPagination(payload?.pagination || emptyPagination);
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to fetch members");
-        setMembers([]);
-        setPagination(emptyPagination);
-      } finally {
-        setLoading(false);
+      const patch = partial || {};
+      const keys = Object.keys(patch);
+      if (keys.length === 0) {
+        await queryClient.invalidateQueries({
+          queryKey: memberQueryKeys.membersPrefix(activeChurch),
+          exact: false
+        });
+        return;
       }
+
+      setFiltersState((prev) => ({ ...prev, ...patch }));
     },
-    [filters, activeChurch]
+    [activeChurch, queryClient]
   );
 
   const createMember = useCallback(
     async (payload) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiCreateMember(payload);
-        await fetchMembers();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to create member");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurch) throw new Error("Active church not selected");
+      await mutations.createMember.mutateAsync(payload);
     },
-    [fetchMembers, activeChurch]
+    [activeChurch, mutations.createMember]
   );
 
   const updateMember = useCallback(
     async (id, payload) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiUpdateMember(id, payload);
-        await fetchMembers();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to update member");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurch) throw new Error("Active church not selected");
+      await mutations.updateMember.mutateAsync({ id, payload });
     },
-    [fetchMembers, activeChurch]
+    [activeChurch, mutations.updateMember]
   );
 
   const deleteMember = useCallback(
     async (id) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        if (!activeChurch) throw new Error("Active church not selected");
-        await apiDeleteMember(id);
-        await fetchMembers();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to delete member");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (!activeChurch) throw new Error("Active church not selected");
+      await mutations.deleteMember.mutateAsync(id);
     },
-    [fetchMembers, activeChurch]
+    [activeChurch, mutations.deleteMember]
   );
 
   const value = useMemo(() => {

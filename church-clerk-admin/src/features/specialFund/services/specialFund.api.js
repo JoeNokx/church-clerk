@@ -2,12 +2,18 @@ import http from "../../../shared/services/http.js";
 
 export const createSpecialFund = async (payload, churchId) => {
   if (!churchId) throw new Error("Active church not selected");
-  return await http.post("/special-fund/special-funds", payload);
+  return await http.post("/special-fund/special-funds", payload, {
+    headers: { "x-active-church": churchId }
+  });
 };
 
-export const getSpecialFunds = async (params, churchId) => {
+export const getSpecialFunds = async (params, churchId, config = {}) => {
   if (!churchId) throw new Error("Active church not selected");
-  return await http.get("/special-fund/special-funds", { params });
+  return await http.get("/special-fund/special-funds", {
+    params,
+    headers: { "x-active-church": churchId },
+    ...(config || {})
+  });
 };
 
 export const updateSpecialFund = async (id, payload, churchId) => {

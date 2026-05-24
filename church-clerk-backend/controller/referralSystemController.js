@@ -128,4 +128,25 @@ const rewardReferralIfEligible = async (churchId) => {
 };
 
 
-export { getMyReferralCode, getReferralHistory, rewardReferralIfEligible };
+const getMyReferrer = async (req, res) => {
+  try {
+    if (!req.activeChurch) return res.status(400).json({ message: "Church context not found" });
+
+    const referral = await ReferralHistory.findOne({
+      referredChurch: req.activeChurch._id
+    }).populate("referrerChurch", "name");
+
+    if (!referral) return res.json({ referrer: null });
+
+    return res.json({
+      referrer: {
+        name: referral.referrerChurch?.name || null,
+        referredAt: referral.referredAt
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getMyReferralCode, getReferralHistory, rewardReferralIfEligible, getMyReferrer };

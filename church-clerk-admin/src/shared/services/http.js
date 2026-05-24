@@ -5,6 +5,9 @@ const envBaseURL = import.meta.env.VITE_API_BASE_URL;
 
 let baseURL = envBaseURL || "/api/v1";
 
+let csrfToken = "";
+let csrfTokenPromise = null;
+
 if (import.meta.env.DEV && typeof baseURL === "string" && /^https?:\/\//i.test(baseURL)) {
   try {
     const u = new URL(baseURL);
@@ -25,8 +28,26 @@ const api = axios.create({
   }
 });
 
+async function fetchCsrfToken() {
+  if (csrfToken) return csrfToken;
+  if (csrfTokenPromise) return csrfTokenPromise;
+
+  csrfTokenPromise = api
+    .get("/csrf-token", { skipCsrf: true, toastError: false })
+    .then((res) => {
+      const token = String(res?.data?.csrfToken || "").trim();
+      csrfToken = token;
+      return csrfToken;
+    })
+    .finally(() => {
+      csrfTokenPromise = null;
+    });
+
+  return csrfTokenPromise;
+}
+
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     config.headers["x-client-app"] = "system-admin";
 
     const inViewChurchMode = localStorage.getItem("systemAdminViewChurch") === "1";
@@ -40,6 +61,18 @@ api.interceptors.request.use(
       if (config.headers) {
         delete config.headers["Content-Type"];
         delete config.headers["content-type"];
+      }
+    }
+
+    const method = String(config?.method || "get").toLowerCase();
+    const isStateChanging = ["post", "put", "patch", "delete"].includes(method);
+    if (isStateChanging && config?.skipCsrf !== true) {
+      const token = await fetchCsrfToken();
+      if (token) {
+        config.headers = config.headers || {};
+        if (!config.headers["CSRF-Token"] && !config.headers["csrf-token"]) {
+          config.headers["CSRF-Token"] = token;
+        }
       }
     }
 
@@ -75,6 +108,14 @@ api.interceptors.response.use(
 
       if (error?.config?.toastError !== false) {
         showError(backendMsg);
+      }
+    }
+
+    if (error?.response?.status === 403) {
+      const data = error?.response?.data;
+      const msg = String(data?.message || "").toLowerCase();
+      if (msg.includes("csrf")) {
+        csrfToken = "";
       }
     }
 

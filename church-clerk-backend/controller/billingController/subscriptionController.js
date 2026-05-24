@@ -5,6 +5,7 @@ import Church from "../../models/churchModel.js";
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import PDFDocument from "pdfkit";
 import https from "https";
+import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
 import { toGhanaNationalFromE164, validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 
@@ -363,10 +364,15 @@ export const addCardPaymentMethod = async (req, res) => {
     const last4 = digits.slice(-4);
 
     subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
-    const exists = subscription.paymentMethods.some(
+
+    const isSameCard = subscription.paymentMethods.some(
       (pm) => String(pm?.type || "") === "card" && String(pm?.last4 || "") === String(last4) && Number(pm?.expMonth) === m && Number(pm?.expYear) === y
     );
-    if (!exists) {
+
+    if (!isSameCard) {
+      subscription.paymentMethods = subscription.paymentMethods.filter(
+        (pm) => String(pm?.type || "") !== "card"
+      );
       subscription.paymentMethods.push({
         type: "card",
         brand,
@@ -536,9 +542,22 @@ export const downloadBillingInvoice = async (req, res) => {
     const planName = billing?.invoiceSnapshot?.planName || "—";
     const billingInterval = billing?.invoiceSnapshot?.billingInterval || "—";
     const amount = Number(billing?.amount || 0);
-    const currency = billing?.currency || billing?.invoiceSnapshot?.currency || "";
+    const currency = billing?.currency || billing?.invoiceSnapshot?.currency || "GHS";
     const status = billing?.status || "—";
     const reference = billing?.providerReference || "—";
+
+    const church = await Church.findById(churchId).lean();
+    const isGhana = String(church?.country || "").trim().toLowerCase() === "ghana";
+    let usdToGhsRate = 0;
+    if (!isGhana) {
+      const settings = await getSystemSettingsSnapshot();
+      usdToGhsRate = Number(settings.usdToGhsRate || 0);
+    }
+    const showUsd = !isGhana && usdToGhsRate > 0;
+    const usdAmount = showUsd ? (amount / usdToGhsRate).toFixed(2) : null;
+    const amountLine = showUsd
+      ? `${Number(usdAmount).toLocaleString("en-US", { minimumFractionDigits: 2 })} USD`
+      : `${amount.toLocaleString()} ${currency}`;
 
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
@@ -558,7 +577,7 @@ export const downloadBillingInvoice = async (req, res) => {
     doc.moveDown(0.5);
     doc.fontSize(10).text(`Plan: ${planName}`);
     doc.text(`Billing Interval: ${billingInterval}`);
-    doc.text(`Amount: ${amount.toLocaleString()} ${currency}`);
+    doc.text(`Amount: ${amountLine}`);
 
     doc.end();
   } catch (error) {

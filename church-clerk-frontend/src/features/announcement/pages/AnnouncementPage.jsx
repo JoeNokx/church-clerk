@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../../church/church.store.js";
+import { getAdminConfiguredRate } from "../../../shared/utils/fx.js";
 import { requestMyChurchSenderId } from "../../church/services/church.api.js";
 import { getGroups } from "../../group/services/group.api.js";
 import { getCells } from "../../cell/services/cell.api.js";
@@ -28,6 +29,12 @@ function formatMoneyGhs(amount) {
   const n = Number(amount || 0);
   const safe = Number.isFinite(n) ? n : 0;
   return safe.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatMoneyUsd(amount) {
+  const n = Number(amount || 0);
+  const safe = Number.isFinite(n) ? n : 0;
+  return `$${safe.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function SenderIdWarningModal({
@@ -191,17 +198,27 @@ function TabButton({ active, onClick, children }) {
   );
 }
 
-function WalletCard({ wallet, onFund, onViewHistory }) {
+function WalletCard({ wallet, onFund, onViewHistory, isGhana, usdToGhs }) {
   const balanceCredits = Number(wallet?.balanceCredits || 0);
   const balanceGhs = creditsToGhs(balanceCredits);
+  const balanceUsd = (!isGhana && usdToGhs) ? balanceGhs / Number(usdToGhs) : null;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="text-xs font-semibold text-gray-500">Wallet Balance</div>
-          <div className="mt-2 text-3xl font-semibold text-gray-900">₵{formatMoneyGhs(balanceGhs)}</div>
-          <div className="mt-1 text-xs text-gray-500">{formatInt(balanceCredits)} credits</div>
+          {!isGhana && balanceUsd !== null ? (
+            <>
+              <div className="mt-2 text-3xl font-semibold text-gray-900">{formatMoneyUsd(balanceUsd)}</div>
+              <div className="mt-1 text-xs text-gray-500">{formatInt(balanceCredits)} credits</div>
+            </>
+          ) : (
+            <>
+              <div className="mt-2 text-3xl font-semibold text-gray-900">₵{formatMoneyGhs(balanceGhs)}</div>
+              <div className="mt-1 text-xs text-gray-500">{formatInt(balanceCredits)} credits</div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -225,18 +242,21 @@ function WalletCard({ wallet, onFund, onViewHistory }) {
   );
 }
 
-function FundWalletModal({ open, onClose, onFund, loading, error }) {
-  const [amount, setAmount] = useState(50);
+function FundWalletModal({ open, onClose, onFund, loading, error, isGhana, usdToGhs }) {
+  const useUsd = !isGhana && Boolean(usdToGhs);
+  const usdRate = Number(usdToGhs || 1);
+
+  const [amount, setAmount] = useState(useUsd ? 10 : 50);
 
   useEffect(() => {
     if (!open) return;
-    setAmount(50);
-  }, [open]);
+    setAmount(useUsd ? 10 : 50);
+  }, [open, useUsd]);
 
   if (!open) return null;
 
-  const presets = [50, 100, 200];
-  const minAmount = 10;
+  const presets = useUsd ? [5, 10, 20] : [50, 100, 200];
+  const minAmount = useUsd ? Number((10 / usdRate).toFixed(2)) : 10;
   const amountNum = Number(amount || 0);
   const amountOk = Number.isFinite(amountNum) && amountNum >= minAmount;
 
@@ -246,7 +266,7 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
         <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-gray-900">Fund Wallet</div>
-            <div className="mt-1 text-xs text-gray-500">Payment method: Paystack</div>
+            <div className="mt-1 text-xs text-gray-500">Payment processed in GHS via Paystack</div>
           </div>
           <button
             type="button"
@@ -261,7 +281,9 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
         <div className="px-5 py-4">
           {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
-          <div className="text-xs font-semibold text-gray-600">Amount to deposit (GHS)</div>
+          <div className="text-xs font-semibold text-gray-600">
+            {useUsd ? "Amount to deposit (USD)" : "Amount to deposit (GHS)"}
+          </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {presets.map((p) => (
               <button
@@ -271,7 +293,7 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
                 disabled={loading}
                 className={`rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-60 ${Number(amount) === p ? "border-blue-200 bg-blue-50 text-blue-900" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
               >
-                ₵{p}
+                {useUsd ? formatMoneyUsd(p) : `₵${p}`}
               </button>
             ))}
             <div className="flex items-center gap-2">
@@ -280,14 +302,16 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
                 value={String(amount ?? "")}
                 onChange={(e) => setAmount(e.target.value)}
                 className="h-10 w-28 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                placeholder="Amount"
+                placeholder={useUsd ? "USD" : "GHS"}
                 inputMode="decimal"
               />
             </div>
           </div>
 
-          <div className="mt-2 text-xs text-gray-500">Minimum deposit: ₵{minAmount}</div>
-          {!amountOk ? <div className="mt-2 text-xs font-semibold text-red-600">Enter at least ₵{minAmount} to proceed.</div> : null}
+          <div className="mt-2 text-xs text-gray-500">
+            Minimum deposit: {useUsd ? formatMoneyUsd(minAmount) : `₵${minAmount}`}
+          </div>
+          {!amountOk ? <div className="mt-2 text-xs font-semibold text-red-600">Enter at least {useUsd ? formatMoneyUsd(minAmount) : `₵${minAmount}`} to proceed.</div> : null}
 
           <div className="mt-5 flex items-center justify-end gap-2">
             <button
@@ -300,7 +324,7 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
             </button>
             <button
               type="button"
-              onClick={() => onFund(amount)}
+              onClick={() => onFund(useUsd ? amountNum * usdRate : amountNum)}
               disabled={loading || !amountOk}
               className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
             >
@@ -313,7 +337,7 @@ function FundWalletModal({ open, onClose, onFund, loading, error }) {
   );
 }
 
-function WalletHistoryTab({ open, transactions, loading, error, onReload }) {
+function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhana, usdToGhs }) {
   if (!open) return null;
 
   return (
@@ -363,9 +387,19 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload }) {
                     <td className="py-2 pr-4 whitespace-nowrap">{t?.type || "—"}</td>
                     <td className="py-2 pr-4 text-gray-600">{t?.description || "—"}</td>
                     <td className="py-2 pr-4 font-semibold whitespace-nowrap">
-                      {typeof t?.amountCredits === "number" ? `${t.amountCredits >= 0 ? "+" : "-"}${Math.abs(t.amountCredits)} credits` : "—"}
+                      {typeof t?.amountCredits === "number" ? (
+                        !isGhana && usdToGhs
+                          ? `${t.amountCredits >= 0 ? "+" : ""}${formatMoneyUsd(creditsToGhs(t.amountCredits) / Number(usdToGhs))}`
+                          : `${t.amountCredits >= 0 ? "+" : "-"}${Math.abs(t.amountCredits)} credits`
+                      ) : "—"}
                     </td>
-                    <td className="py-2 font-semibold text-gray-900">{typeof t?.balanceAfterCredits === "number" ? `${t.balanceAfterCredits} credits` : "—"}</td>
+                    <td className="py-2 font-semibold text-gray-900">
+                      {typeof t?.balanceAfterCredits === "number" ? (
+                        !isGhana && usdToGhs
+                          ? formatMoneyUsd(creditsToGhs(t.balanceAfterCredits) / Number(usdToGhs))
+                          : `${t.balanceAfterCredits} credits`
+                      ) : "—"}
+                    </td>
                   </tr>
                 ))
               )}
@@ -1911,6 +1945,17 @@ function AnnouncementPage() {
   const { can } = useContext(PermissionContext) || {};
   const { user } = useAuth();
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
+  const churchCtx = useContext(ChurchContext);
+  const activeChurch = churchCtx?.activeChurch;
+  const isGhana = String(activeChurch?.country || "").trim().toLowerCase() === "ghana";
+  const [usdToGhs, setUsdToGhs] = useState(null);
+
+  useEffect(() => {
+    if (isGhana) { setUsdToGhs(null); return; }
+    let cancelled = false;
+    getAdminConfiguredRate().then((r) => { if (!cancelled) setUsdToGhs(r); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [isGhana]);
 
   const [tab, setTab] = useState("communication");
 
@@ -2134,6 +2179,8 @@ function AnnouncementPage() {
           wallet={wallet}
           onFund={openFund}
           onViewHistory={() => setTab("wallet-history")}
+          isGhana={isGhana}
+          usdToGhs={usdToGhs}
         />
         {walletLoading ? <div className="mt-2 text-xs text-gray-500">Loading wallet...</div> : null}
       </div>
@@ -2187,6 +2234,8 @@ function AnnouncementPage() {
         loading={txLoading}
         error={txError}
         onReload={loadTx}
+        isGhana={isGhana}
+        usdToGhs={usdToGhs}
       />
 
       <MessagesTable
@@ -2202,6 +2251,8 @@ function AnnouncementPage() {
         onFund={onFund}
         loading={fundLoading}
         error={fundError}
+        isGhana={isGhana}
+        usdToGhs={usdToGhs}
       />
 
       <DeliveryReportModal

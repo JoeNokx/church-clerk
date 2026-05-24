@@ -981,10 +981,17 @@ function MinistryDetailsPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
         {loading ? (
-          <div className="space-y-3">
-            <Skeleton height={18} width={160} />
-            <Skeleton height={28} width={260} />
-            <Skeleton height={14} count={2} />
+          <div className="space-y-4 animate-pulse">
+            <div className="h-4 w-32 rounded bg-gray-200" />
+            <div className="h-7 w-52 rounded bg-gray-200" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i}>
+                  <div className="h-3 w-16 rounded bg-gray-200" />
+                  <div className="mt-1 h-4 w-24 rounded bg-gray-200" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -1101,8 +1108,14 @@ function MinistryDetailsPage() {
           {memberError ? <div className="p-5 text-sm text-red-700">{memberError}</div> : null}
 
           {memberLoading ? (
-            <div className="p-5">
-              <Skeleton height={14} count={6} />
+            <div className="p-5 space-y-3 animate-pulse">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-3 py-1.5">
+                  <div className="h-8 w-8 rounded-full bg-gray-200" />
+                  <div className="h-4 w-24 rounded bg-gray-200" />
+                  <div className="ml-auto h-4 w-16 rounded bg-gray-200" />
+                </div>
+              ))}
             </div>
           ) : members.length === 0 ? (
             <div className="p-5 text-sm text-gray-600">No member record found.</div>
@@ -1206,8 +1219,13 @@ function MinistryDetailsPage() {
                 <div className="text-xs font-semibold text-gray-500">Results</div>
                 <div className="mt-2 rounded-xl border border-gray-200 max-h-64 overflow-y-auto">
                   {addMemberCandidatesLoading ? (
-                    <div className="px-4 py-3">
-                      <Skeleton height={14} count={4} />
+                    <div className="px-4 py-3 space-y-2 animate-pulse">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center gap-3 py-1">
+                          <div className="h-6 w-6 rounded-full bg-gray-200" />
+                          <div className="h-4 w-24 rounded bg-gray-200" />
+                        </div>
+                      ))}
                     </div>
                   ) : addMemberCandidates.length === 0 ? (
                     <div className="px-4 py-3 text-sm text-gray-600">No matching members found.</div>
@@ -1522,8 +1540,13 @@ function MinistryDetailsPage() {
               {individualAttendanceError ? <div className="p-5 text-sm text-red-700">{individualAttendanceError}</div> : null}
 
               {individualAttendanceLoading ? (
-                <div className="p-5">
-                  <Skeleton height={14} count={6} />
+                <div className="p-5 space-y-3 animate-pulse">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 py-1.5">
+                      <div className="h-4 w-24 rounded bg-gray-200" />
+                      <div className="h-4 w-16 rounded bg-gray-200" />
+                    </div>
+                  ))}
                 </div>
               ) : individualAttendances.length === 0 ? (
                 <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
@@ -1613,8 +1636,13 @@ function MinistryDetailsPage() {
                           {individualMembersError ? (
                             <div className="px-4 py-3 text-sm text-red-700">{individualMembersError}</div>
                           ) : individualMembersLoading ? (
-                            <div className="px-4 py-3">
-                              <Skeleton height={14} count={6} />
+                            <div className="px-4 py-3 space-y-2 animate-pulse">
+                              {[0, 1, 2, 3].map((i) => (
+                                <div key={i} className="flex items-center gap-3 py-1">
+                                  <div className="h-4 w-4 rounded bg-gray-200" />
+                                  <div className="h-4 w-24 rounded bg-gray-200" />
+                                </div>
+                              ))}
                             </div>
                           ) : individualMembers.length === 0 ? (
                             <div className="px-4 py-3 text-sm text-gray-600">No members found.</div>
@@ -1684,7 +1712,14 @@ function MinistryDetailsPage() {
                 {individualViewError ? (
                   <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{individualViewError}</div>
                 ) : individualViewLoading ? (
-                  <Skeleton height={14} count={8} />
+                  <div className="space-y-3 animate-pulse">
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <div key={i}>
+                        <div className="h-3 w-16 rounded bg-gray-200" />
+                        <div className="mt-1 h-4 w-24 rounded bg-gray-200" />
+                      </div>
+                    ))}
+                  </div>
                 ) : !individualViewing ? (
                   <div className="text-sm text-gray-600">No record found.</div>
                 ) : (
@@ -1753,8 +1788,13 @@ function MinistryDetailsPage() {
               {attendanceError ? <div className="p-5 text-sm text-red-700">{attendanceError}</div> : null}
 
               {attendanceLoading ? (
-                <div className="p-5">
-                  <Skeleton height={14} count={6} />
+                <div className="p-5 space-y-3 animate-pulse">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 py-1.5">
+                      <div className="h-4 w-24 rounded bg-gray-200" />
+                      <div className="h-4 w-16 rounded bg-gray-200" />
+                    </div>
+                  ))}
                 </div>
               ) : attendances.length === 0 ? (
                 <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
@@ -1893,8 +1933,13 @@ function MinistryDetailsPage() {
           {offeringError ? <div className="p-5 text-sm text-red-700">{offeringError}</div> : null}
 
           {offeringLoading ? (
-            <div className="p-5">
-              <Skeleton height={14} count={6} />
+            <div className="p-5 space-y-3 animate-pulse">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center justify-between gap-3 py-1.5">
+                  <div className="h-4 w-24 rounded bg-gray-200" />
+                  <div className="h-4 w-16 rounded bg-gray-200" />
+                </div>
+              ))}
             </div>
           ) : offerings.length === 0 ? (
             <div className="p-5 text-sm text-gray-600">No offering record found.</div>

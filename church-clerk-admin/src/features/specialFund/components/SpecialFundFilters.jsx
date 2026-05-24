@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 import SpecialFundContext from "../specialFund.store.js";
 
 const CATEGORY_OPTIONS = [
@@ -16,6 +17,12 @@ function SpecialFundFilters() {
 
   const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
 
+  const debouncedSearch = useMemo(() => {
+    return debounce((next) => {
+      store?.fetchSpecialFunds?.({ search: next, page: 1 });
+    }, 400);
+  }, [store]);
+
   const datePickerRef = useRef(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [draftFrom, setDraftFrom] = useState("");
@@ -27,6 +34,12 @@ function SpecialFundFilters() {
   useEffect(() => {
     setSearchValue(store?.filters?.search || "");
   }, [store?.filters?.search]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   useEffect(() => {
     setDraftFrom(appliedDateFrom || "");
@@ -62,11 +75,11 @@ function SpecialFundFilters() {
     await store?.fetchSpecialFunds({ category: value, page: 1 });
   };
 
-  const onSearchChange = async (e) => {
+  const onSearchChange = (e) => {
     const next = e.target.value;
     setSearchValue(next);
     store?.setFilters({ search: next, page: 1 });
-    await store?.fetchSpecialFunds({ search: next, page: 1 });
+    debouncedSearch(next);
   };
 
   const clearDates = async () => {

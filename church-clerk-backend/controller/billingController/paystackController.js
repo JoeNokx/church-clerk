@@ -3,45 +3,30 @@ import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
 import https from "https";
-import { addDays, addMonths } from "../../utils/dateBillingUtils.js";
+import { addDays, addInterval } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
 import { toGhanaNationalFromE164, validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
+import { computeProration } from "./prorationController.js";
 
-const PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL = {
-  basic: {
-    monthly: "PLN_8uefis4crjcr41o",
-    halfYear: "PLN_j6oh9l7kpdeu8iy",
-    yearly: "PLN_fv0op4dygxav9de"
-  },
-  standard: {
-    monthly: "PLN_ty5113i92ozhyh7",
-    halfYear: "PLN_1fgfnonzqgaqj4q",
-    yearly: "PLN_kbhoxbyxdbxbxjz"
-  },
-  premium: {
-    monthly: "PLN_h3sbqgtqdsqbi89",
-    halfYear: "PLN_kb4lhbx563m6gj5",
-    yearly: "PLN_5wa7hr512u9i6p7"
+const getPaystackSecretKey = () => {
+  if (process.env.PAYSTACK_SECRET_KEY) return process.env.PAYSTACK_SECRET_KEY;
+  if (String(process.env.PAYSTACK_MODE || "").toLowerCase() === "live") {
+    return process.env.LIVE_SECRET_KEY || null;
   }
+  return process.env.TEST_SECRET_KEY || null;
 };
 
 const normalizeBillingIntervalKey = (billingInterval) => {
-  const v = String(billingInterval || "")
-    .trim()
-    .toLowerCase();
+  const v = String(billingInterval || "").trim().toLowerCase();
+  if (v === "hourly")    return "hourly";
+  if (v === "daily")     return "daily";
+  if (v === "weekly")    return "weekly";
   if (v === "monthly" || v === "month") return "monthly";
+  if (v === "quarterly") return "quarterly";
   if (v === "halfyear" || v === "half_year" || v === "half-year" || v === "biannually" || v === "semiannually") return "halfYear";
   if (v === "yearly" || v === "year" || v === "annually" || v === "annual") return "yearly";
   return String(billingInterval || "").trim();
-};
-
-const getPaystackRecurringPlanCode = ({ planName, billingInterval }) => {
-  const name = String(planName || "")
-    .trim()
-    .toLowerCase();
-  const intervalKey = normalizeBillingIntervalKey(billingInterval);
-  return PAYSTACK_RECURRING_PLAN_CODE_BY_NAME_AND_INTERVAL?.[name]?.[intervalKey] || null;
 };
 
 const getSupportedPaystackCurrencies = () => {
@@ -52,12 +37,21 @@ const getSupportedPaystackCurrencies = () => {
         .map((s) => String(s || "").trim().toUpperCase())
         .filter(Boolean)
     : [];
-
-  const onlyGhs = parsed.filter((c) => c === "GHS");
-  return onlyGhs.length ? onlyGhs : ["GHS"];
+  return parsed.length ? parsed : ["GHS", "USD"];
 };
 
 export const chargeWithPaystack = async (subscription) => {
+  const paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
+  const card = paymentMethods.find(
+    (pm) => String(pm?.type || "") === "card" && pm?.authorizationCode
+  );
+
+  if (!card) {
+    throw new Error(
+      "No stored card authorization found. The subscriber must complete a manual payment to enable automatic renewal."
+    );
+  }
+
   const billing = await BillingHistory.findOne({
     subscription: subscription._id,
     status: "pending"
@@ -65,33 +59,61 @@ export const chargeWithPaystack = async (subscription) => {
 
   if (!billing) return;
 
-  billing.status = "paid";
-  billing.providerReference = "PAYSTACK_REF_123";
-  await billing.save();
+  const church = await Church.findById(subscription.church).lean();
+  const email = String(church?.email || "").trim();
+  if (!email) {
+    throw new Error("Church email is not configured. Cannot process automatic card charge.");
+  }
 
-  const now = new Date();
+  const currency = "GHS";
+  const amount = Number(billing.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Invalid billing amount for automatic charge.");
+  }
 
-  subscription.status = "active";
-  subscription.gracePeriodEnd = null;
-  subscription.expiryWarning.shown = false;
+  const reference = `CCK_RENEW_${billing._id.toString()}`;
 
-  subscription.nextBillingDate = addMonths(
-    now,
-    subscription.billingInterval === "monthly"
-      ? 1
-      : subscription.billingInterval === "halfYear"
-      ? 6
-      : 12
-  );
+  const response = await paystackRequest({
+    method: "POST",
+    path: "/transaction/charge_authorization",
+    body: {
+      email,
+      amount: Math.round(amount * 100),
+      authorization_code: card.authorizationCode,
+      currency,
+      reference,
+      metadata: {
+        type: "auto_renewal",
+        billingId: billing._id.toString(),
+        subscriptionId: subscription._id.toString(),
+        churchId: subscription.church.toString()
+      }
+    }
+  });
 
-  await subscription.save();
+  const chargeStatus = String(response?.data?.status || "").toLowerCase();
+
+  if (chargeStatus === "success") {
+    billing.status = "paid";
+    billing.providerReference = reference;
+    await billing.save();
+
+    const now = new Date();
+    subscription.status = "active";
+    subscription.gracePeriodEnd = null;
+    subscription.expiryWarning.shown = false;
+    subscription.nextBillingDate = addInterval(now, subscription.billingInterval);
+    await subscription.save();
+  } else {
+    throw new Error(`Paystack auto-charge failed with status: ${chargeStatus}`);
+  }
 };
 
 const paystackRequest = ({ path, method, body }) =>
   new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : "";
 
-    const secretKey = process.env.PAYSTACK_SECRET_KEY || process.env.TEST_SECRET_KEY;
+    const secretKey = getPaystackSecretKey();
 
     if (!secretKey) {
       return reject(new Error("Paystack secret key is not configured"));
@@ -176,7 +198,7 @@ export const getPaystackBanks = async (req, res) => {
 
 export const initializePaystackPayment = async (req, res) => {
   try {
-    const { planId, billingInterval = "monthly", channels, payment_method } = req.body;
+    const { planId, billingInterval = "monthly", channels, payment_method, currency: reqCurrency, displayAmount, isUpgrade } = req.body;
 
     const intervalKey = normalizeBillingIntervalKey(billingInterval) || "monthly";
 
@@ -199,13 +221,6 @@ export const initializePaystackPayment = async (req, res) => {
 
     const currency = "GHS";
 
-    const supportedCurrencies = getSupportedPaystackCurrencies();
-    if (!supportedCurrencies.includes(currency)) {
-      return res.status(400).json({
-        message: `Paystack is not configured for ${currency} on this server. Supported currencies: ${supportedCurrencies.join(", ")}.`
-      });
-    }
-
     const normalizedChannels = Array.isArray(channels)
       ? channels
           .map((c) => String(c || "").trim().toLowerCase())
@@ -215,26 +230,36 @@ export const initializePaystackPayment = async (req, res) => {
     const normalizedPaymentMethod = payment_method ? String(payment_method).trim().toLowerCase() : "";
     const isCardPayment =
       normalizedPaymentMethod === "card" || (normalizedChannels.length === 1 && normalizedChannels[0] === "card");
-    const recurringPlanCode = isCardPayment
-      ? (getPaystackRecurringPlanCode({ planName: plan?.name, billingInterval: intervalKey }) || plan?.paystackPlanCodes?.[intervalKey])
-      : null;
 
-    if (isCardPayment && !recurringPlanCode) {
-      return res.status(400).json({ message: "Card subscription plan code is not configured for this plan" });
+    const fullAmount = plan.pricing?.GHS?.[intervalKey] ?? plan.priceByCurrency?.GHS?.[intervalKey];
+    if (!fullAmount) {
+      return res.status(400).json({ message: "GHS pricing is not configured for this plan and interval" });
     }
 
-    const amount = plan.pricing?.GHS?.[intervalKey];
-    if (!amount) {
-      return res.status(400).json({ message: "Pricing not configured" });
+    let amount = fullAmount;
+    let proratedBreakdown = null;
+    let retainNextBillingDate = null;
+    let isProrationPayment = false;
+
+    if (isUpgrade && subscription.plan && subscription.nextBillingDate) {
+      const currentPlan = await Plan.findById(subscription.plan).lean();
+      if (currentPlan) {
+        const proration = computeProration(subscription, currentPlan, plan, intervalKey);
+        amount = proration.proratedAmount > 0 ? proration.proratedAmount : fullAmount;
+        proratedBreakdown = proration;
+        retainNextBillingDate = proration.retainNextBillingDate;
+        isProrationPayment = true;
+      }
+    }
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Calculated charge amount is invalid. Please try again." });
     }
 
     subscription.billingInterval = intervalKey;
     subscription.currency = currency;
     subscription.paymentProvider = "paystack";
 
-    if (isCardPayment && recurringPlanCode) {
-      subscription.paystackPlanCode = recurringPlanCode;
-    }
     await subscription.save();
 
     const billing = await BillingHistory.create({
@@ -250,7 +275,10 @@ export const initializePaystackPayment = async (req, res) => {
         planName: plan.name,
         billingInterval: intervalKey,
         amount,
-        currency
+        currency,
+        isProration: isProrationPayment,
+        retainNextBillingDate: retainNextBillingDate || null,
+        proratedBreakdown: proratedBreakdown || null
       }
     });
 
@@ -266,7 +294,6 @@ export const initializePaystackPayment = async (req, res) => {
         amount: Math.round(amount * 100),
         currency,
         reference,
-        ...(isCardPayment && recurringPlanCode ? { plan: recurringPlanCode } : {}),
         ...(normalizedChannels.length ? { channels: normalizedChannels } : {}),
         callback_url: `${frontendUrl}/dashboard/billing`,
         metadata: {
@@ -306,12 +333,6 @@ export const chargePaystackMobileMoney = async (req, res) => {
   try {
     const { planId, billingInterval = "monthly", provider, phone } = req.body;
 
-    const email = String(req.user?.email || "").trim();
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!emailOk) {
-      return res.status(400).json({ message: "Your account email is missing or invalid. Please update your profile email and try again." });
-    }
-
     if (!provider || !phone) {
       return res.status(400).json({ message: "Provider and phone are required" });
     }
@@ -336,6 +357,12 @@ export const chargePaystackMobileMoney = async (req, res) => {
       return res.status(400).json({ message: "Unsupported mobile money provider" });
     }
 
+    const email = String(req.user?.email || "").trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk) {
+      return res.status(400).json({ message: "Your account email is missing or invalid. Please update your profile email and try again." });
+    }
+
     const churchId = req.activeChurch?._id || req.user?.church;
     const subscription = churchId ? await Subscription.findOne({ church: churchId }) : null;
     if (!subscription) {
@@ -349,14 +376,7 @@ export const chargePaystackMobileMoney = async (req, res) => {
 
     const currency = "GHS";
 
-    const supportedCurrencies = getSupportedPaystackCurrencies();
-    if (!supportedCurrencies.includes(currency)) {
-      return res.status(400).json({
-        message: `Paystack is not configured for ${currency} on this server. Supported currencies: ${supportedCurrencies.join(", ")}.`
-      });
-    }
-
-    const amount = plan.pricing?.GHS?.[billingInterval];
+    const amount = plan.pricing?.GHS?.[billingInterval] ?? plan.priceByCurrency?.GHS?.[billingInterval];
     if (!amount) {
       return res.status(400).json({ message: "Pricing not configured" });
     }
@@ -442,6 +462,32 @@ export const chargePaystackMobileMoney = async (req, res) => {
   }
 };
 
+export const cancelPaystackPayment = async (req, res) => {
+  try {
+    const { reference } = req.body;
+    if (!reference) {
+      return res.status(400).json({ message: "Payment reference is required" });
+    }
+
+    const billing = await BillingHistory.findOne({
+      providerReference: reference,
+      paymentProvider: "paystack",
+      status: "pending"
+    });
+
+    if (!billing) {
+      return res.status(200).json({ message: "No pending billing record found for this reference" });
+    }
+
+    billing.status = "cancelled";
+    await billing.save();
+
+    return res.status(200).json({ message: "Payment cancelled" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export const verifyPaystackPayment = async (req, res) => {
   try {
     const { reference } = req.body;
@@ -515,12 +561,21 @@ export const verifyPaystackPayment = async (req, res) => {
         const authCode = authorization?.authorization_code;
         if (authCode) {
           subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
-          const exists = subscription.paymentMethods.some(
+          const authLast4 = String(authorization?.last4 || "");
+          const existingIdx = subscription.paymentMethods.findIndex(
             (pm) =>
               String(pm?.type || "") === "card" &&
-              String(pm?.authorizationCode || "") === String(authCode)
+              (String(pm?.authorizationCode || "") === String(authCode) ||
+                (authLast4 && String(pm?.last4 || "") === authLast4))
           );
-          if (!exists) {
+          if (existingIdx >= 0) {
+            if (!subscription.paymentMethods[existingIdx].authorizationCode) {
+              subscription.paymentMethods[existingIdx].authorizationCode = authCode;
+            }
+            if (!subscription.paymentMethods[existingIdx].brand && authorization?.brand) {
+              subscription.paymentMethods[existingIdx].brand = authorization.brand;
+            }
+          } else {
             subscription.paymentMethods.push({
               type: "card",
               brand: authorization?.brand || null,
@@ -551,14 +606,11 @@ export const verifyPaystackPayment = async (req, res) => {
 
         subscription.paymentProvider = "paystack";
 
-        subscription.nextBillingDate = addMonths(
-          now,
-          subscription.billingInterval === "monthly"
-            ? 1
-            : subscription.billingInterval === "halfYear"
-              ? 6
-              : 12
-        );
+        if (billing.invoiceSnapshot?.isProration && billing.invoiceSnapshot?.retainNextBillingDate) {
+          subscription.nextBillingDate = new Date(billing.invoiceSnapshot.retainNextBillingDate);
+        } else {
+          subscription.nextBillingDate = addInterval(now, subscription.billingInterval);
+        }
 
         await subscription.save();
       }
@@ -585,8 +637,12 @@ export const verifyPaystackPayment = async (req, res) => {
     }
 
     if (status === "abandoned") {
+      if (billing.status === "pending") {
+        billing.status = "cancelled";
+        await billing.save();
+      }
       const populated = await Subscription.findById(subscription._id).populate("plan").lean();
-      return res.json({ status: "pending", subscription: populated });
+      return res.json({ status: "cancelled", subscription: populated });
     }
 
     const populated = await Subscription.findById(subscription._id).populate("plan").lean();

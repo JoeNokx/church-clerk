@@ -1,5 +1,5 @@
 import express from "express";
-import { getMyReferralCode, getReferralHistory } from "../controller/referralSystemController.js";
+import { getMyReferralCode, getReferralHistory, getMyReferrer } from "../controller/referralSystemController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
 import {setActiveChurch} from "../middleware/activeChurchMiddleware.js";
@@ -30,6 +30,17 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("referrals", "read"),
   getReferralHistory
+);
+
+router.get(
+  "/my-referrer",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("referrals", "read"),
+  getMyReferrer
 );
 
 export default router;

@@ -6,6 +6,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
     plugins: [react()],
+    cacheDir: ".vite",
     define: {
       "import.meta.env.TEST_PUBLC_KEY": JSON.stringify(env.TEST_PUBLC_KEY || ""),
       "import.meta.env.TEST_PUBLIC_KEY": JSON.stringify(env.TEST_PUBLIC_KEY || "")

@@ -54,6 +54,7 @@ function SystemSettingsPage() {
   const [trialDays, setTrialDays] = useState(14);
   const [gracePeriodDays, setGracePeriodDays] = useState("7");
   const [referralBonusDays, setReferralBonusDays] = useState("30");
+  const [usdToGhsRate, setUsdToGhsRate] = useState("10");
 
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -79,9 +80,11 @@ function SystemSettingsPage() {
       const gd = s?.gracePeriodDays;
       const rbd = s?.referralBonusDays;
 
+      const udr = s?.usdToGhsRate;
       setTrialDays(Number.isFinite(td) ? td : 14);
       setGracePeriodDays(gd === null || gd === undefined ? "7" : String(gd));
       setReferralBonusDays(rbd === null || rbd === undefined ? "30" : String(rbd));
+      setUsdToGhsRate(udr === null || udr === undefined ? "10" : String(udr));
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to load system settings");
     } finally {
@@ -160,7 +163,8 @@ function SystemSettingsPage() {
       const payload = {
         trialDays,
         gracePeriodDays: gracePeriodDays === "" ? 0 : Number(gracePeriodDays),
-        referralBonusDays: referralBonusDays === "" ? 30 : Number(referralBonusDays)
+        referralBonusDays: referralBonusDays === "" ? 30 : Number(referralBonusDays),
+        usdToGhsRate: usdToGhsRate === "" ? 10 : Number(usdToGhsRate)
       };
 
       await updateSystemSettings(payload);
@@ -294,6 +298,52 @@ function SystemSettingsPage() {
                 disabled={!canSave || saving}
                 className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm disabled:opacity-60"
               />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-blue-100 bg-white p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">USD → GHS Exchange Rate</div>
+                <div className="mt-1 text-xs text-gray-500">
+                  Set the conversion rate used when displaying subscription prices in USD for non-Ghana churches.
+                  Set to <strong>0</strong> to use the live market rate automatically.
+                </div>
+              </div>
+              {Number(usdToGhsRate) > 0 ? (
+                <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                  Custom rate active
+                </span>
+              ) : (
+                <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+                  Using live rate
+                </span>
+              )}
+            </div>
+
+            <div className="mt-4 flex items-center gap-3">
+              <div className="relative w-56">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-gray-400">1 USD =</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={0.01}
+                  placeholder="0"
+                  value={usdToGhsRate}
+                  onChange={(e) => setUsdToGhsRate(e.target.value)}
+                  disabled={!canSave || saving}
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white pl-16 pr-12 text-sm text-gray-900 shadow-sm disabled:opacity-60"
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-400">GHS</span>
+              </div>
+              {Number(usdToGhsRate) > 0 ? (
+                <span className="text-xs text-gray-500">
+                  $1 = GHS {Number(usdToGhsRate).toFixed(2)}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400">Live rate will be fetched automatically</span>
+              )}
             </div>
           </div>
 
