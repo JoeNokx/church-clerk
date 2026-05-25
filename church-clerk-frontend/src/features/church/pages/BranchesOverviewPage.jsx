@@ -195,7 +195,7 @@ function BranchesOverviewPage() {
 
       {canViewBranches ? (
         <div className="mt-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             <div className="rounded-2xl border border-gray-200 bg-white p-6">
               <div className="text-xs font-semibold text-gray-500">Total Branches</div>
               <div className="mt-3 text-2xl font-semibold text-gray-900">{Number(kpis.totalBranches || 0).toLocaleString()}</div>

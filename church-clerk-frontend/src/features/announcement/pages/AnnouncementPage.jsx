@@ -191,7 +191,7 @@ function TabButton({ active, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-semibold ${active ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+      className={`shrink-0 whitespace-nowrap rounded-md px-3 py-2.5 sm:py-1.5 text-sm font-semibold ${active ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
     >
       {children}
     </button>
@@ -2167,8 +2167,8 @@ function AnnouncementPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Announcement</h2>
-          <p className="mt-2 text-sm text-gray-600">Send announcements via SMS, WhatsApp, or both. Track delivery and manage wallet credits.</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Announcement</h2>
+          <p className="mt-1 text-sm text-gray-500">Send announcements via SMS, WhatsApp, or both. Track delivery and manage wallet credits.</p>
         </div>
       </div>
 

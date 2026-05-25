@@ -259,7 +259,7 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
 
       onClick={onClick}
 
-      className="w-full text-left rounded-xl border border-gray-200 bg-white p-5 hover:border-blue-200 hover:bg-blue-50/30 transition"
+      className="w-full text-left rounded-xl border border-gray-200 bg-white p-4 sm:p-5 hover:border-blue-200 hover:bg-blue-50/30 active:bg-blue-50/40 transition"
 
     >
 
@@ -280,7 +280,7 @@ function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }
           </div>
 
 
-          <div className="mt-3 text-3xl font-semibold text-gray-900">{value ?? "—"}</div>
+          <div className="mt-3 text-2xl sm:text-3xl font-bold text-gray-900">{value ?? "—"}</div>
 
           {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
 
@@ -611,11 +611,11 @@ function DashboardOverview({ onNavigate }) {
 
       <div className="w-full max-w-none">
 
-        <div className="text-2xl font-semibold text-gray-900">Dashboard Overview</div>
+        <div className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard Overview</div>
 
-        <div className="mt-2 text-sm text-gray-600">A quick summary of what's happening with your church.</div>
+        <div className="mt-1 text-sm text-gray-500">A quick summary of what's happening with your church.</div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
 
           {[0, 1, 2, 3].map((i) => (
 
@@ -639,7 +639,7 @@ function DashboardOverview({ onNavigate }) {
 
         </div>
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
 
           <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
 
@@ -659,7 +659,7 @@ function DashboardOverview({ onNavigate }) {
 
         </div>
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
 
           {[0, 1, 2].map((i) => (
 
@@ -717,9 +717,9 @@ function DashboardOverview({ onNavigate }) {
 
         <div>
 
-          <div className="text-2xl font-semibold text-gray-900">Dashboard Overview</div>
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard Overview</div>
 
-          <div className="mt-2 text-sm text-gray-600">A quick summary of what's happening with your church.</div>
+          <div className="mt-1 text-sm text-gray-500">A quick summary of what's happening with your church.</div>
 
         </div>
 
@@ -731,7 +731,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
 
         <KpiCard
 
@@ -855,7 +855,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
 
         <React.Suspense
 
@@ -1283,7 +1283,7 @@ function DashboardOverview({ onNavigate }) {
 
             onClick={() => onNavigate("referrals")}
 
-            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-blue-800 active:bg-blue-900 whitespace-nowrap"
 
           >
 
@@ -1297,9 +1297,9 @@ function DashboardOverview({ onNavigate }) {
 
         <div className="px-5 pb-5">
 
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
 
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2 sm:w-44">
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 sm:w-44">
 
               <div className="text-sm font-semibold text-blue-900/70">Total Referrals</div>
 
@@ -1307,7 +1307,7 @@ function DashboardOverview({ onNavigate }) {
 
             </div>
 
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2 sm:w-44">
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 sm:w-44">
 
               <div className="text-sm font-semibold text-blue-900/70">Free Days Earned</div>
 
@@ -1315,7 +1315,7 @@ function DashboardOverview({ onNavigate }) {
 
             </div>
 
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2 sm:w-44">
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 sm:w-44">
 
               <div className="text-sm font-semibold text-blue-900/70">Free Days Used</div>
 
@@ -1323,7 +1323,7 @@ function DashboardOverview({ onNavigate }) {
 
             </div>
 
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2 sm:w-44">
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 sm:w-44">
 
               <div className="text-sm font-semibold text-blue-900/70">Free Days Remaining</div>
 
@@ -1357,7 +1357,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-          <div className="relative w-full max-w-2xl rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+          <div className="relative w-full max-w-2xl max-h-[90vh] rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden flex flex-col">
 
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-6 py-4">
 
@@ -1375,7 +1375,7 @@ function DashboardOverview({ onNavigate }) {
 
                 onClick={closeBirthdaysModal}
 
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+                className="h-10 w-10 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 shrink-0"
 
               >
 
@@ -1391,7 +1391,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
 
               {birthdaysModalError ? (
 

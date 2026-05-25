@@ -174,17 +174,17 @@ function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = 
   if (!open) return null;
 
   return (
-    <div className={`fixed inset-0 ${zIndexClass} flex items-center justify-center bg-black/30 p-4`}>
-      <div className={`w-full ${maxWidthClass} rounded-xl bg-white shadow-xl`}>
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+    <div className={`fixed inset-0 ${zIndexClass} flex items-end sm:items-center justify-center bg-black/30 p-0 sm:p-4`}>
+      <div className={`w-full ${maxWidthClass} max-h-[92vh] sm:max-h-[90vh] rounded-t-2xl sm:rounded-xl bg-white shadow-xl flex flex-col overflow-hidden`}>
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 sm:px-6 py-4 sm:py-5 shrink-0">
           <div>
-            <div className="text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-600">{subtitle}</div> : null}
+            <div className="text-base sm:text-lg font-semibold text-gray-900">{title}</div>
+            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 shrink-0"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -193,7 +193,7 @@ function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = 
           </button>
         </div>
 
-        <div className="px-6 py-5">{children}</div>
+        <div className="px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );
@@ -255,6 +255,8 @@ function BillingPage() {
   const [prorationData, setProrationData] = useState(null);
   const [prorationLoading, setProrationLoading] = useState(false);
 
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
+  const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
   const [referralBonusDays, setReferralBonusDays] = useState(30);
 
@@ -566,18 +568,8 @@ function BillingPage() {
     }
 
     if (isFreeLite || (subscribedPlanId && nextLimit <= subscribedLimit)) {
-      setManageLoading(true);
-      setError("");
-      try {
-        await changeMyPlan({ newPlanId: nextId });
-        setToastMessage("Plan updated successfully.");
-        setTimeout(() => setToastMessage(""), 4000);
-        await load();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to change plan");
-      } finally {
-        setManageLoading(false);
-      }
+      setPendingDowngradePlan(plan);
+      setShowDowngradeConfirm(true);
       return;
     }
 
@@ -853,7 +845,7 @@ function BillingPage() {
   return (
     <div className="max-w-6xl">
       <div>
-        <div className="text-2xl font-semibold text-gray-900">Billing &amp; Subscription</div>
+        <div className="text-xl sm:text-2xl font-bold text-gray-900">Billing &amp; Subscription</div>
         <div className="mt-1 text-sm text-gray-600">Manage your subscription, payment methods, and view billing history</div>
       </div>
 
@@ -916,8 +908,6 @@ function BillingPage() {
           {error}
         </div>
       ) : null}
-
-      {planManagementCard}
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
         <div className="flex items-start justify-between gap-4">
@@ -995,6 +985,8 @@ function BillingPage() {
           </div>
         </div>
       </div>
+
+      {planManagementCard}
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
         <div className="flex items-center justify-between gap-4">
@@ -1643,6 +1635,58 @@ function BillingPage() {
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
           >
             Confirm Resume
+          </button>
+        </div>
+      </ModalShell>
+
+      <ModalShell
+        open={showDowngradeConfirm}
+        title="Downgrade Plan"
+        subtitle={`Switch to ${pendingDowngradePlan?.name || "a lower"} plan`}
+        onClose={() => { if (manageLoading) return; setShowDowngradeConfirm(false); setPendingDowngradePlan(null); }}
+        maxWidthClass="max-w-xl"
+      >
+        <div className="rounded-xl border border-yellow-100 bg-yellow-50 p-4">
+          <div className="text-sm font-semibold text-gray-900">If you downgrade your plan:</div>
+          <div className="mt-3 space-y-2 text-sm text-gray-700">
+            <div>- The change takes effect at the end of your current billing period</div>
+            <div>- You will retain all existing data</div>
+            <div>- Some features and actions will be limited to your new plan</div>
+            <div>- You can upgrade again at any time</div>
+          </div>
+        </div>
+        <div className="mt-5 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => { setShowDowngradeConfirm(false); setPendingDowngradePlan(null); }}
+            disabled={manageLoading}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            Keep Current Plan
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!pendingDowngradePlan?._id) return;
+              setManageLoading(true);
+              setError("");
+              try {
+                await changeMyPlan({ newPlanId: pendingDowngradePlan._id });
+                setShowDowngradeConfirm(false);
+                setPendingDowngradePlan(null);
+                setToastMessage("Plan downgrade scheduled.");
+                setTimeout(() => setToastMessage(""), 4000);
+                await load();
+              } catch (e) {
+                setError(e?.response?.data?.message || e?.message || "Failed to change plan");
+              } finally {
+                setManageLoading(false);
+              }
+            }}
+            disabled={manageLoading}
+            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+          >
+            {manageLoading ? "Processing…" : "Confirm Downgrade"}
           </button>
         </div>
       </ModalShell>

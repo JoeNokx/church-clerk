@@ -158,7 +158,7 @@ function Sidebar({ onNavigate = () => {} }) {
 
 
 
-  const linkBase = "flex items-center gap-3 px-3 py-2 rounded-lg text-[15px]";
+  const linkBase = "flex items-center gap-3 px-3 py-2.5 sm:py-2 rounded-lg text-[15px]";
 
   const linkInactive = "text-gray-700 hover:bg-gray-50";
 
@@ -188,7 +188,7 @@ function Sidebar({ onNavigate = () => {} }) {
 
   return (
 
-    <aside className="w-72 bg-white border-r border-gray-200 h-screen flex flex-col">
+    <aside className="w-72 sm:w-64 md:w-72 bg-white border-r border-gray-200 h-screen flex flex-col">
 
       <div className="h-16 px-4 flex items-center gap-3 border-b border-gray-200">
 

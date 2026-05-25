@@ -8,7 +8,8 @@ import {
   getSystemUsers,
   listCustomRoles,
   updateCustomRole,
-  updateSystemUser
+  updateSystemUser,
+  deleteSystemUserApi
 } from "../Services/systemAdmin.api.js";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
@@ -66,6 +67,10 @@ function UsersRolesPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [editRole, setEditRole] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
+
+  const [deleteUserModal, setDeleteUserModal] = useState(null);
+  const [deleteUserLoading, setDeleteUserLoading] = useState(false);
+  const [suspendUserLoading, setSuspendUserLoading] = useState(null);
 
   const allRoles = useMemo(() => {
     const list = roles?.allRoles;
@@ -330,6 +335,35 @@ function UsersRolesPage() {
     }
   };
 
+  const onToggleSuspendUser = async (u) => {
+    if (!u?._id) return;
+    setSuspendUserLoading(u._id);
+    setError("");
+    try {
+      await updateSystemUser(u._id, { isActive: !u.isActive });
+      await load({ nextPage: page });
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to update user");
+    } finally {
+      setSuspendUserLoading(null);
+    }
+  };
+
+  const onDeleteUser = async () => {
+    if (!deleteUserModal?._id) return;
+    setDeleteUserLoading(true);
+    setError("");
+    try {
+      await deleteSystemUserApi(deleteUserModal._id);
+      setDeleteUserModal(null);
+      await load({ nextPage: page });
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to delete user");
+    } finally {
+      setDeleteUserLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl space-y-5">
       <div>
@@ -433,16 +467,33 @@ function UsersRolesPage() {
                       <td className="py-3 text-gray-700">{u?.phoneNumber || "—"}</td>
                       <td className="py-3 text-gray-700">{u?.role || "—"}</td>
                       <td className="py-3 text-gray-700">{u?.church?.name || "—"}</td>
-                      <td className="py-3 text-gray-700">{u?.isActive === false ? "inactive" : "active"}</td>
+                      <td className="py-3">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          u?.isActive === false ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                        }`}>{u?.isActive === false ? "Inactive" : "Active"}</span>
+                      </td>
                       <td className="py-3 text-gray-700">{fmtDateTime(u?.createdAt)}</td>
                       <td className="py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(u)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                        >
-                          Edit
-                        </button>
+                        <div className="inline-flex items-center gap-1 justify-end">
+                          <button type="button" onClick={() => openEdit(u)}
+                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                            Edit
+                          </button>
+                          <button type="button"
+                            onClick={() => onToggleSuspendUser(u)}
+                            disabled={suspendUserLoading === u._id}
+                            className={`rounded-md border px-2.5 py-1 text-xs font-semibold disabled:opacity-60 ${
+                              u?.isActive === false
+                                ? "border-green-200 bg-white text-green-700 hover:bg-green-50"
+                                : "border-amber-200 bg-white text-amber-700 hover:bg-amber-50"
+                            }`}>
+                            {suspendUserLoading === u._id ? "…" : u?.isActive === false ? "Unsuspend" : "Suspend"}
+                          </button>
+                          <button type="button" onClick={() => setDeleteUserModal(u)}
+                            className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -1062,6 +1113,33 @@ function UsersRolesPage() {
           </div>
         </div>
       ) : null}
+
+      {/* Delete User Modal */}
+      {deleteUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+            <div className="text-base font-bold text-gray-900">Delete User?</div>
+            <div className="mt-2 text-sm text-gray-600">
+              Are you sure you want to permanently delete{" "}
+              <strong>{deleteUserModal?.fullName || deleteUserModal?.email || "this user"}</strong>?
+              This action cannot be undone.
+            </div>
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              All associated data for this user will be removed.
+            </div>
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setDeleteUserModal(null)} disabled={deleteUserLoading}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+                Cancel
+              </button>
+              <button type="button" onClick={onDeleteUser} disabled={deleteUserLoading}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
+                {deleteUserLoading ? "Deleting…" : "Delete User"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

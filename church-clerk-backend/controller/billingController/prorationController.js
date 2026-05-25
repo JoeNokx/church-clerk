@@ -116,7 +116,7 @@ export const calculateUpgradeProration = async (req, res) => {
     if (!isGhana) {
       try {
         const settings = await getSystemSettingsSnapshot();
-        usdRate = Number(settings?.usdToGhs || 0) || null;
+        usdRate = Number(settings?.usdToGhsRate || 0) || null;
       } catch { usdRate = null; }
     }
 

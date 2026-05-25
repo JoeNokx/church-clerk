@@ -674,7 +674,7 @@ function ChurchProjectDetailsPage() {
       </div>
 
       {kpiError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{kpiError}</div> : null}
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="text-xs font-semibold text-gray-500">Target Amount</div>
           <div className="mt-3 text-2xl font-semibold text-purple-700">{formatCurrency(kpi?.targetAmount || 0, currency)}</div>

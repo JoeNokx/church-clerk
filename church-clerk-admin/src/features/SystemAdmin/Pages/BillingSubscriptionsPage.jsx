@@ -257,10 +257,11 @@ function BillingSubscriptionsPage() {
                     <td className="py-3 text-gray-700">{fmtDate(s?.nextBillingDate)}</td>
                     <td className="py-3 text-right">
                       <div className="flex flex-wrap justify-end gap-1">
-                        {!isSuspended && (
+                        {s?.status !== "active" && !isSuspended && (
                           <button type="button" onClick={() => onQuickAction(s, "activate")}
                             disabled={!!actionLoading}
-                            className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                            title="Force-set subscription to active and clear grace period"
+                            className="rounded-md border border-green-200 bg-white px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
                             Activate
                           </button>
                         )}

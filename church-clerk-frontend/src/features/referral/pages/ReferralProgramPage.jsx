@@ -86,8 +86,8 @@ function ReferralProgramPage() {
   if (loading) {
     return (
       <div className="max-w-6xl animate-pulse">
-        <div className="text-2xl font-semibold text-gray-900">Referral Program</div>
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="text-xl sm:text-2xl font-bold text-gray-900">Referral Program</div>
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
               <div className="h-4 w-24 rounded bg-gray-200" />
@@ -102,8 +102,8 @@ function ReferralProgramPage() {
   return (
     <div className="max-w-6xl">
       <div>
-        <div className="text-2xl font-semibold text-gray-900">Referral Program</div>
-        <div className="mt-1 text-sm text-gray-600">Earn free subscription days by inviting churches to join.</div>
+        <div className="text-xl sm:text-2xl font-bold text-gray-900">Referral Program</div>
+        <div className="mt-1 text-sm text-gray-500">Earn free subscription days by inviting churches to join.</div>
       </div>
 
       {error ? (

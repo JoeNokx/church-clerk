@@ -1,11 +1,27 @@
 import http from "../../../shared/services/http.js";
 
+export const getAdminDashboardStats = async () => {
+  return await http.get("/system-admin/dashboard/stats");
+};
+
 export const getSystemChurches = async (params) => {
   return await http.get("/system-admin/churches", { params });
 };
 
 export const getSystemChurch = async (id) => {
   return await http.get(`/system-admin/churches/${id}`);
+};
+
+export const suspendSystemChurch = async (id, payload) => {
+  return await http.patch(`/system-admin/churches/${id}/suspend`, payload);
+};
+
+export const unsuspendSystemChurch = async (id) => {
+  return await http.patch(`/system-admin/churches/${id}/unsuspend`);
+};
+
+export const deleteSystemChurch = async (id) => {
+  return await http.delete(`/system-admin/churches/${id}`);
 };
 
 export const getSystemUsers = async (params) => {
@@ -42,6 +58,10 @@ export const deleteCustomRole = async (id) => {
 
 export const updateSystemUser = async (id, payload) => {
   return await http.patch(`/system-admin/users/${id}`, payload);
+};
+
+export const deleteSystemUserApi = async (id) => {
+  return await http.delete(`/system-admin/users/${id}`);
 };
 
 export const getSystemAuditLogs = async (params) => {

@@ -6,6 +6,7 @@ import {
   adminGetInvoices,
   adminMarkInvoiceStatus
 } from "../Services/adminBilling.api.js";
+import { adminGetSubscriptions } from "../Services/adminBilling.api.js";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -19,6 +20,11 @@ function BillingInvoicesPage() {
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [form, setForm] = useState({ subscriptionId: "", amount: "", currency: "GHS", dueDate: "" });
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -64,29 +70,44 @@ function BillingInvoicesPage() {
     load({ nextPage: 1 });
   }, [status, load]);
 
-  const onCreate = async () => {
-    const churchId = window.prompt("Church ID");
-    if (!churchId) return;
-    const subscriptionId = window.prompt("Subscription ID");
-    if (!subscriptionId) return;
-    const amount = window.prompt("Amount (number)");
-    if (!amount) return;
+  const openCreate = async () => {
+    setCreateOpen(true);
+    setCreateError("");
+    setForm({ subscriptionId: "", amount: "", currency: "GHS", dueDate: "" });
+    try {
+      const res = await adminGetSubscriptions();
+      setSubscriptions(Array.isArray(res?.data?.subscriptions) ? res.data.subscriptions : []);
+    } catch (_) {
+      setSubscriptions([]);
+    }
+  };
 
-    setLoading(true);
-    setError("");
+  const submitCreate = async () => {
+    const sub = subscriptions.find((s) => s._id === form.subscriptionId);
+    if (!form.subscriptionId || !sub) {
+      setCreateError("Please select a subscription.");
+      return;
+    }
+    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0) {
+      setCreateError("Enter a valid amount.");
+      return;
+    }
+    setCreateLoading(true);
+    setCreateError("");
     try {
       await adminCreateInvoice({
-        churchId,
-        subscriptionId,
-        amount: Number(amount),
-        currency: "GHS",
-        dueDate: null
+        churchId: sub.church?._id || sub.church,
+        subscriptionId: form.subscriptionId,
+        amount: Number(form.amount),
+        currency: form.currency || "GHS",
+        dueDate: form.dueDate || null
       });
+      setCreateOpen(false);
       await load({ nextPage: 1 });
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Failed to create invoice");
+      setCreateError(e?.response?.data?.message || e?.message || "Failed to create invoice");
     } finally {
-      setLoading(false);
+      setCreateLoading(false);
     }
   };
 
@@ -105,17 +126,15 @@ function BillingInvoicesPage() {
   };
 
   return (
+    <>
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-lg font-semibold text-gray-900">Invoices</div>
-          <div className="mt-1 text-sm text-gray-600">Generate and manage invoices.</div>
+          <div className="mt-1 text-sm text-gray-500">Generate and manage invoices for church subscriptions.</div>
         </div>
-        <button
-          type="button"
-          onClick={onCreate}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-        >
+        <button type="button" onClick={openCreate}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
           Generate Invoice
         </button>
       </div>
@@ -193,7 +212,13 @@ function BillingInvoicesPage() {
                     {Number(i?.amount || 0).toLocaleString()} {i?.currency || ""}
                   </td>
                   <td className="py-3 text-gray-700">{fmtDate(i?.dueDate)}</td>
-                  <td className="py-3 text-gray-700">{i?.status || "—"}</td>
+                  <td className="py-3">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      i?.status === "paid" ? "bg-green-100 text-green-700" :
+                      i?.status === "unpaid" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-gray-100 text-gray-600"
+                    }`}>{i?.status || "—"}</span>
+                  </td>
                   <td className="py-3 text-right">
                     <div className="flex justify-end gap-2">
                       <a
@@ -241,6 +266,67 @@ function BillingInvoicesPage() {
         </button>
       </div>
     </div>
+
+    {/* Create Invoice Modal */}
+    {createOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+          <div className="text-base font-bold text-gray-900 mb-1">Generate Invoice</div>
+          <div className="text-sm text-gray-500 mb-4">Create a manual invoice for a church subscription.</div>
+          {createError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{createError}</div>}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Subscription</label>
+              <select value={form.subscriptionId}
+                onChange={(e) => setForm((f) => ({ ...f, subscriptionId: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
+                <option value="">— select a subscription —</option>
+                {subscriptions.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.church?.name || s._id} — {s.plan?.name || "—"} ({s.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Amount</label>
+                <input type="number" min="0" value={form.amount}
+                  onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                  placeholder="0.00"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+              </div>
+              <div className="w-28">
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Currency</label>
+                <select value={form.currency} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
+                  <option value="GHS">GHS</option>
+                  <option value="NGN">NGN</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Due Date (optional)</label>
+              <input type="date" value={form.dueDate}
+                onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+            </div>
+          </div>
+          <div className="mt-5 flex justify-end gap-3">
+            <button type="button" onClick={() => setCreateOpen(false)} disabled={createLoading}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+              Cancel
+            </button>
+            <button type="button" onClick={submitCreate} disabled={createLoading}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
+              {createLoading ? "Creating…" : "Generate"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

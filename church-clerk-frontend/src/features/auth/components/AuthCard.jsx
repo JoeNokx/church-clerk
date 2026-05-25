@@ -28,11 +28,11 @@ function AuthCard({ children, title, subtitle, footer }) {
 
         <div className="mt-3 text-base font-semibold text-blue-900 tracking-tight">ChurchClerk</div>
 
-        {title && <h1 className="mt-4 text-3xl font-semibold text-gray-900">{title}</h1>}
+        {title && <h1 className="mt-3 text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{title}</h1>}
         {subtitle && <p className="mt-2 text-sm text-gray-600">{subtitle}</p>}
       </div>
 
-      <div className="mt-8 bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6 sm:p-8">
+      <div className="mt-6 sm:mt-8 bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-8">
         {children}
 
         {footer && <div className="mt-6 text-sm text-gray-600 text-center">{footer}</div>}

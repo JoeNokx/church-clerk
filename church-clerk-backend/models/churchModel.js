@@ -77,6 +77,23 @@ const churchSchema = new mongoose.Schema({
     default: null
   },
 
+  isActive: {
+    type: Boolean,
+    default: true,
+    index: true
+  },
+
+  suspendedAt: {
+    type: Date,
+    default: null
+  },
+
+  suspendReason: {
+    type: String,
+    default: null,
+    trim: true
+  },
+
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"

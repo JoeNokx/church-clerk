@@ -15,9 +15,9 @@ import { useMembersKpiQuery } from "../hooks/useMembers.js";
 
 function KpiCard({ label, value }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
       <div className="text-xs font-semibold text-gray-500">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-gray-900">{typeof value === "number" ? value : 0}</div>
+      <div className="mt-1 text-xl sm:text-2xl font-bold text-gray-900">{typeof value === "number" ? value : 0}</div>
     </div>
   );
 }
@@ -182,18 +182,18 @@ function MembersPageInner() {
 
   return (
     <div className="max-w-6xl">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Members</h2>
-          <p className="mt-2 text-sm text-gray-600">Track and manage church members</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Members</h2>
+          <p className="mt-1 text-sm text-gray-500">Track and manage church members</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {canImport && (
             <button
               type="button"
               onClick={openImport}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100"
             >
               Import Members
             </button>
@@ -202,7 +202,7 @@ function MembersPageInner() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800"
             >
               <span className="text-lg leading-none">+</span>
               Add Member
@@ -211,8 +211,8 @@ function MembersPageInner() {
         </div>
       </div>
 
-      <div className="mt-6">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {kpiLoading ? (
             <div className="text-sm text-gray-600 sm:col-span-2 lg:col-span-4">Loading KPI...</div>
           ) : (
@@ -254,7 +254,7 @@ function MembersPageInner() {
               <button
                 type="button"
                 onClick={() => setImportOpen(false)}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                className="h-10 w-10 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 shrink-0"
                 aria-label="Close"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">

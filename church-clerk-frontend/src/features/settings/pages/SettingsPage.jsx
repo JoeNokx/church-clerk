@@ -1087,49 +1087,47 @@ function SettingsPage() {
   if (!canRead) {
     return (
       <div className="max-w-6xl">
-        <h2 className="text-2xl font-semibold text-gray-900">Settings</h2>
-        <p className="mt-2 text-sm text-gray-600">You do not have permission to view settings.</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Settings</h2>
+        <p className="mt-1 text-sm text-gray-500">You do not have permission to view settings.</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Settings</h2>
-          <p className="mt-2 text-sm text-gray-600">Manage your church profile, users and roles</p>
-        </div>
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Settings</h2>
+        <p className="mt-1 text-sm text-gray-500">Manage your church profile, users and roles</p>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-1">
+      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
+        <div className="overflow-x-auto">
+          <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1 min-w-max">
             <button
               type="button"
               onClick={() => setTab("my-profile")}
-              className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "my-profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold whitespace-nowrap ${tab === "my-profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
             >
               My Profile
             </button>
             <button
               type="button"
               onClick={() => setTab("profile")}
-              className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold whitespace-nowrap ${tab === "profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
             >
               Church Profile
             </button>
             <button
               type="button"
               onClick={() => setTab("users")}
-              className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "users" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold whitespace-nowrap ${tab === "users" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
             >
               Users &amp; Roles
             </button>
             <button
               type="button"
               onClick={() => setTab("audit")}
-              className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "audit" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold whitespace-nowrap ${tab === "audit" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
             >
               Audit Log
             </button>

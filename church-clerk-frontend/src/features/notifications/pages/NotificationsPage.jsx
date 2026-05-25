@@ -84,7 +84,7 @@ function NotificationsPage() {
     return (
       <div className="max-w-6xl">
         <div className="flex items-center justify-between gap-3">
-          <div className="text-2xl font-semibold text-gray-900">Notifications</div>
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</div>
         </div>
         <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden animate-pulse">
           {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -106,7 +106,7 @@ function NotificationsPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-2xl font-semibold text-gray-900">Notifications</div>
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</div>
           <div className="mt-1 text-sm text-gray-600">{pagination?.total ? `${pagination.total} total` : "No notifications"}</div>
         </div>
 

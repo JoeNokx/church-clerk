@@ -598,6 +598,9 @@ export const verifyPaystackPayment = async (req, res) => {
 
         if (billing.invoiceSnapshot?.planId) {
           subscription.plan = billing.invoiceSnapshot.planId;
+          subscription.pendingPlan = null;
+          subscription.pendingPlanEffectiveDate = null;
+          subscription.pendingPlanAction = null;
         }
 
         if (billing.invoiceSnapshot?.billingInterval) {

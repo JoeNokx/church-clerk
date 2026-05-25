@@ -66,8 +66,8 @@ function SpecialFundPageInner() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Special Funds</h2>
-          <p className="mt-2 text-sm text-gray-600">Track and manage special church funds</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Special Funds</h2>
+          <p className="mt-1 text-sm text-gray-500">Track and manage special church funds</p>
         </div>
 
         <div className="flex items-center gap-3">

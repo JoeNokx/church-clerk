@@ -364,8 +364,8 @@ function ReportsAnalyticsPage() {
   if (!canRead) {
     return (
       <div className="max-w-6xl">
-        <h2 className="text-2xl font-semibold text-gray-900">Reports &amp; Analytics</h2>
-        <p className="mt-2 text-sm text-gray-600">You do not have permission to view this page.</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Reports &amp; Analytics</h2>
+        <p className="mt-1 text-sm text-gray-500">You do not have permission to view this page.</p>
       </div>
     );
   }
@@ -374,8 +374,8 @@ function ReportsAnalyticsPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Reports &amp; Analytics</h2>
-          <p className="mt-2 text-sm text-gray-600">Analytics and reports for your church data.</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Reports &amp; Analytics</h2>
+          <p className="mt-1 text-sm text-gray-500">Analytics and reports for your church data.</p>
         </div>
       </div>
 

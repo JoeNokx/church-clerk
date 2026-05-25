@@ -5,9 +5,12 @@ import {
   getSystemSettings,
   listSenderIdRequests,
   rejectChurchSenderId,
-  updateSystemSettings
+  updateSystemSettings,
+  getSystemUsers,
+  updateSystemUser,
+  deleteSystemUserApi
 } from "../Services/systemAdmin.api.js";
-import { updateMyPassword, updateMyProfile } from "../../Auth/services/auth.api.js";
+import { updateMyPassword, updateMyProfile, registerSystemAdmin } from "../../Auth/services/auth.api.js";
 
 function SystemSettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -68,6 +71,39 @@ function SystemSettingsPage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [adminForm, setAdminForm] = useState({ fullName: "", email: "", phoneNumber: "", password: "", role: "supportadmin" });
+  const [adminFormLoading, setAdminFormLoading] = useState(false);
+  const [adminFormError, setAdminFormError] = useState("");
+  const [adminFormSuccess, setAdminFormSuccess] = useState("");
+  const [adminList, setAdminList] = useState([]);
+  const [adminListLoading, setAdminListLoading] = useState(false);
+
+  const [adminEditModal, setAdminEditModal] = useState(null);
+  const [adminEditRole, setAdminEditRole] = useState("");
+  const [adminEditLoading, setAdminEditLoading] = useState(false);
+  const [adminEditError, setAdminEditError] = useState("");
+
+  const [adminSuspendLoading, setAdminSuspendLoading] = useState(null);
+
+  const [adminDeleteModal, setAdminDeleteModal] = useState(null);
+  const [adminDeleteLoading, setAdminDeleteLoading] = useState(false);
+
+  const refreshAdminList = () => {
+    setAdminListLoading(true);
+    Promise.all([
+      getSystemUsers({ page: 1, limit: 50, role: "superadmin" }),
+      getSystemUsers({ page: 1, limit: 50, role: "supportadmin" })
+    ])
+      .then(([sa, spa]) => {
+        setAdminList([
+          ...(Array.isArray(sa?.data?.data) ? sa.data.data : []),
+          ...(Array.isArray(spa?.data?.data) ? spa.data.data : [])
+        ]);
+      })
+      .catch(() => {})
+      .finally(() => setAdminListLoading(false));
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -221,9 +257,245 @@ function SystemSettingsPage() {
         >
           My Profile
         </button>
+        {isSuperAdmin && (
+          <button
+            type="button"
+            onClick={() => { setTab("admins"); refreshAdminList(); }}
+            className={`h-10 rounded-lg px-4 text-sm font-semibold ${
+              tab === "admins" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
+            }`}
+          >
+            Admins
+          </button>
+        )}
       </div>
 
-      {tab === "billing" ? (
+      {tab === "admins" && isSuperAdmin ? (
+        <div className="space-y-5">
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="text-sm font-semibold text-gray-900 mb-1">Create System Admin</div>
+            <div className="text-xs text-gray-500 mb-4">Only superadmins can create other system admin accounts.</div>
+            {adminFormError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{adminFormError}</div>}
+            {adminFormSuccess && <div className="mb-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">{adminFormSuccess}</div>}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
+                <input value={adminForm.fullName} onChange={(e) => setAdminForm((f) => ({ ...f, fullName: e.target.value }))}
+                  placeholder="John Doe"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
+                <input type="email" value={adminForm.email} onChange={(e) => setAdminForm((f) => ({ ...f, email: e.target.value }))}
+                  placeholder="admin@example.com"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Phone Number</label>
+                <input value={adminForm.phoneNumber} onChange={(e) => setAdminForm((f) => ({ ...f, phoneNumber: e.target.value }))}
+                  placeholder="+233..."
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Password</label>
+                <input type="password" value={adminForm.password} onChange={(e) => setAdminForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder="Min 8 characters"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Role</label>
+                <select value={adminForm.role} onChange={(e) => setAdminForm((f) => ({ ...f, role: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
+                  <option value="supportadmin">Support Admin</option>
+                  <option value="superadmin">Super Admin</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button type="button" disabled={adminFormLoading}
+                onClick={async () => {
+                  setAdminFormError("");
+                  setAdminFormSuccess("");
+                  const { fullName, email, phoneNumber, password, role } = adminForm;
+                  if (!fullName || !email || !phoneNumber || !password) {
+                    setAdminFormError("All fields are required.");
+                    return;
+                  }
+                  if (password.length < 8) {
+                    setAdminFormError("Password must be at least 8 characters.");
+                    return;
+                  }
+                  setAdminFormLoading(true);
+                  try {
+                    await registerSystemAdmin({ fullName, email, phoneNumber, password, role });
+                    setAdminFormSuccess(`Admin account for ${email} created successfully.`);
+                    setAdminForm({ fullName: "", email: "", phoneNumber: "", password: "", role: "supportadmin" });
+                    refreshAdminList();
+                  } catch (e) {
+                    setAdminFormError(e?.response?.data?.message || e?.message || "Failed to create admin");
+                  } finally {
+                    setAdminFormLoading(false);
+                  }
+                }}
+                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
+                {adminFormLoading ? "Creating…" : "Create Admin"}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="text-sm font-semibold text-gray-900 mb-4">System Admins</div>
+            {adminListLoading ? (
+              <div className="space-y-2 animate-pulse">{[0,1,2].map(i => <div key={i} className="h-10 rounded bg-gray-100" />)}</div>
+            ) : adminList.length === 0 ? (
+              <div className="text-xs text-gray-400">No admin users found.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="text-xs uppercase text-gray-400">
+                    <tr className="border-b">
+                      <th className="py-3 pr-4 text-left font-semibold">Name</th>
+                      <th className="py-3 pr-4 text-left font-semibold">Email</th>
+                      <th className="py-3 pr-4 text-left font-semibold">Phone</th>
+                      <th className="py-3 pr-4 text-left font-semibold">Role</th>
+                      <th className="py-3 pr-4 text-left font-semibold">Status</th>
+                      <th className="py-3 text-right font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminList.filter(u => u?.role === "superadmin" || u?.role === "supportadmin").map((u) => (
+                      <tr key={u._id} className="border-b last:border-0">
+                        <td className="py-3 pr-4 text-xs font-medium text-gray-900">{u.fullName || "—"}</td>
+                        <td className="py-3 pr-4 text-xs text-gray-600">{u.email || "—"}</td>
+                        <td className="py-3 pr-4 text-xs text-gray-600">{u.phoneNumber || "—"}</td>
+                        <td className="py-3 pr-4">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            u.role === "superadmin" ? "bg-purple-100 text-purple-700" : "bg-blue-50 text-blue-700"
+                          }`}>{u.role}</span>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            u.isActive === false ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                          }`}>{u.isActive === false ? "Suspended" : "Active"}</span>
+                        </td>
+                        <td className="py-3">
+                          <div className="inline-flex items-center gap-1 justify-end">
+                            <button type="button"
+                              onClick={() => { setAdminEditModal(u); setAdminEditRole(u.role); setAdminEditError(""); }}
+                              className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                              Edit
+                            </button>
+                            <button type="button"
+                              disabled={adminSuspendLoading === u._id || u._id === user?._id}
+                              onClick={async () => {
+                                setAdminSuspendLoading(u._id);
+                                try {
+                                  await updateSystemUser(u._id, { isActive: !u.isActive });
+                                  refreshAdminList();
+                                } catch { /* noop */ }
+                                finally { setAdminSuspendLoading(null); }
+                              }}
+                              className={`rounded-md border px-2.5 py-1 text-xs font-semibold disabled:opacity-50 ${
+                                u.isActive === false
+                                  ? "border-green-200 bg-white text-green-700 hover:bg-green-50"
+                                  : "border-amber-200 bg-white text-amber-700 hover:bg-amber-50"
+                              }`}>
+                              {adminSuspendLoading === u._id ? "…" : u.isActive === false ? "Unsuspend" : "Suspend"}
+                            </button>
+                            <button type="button"
+                              disabled={u._id === user?._id}
+                              onClick={() => setAdminDeleteModal(u)}
+                              className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Edit Admin Modal */}
+          {adminEditModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
+                <div className="px-6 py-4 border-b border-gray-100">
+                  <div className="font-bold text-gray-900 text-base">Edit Admin</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{adminEditModal.fullName} · {adminEditModal.email}</div>
+                </div>
+                <div className="px-6 py-4">
+                  {adminEditError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{adminEditError}</div>}
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Role</label>
+                  <select value={adminEditRole} onChange={(e) => setAdminEditRole(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
+                    <option value="supportadmin">Support Admin</option>
+                    <option value="superadmin">Super Admin</option>
+                  </select>
+                </div>
+                <div className="px-6 pb-4 flex justify-end gap-2">
+                  <button type="button" onClick={() => setAdminEditModal(null)}
+                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                    Cancel
+                  </button>
+                  <button type="button" disabled={adminEditLoading}
+                    onClick={async () => {
+                      setAdminEditLoading(true);
+                      setAdminEditError("");
+                      try {
+                        await updateSystemUser(adminEditModal._id, { role: adminEditRole });
+                        setAdminEditModal(null);
+                        refreshAdminList();
+                      } catch (e) {
+                        setAdminEditError(e?.response?.data?.message || e?.message || "Failed to update admin");
+                      } finally {
+                        setAdminEditLoading(false);
+                      }
+                    }}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
+                    {adminEditLoading ? "Saving…" : "Save Changes"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Admin Modal */}
+          {adminDeleteModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
+                <div className="px-6 py-4 border-b border-gray-100">
+                  <div className="font-bold text-red-700 text-base">Delete Admin</div>
+                </div>
+                <div className="px-6 py-4 text-sm text-gray-700">
+                  Are you sure you want to permanently delete <strong>{adminDeleteModal.fullName}</strong> ({adminDeleteModal.email})? This cannot be undone.
+                </div>
+                <div className="px-6 pb-4 flex justify-end gap-2">
+                  <button type="button" onClick={() => setAdminDeleteModal(null)}
+                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                    Cancel
+                  </button>
+                  <button type="button" disabled={adminDeleteLoading}
+                    onClick={async () => {
+                      setAdminDeleteLoading(true);
+                      try {
+                        await deleteSystemUserApi(adminDeleteModal._id);
+                        setAdminDeleteModal(null);
+                        refreshAdminList();
+                      } catch { /* noop */ }
+                      finally { setAdminDeleteLoading(false); }
+                    }}
+                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
+                    {adminDeleteLoading ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : tab === "billing" ? (
         <>
           {error ? (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">{error}</div>

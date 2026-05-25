@@ -103,8 +103,8 @@ function WelfarePageInner() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Welfare</h2>
-          <p className="mt-2 text-sm text-gray-600">Track welfare contributions and disbursements</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Welfare</h2>
+          <p className="mt-1 text-sm text-gray-500">Track welfare contributions and disbursements</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ function WelfarePageInner() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="text-xs font-semibold text-gray-500">Contributions (This Month)</div>
           <div className="mt-2 text-lg font-semibold text-green-700">{formatMoney(kpi.thisMonthContribution || 0, currency)}</div>

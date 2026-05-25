@@ -3,11 +3,15 @@ const router = express.Router();
 import {
   getAllChurches,
   getSystemChurchById,
+  suspendChurch,
+  unsuspendChurch,
+  deleteChurch,
   getAllSystemUsers,
   getDashboardStats,
   getSystemRoles,
   getSystemUserById,
   updateSystemUser,
+  deleteSystemUser,
   getSystemAuditLogs,
   getSystemAuditLogById,
   getSystemReferralSummary,
@@ -64,6 +68,31 @@ router.get(
   authorizeRoles("superadmin", "supportadmin"),
   requirePermission("settingsChurchProfile", "read"),
   listChurchSenderIdRequests
+);
+
+router.patch(
+  "/churches/:id/suspend",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  requirePermission("settingsChurchProfile", "update"),
+  suspendChurch
+);
+router.patch(
+  "/churches/:id/unsuspend",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  requirePermission("settingsChurchProfile", "update"),
+  unsuspendChurch
+);
+router.delete(
+  "/churches/:id",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin"),
+  requirePermission("settingsChurchProfile", "delete"),
+  deleteChurch
 );
 
 router.patch(
@@ -164,6 +193,14 @@ router.patch(
   authorizeRoles("superadmin", "supportadmin"),
   requirePermission("settingsUsersRoles", "create"),
   updateSystemUser
+);
+router.delete(
+  "/users/:id",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin"),
+  requirePermission("settingsUsersRoles", "deactivate"),
+  deleteSystemUser
 );
 router.get(
   "/dashboard/stats",

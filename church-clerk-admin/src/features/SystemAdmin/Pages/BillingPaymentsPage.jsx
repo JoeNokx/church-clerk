@@ -171,16 +171,26 @@ function BillingPaymentsPage() {
                   </td>
                   <td className="py-3 text-gray-700">{p?.paymentProvider || "—"}</td>
                   <td className="py-3 text-gray-700">{p?.providerReference || "—"}</td>
-                  <td className="py-3 text-gray-700">{p?.status || "—"}</td>
+                  <td className="py-3">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      p?.status === "paid" ? "bg-green-100 text-green-700" :
+                      p?.status === "failed" ? "bg-red-100 text-red-700" :
+                      p?.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-gray-100 text-gray-600"
+                    }`}>{p?.status || "—"}</span>
+                  </td>
                   <td className="py-3 text-gray-700">{fmtDateTime(p?.createdAt)}</td>
                   <td className="py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => onVerify(p?._id)}
-                      className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                    >
-                      Verify
-                    </button>
+                    {(p?.status === "pending" || p?.status === "failed") && p?.paymentProvider === "paystack" && (
+                      <button
+                        type="button"
+                        onClick={() => onVerify(p?._id)}
+                        title="Re-check this payment with Paystack and update status"
+                        className="rounded-md border border-blue-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                      >
+                        Verify
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

@@ -71,7 +71,7 @@ function SupportHelpPage() {
   return (
     <div className="p-4 md:p-8">
       <div className="max-w-5xl">
-        <div className="text-2xl font-semibold text-gray-900">Help &amp; Support</div>
+        <div className="text-xl sm:text-2xl font-bold text-gray-900">Help &amp; Support</div>
         <div className="mt-1 text-sm text-gray-600">
           Submit a request or reach out to us using the contact details below.
         </div>

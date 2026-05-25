@@ -345,7 +345,12 @@ export const updateSubscription = async (req, res) => {
       if (req.body?.[key] !== undefined) updates[key] = req.body[key];
     }
 
-    if (req.body?.planId) updates.plan = req.body.planId;
+    if (req.body?.planId) {
+      updates.plan = req.body.planId;
+      updates.pendingPlan = null;
+      updates.pendingPlanEffectiveDate = null;
+      updates.pendingPlanAction = null;
+    }
     if (req.body?.pendingPlanId) updates.pendingPlan = req.body.pendingPlanId;
 
     const sub = await Subscription.findByIdAndUpdate(id, updates, {
@@ -491,6 +496,7 @@ export const getRevenueStats = async (req, res) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfTrend = new Date(now.getFullYear(), now.getMonth() - 11, 1);
     const soon = new Date(now);
     soon.setDate(soon.getDate() + 7);
 
@@ -500,7 +506,9 @@ export const getRevenueStats = async (req, res) => {
       yearRevenueAgg,
       activeSubscriptions,
       expiringSubscriptions,
-      failedPayments
+      failedPayments,
+      monthlyTrendAgg,
+      planRevenueAgg
     ] = await Promise.all([
       BillingHistory.aggregate([
         { $match: { type: "payment", status: "paid" } },
@@ -516,7 +524,30 @@ export const getRevenueStats = async (req, res) => {
       ]),
       Subscription.countDocuments({ status: "active" }),
       Subscription.countDocuments({ nextBillingDate: { $gte: now, $lte: soon } }),
-      BillingHistory.countDocuments({ type: "payment", status: "failed", createdAt: { $gte: startOfMonth } })
+      BillingHistory.countDocuments({ type: "payment", status: "failed", createdAt: { $gte: startOfMonth } }),
+      BillingHistory.aggregate([
+        { $match: { type: "payment", status: "paid", createdAt: { $gte: startOfTrend } } },
+        {
+          $group: {
+            _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+            total: { $sum: "$amount" },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } }
+      ]),
+      BillingHistory.aggregate([
+        { $match: { type: "payment", status: "paid" } },
+        {
+          $group: {
+            _id: "$invoiceSnapshot.planName",
+            total: { $sum: "$amount" },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { total: -1 } },
+        { $limit: 6 }
+      ])
     ]);
 
     const toMap = (agg) =>
@@ -524,6 +555,19 @@ export const getRevenueStats = async (req, res) => {
         acc[row._id || ""] = Number(row.amount || 0);
         return acc;
       }, {});
+
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthlyTrend = (monthlyTrendAgg || []).map((r) => ({
+      month: `${MONTHS[(r._id.month || 1) - 1]} ${r._id.year}`,
+      amount: Math.round(Number(r.total || 0) * 100) / 100,
+      transactions: Number(r.count || 0)
+    }));
+
+    const planRevenue = (planRevenueAgg || []).map((r) => ({
+      plan: String(r._id || "Unknown"),
+      total: Math.round(Number(r.total || 0) * 100) / 100,
+      count: Number(r.count || 0)
+    }));
 
     return res.json({
       totals: {
@@ -535,7 +579,9 @@ export const getRevenueStats = async (req, res) => {
         activeSubscriptions,
         expiringSubscriptions,
         failedPayments
-      }
+      },
+      monthlyTrend,
+      planRevenue
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });

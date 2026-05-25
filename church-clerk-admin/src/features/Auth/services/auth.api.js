@@ -19,3 +19,7 @@ export const updateMyProfile = async (payload) => {
 export const updateMyPassword = async (payload) => {
   return await http.put("/user/me/password", payload);
 };
+
+export const registerSystemAdmin = async (payload) => {
+  return await http.post("/admin/register", payload);
+};

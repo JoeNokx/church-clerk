@@ -1080,7 +1080,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
           onClick={onToggleSidebar}
 
-          className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 block md:hidden"
+          className="inline-flex items-center justify-center h-11 w-11 sm:h-9 sm:w-9 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100 flex md:hidden"
 
           aria-label="Toggle sidebar"
 
@@ -1100,11 +1100,13 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
+          
 
 
 
-          <div className="text-lg md:text-xl font-semibold text-gray-900">Dashboard</div>
+          <div className="text-base md:text-xl font-bold text-gray-900">Dashboard</div>
+          <div className="block md:hidden text-[11px] font-medium text-gray-400 truncate mt-0.5">{viewingChurchName}</div>
 
 
 
@@ -1504,7 +1506,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-            className="relative h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
+            className="relative h-11 w-11 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100"
 
 
 
@@ -1596,7 +1598,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                  className="h-9 w-9 rounded-full object-cover border border-gray-200"
+                  className="h-10 w-10 sm:h-9 sm:w-9 rounded-full object-cover border border-gray-200"
 
 
 
@@ -1608,7 +1610,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                <div className="h-9 w-9 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-semibold">
+                <div className="h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-semibold">
 
 
 

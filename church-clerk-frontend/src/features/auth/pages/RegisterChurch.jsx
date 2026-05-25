@@ -281,7 +281,7 @@ function RegisterChurch() {
             placeholder="Your church name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
             required
           />
         </div>
@@ -293,7 +293,7 @@ function RegisterChurch() {
             placeholder="Pastor's full name"
             value={pastor}
             onChange={(e) => setPastor(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
             required
           />
         </div>
@@ -303,7 +303,7 @@ function RegisterChurch() {
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           >
             <option value="Headquarters">Headquarters</option>
             <option value="Branch">Branch</option>
@@ -326,7 +326,7 @@ function RegisterChurch() {
                 setHqDropdownOpen(true);
               }}
               onFocus={() => setHqDropdownOpen(true)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+              className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
               required
             />
 
@@ -380,7 +380,7 @@ function RegisterChurch() {
             value={phoneNumber}
             onChange={setPhoneNumber}
             error={Boolean(error && String(error).toLowerCase().includes("invalid phone"))}
-            inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            inputClassName="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
 
@@ -391,7 +391,7 @@ function RegisterChurch() {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
 
@@ -402,7 +402,7 @@ function RegisterChurch() {
             placeholder="Street address"
             value={streetAddress}
             onChange={(e) => setStreetAddress(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
 
@@ -413,7 +413,7 @@ function RegisterChurch() {
             placeholder="City"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
             required
           />
         </div>
@@ -508,7 +508,7 @@ function RegisterChurch() {
             type="date"
             value={foundedDate}
             onChange={(e) => setFoundedDate(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
 
@@ -519,14 +519,14 @@ function RegisterChurch() {
             placeholder="Referral code"
             value={referralCodeInput}
             onChange={(e) => setReferralCodeInput(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading || (type === "Branch" && !parentChurchId)}
-          className="w-full bg-blue-900 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50"
+          className="w-full bg-blue-900 text-white py-3 sm:py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50"
         >
           {loading ? "Saving..." : "Register Church"}
         </button>

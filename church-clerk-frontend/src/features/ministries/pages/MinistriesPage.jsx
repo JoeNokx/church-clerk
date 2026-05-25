@@ -674,7 +674,7 @@ function MinistriesPage() {
       </div>
 
       <div className="mt-6">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {kpiLoading ? (
             <div className="text-sm text-gray-600 sm:col-span-2 lg:col-span-4">Loading KPI...</div>
           ) : (

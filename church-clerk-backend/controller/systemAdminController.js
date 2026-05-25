@@ -9,6 +9,9 @@ import ReferralCode from "../models/referralModel/referralCodeModel.js";
 import AnnouncementWallet from "../models/announcementWalletModel.js";
 import AnnouncementWalletTransaction from "../models/announcementWalletTransactionModel.js";
 import AnnouncementMessageDelivery from "../models/announcementMessageDeliveryModel.js";
+import Subscription from "../models/billingModel/subscriptionModel.js";
+import BillingHistory from "../models/billingModel/billingHistoryModel.js";
+import Plan from "../models/billingModel/planModel.js";
 
 
 // GET all churches in system
@@ -453,17 +456,130 @@ const getSystemReferralHistory = async (req, res) => {
 
 const getDashboardStats = async (req, res) => {
   try {
-    const totalChurches = await Church.countDocuments();
-    const totalMembers = await Member.countDocuments();
-    const totalUsers = await User.countDocuments();
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    const [
+      totalChurches,
+      churchesThisMonth,
+      churchesPrevMonth,
+      hqCount,
+      branchCount,
+      totalMembers,
+      totalUsers,
+      subStats,
+      revenueThisMonth,
+      revenuePrevMonth,
+      revenueByMonth,
+      planDist,
+      recentChurches
+    ] = await Promise.all([
+      Church.countDocuments(),
+      Church.countDocuments({ createdAt: { $gte: startOfThisMonth } }),
+      Church.countDocuments({ createdAt: { $gte: startOfPrevMonth, $lte: endOfPrevMonth } }),
+      Church.countDocuments({ type: "Headquarters" }),
+      Church.countDocuments({ type: "Branch" }),
+      Member.countDocuments(),
+      User.countDocuments(),
+      Subscription.aggregate([
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 }
+          }
+        }
+      ]),
+      BillingHistory.aggregate([
+        { $match: { status: "paid", createdAt: { $gte: startOfThisMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      BillingHistory.aggregate([
+        { $match: { status: "paid", createdAt: { $gte: startOfPrevMonth, $lte: endOfPrevMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      BillingHistory.aggregate([
+        { $match: { status: "paid", createdAt: { $gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } } },
+        {
+          $group: {
+            _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+            total: { $sum: "$amount" }
+          }
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } }
+      ]),
+      Subscription.aggregate([
+        { $match: { plan: { $ne: null } } },
+        {
+          $lookup: {
+            from: "plans",
+            localField: "plan",
+            foreignField: "_id",
+            as: "planDoc"
+          }
+        },
+        { $unwind: { path: "$planDoc", preserveNullAndEmptyArrays: true } },
+        {
+          $group: {
+            _id: "$planDoc.name",
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } }
+      ]),
+      Church.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select("name type email country city createdAt")
+        .lean()
+    ]);
+
+    const statusMap = {};
+    for (const s of subStats) {
+      statusMap[String(s._id || "unknown").toLowerCase()] = s.count;
+    }
+
+    const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const revenueByMonthFormatted = revenueByMonth.map((r) => ({
+      month: `${MONTH_NAMES[(r._id.month || 1) - 1]} ${r._id.year}`,
+      amount: Math.round(Number(r.total || 0) * 100) / 100
+    }));
+
+    const planDistFormatted = planDist.map((p) => ({
+      plan: String(p._id || "Unknown"),
+      count: Number(p.count || 0)
+    }));
 
     return res.status(200).json({
       message: "Dashboard stats fetched successfully",
       data: {
-        totalChurches,
-        totalMembers,
-        totalUsers
-      },
+        churches: {
+          total: totalChurches,
+          thisMonth: churchesThisMonth,
+          prevMonth: churchesPrevMonth,
+          hq: hqCount,
+          branches: branchCount
+        },
+        members: { total: totalMembers },
+        users: { total: totalUsers },
+        subscriptions: {
+          active: statusMap["active"] || 0,
+          trial: (statusMap["free trial"] || 0) + (statusMap["trialing"] || 0),
+          pastDue: statusMap["past_due"] || 0,
+          cancelled: statusMap["cancelled"] || 0,
+          suspended: statusMap["suspended"] || 0,
+          total: Object.values(statusMap).reduce((a, b) => a + b, 0)
+        },
+        revenue: {
+          thisMonth: Math.round(Number(revenueThisMonth[0]?.total || 0) * 100) / 100,
+          prevMonth: Math.round(Number(revenuePrevMonth[0]?.total || 0) * 100) / 100,
+          currency: "GHS"
+        },
+        revenueByMonth: revenueByMonthFormatted,
+        planDistribution: planDistFormatted,
+        recentChurches
+      }
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -654,14 +770,90 @@ const rejectChurchSenderId = async (req, res) => {
   }
 };
 
+const suspendChurch = async (req, res) => {
+  try {
+    const id = String(req.params?.id || "").trim();
+    if (!id) return res.status(400).json({ message: "Church id is required" });
+
+    const reason = String(req.body?.reason || "").trim() || null;
+
+    const church = await Church.findByIdAndUpdate(
+      id,
+      { isActive: false, suspendedAt: new Date(), suspendReason: reason },
+      { new: true }
+    ).lean();
+
+    if (!church) return res.status(404).json({ message: "Church not found" });
+
+    return res.status(200).json({ message: "Church suspended", data: church });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const unsuspendChurch = async (req, res) => {
+  try {
+    const id = String(req.params?.id || "").trim();
+    if (!id) return res.status(400).json({ message: "Church id is required" });
+
+    const church = await Church.findByIdAndUpdate(
+      id,
+      { isActive: true, suspendedAt: null, suspendReason: null },
+      { new: true }
+    ).lean();
+
+    if (!church) return res.status(404).json({ message: "Church not found" });
+
+    return res.status(200).json({ message: "Church unsuspended", data: church });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteChurch = async (req, res) => {
+  try {
+    const id = String(req.params?.id || "").trim();
+    if (!id) return res.status(400).json({ message: "Church id is required" });
+
+    const church = await Church.findByIdAndDelete(id).lean();
+    if (!church) return res.status(404).json({ message: "Church not found" });
+
+    return res.status(200).json({ message: "Church deleted", data: { _id: id } });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteSystemUser = async (req, res) => {
+  try {
+    const id = String(req.params?.id || "").trim();
+    if (!id) return res.status(400).json({ message: "User id is required" });
+
+    if (String(req.user?._id) === id) {
+      return res.status(400).json({ message: "You cannot delete your own account" });
+    }
+
+    const user = await User.findByIdAndDelete(id).lean();
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    return res.status(200).json({ message: "User deleted", data: { _id: id } });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   getAllChurches,
   getSystemChurchById,
+  suspendChurch,
+  unsuspendChurch,
+  deleteChurch,
   getAllSystemUsers,
   getDashboardStats,
   getSystemRoles,
   getSystemUserById,
   updateSystemUser,
+  deleteSystemUser,
   getSystemAuditLogs,
   getSystemAuditLogById,
   getSystemReferralSummary,
