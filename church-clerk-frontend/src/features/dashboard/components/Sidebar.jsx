@@ -12,7 +12,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 
 
 
-function Sidebar({ onNavigate = () => {} }) {
+function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
@@ -38,7 +38,18 @@ function Sidebar({ onNavigate = () => {} }) {
 
 
 
+  const isMonitoringBranch = churchCtx?.isMonitoringBranch || false;
+
+  // True when the user last clicked a branch-bar item (activeChurch = branch church)
+  const isInBranchContext =
+    isMonitoringBranch &&
+    !!(churchCtx?.branchChurch?._id &&
+      activeChurch?._id &&
+      String(activeChurch._id) === String(churchCtx.branchChurch._id));
+
   const planAllows = (moduleFlagKey) => {
+
+    if (isMonitoringBranch) return true;
 
     const modules = activeChurch?.modules;
 
@@ -75,6 +86,8 @@ function Sidebar({ onNavigate = () => {} }) {
     activeChurch?.type === "Headquarters" ||
 
     (activeChurch?.type === "Branch" && homeChurchId && String(activeChurch?.parentChurch || "") === String(homeChurchId));
+
+  const isHqMonitoringBranch = showHeadquartersNav && activeChurch?.type === "Branch";
 
 
 
@@ -166,7 +179,9 @@ function Sidebar({ onNavigate = () => {} }) {
 
 
 
-  const itemClass = (key) => `${linkBase} ${page === key ? linkActive : linkInactive}`;
+  // When viewing branch data, sidebar items must NOT appear active
+  const itemClass = (key) =>
+    `${linkBase} ${page === key && !isInBranchContext ? linkActive : linkInactive}`;
 
   const toPage = (key) => {
 
@@ -219,6 +234,7 @@ function Sidebar({ onNavigate = () => {} }) {
             if (!el || typeof el.closest !== "function") return;
             const link = el.closest("a");
             if (!link) return;
+            onBeforeNavigate?.();
             onNavigate?.();
           }}
         >

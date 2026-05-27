@@ -59,10 +59,30 @@ export const chargeWithPaystack = async (subscription) => {
 
   if (!billing) return;
 
-  const church = await Church.findById(subscription.church).lean();
-  const email = String(church?.email || "").trim();
+  // Prefer the email stored on the card (matches Paystack's authorization record).
+  // For existing cards without a stored email, look up the customer record from
+  // Paystack using the customer code, then backfill the email for future charges.
+  const cardEmail = String(card.email || "").trim();
+  let email = cardEmail;
+  if (!email && subscription.paystackCustomerCode) {
+    const fetchedEmail = await fetchPaystackCustomerEmail(subscription.paystackCustomerCode);
+    if (fetchedEmail) {
+      email = fetchedEmail;
+      const cardIdx = subscription.paymentMethods.findIndex(
+        (pm) => String(pm?.authorizationCode || "") === String(card.authorizationCode)
+      );
+      if (cardIdx >= 0) {
+        subscription.paymentMethods[cardIdx].email = fetchedEmail;
+        await subscription.save();
+      }
+    }
+  }
   if (!email) {
-    throw new Error("Church email is not configured. Cannot process automatic card charge.");
+    const church = await Church.findById(subscription.church).lean();
+    email = String(church?.email || "").trim();
+  }
+  if (!email) {
+    throw new Error("No email available for automatic card charge. Please re-add your card.");
   }
 
   const currency = "GHS";
@@ -167,6 +187,17 @@ const paystackRequest = ({ path, method, body }) =>
     if (payload) req.write(payload);
     req.end();
   });
+
+const fetchPaystackCustomerEmail = async (customerCode) => {
+  if (!customerCode) return null;
+  try {
+    const res = await paystackRequest({ method: "GET", path: `/customer/${encodeURIComponent(customerCode)}` });
+    const email = String(res?.data?.email || "").trim();
+    return email || null;
+  } catch {
+    return null;
+  }
+};
 
 export const getPaystackBanks = async (req, res) => {
   try {
@@ -559,6 +590,7 @@ export const verifyPaystackPayment = async (req, res) => {
 
         const authorization = verification?.data?.authorization || null;
         const authCode = authorization?.authorization_code;
+        const customerEmail = String(verification?.data?.customer?.email || "").trim() || null;
         if (authCode) {
           subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
           const authLast4 = String(authorization?.last4 || "");
@@ -575,6 +607,9 @@ export const verifyPaystackPayment = async (req, res) => {
             if (!subscription.paymentMethods[existingIdx].brand && authorization?.brand) {
               subscription.paymentMethods[existingIdx].brand = authorization.brand;
             }
+            if (customerEmail) {
+              subscription.paymentMethods[existingIdx].email = customerEmail;
+            }
           } else {
             subscription.paymentMethods.push({
               type: "card",
@@ -582,7 +617,8 @@ export const verifyPaystackPayment = async (req, res) => {
               last4: authorization?.last4 || null,
               expMonth: authorization?.exp_month ? Number(authorization.exp_month) : null,
               expYear: authorization?.exp_year ? Number(authorization.exp_year) : null,
-              authorizationCode: authCode
+              authorizationCode: authCode,
+              email: customerEmail
             });
           }
         }

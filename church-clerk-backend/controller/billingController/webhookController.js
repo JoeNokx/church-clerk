@@ -161,6 +161,38 @@ export const paystackWebhook = async (req, res) => {
 
       if (isCardChargeEvent(event)) {
         applyPaystackSubscriptionCodesToSubscription(subscription, extractPaystackSubscriptionCodes(event?.data));
+
+        const whAuthorization = event?.data?.authorization || null;
+        const whAuthCode = whAuthorization?.authorization_code;
+        const whCustomerEmail = String(event?.data?.customer?.email || "").trim() || null;
+        if (whAuthCode) {
+          subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
+          const whLast4 = String(whAuthorization?.last4 || "");
+          const whIdx = subscription.paymentMethods.findIndex(
+            (pm) =>
+              String(pm?.type || "") === "card" &&
+              (String(pm?.authorizationCode || "") === String(whAuthCode) ||
+                (whLast4 && String(pm?.last4 || "") === whLast4))
+          );
+          if (whIdx >= 0) {
+            if (!subscription.paymentMethods[whIdx].authorizationCode) {
+              subscription.paymentMethods[whIdx].authorizationCode = whAuthCode;
+            }
+            if (whCustomerEmail) {
+              subscription.paymentMethods[whIdx].email = whCustomerEmail;
+            }
+          } else {
+            subscription.paymentMethods.push({
+              type: "card",
+              brand: whAuthorization?.brand || null,
+              last4: whAuthorization?.last4 || null,
+              expMonth: whAuthorization?.exp_month ? Number(whAuthorization.exp_month) : null,
+              expYear: whAuthorization?.exp_year ? Number(whAuthorization.exp_year) : null,
+              authorizationCode: whAuthCode,
+              email: whCustomerEmail
+            });
+          }
+        }
       }
 
       const now = new Date();

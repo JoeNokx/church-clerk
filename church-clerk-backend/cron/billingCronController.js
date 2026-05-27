@@ -60,27 +60,39 @@ export const runDailyBillingJob = async () => {
 
     // -------------------------------------------------------
     // STEP 3: Process billing (free months or paid charge).
+    // Wrapped per-subscription so one failure never aborts the whole run.
     // -------------------------------------------------------
-    const result = await processBillingForSubscription(subscription);
+    try {
+      const result = await processBillingForSubscription(subscription);
 
-    if (result.charged) {
-      // Attempt card auto-deduction if a stored card exists.
-      // Mobile money cannot be auto-debited — always goes to past_due.
-      const hasCard = (subscription.paymentMethods || []).some(
-        (pm) => String(pm?.type || "") === "card" && pm?.authorizationCode
-      );
+      if (result.charged) {
+        // Attempt card auto-deduction if a stored card exists.
+        // Mobile money cannot be auto-debited — always goes to past_due.
+        const hasCard = (subscription.paymentMethods || []).some(
+          (pm) => String(pm?.type || "") === "card" && pm?.authorizationCode
+        );
 
-      if (hasCard) {
-        try {
-          await chargeWithPaystack(subscription);
-          // chargeWithPaystack marks billing paid and advances nextBillingDate on success
-        } catch (chargeErr) {
-          console.error("[BillingCron] card auto-charge failed:", chargeErr?.message || chargeErr);
+        if (hasCard) {
+          try {
+            await chargeWithPaystack(subscription);
+            // chargeWithPaystack marks billing paid and advances nextBillingDate on success
+          } catch (chargeErr) {
+            console.error("[BillingCron] card auto-charge failed:", chargeErr?.message || chargeErr);
+            await handlePaymentFailure(subscription);
+          }
+        } else {
           await handlePaymentFailure(subscription);
         }
-      } else {
-        await handlePaymentFailure(subscription);
       }
+    } catch (billingErr) {
+      console.error(
+        `[BillingCron] error processing subscription ${subscription._id}:`,
+        billingErr?.message || billingErr
+      );
+      // Move to past_due so the subscription isn't retried every cron tick
+      try {
+        await handlePaymentFailure(subscription);
+      } catch { /* ignore secondary failure */ }
     }
   }
 };
