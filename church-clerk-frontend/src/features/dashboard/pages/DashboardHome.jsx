@@ -17,6 +17,8 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 
 import PermissionContext from "../../permissions/permission.store.js";
 
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+
 
 const DashboardCharts = React.lazy(() => import("../components/DashboardCharts.jsx"));
 
@@ -217,102 +219,6 @@ function formatTimeRange(from, to, legacy) {
   if (t) return t;
 
   return legacy ? String(legacy) : "—";
-
-}
-
-
-function KpiCard({ title, value, change, subtitle, compareLabel, icon, onClick }) {
-
-  const delta = Number(change || 0);
-
-  const isUp = delta >= 0;
-
-  const deltaText = formatPercent(delta);
-
-  const deltaClass = isUp ? "text-green-700 bg-green-50" : "text-red-700 bg-red-50";
-
-
-  const arrow = isUp ? (
-
-    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-
-      <path fillRule="evenodd" d="M10 3a1 1 0 01.894.553l4 8a1 1 0 01-.894 1.447H6a1 1 0 01-.894-1.447l4-8A1 1 0 0110 3Z" clipRule="evenodd" />
-
-    </svg>
-
-  ) : (
-
-    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-
-      <path fillRule="evenodd" d="M10 17a1 1 0 01-.894-.553l-4-8A1 1 0 015 7h10a1 1 0 01.894 1.447l-4 8A1 1 0 0110 17Z" clipRule="evenodd" />
-
-    </svg>
-
-  );
-
-
-  return (
-
-    <button
-
-      type="button"
-
-      onClick={onClick}
-
-      className="w-full text-left rounded-xl border border-gray-200 bg-white p-4 sm:p-5 hover:border-blue-200 hover:bg-blue-50/30 active:bg-blue-50/40 transition"
-
-    >
-
-      <div className="flex items-start justify-between gap-3">
-
-        <div className="min-w-0">
-
-          <div className="flex items-center gap-2">
-
-            <span className="h-8 w-8 rounded-lg bg-gray-50 ring-1 ring-gray-200 flex items-center justify-center text-gray-700">
-
-              {icon}
-
-            </span>
-
-            <div className="text-sm font-semibold text-gray-500">{title}</div>
-
-          </div>
-
-
-          <div className="mt-3 text-2xl sm:text-3xl font-bold text-gray-900">{value ?? "—"}</div>
-
-          {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
-
-
-          <div className="mt-3 flex items-center gap-2">
-
-            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold ${deltaClass}`}>
-
-              {arrow}
-
-              <span>{deltaText}</span>
-
-            </span>
-
-            <span className="text-sm text-gray-500">{compareLabel || ""}</span>
-
-          </div>
-
-        </div>
-
-
-        <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-gray-300">
-
-          <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 111.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z" clipRule="evenodd" />
-
-        </svg>
-
-      </div>
-
-    </button>
-
-  );
 
 }
 

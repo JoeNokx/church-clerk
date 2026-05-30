@@ -66,7 +66,7 @@ export const processBillingForSubscription = async (subscription) => {
   const price =
     plan.pricing[billingCurrency]?.[subscription.billingInterval];
 
-  if (!price) throw new Error("Pricing not configured");
+  if (price == null) throw new Error("Pricing not configured");
 
   await BillingHistory.create({
   church: subscription.church,
@@ -77,6 +77,7 @@ export const processBillingForSubscription = async (subscription) => {
   status: "pending",
   paymentProvider: subscription.paymentProvider,
   invoiceSnapshot: {
+    planId: plan._id,
     planName: plan.name,
     billingInterval: subscription.billingInterval,
     amount: price,

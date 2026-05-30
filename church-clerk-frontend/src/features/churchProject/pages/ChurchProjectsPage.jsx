@@ -12,6 +12,7 @@ import {
 } from "../services/churchProject.api.js";
 import { createProjectContribution } from "../contributions/services/projectContributions.api.js";
 import { createProjectExpense } from "../expenses/services/projectExpenses.api.js";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -585,26 +586,27 @@ function ChurchProjectsPageInner() {
       {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Projects</div>
-          <div className="mt-3 text-2xl font-semibold text-gray-900">{totals.totalProjects}</div>
-          <div className="mt-2 text-xs text-gray-500">{totals.activeCount} active</div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Raised</div>
-          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(totals.totalRaised, currency)}</div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Target</div>
-          <div className="mt-3 text-2xl font-semibold text-purple-700">{formatCurrency(totals.totalTarget, currency)}</div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Spent</div>
-          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(totals.totalSpent, currency)}</div>
-        </div>
+        <KpiCard
+          title="Total Projects"
+          value={totals.totalProjects}
+          subtitle={`${totals.activeCount} active`}
+          accent="bg-blue-600"
+        />
+        <KpiCard
+          title="Total Raised"
+          value={formatCurrency(totals.totalRaised, currency)}
+          accent="bg-green-600"
+        />
+        <KpiCard
+          title="Total Target"
+          value={formatCurrency(totals.totalTarget, currency)}
+          accent="bg-purple-600"
+        />
+        <KpiCard
+          title="Total Spent"
+          value={formatCurrency(totals.totalSpent, currency)}
+          accent="bg-orange-600"
+        />
       </div>
 
       {loading ? (

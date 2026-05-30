@@ -30,7 +30,7 @@ const app = express();
 app.set("trust proxy", process.env.NODE_ENV === "production" ? 1 : false);
 
 // Logging middleware (logs every request)
-app.use(morgan("dev"));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 // CORS
 app.use(
@@ -142,6 +142,7 @@ app.param(
 
 // 1) JSON body parser
 const jsonParser = express.json({
+  limit: "50kb",
   verify: (req, res, buf) => {
     req.rawBody = buf;
   }

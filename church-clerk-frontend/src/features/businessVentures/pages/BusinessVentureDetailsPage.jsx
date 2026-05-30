@@ -201,7 +201,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
       </button>
 
       {datePickerOpen && (
-        <div className="absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+        <div className="cck-date-dropdown absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
           <div className="flex items-center justify-between gap-3 pb-3">
             <div className="text-xs font-semibold text-gray-500">Filter by date</div>
             <button type="button" onClick={clearDates} className="text-xs font-semibold text-gray-600 hover:text-gray-900">

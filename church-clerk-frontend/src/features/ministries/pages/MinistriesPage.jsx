@@ -11,6 +11,7 @@ import {
   getDepartmentKPI
 } from "../../department/services/department.api.js";
 import { getCells, createCell, updateCell, deleteCell } from "../../cell/services/cell.api.js";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -27,15 +28,6 @@ function normalizeMeetingSchedule(item) {
     return [{ meetingDay: day, meetingTime: time, meetingVenue: venue }];
   }
   return [];
-}
-
-function KpiCard({ label, value }) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <div className="text-xs font-semibold text-gray-500">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-gray-900">{typeof value === "number" ? value : 0}</div>
-    </div>
-  );
 }
 
 function MinistryTypeIcon({ type }) {
@@ -679,10 +671,10 @@ function MinistriesPage() {
             <div className="text-sm text-gray-600 sm:col-span-2 lg:col-span-4">Loading KPI...</div>
           ) : (
             <>
-              <KpiCard label="Total Groups" value={Number(kpi?.totalGroups || 0)} />
-              <KpiCard label="Total Departments" value={Number(kpi?.totalDepartments || 0)} />
-              <KpiCard label="Total Cells" value={Number(kpi?.totalCells || 0)} />
-              <KpiCard label="Total Ministries" value={Number(kpi?.totalMinistry || 0)} />
+              <KpiCard title="Total Groups" value={Number(kpi?.totalGroups || 0)} />
+              <KpiCard title="Total Departments" value={Number(kpi?.totalDepartments || 0)} />
+              <KpiCard title="Total Cells" value={Number(kpi?.totalCells || 0)} />
+              <KpiCard title="Total Ministries" value={Number(kpi?.totalMinistry || 0)} />
             </>
           )}
         </div>

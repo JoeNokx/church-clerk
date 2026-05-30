@@ -329,6 +329,7 @@ function BusinessVenturesPage() {
   const [error, setError] = useState("");
   const [ventures, setVentures] = useState([]);
   const [kpi, setKpi] = useState(null);
+  const [searchValue, setSearchValue] = useState("");
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -379,6 +380,14 @@ function BusinessVenturesPage() {
 
     return { totalVentures, totalIncome, totalExpenses, net };
   }, [ventures, kpi]);
+
+  const filteredVentures = useMemo(() => {
+    if (!searchValue.trim()) return ventures;
+    const searchLower = searchValue.toLowerCase();
+    return ventures.filter((v) =>
+      String(v?.businessName || "").toLowerCase().includes(searchLower)
+    );
+  }, [ventures, searchValue]);
 
   const viewDetails = (row) => {
     if (!row?._id) return;
@@ -464,6 +473,22 @@ function BusinessVenturesPage() {
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">Business Ventures</div>
+            <div className="text-xs text-gray-500">All ventures and financials</div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+            <input
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              placeholder="Search business name"
+            />
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100">
@@ -492,14 +517,14 @@ function BusinessVenturesPage() {
                     <td className="px-6 py-3"><div className="h-4 w-20 rounded bg-gray-200 ml-auto" /></td>
                   </tr>
                 ))
-              ) : ventures.length === 0 ? (
+              ) : filteredVentures.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
-                    No business ventures found. Click <span className="font-semibold">Add Venture</span> to get started.
+                    {searchValue ? "No business ventures found matching your search." : "No business ventures found. Click <span className=\"font-semibold\">Add Venture</span> to get started."}
                   </td>
                 </tr>
               ) : (
-                ventures.map((v, idx) => (
+                filteredVentures.map((v, idx) => (
                   <tr key={v?._id ?? `v-${idx}`} className="text-sm text-gray-700 hover:bg-gray-50">
                     <td className="px-6 py-3 font-semibold text-gray-900 whitespace-nowrap">{v?.businessName || "—"}</td>
                     <td className="px-6 py-3 text-gray-600 max-w-xs truncate">{v?.description || "—"}</td>

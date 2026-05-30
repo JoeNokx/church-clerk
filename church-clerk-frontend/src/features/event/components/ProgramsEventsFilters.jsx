@@ -61,32 +61,26 @@ function ProgramsEventsFilters({ activeStatus }) {
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-gray-500">Search:</span>
-        <input
-          value={searchValue}
-          onChange={onSearchChange}
-          className="h-9 w-[220px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-          placeholder="Event title"
-        />
-      </div>
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+      <input
+        value={searchValue}
+        onChange={onSearchChange}
+        className="h-9 w-full sm:w-[220px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+        placeholder="Event title"
+      />
 
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-gray-500">Category:</span>
-        <select
-          value={store?.filters?.category || ""}
-          onChange={onCategoryChange}
-          className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-        >
-          <option value="">All Categories</option>
-          {categoryOptions.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
+      <select
+        value={store?.filters?.category || ""}
+        onChange={onCategoryChange}
+        className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+      >
+        <option value="">All Categories</option>
+        {categoryOptions.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

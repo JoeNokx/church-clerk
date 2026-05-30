@@ -12,15 +12,7 @@ import {
   canCreateMember
 } from "../services/member.api.js";
 import { useMembersKpiQuery } from "../hooks/useMembers.js";
-
-function KpiCard({ label, value }) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
-      <div className="text-xs font-semibold text-gray-500">{label}</div>
-      <div className="mt-1 text-xl sm:text-2xl font-bold text-gray-900">{typeof value === "number" ? value : 0}</div>
-    </div>
-  );
-}
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 
 function MembersPageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -217,10 +209,10 @@ function MembersPageInner() {
             <div className="text-sm text-gray-600 sm:col-span-2 lg:col-span-4">Loading KPI...</div>
           ) : (
             <>
-              <KpiCard label="Total Members" value={memberKPI?.totalMembers} />
-              <KpiCard label="Active Members" value={memberKPI?.currentMembers} />
-              <KpiCard label="Inactive Members" value={memberKPI?.inactiveMembers} />
-              <KpiCard label="New This Month" value={memberKPI?.newMembersThisMonth} />
+              <KpiCard title="Total Members" value={memberKPI?.totalMembers} />
+              <KpiCard title="Active Members" value={memberKPI?.currentMembers} />
+              <KpiCard title="Inactive Members" value={memberKPI?.inactiveMembers} />
+              <KpiCard title="New This Month" value={memberKPI?.newMembersThisMonth} />
             </>
           )}
         </div>

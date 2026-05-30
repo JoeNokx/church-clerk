@@ -5,6 +5,7 @@ import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
 import http from "../../../shared/services/http.js";
 import MinistryPlusCustomPlanModal from "../../../shared/components/MinistryPlusCustomPlanModal.jsx";
+import PriceCard from "../../../shared/components/PriceCard/index.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
 import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
@@ -479,47 +480,20 @@ function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-60px" }}
                         transition={{ duration: 0.45, delay: idx * 0.04 }}
-                        className={`relative rounded-2xl bg-white p-6 flex flex-col ${
-                          isMostPopular ? "shadow-md ring-2 ring-blue-900" : "shadow-sm ring-1 ring-gray-200"
-                        }`}
                       >
-                        {isMostPopular ? (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-900 px-3 py-1 text-[10px] font-semibold text-white">
-                            Most Popular
-                          </div>
-                        ) : null}
-
-                        <div className="text-lg font-semibold text-gray-900">{name || "—"}</div>
-                        <div className="mt-4 flex items-end gap-2">
-                          <span className="text-3xl font-semibold text-gray-900">{formatCurrency(displayPrice, displayCurrency)}</span>
-                          <span className="text-sm text-gray-500">{per}</span>
-                        </div>
-
-                        <div className="mt-6">
-                          <Link
-                            to="/register"
-                            className={`w-full inline-flex justify-center items-center rounded-lg text-sm font-semibold px-4 py-2.5 shadow-sm ${
-                              isMostPopular
-                                ? "bg-blue-900 text-white hover:bg-blue-800"
-                                : "border border-blue-900 text-blue-900 hover:bg-blue-50"
-                            }`}
-                          >
-                            Get started
-                          </Link>
-                        </div>
-
-                        <div className="mt-6 space-y-2 text-sm text-gray-600">
-                          {highlights.map((h) => (
-                            <div key={h} className="flex items-center gap-2">
-                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-50 text-green-700">
-                                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                                  <path d="M6 12.5l3.2 3.2L18 7.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </span>
-                              <span>{h}</span>
-                            </div>
-                          ))}
-                        </div>
+                        <PriceCard
+                          id={id}
+                          name={name}
+                          price={displayPrice}
+                          currency={displayCurrency}
+                          per={per}
+                          isMostPopular={isMostPopular}
+                          memberLimit={memberLimit}
+                          features={highlights}
+                          actionLabel="Get started"
+                          actionHref="/register"
+                          variant="landing"
+                        />
                       </motion.div>
                     );
                   })}

@@ -12,6 +12,7 @@ import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -131,7 +132,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
       </button>
 
       {datePickerOpen && (
-        <div className="absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+        <div className="cck-date-dropdown absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
           <div className="flex items-center justify-between gap-3 pb-3">
             <div className="text-xs font-semibold text-gray-500">Filter by date</div>
             <button type="button" onClick={clearDates} className="text-xs font-semibold text-gray-600 hover:text-gray-900">
@@ -717,63 +718,60 @@ function PledgesPageInner() {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-semibold text-gray-500">Total Pledges</div>
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M16 11c1.66 0 3-1.79 3-4s-1.34-4-3-4-3 1.79-3 4 1.34 4 3 4Z" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M8 11c1.66 0 3-1.79 3-4S9.66 3 8 3 5 4.79 5 7s1.34 4 3 4Z" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M21 21v-2a4 4 0 0 0-4-4h-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <path d="M3 21v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-blue-900">{Number(kpi.total || 0).toLocaleString()}</div>
-          <div className="mt-1 text-xs text-gray-500">All pledges</div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-semibold text-gray-500">Total Amount Pledged</div>
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 text-purple-700">
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M12 1v22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <path d="M17 5.5c0-2-2.24-3.5-5-3.5s-5 1.5-5 3.5 2.24 3.5 5 3.5 5 1.5 5 3.5-2.24 3.5-5 3.5-5-1.5-5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-purple-700">{formatCurrency(kpi.pledged, currency)}</div>
-          <div className="mt-1 text-xs text-gray-500">Committed amount</div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-semibold text-gray-500">Total Amount Paid</div>
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-700">
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M20 7L10 17l-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(kpi.paid, currency)}</div>
-          <div className="mt-1 text-xs text-gray-500">Payments received</div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-semibold text-gray-500">Total Outstanding</div>
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-700">
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M12 9v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <path d="M12 17h.01" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-                <path d="M10.3 3.8h3.4L22 22H2L10.3 3.8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-              </svg>
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-red-600">{formatCurrency(kpi.outstanding, currency)}</div>
-          <div className="mt-1 text-xs text-gray-500">Remaining balance</div>
-        </div>
+        <KpiCard
+          title="Total Pledges"
+          value={Number(kpi.total || 0).toLocaleString()}
+          subtitle="All pledges"
+          iconBg="bg-blue-50"
+          iconColor="text-blue-700"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M16 11c1.66 0 3-1.79 3-4s-1.34-4-3-4-3 1.79-3 4 1.34 4 3 4Z" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M8 11c1.66 0 3-1.79 3-4S9.66 3 8 3 5 4.79 5 7s1.34 4 3 4Z" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M21 21v-2a4 4 0 0 0-4-4h-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M3 21v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Total Amount Pledged"
+          value={formatCurrency(kpi.pledged, currency)}
+          subtitle="Committed amount"
+          iconBg="bg-purple-50"
+          iconColor="text-purple-700"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M12 1v22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M17 5.5c0-2-2.24-3.5-5-3.5s-5 1.5-5 3.5 2.24 3.5 5 3.5 5 1.5 5 3.5-2.24 3.5-5 3.5-5-1.5-5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Total Amount Paid"
+          value={formatCurrency(kpi.paid, currency)}
+          subtitle="Payments received"
+          iconBg="bg-green-50"
+          iconColor="text-green-700"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M20 7L10 17l-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Total Outstanding"
+          value={formatCurrency(kpi.outstanding, currency)}
+          subtitle="Remaining balance"
+          iconBg="bg-red-50"
+          iconColor="text-red-700"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M12 9v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M12 17h.01" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+              <path d="M10.3 3.8h3.4L22 22H2L10.3 3.8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          }
+        />
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
@@ -783,48 +781,39 @@ function PledgesPageInner() {
             <div className="text-xs text-gray-500">All pledges and balances</div>
           </div>
 
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <div className="text-xs font-semibold text-gray-500">Search</div>
-              <input
-                value={searchValue}
-                onChange={onSearchChange}
-                className="mt-2 h-9 w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-                placeholder="Search name or phone"
-              />
-            </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3 sm:justify-end">
+            <input
+              value={searchValue}
+              onChange={onSearchChange}
+              className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              placeholder="Search name or phone"
+            />
 
-            <div>
-              <div className="text-xs font-semibold text-gray-500">Service Type</div>
-              <select
-                value={store?.filters?.serviceType || ""}
-                onChange={onServiceTypeChange}
-                className="mt-2 h-9 w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-              >
-                <option value="">All Service Types</option>
-                {serviceTypeOptions.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={store?.filters?.serviceType || ""}
+              onChange={onServiceTypeChange}
+              className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            >
+              <option value="">All Service Types</option>
+              {serviceTypeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
 
-            <div>
-              <div className="text-xs font-semibold text-gray-500">Status</div>
-              <select
-                value={store?.filters?.status || ""}
-                onChange={onStatusChange}
-                className="mt-2 h-9 w-44 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-              >
-                <option value="">All Status</option>
-                {STATUS_OPTIONS.map((s) => (
+            <select
+              value={store?.filters?.status || ""}
+              onChange={onStatusChange}
+              className="h-9 w-full sm:w-44 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            >
+              <option value="">All Status</option>
+              {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
               </select>
-            </div>
 
             <DateRangeFilter
               appliedFrom={store?.filters?.dateFrom || ""}

@@ -30,16 +30,13 @@ function VisitorFilters() {
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-gray-500">Search:</span>
-        <input
-          value={value}
-          onChange={onChange}
-          className="h-9 w-[220px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-          placeholder="Name or invited by"
-        />
-      </div>
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+      <input
+        value={value}
+        onChange={onChange}
+        className="h-9 w-full sm:w-[220px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+        placeholder="Name or invited by"
+      />
     </div>
   );
 }

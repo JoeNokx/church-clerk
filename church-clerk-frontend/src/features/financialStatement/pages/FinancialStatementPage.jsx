@@ -287,11 +287,11 @@ function FinancialStatementPage() {
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
             {tab === "monthly" ? (
               <>
                 <div className="flex items-center gap-2">
-                  <div className="text-xs font-semibold text-gray-500">Month</div>
+                  <div className="hidden sm:block text-xs font-semibold text-gray-500">Month</div>
                   <select
                     className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
                     value={month}
@@ -305,7 +305,7 @@ function FinancialStatementPage() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="text-xs font-semibold text-gray-500">Year</div>
+                  <div className="hidden sm:block text-xs font-semibold text-gray-500">Year</div>
                   <select
                     className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
                     value={monthYear}
@@ -324,7 +324,7 @@ function FinancialStatementPage() {
             {tab === "quarterly" ? (
               <>
                 <div className="flex items-center gap-2">
-                  <div className="text-xs font-semibold text-gray-500">Quarter</div>
+                  <div className="hidden sm:block text-xs font-semibold text-gray-500">Quarter</div>
                   <select
                     className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
                     value={quarter}
@@ -337,7 +337,7 @@ function FinancialStatementPage() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="text-xs font-semibold text-gray-500">Year</div>
+                  <div className="hidden sm:block text-xs font-semibold text-gray-500">Year</div>
                   <select
                     className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
                     value={quarterYear}
@@ -355,7 +355,7 @@ function FinancialStatementPage() {
 
             {tab === "annual" ? (
               <div className="flex items-center gap-2">
-                <div className="text-xs font-semibold text-gray-500">Year</div>
+                <div className="hidden sm:block text-xs font-semibold text-gray-500">Year</div>
                 <select
                   className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
                   value={annualYear}

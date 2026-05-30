@@ -588,6 +588,9 @@ export const verifyPaystackPayment = async (req, res) => {
         subscription.gracePeriodEnd = null;
         subscription.expiryWarning.shown = false;
 
+        const customerCode = String(verification?.data?.customer?.customer_code || "").trim() || null;
+        if (customerCode) subscription.paystackCustomerCode = customerCode;
+
         const authorization = verification?.data?.authorization || null;
         const authCode = authorization?.authorization_code;
         const customerEmail = String(verification?.data?.customer?.email || "").trim() || null;
