@@ -121,9 +121,9 @@ async function registerUser(data, req) {
   });
 
   const token = generateToken(user._id);
-  user.password = undefined;
 
   const { emailSent } = await sendRegistrationVerificationEmail(user);
+  user.password = undefined;
 
   await logActivity({
     user: user._id,

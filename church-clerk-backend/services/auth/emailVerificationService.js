@@ -50,7 +50,7 @@ async function resendVerificationEmail(email, req) {
 async function sendRegistrationVerificationEmail(user) {
   const verificationToken = crypto.randomBytes(32).toString("hex");
   user.emailVerificationToken = verificationToken;
-  await user.save();
+  await User.findByIdAndUpdate(user._id, { emailVerificationToken: verificationToken });
 
   const link = `${getFrontendBaseUrl()}/verify-email?token=${verificationToken}`;
   let emailSent = false;
