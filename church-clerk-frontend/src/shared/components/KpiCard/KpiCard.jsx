@@ -55,7 +55,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 md:gap-2">
-              <span className={`inline-flex h-11 w-11 items-center justify-center rounded-lg ${iconBg} ${iconColor} md:h-12 md:w-12`}>
+              <span className={`hidden md:inline-flex h-11 w-11 items-center justify-center rounded-lg ${iconBg} ${iconColor} md:h-12 md:w-12`}>
                 {icon}
               </span>
               <div className="font-semibold text-gray-500 truncate leading-tight text-xs">{title}</div>
@@ -77,7 +77,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 md:gap-2">
-            <span className="h-6 w-6 shrink-0 rounded-lg bg-gray-50 ring-1 ring-gray-200 flex items-center justify-center text-gray-700 [&>svg]:h-4 [&>svg]:w-4 md:[&>svg]:h-5 md:[&>svg]:w-5 md:h-12 md:w-11">
+            <span className="hidden md:flex h-6 w-6 shrink-0 rounded-lg bg-gray-50 ring-1 ring-gray-200 items-center justify-center text-gray-700 [&>svg]:h-4 [&>svg]:w-4 md:[&>svg]:h-5 md:[&>svg]:w-5 md:h-12 md:w-11">
               {icon}
             </span>
             <div className="font-semibold text-gray-500 truncate leading-tight md:text-sm text-xs">{title}</div>
@@ -97,7 +97,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
           ) : null}
         </div>
 
-        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-gray-300 shrink-0 mt-0.5 md:h-5 md:w-5">
+        <svg viewBox="0 0 20 20" fill="currentColor" className="hidden md:block h-4 w-4 text-gray-300 shrink-0 mt-0.5 md:h-5 md:w-5">
           <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 111.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z" clipRule="evenodd" />
         </svg>
       </div>

@@ -1574,7 +1574,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-              className="flex items-center gap-3 rounded-lg px-2 py-1 hover:bg-gray-50"
+              className="cck-allow-icons flex items-center gap-3 rounded-lg px-2 py-1 hover:bg-gray-50"
 
 
 

@@ -139,7 +139,7 @@ function PillIcon({ color = "blue", children }) {
       : color === "purple"
         ? "bg-purple-100 text-purple-700"
         : "bg-blue-100 text-blue-700";
-  return <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${cls} md:h-12 md:w-12`}>{children}</div>;
+  return <div className={`h-11 w-11 rounded-xl hidden md:flex items-center justify-center ${cls} md:h-12 md:w-12`}>{children}</div>;
 }
 
 function ModeBanner({ mode, onChangeMode }) {
@@ -176,8 +176,8 @@ function ModeBanner({ mode, onChangeMode }) {
 function SimpleModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end pt-[12vh] bg-black/30 sm:flex-row sm:items-center sm:justify-center sm:pt-0 sm:p-4">
+      <div className="w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] rounded-t-2xl sm:rounded-xl bg-white shadow-xl flex flex-col overflow-hidden">
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
@@ -194,7 +194,7 @@ function SimpleModal({ open, title, subtitle, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-4 md:p-6 lg:p-8 overflow-y-auto">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -306,18 +306,18 @@ function ModeSelectCard({ kind, onSelect, disabled = false }) {
 
 function ModeSwitchCards({ currentMode, onPick }) {
   const cardClass = (active) =>
-    `rounded-2xl border p-6 transition ${active ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300"}`;
+    `rounded-2xl border p-4 md:p-6 md:transition ${active ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300"}`;
 
   const isCurrentIndividual = currentMode !== "aggregate";
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6">
       <button
         type="button"
         onClick={() => {
           if (!isCurrentIndividual) onPick?.("individual");
         }}
-        className={`cck-allow-icons ${cardClass(isCurrentIndividual)}`}
+        className={`cck-allow-icons ${cardClass(isCurrentIndividual)} ${isCurrentIndividual ? "pointer-events-none" : ""}`}
       >
         <div className="flex flex-col items-center text-center">
           <div className="h-14 w-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center">
@@ -345,7 +345,7 @@ function ModeSwitchCards({ currentMode, onPick }) {
         onClick={() => {
           if (isCurrentIndividual) onPick?.("aggregate");
         }}
-        className={`cck-allow-icons ${cardClass(!isCurrentIndividual)}`}
+        className={`cck-allow-icons ${cardClass(!isCurrentIndividual)} ${!isCurrentIndividual ? "pointer-events-none" : ""}`}
       >
         <div className="flex flex-col items-center text-center">
           <div className="h-14 w-14 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center">

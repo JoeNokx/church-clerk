@@ -2,18 +2,28 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthCard from "../components/AuthCard.jsx";
 import { forgotPassword } from "../services/auth.api.js";
+import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
+import { forgotPasswordSchema } from "../auth.schemas.js";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     setSuccess("");
+
+    const errs = validateForm(forgotPasswordSchema, { email });
+    if (hasErrors(errs)) {
+      setFieldErrors(errs);
+      return;
+    }
+    setFieldErrors({});
+    setLoading(true);
 
     try {
       const res = await forgotPassword({ email });
@@ -56,10 +66,14 @@ function ForgotPassword() {
             type="email"
             placeholder="you@example.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
+            onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
+            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              fieldErrors.email
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
         </div>
 
         <button

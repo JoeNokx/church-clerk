@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../useAuth.js";
 import AuthCard from "../components/AuthCard.jsx";
+import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
+import { loginSchema } from "../auth.schemas.js";
 
 function Login() {
   const { login } = useAuth();
@@ -12,11 +14,19 @@ function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    const errs = validateForm(loginSchema, { email, password });
+    if (hasErrors(errs)) {
+      setFieldErrors(errs);
+      return;
+    }
+    setFieldErrors({});
+    setLoading(true);
 
     try {
       const userData = await login({ email, password, rememberMe });
@@ -69,10 +79,14 @@ function Login() {
             type="email"
             placeholder="you@example.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
+            onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
+            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              fieldErrors.email
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
         </div>
 
         <div>
@@ -81,10 +95,14 @@ function Login() {
             type="password"
             placeholder="Enter your password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
+            onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
+            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              fieldErrors.password
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
         </div>
 
         <div className="flex items-center justify-between">

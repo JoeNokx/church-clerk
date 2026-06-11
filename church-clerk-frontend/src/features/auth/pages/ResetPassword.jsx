@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthCard from "../components/AuthCard.jsx";
 import { resetPassword } from "../services/auth.api.js";
+import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
+import { resetPasswordSchema } from "../auth.schemas.js";
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,11 +28,12 @@ function ResetPassword() {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
+    const errs = validateForm(resetPasswordSchema, { newPassword, confirmPassword });
+    if (hasErrors(errs)) {
+      setFieldErrors(errs);
       return;
     }
-
+    setFieldErrors({});
     setLoading(true);
     try {
       const res = await resetPassword({ token, newPassword });
@@ -71,12 +75,16 @@ function ResetPassword() {
           <label className="block font-medium text-gray-700 mb-1 text-sm">New Password</label>
           <input
             type="password"
-            placeholder="Enter a new password"
+            placeholder="Enter a new password (min. 8 characters)"
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
+            onChange={(e) => { setNewPassword(e.target.value); setFieldErrors((p) => ({ ...p, newPassword: undefined, confirmPassword: undefined })); }}
+            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              fieldErrors.newPassword
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.newPassword && <p className="mt-1 text-xs text-red-600">{fieldErrors.newPassword}</p>}
         </div>
 
         <div>
@@ -85,10 +93,14 @@ function ResetPassword() {
             type="password"
             placeholder="Confirm your new password"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
+            onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors((p) => ({ ...p, confirmPassword: undefined })); }}
+            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              fieldErrors.confirmPassword
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.confirmPassword && <p className="mt-1 text-xs text-red-600">{fieldErrors.confirmPassword}</p>}
         </div>
 
         <button

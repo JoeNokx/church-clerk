@@ -5,6 +5,8 @@ import { registerUser } from "../services/auth.api.js";
 import AuthCard from "../components/AuthCard.jsx";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
+import { registerSchema } from "../auth.schemas.js";
 
 function Register() {
   const navigate = useNavigate();
@@ -15,17 +17,22 @@ function Register() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
-    if (!isValidPhoneNumber(phoneNumber)) {
-      setLoading(false);
-      setError("Invalid phone number");
+    const errs = validateForm(registerSchema, { fullName, email, phoneNumber, password });
+    if (phoneNumber && !isValidPhoneNumber(phoneNumber)) {
+      errs.phoneNumber = "Enter a valid phone number";
+    }
+    if (hasErrors(errs)) {
+      setFieldErrors(errs);
       return;
     }
+    setFieldErrors({});
+    setLoading(true);
 
     try {
       const res = await registerUser({ fullName, email, phoneNumber, password });
@@ -86,10 +93,14 @@ function Register() {
             type="text"
             placeholder="John Doe"
             value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
+            onChange={(e) => { setFullName(e.target.value); setFieldErrors((p) => ({ ...p, fullName: undefined })); }}
+            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              fieldErrors.fullName
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.fullName && <p className="mt-1 text-xs text-red-600">{fieldErrors.fullName}</p>}
         </div>
 
         <div>
@@ -98,32 +109,45 @@ function Register() {
             type="email"
             placeholder="you@example.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
+            onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
+            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              fieldErrors.email
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
         </div>
 
         <div>
           <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
           <PhoneNumberInput
             value={phoneNumber}
-            onChange={setPhoneNumber}
-            error={Boolean(error && String(error).toLowerCase().includes("invalid phone"))}
-            inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            onChange={(v) => { setPhoneNumber(v); setFieldErrors((p) => ({ ...p, phoneNumber: undefined })); }}
+            error={Boolean(fieldErrors.phoneNumber)}
+            inputClassName={`w-full border rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 ${
+              fieldErrors.phoneNumber
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.phoneNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.phoneNumber}</p>}
         </div>
 
         <div>
           <label className="block font-medium text-gray-700 mb-1 text-sm">Password</label>
           <input
             type="password"
-            placeholder="Create a password"
+            placeholder="Create a password (min. 8 characters)"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
+            onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
+            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              fieldErrors.password
+                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+            }`}
           />
+          {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
         </div>
 
         <button

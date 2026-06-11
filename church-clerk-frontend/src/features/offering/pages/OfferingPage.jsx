@@ -93,7 +93,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false }) {
                 <div className="font-semibold text-gray-500 text-xs">This Week</div>
                 <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisWeek || 0, currency)}</div>
               </div>
-              <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
+              <div className="h-11 w-11 rounded-lg bg-blue-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-600">
                   <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -110,7 +110,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false }) {
                 <div className="font-semibold text-gray-500 text-xs">This Month</div>
                 <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisMonth || 0, currency)}</div>
               </div>
-              <div className="h-11 w-11 rounded-lg bg-orange-50 flex items-center justify-center md:h-12 md:w-12">
+              <div className="h-11 w-11 rounded-lg bg-orange-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-500">
                   <path d="M4 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -128,7 +128,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false }) {
                 <div className="font-semibold text-gray-500 text-xs">This Year</div>
                 <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisYear || 0, currency)}</div>
               </div>
-              <div className="h-11 w-11 rounded-lg bg-green-50 flex items-center justify-center md:h-12 md:w-12">
+              <div className="h-11 w-11 rounded-lg bg-green-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-600">
                   <path d="M4 17l6-6 4 4 6-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M20 7v6h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

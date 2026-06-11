@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import NProgress from "nprogress";
 import { startRouteProgress, stopRouteProgress } from "../shared/services/http.js";
 import AppRoutes from "./routes.jsx";
+import ErrorBoundary from "../shared/components/ErrorBoundary.jsx";
+import OfflineBanner from "../shared/components/OfflineBanner.jsx";
 
 function RouteProgress() {
   const location = useLocation();
@@ -59,9 +61,12 @@ function SubscriptionLockedModal() {
 function App() {
   return (
     <BrowserRouter>
-      <RouteProgress />
-      <SubscriptionLockedModal />
-      <AppRoutes />
+      <ErrorBoundary>
+        <OfflineBanner />
+        <RouteProgress />
+        <SubscriptionLockedModal />
+        <AppRoutes />
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

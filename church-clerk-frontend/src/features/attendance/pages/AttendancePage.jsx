@@ -163,7 +163,7 @@ function AttendancePageInner() {
                   <div className="font-semibold text-gray-500 text-xs">Total Visitors</div>
                   <div className="mt-2 font-semibold text-gray-900 text-lg">{Number(store?.visitorStats?.totalVisitors || 0).toLocaleString()}</div>
                 </div>
-                <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
+                <div className="h-11 w-11 rounded-lg bg-blue-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-600">
                     <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="1.8" />
                     <path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="1.8" />
@@ -180,7 +180,7 @@ function AttendancePageInner() {
                   <div className="font-semibold text-gray-500 text-xs">This Week Visitors</div>
                   <div className="mt-2 font-semibold text-gray-900 text-lg">{Number(store?.visitorStats?.thisWeekVisitors || 0).toLocaleString()}</div>
                 </div>
-                <div className="h-11 w-11 rounded-lg bg-purple-50 flex items-center justify-center md:h-12 md:w-12">
+                <div className="h-11 w-11 rounded-lg bg-purple-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-purple-700">
                     <path d="M7 3v3M17 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
@@ -196,7 +196,7 @@ function AttendancePageInner() {
                   <div className="font-semibold text-gray-500 text-xs">This Month Visitors</div>
                   <div className="mt-2 font-semibold text-gray-900 text-lg">{Number(store?.visitorStats?.thisMonthVisitors || 0).toLocaleString()}</div>
                 </div>
-                <div className="h-11 w-11 rounded-lg bg-orange-50 flex items-center justify-center md:h-12 md:w-12">
+                <div className="h-11 w-11 rounded-lg bg-orange-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-500">
                     <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -212,7 +212,7 @@ function AttendancePageInner() {
                   <div className="font-semibold text-gray-500 text-xs">Converted to Members</div>
                   <div className="mt-2 font-semibold text-gray-900 text-lg">{Number(store?.visitorStats?.convertedVisitors || 0).toLocaleString()}</div>
                 </div>
-                <div className="h-11 w-11 rounded-lg bg-green-50 flex items-center justify-center md:h-12 md:w-12">
+                <div className="h-11 w-11 rounded-lg bg-green-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-600">
                     <path d="M4 17l6-6 4 4 6-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M20 7v6h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
