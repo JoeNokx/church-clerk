@@ -37,7 +37,7 @@ export const updatePassword = async (payload) => {
 };
 
 export const getMyProfile = async () => {
-  return await http.get("/user/me");
+  return await http.get("/user/me", { toastError: false });
 };
 
 export const updateMyProfile = async (payload) => {

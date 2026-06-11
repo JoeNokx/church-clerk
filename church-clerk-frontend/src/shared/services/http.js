@@ -62,11 +62,17 @@ async function fetchCsrfToken() {
       csrfToken = token;
       return csrfToken;
     })
+    .catch(() => "")
     .finally(() => {
       csrfTokenPromise = null;
     });
 
   return csrfTokenPromise;
+}
+
+// Eagerly warm up the CSRF cookie + token on page load
+if (typeof window !== "undefined") {
+  fetchCsrfToken().catch(() => {});
 }
 
 // Request interceptor: attach activeChurch if exists
@@ -130,11 +136,29 @@ api.interceptors.response.use(
 
     return response;
   },
-  (error) => {
+  async (error) => {
     stopProgress();
 
     if (error?.code === "ERR_CANCELED") {
       return Promise.reject(error);
+    }
+
+    // Auto-retry once on CSRF 403 with a fresh token (before showing any toast)
+    if (error?.response?.status === 403) {
+      const msg403 = String(error?.response?.data?.message || "").toLowerCase();
+      if (msg403.includes("csrf") && !error.config?._csrfRetried) {
+        csrfToken = "";
+        error.config._csrfRetried = true;
+        try {
+          const freshToken = await fetchCsrfToken();
+          if (freshToken) {
+            error.config.headers["CSRF-Token"] = freshToken;
+          }
+          return api.request(error.config);
+        } catch {
+          // retry failed — fall through to show error
+        }
+      }
     }
 
     const data = error?.response?.data;
