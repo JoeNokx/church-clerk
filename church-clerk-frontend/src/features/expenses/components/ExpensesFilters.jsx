@@ -37,11 +37,11 @@ function ExpensesFilters() {
   };
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+    <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-end md:justify-end">
       <select
         value={store?.filters?.category || ""}
         onChange={onCategoryChange}
-        className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+        className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
       >
         <option value="">All Categories</option>
         {categoryOptions.map((c) => (

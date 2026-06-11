@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import { releaseDueScheduledSystemInAppAnnouncements } from "../controller/systemInAppAnnouncementController.js";
+import { releaseDueScheduledSystemInAppAnnouncements } from "./systemInAppAnnouncementService.js";
 
 let workerInterval = null;
 

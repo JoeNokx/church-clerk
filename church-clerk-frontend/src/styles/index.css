@@ -69,17 +69,96 @@
 
 /* ── Responsive overrides (mobile < 640px, tablet 640-1023px) ────────── */
 
-/* Card / table section headers: reduce p-5 to p-3 on mobile, p-4 on tablet */
-@media (max-width: 639px) {
-  .flex-col.gap-3.border-b.p-5,
-  .flex-col.gap-3.border-b.border-gray-200.p-5 {
-    padding: 0.75rem !important;
+@media (max-width: 1023px) {
+  button {
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
+
+  button,
+  button * {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  button .text-xs {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+
+  button svg,
+  button img {
+    display: none !important;
+  }
+
+  header button[aria-label="Toggle sidebar"] svg {
+    display: inline-block !important;
+  }
+  header button.relative.h-11.w-11 svg {
+    display: inline-block !important;
+  }
+  header button.relative.h-11.w-11 span {
+    font-size: 10px !important;
+    line-height: 1rem !important;
+  }
+
+  button.cck-allow-icons svg,
+  button.cck-allow-icons img {
+    display: inline-block !important;
+  }
+
+  button[aria-label] svg,
+  button[aria-label] img {
+    display: inline-block !important;
+  }
+
+  .cck-tab-bar {
+    display: flex !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .cck-tab-bar > button {
+    flex: 1 1 0% !important;
+    justify-content: center !important;
+    margin-left: 0 !important;
   }
 }
-@media (min-width: 640px) and (max-width: 1023px) {
+
+/* Typography Responsive Settings */
+h1, .page-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+h2, .section-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+h3, .card-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+@media (min-width: 768px) {
+  h1, .page-title { font-size: 28px; }
+  h2, .section-title { font-size: 22px; }
+  h3, .card-title { font-size: 18px; }
+}
+@media (min-width: 1024px) {
+  /* Inherits or desktop sizes where appropriate */
+}
+
+/* Card / table section headers: reduce p-5 to p-3 on mobile, p-4 on tablet */
+@media (max-width: 767px) {
   .flex-col.gap-3.border-b.p-5,
-  .flex-col.gap-3.border-b.border-gray-200.p-5 {
-    padding: 1rem !important;
+  .flex-col.gap-3.border-b.border-gray-200.p-5,
+  .p-5 {
+    padding: 16px !important;
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .flex-col.gap-3.border-b.p-5,
+  .flex-col.gap-3.border-b.border-gray-200.p-5,
+  .p-5 {
+    padding: 20px !important;
   }
 }
 

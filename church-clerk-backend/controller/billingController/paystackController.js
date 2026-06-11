@@ -2,32 +2,12 @@ import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
-import https from "https";
 import { addDays, addInterval } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
-
 import { toGhanaNationalFromE164, validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 import { computeProration } from "./prorationController.js";
-
-const getPaystackSecretKey = () => {
-  if (process.env.PAYSTACK_SECRET_KEY) return process.env.PAYSTACK_SECRET_KEY;
-  if (String(process.env.PAYSTACK_MODE || "").toLowerCase() === "live") {
-    return process.env.LIVE_SECRET_KEY || null;
-  }
-  return process.env.TEST_SECRET_KEY || null;
-};
-
-const normalizeBillingIntervalKey = (billingInterval) => {
-  const v = String(billingInterval || "").trim().toLowerCase();
-  if (v === "hourly")    return "hourly";
-  if (v === "daily")     return "daily";
-  if (v === "weekly")    return "weekly";
-  if (v === "monthly" || v === "month") return "monthly";
-  if (v === "quarterly") return "quarterly";
-  if (v === "halfyear" || v === "half_year" || v === "half-year" || v === "biannually" || v === "semiannually") return "halfYear";
-  if (v === "yearly" || v === "year" || v === "annually" || v === "annual") return "yearly";
-  return String(billingInterval || "").trim();
-};
+import { getPaystackSecretKey, paystackRequest } from "../../utils/paystackHelpers.js";
+import { normalizeBillingIntervalKey } from "../../utils/planHelpers.js";
 
 const getSupportedPaystackCurrencies = () => {
   const raw = String(process.env.PAYSTACK_SUPPORTED_CURRENCIES || "").trim();
@@ -128,65 +108,6 @@ export const chargeWithPaystack = async (subscription) => {
     throw new Error(`Paystack auto-charge failed with status: ${chargeStatus}`);
   }
 };
-
-const paystackRequest = ({ path, method, body }) =>
-  new Promise((resolve, reject) => {
-    const payload = body ? JSON.stringify(body) : "";
-
-    const secretKey = getPaystackSecretKey();
-
-    if (!secretKey) {
-      return reject(new Error("Paystack secret key is not configured"));
-    }
-
-    const req = https.request(
-      {
-        hostname: "api.paystack.co",
-        path,
-        method,
-        headers: {
-          Authorization: `Bearer ${secretKey}`,
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(payload)
-        }
-      },
-      (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => {
-          const statusCode = res.statusCode || 0;
-
-          let json = null;
-          try {
-            json = data ? JSON.parse(data) : {};
-          } catch {
-            json = null;
-          }
-
-          if (statusCode < 200 || statusCode >= 300) {
-            const msg = json?.message || (data ? String(data).slice(0, 500) : "Paystack request failed");
-            return reject(new Error(`${msg} (${statusCode})`));
-          }
-
-          if (!json) {
-            return reject(new Error("Paystack returned a non-JSON response"));
-          }
-
-          if (json?.status === false) {
-            return reject(new Error(json?.message || "Paystack returned an error"));
-          }
-
-          resolve(json);
-        });
-
-        res.on("error", reject);
-      }
-    );
-
-    req.on("error", reject);
-    if (payload) req.write(payload);
-    req.end();
-  });
 
 const fetchPaystackCustomerEmail = async (customerCode) => {
   if (!customerCode) return null;

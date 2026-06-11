@@ -3,178 +3,23 @@ import Subscription from "../models/billingModel/subscriptionModel.js";
 import BillingHistory from "../models/billingModel/billingHistoryModel.js";
 import Church from "../models/churchModel.js";
 import WebhookLog from "../models/billingModel/webhookLogModel.js";
-import https from "https";
 import PDFDocument from "pdfkit";
 import { sendSuspensionEmail } from "../utils/subscriptionEmails.js";
-
-const BILLING_INTERVALS = ["hourly", "daily", "weekly", "monthly", "quarterly", "halfYear", "yearly"];
-
-const getPaystackSecretKey = () => {
-  if (process.env.PAYSTACK_SECRET_KEY) return process.env.PAYSTACK_SECRET_KEY;
-  if (String(process.env.PAYSTACK_MODE || "").toLowerCase() === "live") {
-    return process.env.LIVE_SECRET_KEY || null;
-  }
-  return process.env.TEST_SECRET_KEY || null;
-};
-
-const normalizeBillingIntervalKey = (billingInterval) => {
-  const v = String(billingInterval || "").trim().toLowerCase();
-  if (v === "hourly")    return "hourly";
-  if (v === "daily")     return "daily";
-  if (v === "weekly")    return "weekly";
-  if (v === "monthly" || v === "month") return "monthly";
-  if (v === "quarterly") return "quarterly";
-  if (v === "halfyear" || v === "half_year" || v === "half-year" || v === "biannually" || v === "semiannually") return "halfYear";
-  if (v === "yearly" || v === "year" || v === "annually" || v === "annual") return "yearly";
-  return String(billingInterval || "").trim();
-};
-
-const toPaystackInterval = (billingInterval) => {
-  const v = String(billingInterval || "").trim();
-  if (v === "hourly")    return "hourly";
-  if (v === "daily")     return "daily";
-  if (v === "weekly")    return "weekly";
-  if (v === "monthly")   return "monthly";
-  if (v === "quarterly") return "quarterly";
-  if (v === "halfYear")  return "biannually";
-  if (v === "yearly")    return "annually";
-  return null;
-};
-
-const clamp = (value, min, max) => {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return min;
-  return Math.min(max, Math.max(min, n));
-};
-
-const paystackRequest = ({ path, method, body }) =>
-  new Promise((resolve, reject) => {
-    const payload = body ? JSON.stringify(body) : "";
-    const secretKey = getPaystackSecretKey();
-    if (!secretKey) {
-      return reject(new Error("Paystack secret key is not configured"));
-    }
-
-    const req = https.request(
-      {
-        hostname: "api.paystack.co",
-        path,
-        method,
-        headers: {
-          Authorization: `Bearer ${secretKey}`,
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(payload)
-        }
-      },
-      (res) => {
-        let data = "";
-        res.on("data", (chunk) => {
-          data += chunk;
-        });
-        res.on("end", () => {
-          try {
-            const json = data ? JSON.parse(data) : {};
-            if (res.statusCode >= 200 && res.statusCode < 300) {
-              resolve(json);
-            } else {
-              reject(new Error(json?.message || `Paystack request failed (${res.statusCode})`));
-            }
-          } catch (e) {
-            reject(e);
-          }
-        });
-      }
-    );
-
-    req.on("error", reject);
-    if (payload) req.write(payload);
-    req.end();
-  });
-
-const normalizePriceByCurrency = (body) => {
-  const priceByCurrency = body?.priceByCurrency || body?.pricing;
-  if (!priceByCurrency) return null;
-  return priceByCurrency;
-};
-
-const sanitizePriceByCurrency = (priceByCurrency) => {
-  if (!priceByCurrency || typeof priceByCurrency !== "object") return null;
-  const sanitized = {};
-  if (priceByCurrency?.GHS) sanitized.GHS = priceByCurrency.GHS;
-  return Object.keys(sanitized).length ? sanitized : null;
-};
-
-const sanitizePlanCurrencies = (plan) => {
-  if (!plan) return plan;
-  const obj = typeof plan.toObject === "function" ? plan.toObject() : plan;
-  const copy = { ...obj };
-
-  const nextPricing = {};
-  if (copy?.pricing?.GHS) nextPricing.GHS = copy.pricing.GHS;
-  copy.pricing = nextPricing;
-
-  const nextPriceByCurrency = {};
-  if (copy?.priceByCurrency?.GHS) nextPriceByCurrency.GHS = copy.priceByCurrency.GHS;
-  copy.priceByCurrency = nextPriceByCurrency;
-
-  return copy;
-};
-
-const normalizePlanName = (name) => {
-  return typeof name === "string" ? name.trim().toLowerCase() : name;
-};
-
-const validatePlanName = (name) => {
-  const allowed = ["free lite", "basic", "standard", "premium"];
-  if (!allowed.includes(String(name || "").trim().toLowerCase())) {
-    throw new Error("Invalid plan name. Allowed: free lite, basic, standard, premium");
-  }
-};
-
-const createOrUpdatePaystackPlansForInterval = async ({ planName, paystackPlanCodes, ghsPrices }) => {
-  const codes = { ...(paystackPlanCodes || {}) };
-  const errors = [];
-
-  for (const interval of BILLING_INTERVALS) {
-    const amount = ghsPrices?.[interval];
-    if (amount === undefined || amount === null) continue;
-
-    const paystackInterval = toPaystackInterval(interval);
-    if (!paystackInterval) continue;
-
-    const amountKobo = Math.round(Number(amount) * 100);
-    if (!Number.isFinite(amountKobo) || amountKobo <= 0) continue;
-
-    const existingCode = codes?.[interval];
-
-    try {
-      if (existingCode) {
-        await paystackRequest({
-          method: "PUT",
-          path: `/plan/${encodeURIComponent(existingCode)}`,
-          body: { amount: amountKobo, interval: paystackInterval }
-        });
-      } else {
-        const result = await paystackRequest({
-          method: "POST",
-          path: "/plan",
-          body: {
-            name: `${planName} - ${interval}`,
-            amount: amountKobo,
-            interval: paystackInterval,
-            currency: "GHS"
-          }
-        });
-        const newCode = result?.data?.plan_code || null;
-        if (newCode) codes[interval] = newCode;
-      }
-    } catch (e) {
-      errors.push(`${interval}: ${e?.message || String(e)}`);
-    }
-  }
-
-  return { codes, errors };
-};
+import {
+  BILLING_INTERVALS,
+  toPaystackInterval,
+  paystackRequest,
+  createOrUpdatePaystackPlansForInterval
+} from "../utils/paystackHelpers.js";
+import {
+  normalizeBillingIntervalKey,
+  clamp,
+  normalizePriceByCurrency,
+  sanitizePriceByCurrency,
+  sanitizePlanCurrencies,
+  normalizePlanName,
+  validatePlanName
+} from "../utils/planHelpers.js";
 
 export const createPlan = async (req, res) => {
   try {

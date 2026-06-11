@@ -3,11 +3,11 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 function DashboardCharts({ attendanceGraph, genderData, analytics, year }) {
   return (
     <>
-      <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-base font-semibold text-gray-900">Attendance Trends</div>
-            <div className="mt-1 text-sm text-gray-600">Sundays attendance totals by month ({year})</div>
+            <div className="font-semibold text-gray-900 text-base">Attendance Trends</div>
+            <div className="mt-1 text-gray-600 text-sm">Sundays attendance totals by month ({year})</div>
           </div>
         </div>
 
@@ -24,9 +24,9 @@ function DashboardCharts({ attendanceGraph, genderData, analytics, year }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <div className="text-base font-semibold text-gray-900">Gender Distribution</div>
-        <div className="mt-1 text-sm text-gray-600">Active members breakdown</div>
+      <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+        <div className="font-semibold text-gray-900 text-base">Gender Distribution</div>
+        <div className="mt-1 text-gray-600 text-sm">Active members breakdown</div>
 
         <div className="mt-4 h-56 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
@@ -43,14 +43,14 @@ function DashboardCharts({ attendanceGraph, genderData, analytics, year }) {
 
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-gray-200 p-3">
-            <div className="text-sm font-semibold text-gray-500">Male</div>
-            <div className="mt-1 text-xl font-semibold text-gray-900">{analytics?.genderDistribution?.male ?? 0}</div>
-            <div className="mt-1 text-sm text-gray-500">{analytics?.genderDistribution?.malePercentage ?? 0}%</div>
+            <div className="font-semibold text-gray-500 text-sm">Male</div>
+            <div className="mt-1 font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">{analytics?.genderDistribution?.male ?? 0}</div>
+            <div className="mt-1 text-gray-500 text-sm">{analytics?.genderDistribution?.malePercentage ?? 0}%</div>
           </div>
           <div className="rounded-lg border border-gray-200 p-3">
-            <div className="text-sm font-semibold text-gray-500">Female</div>
-            <div className="mt-1 text-xl font-semibold text-gray-900">{analytics?.genderDistribution?.female ?? 0}</div>
-            <div className="mt-1 text-sm text-gray-500">{analytics?.genderDistribution?.femalePercentage ?? 0}%</div>
+            <div className="font-semibold text-gray-500 text-sm">Female</div>
+            <div className="mt-1 font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">{analytics?.genderDistribution?.female ?? 0}</div>
+            <div className="mt-1 text-gray-500 text-sm">{analytics?.genderDistribution?.femalePercentage ?? 0}%</div>
           </div>
         </div>
       </div>

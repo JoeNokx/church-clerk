@@ -118,12 +118,12 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{mode === "edit" ? "Edit Offering" : "Add Offering"}</div>
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{mode === "edit" ? "Edit Offering" : "Add Offering"}</div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -132,17 +132,17 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={submit} className="p-5">
+        <form onSubmit={submit} className="p-4 md:p-6 lg:p-8">
           {formError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
               {formError}
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-gray-500">Service Type</label>
+                <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
                 {canCreate || canEdit ? (
                   <AddLookupValueButton
                     label="Add service"
@@ -157,7 +157,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
               <select
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               >
                 <option value="">Select service</option>
                 {serviceTypeOptions.map((c) => (
@@ -170,7 +170,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-gray-500">Offering Type</label>
+                <label className="block font-semibold text-gray-500 text-xs">Offering Type</label>
                 {canCreate || canEdit ? (
                   <AddLookupValueButton
                     label="Add offering type"
@@ -185,7 +185,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
               <select
                 value={offeringType}
                 onChange={(e) => setOfferingType(e.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               >
                 {offeringTypeOptions.map((c) => (
                   <option key={c} value={c}>
@@ -196,23 +196,23 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Amount</label>
+              <label className="block font-semibold text-gray-500 text-xs">Amount</label>
               <input
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 type="number"
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
                 placeholder="0"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Date</label>
+              <label className="block font-semibold text-gray-500 text-xs">Date</label>
               <input
                 value={serviceDate}
                 onChange={(e) => setServiceDate(e.target.value)}
                 type="date"
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               />
             </div>
           </div>
@@ -221,7 +221,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
             >
               Cancel
             </button>
@@ -229,7 +229,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
             <button
               type="submit"
               disabled={store?.loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
               {mode === "edit" ? "Update" : "Save"}
             </button>

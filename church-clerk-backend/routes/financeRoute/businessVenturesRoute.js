@@ -11,6 +11,11 @@ import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../../middleware/permissionMiddleware.js";
+import BusinessVentures from "../../models/financeModel/businessModel/businessVenturesModel.js";
+import BusinessIncome from "../../models/financeModel/businessModel/businessIncomeModel.js";
+import BusinessExpenses from "../../models/financeModel/businessModel/businessExpensesModel.js";
+import { createAdjustment } from "../../services/finance/governanceService.js";
+import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
 
 
 router.post(
@@ -21,6 +26,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "create"),
+  backdatingGuard({ dateField: "startDate", module: "business", entityType: "businessVenture" }),
   createBusinessVentures
 );
 router.get(
@@ -51,6 +57,7 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "update"),
+  conditionalImmutableGuard(),
   updateBusinessVentures
 );
 router.delete(
@@ -61,7 +68,41 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "delete"),
+  conditionalImmutableGuard(),
   deleteBusinessVentures
+);
+
+router.post(
+  "/business-ventures/:id/adjustments",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  requirePermission("businessVentures", "update"),
+  async (req, res) => {
+    try {
+      const churchId = req.activeChurch?._id;
+      if (!churchId) return res.status(400).json({ message: "Active church is required" });
+      const original = await BusinessVentures.findOne({ _id: req.params.id, church: churchId });
+      if (!original) return res.status(404).json({ message: "Business venture not found" });
+      const { patch, reason, impactLevel } = req.body || {};
+      const result = await createAdjustment({
+        user: req.user,
+        churchId,
+        module: "business",
+        entityType: "businessVenture",
+        original: original.toObject ? original.toObject() : original,
+        patch,
+        reason,
+        impactLevel
+      });
+      if (result?.status === "PENDING_APPROVAL") return res.status(202).json({ message: "Adjustment queued for approval", ...result });
+      return res.json({ message: "Adjustment applied", ...result });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 );
 router.get(
   "/business-ventures/stats/kpi",
@@ -83,6 +124,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "create"),
+  backdatingGuard({ dateField: "date", module: "business", entityType: "businessIncome" }),
   createBusinessIncome
 );
 router.get(
@@ -103,6 +145,7 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "update"),
+  conditionalImmutableGuard(),
   updateBusinessIncome
 );
 router.delete(
@@ -113,7 +156,41 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "delete"),
+  conditionalImmutableGuard(),
   deleteBusinessIncome
+);
+
+router.post(
+  "/business-ventures/:businessId/incomes/:incomeId/adjustments",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  requirePermission("businessVentures", "update"),
+  async (req, res) => {
+    try {
+      const churchId = req.activeChurch?._id;
+      if (!churchId) return res.status(400).json({ message: "Active church is required" });
+      const original = await BusinessIncome.findOne({ _id: req.params.incomeId, church: churchId, businessVentures: req.params.businessId });
+      if (!original) return res.status(404).json({ message: "Business income not found" });
+      const { patch, reason, impactLevel } = req.body || {};
+      const result = await createAdjustment({
+        user: req.user,
+        churchId,
+        module: "business",
+        entityType: "businessIncome",
+        original: original.toObject ? original.toObject() : original,
+        patch,
+        reason,
+        impactLevel
+      });
+      if (result?.status === "PENDING_APPROVAL") return res.status(202).json({ message: "Adjustment queued for approval", ...result });
+      return res.json({ message: "Adjustment applied", ...result });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 );
 
 router.post(
@@ -124,6 +201,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "create"),
+  backdatingGuard({ dateField: "date", module: "business", entityType: "businessExpense" }),
   createBusinessExpenses
 );
 router.get(
@@ -144,6 +222,7 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "update"),
+  conditionalImmutableGuard(),
   updateBusinessExpenses
 );
 router.delete(
@@ -154,7 +233,41 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin"),
   requirePermission("businessVentures", "delete"),
+  conditionalImmutableGuard(),
   deleteBusinessExpenses
+);
+
+router.post(
+  "/business-ventures/:businessId/expenses/:expensesId/adjustments",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  requirePermission("businessVentures", "update"),
+  async (req, res) => {
+    try {
+      const churchId = req.activeChurch?._id;
+      if (!churchId) return res.status(400).json({ message: "Active church is required" });
+      const original = await BusinessExpenses.findOne({ _id: req.params.expensesId, church: churchId, businessVentures: req.params.businessId });
+      if (!original) return res.status(404).json({ message: "Business expense not found" });
+      const { patch, reason, impactLevel } = req.body || {};
+      const result = await createAdjustment({
+        user: req.user,
+        churchId,
+        module: "business",
+        entityType: "businessExpense",
+        original: original.toObject ? original.toObject() : original,
+        patch,
+        reason,
+        impactLevel
+      });
+      if (result?.status === "PENDING_APPROVAL") return res.status(202).json({ message: "Adjustment queued for approval", ...result });
+      return res.json({ message: "Adjustment applied", ...result });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 );
 
 router.get(

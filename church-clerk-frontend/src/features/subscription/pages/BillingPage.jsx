@@ -30,6 +30,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
+import { getSystemSettingsAdmin, updateSystemSettingsAdmin, toggleGovernanceFlags } from "../../settings/services/settings.api.js";
 
 function formatCurrency(amount, currency) {
   return formatMoney(amount, currency);
@@ -55,7 +56,7 @@ function StatusPill({ value }) {
           ? "bg-red-100 text-red-700"
           : "bg-gray-100 text-gray-700";
 
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${cls}`}>{displayValue || "—"}</span>;
+  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold ${cls} text-xs`}>{displayValue || "—"}</span>;
 }
 
 function limitValue(limit) {
@@ -175,17 +176,17 @@ function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = 
   if (!open) return null;
 
   return (
-    <div className={`fixed inset-0 ${zIndexClass} flex items-end sm:items-center justify-center bg-black/30 p-0 sm:p-4`}>
-      <div className={`w-full ${maxWidthClass} max-h-[92vh] sm:max-h-[90vh] rounded-t-2xl sm:rounded-xl bg-white shadow-xl flex flex-col overflow-hidden`}>
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 sm:px-6 py-4 sm:py-5 shrink-0">
+    <div className={`fixed inset-0 ${zIndexClass} flex items-end md:items-center justify-center bg-black/30 p-0 md:p-4`}>
+      <div className={`w-full ${maxWidthClass} max-h-[92vh] md:max-h-[90vh] rounded-t-2xl md:rounded-xl bg-white shadow-xl flex flex-col overflow-hidden`}>
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4 md:py-4 md:py-5 lg:py-6 shrink-0">
           <div>
-            <div className="text-base sm:text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
+            <div className="font-semibold text-gray-900 md:text-lg text-base">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 shrink-0"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 shrink-0 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -194,7 +195,7 @@ function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = 
           </button>
         </div>
 
-        <div className="px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto flex-1">{children}</div>
+        <div className="px-4 md:px-6 py-4 md:py-4 md:py-5 lg:py-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );
@@ -260,6 +261,74 @@ function BillingPage() {
   const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
   const [referralBonusDays, setReferralBonusDays] = useState(30);
+
+  // System admin settings (configuration durations + governance toggles)
+  const isSystemAdmin = useMemo(() => {
+    const raw = String(user?.role || "").trim().toLowerCase();
+    const norm = raw.replace(/[\s_\-]+/g, "");
+    return norm === "superadmin" || norm === "supportadmin";
+  }, [user?.role]);
+
+  const [sysLoading, setSysLoading] = useState(false);
+  const [sysError, setSysError] = useState("");
+  const [trialDays, setTrialDays] = useState(14);
+  const [enforceBackdating, setEnforceBackdating] = useState(false);
+  const [enforceImmutability, setEnforceImmutability] = useState(false);
+
+  useEffect(() => {
+    if (!isSystemAdmin) return;
+    let cancelled = false;
+    (async () => {
+      setSysLoading(true);
+      setSysError("");
+      try {
+        const res = await getSystemSettingsAdmin();
+        if (cancelled) return;
+        const s = res?.data?.settings || {};
+        if (s?.trialDays !== undefined) setTrialDays(Number(s.trialDays));
+        setEnforceBackdating(Boolean(s?.enforceBackdating));
+        setEnforceImmutability(Boolean(s?.enforceImmutability));
+      } catch (e) {
+        if (cancelled) return;
+        setSysError(e?.response?.data?.message || e?.message || "Failed to load system settings");
+      } finally {
+        if (cancelled) return;
+        setSysLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isSystemAdmin]);
+
+  const TRIAL_OPTIONS = [3, 7, 14, 21, 30, 40];
+
+  const applyTrialDays = async () => {
+    setSysError("");
+    setSysLoading(true);
+    try {
+      await updateSystemSettingsAdmin({ trialDays });
+    } catch (e) {
+      setSysError(e?.response?.data?.message || e?.message || "Failed to update trial days");
+    } finally {
+      setSysLoading(false);
+    }
+  };
+
+  const handleToggleGov = async (key, value) => {
+    setSysError("");
+    setSysLoading(true);
+    const prev = { enforceBackdating, enforceImmutability };
+    if (key === "enforceBackdating") setEnforceBackdating(value);
+    if (key === "enforceImmutability") setEnforceImmutability(value);
+    try {
+      await toggleGovernanceFlags({ [key]: value });
+    } catch (e) {
+      setSysError(e?.response?.data?.message || e?.message || "Failed to update governance flag");
+      setEnforceBackdating(prev.enforceBackdating);
+      setEnforceImmutability(prev.enforceImmutability);
+    } finally {
+      setSysLoading(false);
+    }
+  };
 
   const setAddFieldError = useCallback((field, message) => {
     setAddMethodFieldErrors((prev) => ({
@@ -516,10 +585,10 @@ function BillingPage() {
   if (loading) {
     return (
       <div className="max-w-6xl animate-pulse">
-        <div className="text-lg font-semibold text-gray-900">Billing & Subscription</div>
+        <div className="font-semibold text-gray-900 text-lg">Billing & Subscription</div>
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+            <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-3 md:p-6 lg:p-8">
               <div className="h-4 w-24 rounded bg-gray-200" />
               <div className="h-6 w-20 rounded bg-gray-200" />
               <div className="h-3 w-32 rounded bg-gray-200" />
@@ -602,19 +671,19 @@ function BillingPage() {
   const isPaidPlan = ["basic", "standard", "premium"].includes(currentPlanName);
 
   const planManagementCard = (
-    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
       <div>
-        <div className="text-sm font-semibold text-gray-900">Plan Management</div>
-        <div className="text-xs text-gray-500">Change your subscription plan or cancel anytime</div>
+        <div className="font-semibold text-gray-900 text-sm">Plan Management</div>
+        <div className="text-gray-500 text-xs">Change your subscription plan or cancel anytime</div>
       </div>
 
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
-        <div className="text-xs font-semibold text-gray-500">Current: {isFreeTrial ? "Free trial" : currentPlan?.name || "—"} Plan</div>
-        <div className="mt-1 text-xs text-gray-600">
+        <div className="font-semibold text-gray-500 text-xs">Current: {isFreeTrial ? "Free trial" : currentPlan?.name || "—"} Plan</div>
+        <div className="mt-1 text-gray-600 text-xs">
           {currentPlan?.memberLimit === null ? "Unlimited members" : `Up to ${Number(currentPlan?.memberLimit || 0).toLocaleString()} members`}
         </div>
         {currentPlanFeatures.length ? (
-          <div className="mt-3 space-y-2 text-xs text-gray-700">
+          <div className="mt-3 space-y-2 text-gray-700 text-xs">
             {currentPlanFeatures.map((item) => (
               <div key={item} className="flex items-center gap-2">
                 <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-50 text-green-700">
@@ -637,7 +706,7 @@ function BillingPage() {
 
       <div className="mt-6">
         <div className="flex flex-col items-center justify-center gap-3">
-          <div className="text-xs font-semibold text-gray-500">Available Plans</div>
+          <div className="font-semibold text-gray-500 text-xs">Available Plans</div>
 
           <div className="inline-flex flex-wrap items-center justify-center gap-2">
             <div className="inline-flex flex-wrap rounded-lg border border-gray-200 bg-white p-1 gap-0.5">
@@ -735,9 +804,9 @@ function BillingPage() {
         })}
       </div>
 
-      <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50 p-5">
-        <div className="text-sm font-semibold text-gray-900">Need a fully customized church management solution?</div>
-        <div className="mt-2 text-sm text-gray-700">
+      <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4 md:p-6 lg:p-8">
+        <div className="font-semibold text-gray-900 text-sm">Need a fully customized church management solution?</div>
+        <div className="mt-2 text-gray-700 text-sm">
           With Ministry Plus, get a tailor-made system built specifically for your church’s needs. Features, workflows, and integrations — all designed just for you.
         </div>
         <div className="mt-4">
@@ -746,7 +815,7 @@ function BillingPage() {
             onClick={() => {
               setShowCustomPlanModal(true);
             }}
-            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-xs"
           >
             Contact us for a custom plan
           </button>
@@ -761,13 +830,13 @@ function BillingPage() {
   const hasPendingCancel = subscription?.pendingPlanAction === "cancel";
 
   const cancelSubscriptionCard = (
-    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="text-sm font-semibold text-gray-900">
+          <div className="font-semibold text-gray-900 text-sm">
             {hasPendingCancel ? "Cancellation Scheduled" : "Cancel Subscription"}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-gray-500 text-xs">
             {hasPendingCancel
               ? "Your subscription is set to cancel at the end of the billing period. You can resume anytime before then."
               : "You can cancel anytime. Your access continues until the end of the current billing period."}
@@ -778,7 +847,7 @@ function BillingPage() {
             type="button"
             onClick={() => setShowResumeConfirm(true)}
             disabled={manageLoading}
-            className="rounded-lg border border-green-200 bg-white px-4 py-2 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-60"
+            className="rounded-lg border border-green-200 bg-white px-4 py-2 font-semibold text-green-700 hover:bg-green-50 disabled:opacity-60 text-xs"
           >
             Resume Subscription
           </button>
@@ -787,7 +856,7 @@ function BillingPage() {
             type="button"
             onClick={onCancel}
             disabled={manageLoading}
-            className="rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+            className="rounded-lg border border-red-200 bg-white px-4 py-2 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 text-xs"
           >
             Cancel Subscription
           </button>
@@ -799,19 +868,97 @@ function BillingPage() {
   return (
     <div className="max-w-6xl">
       <div>
-        <div className="text-xl sm:text-2xl font-bold text-gray-900">Billing &amp; Subscription</div>
-        <div className="mt-1 text-sm text-gray-600">Manage your subscription, payment methods, and view billing history</div>
+        <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Billing &amp; Subscription</div>
+        <div className="mt-1 text-gray-600 text-sm">Manage your subscription, payment methods, and view billing history</div>
       </div>
+
+      {isSystemAdmin && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="font-semibold text-gray-900 text-sm">System Settings · Configuration Duration</div>
+              <div className="mt-1 text-gray-500 text-xs">Financial governance and trial duration for all churches</div>
+            </div>
+          </div>
+
+          {sysError ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{sysError}</div>
+          ) : null}
+
+          <div className="mt-4 space-y-4">
+            {/* Governance toggles placed right before Free Trial Duration */}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="font-medium text-gray-900 text-sm">Enforce Backdating Control</div>
+                <div className="mt-0.5 text-gray-500 text-xs">Backdated creates require admin approval</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={enforceBackdating}
+                  onChange={(e) => handleToggleGov("enforceBackdating", e.target.checked)}
+                  disabled={sysLoading}
+                />
+                <span className="text-gray-700 text-sm">{enforceBackdating ? "On" : "Off"}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="font-medium text-gray-900 text-sm">Enforce Immutability</div>
+                <div className="mt-0.5 text-gray-500 text-xs">Updates/deletes are disabled; use adjustments</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={enforceImmutability}
+                  onChange={(e) => handleToggleGov("enforceImmutability", e.target.checked)}
+                  disabled={sysLoading}
+                />
+                <span className="text-gray-700 text-sm">{enforceImmutability ? "On" : "Off"}</span>
+              </div>
+            </div>
+
+            {/* Free Trial Duration control */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="block font-semibold text-gray-500 text-xs">Free Trial Duration (days)</label>
+                <select
+                  value={trialDays}
+                  onChange={(e) => setTrialDays(Number(e.target.value))}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  disabled={sysLoading}
+                >
+                  {TRIAL_OPTIONS.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={applyTrialDays}
+                disabled={sysLoading}
+                className="rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60 text-sm"
+              >
+                {sysLoading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {paymentRequired ? (
         <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-sm font-semibold text-red-700">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600 text-xs font-bold">!</span>
+              <div className="flex items-center gap-2 font-semibold text-red-700 text-sm">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600 font-bold text-xs">!</span>
                 Payment Required
               </div>
-              <div className="mt-1 text-sm text-red-700/90">
+              <div className="mt-1 text-red-700/90 text-sm">
                 Your free days have ended. Complete payment to continue enjoying all features.
               </div>
             </div>
@@ -819,25 +966,25 @@ function BillingPage() {
         </div>
       ) : isFreeTrial && !isPaidPlan ? (
         <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-sm font-semibold text-blue-700">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2 font-semibold text-blue-700 text-sm">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs">i</span>
               You're on a free trial
             </div>
-            <div className="text-xs text-blue-600">
+            <div className="text-blue-600 text-xs">
               {subscription?.trialEnd ? `Trial ends ${formatShortDate(subscription.trialEnd)}` : "Upgrade anytime to access all features"}
             </div>
           </div>
         </div>
       ) : isFreeLitePlan && !isFreeTrial ? (
         <div className="mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-sm font-semibold text-orange-700">
+              <div className="flex items-center gap-2 font-semibold text-orange-700 text-sm">
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-orange-600 text-xs">↑</span>
                 You're on Free Lite
               </div>
-              <div className="mt-1 text-xs text-orange-600">
+              <div className="mt-1 text-orange-600 text-xs">
                 Unlock more members, features, and tools by upgrading to a paid plan.
               </div>
             </div>
@@ -849,7 +996,7 @@ function BillingPage() {
                 );
                 if (firstPaid) onPlanAction(firstPaid);
               }}
-              className="shrink-0 rounded-lg bg-orange-600 px-4 py-2 text-xs font-semibold text-white hover:bg-orange-700"
+              className="shrink-0 rounded-lg bg-orange-600 px-4 py-2 font-semibold text-white hover:bg-orange-700 text-xs"
             >
               Upgrade Now
             </button>
@@ -858,16 +1005,16 @@ function BillingPage() {
       ) : null}
 
       {error ? (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
           {error}
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Subscription Overview</div>
-            <div className="text-xs text-gray-500">Your current plan and billing status</div>
+            <div className="font-semibold text-gray-900 text-sm">Subscription Overview</div>
+            <div className="text-gray-500 text-xs">Your current plan and billing status</div>
           </div>
           <StatusPill value={paymentRequired ? "Payment Required" : subscription?.status || "—"} />
         </div>
@@ -878,7 +1025,7 @@ function BillingPage() {
               <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
               </svg>
-              <div className="text-xs text-red-800">
+              <div className="text-red-800 text-xs">
                 <strong>Payment overdue.</strong> Your subscription is past due.
                 {subscription?.gracePeriodEnd
                   ? <> Grace period ends <strong>{new Date(subscription.gracePeriodEnd).toLocaleDateString()}</strong>. After that, all write actions will be locked.</>
@@ -890,7 +1037,7 @@ function BillingPage() {
               type="button"
               onClick={() => { setPlanId(String(currentPlanId)); onPay(); }}
               disabled={!currentPlanId || manageLoading}
-              className="ml-2 flex-shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              className="ml-2 flex-shrink-0 rounded-lg bg-red-600 px-3 py-1.5 font-semibold text-white hover:bg-red-700 disabled:opacity-60 text-xs"
             >
               Renew Now
             </button>
@@ -902,7 +1049,7 @@ function BillingPage() {
             <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
-            <div className="text-xs text-yellow-800">
+            <div className="text-yellow-800 text-xs">
               {subscription.pendingPlanAction === "cancel"
                 ? <>Your subscription will be <strong>cancelled</strong> on <strong>{new Date(subscription.pendingPlanEffectiveDate).toLocaleDateString()}</strong>. You will move to the Free Lite plan and retain all your data.</>
                 : <>Your plan will be <strong>downgraded</strong> on <strong>{new Date(subscription.pendingPlanEffectiveDate).toLocaleDateString()}</strong>. You will retain all existing data but actions will be limited to your new plan.</>
@@ -911,25 +1058,25 @@ function BillingPage() {
           </div>
         )}
 
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <div className="text-xs font-semibold text-gray-500">Current Plan</div>
-            <div className="mt-1 text-lg font-semibold text-gray-900">{isFreeTrial ? "Free trial" : currentPlan?.name || "—"}</div>
-            <div className="text-xs text-gray-500">
+            <div className="font-semibold text-gray-500 text-xs">Current Plan</div>
+            <div className="mt-1 font-semibold text-gray-900 text-lg">{isFreeTrial ? "Free trial" : currentPlan?.name || "—"}</div>
+            <div className="text-gray-500 text-xs">
               {currentPriceGhs && currentPriceDisplay !== null ? `${formatCurrency(currentPriceDisplay, displayCurrency)}/${overviewIntervalLabel}` : ""}
             </div>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-500">Currency</div>
-            <div className="mt-2 text-sm font-semibold text-gray-900">{displayCurrency || "—"}</div>
-            <div className="text-xs text-gray-500">Display currency</div>
+            <div className="font-semibold text-gray-500 text-xs">Currency</div>
+            <div className="mt-2 font-semibold text-gray-900 text-sm">{displayCurrency || "—"}</div>
+            <div className="text-gray-500 text-xs">Display currency</div>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-500">Next Billing Date</div>
-            <div className="mt-2 text-sm font-semibold text-gray-900">{nextBillingText}</div>
-            <div className="text-xs text-gray-500">
+            <div className="font-semibold text-gray-500 text-xs">Next Billing Date</div>
+            <div className="mt-2 font-semibold text-gray-900 text-sm">{nextBillingText}</div>
+            <div className="text-gray-500 text-xs">
               You will be charged {currentPriceGhs
                 ? currentPriceDisplay !== null
                   ? formatCurrency(currentPriceDisplay, displayCurrency)
@@ -942,52 +1089,52 @@ function BillingPage() {
 
       {planManagementCard}
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Free Days Earned</div>
-            <div className="text-xs text-gray-500">Rewards from your successful referrals</div>
+            <div className="font-semibold text-gray-900 text-sm">Free Days Earned</div>
+            <div className="text-gray-500 text-xs">Rewards from your successful referrals</div>
           </div>
           <button
             type="button"
             onClick={() => toPage("referrals")}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
           >
             View Referral Program
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-            <div className="text-xs font-semibold text-gray-500">Total Earned</div>
-            <div className="mt-2 text-2xl font-semibold text-green-700">{Number(freeMonths?.earned || 0) * referralBonusDays}</div>
-            <div className="text-xs text-gray-500">days ({Number(freeMonths?.earned || 0)} referral{Number(freeMonths?.earned || 0) === 1 ? "" : "s"})</div>
+            <div className="font-semibold text-gray-500 text-xs">Total Earned</div>
+            <div className="mt-2 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{Number(freeMonths?.earned || 0) * referralBonusDays}</div>
+            <div className="text-gray-500 text-xs">days ({Number(freeMonths?.earned || 0)} referral{Number(freeMonths?.earned || 0) === 1 ? "" : "s"})</div>
           </div>
 
           <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-            <div className="text-xs font-semibold text-gray-500">Used</div>
-            <div className="mt-2 text-2xl font-semibold text-orange-700">{Number(freeMonths?.used || 0) * referralBonusDays}</div>
-            <div className="text-xs text-gray-500">days ({Number(freeMonths?.used || 0)} referral{Number(freeMonths?.used || 0) === 1 ? "" : "s"})</div>
+            <div className="font-semibold text-gray-500 text-xs">Used</div>
+            <div className="mt-2 font-semibold text-orange-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{Number(freeMonths?.used || 0) * referralBonusDays}</div>
+            <div className="text-gray-500 text-xs">days ({Number(freeMonths?.used || 0)} referral{Number(freeMonths?.used || 0) === 1 ? "" : "s"})</div>
           </div>
 
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-            <div className="text-xs font-semibold text-gray-500">Remaining</div>
-            <div className="mt-2 text-2xl font-semibold text-blue-700">{freeRemaining * referralBonusDays}</div>
-            <div className="text-xs text-gray-500">days</div>
+            <div className="font-semibold text-gray-500 text-xs">Remaining</div>
+            <div className="mt-2 font-semibold text-blue-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{freeRemaining * referralBonusDays}</div>
+            <div className="text-gray-500 text-xs">days</div>
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
+        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-600 text-xs">
           <span className="font-semibold">How it works:</span> Each successful subscribed church you refer earns you {referralBonusDays} free day{referralBonusDays === 1 ? "" : "s"}. Free days are cumulative with no limit and apply automatically.
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Payment Methods</div>
-            <div className="text-xs text-gray-500">Manage your payment information</div>
-            <div className="mt-2 text-xs text-blue-700">
+            <div className="font-semibold text-gray-900 text-sm">Payment Methods</div>
+            <div className="text-gray-500 text-xs">Manage your payment information</div>
+            <div className="mt-2 text-blue-700 text-xs">
               {isGhana ? "Payment options: Visa/Mastercard, Mobile Money" : "Payment options: Visa/Mastercard"}
             </div>
           </div>
@@ -1006,7 +1153,7 @@ function BillingPage() {
               setAddMethodFieldErrors({});
             }}
             disabled={methodsLoading}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-xs"
           >
             Add Payment Method
           </button>
@@ -1020,7 +1167,7 @@ function BillingPage() {
                 <div key={m?._id || idx} className="rounded-xl border border-gray-200 bg-white p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-3">
-                      <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700">
+                      <div className="mt-0.5 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 md:h-12 md:w-12">
                         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                           <path d="M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
                           <path d="M10 17h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -1028,8 +1175,8 @@ function BillingPage() {
                       </div>
 
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-blue-800">{methodTitle(m)}</div>
-                        <div className="mt-0.5 text-xs text-gray-500">{methodSubtitle(m)}</div>
+                        <div className="font-semibold text-blue-800 text-sm">{methodTitle(m)}</div>
+                        <div className="mt-0.5 text-gray-500 text-xs">{methodSubtitle(m)}</div>
                       </div>
                     </div>
 
@@ -1057,7 +1204,7 @@ function BillingPage() {
                             setAddMethodFieldErrors({});
                           }}
                           disabled={methodsLoading}
-                          className="text-xs font-semibold text-blue-700 hover:underline disabled:opacity-60"
+                          className="font-semibold text-blue-700 hover:underline disabled:opacity-60 text-xs"
                         >
                           Edit
                         </button>
@@ -1079,7 +1226,7 @@ function BillingPage() {
                           }
                         }}
                         disabled={methodsLoading}
-                        className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-60"
+                        className="font-semibold text-red-600 hover:underline disabled:opacity-60 text-xs"
                       >
                         Remove
                       </button>
@@ -1090,7 +1237,7 @@ function BillingPage() {
               );
             })
           ) : (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No saved payment methods yet.</div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No saved payment methods yet.</div>
           )}
         </div>
 
@@ -1107,10 +1254,10 @@ function BillingPage() {
         >
           <div>
             {addMethodError ? (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{addMethodError}</div>
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{addMethodError}</div>
             ) : null}
 
-            <div className="text-xs font-semibold text-gray-700">Payment Provider</div>
+            <div className="font-semibold text-gray-700 text-xs">Payment Provider</div>
             <select
               value={newProvider}
               onChange={(e) => {
@@ -1120,7 +1267,7 @@ function BillingPage() {
                 setAddMethodFieldErrors({});
               }}
               disabled={methodsLoading}
-              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
             >
               <option value="">Select payment method</option>
               <option value="card">Visa/Mastercard</option>
@@ -1136,11 +1283,11 @@ function BillingPage() {
             {newProvider === "card" ? (
               <div className="mt-4">
                 {!editingMethodId && savedPaymentMethods.some((m) => m?.type === "card") ? (
-                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-xs">
                     <span className="font-semibold">One card allowed.</span> Saving this card will replace your existing saved card.
                   </div>
                 ) : null}
-                <div className="text-xs font-semibold text-gray-700">Card Number</div>
+                <div className="font-semibold text-gray-700 text-xs">Card Number</div>
                 <input
                   ref={cardNumberRef}
                   value={newCardNumber}
@@ -1163,15 +1310,15 @@ function BillingPage() {
                   }}
                   placeholder="1234 5678 9012 3456"
                   disabled={methodsLoading}
-                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tracking-widest"
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 tracking-widest text-sm"
                 />
                 {addMethodFieldErrors?.cardNumber ? (
-                  <div className="mt-1 text-xs font-semibold text-red-600">{addMethodFieldErrors.cardNumber}</div>
+                  <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.cardNumber}</div>
                 ) : null}
 
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <div className="text-xs font-semibold text-gray-700">Expiry</div>
+                    <div className="font-semibold text-gray-700 text-xs">Expiry</div>
                     <input
                       ref={cardExpiryRef}
                       value={newCardExpiry}
@@ -1202,14 +1349,14 @@ function BillingPage() {
                       }}
                       placeholder="MM/YY"
                       disabled={methodsLoading}
-                      className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                      className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
                     />
                     {addMethodFieldErrors?.expiry ? (
-                      <div className="mt-1 text-xs font-semibold text-red-600">{addMethodFieldErrors.expiry}</div>
+                      <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.expiry}</div>
                     ) : null}
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-700">CVV</div>
+                    <div className="font-semibold text-gray-700 text-xs">CVV</div>
                     <input
                       ref={cardCvvRef}
                       value={newCardCvv}
@@ -1229,16 +1376,16 @@ function BillingPage() {
                       }}
                       placeholder="123"
                       disabled={methodsLoading}
-                      className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                      className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
                     />
                     {addMethodFieldErrors?.cvv ? (
-                      <div className="mt-1 text-xs font-semibold text-red-600">{addMethodFieldErrors.cvv}</div>
+                      <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.cvv}</div>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="mt-4">
-                  <div className="text-xs font-semibold text-gray-700">Cardholder Name</div>
+                  <div className="font-semibold text-gray-700 text-xs">Cardholder Name</div>
                   <input
                     ref={cardHolderRef}
                     value={newCardHolderName}
@@ -1254,16 +1401,16 @@ function BillingPage() {
                     }}
                     placeholder="John Doe"
                     disabled={methodsLoading}
-                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
                   />
                   {addMethodFieldErrors?.holderName ? (
-                    <div className="mt-1 text-xs font-semibold text-red-600">{addMethodFieldErrors.holderName}</div>
+                    <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.holderName}</div>
                   ) : null}
                 </div>
               </div>
             ) : newProvider ? (
               <div className="mt-4">
-                <div className="text-xs font-semibold text-gray-700">Mobile Number</div>
+                <div className="font-semibold text-gray-700 text-xs">Mobile Number</div>
                 <div className="mt-2">
                   <PhoneNumberInput
                     value={newPhone}
@@ -1294,7 +1441,7 @@ function BillingPage() {
                   />
                 </div>
                 {addMethodFieldErrors?.phone ? (
-                  <div className="mt-1 text-xs font-semibold text-red-600">{addMethodFieldErrors.phone}</div>
+                  <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.phone}</div>
                 ) : null}
               </div>
             ) : null}
@@ -1304,7 +1451,7 @@ function BillingPage() {
                 type="button"
                 onClick={() => setShowAddPaymentMethod(false)}
                 disabled={methodsLoading}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
               >
                 Cancel
               </button>
@@ -1422,7 +1569,7 @@ function BillingPage() {
                   }
                 }}
                 disabled={methodsLoading}
-                className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60"
+                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60 text-sm"
               >
                 {methodsLoading ? "Saving…" : editingMethodId ? "Save Changes" : "Add Payment Method"}
               </button>
@@ -1431,41 +1578,41 @@ function BillingPage() {
         </ModalShell>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         <div>
-          <div className="text-sm font-semibold text-gray-900">Billing History</div>
-          <div className="text-xs text-gray-500">Complete record of all transactions and free day usage</div>
+          <div className="font-semibold text-gray-900 text-sm">Billing History</div>
+          <div className="text-gray-500 text-xs">Complete record of all transactions and free day usage</div>
         </div>
 
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-slate-100">
-              <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Type</th>
-                <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
-                <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Currency</th>
-                <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Status</th>
-                <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Invoice</th>
+              <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Currency</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Invoice</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {(Array.isArray(history) ? history : []).map((row, idx) => (
-                <tr key={row?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
-                  <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.createdAt ? formatShortDate(row.createdAt) : "—"}</td>
-                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.type === "free_month" ? "Free Days" : "Payment"}</td>
-                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{row?.type === "free_month" ? "—" : (isGhana || !usdToGhs ? formatCurrency(row?.amount || 0, row?.currency || "GHS") : formatCurrency((row?.amount || 0) / Number(usdToGhs), "USD"))}</td>
-                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{isGhana || !usdToGhs ? (row?.currency || "—") : "USD"}</td>
-                  <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
+                <tr key={row?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{row?.createdAt ? formatShortDate(row.createdAt) : "—"}</td>
+                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{row?.type === "free_month" ? "Free Days" : "Payment"}</td>
+                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{row?.type === "free_month" ? "—" : (isGhana || !usdToGhs ? formatCurrency(row?.amount || 0, row?.currency || "GHS") : formatCurrency((row?.amount || 0) / Number(usdToGhs), "USD"))}</td>
+                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{isGhana || !usdToGhs ? (row?.currency || "—") : "USD"}</td>
+                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                     <StatusPill value={row?.status || "—"}/>
                   </td>
-                  <td className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">
+                  <td className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">
                     {row?._id ? (
                       <a
                         href={getBillingInvoiceDownloadUrl(row._id)}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs font-semibold text-blue-700 hover:underline"
+                        className="font-semibold text-blue-700 hover:underline text-xs"
                       >
                         Download
                       </a>
@@ -1484,16 +1631,16 @@ function BillingPage() {
             type="button"
             onClick={() => loadHistoryPage(historyPagination?.prevPage)}
             disabled={!historyPagination?.prevPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
           >
             Prev
           </button>
-          <div className="text-sm text-gray-600">Page {historyPagination?.currentPage || 1}</div>
+          <div className="text-gray-600 text-sm">Page {historyPagination?.currentPage || 1}</div>
           <button
             type="button"
             onClick={() => loadHistoryPage(historyPagination?.nextPage)}
             disabled={!historyPagination?.nextPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
           >
             Next
           </button>
@@ -1510,8 +1657,8 @@ function BillingPage() {
         maxWidthClass="max-w-xl"
       >
         <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-sm font-semibold text-gray-900">If you cancel your subscription:</div>
-          <div className="mt-3 space-y-2 text-sm text-gray-700">
+          <div className="font-semibold text-gray-900 text-sm">If you cancel your subscription:</div>
+          <div className="mt-3 space-y-2 text-gray-700 text-sm">
             <div>- You will retain access until the end of the current billing period</div>
             <div>- You will not be charged again</div>
             <div>- Your data will be preserved</div>
@@ -1523,7 +1670,7 @@ function BillingPage() {
           <button
             type="button"
             onClick={() => setShowCancelConfirm(false)}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
           >
             Keep Subscription
           </button>
@@ -1543,7 +1690,7 @@ function BillingPage() {
               }
             }}
             disabled={manageLoading}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:opacity-60 text-sm"
           >
             Confirm Cancellation
           </button>
@@ -1558,7 +1705,7 @@ function BillingPage() {
         maxWidthClass="max-w-xl"
       >
         <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-sm text-gray-700">
+          <div className="text-gray-700 text-sm">
             The scheduled cancellation will be removed. Your subscription will automatically renew as normal on the next billing date.
           </div>
         </div>
@@ -1566,7 +1713,7 @@ function BillingPage() {
           <button
             type="button"
             onClick={() => setShowResumeConfirm(false)}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
           >
             Keep Cancellation
           </button>
@@ -1586,7 +1733,7 @@ function BillingPage() {
               }
             }}
             disabled={manageLoading}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+            className="rounded-lg bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700 disabled:opacity-60 text-sm"
           >
             Confirm Resume
           </button>
@@ -1601,8 +1748,8 @@ function BillingPage() {
         maxWidthClass="max-w-xl"
       >
         <div className="rounded-xl border border-yellow-100 bg-yellow-50 p-4">
-          <div className="text-sm font-semibold text-gray-900">If you downgrade your plan:</div>
-          <div className="mt-3 space-y-2 text-sm text-gray-700">
+          <div className="font-semibold text-gray-900 text-sm">If you downgrade your plan:</div>
+          <div className="mt-3 space-y-2 text-gray-700 text-sm">
             <div>- The change takes effect at the end of your current billing period</div>
             <div>- You will retain all existing data</div>
             <div>- Some features and actions will be limited to your new plan</div>
@@ -1614,7 +1761,7 @@ function BillingPage() {
             type="button"
             onClick={() => { setShowDowngradeConfirm(false); setPendingDowngradePlan(null); }}
             disabled={manageLoading}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Keep Current Plan
           </button>
@@ -1638,7 +1785,7 @@ function BillingPage() {
               }
             }}
             disabled={manageLoading}
-            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+            className="rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700 disabled:opacity-60 text-sm"
           >
             {manageLoading ? "Processing…" : "Confirm Downgrade"}
           </button>
@@ -1666,16 +1813,16 @@ function BillingPage() {
             onClose={() => { setShowProrationModal(false); setProrationData(null); }}
             maxWidthClass="max-w-xl"
           >
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Current Plan</div>
-                <div className="mt-1 text-base font-bold text-gray-900">{prorationData.currentPlan?.name || "—"}</div>
-                <div className="mt-1 text-xs text-gray-500">{display(bd.currentPlanPrice ?? 0)}/{billingInterval}</div>
+                <div className="font-semibold text-gray-500 uppercase tracking-wide text-xs">Current Plan</div>
+                <div className="mt-1 font-bold text-gray-900 text-base">{prorationData.currentPlan?.name || "—"}</div>
+                <div className="mt-1 text-gray-500 text-xs">{display(bd.currentPlanPrice ?? 0)}/{billingInterval}</div>
               </div>
               <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide">New Plan</div>
-                <div className="mt-1 text-base font-bold text-blue-900">{prorationData.newPlan?.name || "—"}</div>
-                <div className="mt-1 text-xs text-blue-700">{display(bd.newPlanPrice ?? 0)}/{billingInterval}</div>
+                <div className="font-semibold text-blue-600 uppercase tracking-wide text-xs">New Plan</div>
+                <div className="mt-1 font-bold text-blue-900 text-base">{prorationData.newPlan?.name || "—"}</div>
+                <div className="mt-1 text-blue-700 text-xs">{display(bd.newPlanPrice ?? 0)}/{billingInterval}</div>
               </div>
             </div>
 
@@ -1694,11 +1841,11 @@ function BillingPage() {
               </div>
               <div className="flex justify-between px-4 py-3 bg-blue-50 rounded-b-xl">
                 <span className="font-bold text-gray-900">You pay today</span>
-                <span className="text-xl font-bold text-blue-700">{display(proratedGhs)}</span>
+                <span className="font-bold text-blue-700 md:text-2xl lg:text-3xl text-xl">{display(proratedGhs)}</span>
               </div>
             </div>
 
-            <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
+            <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-gray-600 text-xs">
               Your plan upgrades <strong>immediately</strong> on payment. Next renewal on <strong>{renewDate}</strong> at the full {prorationData.newPlan?.name} price ({display(bd.newPlanPrice ?? 0)}).
             </div>
 
@@ -1706,7 +1853,7 @@ function BillingPage() {
               <button
                 type="button"
                 onClick={() => { setShowProrationModal(false); setProrationData(null); }}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
               >
                 Cancel
               </button>
@@ -1716,7 +1863,7 @@ function BillingPage() {
                   setShowProrationModal(false);
                   onPay();
                 }}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
               >
                 Proceed to Payment — {display(proratedGhs)}
               </button>
@@ -1755,7 +1902,7 @@ function BillingPage() {
                 </div>
                 {isProration && (
                   <>
-                    <div className="flex items-center justify-between gap-4 text-sm text-green-700">
+                    <div className="flex items-center justify-between gap-4 text-green-700 text-sm">
                       <div>Credit from {prorationData.currentPlan?.name}</div>
                       <div className="font-semibold">
                         − {isGhana ? formatCurrency(bd.currentPlanCredit ?? 0, "GHS") : toDisplayPrice(bd.currentPlanCredit ?? 0) !== null ? formatCurrency(toDisplayPrice(bd.currentPlanCredit ?? 0), "USD") : "—"}
@@ -1783,11 +1930,11 @@ function BillingPage() {
 
               <div className="mt-4 border-t border-blue-100 pt-4">
                 <div className="flex items-center justify-between gap-4">
-                  <div className="text-sm font-semibold text-gray-700">{isProration ? "Prorated Amount Due Now" : "Total Due Now"}</div>
-                  <div className="text-2xl font-semibold text-gray-900">{displayAmt}</div>
+                  <div className="font-semibold text-gray-700 text-sm">{isProration ? "Prorated Amount Due Now" : "Total Due Now"}</div>
+                  <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{displayAmt}</div>
                 </div>
                 {isProration && (
-                  <div className="mt-1 text-xs text-gray-500">
+                  <div className="mt-1 text-gray-500 text-xs">
                     Next renewal on {bd.retainNextBillingDate ? new Date(bd.retainNextBillingDate).toLocaleDateString() : "—"} at full price.
                   </div>
                 )}
@@ -1806,8 +1953,8 @@ function BillingPage() {
               </svg>
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-gray-900">What happens next:</div>
-              <div className="mt-2 space-y-1 text-sm text-gray-600">
+              <div className="font-semibold text-gray-900 text-sm">What happens next:</div>
+              <div className="mt-2 space-y-1 text-gray-600 text-sm">
                 <div>- You'll be charged {isGhana
                     ? formatCurrency(selectedPriceGhs ?? 0, "GHS")
                     : selectedPriceDisplay !== null
@@ -1825,7 +1972,7 @@ function BillingPage() {
           <button
             type="button"
             onClick={() => setShowPaymentSummary(false)}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
@@ -1835,7 +1982,7 @@ function BillingPage() {
               setShowPaymentSummary(false);
               setShowPaymentMethod(true);
             }}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
           >
             Continue to Payment
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -1856,7 +2003,7 @@ function BillingPage() {
       >
         <div>
           {checkoutError ? (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{checkoutError}</div>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{checkoutError}</div>
           ) : null}
 
           <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
@@ -1865,20 +2012,20 @@ function BillingPage() {
               <span className="font-semibold text-gray-900">{selectedPlan?.name || "—"}</span>
             </div>
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-900">
+              <div className="font-semibold text-gray-900 text-sm">
                 {isGhana
                   ? formatCurrency(selectedPriceGhs ?? 0, "GHS")
                   : selectedPriceDisplay !== null
                     ? formatCurrency(selectedPriceDisplay, "USD")
                     : "—"}
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-gray-500 text-xs">
                 {({ hourly: "/hour", daily: "/day", weekly: "/week", monthly: "/month", quarterly: "/quarter", halfYear: "/6 months", yearly: "/year" })[billingInterval] || `/${billingInterval}`}
               </div>
             </div>
           </div>
 
-          <div className="text-sm font-semibold text-gray-900">Saved Payment Methods</div>
+          <div className="font-semibold text-gray-900 text-sm">Saved Payment Methods</div>
           <div className="mt-3 space-y-3">
             {savedPaymentMethods.length > 0 ? (
               savedPaymentMethods.map((m, idx) => {
@@ -1903,15 +2050,15 @@ function BillingPage() {
                         }}
                         className="h-4 w-4"
                       />
-                      <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700">
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 md:h-12 md:w-12">
                         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                           <path d="M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
                           <path d="M10 17h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                         </svg>
                       </div>
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-blue-800">{methodTitle(m)}</div>
-                        <div className="truncate text-xs text-gray-500">{methodSubtitle(m)}</div>
+                        <div className="truncate font-semibold text-blue-800 text-sm">{methodTitle(m)}</div>
+                        <div className="truncate text-gray-500 text-xs">{methodSubtitle(m)}</div>
                       </div>
                     </div>
 
@@ -1922,12 +2069,12 @@ function BillingPage() {
                 );
               })
             ) : (
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No saved payment methods yet.</div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No saved payment methods yet.</div>
             )}
           </div>
 
           <div className="mt-5 flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-900">Add New Payment Method</div>
+            <div className="font-semibold text-gray-900 text-sm">Add New Payment Method</div>
             <button
               type="button"
               onClick={() => {
@@ -1941,7 +2088,7 @@ function BillingPage() {
                 setNewCardHolderName("");
                 setAddMethodError("");
               }}
-              className="text-sm font-semibold text-blue-700 hover:underline"
+              className="font-semibold text-blue-700 hover:underline text-sm"
             >
               + Add New
             </button>
@@ -1955,7 +2102,7 @@ function BillingPage() {
                 setShowPaymentMethod(false);
                 setShowPaymentSummary(true);
               }}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 text-sm"
               disabled={checkoutLoading}
             >
               Back
@@ -2113,7 +2260,7 @@ function BillingPage() {
                   setCheckoutLoading(false);
                 }
               }}
-              className="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60"
+              className="rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60 text-sm"
               disabled={checkoutLoading}
             >
               {checkoutLoading
@@ -2173,21 +2320,21 @@ function BillingPage() {
             )}
           </div>
 
-          <div className="mt-4 text-lg font-semibold text-gray-900">
+          <div className="mt-4 font-semibold text-gray-900 text-lg">
             {paymentResult?.status === "success"
               ? "Payment Completed Successfully"
               : paymentResult?.status === "pending"
                 ? "Payment Pending"
                 : "Payment Not Completed"}
           </div>
-          <div className="mt-2 text-sm text-gray-600">
+          <div className="mt-2 text-gray-600 text-sm">
             Amount paid: <span className="font-semibold text-gray-900">{formatCurrency(paymentResult?.amount ?? 0, "GHS")}</span>
           </div>
 
           {paymentResult?.status === "success" ? (
             <div className="mt-5 w-full rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-left">
-              <div className="text-sm font-semibold text-green-900">What's Next:</div>
-              <div className="mt-2 space-y-1 text-sm text-green-900/90">
+              <div className="font-semibold text-green-900 text-sm">What's Next:</div>
+              <div className="mt-2 space-y-1 text-green-900/90 text-sm">
                 <div>- Your {selectedPlan?.name || currentPlan?.name || "subscription"} is now active</div>
                 <div>- Receipt has been sent to your email</div>
                 <div>- Next billing: {nextBillingText}</div>
@@ -2212,7 +2359,7 @@ function BillingPage() {
       </ModalShell>
 
       {toastMessage ? (
-        <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-lg">
+        <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-800 shadow-lg text-sm">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-white">
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">

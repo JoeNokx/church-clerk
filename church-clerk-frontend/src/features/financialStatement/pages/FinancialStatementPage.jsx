@@ -226,8 +226,8 @@ function FinancialStatementPage() {
   if (!canRead) {
     return (
       <div className="max-w-6xl">
-        <h2 className="text-2xl font-semibold text-gray-900">Financial Statement</h2>
-        <p className="mt-2 text-sm text-gray-600">You do not have permission to view financial statements.</p>
+        <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Financial Statement</h2>
+        <p className="mt-2 text-gray-600 text-sm">You do not have permission to view financial statements.</p>
       </div>
     );
   }
@@ -236,8 +236,8 @@ function FinancialStatementPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Financial Statement</h2>
-          <p className="mt-2 text-sm text-gray-600">Overview of income and expenses for the selected period</p>
+          <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Financial Statement</h2>
+          <p className="mt-2 text-gray-600 text-sm">Overview of income and expenses for the selected period</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -248,7 +248,7 @@ function FinancialStatementPage() {
                 setExportError("");
                 setExportOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                 <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -263,37 +263,37 @@ function FinancialStatementPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-1">
+          <div className="cck-tab-bar flex items-center gap-2 rounded-lg bg-gray-50 p-1">
             <button
               type="button"
               onClick={() => setTab("monthly")}
-              className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "monthly" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-4 py-2 font-semibold text-sm ${tab === "monthly" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
             >
               Monthly
             </button>
             <button
               type="button"
               onClick={() => setTab("quarterly")}
-              className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "quarterly" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-4 py-2 font-semibold text-sm ${tab === "quarterly" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
             >
               Quarterly
             </button>
             <button
               type="button"
               onClick={() => setTab("annual")}
-              className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === "annual" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-4 py-2 font-semibold text-sm ${tab === "annual" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
             >
               Yearly
             </button>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+          <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3">
             {tab === "monthly" ? (
               <>
                 <div className="flex items-center gap-2">
-                  <div className="hidden sm:block text-xs font-semibold text-gray-500">Month</div>
+                  <div className="hidden md:block font-semibold text-gray-500 text-xs">Month</div>
                   <select
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
                     value={month}
                     onChange={(e) => setMonth(Number(e.target.value))}
                   >
@@ -305,9 +305,9 @@ function FinancialStatementPage() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="hidden sm:block text-xs font-semibold text-gray-500">Year</div>
+                  <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
                   <select
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
                     value={monthYear}
                     onChange={(e) => setMonthYear(Number(e.target.value))}
                   >
@@ -324,9 +324,9 @@ function FinancialStatementPage() {
             {tab === "quarterly" ? (
               <>
                 <div className="flex items-center gap-2">
-                  <div className="hidden sm:block text-xs font-semibold text-gray-500">Quarter</div>
+                  <div className="hidden md:block font-semibold text-gray-500 text-xs">Quarter</div>
                   <select
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
                     value={quarter}
                     onChange={(e) => setQuarter(Number(e.target.value))}
                   >
@@ -337,9 +337,9 @@ function FinancialStatementPage() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="hidden sm:block text-xs font-semibold text-gray-500">Year</div>
+                  <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
                   <select
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
                     value={quarterYear}
                     onChange={(e) => setQuarterYear(Number(e.target.value))}
                   >
@@ -355,9 +355,9 @@ function FinancialStatementPage() {
 
             {tab === "annual" ? (
               <div className="flex items-center gap-2">
-                <div className="hidden sm:block text-xs font-semibold text-gray-500">Year</div>
+                <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
                 <select
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
                   value={annualYear}
                   onChange={(e) => setAnnualYear(Number(e.target.value))}
                 >
@@ -372,30 +372,30 @@ function FinancialStatementPage() {
           </div>
         </div>
 
-        <div className="mt-4 text-sm text-gray-700">
+        <div className="mt-4 text-gray-700 text-sm">
           <span className="font-semibold">Period:</span> {statement?.period?.label || "—"}
         </div>
       </div>
 
       {error ? (
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{error}</div>
       ) : null}
 
       {loading ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">Loading statement…</div>
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 text-gray-600 md:p-6 lg:p-8 text-sm">Loading statement…</div>
       ) : null}
 
       {!loading && !error ? (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-gray-500">Total Income</div>
-                  <div className="mt-2 text-lg font-semibold text-gray-900">{money(kpi.totalIncome)}</div>
-                  <div className="mt-1 text-xs font-semibold text-green-600">{formatPercent(kpi.incomeChangePct)} {comparisonLabel}</div>
+                  <div className="font-semibold text-gray-500 text-xs">Total Income</div>
+                  <div className="mt-2 font-semibold text-gray-900 text-lg">{money(kpi.totalIncome)}</div>
+                  <div className="mt-1 font-semibold text-green-600 text-xs">{formatPercent(kpi.incomeChangePct)} {comparisonLabel}</div>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                <div className="h-11 w-11 rounded-lg bg-green-50 flex items-center justify-center md:h-12 md:w-12">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-600">
                     <path d="M12 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     <path d="M7 10l5-5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -404,14 +404,14 @@ function FinancialStatementPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-gray-500">Total Expenses</div>
-                  <div className="mt-2 text-lg font-semibold text-gray-900">{money(kpi.totalExpenses)}</div>
-                  <div className="mt-1 text-xs font-semibold text-orange-600">{formatPercent(kpi.expensesChangePct)} {comparisonLabel}</div>
+                  <div className="font-semibold text-gray-500 text-xs">Total Expenses</div>
+                  <div className="mt-2 font-semibold text-gray-900 text-lg">{money(kpi.totalExpenses)}</div>
+                  <div className="mt-1 font-semibold text-orange-600 text-xs">{formatPercent(kpi.expensesChangePct)} {comparisonLabel}</div>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                <div className="h-11 w-11 rounded-lg bg-orange-50 flex items-center justify-center md:h-12 md:w-12">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-500">
                     <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     <path d="M17 14l-5 5-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -420,16 +420,16 @@ function FinancialStatementPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-gray-500">Surplus / Deficit</div>
-                  <div className={`mt-2 text-lg font-semibold ${Number(kpi.surplus || 0) >= 0 ? "text-gray-900" : "text-red-700"}`}>
+                  <div className="font-semibold text-gray-500 text-xs">Surplus / Deficit</div>
+                  <div className={`mt-2 font-semibold text-lg ${Number(kpi.surplus || 0) >= 0 ? "text-gray-900" : "text-red-700"}`}>
                     {money(kpi.surplus)}
                   </div>
-                  <div className="mt-1 text-xs font-semibold text-blue-700">{formatPercent(kpi.surplusPctOfIncome)} of income</div>
+                  <div className="mt-1 font-semibold text-blue-700 text-xs">{formatPercent(kpi.surplusPctOfIncome)} of income</div>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-600">
                     <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     <path d="M7 17V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -443,22 +443,22 @@ function FinancialStatementPage() {
 
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-xl border border-gray-200 bg-white">
-              <div className="border-b border-gray-200 p-5">
-                <div className="text-sm font-semibold text-gray-900">Income Breakdown</div>
-                <div className="text-xs text-gray-500">All income sources for the selected period</div>
+              <div className="border-b border-gray-200 p-4 md:p-6 lg:p-8">
+                <div className="font-semibold text-gray-900 text-sm">Income Breakdown</div>
+                <div className="text-gray-500 text-xs">All income sources for the selected period</div>
               </div>
-              <div className="p-5">
+              <div className="p-4 md:p-6 lg:p-8">
                 {sortedIncome.length === 0 ? (
-                  <div className="text-sm text-gray-600">No income records found for this period.</div>
+                  <div className="text-gray-600 text-sm">No income records found for this period.</div>
                 ) : (
                   <div className="space-y-4">
                     {sortedIncome.map((row) => (
                       <div key={row.key} className="space-y-2 rounded-lg border border-gray-200 p-3">
                         <div className="flex items-center justify-between gap-4">
-                          <div className="text-sm font-semibold text-gray-900">{row.label}</div>
-                          <div className="text-sm font-semibold text-gray-900">{money(row.amount)}</div>
+                          <div className="font-semibold text-gray-900 text-sm">{row.label}</div>
+                          <div className="font-semibold text-gray-900 text-sm">{money(row.amount)}</div>
                         </div>
-                        <div className="flex items-center justify-between gap-4 text-xs text-gray-500">
+                        <div className="flex items-center justify-between gap-4 text-gray-500 text-xs">
                           <div>{Math.round(Number(row.percentage || 0) * 10) / 10}% of income</div>
                           <div className="w-full max-w-xs">
                             <div className="h-2 w-full rounded-full bg-gray-100">
@@ -477,22 +477,22 @@ function FinancialStatementPage() {
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white">
-              <div className="border-b border-gray-200 p-5">
-                <div className="text-sm font-semibold text-gray-900">Expenses Breakdown</div>
-                <div className="text-xs text-gray-500">All expense categories for the selected period</div>
+              <div className="border-b border-gray-200 p-4 md:p-6 lg:p-8">
+                <div className="font-semibold text-gray-900 text-sm">Expenses Breakdown</div>
+                <div className="text-gray-500 text-xs">All expense categories for the selected period</div>
               </div>
-              <div className="p-5">
+              <div className="p-4 md:p-6 lg:p-8">
                 {sortedExpenses.length === 0 ? (
-                  <div className="text-sm text-gray-600">No expense records found for this period.</div>
+                  <div className="text-gray-600 text-sm">No expense records found for this period.</div>
                 ) : (
                   <div className="space-y-4">
                     {sortedExpenses.map((row) => (
                       <div key={row.key} className="space-y-2 rounded-lg border border-gray-200 p-3">
                         <div className="flex items-center justify-between gap-4">
-                          <div className="text-sm font-semibold text-gray-900">{row.label}</div>
-                          <div className="text-sm font-semibold text-gray-900">{money(row.amount)}</div>
+                          <div className="font-semibold text-gray-900 text-sm">{row.label}</div>
+                          <div className="font-semibold text-gray-900 text-sm">{money(row.amount)}</div>
                         </div>
-                        <div className="flex items-center justify-between gap-4 text-xs text-gray-500">
+                        <div className="flex items-center justify-between gap-4 text-gray-500 text-xs">
                           <div>{Math.round(Number(row.percentage || 0) * 10) / 10}% of expenses</div>
                           <div className="w-full max-w-xs">
                             <div className="h-2 w-full rounded-full bg-gray-100">
@@ -511,9 +511,9 @@ function FinancialStatementPage() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+              <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-700">
                   <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   <path d="M7 17V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -523,8 +523,8 @@ function FinancialStatementPage() {
               </div>
 
               <div>
-                <div className="text-sm font-semibold text-gray-900">Financial Summary</div>
-                <div className="mt-2 text-sm text-gray-700">{summaryText || "—"}</div>
+                <div className="font-semibold text-gray-900 text-sm">Financial Summary</div>
+                <div className="mt-2 text-gray-700 text-sm">{summaryText || "—"}</div>
               </div>
             </div>
           </div>
@@ -534,18 +534,18 @@ function FinancialStatementPage() {
       {exportOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => (!exporting ? setExportOpen(false) : null)} />
-          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
+          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-lg font-semibold text-gray-900">Export Statement</div>
-                <div className="mt-1 text-sm text-gray-600">Choose a format for the current view.</div>
+                <div className="font-semibold text-gray-900 text-lg">Export Statement</div>
+                <div className="mt-1 text-gray-600 text-sm">Choose a format for the current view.</div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setExportOpen(false)}
                 disabled={exporting}
-                className="rounded-md px-2 py-1 text-sm font-semibold text-gray-500 hover:text-gray-900 disabled:opacity-50"
+                className="rounded-md px-2 py-1 font-semibold text-gray-500 hover:text-gray-900 disabled:opacity-50 text-sm"
               >
                 ×
               </button>
@@ -556,7 +556,7 @@ function FinancialStatementPage() {
                 type="button"
                 onClick={() => handleExport("pdf")}
                 disabled={exporting}
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60"
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60 text-sm"
               >
                 Export as PDF
               </button>
@@ -564,20 +564,20 @@ function FinancialStatementPage() {
                 type="button"
                 onClick={() => handleExport("excel")}
                 disabled={exporting}
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60"
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60 text-sm"
               >
                 Export as Excel
               </button>
             </div>
 
-            {exportError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{exportError}</div> : null}
+            {exportError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{exportError}</div> : null}
 
             <div className="mt-5 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setExportOpen(false)}
                 disabled={exporting}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
               >
                 Cancel
               </button>

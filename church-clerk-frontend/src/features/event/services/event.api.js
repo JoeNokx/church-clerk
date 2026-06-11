@@ -8,8 +8,8 @@ export const getEventStats = async (params, config = {}) => {
   return await http.get("/event/events/stats", { params, ...(config || {}) });
 };
 
-export const getUpcomingEvents = async (params) => {
-  return await getEvents({ ...(params || {}), status: "upcoming" });
+export const getUpcomingEvents = async (params, { churchId } = {}) => {
+  return await getEvents({ ...(params || {}), status: "upcoming" }, churchId ? { headers: { "x-active-church": churchId } } : {});
 };
 
 export const getOngoingEvents = async (params) => {

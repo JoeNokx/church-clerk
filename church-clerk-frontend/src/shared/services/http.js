@@ -73,10 +73,12 @@ async function fetchCsrfToken() {
 api.interceptors.request.use(
   async (config) => {
     startProgress();
-    // Active church from localStorage
-    const activeChurch = localStorage.getItem("activeChurch");
-    if (activeChurch) {
-      config.headers["x-active-church"] = activeChurch;
+    // Active church from localStorage (respect explicit per-request override)
+    if (!config.headers["x-active-church"]) {
+      const activeChurch = localStorage.getItem("activeChurch");
+      if (activeChurch) {
+        config.headers["x-active-church"] = activeChurch;
+      }
     }
 
     const token = getStoredAuthToken();

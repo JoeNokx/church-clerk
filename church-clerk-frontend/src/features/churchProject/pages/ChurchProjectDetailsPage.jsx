@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
@@ -77,15 +77,15 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
-            <div className="text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
+            <div className="font-semibold text-gray-900 text-lg">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -93,7 +93,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -104,22 +104,22 @@ function ConfirmModal({ open, title, message, confirmLabel, onCancel, onConfirm 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
           >
             {confirmLabel}
           </button>
@@ -136,7 +136,7 @@ function DateRangePopover({ dateFrom, dateTo, onChangeFrom, onChangeTo, onClear 
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
           <path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -146,23 +146,23 @@ function DateRangePopover({ dateFrom, dateTo, onChangeFrom, onChangeTo, onClear 
       {open && (
         <div className="absolute right-0 z-10 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-lg">
           <div className="p-4">
-            <div className="text-sm font-semibold text-gray-900 mb-3">Filter by date range</div>
+            <div className="font-semibold text-gray-900 mb-3 text-sm">Filter by date range</div>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-500">From</label>
+                <label className="block font-semibold text-gray-500 text-xs">From</label>
                 <input
                   value={dateFrom}
                   onChange={(e) => onChangeFrom(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="mt-1 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   type="date"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500">To</label>
+                <label className="block font-semibold text-gray-500 text-xs">To</label>
                 <input
                   value={dateTo}
                   onChange={(e) => onChangeTo(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="mt-1 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   type="date"
                 />
               </div>
@@ -171,14 +171,14 @@ function DateRangePopover({ dateFrom, dateTo, onChangeFrom, onChangeTo, onClear 
               <button
                 type="button"
                 onClick={() => { setOpen(false); onClear?.(); }}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
               >
                 Clear
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-800"
+                className="rounded-lg bg-blue-700 px-3 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-xs"
               >
                 Apply
               </button>
@@ -259,46 +259,46 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Contributor</label>
+          <label className="block font-semibold text-gray-500 text-xs">Contributor</label>
           <input
             value={contributorName}
             onChange={(e) => setContributorName(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="e.g., John Mensah"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="number"
               placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Notes</label>
+          <label className="block font-semibold text-gray-500 text-xs">Notes</label>
           <input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
             maxLength={25}
           />
@@ -308,14 +308,14 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={disabled || saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Add Contribution"}
           </button>
@@ -394,46 +394,46 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Spent On</label>
+          <label className="block font-semibold text-gray-500 text-xs">Spent On</label>
           <input
             value={spentOn}
             onChange={(e) => setSpentOn(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="e.g., Foundation materials"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="number"
               placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description</label>
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
             maxLength={25}
           />
@@ -443,14 +443,14 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={disabled || saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Record Expense"}
           </button>
@@ -475,6 +475,18 @@ function ChurchProjectDetailsPage() {
   const canDelete = useMemo(() => (typeof can === "function" ? can("churchProjects", "delete") : false), [can]);
 
   const [tab, setTab] = useState("contributions");
+
+  const [actionMenuId, setActionMenuId] = useState(null);
+  const actionMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!actionMenuId) return;
+    const onDoc = (e) => {
+      if (!actionMenuRef.current?.contains(e.target)) setActionMenuId(null);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [actionMenuId]);
 
   const [kpiLoading, setKpiLoading] = useState(true);
   const [kpiError, setKpiError] = useState("");
@@ -641,8 +653,8 @@ function ChurchProjectDetailsPage() {
   if (!projectId) {
     return (
       <div className="max-w-6xl">
-        <div className="text-2xl font-semibold text-gray-900">Project Details</div>
-        <div className="mt-2 text-sm text-gray-600">No project selected.</div>
+        <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Project Details</div>
+        <div className="mt-2 text-gray-600 text-sm">No project selected.</div>
       </div>
     );
   }
@@ -654,7 +666,7 @@ function ChurchProjectDetailsPage() {
           <button
             type="button"
             onClick={() => toPage("church-projects")}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:underline"
+            className="inline-flex items-center gap-2 font-semibold text-blue-700 hover:underline text-sm"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
               <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -662,39 +674,39 @@ function ChurchProjectDetailsPage() {
             Back to Projects
           </button>
 
-          <div className="mt-3 text-2xl font-semibold text-gray-900">
+          <div className="mt-3 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">
             {kpiLoading ? <Skeleton height={26} width={220} /> : projectName || "Project"}
           </div>
-          <div className="mt-2 text-sm text-gray-600">{kpi?.description || ""}</div>
+          <div className="mt-2 text-gray-600 text-sm">{kpi?.description || ""}</div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
+          <span className={`inline-flex items-center rounded-full px-3 py-1 font-semibold ${badge.cls} text-xs`}>{badge.label}</span>
         </div>
       </div>
 
-      {kpiError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{kpiError}</div> : null}
+      {kpiError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{kpiError}</div> : null}
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Target Amount</div>
-          <div className="mt-3 text-2xl font-semibold text-purple-700">{formatCurrency(kpi?.targetAmount || 0, currency)}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Target Amount</div>
+          <div className="mt-2 font-semibold text-gray-900 text-lg">{formatCurrency(kpi?.targetAmount || 0, currency)}</div>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Raised</div>
-          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(kpi?.totalContributions || 0, currency)}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Total Raised</div>
+          <div className="mt-2 font-semibold text-gray-900 text-lg">{formatCurrency(kpi?.totalContributions || 0, currency)}</div>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Spent</div>
-          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(kpi?.totalExpenses || 0, currency)}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Total Spent</div>
+          <div className="mt-2 font-semibold text-gray-900 text-lg">{formatCurrency(kpi?.totalExpenses || 0, currency)}</div>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Balance</div>
-          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatCurrency(kpi?.balance || 0, currency)}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Balance</div>
+          <div className="mt-2 font-semibold text-gray-900 text-lg">{formatCurrency(kpi?.balance || 0, currency)}</div>
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between text-gray-500 text-xs">
           <div>Fundraising Progress</div>
           <div className="text-blue-700 font-semibold">{kpi?.progressPercentage || "0%"}</div>
         </div>
@@ -704,8 +716,8 @@ function ChurchProjectDetailsPage() {
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-200 px-5 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="cck-tab-bar flex items-center gap-2">
             <button
               type="button"
               onClick={() => setTab("contributions")}
@@ -736,7 +748,7 @@ function ChurchProjectDetailsPage() {
                     setContribPage(1);
                   }}
                   placeholder="Search contributor..."
-                  className="h-10 w-full sm:w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
                 />
                 <DateRangePopover
                   dateFrom={contribDateFrom}
@@ -749,9 +761,9 @@ function ChurchProjectDetailsPage() {
                   type="button"
                   onClick={openCreateContribution}
                   disabled={!canWrite}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
-                  <span className="text-lg leading-none">+</span>
+                  <span className="leading-none text-lg">+</span>
                   Add Contribution
                 </button>
               </>
@@ -764,7 +776,7 @@ function ChurchProjectDetailsPage() {
                     setExpensePage(1);
                   }}
                   placeholder="Search spent on..."
-                  className="h-10 w-full sm:w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
                 />
                 <DateRangePopover
                   dateFrom={expenseDateFrom}
@@ -777,9 +789,9 @@ function ChurchProjectDetailsPage() {
                   type="button"
                   onClick={openCreateExpense}
                   disabled={!canWrite}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
-                  <span className="text-lg leading-none">+</span>
+                  <span className="leading-none text-lg">+</span>
                   Record Expense
                 </button>
               </>
@@ -790,13 +802,13 @@ function ChurchProjectDetailsPage() {
         {tab === "contributions" ? (
           <div>
             {contribLoading ? (
-              <div className="p-5">
+              <div className="p-4 md:p-6 lg:p-8">
                 <Skeleton height={14} count={6} />
               </div>
             ) : null}
             {contribError ? (
-              <div className="p-5">
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{contribError}</div>
+              <div className="p-4 md:p-6 lg:p-8">
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{contribError}</div>
               </div>
             ) : null}
 
@@ -805,40 +817,45 @@ function ChurchProjectDetailsPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Contributor</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Notes</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Recorded By</th>
-                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Contributor</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Notes</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
+                        <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {contribRows.map((row, idx) => (
-                        <tr key={row?._id ?? `c-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.contributorName || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.amount || 0, currency)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.date)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 max-w-[320px] break-words">{row?.notes || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{row?.createdBy?.fullName || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-2">
+                        <tr key={row?._id ?? `c-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.contributorName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[320px] break-words px-4 md:px-6">{row?.notes || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            <div className="md:hidden relative flex justify-end" ref={actionMenuId === `c-${row?._id}` ? actionMenuRef : null}>
                               <button
                                 type="button"
-                                onClick={() => openEditContribution(row)}
-                                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                                aria-label="Row actions"
+                                onClick={() => setActionMenuId((p) => p === `c-${row?._id}` ? null : `c-${row?._id}`)}
+                                className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
                               >
-                                Edit
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-gray-500">
+                                  <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
+                                </svg>
                               </button>
-
-                              <button
-                                type="button"
-                                onClick={() => openConfirmDelete("contribution", row?._id)}
-                                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 shadow-sm hover:bg-gray-50"
-                              >
-                                Delete
-                              </button>
+                              {actionMenuId === `c-${row?._id}` && (
+                                <div className="absolute right-0 top-full z-50 mt-1 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+                                  <button type="button" onClick={() => { openEditContribution(row); setActionMenuId(null); }} className="w-full px-3 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs">Edit</button>
+                                  <button type="button" onClick={() => { openConfirmDelete("contribution", row?._id); setActionMenuId(null); }} className="w-full px-3 py-2 text-left font-semibold text-red-600 hover:bg-gray-50 text-xs">Delete</button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="hidden md:flex items-center justify-end gap-2">
+                              <button type="button" onClick={() => openEditContribution(row)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
+                              <button type="button" onClick={() => openConfirmDelete("contribution", row?._id)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs">Delete</button>
                             </div>
                           </td>
                         </tr>
@@ -847,25 +864,25 @@ function ChurchProjectDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="p-5 text-sm text-gray-600">No contribution record found.</div>
+                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No contribution record found.</div>
               )
             ) : null}
 
-            <div className="flex items-center justify-end gap-3 px-6 max-sm:px-4 py-3">
+            <div className="flex items-center justify-end gap-3 max-md:px-4 py-3 px-4 md:px-6">
               <button
                 type="button"
                 onClick={() => setContribPage((p) => Math.max(1, p - 1))}
                 disabled={!contribPagination?.hasPrev}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
               >
                 Prev
               </button>
-              <div className="text-sm text-gray-600">Page {contribPagination?.currentPage || 1}</div>
+              <div className="text-gray-600 text-sm">Page {contribPagination?.currentPage || 1}</div>
               <button
                 type="button"
                 onClick={() => setContribPage((p) => p + 1)}
                 disabled={!contribPagination?.hasNext}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
               >
                 Next
               </button>
@@ -874,13 +891,13 @@ function ChurchProjectDetailsPage() {
         ) : (
           <div>
             {expenseLoading ? (
-              <div className="p-5">
+              <div className="p-4 md:p-6 lg:p-8">
                 <Skeleton height={14} count={6} />
               </div>
             ) : null}
             {expenseError ? (
-              <div className="p-5">
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{expenseError}</div>
+              <div className="p-4 md:p-6 lg:p-8">
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{expenseError}</div>
               </div>
             ) : null}
 
@@ -889,40 +906,45 @@ function ChurchProjectDetailsPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Spent On</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Description</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Recorded By</th>
-                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Spent On</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Description</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
+                        <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {expenseRows.map((row, idx) => (
-                        <tr key={row?._id ?? `e-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.spentOn || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-orange-600 whitespace-nowrap">{formatCurrency(row?.amount || 0, currency)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.date)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 max-w-[320px] break-words">{row?.description || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{row?.createdBy?.fullName || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-2">
+                        <tr key={row?._id ?? `e-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.spentOn || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[320px] break-words px-4 md:px-6">{row?.description || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            <div className="md:hidden relative flex justify-end" ref={actionMenuId === `e-${row?._id}` ? actionMenuRef : null}>
                               <button
                                 type="button"
-                                onClick={() => openEditExpense(row)}
-                                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                                aria-label="Row actions"
+                                onClick={() => setActionMenuId((p) => p === `e-${row?._id}` ? null : `e-${row?._id}`)}
+                                className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
                               >
-                                Edit
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-gray-500">
+                                  <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
+                                </svg>
                               </button>
-
-                              <button
-                                type="button"
-                                onClick={() => openConfirmDelete("expense", row?._id)}
-                                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 shadow-sm hover:bg-gray-50"
-                              >
-                                Delete
-                              </button>
+                              {actionMenuId === `e-${row?._id}` && (
+                                <div className="absolute right-0 top-full z-50 mt-1 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+                                  <button type="button" onClick={() => { openEditExpense(row); setActionMenuId(null); }} className="w-full px-3 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs">Edit</button>
+                                  <button type="button" onClick={() => { openConfirmDelete("expense", row?._id); setActionMenuId(null); }} className="w-full px-3 py-2 text-left font-semibold text-red-600 hover:bg-gray-50 text-xs">Delete</button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="hidden md:flex items-center justify-end gap-2">
+                              <button type="button" onClick={() => openEditExpense(row)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
+                              <button type="button" onClick={() => openConfirmDelete("expense", row?._id)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs">Delete</button>
                             </div>
                           </td>
                         </tr>
@@ -931,25 +953,25 @@ function ChurchProjectDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="p-5 text-sm text-gray-600">No expense record found.</div>
+                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No expense record found.</div>
               )
             ) : null}
 
-            <div className="flex items-center justify-end gap-3 px-6 max-sm:px-4 py-3">
+            <div className="flex items-center justify-end gap-3 max-md:px-4 py-3 px-4 md:px-6">
               <button
                 type="button"
                 onClick={() => setExpensePage((p) => Math.max(1, p - 1))}
                 disabled={!expensePagination?.hasPrev}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
               >
                 Prev
               </button>
-              <div className="text-sm text-gray-600">Page {expensePagination?.currentPage || 1}</div>
+              <div className="text-gray-600 text-sm">Page {expensePagination?.currentPage || 1}</div>
               <button
                 type="button"
                 onClick={() => setExpensePage((p) => p + 1)}
                 disabled={!expensePagination?.hasNext}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
               >
                 Next
               </button>

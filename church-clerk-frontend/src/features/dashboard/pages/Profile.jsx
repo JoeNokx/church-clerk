@@ -33,7 +33,7 @@ function Profile() {
 
   return (
     <div className="max-w-md mx-auto p-4 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4">My Profile</h2>
+      <h2 className="font-bold mb-4 md:text-3xl lg:text-4xl text-xl md:text-2xl">My Profile</h2>
 
       <div className="mb-2">
         <span className="font-semibold">Full Name:</span> {user.fullName}

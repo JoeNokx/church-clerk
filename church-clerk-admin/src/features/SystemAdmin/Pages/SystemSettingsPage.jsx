@@ -8,7 +8,9 @@ import {
   updateSystemSettings,
   getSystemUsers,
   updateSystemUser,
-  deleteSystemUserApi
+  deleteSystemUserApi,
+  getGovernanceFlagsSnapshot,
+  toggleGovernanceFlags
 } from "../Services/systemAdmin.api.js";
 import { updateMyPassword, updateMyProfile, registerSystemAdmin } from "../../Auth/services/auth.api.js";
 
@@ -58,6 +60,12 @@ function SystemSettingsPage() {
   const [gracePeriodDays, setGracePeriodDays] = useState("7");
   const [referralBonusDays, setReferralBonusDays] = useState("30");
   const [usdToGhsRate, setUsdToGhsRate] = useState("10");
+
+  // Governance flags
+  const [govLoading, setGovLoading] = useState(false);
+  const [govError, setGovError] = useState("");
+  const [enforceBackdating, setEnforceBackdating] = useState(false);
+  const [enforceImmutability, setEnforceImmutability] = useState(false);
 
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -131,6 +139,40 @@ function SystemSettingsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    // Load governance flags snapshot
+    setGovLoading(true);
+    setGovError("");
+    getGovernanceFlagsSnapshot()
+      .then((res) => {
+        const snap = res?.data || {};
+        setEnforceBackdating(Boolean(snap?.enforceBackdating));
+        setEnforceImmutability(Boolean(snap?.enforceImmutability));
+      })
+      .catch((e) => {
+        setGovError(e?.response?.data?.message || e?.message || "Failed to load governance flags");
+      })
+      .finally(() => setGovLoading(false));
+  }, []);
+
+  const onToggleFlag = async (key, value) => {
+    if (!canSave) return;
+    setGovError("");
+    setGovLoading(true);
+    const prev = { enforceBackdating, enforceImmutability };
+    if (key === "enforceBackdating") setEnforceBackdating(value);
+    if (key === "enforceImmutability") setEnforceImmutability(value);
+    try {
+      await toggleGovernanceFlags({ [key]: value });
+    } catch (e) {
+      setGovError(e?.response?.data?.message || e?.message || "Failed to update governance flag");
+      setEnforceBackdating(prev.enforceBackdating);
+      setEnforceImmutability(prev.enforceImmutability);
+    } finally {
+      setGovLoading(false);
+    }
+  };
 
   useEffect(() => {
     setFullName(String(user?.fullName || ""));
@@ -509,6 +551,49 @@ function SystemSettingsPage() {
               You can view system settings, but only a system admin can update them.
             </div>
           ) : null}
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="text-sm font-semibold text-gray-900">Financial Governance</div>
+            <div className="mt-1 text-xs text-gray-500">Control backdating and immutability across all financial modules</div>
+
+            {govError ? (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{govError}</div>
+            ) : null}
+
+            <div className="mt-4 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Enforce Backdating Control</div>
+                  <div className="mt-0.5 text-xs text-gray-500">Backdated creates require admin approval</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={enforceBackdating}
+                    onChange={(e) => onToggleFlag("enforceBackdating", e.target.checked)}
+                    disabled={!canSave || govLoading}
+                  />
+                  <span className="text-sm text-gray-700">{enforceBackdating ? "On" : "Off"}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Enforce Immutability</div>
+                  <div className="mt-0.5 text-xs text-gray-500">Updates/deletes are disabled; use adjustments</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={enforceImmutability}
+                    onChange={(e) => onToggleFlag("enforceImmutability", e.target.checked)}
+                    disabled={!canSave || govLoading}
+                  />
+                  <span className="text-sm text-gray-700">{enforceImmutability ? "On" : "Off"}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="text-sm font-semibold text-gray-900">Free Trial Duration</div>

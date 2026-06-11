@@ -12,6 +12,7 @@ import {
 } from "../../department/services/department.api.js";
 import { getCells, createCell, updateCell, deleteCell } from "../../cell/services/cell.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -67,7 +68,7 @@ function Chip({ color = "gray", children }) {
           ? "bg-purple-100 text-purple-700"
           : "bg-gray-100 text-gray-700";
 
-  return <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${styles}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-full px-3 py-1 font-semibold ${styles} text-xs`}>{children}</span>;
 }
 
 function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
@@ -78,35 +79,35 @@ function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
   const typeLabel = type === "group" ? "Group" : type === "cell" ? "Cell" : "Department";
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 hover:border-blue-200 hover:bg-blue-50/30 transition">
+    <div className="rounded-xl border border-gray-200 bg-white p-4 hover:border-blue-200 hover:bg-blue-50/30 transition md:p-6 lg:p-8">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Chip color={typeColor}>{typeLabel}</Chip>
             {row?.status ? <Chip>{row.status}</Chip> : null}
           </div>
-          <div className="mt-3 text-base font-semibold text-gray-900 truncate">{row?.name || "—"}</div>
+          <div className="mt-3 font-semibold text-gray-900 truncate text-base">{row?.name || "—"}</div>
         </div>
 
-        <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+        <div className={`h-11 md:h-12 w-11 md:w-12 rounded-xl flex items-center justify-center ${
           type === "group" ? "bg-blue-50" : type === "cell" ? "bg-orange-50" : "bg-purple-50"
         }`}>
           <MinistryTypeIcon type={type} />
         </div>
       </div>
 
-      <div className="mt-3 text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">{row?.description || "—"}</div>
+      <div className="mt-3 text-gray-600 line-clamp-3 whitespace-pre-wrap text-sm">{row?.description || "—"}</div>
 
       {firstMeeting ? (
         <div className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-3">
-          <div className="grid grid-cols-1 gap-1 sm:grid-cols-3 sm:gap-3 text-xs">
+          <div className="grid grid-cols-1 gap-1 md:grid-cols-3 md:gap-3 text-xs">
             <div className="text-gray-600">
               <span className="font-semibold text-gray-700">Day:</span> {firstMeeting?.meetingDay || "—"}
             </div>
             <div className="text-gray-600">
               <span className="font-semibold text-gray-700">Time:</span> {firstMeeting?.meetingTime || "—"}
             </div>
-            <div className="text-gray-600 sm:text-right">
+            <div className="text-gray-600 md:text-right">
               <span className="font-semibold text-gray-700">Venue:</span> {firstMeeting?.meetingVenue || "—"}
             </div>
           </div>
@@ -118,7 +119,7 @@ function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
           <button
             type="button"
             onClick={onView}
-            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
           >
             View
           </button>
@@ -127,7 +128,7 @@ function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
         <button
           type="button"
           onClick={onEdit}
-          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
         >
           Edit
         </button>
@@ -135,7 +136,7 @@ function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
         <button
           type="button"
           onClick={onDelete}
-          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 hover:bg-gray-50"
+          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 hover:bg-gray-50 text-xs"
         >
           Delete
         </button>
@@ -262,12 +263,12 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -276,39 +277,39 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={submit} className="p-5">
+        <form onSubmit={submit} className="p-4 md:p-6 lg:p-8">
           {formError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{formError}</div>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{formError}</div>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-gray-500">Name</label>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="e.g. Youth Ministry"
               />
             </div>
 
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-gray-500">Description</label>
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
               />
             </div>
 
-            <div className="sm:col-span-2">
+            <div className="md:col-span-2">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-xs font-semibold text-gray-500">Meeting Schedule</div>
+                <div className="font-semibold text-gray-500 text-xs">Meeting Schedule</div>
                 <button
                   type="button"
                   onClick={() => setMeetingSchedule((prev) => [...(Array.isArray(prev) ? prev : []), { meetingDay: "", meetingTime: "", meetingVenue: "" }])}
-                  className="text-xs font-semibold text-blue-700 hover:underline"
+                  className="font-semibold text-blue-700 hover:underline text-xs"
                 >
                   Add another meeting
                 </button>
@@ -316,9 +317,9 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
 
               <div className="mt-3 space-y-3">
                 {(Array.isArray(meetingSchedule) ? meetingSchedule : []).map((m, idx) => (
-                  <div key={`meeting-${idx}`} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div key={`meeting-${idx}`} className="grid grid-cols-1 gap-3 md:grid-cols-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Day</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Day</label>
                       <select
                         value={m?.meetingDay || ""}
                         onChange={(e) =>
@@ -326,7 +327,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
                             prev.map((row, i) => (i === idx ? { ...row, meetingDay: e.target.value } : row))
                           )
                         }
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                       >
                         <option value="">Select day</option>
                         {meetingDays.map((d) => (
@@ -338,7 +339,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Time</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Time</label>
                       <input
                         value={m?.meetingTime || ""}
                         onChange={(e) =>
@@ -347,12 +348,12 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
                           )
                         }
                         type="time"
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Venue</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Venue</label>
                       <input
                         value={m?.meetingVenue || ""}
                         onChange={(e) =>
@@ -360,17 +361,17 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
                             prev.map((row, i) => (i === idx ? { ...row, meetingVenue: e.target.value } : row))
                           )
                         }
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                         placeholder="Venue"
                       />
                     </div>
 
                     {meetingSchedule.length > 1 ? (
-                      <div className="sm:col-span-3 flex justify-end">
+                      <div className="md:col-span-3 flex justify-end">
                         <button
                           type="button"
                           onClick={() => setMeetingSchedule((prev) => prev.filter((_, i) => i !== idx))}
-                          className="text-xs font-semibold text-red-600 hover:underline"
+                          className="font-semibold text-red-600 hover:underline text-xs"
                         >
                           Remove meeting
                         </button>
@@ -382,12 +383,12 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
             </div>
 
             {type === "cell" || type === "department" ? (
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-500">Status</label>
+              <div className="md:col-span-2">
+                <label className="block font-semibold text-gray-500 text-xs">Status</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 >
                   <option value="active">active</option>
                   <option value="inactive">inactive</option>
@@ -400,7 +401,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
             >
               Cancel
             </button>
@@ -408,7 +409,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
               {mode === "edit" ? "Update" : "Save"}
             </button>
@@ -424,22 +425,22 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
           >
             Delete
           </button>
@@ -625,50 +626,49 @@ function MinistriesPage() {
   const title = activeTab === "groups" ? "Groups" : activeTab === "cells" ? "Cells" : "Departments";
 
   return (
-    <div className="max-w-6xl">
+    <div className="w-full max-w-6xl overflow-x-hidden lg:overflow-x-visible">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Ministries</h2>
-          <p className="mt-2 text-sm text-gray-600">Manage groups, departments and cells in your church</p>
-
-          <div className="mt-4 inline-flex max-w-full overflow-x-auto rounded-lg border border-gray-200 bg-white p-1">
-            <button type="button" onClick={() => setActiveTab("groups")} className={tabClass("groups")}>
-              Groups
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-semibold text-white">
-                {badges.groups}
-              </span>
-            </button>
-            <button type="button" onClick={() => setActiveTab("departments")} className={`ml-1 ${tabClass("departments")}`}>
-              Departments
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-semibold text-white">
-                {badges.departments}
-              </span>
-            </button>
-            <button type="button" onClick={() => setActiveTab("cells")} className={`ml-1 ${tabClass("cells")}`}>
-              Cells
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-600 px-1.5 text-xs font-semibold text-white">
-                {badges.cells}
-              </span>
-            </button>
-          </div>
+          <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Ministries</h2>
+          <p className="mt-2 text-gray-600 text-sm">Manage groups, departments and cells in your church</p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
           >
-            <span className="text-lg leading-none">+</span>
+            <span className="leading-none text-lg">+</span>
             Add {activeTab === "groups" ? "Group" : activeTab === "cells" ? "Cell" : "Department"}
           </button>
         </div>
       </div>
 
-      <div className="mt-6">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="cck-tab-bar mt-4 flex flex-wrap w-full rounded-lg border border-gray-200 bg-white p-1">
+        <button type="button" onClick={() => setActiveTab("groups")} className={tabClass("groups")}>
+          Groups
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 font-semibold text-white text-xs">
+            {badges.groups}
+          </span>
+        </button>
+        <button type="button" onClick={() => setActiveTab("departments")} className={`ml-1 ${tabClass("departments")}`}>
+          Departments
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 font-semibold text-white text-xs">
+            {badges.departments}
+          </span>
+        </button>
+        <button type="button" onClick={() => setActiveTab("cells")} className={`ml-1 ${tabClass("cells")}`}>
+          Cells
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-600 px-1.5 font-semibold text-white text-xs">
+            {badges.cells}
+          </span>
+        </button>
+      </div>
+
+      <KpiGrid className="mt-6 gap-3 lg:grid-cols-4">
           {kpiLoading ? (
-            <div className="text-sm text-gray-600 sm:col-span-2 lg:col-span-4">Loading KPI...</div>
+            <div className="text-gray-600 col-span-2 lg:col-span-4 text-sm">Loading KPI...</div>
           ) : (
             <>
               <KpiCard title="Total Groups" value={Number(kpi?.totalGroups || 0)} />
@@ -677,37 +677,36 @@ function MinistriesPage() {
               <KpiCard title="Total Ministries" value={Number(kpi?.totalMinistry || 0)} />
             </>
           )}
-        </div>
-      </div>
+      </KpiGrid>
 
-      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="text-sm font-semibold text-gray-900">{title} Records</div>
-            <div className="text-xs text-gray-500">All {title.toLowerCase()} and their details</div>
+            <div className="font-semibold text-gray-900 text-sm">{title} Records</div>
+            <div className="text-gray-500 text-xs">All {title.toLowerCase()} and their details</div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
-              className="h-10 w-full sm:w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
             />
           </div>
         </div>
 
         {loading ? (
-          <div className="p-5">
+          <div className="p-4 md:p-6 lg:p-8">
             <Skeleton height={14} count={6} />
           </div>
         ) : filteredRows.length === 0 ? (
-          <div className="p-5 text-sm text-gray-600">No record found.</div>
+          <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No record found.</div>
         ) : (
-          <div className="p-5">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="p-4 md:p-6 lg:p-8">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredRows.map((row, index) => {
                 const ministryType = activeTab === "groups" ? "group" : activeTab === "cells" ? "cell" : "department";
                 return (

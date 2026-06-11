@@ -6,14 +6,7 @@ import ReferralHistory from "../../models/referralModel/referralHistoryModel.js"
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
 import { addDays, addInterval } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
-
-const getPaystackSecretKey = () => {
-  if (process.env.PAYSTACK_SECRET_KEY) return process.env.PAYSTACK_SECRET_KEY;
-  if (String(process.env.PAYSTACK_MODE || "").toLowerCase() === "live") {
-    return process.env.LIVE_SECRET_KEY || "";
-  }
-  return process.env.TEST_SECRET_KEY || "";
-};
+import { getPaystackSecretKey } from "../../utils/paystackHelpers.js";
 
 const isCardChargeEvent = (event) => {
   const ch = event?.data?.channel;

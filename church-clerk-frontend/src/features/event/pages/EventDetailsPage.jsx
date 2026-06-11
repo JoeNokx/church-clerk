@@ -82,12 +82,12 @@ function SimpleModal({ open, title, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -95,7 +95,7 @@ function SimpleModal({ open, title, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -739,20 +739,20 @@ function EventDetailsPage() {
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:underline"
+            className="inline-flex items-center gap-2 font-semibold text-gray-700 hover:underline text-sm"
           >
-            <span className="text-base leading-none">←</span>
+            <span className="leading-none text-base">←</span>
             Back to Programs &amp; Events
           </button>
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         {loading ? (
           <div className="space-y-4 animate-pulse">
             <div className="h-4 w-28 rounded bg-gray-200" />
             <div className="h-7 w-56 rounded bg-gray-200" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2, 3, 4, 5].map((i) => (
                 <div key={i}>
                   <div className="h-3 w-16 rounded bg-gray-200" />
@@ -762,27 +762,27 @@ function EventDetailsPage() {
             </div>
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
         ) : !event ? (
-          <div className="text-sm text-gray-600">No event found.</div>
+          <div className="text-gray-600 text-sm">No event found.</div>
         ) : (
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-5">
+            <div className="flex items-start gap-4 md:gap-5">
               <div className="h-20 w-20 rounded-2xl bg-purple-50 flex flex-col items-center justify-center">
-                <div className="text-xs font-semibold text-purple-700">{badge.month}</div>
-                <div className="text-2xl font-bold text-purple-800">{badge.day}</div>
+                <div className="font-semibold text-purple-700 text-xs">{badge.month}</div>
+                <div className="font-bold text-purple-800 md:text-3xl lg:text-4xl text-xl md:text-2xl">{badge.day}</div>
               </div>
 
               <div className="min-w-0">
-                <div className="text-2xl font-semibold text-blue-900">{event?.title || "—"}</div>
-                <div className="mt-2 text-sm text-gray-600 max-w-3xl whitespace-pre-wrap">{event?.description || "—"}</div>
+                <div className="font-semibold text-blue-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{event?.title || "—"}</div>
+                <div className="mt-2 text-gray-600 max-w-3xl whitespace-pre-wrap text-sm">{event?.description || "—"}</div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">{event?.category || "Conference"}</span>
+                  <span className="rounded-full bg-purple-100 px-3 py-1 font-semibold text-purple-700 text-xs">{event?.category || "Conference"}</span>
                   {event?.department?.name ? (
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{event.department.name}</span>
+                    <span className="rounded-full bg-gray-100 px-3 py-1 font-semibold text-gray-700 text-xs">{event.department.name}</span>
                   ) : null}
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">{event?.status || "upcoming"}</span>
+                  <span className="rounded-full bg-blue-100 px-3 py-1 font-semibold text-blue-700 text-xs">{event?.status || "upcoming"}</span>
                 </div>
               </div>
             </div>
@@ -791,7 +791,7 @@ function EventDetailsPage() {
               <button
                 type="button"
                 onClick={() => setEditOpen(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                   <path d="M4 20h4l10.5-10.5a2.1 2.1 0 00-4-1L4 20Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -828,30 +828,30 @@ function EventDetailsPage() {
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <div className="rounded-xl border border-blue-100 bg-white p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+              <div className="h-11 w-11 rounded-xl bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-700">
                   <path d="M7 3v3M17 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
                 </svg>
               </div>
               <div>
-                <div className="text-xs font-semibold text-gray-500">Date</div>
-                <div className="mt-1 text-sm font-semibold text-blue-900">{formatRange(event?.dateFrom, event?.dateTo)}</div>
+                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">{formatRange(event?.dateFrom, event?.dateTo)}</div>
               </div>
             </div>
           </div>
 
           <div className="rounded-xl border border-purple-100 bg-white p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center">
+              <div className="h-11 w-11 rounded-xl bg-purple-50 flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-purple-700">
                   <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M12 22a10 10 0 100-20 10 10 0 000 20Z" stroke="currentColor" strokeWidth="1.8" />
                 </svg>
               </div>
               <div>
-                <div className="text-xs font-semibold text-gray-500">Time</div>
-                <div className="mt-1 text-sm font-semibold text-blue-900">
+                <div className="font-semibold text-gray-500 text-xs">Time</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">
                   {formatTimeRange(event?.timeFrom, event?.timeTo, event?.time)}
                 </div>
               </div>
@@ -860,30 +860,30 @@ function EventDetailsPage() {
 
           <div className="rounded-xl border border-green-100 bg-white p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-green-50 flex items-center justify-center">
+              <div className="h-11 w-11 rounded-xl bg-green-50 flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-700">
                   <path d="M12 21s7-4.5 7-10a7 7 0 10-14 0c0 5.5 7 10 7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                   <path d="M12 11a2 2 0 100-4 2 2 0 000 4Z" stroke="currentColor" strokeWidth="1.8" />
                 </svg>
               </div>
               <div>
-                <div className="text-xs font-semibold text-gray-500">Location</div>
-                <div className="mt-1 text-sm font-semibold text-blue-900">{event?.venue || "—"}</div>
+                <div className="font-semibold text-gray-500 text-xs">Location</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">{event?.venue || "—"}</div>
               </div>
             </div>
           </div>
 
           <div className="rounded-xl border border-orange-100 bg-white p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
+              <div className="h-11 w-11 rounded-xl bg-orange-50 flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-600">
                   <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
                   <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </div>
               <div>
-                <div className="text-xs font-semibold text-gray-500">Organizer</div>
-                <div className="mt-1 text-sm font-semibold text-blue-900">{organizerText}</div>
+                <div className="font-semibold text-gray-500 text-xs">Organizer</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">{organizerText}</div>
               </div>
             </div>
           </div>
@@ -909,13 +909,13 @@ function EventDetailsPage() {
 
       {!loading && !error && event && activeMainTab === "attendance" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-6 py-5">
-            <div className="text-base font-semibold text-gray-900">Record Attendance</div>
-            <div className="mt-1 text-sm text-gray-600">Choose a method to record event attendance</div>
+          <div className="border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
+            <div className="font-semibold text-gray-900 text-base">Record Attendance</div>
+            <div className="mt-1 text-gray-600 text-sm">Choose a method to record event attendance</div>
           </div>
 
-          <div className="px-6 py-5">
-            <div className="rounded-full bg-gray-100 p-1 flex items-center gap-2">
+          <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
+            <div className="cck-tab-bar rounded-full bg-gray-100 p-1 flex items-center gap-2">
               <button type="button" onClick={() => setActiveTab("registration")} className={tabClass("registration")}>
                 By Registration
               </button>
@@ -930,12 +930,12 @@ function EventDetailsPage() {
             {activeTab === "registration" ? (
               <div className="mt-6">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="text-sm text-gray-600">View registered members and add new registrations for this event</div>
+                  <div className="text-gray-600 text-sm">View registered members and add new registrations for this event</div>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={onExportAttendees}
-                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                         <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -950,7 +950,7 @@ function EventDetailsPage() {
                         setRegisterError(null);
                         setRegisterOpen(true);
                       }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+                      className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 font-semibold text-white hover:bg-green-800 text-sm"
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                         <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -964,12 +964,12 @@ function EventDetailsPage() {
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
                   <table className="min-w-full">
                     <thead className="bg-white">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-white px-6 max-sm:px-4 py-3 whitespace-nowrap">Name</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Email</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Phone</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Location</th>
-                        <th className="px-6 max-sm:px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Name</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
+                        <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -977,44 +977,44 @@ function EventDetailsPage() {
                         <>
                           {[0, 1, 2, 3].map((i) => (
                             <tr key={i} className="animate-pulse">
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-28 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                             </tr>
                           ))}
                         </>
                       ) : attendeesError ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-4 text-sm text-red-700">
+                          <td colSpan={5} className="py-4 text-red-700 text-sm px-4 md:px-6">
                             {attendeesError}
                           </td>
                         </tr>
                       ) : !attendees.length ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">
+                          <td colSpan={5} className="py-4 text-gray-600 text-sm px-4 md:px-6">
                             No attendee found.
                           </td>
                         </tr>
                       ) : (
                         attendees.map((r, idx) => (
-                          <tr key={r?._id || `att-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                            <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">
+                          <tr key={r?._id || `att-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <button type="button" className="text-blue-700 hover:underline">
                                 {r?.fullName || "—"}
                               </button>
                             </td>
-                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{r?.email || "—"}</td>
-                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{r?.phoneNumber || "—"}</td>
-                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{r?.location || "—"}</td>
-                            <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.email || "—"}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.phoneNumber || "—"}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.location || "—"}</td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center justify-end gap-2">
                                 {canEdit ? (
                                   <button
                                     type="button"
                                     onClick={() => openEditAttendee(r)}
-                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                                   >
                                     Edit
                                   </button>
@@ -1023,7 +1023,7 @@ function EventDetailsPage() {
                                   <button
                                     type="button"
                                     onClick={() => onDeleteAttendee(r)}
-                                    className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                                    className="rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 hover:bg-red-50 text-xs"
                                   >
                                     Delete
                                   </button>
@@ -1040,16 +1040,16 @@ function EventDetailsPage() {
             ) : activeTab === "total" ? (
               <div className="mt-6">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="text-sm text-gray-600">Record the total number of attendees without listing individual names</div>
+                  <div className="text-gray-600 text-sm">Record the total number of attendees without listing individual names</div>
                   <button
                     type="button"
                     onClick={() => {
                       setRecordError(null);
                       setRecordOpen(true);
                     }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+                    className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 font-semibold text-white hover:bg-green-800 text-sm"
                   >
-                    <span className="text-lg leading-none">+</span>
+                    <span className="leading-none text-lg">+</span>
                     Record Attendance
                   </button>
                 </div>
@@ -1057,11 +1057,11 @@ function EventDetailsPage() {
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
                   <table className="min-w-full">
                     <thead className="bg-white">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-white px-6 max-sm:px-4 py-3 whitespace-nowrap">Date</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Total Attendees</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Main Speaker</th>
-                        <th className="px-6 max-sm:px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
+                        <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -1069,42 +1069,42 @@ function EventDetailsPage() {
                         <>
                           {[0, 1, 2, 3].map((i) => (
                             <tr key={i} className="animate-pulse">
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                             </tr>
                           ))}
                         </>
                       ) : totalError ? (
                         <tr>
-                          <td colSpan={4} className="px-6 py-4 text-sm text-red-700">
+                          <td colSpan={4} className="py-4 text-red-700 text-sm px-4 md:px-6">
                             {totalError}
                           </td>
                         </tr>
                       ) : !totals.length ? (
                         <tr>
-                          <td colSpan={4} className="px-6 py-4 text-sm text-gray-600">
+                          <td colSpan={4} className="py-4 text-gray-600 text-sm px-4 md:px-6">
                             No attendance found.
                           </td>
                         </tr>
                       ) : (
                         totals.map((r, idx) => (
-                          <tr key={r?._id || `tot-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                            <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">
+                          <tr key={r?._id || `tot-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <button type="button" className="text-blue-700 hover:underline">
                                 {formatDate(r?.date)}
                               </button>
                             </td>
-                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{Number(r?.numberOfAttendees || 0) || "—"}</td>
-                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{r?.mainSpeaker || "—"}</td>
-                            <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0) || "—"}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "—"}</td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center justify-end gap-2">
                                 {canEdit ? (
                                   <button
                                     type="button"
                                     onClick={() => openEditTotal(r)}
-                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                                   >
                                     Edit
                                   </button>
@@ -1113,7 +1113,7 @@ function EventDetailsPage() {
                                   <button
                                     type="button"
                                     onClick={() => onDeleteTotal(r)}
-                                    className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                                    className="rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 hover:bg-red-50 text-xs"
                                   >
                                     Delete
                                   </button>
@@ -1130,12 +1130,12 @@ function EventDetailsPage() {
             ) : (
               <div className="mt-6">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="text-sm text-gray-600">Upload attendance files from Excel, Word, or image formats</div>
+                  <div className="text-gray-600 text-sm">Upload attendance files from Excel, Word, or image formats</div>
                   <FileUploadButton
                     accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
                     disabled={fileUploading}
                     onFile={onUploadFile}
-                    className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 font-semibold text-white hover:bg-green-800 disabled:opacity-60 text-sm"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                       <path d="M12 3v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -1147,18 +1147,18 @@ function EventDetailsPage() {
                 </div>
 
                 {filesError ? (
-                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{filesError}</div>
+                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{filesError}</div>
                 ) : null}
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto pb-24">
                   <table className="min-w-full">
                     <thead className="bg-white">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-white px-6 max-sm:px-4 py-3 whitespace-nowrap">File Name</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">File Type</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">File Size</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Uploaded On</th>
-                        <th className="px-6 max-sm:px-4 py-3 whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Name</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Type</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Size</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Uploaded On</th>
+                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -1166,28 +1166,28 @@ function EventDetailsPage() {
                         <>
                           {[0, 1, 2, 3].map((i) => (
                             <tr key={i} className="animate-pulse">
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                              <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                             </tr>
                           ))}
                         </>
                       ) : !files.length ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">
+                          <td colSpan={5} className="py-4 text-gray-600 text-sm px-4 md:px-6">
                             No uploaded file found.
                           </td>
                         </tr>
                       ) : (
                         files.map((f, idx) => (
-                          <tr key={f?._id || `f-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                            <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 whitespace-nowrap">{f?.originalName || "—"}</td>
-                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{guessFileType(f?.mimeType, f?.originalName)}</td>
-                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{formatBytes(f?.size)}</td>
-                            <td className="px-6 max-sm:px-4 py-2 text-gray-600 whitespace-nowrap">{formatDate(f?.createdAt)}</td>
-                            <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">
+                          <tr key={f?._id || `f-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{f?.originalName || "—"}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{guessFileType(f?.mimeType, f?.originalName)}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatBytes(f?.size)}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(f?.createdAt)}</td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
@@ -1195,7 +1195,7 @@ function EventDetailsPage() {
                                     if (!f?.url) return;
                                     window.open(f.url, "_blank", "noopener,noreferrer");
                                   }}
-                                  className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
+                                  className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs"
                                 >
                                   View
                                 </button>
@@ -1212,7 +1212,7 @@ function EventDetailsPage() {
                                       if (!id) return;
                                       setFileMenuOpenId((prev) => (prev === id ? null : id));
                                     }}
-                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                                    className="h-11 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-11 w-11 md:w-12"
                                     aria-label="More actions"
                                   >
                                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -1232,7 +1232,7 @@ function EventDetailsPage() {
                                             closeFileMenu();
                                             openEditFile(f);
                                           }}
-                                          className="block w-full px-4 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                          className="block w-full px-4 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                                         >
                                           Edit
                                         </button>
@@ -1250,7 +1250,7 @@ function EventDetailsPage() {
                                           a.rel = "noopener noreferrer";
                                           a.click();
                                         }}
-                                        className="block w-full px-4 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                        className="block w-full px-4 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                                       >
                                         Download
                                       </button>
@@ -1262,7 +1262,7 @@ function EventDetailsPage() {
                                             closeFileMenu();
                                             onDeleteFile(f);
                                           }}
-                                          className="block w-full px-4 py-2 text-left text-xs font-semibold text-red-600 hover:bg-gray-50"
+                                          className="block w-full px-4 py-2 text-left font-semibold text-red-600 hover:bg-gray-50 text-xs"
                                         >
                                           Delete
                                         </button>
@@ -1292,20 +1292,20 @@ function EventDetailsPage() {
         <div className="flex max-h-[75vh] flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto pr-1">
             {editAttendeeError ? (
-              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{editAttendeeError}</div>
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{editAttendeeError}</div>
             ) : null}
 
             <div className="grid grid-cols-1 gap-3">
               <input
                 value={editAttendeeFullName}
                 onChange={(e) => setEditAttendeeFullName(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Full name"
               />
               <input
                 value={editAttendeeEmail}
                 onChange={(e) => setEditAttendeeEmail(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Email (optional)"
               />
               <PhoneNumberInput
@@ -1316,7 +1316,7 @@ function EventDetailsPage() {
               <input
                 value={editAttendeeLocation}
                 onChange={(e) => setEditAttendeeLocation(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Location (optional)"
               />
             </div>
@@ -1327,7 +1327,7 @@ function EventDetailsPage() {
               type="button"
               onClick={closeEditAttendee}
               disabled={editAttendeeSaving}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
             >
               Cancel
             </button>
@@ -1335,7 +1335,7 @@ function EventDetailsPage() {
               type="button"
               onClick={onSaveEditAttendee}
               disabled={editAttendeeSaving}
-              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+              className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
             >
               {editAttendeeSaving ? "Saving..." : "Save"}
             </button>
@@ -1349,25 +1349,25 @@ function EventDetailsPage() {
         onClose={closeEditTotal}
       >
         {editTotalError ? (
-          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{editTotalError}</div>
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{editTotalError}</div>
         ) : null}
         <div className="grid grid-cols-1 gap-3">
           <input
             type="date"
             value={editTotalDate}
             onChange={(e) => setEditTotalDate(e.target.value)}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
           <input
             value={editTotalNumber}
             onChange={(e) => setEditTotalNumber(e.target.value)}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Total attendees"
           />
           <input
             value={editTotalSpeaker}
             onChange={(e) => setEditTotalSpeaker(e.target.value)}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Main speaker (optional)"
           />
         </div>
@@ -1376,7 +1376,7 @@ function EventDetailsPage() {
             type="button"
             onClick={closeEditTotal}
             disabled={editTotalSaving}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Cancel
           </button>
@@ -1384,7 +1384,7 @@ function EventDetailsPage() {
             type="button"
             onClick={onSaveEditTotal}
             disabled={editTotalSaving}
-            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
           >
             {editTotalSaving ? "Saving..." : "Save"}
           </button>
@@ -1397,21 +1397,21 @@ function EventDetailsPage() {
         onClose={closeEditFile}
       >
         {editFileError ? (
-          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{editFileError}</div>
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{editFileError}</div>
         ) : null}
 
         <div className="grid grid-cols-1 gap-3">
           <input
             value={editFileName}
             onChange={(e) => setEditFileName(e.target.value)}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="File name"
           />
 
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-            <div className="text-xs font-semibold text-gray-600">Replace file (optional)</div>
+            <div className="font-semibold text-gray-600 text-xs">Replace file (optional)</div>
             <div className="mt-2 flex items-center justify-between gap-3">
-              <div className="text-xs text-gray-600 truncate">{editFileReplacement?.name || "No file selected"}</div>
+              <div className="text-gray-600 truncate text-xs">{editFileReplacement?.name || "No file selected"}</div>
               <FileUploadButton
                 accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
                 disabled={editFileSaving}
@@ -1424,7 +1424,7 @@ function EventDetailsPage() {
                     setEditFileName(f.name);
                   }
                 }}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-xs"
               >
                 Choose File
               </FileUploadButton>
@@ -1437,7 +1437,7 @@ function EventDetailsPage() {
             type="button"
             onClick={closeEditFile}
             disabled={editFileSaving}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Cancel
           </button>
@@ -1445,7 +1445,7 @@ function EventDetailsPage() {
             type="button"
             onClick={onSaveEditFile}
             disabled={editFileSaving}
-            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
           >
             {editFileSaving ? "Saving..." : "Save"}
           </button>
@@ -1463,20 +1463,20 @@ function EventDetailsPage() {
         <div className="flex max-h-[75vh] flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto pr-1">
             {registerError ? (
-              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{registerError}</div>
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{registerError}</div>
             ) : null}
 
             <div className="grid grid-cols-1 gap-3">
               <input
                 value={regFullName}
                 onChange={(e) => setRegFullName(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Full name"
               />
               <input
                 value={regEmail}
                 onChange={(e) => setRegEmail(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Email (optional)"
               />
               <PhoneNumberInput
@@ -1487,26 +1487,26 @@ function EventDetailsPage() {
               <input
                 value={regLocation}
                 onChange={(e) => setRegLocation(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Location (optional)"
               />
             </div>
 
             {registerQueue?.length ? (
               <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-600">Queued Attendees</div>
+                <div className="bg-gray-50 px-4 py-2 font-semibold text-gray-600 text-xs">Queued Attendees</div>
                 <div className="divide-y divide-gray-200">
                   {registerQueue.map((q) => (
                     <div key={q.id} className="flex items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-gray-900 truncate">{q?.fullName || "—"}</div>
-                        <div className="text-xs text-gray-600 truncate">{q?.phoneNumber || ""}</div>
+                        <div className="font-semibold text-gray-900 truncate text-sm">{q?.fullName || "—"}</div>
+                        <div className="text-gray-600 truncate text-xs">{q?.phoneNumber || ""}</div>
                       </div>
                       <button
                         type="button"
                         disabled={registerSaving}
                         onClick={() => setRegisterQueue((prev) => prev.filter((x) => x.id !== q.id))}
-                        className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                        className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-60 md:h-12 md:w-12"
                         aria-label="Remove"
                       >
                         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -1525,7 +1525,7 @@ function EventDetailsPage() {
               type="button"
               onClick={() => setRegisterOpen(false)}
               disabled={registerSaving}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
             >
               Cancel
             </button>
@@ -1533,7 +1533,7 @@ function EventDetailsPage() {
               type="button"
               onClick={onAddToRegisterQueue}
               disabled={registerSaving}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
             >
               Add Another
             </button>
@@ -1560,25 +1560,25 @@ function EventDetailsPage() {
         }}
       >
         {recordError ? (
-          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{recordError}</div>
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{recordError}</div>
         ) : null}
         <div className="grid grid-cols-1 gap-3">
           <input
             type="date"
             value={recordDate}
             onChange={(e) => setRecordDate(e.target.value)}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
           <input
             value={recordNumber}
             onChange={(e) => setRecordNumber(e.target.value)}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Total attendees"
           />
           <input
             value={recordSpeaker}
             onChange={(e) => setRecordSpeaker(e.target.value)}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Main speaker (optional)"
           />
         </div>
@@ -1587,7 +1587,7 @@ function EventDetailsPage() {
             type="button"
             onClick={() => setRecordOpen(false)}
             disabled={recordSaving}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Cancel
           </button>
@@ -1595,7 +1595,7 @@ function EventDetailsPage() {
             type="button"
             onClick={onRecordTotal}
             disabled={recordSaving}
-            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+            className="rounded-lg bg-green-700 px-4 py-2 font-semibold text-white hover:bg-green-800 disabled:opacity-60 text-sm"
           >
             {recordSaving ? "Saving..." : "Record"}
           </button>

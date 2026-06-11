@@ -132,14 +132,14 @@ function PlanComparisonTable({
     <div className={containerClassName}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
-          {subtitle ? <div className="mt-1 text-xs text-gray-500">{subtitle}</div> : null}
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
+          {subtitle ? <div className="mt-1 text-gray-500 text-xs">{subtitle}</div> : null}
         </div>
         {showToggle ? (
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
           >
             See more ({hiddenCount})
           </button>
@@ -147,7 +147,7 @@ function PlanComparisonTable({
           <button
             type="button"
             onClick={() => setExpanded(false)}
-            className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
           >
             See less
           </button>
@@ -158,9 +158,9 @@ function PlanComparisonTable({
         <table className="min-w-[720px] w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-white px-4 py-3 text-left text-xs font-semibold text-gray-600 border-b border-gray-200">Feature</th>
+              <th className="sticky left-0 z-10 bg-white px-4 py-3 text-left font-semibold text-gray-600 border-b border-gray-200 text-xs">Feature</th>
               {rows.map((p) => (
-                <th key={p?._id || p?.name} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 border-b border-gray-200">
+                <th key={p?._id || p?.name} className="px-4 py-3 text-left font-semibold text-gray-600 border-b border-gray-200 text-xs">
                   {p?.name || "—"}
                 </th>
               ))}
@@ -168,17 +168,17 @@ function PlanComparisonTable({
           </thead>
           <tbody>
             <tr>
-              <td className="sticky left-0 z-10 bg-white px-4 py-3 text-xs font-semibold text-gray-700 border-b border-gray-100">Member limit</td>
+              <td className="sticky left-0 z-10 bg-white px-4 py-3 font-semibold text-gray-700 border-b border-gray-100 text-xs">Member limit</td>
               {rows.map((p) => (
-                <td key={`${p?._id || p?.name}-memberLimit`} className="px-4 py-3 text-xs text-gray-700 border-b border-gray-100">
+                <td key={`${p?._id || p?.name}-memberLimit`} className="px-4 py-3 text-gray-700 border-b border-gray-100 text-xs">
                   <span className="font-semibold">{renderLimit(p?.memberLimit)}</span>
                 </td>
               ))}
             </tr>
             <tr>
-              <td className="sticky left-0 z-10 bg-white px-4 py-3 text-xs font-semibold text-gray-700 border-b border-gray-200">User limit</td>
+              <td className="sticky left-0 z-10 bg-white px-4 py-3 font-semibold text-gray-700 border-b border-gray-200 text-xs">User limit</td>
               {rows.map((p) => (
-                <td key={`${p?._id || p?.name}-userLimit`} className="px-4 py-3 text-xs text-gray-700 border-b border-gray-200">
+                <td key={`${p?._id || p?.name}-userLimit`} className="px-4 py-3 text-gray-700 border-b border-gray-200 text-xs">
                   <span className="font-semibold">{renderLimit(p?.userLimit)}</span>
                 </td>
               ))}
@@ -186,9 +186,9 @@ function PlanComparisonTable({
 
             {visibleKeys.map((k) => (
               <tr key={k}>
-                <td className="sticky left-0 z-10 bg-white px-4 py-3 text-xs text-gray-700 border-b border-gray-100">{featureLabels[k] || humanizeFeatureKey(k)}</td>
+                <td className="sticky left-0 z-10 bg-white px-4 py-3 text-gray-700 border-b border-gray-100 text-xs">{featureLabels[k] || humanizeFeatureKey(k)}</td>
                 {rows.map((p) => (
-                  <td key={`${p?._id || p?.name}-${k}`} className="px-4 py-3 text-xs text-gray-700 border-b border-gray-100">
+                  <td key={`${p?._id || p?.name}-${k}`} className="px-4 py-3 text-gray-700 border-b border-gray-100 text-xs">
                     {renderBool(Boolean(getFeatureValue(p, k)), `${k} ${getFeatureValue(p, k) ? "enabled" : "disabled"}`)}
                   </td>
                 ))}

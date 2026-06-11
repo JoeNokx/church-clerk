@@ -161,19 +161,19 @@ function BranchContextNav({ homeChurchName, homeChurchId }) {
     <div className="shrink-0 border-b border-gray-200 bg-white">
 
       {/* ── Row 1: Identity + exit ────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-4 px-4 sm:px-6 pt-3 pb-0">
+      <div className="flex items-center justify-between gap-4 px-4 md:px-6 pt-3 pb-0">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
+          <div className="flex h-11 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white md:h-12 md:w-11 w-11 md:w-12">
             <IconBranch />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-bold text-gray-900 truncate">{branchName}{city}</span>
+              <span className="font-bold text-gray-900 truncate text-sm">{branchName}{city}</span>
               <span className="inline-flex shrink-0 items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
                 Branch
               </span>
             </div>
-            <p className="text-xs text-gray-400 truncate">
+            <p className="text-gray-400 truncate text-xs">
               Branch of <span className="font-medium text-gray-600">{homeChurchName || "Headquarters"}</span>
               {" · "}Sidebar shows HQ data · Branch bar shows branch data
             </p>
@@ -183,7 +183,7 @@ function BranchContextNav({ homeChurchName, homeChurchId }) {
           type="button"
           onClick={handleExit}
           disabled={exitLoading}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-600 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-60 text-xs"
         >
           <IconExit />
           {exitLoading ? "Exiting…" : "Exit Branch"}
@@ -192,7 +192,7 @@ function BranchContextNav({ homeChurchName, homeChurchId }) {
 
       {/* ── Row 2: Group tabs ─────────────────────────────────────────────── */}
       <div className="overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-        <nav className="flex items-end px-2 sm:px-4 min-w-max">
+        <nav className="flex items-end px-2 md:px-4 min-w-max">
           {GROUPS.map((group) => {
             const items = visibleGroupItems(group.items);
             // Hide group if it has defined items but none are visible
@@ -226,7 +226,7 @@ function BranchContextNav({ homeChurchName, homeChurchId }) {
       {/* ── Row 3: Sub-tabs (only when active group has multiple items) ───── */}
       {subItems.length > 1 && (
         <div className="border-t border-gray-100 bg-gray-50/60 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-          <nav className="flex items-center gap-1 px-4 sm:px-6 py-1.5 min-w-max">
+          <nav className="flex items-center gap-1 px-4 md:px-6 py-1.5 min-w-max">
             {subItems.map((item) => {
               const isActive = currentPage === item.key;
               return (

@@ -268,42 +268,42 @@ function RegisterChurch() {
   return (
     <AuthCard title="Register your church" subtitle="Tell us about your ministry">
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-sm">
           {error}
         </div>
       )}
 
       <form onSubmit={handleRegisterChurch} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Church Name</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Church Name</label>
           <input
             type="text"
             placeholder="Your church name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Pastor's Name</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Pastor's Name</label>
           <input
             type="text"
             placeholder="Pastor's full name"
             value={pastor}
             onChange={(e) => setPastor(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Church Type</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Church Type</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           >
             <option value="Headquarters">Headquarters</option>
             <option value="Branch">Branch</option>
@@ -313,7 +313,7 @@ function RegisterChurch() {
 
         {type === "Branch" && (
           <div ref={hqBoxRef} className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Parent Church ID (HQ)</label>
+            <label className="block font-medium text-gray-700 mb-1 text-sm">Parent Church ID (HQ)</label>
             <input type="hidden" name="parentId" value={parentChurchId} />
             <input
               type="text"
@@ -326,21 +326,21 @@ function RegisterChurch() {
                 setHqDropdownOpen(true);
               }}
               onFocus={() => setHqDropdownOpen(true)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+              className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
               required
             />
 
             {selectedHqLabel && parentChurchId ? (
-              <div className="mt-1 text-xs text-gray-500">Selected: {selectedHqLabel}</div>
+              <div className="mt-1 text-gray-500 text-xs">Selected: {selectedHqLabel}</div>
             ) : null}
 
             {hqDropdownOpen ? (
               <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
                 <div className="max-h-72 overflow-y-auto">
                   {hqLoading ? (
-                    <div className="px-4 py-3 text-sm text-gray-600">Searching…</div>
+                    <div className="px-4 py-3 text-gray-600 text-sm">Searching…</div>
                   ) : hqMessage && !hqResults.length ? (
-                    <div className="px-4 py-3 text-sm text-gray-600">{hqMessage}</div>
+                    <div className="px-4 py-3 text-gray-600 text-sm">{hqMessage}</div>
                   ) : hqResults.length ? (
                     hqResults.map((c) => (
                       <button
@@ -356,17 +356,17 @@ function RegisterChurch() {
                         }}
                         className="w-full text-left px-4 py-3 hover:bg-gray-50"
                       >
-                        <div className="text-sm font-semibold text-gray-900 truncate">{c?.name || "—"}</div>
-                        <div className="mt-0.5 text-xs text-gray-600 truncate">
+                        <div className="font-semibold text-gray-900 truncate text-sm">{c?.name || "—"}</div>
+                        <div className="mt-0.5 text-gray-600 truncate text-xs">
                           {`${c?.city || ""}${c?.region ? `, ${c.region}` : ""}`.trim() || "—"}
                         </div>
-                        <div className="mt-0.5 text-xs text-gray-500 truncate">
+                        <div className="mt-0.5 text-gray-500 truncate text-xs">
                           Pastor: {c?.createdBy?.fullName || "—"}
                         </div>
                       </button>
                     ))
                   ) : (
-                    <div className="px-4 py-3 text-sm text-gray-600">Type to search headquarters churches.</div>
+                    <div className="px-4 py-3 text-gray-600 text-sm">Type to search headquarters churches.</div>
                   )}
                 </div>
               </div>
@@ -375,51 +375,51 @@ function RegisterChurch() {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
           <PhoneNumberInput
             value={phoneNumber}
             onChange={setPhoneNumber}
             error={Boolean(error && String(error).toLowerCase().includes("invalid phone"))}
-            inputClassName="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            inputClassName="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Email (optional)</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Street Address (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Street Address (optional)</label>
           <input
             type="text"
             placeholder="Street address"
             value={streetAddress}
             onChange={(e) => setStreetAddress(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">City</label>
           <input
             type="text"
             placeholder="City"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Region (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Region (optional)</label>
           <Select
             inputId="church-region"
             isSearchable
@@ -441,7 +441,7 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Country (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Country (optional)</label>
           <Select
             inputId="church-country"
             isSearchable
@@ -475,7 +475,7 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Currency</label>
           <Select
             inputId="church-currency"
             isSearchable
@@ -488,7 +488,7 @@ function RegisterChurch() {
             placeholder="Select currency"
             styles={selectStyles}
           />
-          <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-xs">
             <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 text-amber-700" aria-hidden="true">
               <path
                 d="M12 9v4m0 4h.01M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z"
@@ -503,30 +503,30 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Founded Date (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Founded Date (optional)</label>
           <input
             type="date"
             value={foundedDate}
             onChange={(e) => setFoundedDate(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Referral Code (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Referral Code (optional)</label>
           <input
             type="text"
             placeholder="Referral code"
             value={referralCodeInput}
             onChange={(e) => setReferralCodeInput(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading || (type === "Branch" && !parentChurchId)}
-          className="w-full bg-blue-900 text-white py-3 sm:py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50"
+          className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
         >
           {loading ? "Saving..." : "Register Church"}
         </button>

@@ -22,7 +22,7 @@ function StatusChip({ value }) {
         : "border-gray-200 bg-gray-50 text-gray-700";
 
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold ${styles} text-xs`}>
       {v || "-"}
     </span>
   );
@@ -184,22 +184,22 @@ function VisitorTable({ onEdit, onDeleted }) {
       <div className="overflow-x-auto animate-pulse">
         <table className="min-w-full">
           <thead className="bg-slate-100">
-            <tr className="text-left text-xs font-semibold text-gray-500">
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-16 rounded bg-gray-200" /></th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-10 rounded bg-gray-200" /></th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-10 rounded bg-gray-200" /></th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+            <tr className="text-left font-semibold text-gray-500 text-xs">
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {[0, 1, 2, 3, 4].map((i) => (
               <tr key={i} className="text-sm">
-                <td className="px-6 max-sm:px-4 py-3 whitespace-nowrap"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="px-6 max-sm:px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
               </tr>
             ))}
           </tbody>
@@ -210,8 +210,8 @@ function VisitorTable({ onEdit, onDeleted }) {
 
   if (store?.visitorError) {
     return (
-      <div className="p-5">
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{store.visitorError}</div>
+      <div className="p-4 md:p-6 lg:p-8">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{store.visitorError}</div>
       </div>
     );
   }
@@ -219,7 +219,7 @@ function VisitorTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.visitors) ? store.visitors : [];
 
   if (!rows.length) {
-    return <div className="p-5 text-sm text-gray-600">No visitor record found.</div>;
+    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No visitor record found.</div>;
   }
 
   return (
@@ -227,14 +227,14 @@ function VisitorTable({ onEdit, onDeleted }) {
       <div className="relative overflow-x-auto pb-24">
         <table className="min-w-full">
           <thead className="bg-slate-100">
-            <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-              <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Full Name</th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Phone</th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Location</th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Invited By</th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Status</th>
-              <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-              <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+            <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Full Name</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Invited By</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -245,22 +245,22 @@ function VisitorTable({ onEdit, onDeleted }) {
                 const openUp = index > 1;
 
                 return (
-              <tr key={String(row?._id ?? row?.id ?? `row-${index}`)} className="text-sm max-sm:text-xs text-gray-700">
-                <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.fullName || "-"}</td>
-                <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.phoneNumber || "-"}</td>
-                <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.location || "-"}</td>
-                <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">{row?.invitedBy || "-"}</td>
-                <td className="px-6 max-sm:px-4 py-1.5 text-gray-700 whitespace-nowrap">
+              <tr key={String(row?._id ?? row?.id ?? `row-${index}`)} className="max-md:text-xs text-gray-700 text-sm">
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.fullName || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.location || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.invitedBy || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                   <StatusChip value={row?.status} />
                 </td>
-                <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.serviceDate)}</td>
-                <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.serviceDate)}</td>
+                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <div className="flex items-center justify-end gap-2">
                     {canView && (
                       <button
                         type="button"
                         onClick={() => openDetails(row)}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                       >
                         view
                       </button>
@@ -274,7 +274,7 @@ function VisitorTable({ onEdit, onDeleted }) {
                           openConvert(row);
                         }}
                         disabled={row?.status === "converted"}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50 disabled:opacity-50"
+                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
                       >
                         {row?.status === "converted" ? "converted" : "convert"}
                       </button>
@@ -292,7 +292,7 @@ function VisitorTable({ onEdit, onDeleted }) {
                             if (!rowId) return;
                             setMenuOpenId((prev) => (prev === rowId ? null : rowId));
                           }}
-                          className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                          className="h-11 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-11 w-11 md:w-12"
                           aria-label="More actions"
                         >
                           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -314,7 +314,7 @@ function VisitorTable({ onEdit, onDeleted }) {
                                   if (!id) return;
                                   onEdit?.(row);
                                 }}
-                                className="block w-full px-4 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                className="block w-full px-4 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                               >
                                 Edit
                               </button>
@@ -329,7 +329,7 @@ function VisitorTable({ onEdit, onDeleted }) {
                                   if (!id) return;
                                   openConfirmDelete(id);
                                 }}
-                                className="block w-full px-4 py-2 text-left text-xs font-semibold text-red-600 hover:bg-gray-50"
+                                className="block w-full px-4 py-2 text-left font-semibold text-red-600 hover:bg-gray-50 text-xs"
                               >
                                 Delete
                               </button>
@@ -348,21 +348,21 @@ function VisitorTable({ onEdit, onDeleted }) {
         </table>
       </div>
 
-      <div className="flex items-center justify-end gap-3 px-6 py-2">
+      <div className="flex items-center justify-end gap-3 py-2 px-4 md:px-6">
         <button
           type="button"
           onClick={onPrev}
           disabled={!store?.visitorPagination?.prevPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
         >
           Prev
         </button>
-        <div className="text-sm text-gray-600">Page {store?.visitorPagination?.currentPage || 1}</div>
+        <div className="text-gray-600 text-sm">Page {store?.visitorPagination?.currentPage || 1}</div>
         <button
           type="button"
           onClick={onNext}
           disabled={!store?.visitorPagination?.nextPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
         >
           Next
         </button>
@@ -371,22 +371,22 @@ function VisitorTable({ onEdit, onDeleted }) {
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-5 py-4">
-              <div className="text-sm font-semibold text-gray-900">Delete Visitor</div>
+            <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Delete Visitor</div>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700">Are you sure you want to delete this record?</div>
-            <div className="flex items-center justify-end gap-3 px-5 py-4">
+            <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">Are you sure you want to delete this record?</div>
+            <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
               <button
                 type="button"
                 onClick={closeConfirmDelete}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+                className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
               >
                 Delete
               </button>
@@ -398,22 +398,22 @@ function VisitorTable({ onEdit, onDeleted }) {
       {convertOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-5 py-4">
-              <div className="text-sm font-semibold text-gray-900">Convert Visitor</div>
+            <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Convert Visitor</div>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700">Do you want to convert this visitor to a member?</div>
-            <div className="flex items-center justify-end gap-3 px-5 py-4">
+            <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">Do you want to convert this visitor to a member?</div>
+            <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
               <button
                 type="button"
                 onClick={closeConvert}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
               >
                 No
               </button>
               <button
                 type="button"
                 onClick={confirmConvert}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 Yes
               </button>
@@ -425,9 +425,9 @@ function VisitorTable({ onEdit, onDeleted }) {
       {detailsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl">
-            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
               <div>
-                <div className="text-lg font-semibold text-gray-900">{detailsVisitor?.fullName || "Visitor Details"}</div>
+                <div className="font-semibold text-gray-900 text-lg">{detailsVisitor?.fullName || "Visitor Details"}</div>
                 <div className="mt-2">
                   <StatusChip value={detailsVisitor?.status} />
                 </div>
@@ -436,7 +436,7 @@ function VisitorTable({ onEdit, onDeleted }) {
               <button
                 type="button"
                 onClick={closeDetails}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
                 aria-label="Close"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -445,66 +445,66 @@ function VisitorTable({ onEdit, onDeleted }) {
               </button>
             </div>
 
-            <div className="px-6 py-5">
+            <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
               {detailsLoading ? (
                 <div className="space-y-4 animate-pulse">
                   <div className="h-5 w-40 rounded bg-gray-200" />
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {[0, 1, 2, 3, 4, 5].map((i) => (
                       <div key={i} className="h-[54px] w-full rounded-lg bg-gray-200" />
                     ))}
-                    <div className="sm:col-span-2">
+                    <div className="md:col-span-2">
                       <div className="h-[70px] w-full rounded-lg bg-gray-200" />
                     </div>
                   </div>
                 </div>
               ) : detailsError ? (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{detailsError}</div>
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{detailsError}</div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-500">Phone</div>
-                    <div className="mt-1 text-sm font-semibold text-gray-900">{detailsVisitor?.phoneNumber || "-"}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Phone</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.phoneNumber || "-"}</div>
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-500">Email</div>
-                    <div className="mt-1 text-sm font-semibold text-gray-900">{detailsVisitor?.email || "-"}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Email</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.email || "-"}</div>
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-500">Location</div>
-                    <div className="mt-1 text-sm font-semibold text-gray-900">{detailsVisitor?.location || "-"}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Location</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.location || "-"}</div>
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-500">Service</div>
-                    <div className="mt-1 text-sm font-semibold text-gray-900">{detailsVisitor?.serviceType || "-"}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Service</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.serviceType || "-"}</div>
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-500">Service Date</div>
-                    <div className="mt-1 text-sm font-semibold text-gray-900">{formatDate(detailsVisitor?.serviceDate)}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Service Date</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(detailsVisitor?.serviceDate)}</div>
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-500">Invited By</div>
-                    <div className="mt-1 text-sm font-semibold text-gray-900">{detailsVisitor?.invitedBy || "-"}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Invited By</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.invitedBy || "-"}</div>
                   </div>
 
-                  <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-500">Note</div>
-                    <div className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">{detailsVisitor?.note || "-"}</div>
+                  <div className="md:col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Note</div>
+                    <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{detailsVisitor?.note || "-"}</div>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 py-4 px-4 md:px-6">
               <button
                 type="button"
                 onClick={closeDetails}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
               >
                 Close
               </button>

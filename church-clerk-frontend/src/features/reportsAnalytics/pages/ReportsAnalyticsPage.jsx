@@ -21,6 +21,7 @@ import {
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 
 function safeNumber(n) {
@@ -215,8 +216,8 @@ function ReportsAnalyticsPage() {
   if (!canRead) {
     return (
       <div className="max-w-6xl">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Reports &amp; Analytics</h2>
-        <p className="mt-1 text-sm text-gray-500">You do not have permission to view this page.</p>
+        <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Reports &amp; Analytics</h2>
+        <p className="mt-1 text-gray-500 text-sm">You do not have permission to view this page.</p>
       </div>
     );
   }
@@ -225,12 +226,12 @@ function ReportsAnalyticsPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Reports &amp; Analytics</h2>
-          <p className="mt-1 text-sm text-gray-500">Analytics and reports for your church data.</p>
+          <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Reports &amp; Analytics</h2>
+          <p className="mt-1 text-gray-500 text-sm">Analytics and reports for your church data.</p>
         </div>
       </div>
 
-      <div className="mt-5 inline-flex rounded-lg border border-gray-200 bg-white p-1">
+      <div className="cck-tab-bar mt-5 inline-flex rounded-lg border border-gray-200 bg-white p-1">
         <button
           type="button"
           onClick={() => setActiveTab("analytics")}
@@ -253,18 +254,18 @@ function ReportsAnalyticsPage() {
 
       {activeTab === "analytics" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="text-sm font-semibold text-gray-900">Year Filter</div>
-              <div className="mt-1 text-xs text-gray-500">Charts are filtered by year (Jan - Dec)</div>
+              <div className="font-semibold text-gray-900 text-sm">Year Filter</div>
+              <div className="mt-1 text-gray-500 text-xs">Charts are filtered by year (Jan - Dec)</div>
             </div>
 
-            <div className="w-full sm:w-auto">
-              <div className="text-xs font-semibold text-gray-600 mb-1">Year</div>
+            <div className="w-full md:w-auto">
+              <div className="font-semibold text-gray-600 mb-1 text-xs">Year</div>
               <select
                 value={year}
                 onChange={(e) => setYear(Number(e.target.value))}
-                className="h-10 w-full sm:w-40 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-40 text-sm"
               >
                 {Array.from({ length: 10 }).map((_, idx) => {
                   const y = new Date().getFullYear() - idx;
@@ -280,15 +281,15 @@ function ReportsAnalyticsPage() {
         </div>
       ) : null}
 
-      {error ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{error}</div> : null}
       {loading ? (
         <div className="mt-4 animate-pulse">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
               <div className="h-4 w-24 rounded bg-gray-200" />
               <div className="mt-4 h-64 rounded-lg bg-gray-200" />
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
               <div className="h-4 w-24 rounded bg-gray-200" />
               <div className="mt-4 h-64 rounded-lg bg-gray-200" />
             </div>
@@ -299,19 +300,19 @@ function ReportsAnalyticsPage() {
       {activeTab === "analytics" ? (
         <>
           {!loading ? (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+            <KpiGrid className="mt-6 gap-4 xl:grid-cols-5">
               <KpiCard title="Overall Revenue" value={formatCurrency(kpi?.kpis?.totalIncome)} accent="bg-green-600" />
               <KpiCard title="Overall Expenses" value={formatCurrency(kpi?.kpis?.totalExpenses)} accent="bg-orange-600" />
               <KpiCard title="Overall Surplus / Deficit" value={formatCurrency(kpi?.kpis?.surplus)} accent="bg-blue-700" />
               <KpiCard title="Overall New Members" value={String(kpi?.kpis?.newMembers ?? 0)} accent="bg-purple-600" />
               <KpiCard title="Overall Visitors" value={String(kpi?.kpis?.visitors ?? 0)} accent="bg-gray-800" />
-            </div>
+            </KpiGrid>
           ) : null}
 
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-sm font-semibold text-gray-900">Income vs Expenses</div>
-              <div className="mt-1 text-xs text-gray-500">Jan - Dec ({year})</div>
+              <div className="font-semibold text-gray-900 text-sm">Income vs Expenses</div>
+              <div className="mt-1 text-gray-500 text-xs">Jan - Dec ({year})</div>
 
               <div className="mt-3 h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -331,8 +332,8 @@ function ReportsAnalyticsPage() {
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-sm font-semibold text-gray-900">Offering vs Tithe</div>
-              <div className="mt-1 text-xs text-gray-500">Jan - Dec ({year})</div>
+              <div className="font-semibold text-gray-900 text-sm">Offering vs Tithe</div>
+              <div className="mt-1 text-gray-500 text-xs">Jan - Dec ({year})</div>
 
               <div className="mt-3 h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -352,8 +353,8 @@ function ReportsAnalyticsPage() {
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-sm font-semibold text-gray-900">Total Members vs New Members</div>
-              <div className="mt-1 text-xs text-gray-500">Jan - Dec ({year})</div>
+              <div className="font-semibold text-gray-900 text-sm">Total Members vs New Members</div>
+              <div className="mt-1 text-gray-500 text-xs">Jan - Dec ({year})</div>
 
               <div className="mt-3 h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -370,8 +371,8 @@ function ReportsAnalyticsPage() {
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-sm font-semibold text-gray-900">Attendance vs Visitors</div>
-              <div className="mt-1 text-xs text-gray-500">Jan - Dec ({year})</div>
+              <div className="font-semibold text-gray-900 text-sm">Attendance vs Visitors</div>
+              <div className="mt-1 text-gray-500 text-xs">Jan - Dec ({year})</div>
 
               <div className="mt-3 h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -393,11 +394,11 @@ function ReportsAnalyticsPage() {
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div className="w-full lg:w-64">
-                <div className="text-xs font-semibold text-gray-600 mb-1">Module</div>
+                <div className="font-semibold text-gray-600 mb-1 text-xs">Module</div>
                 <select
                   value={reportModule}
                   onChange={(e) => setReportModule(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 >
                   <option value="">Select module</option>
                   {MODULE_OPTIONS.map((m) => (
@@ -409,7 +410,7 @@ function ReportsAnalyticsPage() {
               </div>
 
               <div className="w-full lg:w-auto">
-                <div className="text-xs font-semibold text-gray-600 mb-1">Date</div>
+                <div className="font-semibold text-gray-600 mb-1 text-xs">Date</div>
                 <DateRangeFilter
                   appliedFrom={reportFrom}
                   appliedTo={reportTo}
@@ -429,7 +430,7 @@ function ReportsAnalyticsPage() {
                   type="button"
                   disabled={!reportModule || reportLoading}
                   onClick={generateReport}
-                  className="h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                  className="h-11 rounded-lg bg-blue-700 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 md:h-12 text-sm"
                 >
                   {reportLoading ? "Generating…" : "Generate"}
                 </button>
@@ -441,7 +442,7 @@ function ReportsAnalyticsPage() {
                     onClick={() => {
                       openExportModal();
                     }}
-                    className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="h-11 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:h-12 text-sm"
                   >
                     Export
                   </button>
@@ -450,14 +451,14 @@ function ReportsAnalyticsPage() {
             </div>
           </div>
 
-          {reportError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{reportError}</div> : null}
+          {reportError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{reportError}</div> : null}
           {reportLoading ? (
             <div className="mt-4 animate-pulse">
               <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-                <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
+                <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
                   <div className="h-4 w-32 rounded bg-gray-200" />
                 </div>
-                <div className="p-5 space-y-3">
+                <div className="p-4 space-y-3 md:p-6 lg:p-8">
                   {[0, 1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-4 py-1.5">
                       <div className="h-4 w-20 rounded bg-gray-200" />
@@ -473,9 +474,9 @@ function ReportsAnalyticsPage() {
 
           {report?.columns?.length ? (
             <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
-              <div className="border-b border-gray-200 p-5">
-                <div className="text-sm font-semibold text-gray-900">{report?.title || "Report"}</div>
-                <div className="mt-1 text-xs text-gray-500">
+              <div className="border-b border-gray-200 p-4 md:p-6 lg:p-8">
+                <div className="font-semibold text-gray-900 text-sm">{report?.title || "Report"}</div>
+                <div className="mt-1 text-gray-500 text-xs">
                   {lastGenerated?.from || "—"} to {lastGenerated?.to || "—"}
                 </div>
               </div>
@@ -483,11 +484,11 @@ function ReportsAnalyticsPage() {
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
-                    <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
+                    <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                       {report.columns.map((c, index) => (
                         <th
                           key={c.key}
-                          className={`${index === 0 ? "sticky left-0 z-20 bg-slate-100" : ""} px-6 max-sm:px-4 py-2 whitespace-nowrap`}
+                          className={`${index === 0 ? "sticky left-0 z-20 bg-slate-100" : ""} px-6 max-md:px-4 py-2 whitespace-nowrap`}
                         >
                           {c.label}
                         </th>
@@ -496,11 +497,11 @@ function ReportsAnalyticsPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {(Array.isArray(report?.rows) ? report.rows : []).map((r, idx) => (
-                      <tr key={idx} className="text-sm max-sm:text-xs text-gray-700">
+                      <tr key={idx} className="max-md:text-xs text-gray-700 text-sm">
                         {report.columns.map((c, index) => (
                           <td
                             key={`${idx}-${c.key}`}
-                            className={`${index === 0 ? "sticky left-0 z-10 bg-white" : ""} px-6 max-sm:px-4 py-2 whitespace-nowrap`}
+                            className={`${index === 0 ? "sticky left-0 z-10 bg-white" : ""} px-6 max-md:px-4 py-2 whitespace-nowrap`}
                           >
                             {String(r?.[c.key] ?? "—")}
                           </td>
@@ -516,25 +517,25 @@ function ReportsAnalyticsPage() {
           {canExport && reportExportOpen ? (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
               <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-                <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
+                <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">Export Report</div>
-                    <div className="mt-1 text-xs text-gray-500">
+                    <div className="font-semibold text-gray-900 text-sm">Export Report</div>
+                    <div className="mt-1 text-gray-500 text-xs">
                       {reportExportStep === "fields" ? "Select fields to include." : "Choose a format for download."}
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setReportExportOpen(false)}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                   >
                     Close
                   </button>
                 </div>
 
-                <div className="px-5 py-4">
+                <div className="px-4 md:px-5 lg:px-6 py-4">
                   {reportExportError ? (
-                    <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{reportExportError}</div>
+                    <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{reportExportError}</div>
                   ) : null}
 
                   {reportExportStep === "fields" ? (
@@ -548,7 +549,7 @@ function ReportsAnalyticsPage() {
                               if (!key) return null;
                               const checked = reportExportFields.includes(key);
                               return (
-                                <label key={key} className="flex items-center gap-2 text-sm text-gray-700">
+                                <label key={key} className="flex items-center gap-2 text-gray-700 text-sm">
                                   <input
                                     type="checkbox"
                                     checked={checked}
@@ -567,7 +568,7 @@ function ReportsAnalyticsPage() {
                             })}
                           </div>
                         ) : (
-                          <div className="p-3 text-sm text-gray-600">No fields available.</div>
+                          <div className="p-3 text-gray-600 text-sm">No fields available.</div>
                         )}
                       </div>
 
@@ -576,7 +577,7 @@ function ReportsAnalyticsPage() {
                           type="button"
                           disabled={!reportExportAvailableColumns.length}
                           onClick={() => setReportExportFields(reportExportAvailableColumns.map((c) => c?.key).filter(Boolean))}
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                         >
                           Select all
                         </button>
@@ -584,7 +585,7 @@ function ReportsAnalyticsPage() {
                           type="button"
                           disabled={reportExportLoading || !reportExportFields.length}
                           onClick={() => setReportExportStep("format")}
-                          className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                          className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                         >
                           Next
                         </button>
@@ -597,7 +598,7 @@ function ReportsAnalyticsPage() {
                           type="button"
                           disabled={reportExportLoading}
                           onClick={() => exportReport("pdf", reportExportFields)}
-                          className="w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                          className="w-full rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                         >
                           {reportExportLoading ? "Exporting…" : "Export PDF"}
                         </button>
@@ -605,7 +606,7 @@ function ReportsAnalyticsPage() {
                           type="button"
                           disabled={reportExportLoading}
                           onClick={() => exportReport("excel", reportExportFields)}
-                          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                         >
                           {reportExportLoading ? "Exporting…" : "Export Excel"}
                         </button>
@@ -616,7 +617,7 @@ function ReportsAnalyticsPage() {
                           type="button"
                           disabled={reportExportLoading}
                           onClick={() => setReportExportStep("fields")}
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                         >
                           Back
                         </button>
@@ -624,7 +625,7 @@ function ReportsAnalyticsPage() {
                     </div>
                   )}
 
-                  <div className="mt-4 text-xs text-gray-500">
+                  <div className="mt-4 text-gray-500 text-xs">
                     Period: {lastGenerated?.from || "—"} to {lastGenerated?.to || "—"}
                   </div>
                 </div>

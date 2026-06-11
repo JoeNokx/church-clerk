@@ -231,17 +231,17 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div>
-            <div className="text-sm font-semibold text-gray-900">{mode === "edit" ? "Edit Individual Tithe" : "Record Individual Tithe"}</div>
+            <div className="font-semibold text-gray-900 text-sm">{mode === "edit" ? "Edit Individual Tithe" : "Record Individual Tithe"}</div>
             {mode === "edit" && editMemberName ? (
-              <div className="mt-1 text-xs text-gray-500">{editMemberName}</div>
+              <div className="mt-1 text-gray-500 text-xs">{editMemberName}</div>
             ) : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -250,29 +250,29 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={submit} className="p-5">
+        <form onSubmit={submit} className="p-4 md:p-6 lg:p-8">
           {formError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{formError}</div>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{formError}</div>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Amount</label>
+              <label className="block font-semibold text-gray-500 text-xs">Amount</label>
               <input
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 type="number"
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
                 placeholder="0"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Payment Method</label>
+              <label className="block font-semibold text-gray-500 text-xs">Payment Method</label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               >
                 {PAYMENT_METHODS.map((pm) => (
                   <option key={pm} value={pm}>
@@ -283,31 +283,31 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500">Date</label>
+              <label className="block font-semibold text-gray-500 text-xs">Date</label>
               <input
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 type="date"
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               />
             </div>
           </div>
 
           {mode !== "edit" ? (
             <div className="mt-5">
-              <label className="block text-xs font-semibold text-gray-500">Members</label>
+              <label className="block font-semibold text-gray-500 text-xs">Members</label>
 
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 type="text"
                 placeholder="Type name, phone, email..."
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               />
 
               <div ref={listRef} className="mt-3 max-h-64 overflow-y-auto rounded-lg border border-gray-200">
                 {searchLoading ? (
-                  <div className="px-4 py-3 text-sm text-gray-600">Searching...</div>
+                  <div className="px-4 py-3 text-gray-600 text-sm">Searching...</div>
                 ) : options.length ? (
                   <div className="divide-y divide-gray-200">
                     {options.map((m, idx) => (
@@ -320,29 +320,29 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
                           className="mt-1"
                         />
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold text-gray-900 truncate">{memberLabel(m)}</div>
+                          <div className="font-semibold text-gray-900 truncate text-sm">{memberLabel(m)}</div>
                         </div>
                       </label>
                     ))}
                   </div>
                 ) : debouncedQuery.trim() ? (
-                  <div className="px-4 py-3 text-sm text-gray-600">No members found.</div>
+                  <div className="px-4 py-3 text-gray-600 text-sm">No members found.</div>
                 ) : (
-                  <div className="px-4 py-3 text-sm text-gray-600">Start typing to search members.</div>
+                  <div className="px-4 py-3 text-gray-600 text-sm">Start typing to search members.</div>
                 )}
               </div>
 
-              <div className="mt-2 text-xs text-gray-500">Selected: {selectedMemberId ? 1 : 0}</div>
+              <div className="mt-2 text-gray-500 text-xs">Selected: {selectedMemberId ? 1 : 0}</div>
 
               {pendingEntries.length ? (
                 <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <div className="text-xs font-semibold text-gray-700">Pending entries ({pendingEntries.length})</div>
+                  <div className="font-semibold text-gray-700 text-xs">Pending entries ({pendingEntries.length})</div>
                   <div className="mt-2 max-h-40 overflow-y-auto">
                     <div className="space-y-2">
                       {pendingEntries.map((p, i) => (
                         <div key={`pending-${i}`} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-                          <div className="text-sm font-semibold text-gray-900 truncate">{memberLabel(p?.member)}</div>
-                          <div className="mt-1 text-xs text-gray-600">
+                          <div className="font-semibold text-gray-900 truncate text-sm">{memberLabel(p?.member)}</div>
+                          <div className="mt-1 text-gray-600 text-xs">
                             {formatMoney(p?.payload?.amount || 0, currency)} • {p?.payload?.paymentMethod || "-"} • {(p?.payload?.date || "").slice(0, 10)}
                           </div>
                         </div>
@@ -358,7 +358,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
             >
               Cancel
             </button>
@@ -368,7 +368,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
                 type="button"
                 onClick={addAnother}
                 disabled={store?.loading}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 text-sm"
               >
                 Add Another
               </button>
@@ -377,7 +377,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
             <button
               type="submit"
               disabled={store?.loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
               {mode === "edit" ? "Update" : pendingEntries.length ? "Save All" : "Save"}
             </button>

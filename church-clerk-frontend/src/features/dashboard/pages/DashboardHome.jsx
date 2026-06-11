@@ -2,10 +2,7 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 
 import { useLocation } from "react-router-dom";
 
-import { useQuery } from "@tanstack/react-query";
-
-import Skeleton from "react-loading-skeleton";
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboardWidgetsWithParams } from "../services/dashboard.api.js";
 
@@ -16,6 +13,8 @@ import { getMyReferralCode, getMyReferralHistory } from "../../referral/services
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 import PermissionContext from "../../permissions/permission.store.js";
+
+import ChurchContext from "../../church/church.store.js";
 
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 
@@ -229,6 +228,23 @@ function DashboardOverview({ onNavigate }) {
 
   const { can } = useContext(PermissionContext) || {};
 
+  const churchCtx = useContext(ChurchContext);
+
+  const activeChurchId = churchCtx?.activeChurch?._id || null;
+
+  const isMonitoringBranch = churchCtx?.isMonitoringBranch || false;
+  const hqChurchId = churchCtx?.hqChurch?._id || null;
+  const branchChurchIdCtx = churchCtx?.branchChurch?._id || null;
+
+  const otherChurchId = useMemo(() => {
+    if (!isMonitoringBranch || !activeChurchId || !hqChurchId || !branchChurchIdCtx) return null;
+    if (String(activeChurchId) === String(branchChurchIdCtx)) return hqChurchId;
+    if (String(activeChurchId) === String(hqChurchId)) return branchChurchIdCtx;
+    return null;
+  }, [isMonitoringBranch, activeChurchId, hqChurchId, branchChurchIdCtx]);
+
+  const queryClient = useQueryClient();
+
   const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
 
   const canViewEvents = useMemo(() => (typeof can === "function" ? can("events", "view") : false), [can]);
@@ -236,7 +252,9 @@ function DashboardOverview({ onNavigate }) {
   const year = useMemo(() => new Date().getFullYear(), []);
 
   const kpiQuery = useQuery({
-    queryKey: ["dashboard", "kpi"],
+    queryKey: ["dashboard", "kpi", activeChurchId],
+    enabled: !!activeChurchId,
+    staleTime: 0,
     queryFn: async () => {
       const res = await getDashboardKPI();
       return res?.data?.kpis || null;
@@ -244,7 +262,9 @@ function DashboardOverview({ onNavigate }) {
   });
 
   const analyticsQuery = useQuery({
-    queryKey: ["dashboard", "analytics", year],
+    queryKey: ["dashboard", "analytics", activeChurchId, year],
+    enabled: !!activeChurchId,
+    staleTime: 0,
     queryFn: async () => {
       const res = await getDashboardAnalytics({ year });
       return res?.data?.analyticsDashboard || null;
@@ -252,7 +272,9 @@ function DashboardOverview({ onNavigate }) {
   });
 
   const widgetsQuery = useQuery({
-    queryKey: ["dashboard", "widgets"],
+    queryKey: ["dashboard", "widgets", activeChurchId],
+    enabled: !!activeChurchId,
+    staleTime: 0,
     queryFn: async () => {
       const res = await getDashboardWidgets();
       return res?.data?.dashboardWidget || null;
@@ -276,7 +298,9 @@ function DashboardOverview({ onNavigate }) {
   });
 
   const upcomingEventsQuery = useQuery({
-    queryKey: ["dashboard", "upcoming-events"],
+    queryKey: ["dashboard", "upcoming-events", activeChurchId],
+    enabled: !!activeChurchId,
+    staleTime: 0,
     queryFn: async () => {
       const res = await getUpcomingEvents({ page: 1, limit: 6 });
       const payload = res?.data?.data ?? res?.data;
@@ -285,6 +309,37 @@ function DashboardOverview({ onNavigate }) {
       return events.slice(0, 6);
     }
   });
+
+  useEffect(() => {
+    if (!otherChurchId) return;
+    const cid = String(otherChurchId);
+    const y = year;
+    void queryClient.prefetchQuery({
+      queryKey: ["dashboard", "kpi", cid],
+      staleTime: 2 * 60 * 1000,
+      queryFn: () => getDashboardKPI({ churchId: cid }).then(r => r?.data?.kpis || null),
+    });
+    void queryClient.prefetchQuery({
+      queryKey: ["dashboard", "analytics", cid, y],
+      staleTime: 2 * 60 * 1000,
+      queryFn: () => getDashboardAnalytics({ year: y }, { churchId: cid }).then(r => r?.data?.analyticsDashboard || null),
+    });
+    void queryClient.prefetchQuery({
+      queryKey: ["dashboard", "widgets", cid],
+      staleTime: 2 * 60 * 1000,
+      queryFn: () => getDashboardWidgets({ churchId: cid }).then(r => r?.data?.dashboardWidget || null),
+    });
+    void queryClient.prefetchQuery({
+      queryKey: ["dashboard", "upcoming-events", cid],
+      staleTime: 2 * 60 * 1000,
+      queryFn: () => getUpcomingEvents({ page: 1, limit: 6 }, { churchId: cid }).then(r => {
+        const payload = r?.data?.data ?? r?.data;
+        const data = payload?.data ?? payload;
+        const events = Array.isArray(data?.events) ? data.events : [];
+        return events.slice(0, 6);
+      }),
+    });
+  }, [otherChurchId, queryClient, year]);
 
   const loading =
     kpiQuery.isLoading ||
@@ -517,25 +572,25 @@ function DashboardOverview({ onNavigate }) {
 
       <div className="w-full max-w-none">
 
-        <div className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard Overview</div>
+        <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Dashboard Overview</div>
 
-        <div className="mt-1 text-sm text-gray-500">A quick summary of what's happening with your church.</div>
+        <div className="mt-1 text-gray-500 text-sm">A quick summary of what's happening with your church.</div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3 lg:grid-cols-4">
 
           {[0, 1, 2, 3].map((i) => (
 
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+            <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
 
               <div className="flex items-center gap-2">
 
-                <div className="h-8 w-8 rounded-lg bg-gray-200" />
+                <div className="h-11 rounded-lg bg-gray-200 md:h-12 md:w-11 w-11 md:w-12" />
 
                 <div className="h-4 w-24 rounded bg-gray-200" />
 
               </div>
 
-              <div className="mt-3 h-8 w-20 rounded bg-gray-200" />
+              <div className="mt-3 h-11 w-20 rounded bg-gray-200 md:h-12" />
 
               <div className="mt-3 h-6 w-28 rounded-full bg-gray-200" />
 
@@ -545,9 +600,9 @@ function DashboardOverview({ onNavigate }) {
 
         </div>
 
-        <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
 
-          <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+          <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
 
             <div className="h-4 w-32 rounded bg-gray-200" />
 
@@ -555,7 +610,7 @@ function DashboardOverview({ onNavigate }) {
 
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
 
             <div className="h-4 w-32 rounded bg-gray-200" />
 
@@ -565,13 +620,13 @@ function DashboardOverview({ onNavigate }) {
 
         </div>
 
-        <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
 
           {[0, 1, 2].map((i) => (
 
             <div key={i} className="rounded-xl border border-gray-200 bg-white overflow-hidden animate-pulse">
 
-              <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
+              <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
 
                 <div className="h-4 w-32 rounded bg-gray-200" />
 
@@ -579,7 +634,7 @@ function DashboardOverview({ onNavigate }) {
 
               </div>
 
-              <div className="px-5 pb-5 mt-4 space-y-3">
+              <div className="px-4 md:px-5 lg:px-6 pb-5 mt-4 space-y-3">
 
                 {[0, 1, 2, 3].map((j) => (
 
@@ -623,9 +678,9 @@ function DashboardOverview({ onNavigate }) {
 
         <div>
 
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard Overview</div>
+          <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Dashboard Overview</div>
 
-          <div className="mt-1 text-sm text-gray-500">A quick summary of what's happening with your church.</div>
+          <div className="mt-1 text-gray-500 text-sm">A quick summary of what's happening with your church.</div>
 
         </div>
 
@@ -633,7 +688,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
 
 
@@ -761,7 +816,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-      <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
 
         <React.Suspense
 
@@ -769,7 +824,7 @@ function DashboardOverview({ onNavigate }) {
 
             <>
 
-              <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+              <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
 
                 <div className="h-4 w-32 rounded bg-gray-200" />
 
@@ -777,7 +832,7 @@ function DashboardOverview({ onNavigate }) {
 
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
+              <div className="rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
 
                 <div className="h-4 w-32 rounded bg-gray-200" />
 
@@ -799,13 +854,13 @@ function DashboardOverview({ onNavigate }) {
 
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
 
-          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
 
             <div>
 
-              <div className="text-base font-semibold text-gray-900">Upcoming Birthdays</div>
+              <div className="font-semibold text-gray-900 text-base">Upcoming Birthdays</div>
 
-              <div className="mt-1 text-sm text-gray-600">Next 30 days</div>
+              <div className="mt-1 text-gray-600 text-sm">Next 30 days</div>
 
             </div>
 
@@ -815,7 +870,7 @@ function DashboardOverview({ onNavigate }) {
 
               onClick={openBirthdaysModal}
 
-              className="text-base font-semibold text-blue-700 hover:underline"
+              className="font-semibold text-blue-700 hover:underline text-base"
 
             >
 
@@ -827,7 +882,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-          <div className="px-5 pb-5">
+          <div className="px-4 md:px-5 lg:px-6 pb-5">
 
             <div className="mt-4 divide-y divide-gray-200">
 
@@ -851,13 +906,13 @@ function DashboardOverview({ onNavigate }) {
 
                       <div className="min-w-0">
 
-                        <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
 
-                        <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                        <div className="mt-0.5 text-gray-500 text-sm">{formatShortDate(m?.nextBirthday)}</div>
 
                       </div>
 
-                      <div className="text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                      <div className="font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
 
                     </button>
 
@@ -873,13 +928,13 @@ function DashboardOverview({ onNavigate }) {
 
                       <div className="min-w-0">
 
-                        <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
 
-                        <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                        <div className="mt-0.5 text-gray-500 text-sm">{formatShortDate(m?.nextBirthday)}</div>
 
                       </div>
 
-                      <div className="text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                      <div className="font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
 
                     </div>
 
@@ -889,7 +944,7 @@ function DashboardOverview({ onNavigate }) {
 
               ) : (
 
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No birthdays in the next 30 days.</div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No birthdays in the next 30 days.</div>
 
               )}
 
@@ -903,13 +958,13 @@ function DashboardOverview({ onNavigate }) {
 
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
 
-          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
 
             <div>
 
-              <div className="text-base font-semibold text-gray-900">Recent Members</div>
+              <div className="font-semibold text-gray-900 text-base">Recent Members</div>
 
-              <div className="mt-1 text-sm text-gray-600">Recently registered</div>
+              <div className="mt-1 text-gray-600 text-sm">Recently registered</div>
 
             </div>
 
@@ -919,7 +974,7 @@ function DashboardOverview({ onNavigate }) {
 
               onClick={() => onNavigate("members")}
 
-              className="text-base font-semibold text-blue-700 hover:underline"
+              className="font-semibold text-blue-700 hover:underline text-base"
 
             >
 
@@ -931,7 +986,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-          <div className="px-5 pb-5">
+          <div className="px-4 md:px-5 lg:px-6 pb-5">
 
             <div className="mt-4 divide-y divide-gray-200">
 
@@ -955,13 +1010,13 @@ function DashboardOverview({ onNavigate }) {
 
                       <div className="min-w-0">
 
-                        <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
 
-                        <div className="mt-0.5 text-sm text-gray-500">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                        <div className="mt-0.5 text-gray-500 text-sm">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
 
                       </div>
 
-                      <div className="shrink-0 text-sm font-semibold text-gray-700">View</div>
+                      <div className="shrink-0 font-semibold text-gray-700 text-sm">View</div>
 
                     </button>
 
@@ -977,9 +1032,9 @@ function DashboardOverview({ onNavigate }) {
 
                       <div className="min-w-0">
 
-                        <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
 
-                        <div className="mt-0.5 text-sm text-gray-500">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                        <div className="mt-0.5 text-gray-500 text-sm">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
 
                       </div>
 
@@ -991,7 +1046,7 @@ function DashboardOverview({ onNavigate }) {
 
               ) : (
 
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No recent members.</div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No recent members.</div>
 
               )}
 
@@ -1005,13 +1060,13 @@ function DashboardOverview({ onNavigate }) {
 
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
 
-          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
 
             <div>
 
-              <div className="text-base font-semibold text-gray-900">Upcoming Events</div>
+              <div className="font-semibold text-gray-900 text-base">Upcoming Events</div>
 
-              <div className="mt-1 text-sm text-gray-600">Next scheduled programs</div>
+              <div className="mt-1 text-gray-600 text-sm">Next scheduled programs</div>
 
             </div>
 
@@ -1021,7 +1076,7 @@ function DashboardOverview({ onNavigate }) {
 
               onClick={() => onNavigate("programs-events")}
 
-              className="text-base font-semibold text-blue-700 hover:underline"
+              className="font-semibold text-blue-700 hover:underline text-base"
 
             >
 
@@ -1033,7 +1088,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-          <div className="px-5 pb-5">
+          <div className="px-4 md:px-5 lg:px-6 pb-5">
 
             <div className="mt-4">
 
@@ -1053,7 +1108,7 @@ function DashboardOverview({ onNavigate }) {
 
                       </div>
 
-                      <div className="h-3 w-10 rounded bg-gray-200" />
+                      <div className="h-3 w-11 rounded bg-gray-200 md:w-12" />
 
                     </div>
 
@@ -1063,7 +1118,7 @@ function DashboardOverview({ onNavigate }) {
 
               ) : upcomingEventsError ? (
 
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{upcomingEventsError}</div>
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{upcomingEventsError}</div>
 
               ) : upcomingEvents.length ? (
 
@@ -1089,15 +1144,15 @@ function DashboardOverview({ onNavigate }) {
 
                           <div className="min-w-0">
 
-                            <div className="text-base font-semibold text-gray-900 truncate">{ev?.title || ev?.name || "—"}</div>
+                            <div className="font-semibold text-gray-900 truncate text-base">{ev?.title || ev?.name || "—"}</div>
 
-                            <div className="mt-0.5 text-sm text-gray-500">
+                            <div className="mt-0.5 text-gray-500 text-sm">
 
                               {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
 
                             </div>
 
-                            <div className="mt-0.5 text-sm text-gray-500">
+                            <div className="mt-0.5 text-gray-500 text-sm">
 
                               {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
 
@@ -1107,7 +1162,7 @@ function DashboardOverview({ onNavigate }) {
 
                           </div>
 
-                          <div className="shrink-0 text-sm font-semibold text-gray-700">View</div>
+                          <div className="shrink-0 font-semibold text-gray-700 text-sm">View</div>
 
                         </div>
 
@@ -1127,15 +1182,15 @@ function DashboardOverview({ onNavigate }) {
 
                           <div className="min-w-0">
 
-                            <div className="text-base font-semibold text-gray-900 truncate">{ev?.title || ev?.name || "—"}</div>
+                            <div className="font-semibold text-gray-900 truncate text-base">{ev?.title || ev?.name || "—"}</div>
 
-                            <div className="mt-0.5 text-sm text-gray-500">
+                            <div className="mt-0.5 text-gray-500 text-sm">
 
                               {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
 
                             </div>
 
-                            <div className="mt-0.5 text-sm text-gray-500">
+                            <div className="mt-0.5 text-gray-500 text-sm">
 
                               {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
 
@@ -1157,7 +1212,7 @@ function DashboardOverview({ onNavigate }) {
 
               ) : (
 
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No upcoming events.</div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No upcoming events.</div>
 
               )}
 
@@ -1173,13 +1228,13 @@ function DashboardOverview({ onNavigate }) {
 
       <div className="mt-4 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white overflow-hidden">
 
-        <div className="flex items-start justify-between gap-4 border-b border-blue-100 bg-white/70 px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-blue-100 bg-white/70 px-4 md:px-5 lg:px-6 py-4">
 
           <div>
 
-            <div className="text-base font-semibold text-gray-900">Referral Program</div>
+            <div className="font-semibold text-gray-900 text-base">Referral Program</div>
 
-            <div className="mt-1 text-sm text-gray-600">Invite members and earn free days</div>
+            <div className="mt-1 text-gray-600 text-sm">Invite members and earn free days</div>
 
           </div>
 
@@ -1189,7 +1244,7 @@ function DashboardOverview({ onNavigate }) {
 
             onClick={() => onNavigate("referrals")}
 
-            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-blue-800 active:bg-blue-900 whitespace-nowrap"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-3 md:px-4 py-2 font-semibold text-white hover:bg-blue-800 active:bg-blue-900 whitespace-nowrap md:text-sm text-xs"
 
           >
 
@@ -1201,39 +1256,39 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-        <div className="px-5 pb-5">
+        <div className="px-4 md:px-5 lg:px-6 pb-5">
 
-          <div className="mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
+          <div className="mt-4 grid grid-cols-2 md:flex md:flex-wrap gap-3">
 
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 sm:w-44">
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 md:w-44">
 
-              <div className="text-sm font-semibold text-blue-900/70">Total Referrals</div>
+              <div className="font-semibold text-blue-900/70 text-sm">Total Referrals</div>
 
-              <div className="mt-1 text-base font-semibold text-blue-900">{referral?.totalReferrals ?? 0}</div>
-
-            </div>
-
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 sm:w-44">
-
-              <div className="text-sm font-semibold text-blue-900/70">Free Days Earned</div>
-
-              <div className="mt-1 text-base font-semibold text-blue-900">{(referral?.totalFreeMonthsEarned ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
+              <div className="mt-1 font-semibold text-blue-900 text-base">{referral?.totalReferrals ?? 0}</div>
 
             </div>
 
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 sm:w-44">
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 md:w-44">
 
-              <div className="text-sm font-semibold text-blue-900/70">Free Days Used</div>
+              <div className="font-semibold text-blue-900/70 text-sm">Free Days Earned</div>
 
-              <div className="mt-1 text-base font-semibold text-blue-900">{(referral?.totalFreeMonthsUsed ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
+              <div className="mt-1 font-semibold text-blue-900 text-base">{(referral?.totalFreeMonthsEarned ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
 
             </div>
 
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 sm:w-44">
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 md:w-44">
 
-              <div className="text-sm font-semibold text-blue-900/70">Free Days Remaining</div>
+              <div className="font-semibold text-blue-900/70 text-sm">Free Days Used</div>
 
-              <div className="mt-1 text-base font-semibold text-blue-900">{(referral?.freeMonthsRemaining ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
+              <div className="mt-1 font-semibold text-blue-900 text-base">{(referral?.totalFreeMonthsUsed ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
+
+            </div>
+
+            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 md:w-44">
+
+              <div className="font-semibold text-blue-900/70 text-sm">Free Days Remaining</div>
+
+              <div className="mt-1 font-semibold text-blue-900 text-base">{(referral?.freeMonthsRemaining ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
 
             </div>
 
@@ -1265,13 +1320,13 @@ function DashboardOverview({ onNavigate }) {
 
           <div className="relative w-full max-w-2xl max-h-[90vh] rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden flex flex-col">
 
-            <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-6 py-4">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 py-4 px-4 md:px-6">
 
               <div>
 
-                <div className="text-lg font-semibold text-gray-900">Upcoming Birthdays</div>
+                <div className="font-semibold text-gray-900 text-lg">Upcoming Birthdays</div>
 
-                <div className="mt-1 text-sm text-gray-600">All birthdays in the next 30 days</div>
+                <div className="mt-1 text-gray-600 text-sm">All birthdays in the next 30 days</div>
 
               </div>
 
@@ -1281,7 +1336,7 @@ function DashboardOverview({ onNavigate }) {
 
                 onClick={closeBirthdaysModal}
 
-                className="h-10 w-10 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 shrink-0"
+                className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 shrink-0 md:h-12 md:w-12"
 
               >
 
@@ -1297,11 +1352,11 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+            <div className="p-4 overflow-y-auto flex-1 md:p-6 lg:p-8">
 
               {birthdaysModalError ? (
 
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{birthdaysModalError}</div>
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{birthdaysModalError}</div>
 
               ) : null}
 
@@ -1323,7 +1378,7 @@ function DashboardOverview({ onNavigate }) {
 
                   placeholder="Search members"
 
-                  className="w-full sm:flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+                  className="w-full md:flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 text-sm"
 
                 />
 
@@ -1339,7 +1394,7 @@ function DashboardOverview({ onNavigate }) {
 
                     disabled={birthdaysSafePage <= 1}
 
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
 
                   >
 
@@ -1347,7 +1402,7 @@ function DashboardOverview({ onNavigate }) {
 
                   </button>
 
-                  <div className="text-sm text-gray-600">
+                  <div className="text-gray-600 text-sm">
 
                     Page {birthdaysSafePage} of {birthdaysTotalPages}
 
@@ -1361,7 +1416,7 @@ function DashboardOverview({ onNavigate }) {
 
                     disabled={birthdaysSafePage >= birthdaysTotalPages}
 
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
 
                   >
 
@@ -1383,7 +1438,7 @@ function DashboardOverview({ onNavigate }) {
 
                     {[0, 1, 2, 3, 4, 5].map((i) => (
                       <div key={i} className="flex items-center gap-3 py-1">
-                        <div className="h-8 w-8 rounded-full bg-gray-200" />
+                        <div className="h-11 rounded-full bg-gray-200 md:h-12 md:w-11 w-11 md:w-12" />
                         <div className="h-4 w-24 rounded bg-gray-200" />
                         <div className="ml-auto h-3 w-16 rounded bg-gray-200" />
                       </div>
@@ -1413,13 +1468,13 @@ function DashboardOverview({ onNavigate }) {
 
                           <div className="min-w-0">
 
-                            <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                            <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
 
-                            <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                            <div className="mt-0.5 text-gray-500 text-sm">{formatShortDate(m?.nextBirthday)}</div>
 
                           </div>
 
-                          <div className="shrink-0 text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                          <div className="shrink-0 font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
 
                         </button>
 
@@ -1435,13 +1490,13 @@ function DashboardOverview({ onNavigate }) {
 
                           <div className="min-w-0">
 
-                            <div className="text-base font-semibold text-gray-900 truncate">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                            <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
 
-                            <div className="mt-0.5 text-sm text-gray-500">{formatShortDate(m?.nextBirthday)}</div>
+                            <div className="mt-0.5 text-gray-500 text-sm">{formatShortDate(m?.nextBirthday)}</div>
 
                           </div>
 
-                          <div className="shrink-0 text-sm font-semibold text-gray-700">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                          <div className="shrink-0 font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
 
                         </div>
 
@@ -1453,7 +1508,7 @@ function DashboardOverview({ onNavigate }) {
 
                 ) : (
 
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">No birthdays found.</div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No birthdays found.</div>
 
                 )}
 
@@ -1477,39 +1532,40 @@ function DashboardOverview({ onNavigate }) {
 
 }
 
+function PageSkeletonFallback() {
+
+  return (
+
+    <div className="w-full max-w-none">
+
+      <div className="rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
+
+        <div className="h-5 w-48 rounded bg-gray-200" />
+
+        <div className="mt-4 h-64 rounded-lg bg-gray-200" />
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
 function DashboardHome() {
 
     const location = useLocation();
 
     const { toPage } = useDashboardNavigator();
 
+    const _churchCtx = useContext(ChurchContext);
+    const _activeChurchId = _churchCtx?.activeChurch?._id || "default";
+
 
 
     const rawPage = new URLSearchParams(location.search).get("page") || "dashboard";
 
     const page = rawPage === "offering" ? "offerings" : rawPage;
-
-
-
-    function PageSkeletonFallback() {
-
-      return (
-
-        <div className="w-full max-w-none">
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5 animate-pulse">
-
-            <div className="h-5 w-48 rounded bg-gray-200" />
-
-            <div className="mt-4 h-64 rounded-lg bg-gray-200" />
-
-          </div>
-
-        </div>
-
-      );
-
-    }
 
 
 
@@ -1596,6 +1652,8 @@ function DashboardHome() {
   return (
 
     <DashboardOverview
+
+      key={_activeChurchId}
 
       onNavigate={(targetPage) => {
 

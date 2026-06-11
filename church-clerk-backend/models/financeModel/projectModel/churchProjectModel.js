@@ -7,6 +7,8 @@ const churchProjectSchema = new mongoose.Schema({
   targetAmount: { type: Number, required: true },
   description: { type: String },
 
+  startDate: { type: Date, required: true, default: Date.now },
+
   status: { 
     type: String, 
     enum: ['Active', 'Completed'], 
@@ -15,5 +17,7 @@ const churchProjectSchema = new mongoose.Schema({
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
+
+churchProjectSchema.index({ church: 1, startDate: 1 });
 
 export default mongoose.model('ChurchProject', churchProjectSchema);

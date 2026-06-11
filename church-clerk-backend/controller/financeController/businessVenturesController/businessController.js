@@ -12,7 +12,8 @@ const createBusinessVentures = async (req, res) => {
                 businessName,
                 description,
                 manager,
-                phoneNumber
+                phoneNumber,
+                startDate
                 } = req.body;
                 
                 if (!businessName || !description) {
@@ -39,6 +40,7 @@ const createBusinessVentures = async (req, res) => {
                 description,
                 manager,
                 phoneNumber: validatedPhoneNumber,
+                startDate: startDate ? new Date(startDate) : new Date(),
                 church: req.activeChurch._id,
                 createdBy: req.user._id
                 });

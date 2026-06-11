@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { loginUser, logoutUser, getMyProfile } from "./services/auth.api.js";
 import PermissionContext from "../permissions/permission.store.js";
 import ChurchContext from "../church/church.store.js";
-import { getDashboardAnalytics, getDashboardKPI, getDashboardSummary, getDashboardWidgets } from "../dashboard/services/dashboard.api.js";
+import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets } from "../dashboard/services/dashboard.api.js";
 
 
 const AuthContext = createContext(null);
@@ -56,30 +56,27 @@ export function AuthProvider({ children }) {
 
         if (nextUser) {
           const year = new Date().getFullYear();
+          const churchId = payload?.activeChurch?._id || null;
           void Promise.allSettled([
             queryClient.prefetchQuery({
-              queryKey: ["dashboard", "kpi"],
+              queryKey: ["dashboard", "kpi", churchId],
+              staleTime: 0,
               queryFn: async () => {
                 const res = await getDashboardKPI();
                 return res?.data?.kpis || null;
               }
             }),
             queryClient.prefetchQuery({
-              queryKey: ["dashboard", "widgets"],
+              queryKey: ["dashboard", "widgets", churchId],
+              staleTime: 0,
               queryFn: async () => {
                 const res = await getDashboardWidgets();
                 return res?.data?.dashboardWidget || null;
               }
             }),
             queryClient.prefetchQuery({
-              queryKey: ["dashboard", "summary"],
-              queryFn: async () => {
-                const res = await getDashboardSummary();
-                return res?.data || null;
-              }
-            }),
-            queryClient.prefetchQuery({
-              queryKey: ["dashboard", "analytics", year],
+              queryKey: ["dashboard", "analytics", churchId, year],
+              staleTime: 0,
               queryFn: async () => {
                 const res = await getDashboardAnalytics({ year });
                 return res?.data?.analyticsDashboard || null;
@@ -157,30 +154,27 @@ export function AuthProvider({ children }) {
 
     if (userData) {
       const year = new Date().getFullYear();
+      const churchId = userData?.church?._id || (typeof userData?.church === "string" ? userData.church : null);
       await Promise.allSettled([
         queryClient.prefetchQuery({
-          queryKey: ["dashboard", "kpi"],
+          queryKey: ["dashboard", "kpi", churchId],
+          staleTime: 0,
           queryFn: async () => {
             const res = await getDashboardKPI();
             return res?.data?.kpis || null;
           }
         }),
         queryClient.prefetchQuery({
-          queryKey: ["dashboard", "widgets"],
+          queryKey: ["dashboard", "widgets", churchId],
+          staleTime: 0,
           queryFn: async () => {
             const res = await getDashboardWidgets();
             return res?.data?.dashboardWidget || null;
           }
         }),
         queryClient.prefetchQuery({
-          queryKey: ["dashboard", "summary"],
-          queryFn: async () => {
-            const res = await getDashboardSummary();
-            return res?.data || null;
-          }
-        }),
-        queryClient.prefetchQuery({
-          queryKey: ["dashboard", "analytics", year],
+          queryKey: ["dashboard", "analytics", churchId, year],
+          staleTime: 0,
           queryFn: async () => {
             const res = await getDashboardAnalytics({ year });
             return res?.data?.analyticsDashboard || null;

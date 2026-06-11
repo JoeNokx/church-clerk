@@ -20,15 +20,15 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
-            <div className="text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
+            <div className="font-semibold text-gray-900 text-lg">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -36,7 +36,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -47,22 +47,22 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
           >
             {confirmLabel}
           </button>
@@ -77,6 +77,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
   const [description, setDescription] = useState("");
   const [manager, setManager] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [startDate, setStartDate] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -86,6 +87,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
     setDescription("");
     setManager("");
     setPhoneNumber("");
+    setStartDate("");
     setError("");
     setSaving(false);
   }, [open]);
@@ -115,7 +117,8 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
         businessName: String(businessName).trim(),
         description: String(description).trim(),
         manager: String(manager || "").trim(),
-        phoneNumber: String(phoneNumber || "").trim()
+        phoneNumber: String(phoneNumber || "").trim(),
+        ...(startDate ? { startDate } : {})
       });
       onSuccess?.();
     } catch (e2) {
@@ -128,43 +131,55 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
   return (
     <BaseModal open={open} title="Add Business Venture" subtitle="Create a new venture" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Business Name</label>
+          <label className="block font-semibold text-gray-500 text-xs">Business Name</label>
           <input
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="e.g., Bookshop"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+            className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
             placeholder="What does this venture do?"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Manager</label>
+            <label className="block font-semibold text-gray-500 text-xs">Manager</label>
             <input
               value={manager}
               onChange={(e) => setManager(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               placeholder="Optional"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Phone Number</label>
+            <label className="block font-semibold text-gray-500 text-xs">Phone Number</label>
             <div className="mt-2">
               <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
             </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Start Date</label>
+            <input
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              type="date"
+            />
           </div>
         </div>
 
@@ -172,14 +187,14 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Add
           </button>
@@ -243,37 +258,37 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
   return (
     <BaseModal open={open} title="Edit Business Venture" subtitle="Update venture details" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Business Name</label>
+          <label className="block font-semibold text-gray-500 text-xs">Business Name</label>
           <input
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+            className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Manager</label>
+            <label className="block font-semibold text-gray-500 text-xs">Manager</label>
             <input
               value={manager}
               onChange={(e) => setManager(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Phone Number</label>
+            <label className="block font-semibold text-gray-500 text-xs">Phone Number</label>
             <div className="mt-2">
               <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
             </div>
@@ -284,14 +299,14 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Save
           </button>
@@ -430,8 +445,8 @@ function BusinessVenturesPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-2xl font-semibold text-gray-900">Business Ventures</div>
-          <div className="mt-2 text-sm text-gray-600">Track venture income and expenses</div>
+          <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Business Ventures</div>
+          <div className="mt-2 text-gray-600 text-sm">Track venture income and expenses</div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -439,51 +454,51 @@ function BusinessVenturesPage() {
             <button
               type="button"
               onClick={() => setAddOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
             >
-              <span className="text-lg leading-none">+</span>
+              <span className="leading-none text-lg">+</span>
               Add Venture
             </button>
           ) : null}
         </div>
       </div>
 
-      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Ventures</div>
-          <div className="mt-3 text-2xl font-semibold text-gray-900">{totals.totalVentures}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Total Ventures</div>
+          <div className="mt-3 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{totals.totalVentures}</div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Income</div>
-          <div className="mt-3 text-2xl font-semibold text-green-700">{formatMoney(totals.totalIncome, currency)}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Total Income</div>
+          <div className="mt-3 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatMoney(totals.totalIncome, currency)}</div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Expenses</div>
-          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatMoney(totals.totalExpenses, currency)}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Total Expenses</div>
+          <div className="mt-3 font-semibold text-orange-600 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatMoney(totals.totalExpenses, currency)}</div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Net</div>
-          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatMoney(totals.net, currency)}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Net</div>
+          <div className="mt-3 font-semibold text-blue-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatMoney(totals.net, currency)}</div>
         </div>
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Business Ventures</div>
-            <div className="text-xs text-gray-500">All ventures and financials</div>
+            <div className="font-semibold text-gray-900 text-sm">Business Ventures</div>
+            <div className="text-gray-500 text-xs">All ventures and financials</div>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+          <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-end md:justify-end">
             <input
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
               placeholder="Search business name"
             />
           </div>
@@ -492,69 +507,69 @@ function BusinessVenturesPage() {
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100">
-              <tr className="text-left text-xs font-semibold text-gray-500">
-                <th className="px-6 py-3 whitespace-nowrap">Business Name</th>
-                <th className="px-6 py-3 whitespace-nowrap">Description</th>
-                <th className="px-6 py-3 whitespace-nowrap">Manager</th>
-                <th className="px-6 py-3 whitespace-nowrap">Phone</th>
-                <th className="px-6 py-3 whitespace-nowrap">Income</th>
-                <th className="px-6 py-3 whitespace-nowrap">Expenses</th>
-                <th className="px-6 py-3 whitespace-nowrap">Net</th>
-                <th className="px-6 py-3 text-right whitespace-nowrap">Actions</th>
+              <tr className="text-left font-semibold text-gray-500 text-xs">
+                <th className="py-3 whitespace-nowrap px-4 md:px-6">Business Name</th>
+                <th className="py-3 whitespace-nowrap px-4 md:px-6">Description</th>
+                <th className="py-3 whitespace-nowrap px-4 md:px-6">Manager</th>
+                <th className="py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
+                <th className="py-3 whitespace-nowrap px-4 md:px-6">Income</th>
+                <th className="py-3 whitespace-nowrap px-4 md:px-6">Expenses</th>
+                <th className="py-3 whitespace-nowrap px-4 md:px-6">Net</th>
+                <th className="py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 [0, 1, 2, 3].map((i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-3"><div className="h-4 w-28 rounded bg-gray-200" /></td>
-                    <td className="px-6 py-3"><div className="h-4 w-36 rounded bg-gray-200" /></td>
-                    <td className="px-6 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-6 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                    <td className="px-6 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-6 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-6 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-6 py-3"><div className="h-4 w-20 rounded bg-gray-200 ml-auto" /></td>
+                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-36 rounded bg-gray-200" /></td>
+                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200 ml-auto" /></td>
                   </tr>
                 ))
               ) : filteredVentures.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={8} className="py-8 text-center text-gray-500 text-sm px-4 md:px-6">
                     {searchValue ? "No business ventures found matching your search." : "No business ventures found. Click <span className=\"font-semibold\">Add Venture</span> to get started."}
                   </td>
                 </tr>
               ) : (
                 filteredVentures.map((v, idx) => (
-                  <tr key={v?._id ?? `v-${idx}`} className="text-sm text-gray-700 hover:bg-gray-50">
-                    <td className="px-6 py-3 font-semibold text-gray-900 whitespace-nowrap">{v?.businessName || "—"}</td>
-                    <td className="px-6 py-3 text-gray-600 max-w-xs truncate">{v?.description || "—"}</td>
-                    <td className="px-6 py-3 whitespace-nowrap">{v?.manager || "—"}</td>
-                    <td className="px-6 py-3 whitespace-nowrap">{v?.phoneNumber || "—"}</td>
-                    <td className="px-6 py-3 font-semibold text-green-700 whitespace-nowrap">{formatMoney(v?.totalIncome, currency)}</td>
-                    <td className="px-6 py-3 font-semibold text-orange-600 whitespace-nowrap">{formatMoney(v?.totalExpenses, currency)}</td>
-                    <td className="px-6 py-3 font-semibold text-blue-900 whitespace-nowrap">{formatMoney(v?.net, currency)}</td>
-                    <td className="px-6 py-3 whitespace-nowrap">
+                  <tr key={v?._id ?? `v-${idx}`} className="text-gray-700 hover:bg-gray-50 text-sm">
+                    <td className="py-3 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">{v?.businessName || "—"}</td>
+                    <td className="py-3 text-gray-600 max-w-xs truncate px-4 md:px-6">{v?.description || "—"}</td>
+                    <td className="py-3 whitespace-nowrap px-4 md:px-6">{v?.manager || "—"}</td>
+                    <td className="py-3 whitespace-nowrap px-4 md:px-6">{v?.phoneNumber || "—"}</td>
+                    <td className="py-3 font-semibold text-green-700 whitespace-nowrap px-4 md:px-6">{formatMoney(v?.totalIncome, currency)}</td>
+                    <td className="py-3 font-semibold text-orange-600 whitespace-nowrap px-4 md:px-6">{formatMoney(v?.totalExpenses, currency)}</td>
+                    <td className="py-3 font-semibold text-blue-900 whitespace-nowrap px-4 md:px-6">{formatMoney(v?.net, currency)}</td>
+                    <td className="py-3 whitespace-nowrap px-4 md:px-6">
                       <div className="flex items-center justify-end gap-2">
                         {canView ? (
                           <>
                             <button
                               type="button"
                               onClick={() => viewIncome(v)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-green-700 hover:bg-gray-50"
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-green-700 hover:bg-gray-50 text-xs"
                             >
                               Income
                             </button>
                             <button
                               type="button"
                               onClick={() => viewExpenses(v)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-orange-600 hover:bg-gray-50"
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-orange-600 hover:bg-gray-50 text-xs"
                             >
                               Expenses
                             </button>
                             <button
                               type="button"
                               onClick={() => viewDetails(v)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                             >
                               View
                             </button>
@@ -565,14 +580,14 @@ function BusinessVenturesPage() {
                             <button
                               type="button"
                               onClick={() => openEdit(v)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                             >
                               Edit
                             </button>
                             <button
                               type="button"
                               onClick={() => openDelete(v)}
-                              className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                              className="rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-red-50 text-xs"
                             >
                               Delete
                             </button>

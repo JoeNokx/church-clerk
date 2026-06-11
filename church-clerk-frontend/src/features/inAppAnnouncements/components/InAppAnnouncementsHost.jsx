@@ -155,8 +155,8 @@ function InAppAnnouncementsHost() {
         <div className={`mb-4 rounded-xl border px-4 py-3 ${String(banner?.priority) === "critical" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-gray-900 truncate">{banner?.title || "System Announcement"}</div>
-              <div className="mt-1 text-sm text-gray-800">{banner?.message || ""}</div>
+              <div className="font-semibold text-gray-900 truncate text-sm">{banner?.title || "System Announcement"}</div>
+              <div className="mt-1 text-gray-800 text-sm">{banner?.message || ""}</div>
             </div>
 
             <div className="shrink-0 flex items-center gap-2">
@@ -164,7 +164,7 @@ function InAppAnnouncementsHost() {
                 <button
                   type="button"
                   onClick={() => onAcknowledge(banner._id, "banner")}
-                  className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-900 px-3 text-sm font-semibold text-white"
+                  className="inline-flex h-11 items-center justify-center rounded-lg bg-gray-900 px-3 font-semibold text-white md:h-12 text-sm"
                 >
                   Acknowledge
                 </button>
@@ -173,7 +173,7 @@ function InAppAnnouncementsHost() {
                   <button
                     type="button"
                     onClick={() => onDismiss(banner._id, "banner")}
-                    className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 hover:bg-gray-50 md:h-12 text-sm"
                   >
                     Dismiss
                   </button>
@@ -187,17 +187,17 @@ function InAppAnnouncementsHost() {
       {modal?._id ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-xl rounded-xl bg-white shadow-xl">
-            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
               <div>
-                <div className="text-lg font-semibold text-gray-900">{modal?.title || "System Announcement"}</div>
-                <div className="mt-1 text-sm text-gray-600">{String(modal?.priority) === "critical" ? "Action required" : ""}</div>
+                <div className="font-semibold text-gray-900 text-lg">{modal?.title || "System Announcement"}</div>
+                <div className="mt-1 text-gray-600 text-sm">{String(modal?.priority) === "critical" ? "Action required" : ""}</div>
               </div>
 
               {String(modal?.priority) === "critical" ? null : (
                 <button
                   type="button"
                   onClick={() => onDismiss(modal._id, "modal")}
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
                   aria-label="Close"
                 >
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -207,15 +207,15 @@ function InAppAnnouncementsHost() {
               )}
             </div>
 
-            <div className="px-6 py-5">
-              <div className="text-sm text-gray-800 whitespace-pre-wrap">{modal?.message || ""}</div>
+            <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
+              <div className="text-gray-800 whitespace-pre-wrap text-sm">{modal?.message || ""}</div>
 
               <div className="mt-6 flex items-center justify-end gap-3">
                 {String(modal?.priority) === "critical" ? (
                   <button
                     type="button"
                     onClick={() => onAcknowledge(modal._id, "modal")}
-                    className="rounded-lg bg-gray-900 px-6 py-2 text-sm font-semibold text-white shadow-sm"
+                    className="rounded-lg bg-gray-900 py-2 font-semibold text-white shadow-sm text-sm px-4 md:px-6"
                   >
                     Acknowledge
                   </button>
@@ -224,14 +224,14 @@ function InAppAnnouncementsHost() {
                     <button
                       type="button"
                       onClick={() => onDismiss(modal._id, "modal")}
-                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
                     >
                       Dismiss
                     </button>
                     <button
                       type="button"
                       onClick={() => onDismiss(modal._id, "modal")}
-                      className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+                      className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm px-4 md:px-6"
                     >
                       OK
                     </button>

@@ -216,40 +216,40 @@ function LandingPage() {
             <div className="absolute -bottom-56 right-0 h-[520px] w-[520px] rounded-full bg-indigo-600/10 blur-3xl" />
           </div>
 
-          <div className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+          <div className="relative mx-auto w-full max-w-6xl px-4 py-16 md:py-20">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-center">
               <motion.div initial="hidden" animate="show" variants={sectionFade} transition={{ duration: 0.6 }}>
-                <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+                <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 font-semibold text-blue-800 text-xs">
                   <span className="inline-flex h-2 w-2 rounded-full bg-blue-700" />
                   Built by African pastors and church leaders—made for African churches
                 </div>
 
-                <h1 className="mt-5 text-3xl sm:text-5xl font-semibold text-gray-900 tracking-tight">
+                <h1 className="mt-5 font-semibold text-gray-900 tracking-tight md:text-5xl text-2xl md:text-3xl">
                   Run your church operations with clarity, accountability, and speed.
                 </h1>
 
-                <p className="mt-4 text-base sm:text-lg text-gray-600 max-w-xl">
+                <p className="mt-4 text-gray-600 max-w-xl md:text-lg text-base">
                   ChurchClerk helps you keep your people, finances, and branches organized in one place—so you spend less time chasing records and more time doing ministry.
                 </p>
 
-                <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
+                <div className="mt-8 flex flex-col md:flex-row items-center gap-3">
                   <Link
                     to="/register"
-                    className="w-full sm:w-auto inline-flex justify-center items-center rounded-lg bg-blue-900 text-white text-sm font-semibold px-5 py-3 shadow-sm hover:bg-blue-800"
+                    className="w-full md:w-auto inline-flex justify-center items-center rounded-lg bg-blue-900 text-white font-semibold px-4 md:px-5 lg:px-6 py-3 shadow-sm hover:bg-blue-800 text-sm"
                   >
                     Start Free Trial
                   </Link>
                   <a
                     href="#pricing"
-                    className="w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 text-gray-800 text-sm font-semibold px-5 py-3 hover:bg-gray-50"
+                    className="w-full md:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 text-gray-800 font-semibold px-4 md:px-5 lg:px-6 py-3 hover:bg-gray-50 text-sm"
                   >
                     View Pricing
                   </a>
                 </div>
 
-                <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-3">
                   {["Fast setup", "Headquarters & branches", "Clear accountability"].map((t) => (
-                    <div key={t} className="rounded-xl border border-gray-200 bg-white/70 px-4 py-3 text-sm font-semibold text-gray-700">
+                    <div key={t} className="rounded-xl border border-gray-200 bg-white/70 px-4 py-3 font-semibold text-gray-700 text-sm">
                       {t}
                     </div>
                   ))}
@@ -262,11 +262,11 @@ function LandingPage() {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="rounded-3xl border border-gray-200 bg-white shadow-sm"
               >
-                <div className="border-b border-gray-200 p-6">
-                  <div className="text-sm font-semibold text-gray-900">What you can manage</div>
-                  <div className="mt-1 text-xs text-gray-500">A unified system that scales with your church.</div>
+                <div className="border-b border-gray-200 p-4 md:p-6 lg:p-8">
+                  <div className="font-semibold text-gray-900 text-sm">What you can manage</div>
+                  <div className="mt-1 text-gray-500 text-xs">A unified system that scales with your church.</div>
                 </div>
-                <div className="p-6">
+                <div className="p-4 md:p-6 lg:p-8">
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       "Members",
@@ -279,15 +279,15 @@ function LandingPage() {
                       "Budgeting",
                       "Reports"
                     ].map((item) => (
-                      <div key={item} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800">
+                      <div key={item} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-semibold text-gray-800 text-sm">
                         {item}
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-5 rounded-2xl bg-blue-900 px-5 py-4 text-white">
-                    <div className="text-sm font-semibold">A striking truth</div>
-                    <div className="mt-1 text-xs text-white/80">
+                  <div className="mt-5 rounded-2xl bg-blue-900 px-4 md:px-5 lg:px-6 py-4 text-white">
+                    <div className="font-semibold text-sm">A striking truth</div>
+                    <div className="mt-1 text-white/80 text-xs">
                       African pastors built this for you—because we understand African church administration: branches, welfare, projects, accountability, and real-life ministry needs.
                     </div>
                   </div>
@@ -300,13 +300,13 @@ function LandingPage() {
         <section id="features" className="bg-gray-50 border-t border-gray-200">
           <div className="mx-auto w-full max-w-6xl px-4 py-14">
             <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={sectionFade} transition={{ duration: 0.5 }} className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">Everything you need—organized by real church workflows</h2>
-              <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-3xl mx-auto">
+              <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Everything you need—organized by real church workflows</h2>
+              <p className="mt-2 text-gray-600 max-w-3xl mx-auto md:text-base text-sm">
                 Built for staff and leaders: clear records, consistent reports, and the flexibility to grow from a small team to multiple branches.
               </p>
             </motion.div>
 
-            <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {features.map((f, idx) => (
                 <motion.div
                   key={f.title}
@@ -314,43 +314,43 @@ function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ duration: 0.45, delay: idx * 0.05 }}
-                  className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 p-6"
+                  className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 p-4 md:p-6 lg:p-8"
                 >
                   <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-900">{f.icon}</div>
-                  <h3 className="mt-4 text-base font-semibold text-gray-900">{f.title}</h3>
-                  <p className="mt-2 text-sm text-gray-600">{f.desc}</p>
+                  <h3 className="mt-4 font-semibold text-gray-900 text-base">{f.title}</h3>
+                  <p className="mt-2 text-gray-600 text-sm">{f.desc}</p>
                 </motion.div>
               ))}
             </div>
 
-            <div className="mt-10 rounded-3xl border border-gray-200 bg-white p-6 sm:p-8">
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
+            <div className="mt-10 rounded-3xl border border-gray-200 bg-white md:p-8 p-4 md:p-6">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-center md:gap-6">
                 <div className="lg:col-span-2">
-                  <div className="text-lg font-semibold text-gray-900">Designed for trust</div>
-                  <div className="mt-2 text-sm text-gray-600">
+                  <div className="font-semibold text-gray-900 text-lg">Designed for trust</div>
+                  <div className="mt-2 text-gray-600 text-sm">
                     Your church deserves clarity. With roles and permissions, and a record of changes, leaders can trust what they see.
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 justify-start lg:justify-end">
-                  <Link to="/register" className="inline-flex items-center justify-center rounded-lg bg-blue-900 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">
+                <div className="flex flex-col md:flex-row gap-3 justify-start lg:justify-end">
+                  <Link to="/register" className="inline-flex items-center justify-center rounded-lg bg-blue-900 px-4 md:px-5 lg:px-6 py-3 font-semibold text-white hover:bg-blue-800 text-sm">
                     Create account
                   </Link>
-                  <Link to="/login" className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+                  <Link to="/login" className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 md:px-5 lg:px-6 py-3 font-semibold text-gray-800 hover:bg-gray-50 text-sm">
                     Sign in
                   </Link>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 rounded-3xl border border-gray-200 bg-white p-6 sm:p-8">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="mt-6 rounded-3xl border border-gray-200 bg-white md:p-8 p-4 md:p-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
                 <div>
-                  <div className="text-lg font-semibold text-gray-900">Why choose ChurchClerk?</div>
-                  <div className="mt-2 text-sm text-gray-600">
+                  <div className="font-semibold text-gray-900 text-lg">Why choose ChurchClerk?</div>
+                  <div className="mt-2 text-gray-600 text-sm">
                     We built this around how churches actually work in Africa: headquarters oversight, branches, welfare support, projects, and accountability.
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm text-gray-700">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 text-gray-700 text-sm">
                   {["Headquarters + branch oversight", "Clear giving & spending records", "Simple for admins and leaders", "Grow without losing control"].map((t) => (
                     <div key={t} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-semibold">
                       {t}
@@ -365,11 +365,11 @@ function LandingPage() {
         <section id="how" className="bg-white border-t border-gray-200">
           <div className="mx-auto w-full max-w-6xl px-4 py-14">
             <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={sectionFade} transition={{ duration: 0.5 }} className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">How it works</h2>
-              <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">Get started quickly. Your team can be productive in minutes.</p>
+              <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">How it works</h2>
+              <p className="mt-2 text-gray-600 max-w-2xl mx-auto md:text-base text-sm">Get started quickly. Your team can be productive in minutes.</p>
             </motion.div>
 
-            <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
               {[
                 {
                   step: "01",
@@ -393,11 +393,11 @@ function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ duration: 0.45, delay: idx * 0.05 }}
-                  className="rounded-2xl border border-gray-200 bg-gray-50 p-6"
+                  className="rounded-2xl border border-gray-200 bg-gray-50 p-4 md:p-6 lg:p-8"
                 >
-                  <div className="text-xs font-semibold text-blue-900">STEP {item.step}</div>
-                  <div className="mt-2 text-base font-semibold text-gray-900">{item.title}</div>
-                  <div className="mt-2 text-sm text-gray-600">{item.desc}</div>
+                  <div className="font-semibold text-blue-900 text-xs">STEP {item.step}</div>
+                  <div className="mt-2 font-semibold text-gray-900 text-base">{item.title}</div>
+                  <div className="mt-2 text-gray-600 text-sm">{item.desc}</div>
                 </motion.div>
               ))}
             </div>
@@ -407,8 +407,8 @@ function LandingPage() {
         <section id="pricing" className="bg-white border-t border-gray-200">
           <div className="mx-auto w-full max-w-6xl px-4 py-14">
             <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={sectionFade} transition={{ duration: 0.5 }} className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">Pricing that scales with your church</h2>
-              <p className="mt-2 text-sm sm:text-base text-gray-600">Start simple, upgrade when you’re ready.</p>
+              <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Pricing that scales with your church</h2>
+              <p className="mt-2 text-gray-600 md:text-base text-sm">Start simple, upgrade when you’re ready.</p>
             </motion.div>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3">
@@ -442,7 +442,7 @@ function LandingPage() {
                 </button>
               </div>
 
-              <div className="text-xs text-gray-500">
+              <div className="text-gray-500 text-xs">
                 Display currency: <span className="font-semibold text-gray-700">{displayCurrency}</span>
                 {fxLoading ? <span className="ml-2">(updating…)</span> : null}
               </div>
@@ -450,15 +450,15 @@ function LandingPage() {
 
             <div className="mt-10">
               {loadingPlans ? (
-                <div className="text-center text-sm text-gray-600">Loading plans…</div>
+                <div className="text-center text-gray-600 text-sm">Loading plans…</div>
               ) : null}
 
               {!loadingPlans && plansSorted.length === 0 ? (
-                <div className="text-center text-sm text-gray-600">No plans available right now.</div>
+                <div className="text-center text-gray-600 text-sm">No plans available right now.</div>
               ) : null}
 
               {!loadingPlans && plansSorted.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch md:gap-6">
                   {plansSorted.map((p, idx) => {
                     const id = p?._id;
                     const name = String(p?.name || "");
@@ -510,16 +510,16 @@ function LandingPage() {
               priorityKeys={["financeModule", "budgeting", "branchesOverview", "programsEvents", "announcements", "reportsAnalytics"]}
             />
 
-            <div className="mt-10 rounded-2xl border border-indigo-200 bg-indigo-50 p-6">
-              <div className="text-base font-semibold text-gray-900">Need a fully customized church management solution?</div>
-              <div className="mt-2 text-sm text-gray-700">
+            <div className="mt-10 rounded-2xl border border-indigo-200 bg-indigo-50 p-4 md:p-6 lg:p-8">
+              <div className="font-semibold text-gray-900 text-base">Need a fully customized church management solution?</div>
+              <div className="mt-2 text-gray-700 text-sm">
                 With Ministry Plus, get a tailor-made system built specifically for your church’s needs. Features, workflows, and integrations — all designed just for you.
               </div>
               <div className="mt-4">
                 <button
                   type="button"
                   onClick={() => setShowCustomPlanModal(true)}
-                  className="inline-flex items-center justify-center rounded-lg bg-blue-900 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-900 px-4 md:px-5 lg:px-6 py-3 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                 >
                   Contact us for a custom plan
                 </button>
@@ -533,8 +533,8 @@ function LandingPage() {
         <section className="bg-gray-50 border-t border-gray-200">
           <div className="mx-auto w-full max-w-6xl px-4 py-14">
             <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={sectionFade} transition={{ duration: 0.5 }} className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">Frequently asked questions</h2>
-              <p className="mt-2 text-sm sm:text-base text-gray-600">Quick answers for leaders and admins.</p>
+              <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Frequently asked questions</h2>
+              <p className="mt-2 text-gray-600 md:text-base text-sm">Quick answers for leaders and admins.</p>
             </motion.div>
 
             <div id="faq" className="mt-10 mx-auto max-w-3xl space-y-3">
@@ -581,10 +581,10 @@ function LandingPage() {
                     <button
                       type="button"
                       onClick={() => setFaqOpen((v) => (v === row.key ? "" : row.key))}
-                      className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                      className="w-full flex items-center justify-between gap-4 px-4 md:px-5 lg:px-6 py-4 text-left"
                     >
-                      <div className="text-sm font-semibold text-gray-900">{row.q}</div>
-                      <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700">
+                      <div className="font-semibold text-gray-900 text-sm">{row.q}</div>
+                      <div className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 md:h-12 md:w-11 w-11 md:w-12">
                         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                           <path
                             d={isOpen ? "M6 12h12" : "M6 12h12M12 6v12"}
@@ -604,7 +604,7 @@ function LandingPage() {
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.25 }}
                         >
-                          <div className="px-5 pb-5 text-sm text-gray-600">{row.a}</div>
+                          <div className="px-4 md:px-5 lg:px-6 pb-5 text-gray-600 text-sm">{row.a}</div>
                         </motion.div>
                       ) : null}
                     </AnimatePresence>
@@ -617,17 +617,17 @@ function LandingPage() {
 
         <section className="bg-blue-900">
           <div className="mx-auto w-full max-w-6xl px-4 py-14 text-center">
-            <p className="text-white text-lg font-medium">Ready to organize your church records and operations today?</p>
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <p className="text-white font-medium text-lg">Ready to organize your church records and operations today?</p>
+            <div className="mt-6 flex flex-col md:flex-row items-center justify-center gap-3">
               <Link
                 to="/register"
-                className="inline-flex justify-center items-center rounded-lg bg-white text-blue-900 text-sm font-semibold px-6 py-3 shadow-sm hover:bg-gray-100"
+                className="inline-flex justify-center items-center rounded-lg bg-white text-blue-900 font-semibold py-3 shadow-sm hover:bg-gray-100 text-sm px-4 md:px-6"
               >
                 Create your account
               </Link>
               <Link
                 to="/login"
-                className="inline-flex justify-center items-center rounded-lg border border-white/30 bg-white/10 text-white text-sm font-semibold px-6 py-3 shadow-sm hover:bg-white/15"
+                className="inline-flex justify-center items-center rounded-lg border border-white/30 bg-white/10 text-white font-semibold py-3 shadow-sm hover:bg-white/15 text-sm px-4 md:px-6"
               >
                 Sign in
               </Link>

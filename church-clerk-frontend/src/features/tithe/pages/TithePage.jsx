@@ -8,6 +8,7 @@ import TitheAggregateTable from "../components/TitheAggregateTable.jsx";
 import TitheIndividualForm from "../components/TitheIndividualForm.jsx";
 import TitheAggregateForm from "../components/TitheAggregateForm.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -59,7 +60,7 @@ function DateRangePopover({ valueFrom, valueTo, onApply, onClear }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+        className="inline-flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
       >
         <span className="inline-flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -73,7 +74,7 @@ function DateRangePopover({ valueFrom, valueTo, onApply, onClear }) {
           </svg>
           Date
         </span>
-        <span className="text-xs text-gray-500">
+        <span className="text-gray-500 text-xs">
           {valueFrom || valueTo ? "Filtered" : "All"}
         </span>
       </button>
@@ -81,23 +82,23 @@ function DateRangePopover({ valueFrom, valueTo, onApply, onClear }) {
       {open ? (
         <div className="absolute right-0 z-10 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-lg">
           <div className="p-4">
-            <div className="text-sm font-semibold text-gray-900 mb-3">Filter by date range</div>
+            <div className="font-semibold text-gray-900 mb-3 text-sm">Filter by date range</div>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-500">From</label>
+                <label className="block font-semibold text-gray-500 text-xs">From</label>
                 <input
                   value={draftFrom}
                   onChange={(e) => setDraftFrom(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="mt-1 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   type="date"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500">To</label>
+                <label className="block font-semibold text-gray-500 text-xs">To</label>
                 <input
                   value={draftTo}
                   onChange={(e) => setDraftTo(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="mt-1 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   type="date"
                 />
               </div>
@@ -109,7 +110,7 @@ function DateRangePopover({ valueFrom, valueTo, onApply, onClear }) {
                   setOpen(false);
                   onClear?.();
                 }}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
               >
                 Clear
               </button>
@@ -119,7 +120,7 @@ function DateRangePopover({ valueFrom, valueTo, onApply, onClear }) {
                   setOpen(false);
                   onApply?.({ dateFrom: draftFrom, dateTo: draftTo });
                 }}
-                className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-800"
+                className="rounded-lg bg-blue-700 px-3 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-xs"
               >
                 Apply
               </button>
@@ -138,13 +139,13 @@ function PillIcon({ color = "blue", children }) {
       : color === "purple"
         ? "bg-purple-100 text-purple-700"
         : "bg-blue-100 text-blue-700";
-  return <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${cls}`}>{children}</div>;
+  return <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${cls} md:h-12 md:w-12`}>{children}</div>;
 }
 
 function ModeBanner({ mode, onChangeMode }) {
   const isAggregate = mode === "aggregate";
   return (
-    <div className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
+    <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 md:px-5 lg:px-6 py-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="text-blue-700">
@@ -159,12 +160,12 @@ function ModeBanner({ mode, onChangeMode }) {
               </svg>
             )}
           </div>
-          <div className="text-sm font-semibold text-gray-900">
+          <div className="font-semibold text-gray-900 text-sm">
             Tithe Mode: {isAggregate ? "Aggregate Recording" : "Individual Recording"}
           </div>
         </div>
 
-        <button type="button" onClick={onChangeMode} className="text-sm font-semibold text-blue-700 hover:underline">
+        <button type="button" onClick={onChangeMode} className="font-semibold text-blue-700 hover:underline text-sm">
           Change Mode
         </button>
       </div>
@@ -176,16 +177,16 @@ function SimpleModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl max-h-[90vh] flex flex-col">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
-            <div className="text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
+            <div className="font-semibold text-gray-900 text-lg">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -193,7 +194,7 @@ function SimpleModal({ open, title, subtitle, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
@@ -204,21 +205,21 @@ function ConfirmModal({ open, onCancel, onConfirm }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center md:h-12 md:w-12">
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                 <path d="M12 9v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 <path d="M12 17h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 <path d="M10.3 4.6 3.5 17.4A2 2 0 0 0 5.3 20h13.4a2 2 0 0 0 1.8-2.6L13.7 4.6a2 2 0 0 0-3.4 0Z" stroke="currentColor" strokeWidth="1.6" />
               </svg>
             </div>
-            <div className="text-sm font-semibold text-gray-900">Switch Tithe Recording Mode</div>
+            <div className="font-semibold text-gray-900 text-sm">Switch Tithe Recording Mode</div>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -227,23 +228,23 @@ function ConfirmModal({ open, onCancel, onConfirm }) {
           </button>
         </div>
 
-        <div className="px-6 py-5 text-sm text-gray-600">
+        <div className="py-4 md:py-5 lg:py-6 text-gray-600 text-sm px-4 md:px-6">
           <div>Changing your tithe recording mode will affect how new tithe records are entered.</div>
           <div className="mt-3 font-semibold text-gray-700">Your previous records will remain safe.</div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 pb-6">
+        <div className="flex items-center justify-end gap-3 pb-6 px-4 md:px-6">
           <button
             type="button"
             onClick={onCancel}
-            className="h-10 rounded-lg border border-gray-200 bg-white px-6 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="h-11 rounded-lg border border-gray-200 bg-white font-semibold text-gray-700 shadow-sm hover:bg-gray-50 md:h-12 text-sm px-4 md:px-6"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="h-10 rounded-lg bg-red-600 px-8 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="h-11 rounded-lg bg-red-600 px-8 font-semibold text-white shadow-sm hover:bg-red-700 md:h-12 text-sm"
           >
             Switch Mode
           </button>
@@ -256,23 +257,23 @@ function ConfirmModal({ open, onCancel, onConfirm }) {
 function ModeSelectCard({ kind, onSelect, disabled = false }) {
   const isAggregate = kind === "aggregate";
   return (
-    <div className={`rounded-2xl border bg-white p-8 shadow-sm ${isAggregate ? "border-green-200" : "border-gray-200"}`}>
+    <div className={`rounded-2xl border bg-white p-3 md:p-6 shadow-sm ${isAggregate ? "border-green-200" : "border-gray-200"}`}>
       <div className="flex flex-col items-center text-center">
-        <div className={`h-16 w-16 rounded-2xl flex items-center justify-center ${isAggregate ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
+        <div className={`h-10 w-10 md:h-14 md:w-14 rounded-2xl flex items-center justify-center ${isAggregate ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
           {isAggregate ? (
-            <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 md:h-7 md:w-7">
               <path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" stroke="currentColor" strokeWidth="1.8" />
             </svg>
           ) : (
-            <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 md:h-7 md:w-7">
               <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
               <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           )}
         </div>
 
-        <div className="mt-5 text-xl font-semibold text-blue-900">{isAggregate ? "Aggregate" : "Individual"} Recording</div>
-        <div className="mt-4 space-y-2 text-sm text-gray-600">
+        <div className="mt-2 md:mt-4 font-semibold text-blue-900 text-xs md:text-base lg:text-xl">{isAggregate ? "Aggregate" : "Individual"} Recording</div>
+        <div className="mt-1 md:mt-3 space-y-0.5 md:space-y-2 text-gray-600 text-xs md:text-sm">
           {isAggregate ? (
             <>
               <div>Record only the total collected</div>
@@ -292,7 +293,7 @@ function ModeSelectCard({ kind, onSelect, disabled = false }) {
           type="button"
           disabled={disabled}
           onClick={() => onSelect?.(kind)}
-          className={`mt-7 h-12 w-full rounded-xl px-6 text-sm font-semibold text-white shadow-sm disabled:opacity-60 ${
+          className={`mt-3 md:mt-5 h-8 md:h-11 w-full rounded-xl px-3 md:px-6 text-xs md:text-sm font-semibold text-white shadow-sm disabled:opacity-60 ${
             isAggregate ? "bg-green-700 hover:bg-green-800" : "bg-blue-700 hover:bg-blue-800"
           }`}
         >
@@ -310,13 +311,13 @@ function ModeSwitchCards({ currentMode, onPick }) {
   const isCurrentIndividual = currentMode !== "aggregate";
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
       <button
         type="button"
         onClick={() => {
           if (!isCurrentIndividual) onPick?.("individual");
         }}
-        className={cardClass(isCurrentIndividual)}
+        className={`cck-allow-icons ${cardClass(isCurrentIndividual)}`}
       >
         <div className="flex flex-col items-center text-center">
           <div className="h-14 w-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center">
@@ -325,14 +326,14 @@ function ModeSwitchCards({ currentMode, onPick }) {
               <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           </div>
-          <div className="mt-4 text-base font-semibold text-blue-900">Individual Recording</div>
-          <div className="mt-3 space-y-2 text-sm text-gray-600">
+          <div className="mt-4 font-semibold text-blue-900 text-base">Individual Recording</div>
+          <div className="mt-3 space-y-2 text-gray-600 text-sm">
             <div>Record by member name</div>
             <div>Track individual patterns</div>
             <div>Named tithe entries</div>
           </div>
           {isCurrentIndividual ? (
-            <div className="mt-5 inline-flex h-9 items-center justify-center rounded-lg bg-blue-700 px-5 text-xs font-semibold text-white">
+            <div className="mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs">
               Current Mode
             </div>
           ) : null}
@@ -344,7 +345,7 @@ function ModeSwitchCards({ currentMode, onPick }) {
         onClick={() => {
           if (isCurrentIndividual) onPick?.("aggregate");
         }}
-        className={cardClass(!isCurrentIndividual)}
+        className={`cck-allow-icons ${cardClass(!isCurrentIndividual)}`}
       >
         <div className="flex flex-col items-center text-center">
           <div className="h-14 w-14 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center">
@@ -352,14 +353,14 @@ function ModeSwitchCards({ currentMode, onPick }) {
               <path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" stroke="currentColor" strokeWidth="1.8" />
             </svg>
           </div>
-          <div className="mt-4 text-base font-semibold text-blue-900">Aggregate Recording</div>
-          <div className="mt-3 space-y-2 text-sm text-gray-600">
+          <div className="mt-4 font-semibold text-blue-900 text-base">Aggregate Recording</div>
+          <div className="mt-3 space-y-2 text-gray-600 text-sm">
             <div>Record total collected</div>
             <div>No individual names</div>
             <div>Bulk collection</div>
           </div>
           {!isCurrentIndividual ? (
-            <div className="mt-5 inline-flex h-9 items-center justify-center rounded-lg bg-blue-700 px-5 text-xs font-semibold text-white">
+            <div className="mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs">
               Current Mode
             </div>
           ) : null}
@@ -537,11 +538,11 @@ function TithePageInner() {
   return (
     <div className="max-w-6xl">
       {view === "landing" ? (
-        <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white px-6 py-12">
+        <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white py-6 md:py-12 px-4 md:px-6">
           <div className="mx-auto max-w-5xl">
             <div className="flex flex-col items-center text-center">
-              <div className="h-16 w-16 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
+              <div className="h-10 w-10 md:h-16 md:w-16 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 md:h-11 md:w-11">
                   <path
                     d="M7 7h12v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7Z"
                     stroke="currentColor"
@@ -552,11 +553,11 @@ function TithePageInner() {
                   <path d="M10 6a2 2 0 0 1 4 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </div>
-              <div className="mt-5 text-3xl font-semibold text-blue-900">Tithes</div>
-              <div className="mt-2 text-sm text-gray-600">Choose how you want to record tithes. You can change this later.</div>
+              <div className="mt-2 md:mt-5 font-semibold text-blue-900 text-lg md:text-2xl lg:text-3xl">Tithes</div>
+              <div className="mt-2 text-gray-600 text-sm">Choose how you want to record tithes. You can change this later.</div>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2">
+            <div className="mt-4 md:mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
               <ModeSelectCard
                 kind="individual"
                 disabled={!canUpdateMode || store?.loading}
@@ -575,7 +576,7 @@ function TithePageInner() {
               />
             </div>
 
-            <div className="mt-10 text-center text-xs text-gray-500">
+            <div className="mt-4 md:mt-8 text-center text-gray-500 text-xs">
               You can switch your tithe recording mode anytime from the settings.
             </div>
           </div>
@@ -586,8 +587,8 @@ function TithePageInner() {
 
           <div className="mt-8 flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Tithes</h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Tithes</h2>
+              <p className="mt-1 text-gray-500 text-sm">
                 {mode === "aggregate" ? "Track and manage aggregate tithe collections" : "Track and manage individual member tithes"}
               </p>
             </div>
@@ -597,9 +598,9 @@ function TithePageInner() {
                 <button
                   type="button"
                   onClick={openCreateIndividual}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                 >
-                  <span className="text-lg leading-none">+</span>
+                  <span className="leading-none text-lg">+</span>
                   Record Tithe
                 </button>
               ) : null}
@@ -608,9 +609,9 @@ function TithePageInner() {
                 <button
                   type="button"
                   onClick={openCreateAggregate}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                 >
-                  <span className="text-lg leading-none">+</span>
+                  <span className="leading-none text-lg">+</span>
                   Record Tithe
                 </button>
               ) : null}
@@ -618,13 +619,13 @@ function TithePageInner() {
           </div>
 
           {kpi ? (
-            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
-              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <KpiGrid className="mt-4 gap-3 lg:grid-cols-3">
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">This Month</div>
-                    <div className="mt-2 text-2xl font-semibold text-blue-900">{formatCurrency(kpiThisMonth, currency)}</div>
-                    <div className="mt-1 text-xs text-gray-500">{monthLabel()}</div>
+                    <div className="font-semibold text-gray-500 text-xs">This Month</div>
+                    <div className="mt-2 font-semibold text-blue-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiThisMonth, currency)}</div>
+                    <div className="mt-1 text-gray-500 text-xs">{monthLabel()}</div>
                   </div>
                   <PillIcon color="blue">
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -636,12 +637,12 @@ function TithePageInner() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">This Year</div>
-                    <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(kpiThisYear, currency)}</div>
-                    <div className="mt-1 text-xs text-gray-500">{yearLabel()}</div>
+                    <div className="font-semibold text-gray-500 text-xs">This Year</div>
+                    <div className="mt-2 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiThisYear, currency)}</div>
+                    <div className="mt-1 text-gray-500 text-xs">{yearLabel()}</div>
                   </div>
                   <PillIcon color="green">
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -651,12 +652,12 @@ function TithePageInner() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">{thirdLabel}</div>
-                    <div className="mt-2 text-2xl font-semibold text-purple-700">{Number(thirdValue || 0).toLocaleString()}</div>
-                    <div className="mt-1 text-xs text-gray-500">This month</div>
+                    <div className="font-semibold text-gray-500 text-xs">{thirdLabel}</div>
+                    <div className="mt-2 font-semibold text-purple-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{Number(thirdValue || 0).toLocaleString()}</div>
+                    <div className="mt-1 text-gray-500 text-xs">This month</div>
                   </div>
                   <PillIcon color="purple">
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -666,26 +667,26 @@ function TithePageInner() {
                   </PillIcon>
                 </div>
               </div>
-            </div>
+            </KpiGrid>
           ) : null}
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Filter by Date</div>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+            <div className="font-semibold text-gray-900 text-sm">Filter by Date</div>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
               <input
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={mode === "aggregate" ? "Search recorded by..." : "Search by name..."}
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
               />
               <DateRangePopover valueFrom={dateFrom} valueTo={dateTo} onApply={applyDateRange} onClear={clearDateRange} />
             </div>
           </div>
 
           <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-            <div className="border-b border-gray-200 p-5">
-              <div className="text-sm font-semibold text-gray-900">Tithe Records</div>
-              <div className="text-xs text-gray-500">{mode === "aggregate" ? "All aggregate tithe collections" : "All individual tithe payments"}</div>
+            <div className="border-b border-gray-200 p-4 md:p-6 lg:p-8">
+              <div className="font-semibold text-gray-900 text-sm">Tithe Records</div>
+              <div className="text-gray-500 text-xs">{mode === "aggregate" ? "All aggregate tithe collections" : "All individual tithe payments"}</div>
             </div>
 
             {mode === "aggregate" ? (

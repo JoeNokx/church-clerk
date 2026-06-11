@@ -40,6 +40,14 @@ const systemSettingsSchema = new mongoose.Schema(
       type: Number,
       default: 10,
       min: 0
+    },
+    enforceBackdating: {
+      type: Boolean,
+      default: false
+    },
+    enforceImmutability: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }

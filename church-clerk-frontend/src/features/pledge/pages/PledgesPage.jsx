@@ -13,6 +13,7 @@ import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -121,7 +122,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
       <button
         type="button"
         onClick={() => setDatePickerOpen((v) => !v)}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+        className="inline-flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 md:h-12 text-sm"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
           <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -134,36 +135,36 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
       {datePickerOpen && (
         <div className="cck-date-dropdown absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
           <div className="flex items-center justify-between gap-3 pb-3">
-            <div className="text-xs font-semibold text-gray-500">Filter by date</div>
-            <button type="button" onClick={clearDates} className="text-xs font-semibold text-gray-600 hover:text-gray-900">
+            <div className="font-semibold text-gray-500 text-xs">Filter by date</div>
+            <button type="button" onClick={clearDates} className="font-semibold text-gray-600 hover:text-gray-900 text-xs">
               Clear
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-xs font-semibold text-gray-500">From</div>
+              <div className="font-semibold text-gray-500 text-xs">From</div>
               <input
                 type="date"
                 value={draftFrom}
                 onChange={(e) => onDraftFromChange(e.target.value)}
-                className="mt-2 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
             </div>
 
             <div>
-              <div className="text-xs font-semibold text-gray-500">To</div>
+              <div className="font-semibold text-gray-500 text-xs">To</div>
               <input
                 type="date"
                 value={draftTo}
                 min={draftFrom || undefined}
                 onChange={(e) => setDraftTo(e.target.value)}
-                className="mt-2 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
             </div>
           </div>
 
-          <div className="pt-3 text-xs text-gray-500">
+          <div className="pt-3 text-gray-500 text-xs">
             Pick only <span className="font-semibold">From</span> for a single day, or pick both for a range.
           </div>
 
@@ -171,7 +172,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
             <button
               type="button"
               onClick={applyDates}
-              className="h-9 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="h-11 rounded-lg bg-blue-600 px-4 font-semibold text-white shadow-sm hover:bg-blue-700 md:h-12 text-sm"
             >
               Apply
             </button>
@@ -188,7 +189,7 @@ function StatusChip({ value }) {
     v === "completed" ? "border-green-200 bg-green-50 text-green-700" : "border-yellow-200 bg-yellow-50 text-yellow-700";
 
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold ${styles} text-xs`}>
       {value || "—"}
     </span>
   );
@@ -199,15 +200,15 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
-            <div className="text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
+            <div className="font-semibold text-gray-900 text-lg">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -215,7 +216,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -337,21 +338,21 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Name</label>
+            <label className="block font-semibold text-gray-500 text-xs">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               placeholder="e.g., John Doe"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Phone Number</label>
+            <label className="block font-semibold text-gray-500 text-xs">Phone Number</label>
             <div className="mt-2">
               <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
             </div>
@@ -359,7 +360,7 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
 
           <div>
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-semibold text-gray-500">Service Type</label>
+              <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
               <AddLookupValueButton
                 label="Add service"
                 kind="serviceType"
@@ -372,7 +373,7 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
             <select
               value={serviceType}
               onChange={(e) => setServiceType(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             >
               <option value="">Select service type</option>
               {serviceTypeOptions.map((t) => (
@@ -384,42 +385,42 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="number"
               placeholder="0.00"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Pledge Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Pledge Date</label>
             <input
               value={pledgeDate}
               onChange={(e) => setPledgeDate(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Deadline</label>
+            <label className="block font-semibold text-gray-500 text-xs">Deadline</label>
             <input
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
 
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-gray-500">Note</label>
+          <div className="md:col-span-2">
+            <label className="block font-semibold text-gray-500 text-xs">Note</label>
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               placeholder="Optional"
             />
           </div>
@@ -429,14 +430,14 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Create"}
           </button>
@@ -451,22 +452,22 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
           >
             {confirmLabel}
           </button>
@@ -696,8 +697,8 @@ function PledgesPageInner() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Pledges</h2>
-          <p className="mt-1 text-sm text-gray-500">Track pledges and payment commitments</p>
+          <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Pledges</h2>
+          <p className="mt-1 text-gray-500 text-sm">Track pledges and payment commitments</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -709,15 +710,15 @@ function PledgesPageInner() {
             }}
             disabled={!canCreate}
             title={!canCreate ? "You don't have permission to create pledges" : undefined}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed text-sm"
           >
-            <span className="text-lg leading-none">+</span>
+            <span className="leading-none text-lg">+</span>
             New Pledge
           </button>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
         <KpiCard
           title="Total Pledges"
           value={Number(kpi.total || 0).toLocaleString()}
@@ -772,27 +773,27 @@ function PledgesPageInner() {
             </svg>
           }
         />
-      </div>
+      </KpiGrid>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Pledge Records</div>
-            <div className="text-xs text-gray-500">All pledges and balances</div>
+            <div className="font-semibold text-gray-900 text-sm">Pledge Records</div>
+            <div className="text-gray-500 text-xs">All pledges and balances</div>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3 sm:justify-end">
+          <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-end md:justify-end md:gap-3">
             <input
               value={searchValue}
               onChange={onSearchChange}
-              className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
               placeholder="Search name or phone"
             />
 
             <select
               value={store?.filters?.serviceType || ""}
               onChange={onServiceTypeChange}
-              className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
             >
               <option value="">All Service Types</option>
               {serviceTypeOptions.map((t) => (
@@ -805,7 +806,7 @@ function PledgesPageInner() {
             <select
               value={store?.filters?.status || ""}
               onChange={onStatusChange}
-              className="h-9 w-full sm:w-44 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-44 text-sm"
             >
               <option value="">All Status</option>
               {STATUS_OPTIONS.map((s) => (
@@ -828,22 +829,22 @@ function PledgesPageInner() {
           <div className="overflow-x-auto animate-pulse">
             <table className="min-w-full">
               <thead className="bg-slate-100">
-                <tr className="text-left text-xs font-semibold text-gray-500">
-                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-16 rounded bg-gray-200" /></th>
-                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-10 rounded bg-gray-200" /></th>
-                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-                  <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                <tr className="text-left font-semibold text-gray-500 text-xs">
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {[0, 1, 2, 3, 4].map((i) => (
                   <tr key={i} className="text-sm">
-                    <td className="px-6 max-sm:px-4 py-3 whitespace-nowrap"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                    <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-6 max-sm:px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                    <td className="px-6 max-sm:px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -851,48 +852,48 @@ function PledgesPageInner() {
           </div>
         ) : null}
         {!store?.loading && store?.error ? (
-          <div className="p-5">
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{store.error}</div>
+          <div className="p-4 md:p-6 lg:p-8">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{store.error}</div>
           </div>
         ) : null}
 
-        {!store?.loading && !store?.error && !rows.length ? <div className="p-5 text-sm text-gray-600">No pledge record found.</div> : null}
+        {!store?.loading && !store?.error && !rows.length ? <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No pledge record found.</div> : null}
 
         {!store?.loading && !store?.error && rows.length ? (
           <div>
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-100">
-                  <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                    <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Name</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Phone</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Pledged</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Paid</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Balance</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Deadline</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Status</th>
-                    <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Pledged</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Paid</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Balance</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Deadline</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                    <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {rows.map((row, index) => (
-                    <tr key={row?._id ?? `row-${index}`} className="text-sm max-sm:text-xs text-gray-700">
-                      <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{row?.name || "—"}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 whitespace-nowrap">{row?.phoneNumber || "—"}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(row?.amount || 0, currency)}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.totalPaid || 0, currency)}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 text-red-600 whitespace-nowrap">{formatCurrency(row?.remainingBalance || 0, currency)}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 whitespace-nowrap">{formatDate(row?.deadline)}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                    <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
+                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.name || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
+                      <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.totalPaid || 0, currency)}</td>
+                      <td className="max-md:px-4 py-1.5 text-red-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.remainingBalance || 0, currency)}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(row?.deadline)}</td>
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <StatusChip value={row?.status} />
                       </td>
-                      <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <div className="flex items-center justify-end gap-2">
                           {canView && (
                             <button
                               type="button"
                               onClick={() => viewDetails(row)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                             >
                               View
                             </button>
@@ -903,7 +904,7 @@ function PledgesPageInner() {
                               <button
                                 type="button"
                                 onClick={() => setMenuOpenId((prev) => (prev === row?._id ? null : row?._id))}
-                                className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                                className="h-11 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-11 w-11 md:w-12"
                                 aria-label="More actions"
                               >
                                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -920,7 +921,7 @@ function PledgesPageInner() {
                                         setMenuOpenId(null);
                                         openEdit(row);
                                       }}
-                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                      className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 text-sm"
                                     >
                                       Edit
                                     </button>
@@ -933,7 +934,7 @@ function PledgesPageInner() {
                                         setMenuOpenId(null);
                                         openDelete(row);
                                       }}
-                                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
+                                      className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-50 text-sm"
                                     >
                                       Delete
                                     </button>
@@ -950,21 +951,21 @@ function PledgesPageInner() {
               </table>
             </div>
 
-            <div className="flex items-center justify-end gap-3 px-6 py-2">
+            <div className="flex items-center justify-end gap-3 py-2 px-4 md:px-6">
               <button
                 type="button"
                 onClick={onPrev}
                 disabled={!store?.pagination?.prevPage}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
               >
                 Prev
               </button>
-              <div className="text-sm text-gray-600">Page {store?.pagination?.currentPage || 1}</div>
+              <div className="text-gray-600 text-sm">Page {store?.pagination?.currentPage || 1}</div>
               <button
                 type="button"
                 onClick={onNext}
                 disabled={!store?.pagination?.nextPage}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
               >
                 Next
               </button>

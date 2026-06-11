@@ -19,41 +19,10 @@ import {
   sendDowngradeAppliedEmail
 } from "../../utils/subscriptionEmails.js";
 
-
-
-const normalizeLegacyCurrency = (currency) => {
-
-  const cur = String(currency || "")
-
-    .trim()
-
-    .toUpperCase();
-
-  if (cur === "GHS") return "GHS";
-
-  return "GHS";
-
-};
-
-
-
-
-
-
-// =============================
-
-// Helper: HQ-only restriction
-
-// =============================
-
 const validatePlanForChurch = (church, plan) => {
-
   if (church.type === "Headquarters" && String(plan.name || "").toLowerCase() !== "premium") {
-
     throw new Error("HQ churches must subscribe to Premium plan only");
-
   }
-
 };
 
 
@@ -90,13 +59,7 @@ export const createSubscriptionForChurch = async ({
 
 
 
-  const normalizedCurrency = String(currency || "")
-
-    .trim()
-
-    .toUpperCase();
-
-  const planCurrency = normalizedCurrency === "GHS" ? "GHS" : "GHS";
+  const planCurrency = "GHS";
 
 
 
@@ -290,21 +253,12 @@ export const processSubscriptionBillings = async (subscription) => {
 
   if (!plan) throw new Error("Plan not found");
 
-
-
-  const billingCurrency = normalizeLegacyCurrency(subscription.currency);
-
-
+  const billingCurrency = "GHS";
 
   if (billingCurrency !== subscription.currency) {
-
     subscription.currency = billingCurrency;
-
     await subscription.save();
-
   }
-
-
 
   const price = plan.pricing[billingCurrency]?.[subscription.billingInterval];
 

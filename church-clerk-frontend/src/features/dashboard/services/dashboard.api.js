@@ -1,15 +1,18 @@
 import http from "../../../shared/services/http.js";
 
-export const getDashboardKPI = async () => {
-  return await http.get("/dashboard/kpi");
+export const getDashboardKPI = async ({ churchId } = {}) => {
+  return await http.get("/dashboard/kpi", churchId ? { headers: { "x-active-church": churchId } } : undefined);
 };
 
-export const getDashboardAnalytics = async (params) => {
-  return await http.get("/dashboard/analytics", { params });
+export const getDashboardAnalytics = async (params, { churchId } = {}) => {
+  return await http.get("/dashboard/analytics", {
+    params,
+    ...(churchId ? { headers: { "x-active-church": churchId } } : {})
+  });
 };
 
-export const getDashboardWidgets = async () => {
-  return await http.get("/dashboard/widgets");
+export const getDashboardWidgets = async ({ churchId } = {}) => {
+  return await http.get("/dashboard/widgets", churchId ? { headers: { "x-active-church": churchId } } : undefined);
 };
 
 export const getDashboardWidgetsWithParams = async (params) => {

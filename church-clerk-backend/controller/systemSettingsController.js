@@ -23,7 +23,9 @@ export const getSystemSettings = async (req, res) => {
         smsCostCredits: settings.smsCostCredits,
         whatsappCostCredits: settings.whatsappCostCredits,
         referralBonusDays: settings.referralBonusDays,
-        usdToGhsRate: settings.usdToGhsRate
+        usdToGhsRate: settings.usdToGhsRate,
+        enforceBackdating: !!settings.enforceBackdating,
+        enforceImmutability: !!settings.enforceImmutability
       }
     });
   } catch (error) {
@@ -33,7 +35,7 @@ export const getSystemSettings = async (req, res) => {
 
 export const updateSystemSettings = async (req, res) => {
   try {
-    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, whatsappCostCredits, referralBonusDays, usdToGhsRate } = req.body || {};
+    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, whatsappCostCredits, referralBonusDays, usdToGhsRate, enforceBackdating, enforceImmutability } = req.body || {};
 
     const update = {};
 
@@ -93,6 +95,14 @@ export const updateSystemSettings = async (req, res) => {
       update.usdToGhsRate = n;
     }
 
+    if (enforceBackdating !== undefined) {
+      update.enforceBackdating = Boolean(enforceBackdating);
+    }
+
+    if (enforceImmutability !== undefined) {
+      update.enforceImmutability = Boolean(enforceImmutability);
+    }
+
     const settings = await getSingletonSettings();
 
     if (Object.keys(update).length === 0) {
@@ -105,7 +115,9 @@ export const updateSystemSettings = async (req, res) => {
           smsCostCredits: settings.smsCostCredits,
           whatsappCostCredits: settings.whatsappCostCredits,
           referralBonusDays: settings.referralBonusDays,
-          usdToGhsRate: settings.usdToGhsRate
+          usdToGhsRate: settings.usdToGhsRate,
+          enforceBackdating: !!settings.enforceBackdating,
+          enforceImmutability: !!settings.enforceImmutability
         }
       });
     }
@@ -166,7 +178,9 @@ export const updateSystemSettings = async (req, res) => {
         smsCostCredits: settings.smsCostCredits,
         whatsappCostCredits: settings.whatsappCostCredits,
         referralBonusDays: settings.referralBonusDays,
-        usdToGhsRate: settings.usdToGhsRate
+        usdToGhsRate: settings.usdToGhsRate,
+        enforceBackdating: !!settings.enforceBackdating,
+        enforceImmutability: !!settings.enforceImmutability
       }
     });
   } catch (error) {
@@ -183,7 +197,9 @@ export const getSystemSettingsSnapshot = async () => {
     smsCostCredits: Number(settings.smsCostCredits || 5),
     whatsappCostCredits: Number(settings.whatsappCostCredits || 20),
     referralBonusDays: Number(settings.referralBonusDays || 30),
-    usdToGhsRate: Number(settings.usdToGhsRate || 0)
+    usdToGhsRate: Number(settings.usdToGhsRate || 0),
+    enforceBackdating: Boolean(settings.enforceBackdating),
+    enforceImmutability: Boolean(settings.enforceImmutability)
   };
 };
 

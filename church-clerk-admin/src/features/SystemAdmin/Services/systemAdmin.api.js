@@ -84,6 +84,15 @@ export const updateSystemSettings = async (payload) => {
   return await http.patch("/system-admin/settings", payload);
 };
 
+// Financial governance flags (admin)
+export const getGovernanceFlagsSnapshot = async () => {
+  return await http.get("/system-admin/governance/flags/snapshot");
+};
+
+export const toggleGovernanceFlags = async (payload) => {
+  return await http.post("/system-admin/governance/flags/toggle", payload);
+};
+
 export const listSenderIdRequests = async (params) => {
   return await http.get("/system-admin/sender-id/requests", { params });
 };

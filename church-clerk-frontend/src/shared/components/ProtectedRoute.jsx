@@ -15,7 +15,7 @@ function ProtectedRoute({ children }) {
               <path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
             </svg>
           </div>
-          <div className="text-base font-semibold text-blue-900 tracking-tight">ChurchClerk</div>
+          <div className="font-semibold text-blue-900 tracking-tight text-base">ChurchClerk</div>
           <div className="h-5 w-5 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
         </div>
       </div>

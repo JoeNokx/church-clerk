@@ -39,15 +39,15 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
-            <div className="text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
+            <div className="font-semibold text-gray-900 text-lg">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -55,7 +55,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -66,22 +66,22 @@ function ConfirmModal({ open, title, message, confirmLabel, onCancel, onConfirm 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
           >
             {confirmLabel}
           </button>
@@ -190,7 +190,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
       <button
         type="button"
         onClick={() => setDatePickerOpen((v) => !v)}
-        className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+        className="inline-flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 md:h-12 text-sm"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
           <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -203,36 +203,36 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
       {datePickerOpen && (
         <div className="cck-date-dropdown absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
           <div className="flex items-center justify-between gap-3 pb-3">
-            <div className="text-xs font-semibold text-gray-500">Filter by date</div>
-            <button type="button" onClick={clearDates} className="text-xs font-semibold text-gray-600 hover:text-gray-900">
+            <div className="font-semibold text-gray-500 text-xs">Filter by date</div>
+            <button type="button" onClick={clearDates} className="font-semibold text-gray-600 hover:text-gray-900 text-xs">
               Clear
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-xs font-semibold text-gray-500">From</div>
+              <div className="font-semibold text-gray-500 text-xs">From</div>
               <input
                 type="date"
                 value={draftFrom}
                 onChange={(e) => onDraftFromChange(e.target.value)}
-                className="mt-2 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
             </div>
 
             <div>
-              <div className="text-xs font-semibold text-gray-500">To</div>
+              <div className="font-semibold text-gray-500 text-xs">To</div>
               <input
                 type="date"
                 value={draftTo}
                 min={draftFrom || undefined}
                 onChange={(e) => setDraftTo(e.target.value)}
-                className="mt-2 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
             </div>
           </div>
 
-          <div className="pt-3 text-xs text-gray-500">
+          <div className="pt-3 text-gray-500 text-xs">
             Pick only <span className="font-semibold">From</span> for a single day, or pick both for a range.
           </div>
 
@@ -240,7 +240,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
             <button
               type="button"
               onClick={applyDates}
-              className="h-9 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="h-11 rounded-lg bg-blue-600 px-4 font-semibold text-white shadow-sm hover:bg-blue-700 md:h-12 text-sm"
             >
               Apply
             </button>
@@ -315,45 +315,45 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
   return (
     <BaseModal open={open} title={title} subtitle="Business income" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Received From</label>
+          <label className="block font-semibold text-gray-500 text-xs">Received From</label>
           <input
             value={recievedFrom}
             onChange={(e) => setRecievedFrom(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="number"
               placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Note</label>
+          <label className="block font-semibold text-gray-500 text-xs">Note</label>
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
           />
         </div>
@@ -362,14 +362,14 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Add"}
           </button>
@@ -466,21 +466,21 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
   return (
     <BaseModal open={open} title={title} subtitle="Business expenses" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Spent By</label>
+          <label className="block font-semibold text-gray-500 text-xs">Spent By</label>
           <input
             value={spentBy}
             onChange={(e) => setSpentBy(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-semibold text-gray-500">Category</label>
+              <label className="block font-semibold text-gray-500 text-xs">Category</label>
               <AddLookupValueButton
                 label="Add category"
                 kind="businessExpenseCategory"
@@ -493,7 +493,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             >
               <option value="">Select category</option>
               {categoryOptions.map((c) => (
@@ -504,33 +504,33 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="number"
               placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Description</label>
+            <label className="block font-semibold text-gray-500 text-xs">Description</label>
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               placeholder="Optional"
             />
           </div>
@@ -540,14 +540,14 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Add"}
           </button>
@@ -713,13 +713,13 @@ function BusinessVentureDetailsPage() {
   if (!businessId) {
     return (
       <div className="max-w-6xl">
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="text-sm font-semibold text-gray-900">Business Venture</div>
-          <div className="mt-2 text-sm text-gray-600">Missing business id.</div>
+        <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-900 text-sm">Business Venture</div>
+          <div className="mt-2 text-gray-600 text-sm">Missing business id.</div>
           <button
             type="button"
             onClick={() => toPage("business-ventures")}
-            className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
           >
             Back
           </button>
@@ -735,39 +735,39 @@ function BusinessVentureDetailsPage() {
           <button
             type="button"
             onClick={() => toPage("business-ventures")}
-            className="text-sm font-semibold text-gray-600 hover:text-gray-900"
+            className="font-semibold text-gray-600 hover:text-gray-900 text-sm"
           >
             ← Back
           </button>
-          <div className="mt-2 text-2xl font-semibold text-gray-900">{business?.businessName || "Business Venture"}</div>
-          <div className="mt-2 text-sm text-gray-600">{business?.description || "—"}</div>
-          <div className="mt-2 text-xs text-gray-500">Manager: {business?.manager || "—"} | Phone: {business?.phoneNumber || "—"}</div>
+          <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{business?.businessName || "Business Venture"}</div>
+          <div className="mt-2 text-gray-600 text-sm">{business?.description || "—"}</div>
+          <div className="mt-2 text-gray-500 text-xs">Manager: {business?.manager || "—"} | Phone: {business?.phoneNumber || "—"}</div>
         </div>
       </div>
 
-      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Income</div>
-          <div className="mt-3 text-2xl font-semibold text-green-700">{formatCurrency(kpiCards.totalIncome, currency)}</div>
-          <div className="mt-2 text-xs text-gray-500">{kpiCards.incomeCount} transactions</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Total Income</div>
+          <div className="mt-3 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiCards.totalIncome, currency)}</div>
+          <div className="mt-2 text-gray-500 text-xs">{kpiCards.incomeCount} transactions</div>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Total Expenses</div>
-          <div className="mt-3 text-2xl font-semibold text-orange-600">{formatCurrency(kpiCards.totalExpenses, currency)}</div>
-          <div className="mt-2 text-xs text-gray-500">{kpiCards.expensesCount} transactions</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Total Expenses</div>
+          <div className="mt-3 font-semibold text-orange-600 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiCards.totalExpenses, currency)}</div>
+          <div className="mt-2 text-gray-500 text-xs">{kpiCards.expensesCount} transactions</div>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">Net</div>
-          <div className="mt-3 text-2xl font-semibold text-blue-900">{formatCurrency(kpiCards.totalNet, currency)}</div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Net</div>
+          <div className="mt-3 font-semibold text-blue-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiCards.totalNet, currency)}</div>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="text-xs font-semibold text-gray-500">This Month</div>
-          <div className="mt-3 text-sm font-semibold text-gray-900">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">This Month</div>
+          <div className="mt-3 font-semibold text-gray-900 text-sm">
             Income: {formatCurrency(kpiCards.incomeThisMonth, currency)}
           </div>
-          <div className="mt-1 text-sm font-semibold text-gray-900">
+          <div className="mt-1 font-semibold text-gray-900 text-sm">
             Expenses: {formatCurrency(kpiCards.expensesThisMonth, currency)}
           </div>
         </div>
@@ -784,14 +784,14 @@ function BusinessVentureDetailsPage() {
               <button
                 type="button"
                 onClick={() => changeTab("incomes")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${activeTab === "incomes" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"}`}
+                className={`rounded-lg px-4 py-2 font-semibold text-sm ${activeTab === "incomes" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"}`}
               >
                 Income
               </button>
               <button
                 type="button"
                 onClick={() => changeTab("expenses")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${activeTab === "expenses" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"}`}
+                className={`rounded-lg px-4 py-2 font-semibold text-sm ${activeTab === "expenses" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"}`}
               >
                 Expenses
               </button>
@@ -839,7 +839,7 @@ function BusinessVentureDetailsPage() {
                   setExpensePage(1);
                 }}
                 placeholder="Search..."
-                className="h-10 w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-64 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
 
               {canEdit ? (
@@ -847,7 +847,7 @@ function BusinessVentureDetailsPage() {
                   <button
                     type="button"
                     onClick={() => setAddIncomeOpen(true)}
-                    className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                    className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
                   >
                     + Add Income
                   </button>
@@ -855,7 +855,7 @@ function BusinessVentureDetailsPage() {
                   <button
                     type="button"
                     onClick={() => setAddExpenseOpen(true)}
-                    className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                    className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
                   >
                     + Add Expense
                   </button>
@@ -870,22 +870,22 @@ function BusinessVentureDetailsPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Received From</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Note</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
-                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Received From</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Note</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                        <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {incomeRows.map((row, idx) => (
-                        <tr key={row?._id ?? `i-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.recievedFrom || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600">{row?.note || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.date)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-green-700 whitespace-nowrap">{formatCurrency(row?.amount, currency)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                        <tr key={row?._id ?? `i-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.recievedFrom || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 px-4 md:px-6">{row?.note || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount, currency)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center justify-end gap-2">
                               {canEdit ? (
                                 <>
@@ -895,7 +895,7 @@ function BusinessVentureDetailsPage() {
                                       setEditIncomeRow(row);
                                       setEditIncomeOpen(true);
                                     }}
-                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                                   >
                                     Edit
                                   </button>
@@ -905,7 +905,7 @@ function BusinessVentureDetailsPage() {
                                       setDeleteIncomeRow(row);
                                       setDeleteIncomeOpen(true);
                                     }}
-                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-red-50 text-xs"
                                   >
                                     Delete
                                   </button>
@@ -919,24 +919,24 @@ function BusinessVentureDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="px-5 py-4 text-sm text-gray-600">No income records found.</div>
+                <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-600 text-sm">No income records found.</div>
               )}
 
-              <div className="flex items-center justify-end gap-3 px-5 py-4">
+              <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setIncomePage((p) => Math.max(1, p - 1))}
                   disabled={incomePage <= 1}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
                 >
                   Prev
                 </button>
-                <div className="text-sm text-gray-600">Page {incomePage} of {incomeTotalPages}</div>
+                <div className="text-gray-600 text-sm">Page {incomePage} of {incomeTotalPages}</div>
                 <button
                   type="button"
                   onClick={() => setIncomePage((p) => Math.min(incomeTotalPages, p + 1))}
                   disabled={incomePage >= incomeTotalPages}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
                 >
                   Next
                 </button>
@@ -948,24 +948,24 @@ function BusinessVentureDetailsPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Spent By</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Category</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Description</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
-                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Spent By</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Description</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                        <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {expenseRows.map((row, idx) => (
-                        <tr key={row?._id ?? `e-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{row?.spentBy || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 whitespace-nowrap">{row?.category || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-gray-600">{row?.description || "—"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDate(row?.date)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 text-orange-600 whitespace-nowrap">{formatCurrency(row?.amount, currency)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                        <tr key={row?._id ?? `e-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.spentBy || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.category || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 px-4 md:px-6">{row?.description || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount, currency)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center justify-end gap-2">
                               {canEdit ? (
                                 <>
@@ -975,7 +975,7 @@ function BusinessVentureDetailsPage() {
                                       setEditExpenseRow(row);
                                       setEditExpenseOpen(true);
                                     }}
-                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                                   >
                                     Edit
                                   </button>
@@ -985,7 +985,7 @@ function BusinessVentureDetailsPage() {
                                       setDeleteExpenseRow(row);
                                       setDeleteExpenseOpen(true);
                                     }}
-                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-red-50 text-xs"
                                   >
                                     Delete
                                   </button>
@@ -999,24 +999,24 @@ function BusinessVentureDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="px-5 py-4 text-sm text-gray-600">No expense records found.</div>
+                <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-600 text-sm">No expense records found.</div>
               )}
 
-              <div className="flex items-center justify-end gap-3 px-5 py-4">
+              <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setExpensePage((p) => Math.max(1, p - 1))}
                   disabled={expensePage <= 1}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
                 >
                   Prev
                 </button>
-                <div className="text-sm text-gray-600">Page {expensePage} of {expenseTotalPages}</div>
+                <div className="text-gray-600 text-sm">Page {expensePage} of {expenseTotalPages}</div>
                 <button
                   type="button"
                   onClick={() => setExpensePage((p) => Math.min(expenseTotalPages, p + 1))}
                   disabled={expensePage >= expenseTotalPages}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
                 >
                   Next
                 </button>

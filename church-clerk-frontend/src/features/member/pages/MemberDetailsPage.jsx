@@ -19,7 +19,7 @@ function StatusChip({ value }) {
             ? "border-red-200 bg-red-50 text-red-700"
             : "border-gray-200 bg-gray-50 text-gray-700";
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold ${styles} text-xs`}>
       {v || "-"}
     </span>
   );
@@ -27,7 +27,7 @@ function StatusChip({ value }) {
 
 function IdChip({ value }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-700">
+    <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 font-semibold text-gray-700 text-xs">
       {value || "-"}
     </span>
   );
@@ -36,8 +36,8 @@ function IdChip({ value }) {
 function FieldRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2">
-      <div className="text-xs font-semibold text-gray-500">{label}</div>
-      <div className="text-sm font-semibold text-gray-900 text-right">{value || "-"}</div>
+      <div className="font-semibold text-gray-500 text-xs">{label}</div>
+      <div className="font-semibold text-gray-900 text-right text-sm">{value || "-"}</div>
     </div>
   );
 }
@@ -45,11 +45,11 @@ function FieldRow({ label, value }) {
 function Section({ title, subtitle, children }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
-      <div className="border-b border-gray-200 px-5 py-4">
-        <div className="text-sm font-semibold text-gray-900">{title}</div>
-        {subtitle ? <div className="mt-1 text-xs text-gray-500">{subtitle}</div> : null}
+      <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+        <div className="font-semibold text-gray-900 text-sm">{title}</div>
+        {subtitle ? <div className="mt-1 text-gray-500 text-xs">{subtitle}</div> : null}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-4 md:p-6 lg:p-8">{children}</div>
     </div>
   );
 }
@@ -57,8 +57,8 @@ function Section({ title, subtitle, children }) {
 function InfoCard({ label, value }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-      <div className="text-xs font-semibold text-gray-500">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-gray-900">{value || "-"}</div>
+      <div className="font-semibold text-gray-500 text-xs">{label}</div>
+      <div className="mt-1 font-semibold text-gray-900 text-sm">{value || "-"}</div>
     </div>
   );
 }
@@ -66,11 +66,11 @@ function InfoCard({ label, value }) {
 function BigCard({ title, subtitle, children }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
-      <div className="border-b border-gray-200 px-5 py-4">
-        <div className="text-sm font-semibold text-gray-900">{title}</div>
-        {subtitle ? <div className="mt-1 text-xs text-gray-500">{subtitle}</div> : null}
+      <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+        <div className="font-semibold text-gray-900 text-sm">{title}</div>
+        {subtitle ? <div className="mt-1 text-gray-500 text-xs">{subtitle}</div> : null}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-4 md:p-6 lg:p-8">{children}</div>
     </div>
   );
 }
@@ -78,8 +78,8 @@ function BigCard({ title, subtitle, children }) {
 function DataPair({ label, value }) {
   return (
     <div>
-      <div className="text-xs font-semibold text-gray-500">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-gray-900">{value ?? "-"}</div>
+      <div className="font-semibold text-gray-500 text-xs">{label}</div>
+      <div className="mt-1 font-semibold text-gray-900 text-sm">{value ?? "-"}</div>
     </div>
   );
 }
@@ -145,13 +145,13 @@ function MemberDetailsPageInner() {
   const groups = Array.isArray(member?.group) ? member.group : [];
 
   const renderMinistryChips = (items) => {
-    if (!items?.length) return <div className="text-sm text-gray-600">-</div>;
+    if (!items?.length) return <div className="text-gray-600 text-sm">-</div>;
     return (
       <div className="flex flex-wrap gap-2">
         {items.map((it) => (
           <span
             key={it?._id || it?.name}
-            className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-700"
+            className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 font-semibold text-gray-700 text-xs"
           >
             {it?.name || "-"}
           </span>
@@ -164,8 +164,8 @@ function MemberDetailsPageInner() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Member Details</h2>
-          <p className="mt-2 text-sm text-gray-600">Member profile</p>
+          <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Member Details</h2>
+          <p className="mt-2 text-gray-600 text-sm">Member profile</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -182,7 +182,7 @@ function MemberDetailsPageInner() {
               }
               navigate(-1);
             }}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Back
           </button>
@@ -191,7 +191,7 @@ function MemberDetailsPageInner() {
             <button
               type="button"
               onClick={() => toPage("member-form", { id: memberId })}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               Edit
             </button>
@@ -203,14 +203,14 @@ function MemberDetailsPageInner() {
         {loading ? (
           <div className="space-y-5 animate-pulse">
             <div className="rounded-xl border border-gray-200 bg-white">
-              <div className="border-b border-gray-200 px-5 py-4">
+              <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
                 <div className="h-6 w-48 rounded bg-gray-200" />
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <div className="h-6 w-16 rounded-full bg-gray-200" />
                   <div className="h-6 w-16 rounded-full bg-gray-200" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 md:p-6 lg:p-8 md:gap-5">
                 {[0, 1, 2, 3, 4].map((i) => (
                   <div key={i}>
                     <div className="h-3 w-12 rounded bg-gray-200" />
@@ -222,7 +222,7 @@ function MemberDetailsPageInner() {
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
                 <div className="h-4 w-1/2 rounded bg-gray-200" />
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
                   {[0, 1, 2].map((j) => (
                     <div key={j}>
                       <div className="h-3 w-12 rounded bg-gray-200" />
@@ -234,15 +234,15 @@ function MemberDetailsPageInner() {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
         ) : (
           <>
             <div className="rounded-xl border border-gray-200 bg-white">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <div className="text-xl font-semibold text-gray-900">{name}</div>
+              <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+                <div className="font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">{name}</div>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Member ID</div>
+                    <div className="font-semibold text-gray-500 text-xs">Member ID</div>
                     <div className="mt-1 flex items-center gap-2">
                       <IdChip value={member?.memberId} />
                       <StatusChip value={member?.status} />
@@ -251,7 +251,7 @@ function MemberDetailsPageInner() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 md:p-6 lg:p-8 md:gap-5">
                 <DataPair label="Email" value={member?.email} />
                 <DataPair label="Phone" value={member?.phoneNumber} />
                 <DataPair label="City" value={member?.city} />
@@ -261,7 +261,7 @@ function MemberDetailsPageInner() {
             </div>
 
             <BigCard title="Personal Information" subtitle="Personal details of the member">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
                 <DataPair label="First Name" value={member?.firstName} />
                 <DataPair label="Last Name" value={member?.lastName} />
                 <DataPair label="Gender" value={member?.gender} />
@@ -276,7 +276,7 @@ function MemberDetailsPageInner() {
             </BigCard>
 
             <BigCard title="Address Information" subtitle="Address details">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
                 <DataPair label="Street Address" value={member?.streetAddress} />
                 <DataPair label="City" value={member?.city} />
                 <DataPair label="Region" value={member?.region} />
@@ -285,7 +285,7 @@ function MemberDetailsPageInner() {
             </BigCard>
 
             <BigCard title="Church Information" subtitle="Church membership details">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
                 <DataPair label="Member ID" value={<IdChip value={member?.memberId} />} />
                 <DataPair label="Status" value={<StatusChip value={member?.status} />} />
                 <DataPair label="Church Role" value={member?.churchRole} />
@@ -296,22 +296,22 @@ function MemberDetailsPageInner() {
             <BigCard title="Ministry Information" subtitle="Cells, departments, and groups">
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <div>
-                  <div className="text-xs font-semibold text-gray-500">Cells</div>
+                  <div className="font-semibold text-gray-500 text-xs">Cells</div>
                   <div className="mt-2">{renderMinistryChips(cells)}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-gray-500">Departments</div>
+                  <div className="font-semibold text-gray-500 text-xs">Departments</div>
                   <div className="mt-2">{renderMinistryChips(departments)}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-gray-500">Groups</div>
+                  <div className="font-semibold text-gray-500 text-xs">Groups</div>
                   <div className="mt-2">{renderMinistryChips(groups)}</div>
                 </div>
               </div>
             </BigCard>
 
             <BigCard title="Notes" subtitle="Additional information">
-              <div className="text-sm text-gray-900 whitespace-pre-wrap">{member?.note || "-"}</div>
+              <div className="text-gray-900 whitespace-pre-wrap text-sm">{member?.note || "-"}</div>
             </BigCard>
           </>
         )}

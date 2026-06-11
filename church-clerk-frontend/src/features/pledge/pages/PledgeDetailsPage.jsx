@@ -13,6 +13,7 @@ import {
   updatePledgePayment
 } from "../payments/services/pledgePayments.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -31,7 +32,7 @@ function StatusChip({ value }) {
     v === "completed" ? "border-green-200 bg-green-50 text-green-700" : "border-yellow-200 bg-yellow-50 text-yellow-700";
 
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles}`}>{value || "—"}</span>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold ${styles} text-xs`}>{value || "—"}</span>
   );
 }
 
@@ -40,15 +41,15 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
-            <div className="text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
+            <div className="font-semibold text-gray-900 text-lg">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -56,7 +57,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -134,36 +135,36 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Payment Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Payment Date</label>
             <input
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="number"
               placeholder="0.00"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Payment Method</label>
+            <label className="block font-semibold text-gray-500 text-xs">Payment Method</label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             >
               {PAYMENT_METHODS.map((m) => (
                 <option key={m} value={m}>
@@ -173,12 +174,12 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
             </select>
           </div>
 
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-gray-500">Note</label>
+          <div className="md:col-span-2">
+            <label className="block font-semibold text-gray-500 text-xs">Note</label>
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               placeholder="Optional"
             />
           </div>
@@ -188,14 +189,14 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Add"}
           </button>
@@ -210,22 +211,22 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
           >
             {confirmLabel}
           </button>
@@ -388,7 +389,7 @@ function PledgeDetailsPageInner() {
       <div className="max-w-6xl animate-pulse">
         <div className="h-7 w-40 rounded bg-gray-200" />
         <div className="mt-6 space-y-5">
-          <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3 md:p-6 lg:p-8">
             <div className="h-4 w-1/2 rounded bg-gray-200" />
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {[0, 1, 2, 3].map((i) => (
@@ -400,10 +401,10 @@ function PledgeDetailsPageInner() {
             </div>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
+            <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
               <div className="h-4 w-32 rounded bg-gray-200" />
             </div>
-            <div className="p-5 space-y-3">
+            <div className="p-4 space-y-3 md:p-6 lg:p-8">
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="flex items-center justify-between gap-3 py-2">
                   <div className="h-4 w-24 rounded bg-gray-200" />
@@ -423,11 +424,11 @@ function PledgeDetailsPageInner() {
         <button
           type="button"
           onClick={goBack}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
         >
           Back
         </button>
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
       </div>
     );
   }
@@ -439,7 +440,7 @@ function PledgeDetailsPageInner() {
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -452,117 +453,117 @@ function PledgeDetailsPageInner() {
           <button
             type="button"
             onClick={() => setNewPaymentOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
           >
-            <span className="text-lg leading-none">+</span>
+            <span className="leading-none text-lg">+</span>
             Add Payment
           </button>
         ) : null}
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <div className="text-2xl font-semibold text-gray-900 truncate">{pledge?.name || "—"}</div>
+              <div className="font-semibold text-gray-900 truncate md:text-3xl lg:text-4xl text-xl md:text-2xl">{pledge?.name || "—"}</div>
               <StatusChip value={derivedStatus} />
             </div>
-            <div className="mt-1 text-sm text-gray-600">Pledge information</div>
+            <div className="mt-1 text-gray-600 text-sm">Pledge information</div>
           </div>
         </div>
 
         <div className="mt-5 divide-y divide-gray-200">
-          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs font-semibold text-gray-500">Phone Number</div>
-            <div className="text-sm font-semibold text-gray-900">{pledge?.phoneNumber || "—"}</div>
+          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+            <div className="font-semibold text-gray-500 text-xs">Phone Number</div>
+            <div className="font-semibold text-gray-900 text-sm">{pledge?.phoneNumber || "—"}</div>
           </div>
 
-          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs font-semibold text-gray-500">Pledge Date</div>
-            <div className="text-sm font-semibold text-gray-900">{formatDate(pledge?.pledgeDate)}</div>
+          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+            <div className="font-semibold text-gray-500 text-xs">Pledge Date</div>
+            <div className="font-semibold text-gray-900 text-sm">{formatDate(pledge?.pledgeDate)}</div>
           </div>
 
-          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs font-semibold text-gray-500">Days Until Deadline</div>
-            <div className="text-sm font-semibold text-gray-900">{daysUntilDeadline ?? "—"}</div>
+          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+            <div className="font-semibold text-gray-500 text-xs">Days Until Deadline</div>
+            <div className="font-semibold text-gray-900 text-sm">{daysUntilDeadline ?? "—"}</div>
           </div>
 
-          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs font-semibold text-gray-500">Service Type</div>
-            <div className="text-sm font-semibold text-gray-900">{pledge?.serviceType || "—"}</div>
+          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+            <div className="font-semibold text-gray-500 text-xs">Service Type</div>
+            <div className="font-semibold text-gray-900 text-sm">{pledge?.serviceType || "—"}</div>
           </div>
 
-          <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs font-semibold text-gray-500">Deadline</div>
-            <div className="text-sm font-semibold text-gray-900">{formatDate(pledge?.deadline)}</div>
+          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+            <div className="font-semibold text-gray-500 text-xs">Deadline</div>
+            <div className="font-semibold text-gray-900 text-sm">{formatDate(pledge?.deadline)}</div>
           </div>
 
           <div className="py-3">
-            <div className="text-xs font-semibold text-gray-500">Note</div>
-            <div className="mt-1 text-sm font-semibold text-gray-900 break-words">{pledge?.note || "—"}</div>
+            <div className="font-semibold text-gray-500 text-xs">Note</div>
+            <div className="mt-1 font-semibold text-gray-900 break-words text-sm">{pledge?.note || "—"}</div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-xs font-semibold text-gray-500">Amount Pledged</div>
-          <div className="mt-2 text-2xl font-semibold text-purple-700">{formatCurrency(pledge?.amount || paymentsSummary?.amountPledged || 0, currency)}</div>
+      <KpiGrid className="mt-4 gap-3 lg:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Amount Pledged</div>
+          <div className="mt-2 font-semibold text-purple-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(pledge?.amount || paymentsSummary?.amountPledged || 0, currency)}</div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-xs font-semibold text-gray-500">Total Paid</div>
-          <div className="mt-2 text-2xl font-semibold text-green-700">{formatCurrency(paymentsSummary?.totalPaid || 0, currency)}</div>
+        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Total Paid</div>
+          <div className="mt-2 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(paymentsSummary?.totalPaid || 0, currency)}</div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-xs font-semibold text-gray-500">Balance</div>
-          <div className="mt-2 text-2xl font-semibold text-red-600">{formatCurrency(paymentsSummary?.remainingBalance || 0, currency)}</div>
+        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="font-semibold text-gray-500 text-xs">Balance</div>
+          <div className="mt-2 font-semibold text-red-600 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(paymentsSummary?.remainingBalance || 0, currency)}</div>
         </div>
-      </div>
+      </KpiGrid>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Payment History</div>
-            <div className="mt-1 text-xs text-gray-500">Payments recorded for this pledge</div>
+            <div className="font-semibold text-gray-900 text-sm">Payment History</div>
+            <div className="mt-1 text-gray-500 text-xs">Payments recorded for this pledge</div>
           </div>
         </div>
 
-          {paymentsLoading ? <div className="mt-4 text-sm text-gray-600">Loading payments...</div> : null}
+          {paymentsLoading ? <div className="mt-4 text-gray-600 text-sm">Loading payments...</div> : null}
           {!paymentsLoading && paymentsError ? (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{paymentsError}</div>
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{paymentsError}</div>
           ) : null}
 
-          {!paymentsLoading && !paymentsError && !payments.length ? <div className="mt-4 text-sm text-gray-600">No payments recorded yet.</div> : null}
+          {!paymentsLoading && !paymentsError && !payments.length ? <div className="mt-4 text-gray-600 text-sm">No payments recorded yet.</div> : null}
 
           {!paymentsLoading && !paymentsError && payments.length ? (
             <div className="mt-4">
               <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
-                    <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                      <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                      <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
-                      <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Method</th>
-                      <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Note</th>
-                      <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                    <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Method</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Note</th>
+                      <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {payments.map((p, idx) => (
-                      <tr key={p?._id ?? `p-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                        <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{formatDate(p?.paymentDate)}</td>
-                        <td className="px-6 max-sm:px-4 py-1.5 text-green-700 font-semibold whitespace-nowrap">{formatCurrency(p?.amount || 0, currency)}</td>
-                        <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 whitespace-nowrap">{p?.paymentMethod || "—"}</td>
-                        <td className="px-6 max-sm:px-4 py-1.5 text-gray-600">{p?.note || "—"}</td>
-                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                      <tr key={p?._id ?? `p-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                        <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(p?.paymentDate)}</td>
+                        <td className="max-md:px-4 py-1.5 text-green-700 font-semibold whitespace-nowrap px-4 md:px-6">{formatCurrency(p?.amount || 0, currency)}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{p?.paymentMethod || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-600 px-4 md:px-6">{p?.note || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <div className="flex items-center justify-end gap-2">
                             {canEditPayment ? (
                               <button
                                 type="button"
                                 onClick={() => openEdit(p)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                               >
                                 Edit
                               </button>
@@ -572,7 +573,7 @@ function PledgeDetailsPageInner() {
                               <button
                                 type="button"
                                 onClick={() => openDelete(p)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
                               >
                                 Delete
                               </button>
@@ -590,16 +591,16 @@ function PledgeDetailsPageInner() {
                   type="button"
                   onClick={onPrev}
                   disabled={!paymentsPagination?.prevPage}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
                 >
                   Prev
                 </button>
-                <div className="text-sm text-gray-600">Page {paymentsPagination?.currentPage || 1}</div>
+                <div className="text-gray-600 text-sm">Page {paymentsPagination?.currentPage || 1}</div>
                 <button
                   type="button"
                   onClick={onNext}
                   disabled={!paymentsPagination?.nextPage}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
                 >
                   Next
                 </button>

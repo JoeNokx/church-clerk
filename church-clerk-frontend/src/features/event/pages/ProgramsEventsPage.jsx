@@ -46,53 +46,52 @@ function ProgramsEventsPageInner() {
   );
 
   return (
-    <div className="max-w-6xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Programs &amp; Events</h2>
-          <p className="mt-2 text-sm text-gray-600">Search and manage church events</p>
-
-          <div className="mt-4 inline-flex rounded-lg border border-gray-200 bg-white p-1">
-            <button type="button" onClick={() => setActiveTab("upcoming")} className={tabClass("upcoming")}>
-              Upcoming
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-semibold text-white">
-                {upcomingBadge}
-              </span>
-            </button>
-            <button type="button" onClick={() => setActiveTab("ongoing")} className={`ml-1 ${tabClass("ongoing")}`}>
-              Ongoing
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-semibold text-white">
-                {ongoingBadge}
-              </span>
-            </button>
-            <button type="button" onClick={() => setActiveTab("past")} className={`ml-1 ${tabClass("past")}`}>
-              Past
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-600 px-1.5 text-xs font-semibold text-white">
-                {pastBadge}
-              </span>
-            </button>
+    <div className="w-full max-w-6xl overflow-x-hidden">
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Programs &amp; Events</h2>
+          <div className="shrink-0">
+            {canCreate ? (
+              <button
+                type="button"
+                onClick={() => setCreateOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+              >
+                <span className="leading-none text-lg">+</span>
+                Create Event
+              </button>
+            ) : null}
           </div>
         </div>
+        <p className="mt-2 text-gray-600 text-sm">Search and manage church events</p>
 
-        <div className="flex items-center gap-3">
-          {canCreate ? (
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-            >
-              <span className="text-lg leading-none">+</span>
-              Create Event
-            </button>
-          ) : null}
+        <div className="cck-tab-bar mt-4 flex flex-wrap w-full rounded-lg border border-gray-200 bg-white p-1">
+          <button type="button" onClick={() => setActiveTab("upcoming")} className={tabClass("upcoming")}>
+            Upcoming
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 font-semibold text-white text-xs">
+              {upcomingBadge}
+            </span>
+          </button>
+          <button type="button" onClick={() => setActiveTab("ongoing")} className={`ml-1 ${tabClass("ongoing")}`}>
+            Ongoing
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 font-semibold text-white text-xs">
+              {ongoingBadge}
+            </span>
+          </button>
+          <button type="button" onClick={() => setActiveTab("past")} className={`ml-1 ${tabClass("past")}`}>
+            Past
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-600 px-1.5 font-semibold text-white text-xs">
+              {pastBadge}
+            </span>
+          </button>
         </div>
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Event Records</div>
-            <div className="text-xs text-gray-500">All events and their details</div>
+            <div className="font-semibold text-gray-900 text-sm">Event Records</div>
+            <div className="text-gray-500 text-xs">All events and their details</div>
           </div>
 
           <ProgramsEventsFilters activeStatus={activeTab} />

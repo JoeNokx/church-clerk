@@ -1,50 +1,19 @@
-import { createSubscriptionForChurch, upgradeTrialToPlans, runBillingCycles } from "./subscriptionService.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
-import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import PDFDocument from "pdfkit";
-import https from "https";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
-
-import { toGhanaNationalFromE164, validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
-
-
-const planRank = (plan) => {
-  const n = String(plan?.name || "")
-    .trim()
-    .toLowerCase();
-  if (n === "free lite") return 0;
-  if (n === "basic") return 1;
-  if (n === "standard") return 2;
-  if (n === "premium") return 3;
-  return 99;
-};
-
-const sortPlans = (plans) => {
-  const rows = Array.isArray(plans) ? plans : [];
-  return rows.slice().sort((a, b) => {
-    const ar = planRank(a);
-    const br = planRank(b);
-    if (ar !== br) return ar - br;
-    return String(a?.name || "").localeCompare(String(b?.name || ""));
-  });
-};
-
-const sanitizePlanCurrencies = (plan) => {
-  if (!plan || typeof plan !== "object") return plan;
-  const copy = { ...plan };
-
-  const nextPricing = {};
-  if (plan?.pricing?.GHS) nextPricing.GHS = plan.pricing.GHS;
-  copy.pricing = nextPricing;
-
-  const nextPriceByCurrency = {};
-  if (plan?.priceByCurrency?.GHS) nextPriceByCurrency.GHS = plan.priceByCurrency.GHS;
-  copy.priceByCurrency = nextPriceByCurrency;
-
-  return copy;
-};
+import { buildPaginationParams, buildPaginationResponse } from "../../utils/paginationHelper.js";
+import {
+  chooseSubscriptionPlan,
+  upgradeTrial,
+  executeBillingCycle,
+  getAvailablePlans as getAvailablePlansService,
+  getSubscriptionForChurch,
+  getEffectivePlan
+} from "../../services/billing/subscriptionManagementService.js";
+import { addCardPaymentMethod as addCardPaymentMethodService } from "../../services/billing/cardPaymentService.js";
+import { addMobileMoneyPaymentMethod as addMobileMoneyPaymentMethodService, updateMobileMoneyPaymentMethod } from "../../services/billing/mobileMoneyPaymentService.js";
 
 export const chooseSubscription = async (req, res) => {
   try {
@@ -57,20 +26,8 @@ export const chooseSubscription = async (req, res) => {
       billingCycle
     } = req.body;
 
-    const church = await Church.findById(churchId);
-    if (!church) {
-      return res.status(404).json({ message: "Church not found" });
-    }
-
     const currency = "GHS";
-
-    const subscription = await createSubscriptionForChurch({
-      church,
-      planId,
-      trial,
-      currency,
-      billingInterval: billingCycle || billingInterval
-    });
+    const subscription = await chooseSubscriptionPlan(churchId, planId, trial, currency, billingCycle || billingInterval);
 
     res.status(201).json({
       message: "Subscription created successfully",
@@ -83,120 +40,8 @@ export const chooseSubscription = async (req, res) => {
   }
 };
 
-const paystackResolveBankAccount = ({ accountNumber, bankCode }) =>
-  new Promise((resolve, reject) => {
-    const secretKey = process.env.PAYSTACK_SECRET_KEY || process.env.TEST_SECRET_KEY;
-    if (!secretKey) {
-      return reject(new Error("Paystack secret key is not configured"));
-    }
-
-    const path = `/bank/resolve?account_number=${encodeURIComponent(accountNumber)}&bank_code=${encodeURIComponent(
-      bankCode
-    )}`;
-
-    const req = https.request(
-      {
-        hostname: "api.paystack.co",
-        path,
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${secretKey}`
-        }
-      },
-      (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => {
-          const statusCode = res.statusCode || 0;
-          let json = null;
-          try {
-            json = data ? JSON.parse(data) : {};
-          } catch {
-            json = null;
-          }
-
-          if (statusCode < 200 || statusCode >= 300) {
-            const msg = json?.message || (data ? String(data).slice(0, 500) : "Paystack resolve failed");
-            return reject(new Error(`${msg} (${statusCode})`));
-          }
-
-          if (!json || json?.status === false) {
-            return reject(new Error(json?.message || "Paystack returned an error"));
-          }
-
-          return resolve(json);
-        });
-      }
-    );
-
-    req.on("error", reject);
-    req.end();
-  });
-
 export const addBankPaymentMethod = async (req, res) => {
-  try {
-    const churchId = req.activeChurch?._id;
-    if (!churchId) {
-      return res.status(400).json({ message: "Active church is required" });
-    }
-
-    return res.status(400).json({ message: "Bank payment methods are not supported" });
-
-    const { bankCode, accountNumber } = req.body;
-    const bankCodeStr = String(bankCode || "").trim();
-    const accountDigits = String(accountNumber || "").replace(/\D+/g, "");
-
-    if (!bankCodeStr) {
-      return res.status(400).json({ message: "Bank code is required" });
-    }
-
-    if (!accountDigits || accountDigits.length !== 10) {
-      return res.status(400).json({ message: "Account number must be 10 digits" });
-    }
-
-    const subscription = await Subscription.findOne({ church: churchId });
-    if (!subscription) {
-      return res.status(404).json({ message: "Subscription not found" });
-    }
-
-    const church = await Church.findById(churchId).lean();
-    const country = String(church?.country || "").trim().toLowerCase();
-
-    const currency = "GHS";
-
-    const resolved = await paystackResolveBankAccount({
-      accountNumber: accountDigits,
-      bankCode: bankCodeStr
-    });
-
-    const accountName = resolved?.data?.account_name ? String(resolved.data.account_name) : "";
-    const bankName = resolved?.data?.bank_name ? String(resolved.data.bank_name) : "";
-    const last4 = accountDigits.slice(-4);
-
-    subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
-    const exists = subscription.paymentMethods.some(
-      (m) =>
-        String(m?.type || "") === "bank" &&
-        String(m?.bankCode || "") === bankCodeStr &&
-        String(m?.accountNumberLast4 || "") === last4
-    );
-
-    if (!exists) {
-      subscription.paymentMethods.push({
-        type: "bank",
-        bankCode: bankCodeStr,
-        bankName: bankName || null,
-        accountName: accountName || null,
-        accountNumberLast4: last4
-      });
-      await subscription.save();
-    }
-
-    const populated = await Subscription.findById(subscription._id).populate("plan").lean();
-    return res.json({ subscription: populated });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
+  return res.status(400).json({ message: "Bank payment methods are not supported" });
 };
 
 export const updatePaymentMethod = async (req, res) => {
@@ -223,7 +68,6 @@ export const updatePaymentMethod = async (req, res) => {
     }
 
     const type = String(method?.type || "mobile_money").toLowerCase();
-    const currency = "GHS";
 
     if (type === "card") {
       return res.status(400).json({ message: "Card payment methods cannot be edited" });
@@ -234,50 +78,11 @@ export const updatePaymentMethod = async (req, res) => {
     }
 
     if (type === "mobile_money") {
-      if (country !== "ghana") {
-        return res.status(400).json({ message: "Mobile money is only available for churches in Ghana" });
-      }
-      const { provider, phone } = req.body;
-      if (!provider || !phone) {
-        return res.status(400).json({ message: "Provider and phone are required" });
-      }
-
-      const normalizedProvider = String(provider || "").trim().toLowerCase();
-
-      let phoneE164;
-      try {
-        phoneE164 = validatePhoneNumber(phone, "GH");
-      } catch (e) {
-        return res.status(400).json({ message: e?.message || "Invalid phone number" });
-      }
-
-      let nationalPhone;
-      try {
-        nationalPhone = toGhanaNationalFromE164(phoneE164);
-      } catch (e) {
-        return res.status(400).json({ message: e?.message || "Invalid phone number" });
-      }
-
-      if (!["mtn", "vod", "tgo"].includes(normalizedProvider)) {
-        return res.status(400).json({ message: "Unsupported mobile money provider" });
-      }
-
-      const prefix = String(nationalPhone || "").slice(0, 3);
-      const prefixByProvider = {
-        mtn: ["024", "054", "055", "059"],
-        vod: ["020", "050"],
-        tgo: ["026", "027", "056", "057"]
-      };
-      const allowedPrefixes = prefixByProvider[normalizedProvider] || [];
-      if (allowedPrefixes.length > 0 && !allowedPrefixes.includes(prefix)) {
-        return res.status(400).json({ message: "Mobile number does not match selected provider" });
-      }
-
-      method.provider = normalizedProvider;
-      method.phone = phoneE164;
-
-      await subscription.save();
-      const populated = await Subscription.findById(subscription._id).populate("plan").lean();
+      const church = await Church.findById(churchId).lean();
+      const country = String(church?.country || "").trim().toLowerCase();
+      
+      const updated = await updateMobileMoneyPaymentMethod(subscription, methodId, req.body, country);
+      const populated = await Subscription.findById(updated._id).populate("plan").lean();
       return res.json({ subscription: populated });
     }
 
@@ -285,32 +90,6 @@ export const updatePaymentMethod = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
-};
-
-const luhnCheck = (value) => {
-  const digits = String(value || "").replace(/\D+/g, "");
-  if (!digits) return false;
-  let sum = 0;
-  let shouldDouble = false;
-  for (let i = digits.length - 1; i >= 0; i -= 1) {
-    let d = Number(digits[i]);
-    if (Number.isNaN(d)) return false;
-    if (shouldDouble) {
-      d *= 2;
-      if (d > 9) d -= 9;
-    }
-    sum += d;
-    shouldDouble = !shouldDouble;
-  }
-  return sum % 10 === 0;
-};
-
-const detectCardBrand = (digits) => {
-  const v = String(digits || "");
-  if (/^4/.test(v)) return "Visa";
-  if (/^(5[1-5])/.test(v)) return "Mastercard";
-  if (/^(2[2-7])/.test(v)) return "Mastercard";
-  return "Visa/Mastercard";
 };
 
 export const addCardPaymentMethod = async (req, res) => {
@@ -322,69 +101,13 @@ export const addCardPaymentMethod = async (req, res) => {
 
     const { cardNumber, expMonth, expYear, cvv, holderName } = req.body;
 
-    const digits = String(cardNumber || "").replace(/\D+/g, "");
-    if (!digits || digits.length < 13 || digits.length > 19) {
-      return res.status(400).json({ message: "Card number is invalid" });
-    }
-    if (!luhnCheck(digits)) {
-      return res.status(400).json({ message: "Card number is invalid" });
-    }
-
-    const m = Number(expMonth);
-    const y = Number(expYear);
-    if (!Number.isInteger(m) || m < 1 || m > 12) {
-      return res.status(400).json({ message: "Expiry month is invalid" });
-    }
-    if (!Number.isInteger(y) || y < 2000) {
-      return res.status(400).json({ message: "Expiry year is invalid" });
-    }
-
-    const now = new Date();
-    const expiryDate = new Date(y, m, 0, 23, 59, 59, 999);
-    if (expiryDate.getTime() < now.getTime()) {
-      return res.status(400).json({ message: "Card is expired" });
-    }
-
-    const cvvDigits = String(cvv || "").replace(/\D+/g, "");
-    if (!cvvDigits || (cvvDigits.length !== 3 && cvvDigits.length !== 4)) {
-      return res.status(400).json({ message: "CVV is invalid" });
-    }
-
-    const name = String(holderName || "").trim();
-    if (!name) {
-      return res.status(400).json({ message: "Cardholder name is required" });
-    }
-
     const subscription = await Subscription.findOne({ church: churchId });
     if (!subscription) {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    const brand = detectCardBrand(digits);
-    const last4 = digits.slice(-4);
-
-    subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
-
-    const isSameCard = subscription.paymentMethods.some(
-      (pm) => String(pm?.type || "") === "card" && String(pm?.last4 || "") === String(last4) && Number(pm?.expMonth) === m && Number(pm?.expYear) === y
-    );
-
-    if (!isSameCard) {
-      subscription.paymentMethods = subscription.paymentMethods.filter(
-        (pm) => String(pm?.type || "") !== "card"
-      );
-      subscription.paymentMethods.push({
-        type: "card",
-        brand,
-        last4,
-        expMonth: m,
-        expYear: y,
-        holderName: name
-      });
-      await subscription.save();
-    }
-
-    const populated = await Subscription.findById(subscription._id).populate("plan").lean();
+    const updated = await addCardPaymentMethodService(subscription, { cardNumber, expMonth, expYear, cvv, holderName });
+    const populated = await Subscription.findById(updated._id).populate("plan").lean();
     return res.json({ subscription: populated });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -399,56 +122,8 @@ export const getMySubscription = async (req, res) => {
       return res.status(400).json({ message: "Active church is required" });
     }
 
-    let subscription = await Subscription.findOne({ church: churchId })
-      .populate("plan")
-      .populate("pendingPlan")
-      .lean();
-
-    if (!subscription) {
-      const church = await Church.findById(churchId).lean();
-      if (!church) {
-        return res.status(404).json({ message: "Church not found" });
-      }
-
-      await createSubscriptionForChurch({
-        church,
-        trial: true,
-        currency: church?.currency,
-        billingInterval: "monthly"
-      });
-
-      subscription = await Subscription.findOne({ church: churchId })
-        .populate("plan")
-        .populate("pendingPlan")
-        .lean();
-    }
-
-    if (!subscription) {
-      return res.status(404).json({ message: "No subscription found" });
-    }
-
-    const now = new Date();
-
-    const isTrialExpired =
-      (subscription.status === "free trial" || subscription.status === "trialing") &&
-      subscription.trialEnd &&
-      now > new Date(subscription.trialEnd);
-
-    const isGraceExpired =
-      subscription.status === "past_due" &&
-      subscription.gracePeriodEnd &&
-      now > new Date(subscription.gracePeriodEnd);
-
-    let effectivePlan = (subscription.status === "free trial" || subscription.status === "trialing")
-      ? await Plan.findOne({ name: { $regex: /^premium$/i }, isActive: true }).lean()
-      : subscription.plan;
-
-    if (subscription?.pendingPlan) {
-      const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
-      if (effectiveAt && new Date(effectiveAt) <= now) {
-        effectivePlan = subscription.pendingPlan;
-      }
-    }
+    const subscription = await getSubscriptionForChurch(churchId);
+    const { effectivePlan, isTrialExpired, isGraceExpired } = await getEffectivePlan(subscription);
 
     const readOnly = Boolean(
       isTrialExpired ||
@@ -476,7 +151,7 @@ export const upgradeTrialToPlan = async (req, res) => {
     const church = await Church.findById(req.user.church);
     if (!church) return res.status(404).json({ message: "Church not found" });
 
-    const subscription = await upgradeTrialToPlans(church, planId);
+    const subscription = await upgradeTrial(req.user.church, planId);
 
     res.json({
       message: "Trial upgraded to plan successfully",
@@ -488,11 +163,9 @@ export const upgradeTrialToPlan = async (req, res) => {
   }
 };
 
-
-
 export const runBillingCycle = async (req, res) => {
   try {
-    await runBillingCycles();
+    await executeBillingCycle();
     res.json({ message: "Billing cycle executed successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -501,9 +174,8 @@ export const runBillingCycle = async (req, res) => {
 
 export const getAvailablePlans = async (req, res) => {
   try {
-    const plans = await Plan.find({ isActive: true }).lean();
-    const sanitized = sortPlans(plans).map(sanitizePlanCurrencies);
-    return res.json({ plans: sanitized });
+    const plans = await getAvailablePlansService();
+    return res.json({ plans });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -511,9 +183,8 @@ export const getAvailablePlans = async (req, res) => {
 
 export const getPublicPlans = async (req, res) => {
   try {
-    const plans = await Plan.find({ isActive: true }).lean();
-    const sanitized = sortPlans(plans).map(sanitizePlanCurrencies);
-    return res.json({ plans: sanitized });
+    const plans = await getAvailablePlansService();
+    return res.json({ plans });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -592,26 +263,18 @@ export const getMyBillingHistory = async (req, res) => {
       return res.status(400).json({ message: "Active church is required" });
     }
 
-    const page = Math.max(1, Number(req.query?.page || 1));
-    const limit = Math.min(100, Math.max(1, Number(req.query?.limit || 10)));
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = buildPaginationParams(req.query);
 
     const [totalItems, history] = await Promise.all([
       BillingHistory.countDocuments({ church: churchId }),
       BillingHistory.find({ church: churchId }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean()
     ]);
 
-    const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+    const pagination = buildPaginationResponse(totalItems, page, limit);
 
     return res.json({
       history,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalItems,
-        nextPage: page < totalPages ? page + 1 : null,
-        prevPage: page > 1 ? page - 1 : null
-      }
+      pagination
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -641,49 +304,8 @@ export const addMobileMoneyPaymentMethod = async (req, res) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    const currency = "GHS";
-
-    const normalizedProvider = String(provider).toLowerCase();
-
-    let phoneE164;
-    try {
-      phoneE164 = validatePhoneNumber(phone, "GH");
-    } catch (e) {
-      return res.status(400).json({ message: e?.message || "Invalid phone number" });
-    }
-
-    let nationalPhone;
-    try {
-      nationalPhone = toGhanaNationalFromE164(phoneE164);
-    } catch (e) {
-      return res.status(400).json({ message: e?.message || "Invalid phone number" });
-    }
-
-    if (!["mtn", "vod", "tgo"].includes(normalizedProvider)) {
-      return res.status(400).json({ message: "Unsupported mobile money provider" });
-    }
-
-    const prefix = String(nationalPhone || "").slice(0, 3);
-    const prefixByProvider = {
-      mtn: ["024", "054", "055", "059"],
-      vod: ["020", "050"],
-      tgo: ["026", "027", "056", "057"]
-    };
-    const allowedPrefixes = prefixByProvider[normalizedProvider] || [];
-    if (allowedPrefixes.length > 0 && !allowedPrefixes.includes(prefix)) {
-      return res.status(400).json({ message: "Mobile number does not match selected provider" });
-    }
-
-    subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
-    const exists = subscription.paymentMethods.some(
-      (m) => String(m?.type || "mobile_money") === "mobile_money" && String(m?.provider || "") === normalizedProvider && String(m?.phone || "") === phoneE164
-    );
-    if (!exists) {
-      subscription.paymentMethods.push({ type: "mobile_money", provider: normalizedProvider, phone: phoneE164 });
-      await subscription.save();
-    }
-
-    const populated = await Subscription.findById(subscription._id).populate("plan").lean();
+    const updated = await addMobileMoneyPaymentMethodService(subscription, provider, phone);
+    const populated = await Subscription.findById(updated._id).populate("plan").lean();
     return res.json({ subscription: populated });
   } catch (error) {
     return res.status(500).json({ message: error.message });

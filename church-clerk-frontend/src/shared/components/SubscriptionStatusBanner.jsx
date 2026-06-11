@@ -160,20 +160,20 @@ function SubscriptionStatusBanner() {
   if (!banner) return null;
 
   return (
-    <div className={`mb-4 rounded-xl border px-4 py-3 text-sm ${cls(banner.variant)}`}>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className={`mb-4 rounded-xl border px-4 py-3 ${cls(banner.variant)} text-sm`}>
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="font-semibold">{banner.title}</div>
-          <div className="text-sm opacity-90">{banner.message}</div>
+          <div className="opacity-90 text-sm">{banner.message}</div>
           {readOnly ? (
-            <div className="mt-1 text-xs opacity-80">Read-only mode: actions are blocked until payment is resolved.</div>
+            <div className="mt-1 opacity-80 text-xs">Read-only mode: actions are blocked until payment is resolved.</div>
           ) : null}
         </div>
 
         {banner.showUpgrade ? (
           <Link
             to="/dashboard/billing"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-blue-700 px-4 text-xs font-semibold text-white shadow-sm hover:bg-blue-800"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-4 font-semibold text-white shadow-sm hover:bg-blue-800 md:h-12 text-xs"
           >
             Upgrade / Pay now
           </Link>

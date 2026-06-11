@@ -69,7 +69,7 @@ function Register() {
       title="Create an account"
       subtitle="Start by creating your admin account"
       footer={
-        <div className="text-sm text-gray-600">
+        <div className="text-gray-600 text-sm">
           Already have an account?{" "}
           <a href="/login" className="font-semibold text-blue-900 hover:underline">
             Sign in
@@ -77,35 +77,35 @@ function Register() {
         </div>
       }
     >
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
           <input
             type="text"
             placeholder="John Doe"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
           <PhoneNumberInput
             value={phoneNumber}
             onChange={setPhoneNumber}
@@ -115,13 +115,13 @@ function Register() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Password</label>
           <input
             type="password"
             placeholder="Create a password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
@@ -129,7 +129,7 @@ function Register() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-900 text-white py-3 sm:py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50"
+          className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
         >
           {loading ? "Creating account..." : "Create account"}
         </button>

@@ -7,238 +7,9 @@ import Plan from "../models/billingModel/planModel.js";
 import GroupMember from "../models/ministryModel/groupMembersModel.js"
 import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
-
-function escapeRegex(input) {
-  return String(input || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function normalizeHeader(h) {
-  return String(h || "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/[^a-z0-9_]/g, "");
-}
-
-function parseCsvLine(line) {
-  const s = String(line ?? "");
-  const out = [];
-  let cur = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
-    if (ch === '"') {
-      const next = s[i + 1];
-      if (inQuotes && next === '"') {
-        cur += '"';
-        i++;
-        continue;
-      }
-      inQuotes = !inQuotes;
-      continue;
-    }
-
-    if (ch === "," && !inQuotes) {
-      out.push(cur);
-      cur = "";
-      continue;
-    }
-
-    cur += ch;
-  }
-
-  out.push(cur);
-  return out.map((v) => String(v ?? "").trim());
-}
-
-function parseCsvToObjects(csvText) {
-  const text = String(csvText || "").replace(/^\uFEFF/, "");
-  const rawLines = text.split(/\r\n|\n|\r/);
-  const lines = rawLines.map((l) => String(l || "").trim()).filter((l) => l.length > 0);
-  if (!lines.length) return { headers: [], rows: [] };
-
-  const headerParts = parseCsvLine(lines[0]);
-  const headers = headerParts.map(normalizeHeader);
-
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const parts = parseCsvLine(lines[i]);
-    const obj = {};
-    for (let j = 0; j < headers.length; j++) {
-      const key = headers[j];
-      if (!key) continue;
-      obj[key] = parts[j] ?? "";
-    }
-    rows.push(obj);
-  }
-
-  return { headers, rows };
-}
-
-function parseOptionalDate(value) {
-  const v = String(value || "").trim();
-  if (!v) return { date: null, error: null };
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return { date: null, error: "Invalid date" };
-  return { date: d, error: null };
-}
-
-async function getChurchPrefix(churchId) {
-  const church = await Church.findById(churchId).lean();
-  if (!church) return null;
-
-  const prefix = String(church?.name || "")
-    .trim()
-    .split(/\s+/)
-    .map((word) => word.replace(/[^a-zA-Z]/g, "")[0])
-    .filter(Boolean)
-    .map((ch) => ch.toUpperCase())
-    .join("");
-
-  return prefix || "CH";
-}
-
-async function validateMemberImportRows({ churchId, rawRows }) {
-  const rows = Array.isArray(rawRows) ? rawRows : [];
-  const normalized = rows.map((r) => {
-    const firstName = String(r?.firstname || r?.first || "").trim();
-    const lastName = String(r?.lastname || r?.last || "").trim();
-    const phoneNumberRaw = String(r?.phonenumber || r?.phone || "").trim();
-    let phoneNumber = "";
-    if (phoneNumberRaw) {
-      try {
-        phoneNumber = validatePhoneNumber(phoneNumberRaw, "GH");
-      } catch {
-        phoneNumber = "";
-      }
-    }
-    const email = String(r?.email || "").trim().toLowerCase();
-    const gender = String(r?.gender || "").trim().toLowerCase();
-    const occupation = String(r?.occupation || "").trim();
-    const nationality = String(r?.nationality || "").trim();
-    const status = String(r?.status || "").trim().toLowerCase();
-    const note = String(r?.note || "").trim();
-    const churchRole = String(r?.churchrole || r?.role || "").trim();
-    const streetAddress = String(r?.streetaddress || r?.address || "").trim();
-    const city = String(r?.city || "").trim();
-    const region = String(r?.region || "").trim();
-    const country = String(r?.country || "").trim();
-    const maritalStatus = String(r?.maritalstatus || "").trim().toLowerCase();
-    const dateOfBirthRaw = r?.dateofbirth || r?.dob || "";
-    const dateJoinedRaw = r?.datejoined || "";
-    return {
-      firstName,
-      lastName,
-      phoneNumber,
-      phoneNumberRaw,
-      email,
-      gender,
-      occupation,
-      nationality,
-      status,
-      note,
-      churchRole,
-      streetAddress,
-      city,
-      region,
-      country,
-      maritalStatus,
-      dateOfBirthRaw,
-      dateJoinedRaw
-    };
-  });
-
-  const phones = normalized.map((r) => r.phoneNumber).filter(Boolean);
-  const emails = normalized.map((r) => r.email).filter(Boolean);
-
-  const existing = await Member.find({
-    church: churchId,
-    $or: [
-      ...(phones.length ? [{ phoneNumber: { $in: phones } }] : []),
-      ...(emails.length ? [{ email: { $in: emails } }] : [])
-    ]
-  })
-    .select("phoneNumber email")
-    .lean();
-
-  const existingPhones = new Set((existing || []).map((m) => String(m?.phoneNumber || "").trim()).filter(Boolean));
-  const existingEmails = new Set((existing || []).map((m) => String(m?.email || "").trim().toLowerCase()).filter(Boolean));
-
-  const seenPhones = new Set();
-  const seenEmails = new Set();
-
-  const valid = [];
-  const invalid = [];
-
-  normalized.forEach((r, idx) => {
-    const rowNumber = idx + 2;
-    const reasons = [];
-
-    if (!r.firstName) reasons.push("Missing firstName");
-    if (!r.lastName) reasons.push("Missing lastName");
-    if (!r.phoneNumberRaw) reasons.push("Missing phoneNumber");
-
-    if (r.gender && !["male", "female"].includes(r.gender)) reasons.push("Invalid gender");
-    if (r.status && !["active", "inactive", "visitor", "former"].includes(r.status)) reasons.push("Invalid status");
-    if (r.maritalStatus && !["single", "married", "divorced", "widowed", "other"].includes(r.maritalStatus)) {
-      reasons.push("Invalid maritalStatus");
-    }
-
-    const emailTrimmed = r.email;
-    if (emailTrimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) reasons.push("Invalid email");
-
-    const dob = parseOptionalDate(r.dateOfBirthRaw);
-    if (dob.error) reasons.push("Invalid dateOfBirth");
-    const joined = parseOptionalDate(r.dateJoinedRaw);
-    if (joined.error) reasons.push("Invalid dateJoined");
-
-    if (r.phoneNumberRaw) {
-      if (!r.phoneNumber) reasons.push("Invalid phoneNumber");
-      if (r.phoneNumber) {
-        if (existingPhones.has(r.phoneNumber)) reasons.push("Duplicate phoneNumber (already exists)");
-        if (seenPhones.has(r.phoneNumber)) reasons.push("Duplicate phoneNumber (in file)");
-      }
-    }
-    if (emailTrimmed) {
-      if (existingEmails.has(emailTrimmed)) reasons.push("Duplicate email (already exists)");
-      if (seenEmails.has(emailTrimmed)) reasons.push("Duplicate email (in file)");
-    }
-
-    if (reasons.length) {
-      invalid.push({ rowNumber, reasons, row: r });
-      return;
-    }
-
-    if (r.phoneNumber) seenPhones.add(r.phoneNumber);
-    if (emailTrimmed) seenEmails.add(emailTrimmed);
-
-    valid.push({
-      rowNumber,
-      payload: {
-        firstName: r.firstName,
-        lastName: r.lastName,
-        phoneNumber: r.phoneNumber,
-        email: emailTrimmed || undefined,
-        gender: r.gender || undefined,
-        occupation: r.occupation || undefined,
-        nationality: r.nationality || undefined,
-        status: r.status || "active",
-        note: r.note || undefined,
-        dateOfBirth: dob.date || undefined,
-        churchRole: r.churchRole || undefined,
-        dateJoined: joined.date || undefined,
-        streetAddress: r.streetAddress || undefined,
-        city: r.city || undefined,
-        region: r.region || undefined,
-        country: r.country || undefined,
-        maritalStatus: r.maritalStatus || undefined
-      }
-    });
-  });
-
-  return { valid, invalid };
-}
+import { parseCsvToObjects } from "../utils/csvParser.js";
+import { parseOptionalDate, getChurchPrefix, generateMemberId } from "../utils/memberHelpers.js";
+import { validateMemberImportRows } from "../services/member/memberImportService.js";
 
 const downloadMembersImportTemplate = async (req, res) => {
   try {
@@ -430,11 +201,8 @@ const createMember = async (req, res) => {
       return res.status(404).json({ message: "Church not found" });
     }
 
-    const prefix = church.name
-      .trim()
-      .split(/\s+/)             // split by spaces
-      .map(word => word.replace(/[^a-zA-Z]/g, "")[0].toUpperCase()) // remove non-letters, take first letter
-      .join("");
+    const prefix = await getChurchPrefix(churchId);
+    if (!prefix) return res.status(404).json({ message: "Church not found" });
 
     const updatedChurch = await Church.findByIdAndUpdate(
       churchId,
@@ -442,8 +210,7 @@ const createMember = async (req, res) => {
       { new: true }
     );
 
-    const paddedNumber = String(updatedChurch.memberSerial || 0).padStart(6, "0");
-    const memberId = `${prefix}-${paddedNumber}`;
+    const memberId = generateMemberId(prefix, updatedChurch.memberSerial - 1);
 
     let validatedPhoneNumber;
     try {

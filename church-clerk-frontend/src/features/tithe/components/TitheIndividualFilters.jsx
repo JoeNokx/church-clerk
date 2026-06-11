@@ -26,7 +26,7 @@ function TitheIndividualFilters() {
   }, [debouncedSearch]);
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-2 md:flex-row md:items-center">
       <input
         value={searchValue}
         onChange={(e) => {
@@ -35,7 +35,7 @@ function TitheIndividualFilters() {
           debouncedSearch(next);
         }}
         placeholder="Search member..."
-        className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
       />
 
       <input
@@ -44,7 +44,7 @@ function TitheIndividualFilters() {
           await store?.fetchIndividuals?.({ dateFrom: e.target.value, page: 1 });
         }}
         type="date"
-        className="h-9 w-full sm:w-40 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-40 text-sm"
       />
 
       <input
@@ -53,7 +53,7 @@ function TitheIndividualFilters() {
           await store?.fetchIndividuals?.({ dateTo: e.target.value, page: 1 });
         }}
         type="date"
-        className="h-9 w-full sm:w-40 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-40 text-sm"
       />
     </div>
   );

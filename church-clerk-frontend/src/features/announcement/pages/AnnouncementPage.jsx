@@ -57,10 +57,10 @@ function SenderIdWarningModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
-        <div className="border-b border-gray-200 px-5 py-4 flex items-start justify-between gap-3">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-start justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Sender ID not approved</div>
-            <div className="mt-1 text-xs text-gray-500">
+            <div className="font-semibold text-gray-900 text-sm">Sender ID not approved</div>
+            <div className="mt-1 text-gray-500 text-xs">
               You can still send with the default sender ID (CHURCHCLERK), or request approval for your custom Sender ID.
             </div>
           </div>
@@ -68,25 +68,25 @@ function SenderIdWarningModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Close
           </button>
         </div>
 
-        <div className="px-5 py-4">
-          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        <div className="px-4 md:px-5 lg:px-6 py-4">
+          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-            <div className="text-xs font-semibold text-gray-500">Current Sender ID status</div>
-            <div className="mt-1 text-sm font-semibold text-gray-900">
+            <div className="font-semibold text-gray-500 text-xs">Current Sender ID status</div>
+            <div className="mt-1 font-semibold text-gray-900 text-sm">
               {status === "pending" ? "Pending: Under review" : status === "rejected" ? "Rejected" : "Not requested"}
             </div>
-            <div className="mt-1 text-xs text-gray-500">Requested Sender ID: {requested || "—"}</div>
-            <div className="mt-2 text-xs text-gray-600">Your members will see your sender ID as: CHURCHCLERK</div>
+            <div className="mt-1 text-gray-500 text-xs">Requested Sender ID: {requested || "—"}</div>
+            <div className="mt-2 text-gray-600 text-xs">Your members will see your sender ID as: CHURCHCLERK</div>
           </div>
 
-          <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+          <div className="mt-3 flex items-center gap-2 text-gray-600 text-xs">
             <input
               type="checkbox"
               checked={Boolean(remember)}
@@ -102,7 +102,7 @@ function SenderIdWarningModal({
               type="button"
               onClick={onRequest}
               disabled={loading}
-              className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60"
+              className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60 text-sm"
             >
               {loading ? "Requesting..." : status === "pending" ? "Resubmit Request" : "Request Sender ID"}
             </button>
@@ -110,7 +110,7 @@ function SenderIdWarningModal({
               type="button"
               onClick={onContinue}
               disabled={loading}
-              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+              className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
             >
               Continue with Default Sender (CHURCHCLERK)
             </button>
@@ -191,7 +191,7 @@ function TabButton({ active, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-md px-3 py-2.5 sm:py-1.5 text-sm font-semibold ${active ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+      className={`shrink-0 whitespace-nowrap rounded-md px-3 py-2.5 md:py-1.5 font-semibold ${active ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
     >
       {children}
     </button>
@@ -204,19 +204,19 @@ function WalletCard({ wallet, onFund, onViewHistory, isGhana, usdToGhs }) {
   const balanceUsd = (!isGhana && usdToGhs) ? balanceGhs / Number(usdToGhs) : null;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
+    <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-xs font-semibold text-gray-500">Wallet Balance</div>
+          <div className="font-semibold text-gray-500 text-xs">Wallet Balance</div>
           {!isGhana && balanceUsd !== null ? (
             <>
-              <div className="mt-2 text-3xl font-semibold text-gray-900">{formatMoneyUsd(balanceUsd)}</div>
-              <div className="mt-1 text-xs text-gray-500">{formatInt(balanceCredits)} credits</div>
+              <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatMoneyUsd(balanceUsd)}</div>
+              <div className="mt-1 text-gray-500 text-xs">{formatInt(balanceCredits)} credits</div>
             </>
           ) : (
             <>
-              <div className="mt-2 text-3xl font-semibold text-gray-900">₵{formatMoneyGhs(balanceGhs)}</div>
-              <div className="mt-1 text-xs text-gray-500">{formatInt(balanceCredits)} credits</div>
+              <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">₵{formatMoneyGhs(balanceGhs)}</div>
+              <div className="mt-1 text-gray-500 text-xs">{formatInt(balanceCredits)} credits</div>
             </>
           )}
         </div>
@@ -225,16 +225,9 @@ function WalletCard({ wallet, onFund, onViewHistory, isGhana, usdToGhs }) {
           <button
             type="button"
             onClick={onFund}
-            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+            className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
           >
             Fund Wallet
-          </button>
-          <button
-            type="button"
-            onClick={onViewHistory}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-          >
-            Transaction History
           </button>
         </div>
       </div>
@@ -263,25 +256,25 @@ function FundWalletModal({ open, onClose, onFund, loading, error, isGhana, usdTo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Fund Wallet</div>
-            <div className="mt-1 text-xs text-gray-500">Payment processed in GHS via Paystack</div>
+            <div className="font-semibold text-gray-900 text-sm">Fund Wallet</div>
+            <div className="mt-1 text-gray-500 text-xs">Payment processed in GHS via Paystack</div>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Close
           </button>
         </div>
 
-        <div className="px-5 py-4">
-          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        <div className="px-4 md:px-5 lg:px-6 py-4">
+          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-          <div className="text-xs font-semibold text-gray-600">
+          <div className="font-semibold text-gray-600 text-xs">
             {useUsd ? "Amount to deposit (USD)" : "Amount to deposit (GHS)"}
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -291,34 +284,34 @@ function FundWalletModal({ open, onClose, onFund, loading, error, isGhana, usdTo
                 type="button"
                 onClick={() => setAmount(p)}
                 disabled={loading}
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-60 ${Number(amount) === p ? "border-blue-200 bg-blue-50 text-blue-900" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
+                className={`rounded-lg border px-3 py-2 font-semibold disabled:opacity-60 ${Number(amount) === p ? "border-blue-200 bg-blue-50 text-blue-900" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"} text-sm`}
               >
                 {useUsd ? formatMoneyUsd(p) : `₵${p}`}
               </button>
             ))}
             <div className="flex items-center gap-2">
-              <div className="text-sm font-semibold text-gray-700">Custom:</div>
+              <div className="font-semibold text-gray-700 text-sm">Custom:</div>
               <input
                 value={String(amount ?? "")}
                 onChange={(e) => setAmount(e.target.value)}
-                className="h-10 w-28 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-28 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder={useUsd ? "USD" : "GHS"}
                 inputMode="decimal"
               />
             </div>
           </div>
 
-          <div className="mt-2 text-xs text-gray-500">
+          <div className="mt-2 text-gray-500 text-xs">
             Minimum deposit: {useUsd ? formatMoneyUsd(minAmount) : `₵${minAmount}`}
           </div>
-          {!amountOk ? <div className="mt-2 text-xs font-semibold text-red-600">Enter at least {useUsd ? formatMoneyUsd(minAmount) : `₵${minAmount}`} to proceed.</div> : null}
+          {!amountOk ? <div className="mt-2 font-semibold text-red-600 text-xs">Enter at least {useUsd ? formatMoneyUsd(minAmount) : `₵${minAmount}`} to proceed.</div> : null}
 
           <div className="mt-5 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
             >
               Cancel
             </button>
@@ -326,7 +319,7 @@ function FundWalletModal({ open, onClose, onFund, loading, error, isGhana, usdTo
               type="button"
               onClick={() => onFund(useUsd ? amountNum * usdRate : amountNum)}
               disabled={loading || !amountOk}
-              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+              className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
             >
               {loading ? "Processing..." : "Proceed to Pay"}
             </button>
@@ -342,28 +335,28 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
 
   return (
     <div className="mt-5 rounded-xl border border-gray-200 bg-white overflow-hidden">
-      <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4">
+      <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
         <div>
-          <div className="text-sm font-semibold text-gray-900">Wallet History</div>
-          <div className="mt-1 text-xs text-gray-500">All wallet transactions and credit deductions.</div>
+          <div className="font-semibold text-gray-900 text-sm">Wallet History</div>
+          <div className="mt-1 text-gray-500 text-xs">All wallet transactions and credit deductions.</div>
         </div>
         <button
           type="button"
           onClick={onReload}
           disabled={loading}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
         >
           Refresh
         </button>
       </div>
 
-      <div className="p-5">
-        {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      <div className="p-4 md:p-6 lg:p-8">
+        {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="text-left text-xs font-semibold text-gray-500">
+              <tr className="text-left font-semibold text-gray-500 text-xs">
                 <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Date</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Type</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Description</th>
@@ -374,15 +367,15 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-4 text-sm text-gray-600">Loading...</td>
+                  <td colSpan={5} className="py-4 text-gray-600 text-sm">Loading...</td>
                 </tr>
               ) : !transactions.length ? (
                 <tr>
-                  <td colSpan={5} className="py-4 text-sm text-gray-600">No wallet transactions yet.</td>
+                  <td colSpan={5} className="py-4 text-gray-600 text-sm">No wallet transactions yet.</td>
                 </tr>
               ) : (
                 transactions.map((t, idx) => (
-                  <tr key={t?._id || `tx-${idx}`} className="text-sm text-gray-700">
+                  <tr key={t?._id || `tx-${idx}`} className="text-gray-700 text-sm">
                     <td className="sticky left-0 z-10 bg-white py-2 pr-4 text-gray-600 whitespace-nowrap">{t?.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}</td>
                     <td className="py-2 pr-4 whitespace-nowrap">{t?.type || "—"}</td>
                     <td className="py-2 pr-4 text-gray-600">{t?.description || "—"}</td>
@@ -500,10 +493,10 @@ function TemplatesTab({ open, onUseTemplate }) {
 
   return (
     <div className="mt-5">
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <div className="text-sm font-semibold text-gray-900">Templates</div>
+      <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+        <div className="font-semibold text-gray-900 text-sm">Templates</div>
 
-        {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div className="mt-4 grid grid-cols-1 gap-3">
           <input
@@ -511,14 +504,14 @@ function TemplatesTab({ open, onUseTemplate }) {
             onChange={(e) => setName(e.target.value)}
             placeholder="Template name"
             disabled={loading || !canWrite}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
 
           <select
             value={channel}
             onChange={(e) => setChannel(e.target.value)}
             disabled={loading || !canWrite}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           >
             <option value="sms">SMS</option>
             <option value="whatsapp">WhatsApp</option>
@@ -529,7 +522,7 @@ function TemplatesTab({ open, onUseTemplate }) {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Message"
             disabled={loading || !canWrite}
-            className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+            className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
           />
 
           <div className="flex items-center justify-end gap-2">
@@ -537,7 +530,7 @@ function TemplatesTab({ open, onUseTemplate }) {
               type="button"
               onClick={resetForm}
               disabled={loading || !canWrite}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
             >
               Clear
             </button>
@@ -545,7 +538,7 @@ function TemplatesTab({ open, onUseTemplate }) {
               type="button"
               onClick={onSave}
               disabled={loading || !canWrite}
-              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+              className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
             >
               {loading ? "Saving..." : editId ? "Update Template" : "Create Template"}
             </button>
@@ -554,21 +547,21 @@ function TemplatesTab({ open, onUseTemplate }) {
       </div>
 
       <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden">
-        <div className="border-b border-gray-200 bg-gray-50 px-5 py-4 flex items-center justify-between">
-          <div className="text-sm font-semibold text-gray-900">Saved Templates</div>
+        <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between">
+          <div className="font-semibold text-gray-900 text-sm">Saved Templates</div>
           <button
             type="button"
             onClick={load}
             disabled={loading}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Refresh
           </button>
         </div>
-        <div className="p-5 overflow-x-auto">
+        <div className="p-4 overflow-x-auto md:p-6 lg:p-8">
           <table className="min-w-full">
             <thead>
-              <tr className="text-left text-xs font-semibold text-gray-500">
+              <tr className="text-left font-semibold text-gray-500 text-xs">
                 <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Template Name</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Channel</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Message Preview</th>
@@ -578,15 +571,15 @@ function TemplatesTab({ open, onUseTemplate }) {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-4 text-sm text-gray-600">Loading...</td>
+                  <td colSpan={4} className="py-4 text-gray-600 text-sm">Loading...</td>
                 </tr>
               ) : !rows.length ? (
                 <tr>
-                  <td colSpan={4} className="py-4 text-sm text-gray-600">No templates found.</td>
+                  <td colSpan={4} className="py-4 text-gray-600 text-sm">No templates found.</td>
                 </tr>
               ) : (
                 rows.map((t, idx) => (
-                  <tr key={t?._id || `tpl-${idx}`} className="text-sm text-gray-700">
+                  <tr key={t?._id || `tpl-${idx}`} className="text-gray-700 text-sm">
                     <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{t?.name || "—"}</td>
                     <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{String(t?.channel || "").toUpperCase() || "—"}</td>
                     <td className="py-2 pr-4 text-gray-600">{String(t?.message || "").slice(0, 60) || "—"}</td>
@@ -595,21 +588,21 @@ function TemplatesTab({ open, onUseTemplate }) {
                         <button
                           type="button"
                           onClick={() => onUseTemplate?.(t)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs"
                         >
                           Use
                         </button>
                         <button
                           type="button"
                           onClick={() => onEdit(t)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           onClick={() => onDelete(t?._id)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
                         >
                           Delete
                         </button>
@@ -733,25 +726,25 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
 
   return (
     <div className="mt-5 rounded-xl border border-gray-200 bg-white overflow-hidden">
-      <div className="border-b border-gray-200 bg-gray-50 px-5 py-4 flex items-center justify-between gap-3">
+      <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
-          {error ? <div className="mt-1 text-xs text-red-700">{error}</div> : null}
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
+          {error ? <div className="mt-1 text-red-700 text-xs">{error}</div> : null}
         </div>
         <button
           type="button"
           onClick={load}
           disabled={loading}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
         >
           Refresh
         </button>
       </div>
 
-      <div className="p-5 overflow-x-auto">
+      <div className="p-4 overflow-x-auto md:p-6 lg:p-8">
         <table className="min-w-full">
           <thead>
-            <tr className="text-left text-xs font-semibold text-gray-500">
+            <tr className="text-left font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Title</th>
               <th className="py-2 pr-4 whitespace-nowrap">Channel</th>
               <th className="py-2 pr-4 whitespace-nowrap">Recipients</th>
@@ -764,15 +757,15 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={7} className="py-4 text-sm text-gray-600">Loading...</td>
+                <td colSpan={7} className="py-4 text-gray-600 text-sm">Loading...</td>
               </tr>
             ) : !rows.length ? (
               <tr>
-                <td colSpan={7} className="py-4 text-sm text-gray-600">No messages found.</td>
+                <td colSpan={7} className="py-4 text-gray-600 text-sm">No messages found.</td>
               </tr>
             ) : (
               rows.map((m, idx) => (
-                <tr key={m?._id || `m-${idx}`} className="text-sm text-gray-700">
+                <tr key={m?._id || `m-${idx}`} className="text-gray-700 text-sm">
                   <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{m?.title || "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{Array.isArray(m?.channels) ? m.channels.map((c) => String(c).toUpperCase()).join(", ") : "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{typeof m?.recipientCount === "number" ? m.recipientCount : "—"}</td>
@@ -785,7 +778,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                         <button
                           type="button"
                           onClick={() => onUse?.(m)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs"
                         >
                           Use
                         </button>
@@ -794,7 +787,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                         <button
                           type="button"
                           onClick={() => onOpenDeliveryReport(m)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-gray-50"
+                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs"
                         >
                           View Report
                         </button>
@@ -806,7 +799,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                             type="button"
                             onClick={() => setMenuId((cur) => (cur === m?._id ? null : m?._id))}
                             disabled={actionLoadingId === m?._id}
-                            className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                            className="rounded-md border border-gray-200 bg-white px-2 py-1 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-xs"
                             aria-label="More actions"
                           >
                             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden="true">
@@ -820,7 +813,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                                 <button
                                   type="button"
                                   onClick={() => openEdit(m)}
-                                  className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                  className="w-full px-3 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                                 >
                                   Edit
                                 </button>
@@ -829,7 +822,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                                 <button
                                   type="button"
                                   onClick={() => onDeleteRow(m)}
-                                  className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50"
+                                  className="w-full px-3 py-2 text-left font-semibold text-red-600 hover:bg-red-50 text-xs"
                                 >
                                   Delete
                                 </button>
@@ -905,44 +898,44 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-gray-900">{isScheduled ? "Edit Scheduled Message" : "Edit Draft Message"}</div>
-            <div className="mt-1 text-xs text-gray-500">{isScheduled ? "This will update the message before it is sent." : "This will update the saved draft."}</div>
+            <div className="font-semibold text-gray-900 text-sm">{isScheduled ? "Edit Scheduled Message" : "Edit Draft Message"}</div>
+            <div className="mt-1 text-gray-500 text-xs">{isScheduled ? "This will update the message before it is sent." : "This will update the saved draft."}</div>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Close
           </button>
         </div>
 
-        <div className="p-5">
-          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        <div className="p-4 md:p-6 lg:p-8">
+          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="text-xs font-semibold text-gray-600">Title</label>
+              <label className="font-semibold text-gray-600 text-xs">Title</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={loading}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60 text-sm"
                 placeholder="Message title"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="text-xs font-semibold text-gray-600">Message</label>
+              <label className="font-semibold text-gray-600 text-xs">Message</label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 disabled={loading}
                 rows={5}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60 text-sm"
                 placeholder="Message content"
               />
             </div>
@@ -950,24 +943,24 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
             {isScheduled ? (
               <>
                 <div>
-                  <label className="text-xs font-semibold text-gray-600">Scheduled Date</label>
+                  <label className="font-semibold text-gray-600 text-xs">Scheduled Date</label>
                   <input
                     type="date"
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
                     disabled={loading}
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-gray-600">Scheduled Time</label>
+                  <label className="font-semibold text-gray-600 text-xs">Scheduled Time</label>
                   <input
                     type="time"
                     value={scheduledTime}
                     onChange={(e) => setScheduledTime(e.target.value)}
                     disabled={loading}
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60 text-sm"
                   />
                 </div>
               </>
@@ -979,7 +972,7 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
             >
               Cancel
             </button>
@@ -987,7 +980,7 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
               type="button"
               onClick={submit}
               disabled={loading}
-              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+              className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
             >
               Save Changes
             </button>
@@ -1040,78 +1033,78 @@ function DeliveryReportModal({ open, onClose, message }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-5xl max-h-[90vh] rounded-xl bg-white shadow-xl flex flex-col overflow-hidden">
-        <div className="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-3">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Delivery Report</div>
-            <div className="mt-1 text-xs text-gray-500">{message?.title || "—"}</div>
+            <div className="font-semibold text-gray-900 text-sm">Delivery Report</div>
+            <div className="mt-1 text-gray-500 text-xs">{message?.title || "—"}</div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
           >
             Close
           </button>
         </div>
 
-        <div className="p-5 overflow-y-auto">
-          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        <div className="p-4 overflow-y-auto md:p-6 lg:p-8">
+          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
           <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
-                <div className="text-xs font-semibold text-gray-500">Title</div>
-                <div className="mt-1 text-sm font-semibold text-gray-900">{message?.title || "—"}</div>
+                <div className="font-semibold text-gray-500 text-xs">Title</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{message?.title || "—"}</div>
               </div>
               <div>
-                <div className="text-xs font-semibold text-gray-500">Channel</div>
-                <div className="mt-1 text-sm font-semibold text-gray-900">
+                <div className="font-semibold text-gray-500 text-xs">Channel</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">
                   {Array.isArray(message?.channels) && message.channels.length
                     ? message.channels.map((c) => String(c).toUpperCase()).join(", ")
                     : "—"}
                 </div>
               </div>
               <div>
-                <div className="text-xs font-semibold text-gray-500">Audience</div>
-                <div className="mt-1 text-sm font-semibold text-gray-900">{String(message?.audience?.type || "all")}</div>
+                <div className="font-semibold text-gray-500 text-xs">Audience</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{String(message?.audience?.type || "all")}</div>
               </div>
               <div>
-                <div className="text-xs font-semibold text-gray-500">Send Options</div>
-                <div className="mt-1 text-sm font-semibold text-gray-900">
+                <div className="font-semibold text-gray-500 text-xs">Send Options</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">
                   {String(message?.status || "—")}
                   {message?.scheduledAt ? ` • ${new Date(message.scheduledAt).toLocaleString()}` : ""}
                 </div>
               </div>
               <div className="md:col-span-4">
-                <div className="text-xs font-semibold text-gray-500">Message Content</div>
-                <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{message?.content || "—"}</div>
+                <div className="font-semibold text-gray-500 text-xs">Message Content</div>
+                <div className="mt-1 text-gray-700 whitespace-pre-wrap text-sm">{message?.content || "—"}</div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="text-xs font-semibold text-gray-500">Total Recipients</div>
-              <div className="mt-1 text-lg font-semibold text-gray-900">{stats?.total ?? message?.recipientCount ?? 0}</div>
+              <div className="font-semibold text-gray-500 text-xs">Total Recipients</div>
+              <div className="mt-1 font-semibold text-gray-900 text-lg">{stats?.total ?? message?.recipientCount ?? 0}</div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="text-xs font-semibold text-gray-500">Sent</div>
-              <div className="mt-1 text-lg font-semibold text-gray-900">{stats?.sent ?? 0}</div>
+              <div className="font-semibold text-gray-500 text-xs">Sent</div>
+              <div className="mt-1 font-semibold text-gray-900 text-lg">{stats?.sent ?? 0}</div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="text-xs font-semibold text-gray-500">Delivered</div>
-              <div className="mt-1 text-lg font-semibold text-gray-900">{stats?.delivered ?? message?.deliveredCount ?? 0}</div>
+              <div className="font-semibold text-gray-500 text-xs">Delivered</div>
+              <div className="mt-1 font-semibold text-gray-900 text-lg">{stats?.delivered ?? message?.deliveredCount ?? 0}</div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="text-xs font-semibold text-gray-500">Failed</div>
-              <div className="mt-1 text-lg font-semibold text-gray-900">{stats?.failed ?? message?.failedCount ?? 0}</div>
+              <div className="font-semibold text-gray-500 text-xs">Failed</div>
+              <div className="mt-1 font-semibold text-gray-900 text-lg">{stats?.failed ?? message?.failedCount ?? 0}</div>
             </div>
           </div>
 
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="text-left text-xs font-semibold text-gray-500">
+                <tr className="text-left font-semibold text-gray-500 text-xs">
                   <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Member</th>
                   <th className="py-2 pr-4 whitespace-nowrap">Phone</th>
                   <th className="py-2 pr-4 whitespace-nowrap">Status</th>
@@ -1121,15 +1114,15 @@ function DeliveryReportModal({ open, onClose, message }) {
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-sm text-gray-600">Loading...</td>
+                    <td colSpan={4} className="py-4 text-gray-600 text-sm">Loading...</td>
                   </tr>
                 ) : !rows.length ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-sm text-gray-600">No delivery records.</td>
+                    <td colSpan={4} className="py-4 text-gray-600 text-sm">No delivery records.</td>
                   </tr>
                 ) : (
                   rows.map((d, idx) => (
-                    <tr key={d?._id || `d-${idx}`} className="text-sm text-gray-700">
+                    <tr key={d?._id || `d-${idx}`} className="text-gray-700 text-sm">
                       <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{d?.memberName || "—"}</td>
                       <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{d?.phone || "—"}</td>
                       <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{d?.status || "—"}</td>
@@ -1609,8 +1602,8 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
 
   return (
     <div className="mt-5">
-      {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
-      {success ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{success}</div> : null}
+      {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{error}</div> : null}
+      {success ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{success}</div> : null}
 
       <SenderIdWarningModal
         open={senderWarnOpen}
@@ -1625,15 +1618,15 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
         onRememberChange={setSenderWarnRemember}
       />
 
-      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
-        <div className="text-sm font-semibold text-gray-900">Announcement Info</div>
+      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+        <div className="font-semibold text-gray-900 text-sm">Announcement Info</div>
 
         <div className="mt-4 grid grid-cols-1 gap-3">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Title"
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
 
           <div>
@@ -1641,25 +1634,25 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Message content"
-              className="min-h-[140px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+              className="min-h-[140px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
             />
-            <div className="mt-1 text-xs text-gray-500">Characters: {messageCharCount}</div>
+            <div className="mt-1 text-gray-500 text-xs">Characters: {messageCharCount}</div>
           </div>
         </div>
 
         <div className="mt-6 border-t border-gray-100 pt-5">
-          <div className="text-sm font-semibold text-gray-900">Select Audience</div>
+          <div className="font-semibold text-gray-900 text-sm">Select Audience</div>
 
           <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-gray-700 text-sm">
               <input type="radio" checked={audienceType === "all"} onChange={() => setAudienceType("all")} />
               All Members
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-gray-700 text-sm">
               <input type="radio" checked={audienceType === "groups"} onChange={() => setAudienceType("groups")} />
               Specific Groups / Cells / Departments
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-gray-700 text-sm">
               <input type="radio" checked={audienceType === "members"} onChange={() => setAudienceType("members")} />
               Specific Members
             </label>
@@ -1668,10 +1661,10 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
           {audienceType === "groups" ? (
             <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div>
-                <div className="text-xs font-semibold text-gray-600">Groups</div>
+                <div className="font-semibold text-gray-600 text-xs">Groups</div>
                 <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
                   {groups.length ? (
-                    <label className="flex items-center gap-2 py-1 text-sm font-semibold text-gray-700">
+                    <label className="flex items-center gap-2 py-1 font-semibold text-gray-700 text-sm">
                       <input
                         type="checkbox"
                         checked={groups.every((g) => groupIds.includes(String(g?._id || "")))}
@@ -1686,9 +1679,9 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
                       Select all groups
                     </label>
                   ) : null}
-                  {!groups.length ? <div className="text-sm text-gray-600">No groups found.</div> : null}
+                  {!groups.length ? <div className="text-gray-600 text-sm">No groups found.</div> : null}
                   {groups.map((g) => (
-                    <label key={g?._id} className="flex items-center gap-2 py-1 text-sm text-gray-700">
+                    <label key={g?._id} className="flex items-center gap-2 py-1 text-gray-700 text-sm">
                       <input
                         type="checkbox"
                         checked={groupIds.includes(String(g?._id || ""))}
@@ -1701,10 +1694,10 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
               </div>
 
               <div>
-                <div className="text-xs font-semibold text-gray-600">Cells</div>
+                <div className="font-semibold text-gray-600 text-xs">Cells</div>
                 <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
                   {cells.length ? (
-                    <label className="flex items-center gap-2 py-1 text-sm font-semibold text-gray-700">
+                    <label className="flex items-center gap-2 py-1 font-semibold text-gray-700 text-sm">
                       <input
                         type="checkbox"
                         checked={cells.every((c) => cellIds.includes(String(c?._id || "")))}
@@ -1719,9 +1712,9 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
                       Select all cells
                     </label>
                   ) : null}
-                  {!cells.length ? <div className="text-sm text-gray-600">No cells found.</div> : null}
+                  {!cells.length ? <div className="text-gray-600 text-sm">No cells found.</div> : null}
                   {cells.map((c) => (
-                    <label key={c?._id} className="flex items-center gap-2 py-1 text-sm text-gray-700">
+                    <label key={c?._id} className="flex items-center gap-2 py-1 text-gray-700 text-sm">
                       <input
                         type="checkbox"
                         checked={cellIds.includes(String(c?._id || ""))}
@@ -1734,10 +1727,10 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
               </div>
 
               <div>
-                <div className="text-xs font-semibold text-gray-600">Departments</div>
+                <div className="font-semibold text-gray-600 text-xs">Departments</div>
                 <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
                   {departments.length ? (
-                    <label className="flex items-center gap-2 py-1 text-sm font-semibold text-gray-700">
+                    <label className="flex items-center gap-2 py-1 font-semibold text-gray-700 text-sm">
                       <input
                         type="checkbox"
                         checked={departments.every((d) => departmentIds.includes(String(d?._id || "")))}
@@ -1752,9 +1745,9 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
                       Select all departments
                     </label>
                   ) : null}
-                  {!departments.length ? <div className="text-sm text-gray-600">No departments found.</div> : null}
+                  {!departments.length ? <div className="text-gray-600 text-sm">No departments found.</div> : null}
                   {departments.map((d) => (
-                    <label key={d?._id} className="flex items-center gap-2 py-1 text-sm text-gray-700">
+                    <label key={d?._id} className="flex items-center gap-2 py-1 text-gray-700 text-sm">
                       <input
                         type="checkbox"
                         checked={departmentIds.includes(String(d?._id || ""))}
@@ -1774,11 +1767,11 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
                 placeholder="Search members by name..."
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
 
               {String(memberSearch || "").trim().length >= 1 ? (
-                <div className="mt-1 text-xs text-gray-500">
+                <div className="mt-1 text-gray-500 text-xs">
                   {memberSearchLoading ? "Searching..." : memberResults.length ? "" : "No members found"}
                 </div>
               ) : null}
@@ -1791,7 +1784,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
                     return (
                       <label
                         key={id}
-                        className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center justify-between gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm"
                       >
                         <span className="min-w-0 truncate">{memberLabel(m)}</span>
                         <input
@@ -1808,20 +1801,20 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
 
               {memberIds.length ? (
                 <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <div className="text-xs font-semibold text-gray-600">Selected Members</div>
+                  <div className="font-semibold text-gray-600 text-xs">Selected Members</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {memberIds.map((id) => (
                       <button
                         key={id}
                         type="button"
                         onClick={() => removeMember(id)}
-                        className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                        className="rounded-full border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                       >
                         {memberNameById?.[id] || id.slice(-6)}
                       </button>
                     ))}
                   </div>
-                  <div className="mt-2 text-xs text-gray-500">Click a chip to remove.</div>
+                  <div className="mt-2 text-gray-500 text-xs">Click a chip to remove.</div>
                 </div>
               ) : null}
             </div>
@@ -1829,9 +1822,9 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
         </div>
 
         <div className="mt-6 border-t border-gray-100 pt-5">
-          <div className="text-sm font-semibold text-gray-900">Select Channel</div>
+          <div className="font-semibold text-gray-900 text-sm">Select Channel</div>
           <div className="mt-3 flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-gray-700 text-sm">
               <input
                 type="checkbox"
                 checked={channels.sms}
@@ -1839,7 +1832,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
               />
               SMS
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-gray-700 text-sm">
               <input
                 type="checkbox"
                 checked={channels.whatsapp}
@@ -1851,60 +1844,60 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
         </div>
 
         <div className="mt-6 border-t border-gray-100 pt-5">
-          <div className="text-sm font-semibold text-gray-900">Message Cost Preview</div>
-          {estimateError ? <div className="mt-2 text-xs font-semibold text-red-700">{estimateError}</div> : null}
+          <div className="font-semibold text-gray-900 text-sm">Message Cost Preview</div>
+          {estimateError ? <div className="mt-2 font-semibold text-red-700 text-xs">{estimateError}</div> : null}
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="text-xs font-semibold text-gray-500">Cost per Recipient</div>
-              <div className="mt-1 text-sm font-semibold text-gray-900">
+              <div className="font-semibold text-gray-500 text-xs">Cost per Recipient</div>
+              <div className="mt-1 font-semibold text-gray-900 text-sm">
                 {(audienceType === "members" ? costPerRecipient : estimatedCostPerRecipient || costPerRecipient)} credits
               </div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="text-xs font-semibold text-gray-500">Estimated Total Cost</div>
-              <div className="mt-1 text-sm font-semibold text-gray-900">{`${estimatedTotalCost} credits`}</div>
-              <div className="mt-1 text-xs text-gray-500">Wallet: {walletCredits} credits</div>
+              <div className="font-semibold text-gray-500 text-xs">Estimated Total Cost</div>
+              <div className="mt-1 font-semibold text-gray-900 text-sm">{`${estimatedTotalCost} credits`}</div>
+              <div className="mt-1 text-gray-500 text-xs">Wallet: {walletCredits} credits</div>
             </div>
           </div>
 
           {!hasEnoughCredits && estimatedTotalCost > 0 ? (
-            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
               Insufficient credits. Please fund your wallet.
             </div>
           ) : null}
 
           {audienceType !== "members" ? (
-            <div className="mt-2 text-xs text-gray-500">Recipient counts and costs for All Members and Groups/Cells/Departments are computed accurately on the server.</div>
+            <div className="mt-2 text-gray-500 text-xs">Recipient counts and costs for All Members and Groups/Cells/Departments are computed accurately on the server.</div>
           ) : null}
         </div>
 
         <div className="mt-6 border-t border-gray-100 pt-5">
-          <div className="text-sm font-semibold text-gray-900">Send Options</div>
+          <div className="font-semibold text-gray-900 text-sm">Send Options</div>
 
           <div className="mt-3 flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-gray-700 text-sm">
               <input type="radio" checked={sendMode === "now"} onChange={() => setSendMode("now")} />
               Send Immediately
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-gray-700 text-sm">
               <input type="radio" checked={sendMode === "schedule"} onChange={() => setSendMode("schedule")} />
               Schedule Message
             </label>
           </div>
 
           {sendMode === "schedule" ? (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
               <input
                 type="date"
                 value={scheduleDate}
                 onChange={(e) => setScheduleDate(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
               <input
                 type="time"
                 value={scheduleTime}
                 onChange={(e) => setScheduleTime(e.target.value)}
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
             </div>
           ) : null}
@@ -1915,7 +1908,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
             type="button"
             onClick={resetForm}
             disabled={loading}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Cancel
           </button>
@@ -1923,7 +1916,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
             type="button"
             onClick={() => onSend({ draft: true })}
             disabled={loading}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             {loading && submitAction === "draft" ? "Saving..." : "Save as Draft"}
           </button>
@@ -1931,7 +1924,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
             type="button"
             onClick={() => onSend({ draft: false })}
             disabled={loading || (!hasEnoughCredits && estimatedTotalCost > 0)}
-            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
           >
             {loading && submitAction === "send" ? "Sending..." : "Send Announcement"}
           </button>
@@ -2167,12 +2160,12 @@ function AnnouncementPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Announcement</h2>
-          <p className="mt-1 text-sm text-gray-500">Send announcements via SMS, WhatsApp, or both. Track delivery and manage wallet credits.</p>
+          <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Announcement</h2>
+          <p className="mt-1 text-gray-500 text-sm">Send announcements via SMS, WhatsApp, or both. Track delivery and manage wallet credits.</p>
         </div>
       </div>
 
-      {walletError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{walletError}</div> : null}
+      {walletError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{walletError}</div> : null}
 
       <div className="mt-6">
         <WalletCard
@@ -2182,7 +2175,7 @@ function AnnouncementPage() {
           isGhana={isGhana}
           usdToGhs={usdToGhs}
         />
-        {walletLoading ? <div className="mt-2 text-xs text-gray-500">Loading wallet...</div> : null}
+        {walletLoading ? <div className="mt-2 text-gray-500 text-xs">Loading wallet...</div> : null}
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">

@@ -5,11 +5,11 @@ import { sendEmail } from "../services/emailService.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import { AFRICAN_CURRENCY_CODES } from "../utils/africanCurrencies.js";
 import { isCurrencyLockedForChurch } from "../utils/isCurrencyLockedForChurch.js";
-
-// referral models
-import ReferralCode from "../models/referralModel/referralCodeModel.js";
-import ReferralHistory from "../models/referralModel/referralHistoryModel.js";
-import { generateReferralCode } from "../utils/generateReferralCode.js";
+import { getWelcomeEmailTemplate } from "../utils/emailTemplates.js";
+import { buildPaginationParams, buildPaginationResponse } from "../utils/paginationHelper.js";
+import { buildSearchQuery } from "../utils/searchHelper.js";
+import { handleReferralCode, assignUserRole, createReferralCodeForChurch } from "../services/church/churchCreationService.js";
+import { getBranchesPaginated, getBranchKPIs } from "../services/church/branchService.js";
 
 const createMyChurch = async (req, res) => {
   try {
@@ -89,52 +89,15 @@ const createMyChurch = async (req, res) => {
       createdBy: req.user._id
     });
 
-    const newReferralCode = generateReferralCode(name);
-    await ReferralCode.create({
-      church: church._id,
-      code: newReferralCode
-    });
+    await createReferralCodeForChurch({ churchId: church._id, churchName: name });
 
-    if (referralCodeInput) {
-      const referrerCode = await ReferralCode.findOne({
-        code: String(referralCodeInput || "").toUpperCase()
-      });
-
-      if (!referrerCode) {
-        return res.status(400).json({
-          message: "Invalid referral code. Please check and try again."
-        });
-      }
-
-      if (referrerCode && referrerCode.church.toString() !== church._id.toString()) {
-        const existingReferral = await ReferralHistory.findOne({
-          referredChurch: church._id
-        });
-
-        if (!existingReferral) {
-          await ReferralHistory.create({
-            referrerChurch: referrerCode.church,
-            referredChurch: church._id,
-            referredChurchEmail: email
-          });
-        }
-      }
+    try {
+      await handleReferralCode({ churchId: church._id, referralCodeInput, email });
+    } catch (e) {
+      return res.status(400).json({ message: e.message });
     }
 
-    const existingUsersInChurch = await User.countDocuments({ church: church._id });
-
-    const setRole =
-      existingUsersInChurch === 0 &&
-      req.user.role !== "superadmin" &&
-      req.user.role !== "supportadmin"
-        ? "churchadmin"
-        : req.user.role;
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { church: church._id, role: setRole },
-      { new: true }
-    );
+    const updatedUser = await assignUserRole({ userId: req.user._id, churchId: church._id, currentRole: req.user.role });
 
     try {
       const recipient = updatedUser?.email || req.user?.email;
@@ -142,13 +105,7 @@ const createMyChurch = async (req, res) => {
         await sendEmail({
           to: recipient,
           subject: "Welcome to Church Clerk",
-          html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-              <h2 style="margin: 0 0 12px;">Welcome to Church Clerk</h2>
-              <p>Hello ${updatedUser?.fullName || req.user?.fullName || ""},</p>
-              <p>Your church <strong>${church?.name || ""}</strong> has been set up successfully. You can now start managing members, events, finances, and more.</p>
-            </div>
-          `
+          html: getWelcomeEmailTemplate(updatedUser?.fullName || req.user?.fullName || "", church?.name || "")
         });
       }
     } catch {
@@ -367,67 +324,27 @@ const updateMyChurchProfile = async (req, res) => {
 
 const getMyBranches = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "" } = req.query;
+    const { page, limit } = req.query;
+    const { search = "" } = req.query;
 
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.max(1, parseInt(limit));
-    const skip = (pageNum - 1) * limitNum;
-
-    // ALWAYS use active church
     const headquarters = req.activeChurch;
 
-    //  Ensure it's HQ
     if (String(headquarters?.type || "").toLowerCase() !== "headquarters") {
       return res.status(403).json({
         message: "Only headquarters churches can view branches"
       });
     }
 
-    const baseQuery = {
-      parentChurch: req.activeChurch._id
-    };
+    const { branches, totalBranches, pagination } = await getBranchesPaginated({
+      churchId: req.activeChurch._id,
+      search,
+      page,
+      limit
+    });
 
-    const query = {
-      ...baseQuery
-    };
+    const kpi = await getBranchKPIs({ churchId: req.activeChurch._id });
 
-    if (search) {
-      const regex = new RegExp(search, "i");
-      query.$or = [
-        { name: regex },
-        { pastor: regex },
-        { streetAddress: regex },
-        { city: regex },
-        { region: regex },
-        { country: regex }
-      ];
-    }
-
-    const branches = await Church.find(query)
-      .select("name pastor streetAddress city region country phoneNumber email memberCount")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
-
-    const totalBranches = await Church.countDocuments(query);
-    const totalPages = Math.ceil(totalBranches / limitNum);
-
-    const baseKpiAgg = await Church.aggregate([
-      { $match: baseQuery },
-      {
-        $group: {
-          _id: null,
-          totalBranches: { $sum: 1 },
-          totalMembers: { $sum: { $ifNull: ["$memberCount", 0] } }
-        }
-      }
-    ]);
-
-    const totalBranchesAll = Number(baseKpiAgg?.[0]?.totalBranches || 0);
-    const totalMembersAll = Number(baseKpiAgg?.[0]?.totalMembers || 0);
-
-    const branchIds = await Church.find(baseQuery).select("_id").lean();
+    const branchIds = await Church.find({ parentChurch: req.activeChurch._id }).select("_id").lean();
     const branchIdList = branchIds.map((b) => b._id);
 
     const activeBranches = branchIdList.length
@@ -437,28 +354,18 @@ const getMyBranches = async (req, res) => {
         })
       : 0;
 
-    const pagination = {
-      totalResult: totalBranches,
-      totalPages,
-      currentPage: pageNum,
-      hasPrev: pageNum > 1,
-      hasNext: pageNum < totalPages,
-      prevPage: pageNum > 1 ? pageNum - 1 : null,
-      nextPage: pageNum < totalPages ? pageNum + 1 : null
-    }
-
     if (!branches || branches.length === 0) {
       return res.status(200).json({
         message: "No branches church found.",
         kpis: {
-          totalBranches: totalBranchesAll,
-          totalMembers: totalMembersAll,
+          totalBranches: kpi.totalBranches,
+          totalMembers: kpi.totalMembers,
           activeBranches
         },
         pagination: {
           totalResult: 0,
           totalPages: 0,
-          currentPage: pageNum,
+          currentPage: page,
           hasPrev: false,
           hasNext: false,
           prevPage: null,
@@ -469,18 +376,20 @@ const getMyBranches = async (req, res) => {
       });
     }
 
-    // SUCCESS RESPONSE
     return res.status(200).json({
       message: "branches fetched successfully",
       kpis: {
-        totalBranches: totalBranchesAll,
-        totalMembers: totalMembersAll,
+        totalBranches: kpi.totalBranches,
+        totalMembers: kpi.totalMembers,
         activeBranches
       },
-      pagination,
+      pagination: {
+        ...pagination,
+        totalResult: totalBranches
+      },
       count: branches.length,
       branches
-    })
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

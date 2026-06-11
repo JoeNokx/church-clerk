@@ -5,7 +5,7 @@ function AuthLayout({ children }) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen flex items-start sm:items-center justify-center bg-slate-50 px-4 py-8 sm:py-12">
+    <div className="min-h-screen flex items-start md:items-center justify-center bg-slate-50 px-4 py-8 md:py-12">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={`${location.pathname}${location.search}`}

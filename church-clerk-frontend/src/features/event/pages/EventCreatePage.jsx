@@ -23,7 +23,7 @@ const CATEGORY_OPTIONS = [
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-500">{label}</label>
+      <label className="block font-semibold text-gray-500 text-xs">{label}</label>
       <div className="mt-2">{children}</div>
     </div>
   );
@@ -245,15 +245,15 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
     <div className={isModal ? "w-full max-w-2xl" : "max-w-4xl"}>
       <div className={isModal ? "rounded-2xl border border-gray-200 bg-white shadow-xl max-h-[90vh] flex flex-col overflow-hidden" : ""}>
         {isModal ? (
-          <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
+          <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
             <div className="min-w-0">
-              <div className="text-lg font-semibold text-gray-900">{isEdit ? "Edit Event" : "Create Event"}</div>
-              <div className="mt-1 text-sm text-gray-600">{isEdit ? "Update event information" : "Add a new church event"}</div>
+              <div className="font-semibold text-gray-900 text-lg">{isEdit ? "Edit Event" : "Create Event"}</div>
+              <div className="mt-1 text-gray-600 text-sm">{isEdit ? "Update event information" : "Add a new church event"}</div>
             </div>
             <button
               type="button"
               onClick={closeModal}
-              className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
               aria-label="Close"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -268,68 +268,68 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
                 <button
                   type="button"
                   onClick={goBack}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
                 >
-                  <span className="text-base leading-none">←</span>
+                  <span className="leading-none text-base">←</span>
                   Back
                 </button>
 
-                <h2 className="text-2xl font-semibold text-gray-900">{isEdit ? "Edit Event" : "Create Event"}</h2>
+                <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{isEdit ? "Edit Event" : "Create Event"}</h2>
               </div>
-              <p className="mt-2 text-sm text-gray-600">{isEdit ? "Update event information" : "Add a new church event"}</p>
+              <p className="mt-2 text-gray-600 text-sm">{isEdit ? "Update event information" : "Add a new church event"}</p>
             </div>
           </div>
         )}
 
         <form onSubmit={onSubmit} className={isModal ? "flex flex-col min-h-0" : "mt-6 rounded-xl border border-gray-200 bg-white"}>
           {isModal ? null : (
-            <div className="border-b border-gray-200 px-5 py-4">
-              <div className="text-sm font-semibold text-gray-900">Event Information</div>
-              <div className="mt-1 text-xs text-gray-500">Fill the details below to create an event</div>
+            <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Event Information</div>
+              <div className="mt-1 text-gray-500 text-xs">Fill the details below to create an event</div>
             </div>
           )}
 
           <div className={isModal ? "p-5 overflow-y-auto min-h-0" : "p-5"}>
             {error ? (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
             ) : null}
 
             {isEdit ? (!canEdit ? (
-              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
                 You do not have permission to edit events.
               </div>
             ) : null) : (!canCreate ? (
-              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
                 You do not have permission to create events.
               </div>
             ) : null)}
 
             {initialLoading ? (
               <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 animate-pulse">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {[0, 1, 2, 3, 4, 5].map((i) => (
                     <div key={i}>
                       <div className="h-3 w-16 rounded bg-gray-200" />
-                      <div className="mt-1 h-10 w-full rounded-lg bg-gray-200" />
+                      <div className="mt-1 h-11 w-full rounded-lg bg-gray-200 md:h-12" />
                     </div>
                   ))}
                 </div>
               </div>
             ) : null}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="Title">
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="Event title"
                 />
               </Field>
 
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-gray-500">Category</label>
+                  <label className="block font-semibold text-gray-500 text-xs">Category</label>
                   {canCreate || canEdit ? (
                     <AddLookupValueButton
                       label="Add category"
@@ -345,7 +345,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   >
                     <option value="">Select category</option>
                     {categoryOptions.map((c) => (
@@ -362,7 +362,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 />
               </Field>
 
@@ -371,7 +371,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 />
               </Field>
 
@@ -379,7 +379,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
                 <input
                   value={timeFrom}
                   onChange={(e) => setTimeFrom(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="10:00AM"
                 />
               </Field>
@@ -388,7 +388,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
                 <input
                   value={timeTo}
                   onChange={(e) => setTimeTo(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="1:00PM"
                 />
               </Field>
@@ -397,28 +397,28 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
                 <input
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="Event venue"
                 />
               </Field>
 
-              <div className="sm:col-span-2">
+              <div className="md:col-span-2">
                 <Field label="Organizer">
                   <input
                     value={organizer}
                     onChange={(e) => setOrganizer(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                     placeholder="e.g. John Doe"
                   />
                 </Field>
               </div>
 
-              <div className="sm:col-span-2">
+              <div className="md:col-span-2">
                 <Field label="Description">
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                    className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                     placeholder="Optional event description"
                   />
                 </Field>
@@ -431,14 +431,14 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={(isEdit ? !canEdit : !canCreate) || initialLoading || loading}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
               >
                 {loading ? (isEdit ? "Saving..." : "Creating...") : isEdit ? "Save Changes" : "Create Event"}
               </button>

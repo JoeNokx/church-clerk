@@ -1,121 +1,121 @@
 {
-  "hash": "2998bb86",
+  "hash": "8da9edc4",
   "configHash": "f5b95ca9",
-  "lockfileHash": "d317acbf",
-  "browserHash": "2af36285",
+  "lockfileHash": "bcc3819a",
+  "browserHash": "e8f614c1",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "12e476fd",
+      "fileHash": "a38b1982",
       "needsInterop": true
     },
     "react-dom": {
       "src": "../../node_modules/react-dom/index.js",
       "file": "react-dom.js",
-      "fileHash": "002d1087",
+      "fileHash": "1608a48c",
       "needsInterop": true
     },
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "1c0d1f49",
+      "fileHash": "87fbe87c",
       "needsInterop": true
     },
     "react/jsx-runtime": {
       "src": "../../node_modules/react/jsx-runtime.js",
       "file": "react_jsx-runtime.js",
-      "fileHash": "f4e4c454",
-      "needsInterop": true
-    },
-    "@tanstack/react-query": {
-      "src": "../../node_modules/@tanstack/react-query/build/modern/index.js",
-      "file": "@tanstack_react-query.js",
-      "fileHash": "569baad7",
-      "needsInterop": false
-    },
-    "axios": {
-      "src": "../../node_modules/axios/index.js",
-      "file": "axios.js",
-      "fileHash": "d4e7d63b",
-      "needsInterop": false
-    },
-    "country-state-city": {
-      "src": "../../node_modules/country-state-city/lib/index.js",
-      "file": "country-state-city.js",
-      "fileHash": "c5452fc4",
-      "needsInterop": false
-    },
-    "currency-codes": {
-      "src": "../../node_modules/currency-codes/index.js",
-      "file": "currency-codes.js",
-      "fileHash": "a4d0e809",
-      "needsInterop": true
-    },
-    "framer-motion": {
-      "src": "../../node_modules/framer-motion/dist/es/index.mjs",
-      "file": "framer-motion.js",
-      "fileHash": "96d0b726",
-      "needsInterop": false
-    },
-    "nprogress": {
-      "src": "../../node_modules/nprogress/nprogress.js",
-      "file": "nprogress.js",
-      "fileHash": "8fad28c2",
+      "fileHash": "2b03615b",
       "needsInterop": true
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "e6a245d9",
+      "fileHash": "223e4f63",
       "needsInterop": true
     },
-    "react-loading-skeleton": {
-      "src": "../../node_modules/react-loading-skeleton/dist/index.js",
-      "file": "react-loading-skeleton.js",
-      "fileHash": "36e8f69f",
-      "needsInterop": false
-    },
-    "react-phone-number-input": {
-      "src": "../../node_modules/react-phone-number-input/min/index.js",
-      "file": "react-phone-number-input.js",
-      "fileHash": "80c5f16c",
-      "needsInterop": false
-    },
-    "react-router-dom": {
-      "src": "../../node_modules/react-router-dom/dist/index.mjs",
-      "file": "react-router-dom.js",
-      "fileHash": "7af770f4",
-      "needsInterop": false
-    },
-    "react-select": {
-      "src": "../../node_modules/react-select/dist/react-select.esm.js",
-      "file": "react-select.js",
-      "fileHash": "a7ac2ce4",
+    "@tanstack/react-query": {
+      "src": "../../node_modules/@tanstack/react-query/build/modern/index.js",
+      "file": "@tanstack_react-query.js",
+      "fileHash": "8c32db36",
       "needsInterop": false
     },
     "react-toastify": {
       "src": "../../node_modules/react-toastify/dist/index.mjs",
       "file": "react-toastify.js",
-      "fileHash": "750dc41a",
+      "fileHash": "eb5911c1",
+      "needsInterop": false
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "37cd3aee",
+      "needsInterop": false
+    },
+    "nprogress": {
+      "src": "../../node_modules/nprogress/nprogress.js",
+      "file": "nprogress.js",
+      "fileHash": "04ec8d41",
+      "needsInterop": true
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "14214a82",
+      "needsInterop": false
+    },
+    "react-phone-number-input": {
+      "src": "../../node_modules/react-phone-number-input/min/index.js",
+      "file": "react-phone-number-input.js",
+      "fileHash": "aa5c44df",
+      "needsInterop": false
+    },
+    "framer-motion": {
+      "src": "../../node_modules/framer-motion/dist/es/index.mjs",
+      "file": "framer-motion.js",
+      "fileHash": "88bff3df",
+      "needsInterop": false
+    },
+    "react-select": {
+      "src": "../../node_modules/react-select/dist/react-select.esm.js",
+      "file": "react-select.js",
+      "fileHash": "5158d6c7",
+      "needsInterop": false
+    },
+    "currency-codes": {
+      "src": "../../node_modules/currency-codes/index.js",
+      "file": "currency-codes.js",
+      "fileHash": "9d0bc73f",
+      "needsInterop": true
+    },
+    "country-state-city": {
+      "src": "../../node_modules/country-state-city/lib/index.js",
+      "file": "country-state-city.js",
+      "fileHash": "7906085c",
+      "needsInterop": false
+    },
+    "react-loading-skeleton": {
+      "src": "../../node_modules/react-loading-skeleton/dist/index.js",
+      "file": "react-loading-skeleton.js",
+      "fileHash": "8c563cd6",
       "needsInterop": false
     },
     "recharts": {
       "src": "../../node_modules/recharts/es6/index.js",
       "file": "recharts.js",
-      "fileHash": "0a6acd14",
+      "fileHash": "274a27d1",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-LNJWJNFR": {
-      "file": "chunk-LNJWJNFR.js"
-    },
     "chunk-7I2UKMSJ": {
       "file": "chunk-7I2UKMSJ.js"
     },
     "chunk-C76DDT7O": {
       "file": "chunk-C76DDT7O.js"
+    },
+    "chunk-LNJWJNFR": {
+      "file": "chunk-LNJWJNFR.js"
     },
     "chunk-P6RTVJOB": {
       "file": "chunk-P6RTVJOB.js"

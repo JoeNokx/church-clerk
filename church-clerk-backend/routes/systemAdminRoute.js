@@ -1,5 +1,6 @@
 import express from "express";
 const router = express.Router();
+import financialGovernanceRouter from "./financeRoute/financialGovernanceRoute.js";
 import {
   getAllChurches,
   getSystemChurchById,
@@ -311,5 +312,8 @@ router.patch(
   requirePermission("settingsChurchProfile", "update"),
   updateSystemSettings
 );
+
+// Mount additional admin subroutes
+router.use("/", financialGovernanceRouter);
 
 export default router;

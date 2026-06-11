@@ -11,7 +11,8 @@ const createChurchProjects = async (req, res) => {
                 name,
                 description,
                 targetAmount,
-                status
+                status,
+                startDate
                 } = req.body;
                 
                 if (!name || !description || !targetAmount) {
@@ -24,6 +25,7 @@ const createChurchProjects = async (req, res) => {
                 description,
                 targetAmount,
                 status,
+                startDate: startDate ? new Date(startDate) : new Date(),
                 church: req.activeChurch._id,
                 createdBy: req.user._id
                 });

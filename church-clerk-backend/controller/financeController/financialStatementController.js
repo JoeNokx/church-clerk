@@ -19,25 +19,8 @@ import Expense from "../../models/financeModel/incomeExpenseModel/expenseModel.j
 
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
-
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfDay(date) {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
-
-function percentChange(current, previous) {
-  const prev = Number(previous || 0);
-  const curr = Number(current || 0);
-  if (prev === 0) return curr > 0 ? 100 : 0;
-  return ((curr - prev) / prev) * 100;
-}
+import { startOfDay, endOfDay, percentChange, clampToNumber, toSafeFileName } from "../../utils/dateHelpers.js";
+import { pickTop, withPercent } from "../../utils/financeHelpers.js";
 
 async function sumByPeriod({ Model, churchId, dateField, amountField, periodStart, periodEnd }) {
   const match = {
@@ -51,35 +34,6 @@ async function sumByPeriod({ Model, churchId, dateField, amountField, periodStar
   ]);
 
   return Number(res?.[0]?.totalAmount || 0);
-}
-
-function pickTop(rows) {
-  const valid = (rows || []).filter((r) => Number(r?.amount || 0) > 0);
-  if (!valid.length) return null;
-  valid.sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0));
-  return valid[0];
-}
-
-function withPercent(rows, total) {
-  const denom = Number(total || 0);
-  return (rows || []).map((r) => {
-    const amount = Number(r?.amount || 0);
-    const pct = denom > 0 ? (amount / denom) * 100 : 0;
-    return { ...r, amount, percentage: pct };
-  });
-}
-
-function clampToNumber(value) {
-  const n = Number(value || 0);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function toSafeFileName(value) {
-  return String(value || "")
-    .trim()
-    .replace(/[\\/:*?"<>|]+/g, "-")
-    .replace(/\s+/g, "-")
-    .slice(0, 80);
 }
 
 function resolveExportPeriod({ type, now, query }) {

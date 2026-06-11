@@ -21,7 +21,7 @@ const CATEGORY_OPTIONS = [
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-500">{label}</label>
+      <label className="block font-semibold text-gray-500 text-xs">{label}</label>
       <div className="mt-2">{children}</div>
     </div>
   );
@@ -159,53 +159,53 @@ function EventEditPage() {
             <button
               type="button"
               onClick={goBack}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
             >
-              <span className="text-base leading-none">←</span>
+              <span className="leading-none text-base">←</span>
               Back
             </button>
 
-            <h2 className="text-2xl font-semibold text-gray-900">Edit Event</h2>
+            <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Edit Event</h2>
           </div>
-          <p className="mt-2 text-sm text-gray-600">Update event information</p>
+          <p className="mt-2 text-gray-600 text-sm">Update event information</p>
         </div>
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">Event Information</div>
-          <div className="mt-1 text-xs text-gray-500">Edit the details below</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">Event Information</div>
+          <div className="mt-1 text-gray-500 text-xs">Edit the details below</div>
         </div>
 
-        <form onSubmit={onSubmit} className="p-5">
+        <form onSubmit={onSubmit} className="p-4 md:p-6 lg:p-8">
           {error ? (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
           ) : null}
 
           {!canEdit ? (
-            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
               You do not have permission to edit events.
             </div>
           ) : null}
 
           {loading ? (
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 animate-pulse">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {[0, 1, 2, 3, 4, 5].map((i) => (
                   <div key={i}>
                     <div className="h-3 w-16 rounded bg-gray-200" />
-                    <div className="mt-1 h-10 w-full rounded-lg bg-gray-200" />
+                    <div className="mt-1 h-11 w-full rounded-lg bg-gray-200 md:h-12" />
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="Title">
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="Event title"
                 />
               </Field>
@@ -214,7 +214,7 @@ function EventEditPage() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 >
                   <option value="">Select category</option>
                   {CATEGORY_OPTIONS.map((c) => (
@@ -230,7 +230,7 @@ function EventEditPage() {
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 />
               </Field>
 
@@ -239,7 +239,7 @@ function EventEditPage() {
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 />
               </Field>
 
@@ -247,7 +247,7 @@ function EventEditPage() {
                 <input
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="10:00AM - 1:00PM"
                 />
               </Field>
@@ -256,28 +256,28 @@ function EventEditPage() {
                 <input
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="Event venue"
                 />
               </Field>
 
-              <div className="sm:col-span-2">
+              <div className="md:col-span-2">
                 <Field label="Organizers (comma-separated)">
                   <input
                     value={organizers}
                     onChange={(e) => setOrganizers(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                     placeholder="e.g. John Doe, Jane Doe"
                   />
                 </Field>
               </div>
 
-              <div className="sm:col-span-2">
+              <div className="md:col-span-2">
                 <Field label="Description">
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                    className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                     placeholder="Optional event description"
                   />
                 </Field>
@@ -289,14 +289,14 @@ function EventEditPage() {
             <button
               type="button"
               onClick={goBack}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!canEdit || loading || saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>

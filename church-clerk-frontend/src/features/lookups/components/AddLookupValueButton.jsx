@@ -8,7 +8,7 @@ function AddLookupValueButton({ label, kind, onCreated }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-blue-700 hover:underline"
+        className="font-semibold text-blue-700 hover:underline text-xs"
       >
         {label}
       </button>
@@ -64,12 +64,12 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">Add New</div>
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">Add New</div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -78,12 +78,12 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
           </button>
         </div>
 
-        <div className="p-5">
+        <div className="p-4 md:p-6 lg:p-8">
           {error ? (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
           ) : null}
 
-          <label className="block text-xs font-semibold text-gray-500">Value</label>
+          <label className="block font-semibold text-gray-500 text-xs">Value</label>
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -92,7 +92,7 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
                 void submit(e);
               }
             }}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Type and save"
           />
 
@@ -100,7 +100,7 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
             >
               Cancel
             </button>
@@ -108,7 +108,7 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
               type="button"
               disabled={saving}
               onClick={submit}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
               {saving ? "Saving..." : "Save"}
             </button>

@@ -60,7 +60,7 @@ function PriceCard({
 
       <div className="mt-4 flex items-end gap-2">
         <span className={priceClass}>{price !== null ? formatCurrency(price, currency) : "—"}</span>
-        <span className="text-sm text-gray-500">{per}</span>
+        <span className="text-gray-500 text-sm">{per}</span>
       </div>
 
       {variant === "landing" && actionHref ? (
@@ -84,7 +84,7 @@ function PriceCard({
         </button>
       ) : null}
 
-      <div className="mt-4 space-y-2 text-xs text-gray-700">
+      <div className="mt-4 space-y-2 text-gray-700 text-xs">
         <div>{memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`}</div>
         {features?.map((item) => (
           <div key={item} className="flex items-center gap-2">

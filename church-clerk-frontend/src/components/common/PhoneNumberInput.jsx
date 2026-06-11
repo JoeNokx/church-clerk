@@ -119,7 +119,7 @@ function CountryMenuList(props) {
               selectProps?.onCountryMenuSearchChange?.(e.target.value);
             }}
             placeholder="Search country"
-            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-11 w-full rounded-md border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             onMouseDown={(e) => {
               if (selectProps?.keepMenuOpenRef) selectProps.keepMenuOpenRef.current = true;
               e.stopPropagation();

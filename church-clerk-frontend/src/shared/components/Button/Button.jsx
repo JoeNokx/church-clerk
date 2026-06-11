@@ -1,5 +1,5 @@
 function Button({ children, variant = "primary", size = "md", className = "", disabled = false, type = "button", onClick }) {
-  const baseStyles = "inline-flex items-center justify-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = "inline-flex items-center justify-center font-semibold text-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap lg:whitespace-normal [&_svg]:hidden [&_img]:hidden lg:[&_svg]:inline-block lg:[&_img]:inline-block";
   
   const variantStyles = {
     primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
@@ -9,9 +9,9 @@ function Button({ children, variant = "primary", size = "md", className = "", di
   };
   
   const sizeStyles = {
-    sm: "h-8 px-3 text-xs rounded-lg",
-    md: "h-9 px-4 text-sm rounded-lg",
-    lg: "h-10 px-5 text-sm rounded-lg"
+    sm: "h-[44px] md:h-11 lg:h-8 px-[16px] md:px-[18px] lg:px-3 text-[14px] lg:text-xs rounded-[10px] md:rounded-lg",
+    md: "h-[44px] md:h-12 lg:h-9 px-[16px] md:px-[18px] lg:px-4 text-[14px] rounded-[10px] md:rounded-lg",
+    lg: "h-[44px] md:h-12 lg:h-10 px-[16px] md:px-[18px] lg:px-5 text-[14px] rounded-[10px] md:rounded-lg"
   };
   
   return (

@@ -171,7 +171,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-  const linkBase = "flex items-center gap-3 px-3 py-2.5 sm:py-2 rounded-lg text-[15px]";
+  const linkBase = "flex items-center gap-3 px-3 py-2.5 md:py-2 rounded-lg text-[15px]";
 
   const linkInactive = "text-gray-700 hover:bg-gray-50";
 
@@ -203,11 +203,11 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   return (
 
-    <aside className="w-72 sm:w-64 md:w-72 bg-white border-r border-gray-200 h-screen flex flex-col">
+    <aside className="w-72 bg-white border-r border-gray-200 h-screen flex flex-col md:w-72">
 
       <div className="h-16 px-4 flex items-center gap-3 border-b border-gray-200">
 
-        <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center ring-1 ring-blue-100">
+        <div className="h-11 w-11 rounded-xl bg-blue-50 flex items-center justify-center ring-1 ring-blue-100 md:h-12 md:w-12">
 
           <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-blue-900">
 
@@ -269,7 +269,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
             <div>
 
-              <div className="px-3 text-xs font-semibold text-gray-400 tracking-wider">HEADQUARTERS</div>
+              <div className="px-3 font-semibold text-gray-400 tracking-wider text-xs">HEADQUARTERS</div>
 
               <div className="mt-2 space-y-1">
 
@@ -301,7 +301,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
             <div>
 
-              <div className="px-3 text-xs font-semibold text-gray-400 tracking-wider">PEOPLE &amp; MINISTRIES</div>
+              <div className="px-3 font-semibold text-gray-400 tracking-wider text-xs">PEOPLE &amp; MINISTRIES</div>
 
               <div className="mt-2 space-y-1">
 
@@ -439,7 +439,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
             <div>
 
-              <div className="px-3 text-xs font-semibold text-gray-400 tracking-wider">FINANCE</div>
+              <div className="px-3 font-semibold text-gray-400 tracking-wider text-xs">FINANCE</div>
 
               <div className="mt-2 space-y-1">
 
@@ -693,7 +693,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
             <div>
 
-              <div className="px-3 text-xs font-semibold text-gray-400 tracking-wider">ADMINISTRATION</div>
+              <div className="px-3 font-semibold text-gray-400 tracking-wider text-xs">ADMINISTRATION</div>
 
               <div className="mt-2 space-y-1">
 

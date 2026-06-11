@@ -38,8 +38,8 @@ export function EventOfferingPageInner() {
     <div className="w-full">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Event Offerings</h2>
-          <p className="mt-1 text-sm text-gray-600">Record and manage offerings collected for this event.</p>
+          <h2 className="font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">Event Offerings</h2>
+          <p className="mt-1 text-gray-600 text-sm">Record and manage offerings collected for this event.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -47,9 +47,9 @@ export function EventOfferingPageInner() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
-              <span className="text-lg leading-none">+</span>
+              <span className="leading-none text-lg">+</span>
               Add Offering
             </button>
           )}
@@ -57,10 +57,10 @@ export function EventOfferingPageInner() {
       </div>
 
       <div className="mt-4 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Offerings Records</div>
-            <div className="text-xs text-gray-500">All offerings and their details</div>
+            <div className="font-semibold text-gray-900 text-sm">Offerings Records</div>
+            <div className="text-gray-500 text-xs">All offerings and their details</div>
           </div>
 
           <EventOfferingFilters />

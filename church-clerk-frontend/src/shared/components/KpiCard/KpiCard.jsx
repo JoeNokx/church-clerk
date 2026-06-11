@@ -41,9 +41,9 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
     return (
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         {topBar && <div className={`h-1.5 ${topBar}`} />}
-        <div className="p-3 sm:p-4">
-          <div className="text-xs font-semibold text-gray-500">{title}</div>
-          <div className="mt-2 text-xl sm:text-2xl font-semibold text-gray-900">{value}</div>
+        <div className="p-3 md:p-4">
+          <div className="font-semibold text-gray-500 text-xs">{title}</div>
+          <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl">{value}</div>
         </div>
       </div>
     );
@@ -51,17 +51,17 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
 
   if (isColoredIconVariant) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 lg:p-5">
+      <div className="rounded-xl border border-gray-200 bg-white p-3 md:p-6 lg:p-8">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${iconBg} ${iconColor}`}>
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <span className={`inline-flex h-11 w-11 items-center justify-center rounded-lg ${iconBg} ${iconColor} md:h-12 md:w-12`}>
                 {icon}
               </span>
-              <div className="text-xs font-semibold text-gray-500 truncate leading-tight">{title}</div>
+              <div className="font-semibold text-gray-500 truncate leading-tight text-xs">{title}</div>
             </div>
-            <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 tabular-nums leading-tight">{value ?? "—"}</div>
-            {subtitle ? <div className="mt-1 text-xs text-gray-500 truncate">{subtitle}</div> : null}
+            <div className="mt-2 font-bold text-gray-900 tabular-nums leading-tight md:text-3xl lg:text-4xl text-xl">{value ?? "—"}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 truncate text-xs">{subtitle}</div> : null}
           </div>
         </div>
       </div>
@@ -72,32 +72,32 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left rounded-xl border border-gray-200 bg-white p-3 sm:p-4 lg:p-5 hover:border-blue-200 hover:bg-blue-50/30 active:bg-blue-50/40 transition"
+      className="cck-allow-icons w-full text-left rounded-xl border border-gray-200 bg-white p-3 hover:border-blue-200 hover:bg-blue-50/30 active:bg-blue-50/40 transition md:p-6 lg:p-8"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="h-6 w-6 sm:h-8 sm:w-8 shrink-0 rounded-lg bg-gray-50 ring-1 ring-gray-200 flex items-center justify-center text-gray-700 [&>svg]:h-4 [&>svg]:w-4 sm:[&>svg]:h-5 sm:[&>svg]:w-5">
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <span className="h-6 w-6 shrink-0 rounded-lg bg-gray-50 ring-1 ring-gray-200 flex items-center justify-center text-gray-700 [&>svg]:h-4 [&>svg]:w-4 md:[&>svg]:h-5 md:[&>svg]:w-5 md:h-12 md:w-11">
               {icon}
             </span>
-            <div className="text-xs sm:text-sm font-semibold text-gray-500 truncate leading-tight">{title}</div>
+            <div className="font-semibold text-gray-500 truncate leading-tight md:text-sm text-xs">{title}</div>
           </div>
 
-          <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 tabular-nums leading-tight">{value ?? "—"}</div>
-          {subtitle ? <div className="mt-0.5 text-xs text-gray-500 truncate">{subtitle}</div> : null}
+          <div className="mt-2 font-bold text-gray-900 tabular-nums leading-tight md:text-3xl lg:text-4xl text-xl">{value ?? "—"}</div>
+          {subtitle ? <div className="mt-0.5 text-gray-500 truncate text-xs">{subtitle}</div> : null}
 
           {change !== undefined && change !== null ? (
-            <div className="mt-2 flex items-center gap-1 sm:gap-2 flex-wrap">
-              <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-semibold ${deltaClass}`}>
+            <div className="mt-2 flex items-center gap-1 flex-wrap md:gap-2">
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 md:px-2.5 md:py-1 font-semibold ${deltaClass} text-xs`}>
                 {arrow}
                 <span>{deltaText}</span>
               </span>
-              <span className="text-xs text-gray-500">{compareLabel || ""}</span>
+              <span className="text-gray-500 text-xs">{compareLabel || ""}</span>
             </div>
           ) : null}
         </div>
 
-        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300 shrink-0 mt-0.5">
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-gray-300 shrink-0 mt-0.5 md:h-5 md:w-5">
           <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 111.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z" clipRule="evenodd" />
         </svg>
       </div>

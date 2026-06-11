@@ -1070,7 +1070,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-      <div className="h-14 md:h-16 px-4 md:px-8 flex items-center justify-between gap-4">
+      <div className="h-14 px-4 md:px-8 flex items-center justify-between gap-4 md:h-16">
 
 
 
@@ -1080,7 +1080,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
           onClick={onToggleSidebar}
 
-          className="inline-flex items-center justify-center h-11 w-11 sm:h-9 sm:w-9 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100 flex md:hidden"
+          className="inline-flex items-center justify-center h-11 w-11 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100 flex md:hidden md:h-12 md:w-12"
 
           aria-label="Toggle sidebar"
 
@@ -1105,12 +1105,12 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-          <div className="text-base md:text-xl font-bold text-gray-900">Dashboard</div>
+          <div className="font-bold text-gray-900 md:text-2xl lg:text-3xl text-base">Dashboard</div>
           <div className="block md:hidden text-[11px] font-medium text-gray-400 truncate mt-0.5">{viewingChurchName}</div>
 
 
 
-          <div className="hidden sm:block text-[15px] text-gray-600 truncate">Welcome back! Here’s what’s happening with your church</div>
+          <div className="hidden md:block text-[15px] text-gray-600 truncate">Welcome back! Here’s what’s happening with your church</div>
 
 
 
@@ -1246,11 +1246,11 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                  <div className="text-xs font-semibold text-gray-500">Currently viewing</div>
+                  <div className="font-semibold text-gray-500 text-xs">Currently viewing</div>
 
 
 
-                <div className="mt-1 text-sm font-semibold text-gray-900 truncate">{viewingChurchName}</div>
+                <div className="mt-1 font-semibold text-gray-900 truncate text-sm">{viewingChurchName}</div>
 
 
 
@@ -1266,7 +1266,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                  <div className="px-4 py-3 text-sm text-red-700 bg-red-50 border-b border-red-100">{branchesError}</div>
+                  <div className="px-4 py-3 text-red-700 bg-red-50 border-b border-red-100 text-sm">{branchesError}</div>
 
 
 
@@ -1306,11 +1306,11 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                      <div className="text-sm font-semibold text-gray-900 truncate">{homeChurchName || "Headquarters"}</div>
+                      <div className="font-semibold text-gray-900 truncate text-sm">{homeChurchName || "Headquarters"}</div>
 
 
 
-                      <div className="mt-0.5 text-xs text-gray-500">Headquarters</div>
+                      <div className="mt-0.5 text-gray-500 text-xs">Headquarters</div>
 
 
 
@@ -1326,7 +1326,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                  <div className="mt-2 px-3 py-1 text-xs font-semibold text-gray-400 tracking-wider">BRANCHES</div>
+                  <div className="mt-2 px-3 py-1 font-semibold text-gray-400 tracking-wider text-xs">BRANCHES</div>
 
 
 
@@ -1386,11 +1386,11 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                          <div className="text-sm font-semibold text-gray-900 truncate">{b?.name || "—"}</div>
+                          <div className="font-semibold text-gray-900 truncate text-sm">{b?.name || "—"}</div>
 
 
 
-                          <div className="mt-0.5 text-xs text-gray-500 truncate">
+                          <div className="mt-0.5 text-gray-500 truncate text-xs">
 
 
 
@@ -1418,7 +1418,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                    <div className="px-3 py-2 text-sm text-gray-600">
+                    <div className="px-3 py-2 text-gray-600 text-sm">
 
 
 
@@ -1450,7 +1450,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                    className="mt-2 w-full text-left rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                    className="mt-2 w-full text-left rounded-lg px-3 py-2 font-semibold text-blue-700 hover:bg-blue-50 text-sm"
 
 
 
@@ -1506,7 +1506,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-            className="relative h-11 w-11 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100"
+            className="relative h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100 md:h-12 md:w-12"
 
 
 
@@ -1598,7 +1598,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                  className="h-10 w-10 sm:h-9 sm:w-9 rounded-full object-cover border border-gray-200"
+                  className="h-11 rounded-full object-cover border border-gray-200 md:h-12 md:w-12 w-11"
 
 
 
@@ -1610,7 +1610,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                <div className="h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-semibold">
+                <div className="h-11 rounded-full bg-blue-900 text-white flex items-center justify-center font-semibold md:h-12 md:w-12 text-sm w-11">
 
 
 
@@ -1630,7 +1630,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-              <div className="hidden sm:block leading-tight text-left">
+              <div className="hidden md:block leading-tight text-left">
 
 
 
@@ -1682,7 +1682,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                  <div className="text-sm font-semibold text-gray-900">My Account</div>
+                  <div className="font-semibold text-gray-900 text-sm">My Account</div>
 
 
 
@@ -1710,7 +1710,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                    className="w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                    className="w-full px-4 py-2.5 text-gray-700 hover:bg-gray-50 flex items-center gap-3 text-sm"
 
 
 
@@ -1762,7 +1762,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                    className="w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                    className="w-full px-4 py-2.5 text-gray-700 hover:bg-gray-50 flex items-center gap-3 text-sm"
 
 
 
@@ -1818,7 +1818,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                    className="w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                    className="w-full px-4 py-2.5 text-gray-700 hover:bg-gray-50 flex items-center gap-3 text-sm"
 
 
 
@@ -1874,7 +1874,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                    className="w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                    className="w-full px-4 py-2.5 text-gray-700 hover:bg-gray-50 flex items-center gap-3 text-sm"
 
 
 
@@ -1938,7 +1938,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                    className="w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
+                    className="w-full px-4 py-2.5 text-red-600 hover:bg-red-50 flex items-center gap-3 text-sm"
 
 
 

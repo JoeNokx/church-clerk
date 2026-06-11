@@ -7,6 +7,8 @@ import BudgetingForm from "../components/BudgetingForm.jsx";
 import BudgetingTable from "../components/BudgetingTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function BudgetingPageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -84,8 +86,8 @@ function BudgetingPageInner() {
     <div className="w-full max-w-none">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Budgeting</h2>
-          <p className="mt-2 text-sm text-gray-600">Create budgets and compare planned vs actual spending.</p>
+          <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Budgeting</h2>
+          <p className="mt-2 text-gray-600 text-sm">Create budgets and compare planned vs actual spending.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -93,9 +95,9 @@ function BudgetingPageInner() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
-              <span className="text-lg leading-none">+</span>
+              <span className="leading-none text-lg">+</span>
               New Budget
             </button>
           ) : null}
@@ -105,15 +107,15 @@ function BudgetingPageInner() {
       {viewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-5xl rounded-xl bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
               <div>
-                <div className="text-sm font-semibold text-gray-900">{viewBudget?.name || "Budget"}</div>
-                <div className="mt-1 text-xs text-gray-500">Budget summary and planned items</div>
+                <div className="font-semibold text-gray-900 text-sm">{viewBudget?.name || "Budget"}</div>
+                <div className="mt-1 text-gray-500 text-xs">Budget summary and planned items</div>
               </div>
               <button
                 type="button"
                 onClick={closeView}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
                 aria-label="Close"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -122,58 +124,46 @@ function BudgetingPageInner() {
               </button>
             </div>
 
-            <div className="p-5">
+            <div className="p-4 md:p-6 lg:p-8">
               {viewLoading ? (
-                <div className="text-sm text-gray-600">Loading…</div>
+                <div className="text-gray-600 text-sm">Loading…</div>
               ) : (
                 <div className="space-y-5">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-xl border border-gray-200 bg-white p-5">
-                      <div className="text-xs font-semibold text-gray-500">Planned Income</div>
-                      <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(viewSummary?.plannedIncomeTotal || 0, currency)}</div>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-5">
-                      <div className="text-xs font-semibold text-gray-500">Planned Expenses</div>
-                      <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(viewSummary?.plannedExpenseTotal || 0, currency)}</div>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-5">
-                      <div className="text-xs font-semibold text-gray-500">Actual Expenses</div>
-                      <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(viewSummary?.actualExpenseTotal || 0, currency)}</div>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-5">
-                      <div className="text-xs font-semibold text-gray-500">Variance (Budget Left)</div>
-                      <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(viewSummary?.varianceExpense || 0, currency)}</div>
-                    </div>
-                  </div>
+                  <KpiGrid className="gap-4 lg:grid-cols-4">
+                    <KpiStatCard label="Planned Income" value={formatMoney(viewSummary?.plannedIncomeTotal || 0, currency)} />
+                    <KpiStatCard label="Planned Expenses" value={formatMoney(viewSummary?.plannedExpenseTotal || 0, currency)} />
+                    <KpiStatCard label="Actual Expenses" value={formatMoney(viewSummary?.actualExpenseTotal || 0, currency)} />
+                    <KpiStatCard label="Variance (Budget Left)" value={formatMoney(viewSummary?.varianceExpense || 0, currency)} />
+                  </KpiGrid>
 
                   <div className="rounded-xl border border-gray-200">
-                    <div className="border-b border-gray-200 px-5 py-4">
-                      <div className="text-sm font-semibold text-gray-900">Planned Items</div>
-                      <div className="mt-1 text-xs text-gray-500">Expense and income breakdown for this budget.</div>
+                    <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+                      <div className="font-semibold text-gray-900 text-sm">Planned Items</div>
+                      <div className="mt-1 text-gray-500 text-xs">Expense and income breakdown for this budget.</div>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="min-w-full">
                         <thead className="bg-slate-100">
-                          <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                            <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Type</th>
-                            <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Category</th>
-                            <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
-                            <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Notes</th>
+                          <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                            <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+                            <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
+                            <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                            <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Notes</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {items.length ? (
                             items.map((it, idx) => (
-                              <tr key={`it-${idx}`} className="text-sm max-sm:text-xs text-gray-700">
-                                <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-2 capitalize whitespace-nowrap">{it?.type || "-"}</td>
-                                <td className="px-6 max-sm:px-4 py-2 text-gray-900 font-semibold whitespace-nowrap">{it?.category || "-"}</td>
-                                <td className="px-6 max-sm:px-4 py-2 whitespace-nowrap">{formatMoney(it?.amount || 0, currency)}</td>
-                                <td className="px-6 max-sm:px-4 py-2 text-gray-600">{it?.notes || "-"}</td>
+                              <tr key={`it-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 capitalize whitespace-nowrap px-4 md:px-6">{it?.type || "-"}</td>
+                                <td className="max-md:px-4 py-2 text-gray-900 font-semibold whitespace-nowrap px-4 md:px-6">{it?.category || "-"}</td>
+                                <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{formatMoney(it?.amount || 0, currency)}</td>
+                                <td className="max-md:px-4 py-2 text-gray-600 px-4 md:px-6">{it?.notes || "-"}</td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={4} className="px-6 py-6 text-sm text-gray-600">
+                              <td colSpan={4} className="text-gray-600 text-sm px-4 md:px-6 py-4 md:py-6">
                                 No items.
                               </td>
                             </tr>
@@ -190,10 +180,10 @@ function BudgetingPageInner() {
       )}
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Budgets</div>
-            <div className="text-xs text-gray-500">Create, filter, and manage your budgets.</div>
+            <div className="font-semibold text-gray-900 text-sm">Budgets</div>
+            <div className="text-gray-500 text-xs">Create, filter, and manage your budgets.</div>
           </div>
 
           <BudgetingFilters />

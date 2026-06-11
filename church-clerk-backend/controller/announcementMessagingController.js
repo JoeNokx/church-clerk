@@ -2,293 +2,21 @@ import AnnouncementMessage from "../models/announcementMessageModel.js";
 import AnnouncementMessageDelivery from "../models/announcementMessageDeliveryModel.js";
 import AnnouncementWallet from "../models/announcementWalletModel.js";
 import AnnouncementWalletTransaction from "../models/announcementWalletTransactionModel.js";
-import Member from "../models/memberModel.js";
 import Church from "../models/churchModel.js";
-import mongoose from "mongoose";
-import GroupMember from "../models/ministryModel/groupMembersModel.js";
-import CellMember from "../models/ministryModel/cellMembersModel.js";
-import DepartmentMember from "../models/ministryModel/departmentMembersModel.js";
 import { getSystemSettingsSnapshot } from "./systemSettingsController.js";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
-import { getDefaultSmsSenderId, sendBulkSms } from "../services/africasTalkingSmsService.js";
 import { resolveSenderId } from "../utils/resolveSenderId.js";
-
-const computeCostPerRecipientCredits = ({ channels, smsCostCredits, whatsappCostCredits }) => {
-  const arr = Array.isArray(channels) ? channels : [];
-  const costs = {
-    sms: Number.isFinite(Number(smsCostCredits)) ? Number(smsCostCredits) : 5,
-    whatsapp: Number.isFinite(Number(whatsappCostCredits)) ? Number(whatsappCostCredits) : 20
-  };
-  return arr.reduce((sum, c) => sum + (costs[String(c)] || 0), 0);
-};
-
-const parseSchedule = ({ scheduledDate, scheduledTime }) => {
-  const d = String(scheduledDate || "").trim();
-  const t = String(scheduledTime || "").trim();
-  if (!d || !t) return null;
-  const dt = new Date(`${d}T${t}:00`);
-  if (Number.isNaN(dt.getTime())) return null;
-  return dt;
-};
-
-const toScheduleParts = (dateValue) => {
-  if (!dateValue) return { scheduledDate: "", scheduledTime: "" };
-  const d = new Date(dateValue);
-  if (Number.isNaN(d.getTime())) return { scheduledDate: "", scheduledTime: "" };
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return { scheduledDate: `${yyyy}-${mm}-${dd}`, scheduledTime: `${hh}:${mi}` };
-};
-
-const toObjectIdList = (ids) => {
-  const arr = Array.isArray(ids) ? ids : [];
-  return arr
-    .map((v) => String(v || "").trim())
-    .filter(Boolean)
-    .map((v) => {
-      try {
-        return new mongoose.Types.ObjectId(v);
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean);
-};
-
-const distinctMemberIdsForMinistries = async ({ churchId, groupIds, cellIds, departmentIds }) => {
-  const [g, c, d] = await Promise.all([
-    groupIds.length
-      ? GroupMember.find({ church: churchId, group: { $in: groupIds } }).distinct("member")
-      : Promise.resolve([]),
-    cellIds.length
-      ? CellMember.find({ church: churchId, cell: { $in: cellIds } }).distinct("member")
-      : Promise.resolve([]),
-    departmentIds.length
-      ? DepartmentMember.find({ church: churchId, department: { $in: departmentIds } }).distinct("member")
-      : Promise.resolve([])
-  ]);
-
-  const set = new Set([
-    ...(Array.isArray(g) ? g : []),
-    ...(Array.isArray(c) ? c : []),
-    ...(Array.isArray(d) ? d : [])
-  ].map((id) => String(id || "")).filter(Boolean));
-
-  return Array.from(set)
-    .map((id) => {
-      try {
-        return new mongoose.Types.ObjectId(id);
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean);
-};
-
-const countUniqueMembersForAudience = async ({ churchId, audience }) => {
-  const type = String(audience?.type || "all").trim();
-
-  if (type === "members") {
-    const memberIds = toObjectIdList(audience?.memberIds);
-    if (!memberIds.length) return 0;
-    return await Member.countDocuments({ church: churchId, _id: { $in: memberIds } });
-  }
-
-  if (type === "groups") {
-    const groupIds = toObjectIdList(audience?.groupIds);
-    const cellIds = toObjectIdList(audience?.cellIds);
-    const departmentIds = toObjectIdList(audience?.departmentIds);
-
-    if (!groupIds.length && !cellIds.length && !departmentIds.length) return 0;
-
-    const memberIds = await distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, departmentIds });
-    return memberIds.length;
-  }
-
-  return await Member.countDocuments({ church: churchId });
-};
-
-const resolveAudienceMembers = async ({ churchId, audience }) => {
-  const type = String(audience?.type || "all").trim();
-
-  if (type === "members") {
-    const memberIds = toObjectIdList(audience?.memberIds);
-    if (!memberIds.length) return [];
-    return await Member.find({ church: churchId, _id: { $in: memberIds } }).lean();
-  }
-
-  if (type === "groups") {
-    const groupIds = toObjectIdList(audience?.groupIds);
-    const cellIds = toObjectIdList(audience?.cellIds);
-    const departmentIds = toObjectIdList(audience?.departmentIds);
-
-    if (!groupIds.length && !cellIds.length && !departmentIds.length) return [];
-
-    const memberIds = await distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, departmentIds });
-    if (!memberIds.length) return [];
-    return await Member.find({ church: churchId, _id: { $in: memberIds } }).lean();
-  }
-
-  return await Member.find({ church: churchId }).lean();
-};
-
-const getOrCreateWallet = async ({ churchId }) => {
-  const wallet = await AnnouncementWallet.findOneAndUpdate(
-    { church: churchId },
-    { $setOnInsert: { balanceCredits: 0 } },
-    { new: true, upsert: true }
-  );
-  return wallet;
-};
-
-const normalizeSmsPhoneE164 = (rawPhone) => {
-  const raw = String(rawPhone || "").trim();
-  if (!raw) return null;
-
-  try {
-    const parsed = raw.startsWith("+")
-      ? parsePhoneNumberFromString(raw)
-      : parsePhoneNumberFromString(raw, "GH");
-
-    if (!parsed || !parsed.isValid()) return null;
-    return parsed.number;
-  } catch {
-    return null;
-  }
-};
-
-const resolveSmsSenderIdOrThrow = ({ church, requestedSenderId }) => {
-  const primary = String(requestedSenderId || "").trim();
-  const resolved = primary || resolveSenderId(church) || getDefaultSmsSenderId();
-  if (!resolved) {
-    throw new Error("SMS sender ID is required. Set AT_DEFAULT_SENDER_ID in .env or provide an approved church sender ID.");
-  }
-  return resolved;
-};
-
-const mapAfricasTalkingRecipientToStatus = (statusRaw) => {
-  const s = String(statusRaw || "").trim().toLowerCase();
-  if (s === "success") return "delivered";
-  if (s) return "failed";
-  return "failed";
-};
-
-const sendSmsAndUpdateDeliveries = async ({ churchId, church, messageDoc, deliveries, markProviderErrorsFailed = true }) => {
-  const senderId = resolveSmsSenderIdOrThrow({ church, requestedSenderId: messageDoc?.smsSenderId });
-
-  if (messageDoc?._id) {
-    await AnnouncementMessage.updateOne(
-      { _id: messageDoc._id, church: churchId },
-      { $set: { sender_id_used: senderId } }
-    );
-  }
-
-  const valid = [];
-  const invalid = [];
-
-  for (const d of deliveries) {
-    const normalized = normalizeSmsPhoneE164(d.phone);
-    if (!normalized) {
-      invalid.push(d);
-      continue;
-    }
-    valid.push({ delivery: d, phoneE164: normalized });
-  }
-
-  if (invalid.length) {
-    const ops = invalid.map((d) => ({
-      updateOne: {
-        filter: { _id: d._id, church: churchId },
-        update: {
-          $set: {
-            status: "failed",
-            provider: "africastalking",
-            errorMessage: "Invalid phone number"
-          }
-        }
-      }
-    }));
-    await AnnouncementMessageDelivery.bulkWrite(ops);
-  }
-
-  if (!valid.length) {
-    return {
-      attempted: 0,
-      delivered: 0,
-      failed: invalid.length,
-      invalid: invalid.length
-    };
-  }
-
-  let response;
-  try {
-    response = await sendBulkSms({
-      to: valid.map((v) => v.phoneE164),
-      message: messageDoc.content,
-      from: senderId
-    });
-  } catch (err) {
-    const ops = valid.map((v) => ({
-      updateOne: {
-        filter: { _id: v.delivery._id, church: churchId },
-        update: {
-          $set: {
-            status: markProviderErrorsFailed ? "failed" : "pending",
-            provider: "africastalking",
-            errorMessage: String(err?.message || "SMS send failed")
-          }
-        }
-      }
-    }));
-    if (ops.length) {
-      await AnnouncementMessageDelivery.bulkWrite(ops);
-    }
-    throw err;
-  }
-
-  const recipients = response?.SMSMessageData?.Recipients;
-  const list = Array.isArray(recipients) ? recipients : [];
-  const byPhone = new Map(list.map((r) => [String(r?.number || "").trim(), r]));
-
-  let delivered = 0;
-  let failed = 0;
-
-  const ops = valid.map((v) => {
-    const r = byPhone.get(v.phoneE164);
-    const status = mapAfricasTalkingRecipientToStatus(r?.status);
-    if (status === "delivered") delivered += 1;
-    else failed += 1;
-
-    return {
-      updateOne: {
-        filter: { _id: v.delivery._id, church: churchId },
-        update: {
-          $set: {
-            status,
-            provider: "africastalking",
-            providerMessageId: r?.messageId ? String(r.messageId) : null,
-            errorMessage: status === "failed" ? String(r?.status || "Failed") : null,
-            phone: v.phoneE164
-          }
-        }
-      }
-    };
-  });
-
-  if (ops.length) {
-    await AnnouncementMessageDelivery.bulkWrite(ops);
-  }
-
-  return {
-    attempted: valid.length,
-    delivered,
-    failed: failed + invalid.length,
-    invalid: invalid.length
-  };
-};
+import {
+  computeCostPerRecipientCredits,
+  parseSchedule,
+  toScheduleParts,
+  toObjectIdList
+} from "../utils/announcementHelpers.js";
+import {
+  countUniqueMembersForAudience,
+  resolveAudienceMembers
+} from "../services/announcement/audienceService.js";
+import { sendSmsAndUpdateDeliveries } from "../services/announcement/smsService.js";
+import { getOrCreateWallet, deductCreditsForMessage } from "../services/announcement/walletService.js";
 
 export const createMessage = async (req, res) => {
   try {
@@ -362,32 +90,19 @@ export const createMessage = async (req, res) => {
     let wallet = await getOrCreateWallet({ churchId: req.activeChurch._id });
 
     if (status !== "draft" && totalCostCredits > 0) {
-      const updatedWallet = await AnnouncementWallet.findOneAndUpdate(
-        { _id: wallet._id, balanceCredits: { $gte: totalCostCredits } },
-        { $inc: { balanceCredits: -totalCostCredits } },
-        { new: true }
-      );
-
-      if (!updatedWallet) {
-        return res.status(400).json({ message: "Insufficient credits. Please fund your wallet." });
-      }
-
-      wallet = updatedWallet;
-
-      await AnnouncementWalletTransaction.create({
-        church: req.activeChurch._id,
-        wallet: wallet._id,
-        type: "deduct",
-        status: "success",
-        amountCredits: -totalCostCredits,
-        balanceAfterCredits: wallet.balanceCredits,
-        description: `Message ${status}`,
-        createdBy: req.user?._id || null,
-        metadata: {
+      try {
+        wallet = await deductCreditsForMessage({
+          churchId: req.activeChurch._id,
+          wallet,
+          totalCostCredits,
+          status,
           channels,
-          recipientCount
-        }
-      });
+          recipientCount,
+          userId: req.user?._id
+        });
+      } catch (err) {
+        return res.status(400).json({ message: err.message });
+      }
     }
 
     const initialDeliveredCount = status === "draft"

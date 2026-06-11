@@ -126,7 +126,7 @@ function Chip({ color = "gray", children }) {
           ? "bg-purple-100 text-purple-700"
           : "bg-gray-100 text-gray-700";
 
-  return <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${styles}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-full px-3 py-1 font-semibold ${styles} text-xs`}>{children}</span>;
 }
 
 function normalizeMeetingSchedule(item) {
@@ -161,22 +161,22 @@ function ConfirmDialog({ open, title, message, confirmLabel = "Delete", onCancel
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
           >
             {confirmLabel}
           </button>
@@ -192,12 +192,12 @@ function SimpleModal({ open, title, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -205,7 +205,7 @@ function SimpleModal({ open, title, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -971,20 +971,20 @@ function MinistryDetailsPage() {
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:underline"
+            className="inline-flex items-center gap-2 font-semibold text-gray-700 hover:underline text-sm"
           >
-            <span className="text-base leading-none">←</span>
+            <span className="leading-none text-base">←</span>
             Back to Ministries
           </button>
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         {loading ? (
           <div className="space-y-4 animate-pulse">
             <div className="h-4 w-32 rounded bg-gray-200" />
             <div className="h-7 w-52 rounded bg-gray-200" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[0, 1, 2, 3, 4].map((i) => (
                 <div key={i}>
                   <div className="h-3 w-16 rounded bg-gray-200" />
@@ -994,11 +994,11 @@ function MinistryDetailsPage() {
             </div>
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
         ) : !entity ? (
-          <div className="text-sm text-gray-600">No record found.</div>
+          <div className="text-gray-600 text-sm">No record found.</div>
         ) : (
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between md:gap-6">
             <div className="flex items-start gap-4 min-w-0">
               <div
                 className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ring-1 ${
@@ -1017,21 +1017,21 @@ function MinistryDetailsPage() {
                   <Chip color={typeColor}>{title}</Chip>
                   {entity?.status ? <Chip>{entity.status}</Chip> : null}
                 </div>
-                <div className="mt-2 text-2xl font-semibold text-gray-900 truncate">{entity?.name || "—"}</div>
-                <div className="mt-2 text-sm text-gray-600 max-w-3xl whitespace-pre-wrap">{entity?.description || "—"}</div>
+                <div className="mt-2 font-semibold text-gray-900 truncate md:text-3xl lg:text-4xl text-xl md:text-2xl">{entity?.name || "—"}</div>
+                <div className="mt-2 text-gray-600 max-w-3xl whitespace-pre-wrap text-sm">{entity?.description || "—"}</div>
 
                 {meetingRows.length ? (
                   <div className="mt-4 space-y-2">
                     {meetingRows.map((m, idx) => (
                       <div key={m?._id || idx} className="rounded-lg border border-gray-200 bg-white px-4 py-2">
-                        <div className="grid grid-cols-1 gap-1 sm:grid-cols-3 sm:gap-3 text-xs">
+                        <div className="grid grid-cols-1 gap-1 md:grid-cols-3 md:gap-3 text-xs">
                           <div className="text-gray-600">
                             <span className="font-semibold text-gray-700">Day:</span> {m?.meetingDay || "—"}
                           </div>
                           <div className="text-gray-600">
                             <span className="font-semibold text-gray-700">Time:</span> {m?.meetingTime || "—"}
                           </div>
-                          <div className="text-gray-600 sm:text-right">
+                          <div className="text-gray-600 md:text-right">
                             <span className="font-semibold text-gray-700">Venue:</span> {m?.meetingVenue || "—"}
                           </div>
                         </div>
@@ -1044,13 +1044,13 @@ function MinistryDetailsPage() {
 
             <div className="flex flex-col gap-3 w-full lg:w-auto lg:min-w-44">
               <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="text-xs font-semibold text-gray-500">Total Members</div>
-                <div className="mt-1 text-2xl font-semibold text-gray-900">{totalMembersValue}</div>
+                <div className="font-semibold text-gray-500 text-xs">Total Members</div>
+                <div className="mt-1 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{totalMembersValue}</div>
               </div>
               <button
                 type="button"
                 onClick={openEdit}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
               >
                 Edit
               </button>
@@ -1059,7 +1059,7 @@ function MinistryDetailsPage() {
         )}
       </div>
 
-      <div className="mt-6 rounded-full bg-gray-100 p-1 flex items-center gap-2 max-w-xl">
+      <div className="cck-tab-bar mt-6 rounded-full bg-gray-100 p-1 flex items-center gap-2 max-w-xl">
         <button type="button" onClick={() => setActiveTab("members")} className={mainTabClass("members")}>
           Members
         </button>
@@ -1073,18 +1073,18 @@ function MinistryDetailsPage() {
 
       {activeTab === "members" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-          <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
             <div>
-              <div className="text-sm font-semibold text-gray-900">Members</div>
-              <div className="text-xs text-gray-500">Manage members in this {title.toLowerCase()}</div>
+              <div className="font-semibold text-gray-900 text-sm">Members</div>
+              <div className="text-gray-500 text-xs">Manage members in this {title.toLowerCase()}</div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <input
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
                 placeholder="Search members..."
-                className="h-10 w-full sm:w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
               />
               <button
                 type="button"
@@ -1097,38 +1097,38 @@ function MinistryDetailsPage() {
                   setAddMemberSelectedIds([]);
                   setAddMemberOpen(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
-                <span className="text-lg leading-none">+</span>
+                <span className="leading-none text-lg">+</span>
                 Add Member
               </button>
             </div>
           </div>
 
-          {memberError ? <div className="p-5 text-sm text-red-700">{memberError}</div> : null}
+          {memberError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{memberError}</div> : null}
 
           {memberLoading ? (
-            <div className="p-5 space-y-3 animate-pulse">
+            <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
               {[0, 1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex items-center gap-3 py-1.5">
-                  <div className="h-8 w-8 rounded-full bg-gray-200" />
+                  <div className="h-11 rounded-full bg-gray-200 md:h-12 md:w-11 w-11 md:w-12" />
                   <div className="h-4 w-24 rounded bg-gray-200" />
                   <div className="ml-auto h-4 w-16 rounded bg-gray-200" />
                 </div>
               ))}
             </div>
           ) : members.length === 0 ? (
-            <div className="p-5 text-sm text-gray-600">No member record found.</div>
+            <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No member record found.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-100">
-                  <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                    <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Name</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Phone</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Email</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Role</th>
-                    <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
+                    <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1136,12 +1136,12 @@ function MinistryDetailsPage() {
                     const member = m?.member || {};
                     const name = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() || "-";
                     return (
-                      <tr key={m?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
-                        <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{name}</td>
-                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{member?.phoneNumber || "-"}</td>
-                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{member?.email || "-"}</td>
-                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{m?.role || "member"}</td>
-                        <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                      <tr key={m?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                        <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{name}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.phoneNumber || "-"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.email || "-"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{m?.role || "member"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <div className="flex items-center justify-end gap-2">
                             {canViewMembers ? (
                               <button
@@ -1151,7 +1151,7 @@ function MinistryDetailsPage() {
                                   if (!memberId) return;
                                   toPage("member-details", { id: memberId });
                                 }}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                               >
                                 View
                               </button>
@@ -1160,7 +1160,7 @@ function MinistryDetailsPage() {
                             <button
                               type="button"
                               onClick={() => openRoleModal(member?._id, m?.role || "member")}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                             >
                               Edit Role
                             </button>
@@ -1173,7 +1173,7 @@ function MinistryDetailsPage() {
                                   memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim()
                                 })
                               }
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
+                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
                             >
                               Remove
                             </button>
@@ -1196,27 +1196,27 @@ function MinistryDetailsPage() {
           >
             <form onSubmit={addMemberSubmit}>
               {addMemberError ? (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{addMemberError}</div>
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{addMemberError}</div>
               ) : null}
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500">Search member (name/email/phone)</label>
+                <label className="block font-semibold text-gray-500 text-xs">Search member (name/email/phone)</label>
                 <div className="mt-2">
                   <input
                     value={addMemberValue}
                     onChange={(e) => setAddMemberValue(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                     placeholder="Type to search (auto-search)"
                   />
                 </div>
               </div>
 
               {addMemberCandidatesError ? (
-                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{addMemberCandidatesError}</div>
+                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{addMemberCandidatesError}</div>
               ) : null}
 
               <div className="mt-4">
-                <div className="text-xs font-semibold text-gray-500">Results</div>
+                <div className="font-semibold text-gray-500 text-xs">Results</div>
                 <div className="mt-2 rounded-xl border border-gray-200 max-h-64 overflow-y-auto">
                   {addMemberCandidatesLoading ? (
                     <div className="px-4 py-3 space-y-2 animate-pulse">
@@ -1228,7 +1228,7 @@ function MinistryDetailsPage() {
                       ))}
                     </div>
                   ) : addMemberCandidates.length === 0 ? (
-                    <div className="px-4 py-3 text-sm text-gray-600">No matching members found.</div>
+                    <div className="px-4 py-3 text-gray-600 text-sm">No matching members found.</div>
                   ) : (
                     <div className="divide-y divide-gray-200">
                       {addMemberCandidates.map((m, idx) => {
@@ -1260,10 +1260,10 @@ function MinistryDetailsPage() {
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <div className="text-sm font-semibold text-gray-900 truncate">{name}</div>
-                                  <div className="mt-1 text-xs text-gray-500 truncate">{phone}</div>
+                                  <div className="font-semibold text-gray-900 truncate text-sm">{name}</div>
+                                  <div className="mt-1 text-gray-500 truncate text-xs">{phone}</div>
                                 </div>
-                                <div className="text-xs font-semibold text-gray-600 shrink-0">{city}</div>
+                                <div className="font-semibold text-gray-600 shrink-0 text-xs">{city}</div>
                               </div>
                             </div>
                           </label>
@@ -1272,15 +1272,15 @@ function MinistryDetailsPage() {
                     </div>
                   )}
                 </div>
-                <div className="mt-2 text-xs text-gray-500">Selected: {addMemberSelectedIds.length}</div>
+                <div className="mt-2 text-gray-500 text-xs">Selected: {addMemberSelectedIds.length}</div>
               </div>
 
               <div className="mt-4">
-                <label className="block text-xs font-semibold text-gray-500">Role</label>
+                <label className="block font-semibold text-gray-500 text-xs">Role</label>
                 <input
                   value={addMemberRole}
                   onChange={(e) => setAddMemberRole(e.target.value)}
-                  className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="e.g. leader"
                 />
               </div>
@@ -1289,14 +1289,14 @@ function MinistryDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setAddMemberOpen(false)}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addMemberSaving || addMemberSelectedIds.length === 0}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                 >
                   Add
                 </button>
@@ -1309,15 +1309,15 @@ function MinistryDetailsPage() {
       <SimpleModal open={roleModalOpen} title="Edit Role" onClose={() => setRoleModalOpen(false)}>
         <form onSubmit={submitRoleModal}>
           {roleModalError ? (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{roleModalError}</div>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{roleModalError}</div>
           ) : null}
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Role</label>
+            <label className="block font-semibold text-gray-500 text-xs">Role</label>
             <input
               value={roleModalValue}
               onChange={(e) => setRoleModalValue(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               placeholder="e.g. leader"
             />
           </div>
@@ -1326,13 +1326,13 @@ function MinistryDetailsPage() {
             <button
               type="button"
               onClick={() => setRoleModalOpen(false)}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               Save
             </button>
@@ -1343,38 +1343,38 @@ function MinistryDetailsPage() {
       <SimpleModal open={editOpen} title={`Edit ${title}`} onClose={() => setEditOpen(false)}>
         <form onSubmit={submitEdit}>
           {editError ? (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{editError}</div>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{editError}</div>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-gray-500">Name</label>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Name</label>
               <input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
             </div>
 
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-gray-500">Description</label>
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Description</label>
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 rows={3}
-                className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
               />
             </div>
 
-            <div className="sm:col-span-2">
+            <div className="md:col-span-2">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-xs font-semibold text-gray-500">Meeting Schedule</div>
+                <div className="font-semibold text-gray-500 text-xs">Meeting Schedule</div>
                 <button
                   type="button"
                   onClick={() =>
                     setEditMeetingSchedule((prev) => [...(Array.isArray(prev) ? prev : []), { meetingDay: "", meetingTime: "", meetingVenue: "" }])
                   }
-                  className="text-xs font-semibold text-blue-700 hover:underline"
+                  className="font-semibold text-blue-700 hover:underline text-xs"
                 >
                   Add another meeting
                 </button>
@@ -1382,15 +1382,15 @@ function MinistryDetailsPage() {
 
               <div className="mt-3 space-y-3">
                 {(Array.isArray(editMeetingSchedule) ? editMeetingSchedule : []).map((m, idx) => (
-                  <div key={`meeting-${idx}`} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div key={`meeting-${idx}`} className="grid grid-cols-1 gap-3 md:grid-cols-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Day</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Day</label>
                       <select
                         value={m?.meetingDay || ""}
                         onChange={(e) =>
                           setEditMeetingSchedule((prev) => prev.map((row, i) => (i === idx ? { ...row, meetingDay: e.target.value } : row)))
                         }
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                       >
                         <option value="">Select day</option>
                         {meetingDays.map((d) => (
@@ -1402,35 +1402,35 @@ function MinistryDetailsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Time</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Time</label>
                       <input
                         value={m?.meetingTime || ""}
                         onChange={(e) =>
                           setEditMeetingSchedule((prev) => prev.map((row, i) => (i === idx ? { ...row, meetingTime: e.target.value } : row)))
                         }
                         type="time"
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Venue</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Venue</label>
                       <input
                         value={m?.meetingVenue || ""}
                         onChange={(e) =>
                           setEditMeetingSchedule((prev) => prev.map((row, i) => (i === idx ? { ...row, meetingVenue: e.target.value } : row)))
                         }
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                         placeholder="Venue"
                       />
                     </div>
 
                     {editMeetingSchedule.length > 1 ? (
-                      <div className="sm:col-span-3 flex justify-end">
+                      <div className="md:col-span-3 flex justify-end">
                         <button
                           type="button"
                           onClick={() => setEditMeetingSchedule((prev) => prev.filter((_, i) => i !== idx))}
-                          className="text-xs font-semibold text-red-600 hover:underline"
+                          className="font-semibold text-red-600 hover:underline text-xs"
                         >
                           Remove meeting
                         </button>
@@ -1442,12 +1442,12 @@ function MinistryDetailsPage() {
             </div>
 
             {type === "cell" || type === "department" ? (
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-500">Status</label>
+              <div className="md:col-span-2">
+                <label className="block font-semibold text-gray-500 text-xs">Status</label>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 >
                   <option value="active">active</option>
                   <option value="inactive">inactive</option>
@@ -1460,14 +1460,14 @@ function MinistryDetailsPage() {
             <button
               type="button"
               onClick={() => setEditOpen(false)}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={editSaving}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
               Save
             </button>
@@ -1477,34 +1477,34 @@ function MinistryDetailsPage() {
 
       {activeTab === "attendance" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-          <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-5">
+          <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
             <div>
-              <div className="text-sm font-semibold text-gray-900">Attendance</div>
-              <div className="text-xs text-gray-500">Record attendance</div>
+              <div className="font-semibold text-gray-900 text-sm">Attendance</div>
+              <div className="text-gray-500 text-xs">Record attendance</div>
             </div>
 
             {attendanceView === "individual" ? (
               <button
                 type="button"
                 onClick={() => void openIndividualAttendanceForm("create", null)}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
-                <span className="text-lg leading-none">+</span>
+                <span className="leading-none text-lg">+</span>
                 Record Attendance
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => openAttendanceForm("create", null)}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
-                <span className="text-lg leading-none">+</span>
+                <span className="leading-none text-lg">+</span>
                 Add Attendance
               </button>
             )}
           </div>
 
-          <div className="px-5 pt-4 pb-4">
+          <div className="px-4 md:px-5 lg:px-6 pt-4 pb-4">
             <div className="rounded-full bg-gray-100 p-1 flex items-center gap-2 max-w-md">
               <button
                 type="button"
@@ -1537,10 +1537,10 @@ function MinistryDetailsPage() {
 
           {attendanceView === "individual" ? (
             <>
-              {individualAttendanceError ? <div className="p-5 text-sm text-red-700">{individualAttendanceError}</div> : null}
+              {individualAttendanceError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{individualAttendanceError}</div> : null}
 
               {individualAttendanceLoading ? (
-                <div className="p-5 space-y-3 animate-pulse">
+                <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
                   {[0, 1, 2, 3, 4].map((i) => (
                     <div key={i} className="flex items-center justify-between gap-3 py-1.5">
                       <div className="h-4 w-24 rounded bg-gray-200" />
@@ -1549,46 +1549,46 @@ function MinistryDetailsPage() {
                   ))}
                 </div>
               ) : individualAttendances.length === 0 ? (
-                <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
+                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No attendance record found.</div>
               ) : (
-                <div className="overflow-x-auto px-5 pb-6">
+                <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-6">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Day</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Present</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Absent</th>
-                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Day</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Present</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Absent</th>
+                        <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {individualAttendances.map((r, idx) => (
-                        <tr key={r?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
-                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{formatDate(r?.date)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{formatDay(r?.date) || "-"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{Number(r?.presentCount ?? 0)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{Number(r?.absentCount ?? 0)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                        <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDay(r?.date) || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.presentCount ?? 0)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
                                 onClick={() => void openIndividualAttendanceForm("edit", r)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                               >
                                 Edit
                               </button>
                               <button
                                 type="button"
                                 onClick={() => void openIndividualView(r)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                               >
                                 View
                               </button>
                               <button
                                 type="button"
                                 onClick={() => openConfirm("delete-individual-attendance", r?._id)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
                               >
                                 Delete
                               </button>
@@ -1609,32 +1609,32 @@ function MinistryDetailsPage() {
                 <form onSubmit={submitIndividualAttendance} className="flex max-h-[75vh] flex-col">
                   <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                     {individualAttendanceFormError ? (
-                      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{individualAttendanceFormError}</div>
+                      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{individualAttendanceFormError}</div>
                     ) : null}
 
                     <div className="grid grid-cols-1 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500">Date</label>
+                        <label className="block font-semibold text-gray-500 text-xs">Date</label>
                         <input
                           value={individualAttendanceDate}
                           onChange={(e) => setIndividualAttendanceDate(e.target.value)}
                           type="date"
-                          className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500">Members present</label>
+                        <label className="block font-semibold text-gray-500 text-xs">Members present</label>
                         <input
                           value={individualMemberSearch}
                           onChange={(e) => setIndividualMemberSearch(e.target.value)}
                           placeholder="Search members..."
-                          className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                         />
 
                         <div className="mt-3 rounded-xl border border-gray-200 max-h-[45vh] overflow-y-auto">
                           {individualMembersError ? (
-                            <div className="px-4 py-3 text-sm text-red-700">{individualMembersError}</div>
+                            <div className="px-4 py-3 text-red-700 text-sm">{individualMembersError}</div>
                           ) : individualMembersLoading ? (
                             <div className="px-4 py-3 space-y-2 animate-pulse">
                               {[0, 1, 2, 3].map((i) => (
@@ -1645,7 +1645,7 @@ function MinistryDetailsPage() {
                               ))}
                             </div>
                           ) : individualMembers.length === 0 ? (
-                            <div className="px-4 py-3 text-sm text-gray-600">No members found.</div>
+                            <div className="px-4 py-3 text-gray-600 text-sm">No members found.</div>
                           ) : (
                             <div className="divide-y divide-gray-200">
                               {individualMembers
@@ -1659,7 +1659,7 @@ function MinistryDetailsPage() {
                                   return (
                                     <label
                                       key={m.id}
-                                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50"
+                                      className="flex items-center gap-3 px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-50 text-sm"
                                     >
                                       <input
                                         type="checkbox"
@@ -1680,7 +1680,7 @@ function MinistryDetailsPage() {
                             </div>
                           )}
                         </div>
-                        <div className="mt-2 text-xs text-gray-500">Selected: {individualAttendanceSelectedIds.length}</div>
+                        <div className="mt-2 text-gray-500 text-xs">Selected: {individualAttendanceSelectedIds.length}</div>
                       </div>
                     </div>
                   </div>
@@ -1689,14 +1689,14 @@ function MinistryDetailsPage() {
                     <button
                       type="button"
                       onClick={() => setIndividualAttendanceOpen(false)}
-                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={individualAttendanceSaving}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                      className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                     >
                       {individualAttendanceMode === "edit" ? "Update" : "Save"}
                     </button>
@@ -1710,7 +1710,7 @@ function MinistryDetailsPage() {
                 onClose={() => setIndividualViewOpen(false)}
               >
                 {individualViewError ? (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{individualViewError}</div>
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{individualViewError}</div>
                 ) : individualViewLoading ? (
                   <div className="space-y-3 animate-pulse">
                     {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -1721,41 +1721,41 @@ function MinistryDetailsPage() {
                     ))}
                   </div>
                 ) : !individualViewing ? (
-                  <div className="text-sm text-gray-600">No record found.</div>
+                  <div className="text-gray-600 text-sm">No record found.</div>
                 ) : (
                   <div className="flex max-h-[75vh] flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                         <div>
-                          <div className="text-xs font-semibold text-gray-500">Date</div>
-                          <div className="mt-1 text-sm font-semibold text-gray-900">{formatDate(individualViewing?.date)}</div>
+                          <div className="font-semibold text-gray-500 text-xs">Date</div>
+                          <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(individualViewing?.date)}</div>
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-gray-500">Day</div>
-                          <div className="mt-1 text-sm font-semibold text-gray-900">{formatDay(individualViewing?.date) || "-"}</div>
+                          <div className="font-semibold text-gray-500 text-xs">Day</div>
+                          <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDay(individualViewing?.date) || "-"}</div>
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-gray-500">Present</div>
-                          <div className="mt-1 text-sm font-semibold text-gray-900">{Number(individualViewing?.presentCount ?? 0)}</div>
+                          <div className="font-semibold text-gray-500 text-xs">Present</div>
+                          <div className="mt-1 font-semibold text-gray-900 text-sm">{Number(individualViewing?.presentCount ?? 0)}</div>
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-gray-500">Absent</div>
-                          <div className="mt-1 text-sm font-semibold text-gray-900">{Number(individualViewing?.absentCount ?? 0)}</div>
+                          <div className="font-semibold text-gray-500 text-xs">Absent</div>
+                          <div className="mt-1 font-semibold text-gray-900 text-sm">{Number(individualViewing?.absentCount ?? 0)}</div>
                         </div>
                       </div>
 
                       <div className="mt-4 border-b border-gray-200" />
 
                       <div className="mt-4">
-                        <div className="text-sm font-semibold text-gray-900">Present members</div>
+                        <div className="font-semibold text-gray-900 text-sm">Present members</div>
                         <div className="mt-2 rounded-xl border border-gray-200 overflow-hidden">
                           <div className="max-h-80 overflow-y-auto">
                             {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).length === 0 ? (
-                              <div className="px-4 py-3 text-sm text-gray-600">No members marked present.</div>
+                              <div className="px-4 py-3 text-gray-600 text-sm">No members marked present.</div>
                             ) : (
                               <table className="min-w-full">
                                 <thead className="bg-slate-100">
-                                  <tr className="text-left text-xs font-semibold text-gray-500">
+                                  <tr className="text-left font-semibold text-gray-500 text-xs">
                                     <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 whitespace-nowrap">Name</th>
                                     <th className="px-4 py-2 whitespace-nowrap">Phone</th>
                                     <th className="px-4 py-2 whitespace-nowrap">Email</th>
@@ -1765,7 +1765,7 @@ function MinistryDetailsPage() {
                                   {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).map((m, idx) => {
                                     const name = `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-";
                                     return (
-                                      <tr key={m?._id || idx} className="text-sm text-gray-700">
+                                      <tr key={m?._id || idx} className="text-gray-700 text-sm">
                                         <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{name}</td>
                                         <td className="px-4 py-1.5 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
                                         <td className="px-4 py-1.5 whitespace-nowrap">{m?.email || "-"}</td>
@@ -1785,10 +1785,10 @@ function MinistryDetailsPage() {
             </>
           ) : (
             <>
-              {attendanceError ? <div className="p-5 text-sm text-red-700">{attendanceError}</div> : null}
+              {attendanceError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{attendanceError}</div> : null}
 
               {attendanceLoading ? (
-                <div className="p-5 space-y-3 animate-pulse">
+                <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
                   {[0, 1, 2, 3, 4].map((i) => (
                     <div key={i} className="flex items-center justify-between gap-3 py-1.5">
                       <div className="h-4 w-24 rounded bg-gray-200" />
@@ -1797,39 +1797,39 @@ function MinistryDetailsPage() {
                   ))}
                 </div>
               ) : attendances.length === 0 ? (
-                <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
+                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No attendance record found.</div>
               ) : (
-                <div className="overflow-x-auto px-5 pb-6">
+                <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-6">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
-                      <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                        <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Attendees</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Speaker</th>
-                        <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Activity</th>
-                        <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Attendees</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Speaker</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Activity</th>
+                        <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {attendances.map((r, idx) => (
-                        <tr key={r?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
-                          <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{formatDate(r?.date)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{Number(r?.numberOfAttendees || 0)}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{r?.mainSpeaker || "-"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">{r?.activity || "-"}</td>
-                          <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                        <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.activity || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
                                 onClick={() => openAttendanceForm("edit", r)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                               >
                                 Edit
                               </button>
                               <button
                                 type="button"
                                 onClick={() => openConfirm("delete-attendance", r?._id)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
+                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
                               >
                                 Delete
                               </button>
@@ -1849,42 +1849,42 @@ function MinistryDetailsPage() {
               >
                 <form onSubmit={submitAttendance}>
                   {attendanceFormError ? (
-                    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{attendanceFormError}</div>
+                    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{attendanceFormError}</div>
                   ) : null}
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Date</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Date</label>
                       <input
                         value={attendanceDate}
                         onChange={(e) => setAttendanceDate(e.target.value)}
                         type="date"
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Number of attendees</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Number of attendees</label>
                       <input
                         value={attendanceNumber}
                         onChange={(e) => setAttendanceNumber(e.target.value)}
                         type="number"
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Main speaker</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Main speaker</label>
                       <input
                         value={attendanceSpeaker}
                         onChange={(e) => setAttendanceSpeaker(e.target.value)}
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500">Activity</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Activity</label>
                       <input
                         value={attendanceActivity}
                         onChange={(e) => setAttendanceActivity(e.target.value)}
-                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                       />
                     </div>
                   </div>
@@ -1893,14 +1893,14 @@ function MinistryDetailsPage() {
                     <button
                       type="button"
                       onClick={() => setAttendanceOpen(false)}
-                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={attendanceSaving}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                      className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                     >
                       {attendanceMode === "edit" ? "Update" : "Save"}
                     </button>
@@ -1914,26 +1914,26 @@ function MinistryDetailsPage() {
 
       {activeTab === "offerings" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-          <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-5">
+          <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
             <div>
-              <div className="text-sm font-semibold text-gray-900">Offerings</div>
-              <div className="text-xs text-gray-500">Record ministry offerings</div>
+              <div className="font-semibold text-gray-900 text-sm">Offerings</div>
+              <div className="text-gray-500 text-xs">Record ministry offerings</div>
             </div>
 
             <button
               type="button"
               onClick={() => openOfferingForm("create", null)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
-              <span className="text-lg leading-none">+</span>
+              <span className="leading-none text-lg">+</span>
               Add Offering
             </button>
           </div>
 
-          {offeringError ? <div className="p-5 text-sm text-red-700">{offeringError}</div> : null}
+          {offeringError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{offeringError}</div> : null}
 
           {offeringLoading ? (
-            <div className="p-5 space-y-3 animate-pulse">
+            <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
               {[0, 1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex items-center justify-between gap-3 py-1.5">
                   <div className="h-4 w-24 rounded bg-gray-200" />
@@ -1942,37 +1942,37 @@ function MinistryDetailsPage() {
               ))}
             </div>
           ) : offerings.length === 0 ? (
-            <div className="p-5 text-sm text-gray-600">No offering record found.</div>
+            <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No offering record found.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-100">
-                  <tr className="text-left text-xs sm:max-lg:text-sm font-semibold text-gray-500">
-                    <th className="sticky left-0 z-20 bg-slate-100 px-6 max-sm:px-4 py-2 whitespace-nowrap">Date</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Amount</th>
-                    <th className="px-6 max-sm:px-4 py-2 whitespace-nowrap">Note</th>
-                    <th className="px-6 max-sm:px-4 py-2 text-right whitespace-nowrap">Actions</th>
+                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Note</th>
+                    <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {offerings.map((r, idx) => (
-                    <tr key={r?._id || idx} className="text-sm max-sm:text-xs text-gray-700">
-                      <td className="sticky left-0 z-10 bg-white px-6 max-sm:px-4 py-1.5 text-gray-900 whitespace-nowrap">{formatDate(r?.date)}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 text-blue-700 whitespace-nowrap">{formatMoney(r?.amount || 0, currency)}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 text-gray-600 max-w-[420px] break-words">{r?.note || "-"}</td>
-                      <td className="px-6 max-sm:px-4 py-1.5 whitespace-nowrap">
+                    <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
+                      <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(r?.amount || 0, currency)}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[420px] break-words px-4 md:px-6">{r?.note || "-"}</td>
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => openOfferingForm("edit", r)}
-                            className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                           >
                             Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => openConfirm("delete-offering", r?._id)}
-                            className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-gray-50"
+                            className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
                           >
                             Delete
                           </button>
@@ -1992,35 +1992,35 @@ function MinistryDetailsPage() {
           >
             <form onSubmit={submitOffering}>
               {offeringFormError ? (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{offeringFormError}</div>
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{offeringFormError}</div>
               ) : null}
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500">Date</label>
+                  <label className="block font-semibold text-gray-500 text-xs">Date</label>
                   <input
                     value={offeringDate}
                     onChange={(e) => setOfferingDate(e.target.value)}
                     type="date"
-                    className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500">Amount</label>
+                  <label className="block font-semibold text-gray-500 text-xs">Amount</label>
                   <input
                     value={offeringAmount}
                     onChange={(e) => setOfferingAmount(e.target.value)}
                     type="number"
-                    className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   />
                 </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-500">Note</label>
+                <div className="md:col-span-2">
+                  <label className="block font-semibold text-gray-500 text-xs">Note</label>
                   <textarea
                     value={offeringNote}
                     onChange={(e) => setOfferingNote(e.target.value)}
                     rows={3}
-                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                   />
                 </div>
               </div>
@@ -2029,14 +2029,14 @@ function MinistryDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setOfferingOpen(false)}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={offeringSaving}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                 >
                   {offeringMode === "edit" ? "Update" : "Save"}
                 </button>

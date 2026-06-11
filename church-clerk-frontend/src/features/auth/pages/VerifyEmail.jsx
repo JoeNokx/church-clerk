@@ -100,13 +100,13 @@ function VerifyEmail() {
       subtitle="Please verify your email address to continue"
       footer={
         <div className="space-y-3">
-          <div className="text-sm text-gray-600">
+          <div className="text-gray-600 text-sm">
             Already verified?{" "}
             <Link to="/login" className="font-semibold text-blue-900 hover:underline">
               Sign in
             </Link>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-gray-500 text-sm">
             <Link to="/" className="hover:text-blue-900 hover:underline">
               Back to home
             </Link>
@@ -115,13 +115,13 @@ function VerifyEmail() {
       }
     >
       {loading ? (
-        <div className="text-sm text-gray-700">Verifying your email…</div>
+        <div className="text-gray-700 text-sm">Verifying your email…</div>
       ) : message ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{message}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-sm">{message}</div>
       ) : null}
 
       {showInstructions ? (
-        <div className="space-y-3 text-sm text-gray-700">
+        <div className="space-y-3 text-gray-700 text-sm">
           <p>
             We&apos;ve sent a verification link to{email ? ` ${email}` : " your email"}. Please open the email and click the
             verification link.
@@ -131,29 +131,29 @@ function VerifyEmail() {
           </p>
 
           <div className="pt-1">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Email address</label>
+            <label className="block font-semibold text-gray-600 mb-1 text-xs">Email address</label>
             <input
               type="email"
               value={resendEmail}
               onChange={(ev) => setResendEmail(ev.target.value)}
               placeholder="you@example.com"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
               autoComplete="email"
             />
           </div>
 
           {resendError ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{resendError}</div>
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-sm">{resendError}</div>
           ) : null}
           {resendMessage ? (
-            <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{resendMessage}</div>
+            <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700 text-sm">{resendMessage}</div>
           ) : null}
 
           <button
             type="button"
             onClick={handleResend}
             disabled={resendLoading || resendCooldown > 0}
-            className="w-full bg-blue-900 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="w-full bg-blue-900 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
           >
             {resendLoading
               ? "Sending…"

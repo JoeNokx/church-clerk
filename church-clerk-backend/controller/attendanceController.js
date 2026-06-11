@@ -1,6 +1,7 @@
 import Attendance from "../models/attendanceModel.js"
-
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
+import { buildPaginationParams, buildPaginationResponse } from "../utils/paginationHelper.js";
+import { buildDateRangeQuery } from "../utils/searchHelper.js";
 
 
 const createAttendance = async (req, res) => {
@@ -37,71 +38,35 @@ const createAttendance = async (req, res) => {
 
 const getAllAttendances = async (req, res) => {
   try {
-    const { page = 1, limit = 10, serviceType, dateFrom, dateTo } = req.query;
+    const { page, limit, skip } = buildPaginationParams(req.query);
+    const { serviceType, dateFrom, dateTo } = req.query;
 
-    const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, parseInt(limit, 10) || 10);
-    const skip = (pageNum - 1) * limitNum;
+    const query = { church: req.activeChurch._id };
 
-    // MAIN QUERY
-    const query = {};
-
-    query.church = req.activeChurch._id;
-
-    // Filter by serviceType
     if (serviceType) {
       query.serviceType = serviceType;
     }
 
- // Filter by date range
-if (dateFrom || dateTo) {
-  query.serviceDate = {};
+    if (dateFrom || dateTo) {
+      Object.assign(query, buildDateRangeQuery(dateFrom, dateTo, "serviceDate"));
+    }
 
-  // Filter from a starting date
-  if (dateFrom) {
-    const startDate = new Date(dateFrom);
-    startDate.setHours(0, 0, 0, 0); // Start of the day
-    query.serviceDate.$gte = startDate;
-  }
-
-  // Filter up to an ending date
-  if (dateTo) {
-    const endDate = new Date(dateTo);
-    endDate.setHours(23, 59, 59, 999); // End of the day
-    query.serviceDate.$lte = endDate;
-  }
-}
-
-    // FETCH ATTENDANCES
     const attendances = await Attendance.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNum)
+      .limit(limit)
       .lean();
 
-    // COUNT TOTAL ATTENDANCES
     const totalAttendances = await Attendance.countDocuments(query);
+    const pagination = buildPaginationResponse(totalAttendances, page, limit);
 
-     // PAGINATION DETAILS
-    const totalPages = Math.ceil(totalAttendances / limitNum);
-    const pagination = {
-      totalResult: totalAttendances,
-      totalPages,
-      currentPage: pageNum,
-      hasPrev: pageNum > 1,
-      hasNext: pageNum < totalPages,
-      prevPage: pageNum > 1 ? pageNum - 1 : null,
-      nextPage: pageNum < totalPages ? pageNum + 1 : null,
-    };
-
-    // IF NO RESULTS
     if (!attendances || attendances.length === 0) {
       return res.status(200).json({
         message: "No attendance found.",
         pagination: {
           totalResult: 0,
           totalPages: 0,
-          currentPage: pageNum,
+          currentPage: page,
           hasPrev: false,
           hasNext: false,
           prevPage: null,

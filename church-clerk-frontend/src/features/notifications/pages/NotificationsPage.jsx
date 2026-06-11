@@ -84,12 +84,12 @@ function NotificationsPage() {
     return (
       <div className="max-w-6xl">
         <div className="flex items-center justify-between gap-3">
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</div>
+          <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Notifications</div>
         </div>
         <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden animate-pulse">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-              <div className="h-8 w-8 rounded-full bg-gray-200" />
+            <div key={i} className="flex items-start gap-3 border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div className="h-11 rounded-full bg-gray-200 md:h-12 md:w-11 w-11 md:w-12" />
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="h-4 w-3/4 rounded bg-gray-200" />
                 <div className="h-3 w-1/2 rounded bg-gray-200" />
@@ -106,8 +106,8 @@ function NotificationsPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</div>
-          <div className="mt-1 text-sm text-gray-600">{pagination?.total ? `${pagination.total} total` : "No notifications"}</div>
+          <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Notifications</div>
+          <div className="mt-1 text-gray-600 text-sm">{pagination?.total ? `${pagination.total} total` : "No notifications"}</div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -117,7 +117,7 @@ function NotificationsPage() {
               setUnreadOnly((v) => !v);
               setPagination((p) => ({ ...p, currentPage: 1 }));
             }}
-            className={`rounded-lg border px-3 py-2 text-sm font-semibold ${unreadOnly ? "border-blue-200 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
+            className={`rounded-lg border px-3 py-2 font-semibold text-sm ${unreadOnly ? "border-blue-200 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
           >
             {unreadOnly ? `Unread only (${unreadCountLocal})` : "Show unread only"}
           </button>
@@ -133,7 +133,7 @@ function NotificationsPage() {
                 void 0;
               }
             }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
           >
             Mark all as read
           </button>
@@ -141,24 +141,24 @@ function NotificationsPage() {
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
       ) : null}
 
       <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden">
         {notifications.length ? (
           <div className="divide-y divide-gray-200">
             {notifications.map((n) => (
-              <div key={n?._id} className="px-5 py-4">
+              <div key={n?._id} className="px-4 md:px-5 lg:px-6 py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       {!n?.readStatus ? (
                         <span className="inline-flex h-2 w-2 rounded-full bg-blue-600" />
                       ) : null}
-                      <div className="text-sm font-semibold text-gray-900 truncate">{n?.title || "Notification"}</div>
+                      <div className="font-semibold text-gray-900 truncate text-sm">{n?.title || "Notification"}</div>
                     </div>
-                    <div className="mt-1 text-sm text-gray-700">{n?.message || ""}</div>
-                    <div className="mt-2 text-xs text-gray-500">{formatDateTime(n?.createdAt)}</div>
+                    <div className="mt-1 text-gray-700 text-sm">{n?.message || ""}</div>
+                    <div className="mt-2 text-gray-500 text-xs">{formatDateTime(n?.createdAt)}</div>
                   </div>
 
                   <div className="shrink-0">
@@ -178,7 +178,7 @@ function NotificationsPage() {
                           void 0;
                         }
                       }}
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                     >
                       Mark read
                     </button>
@@ -188,9 +188,9 @@ function NotificationsPage() {
             ))}
           </div>
         ) : (
-          <div className="px-5 py-10 text-center">
-            <div className="text-sm font-semibold text-gray-900">No notifications yet</div>
-            <div className="mt-1 text-sm text-gray-600">Notifications will appear here when events happen in your account.</div>
+          <div className="px-4 md:px-5 lg:px-6 py-10 text-center">
+            <div className="font-semibold text-gray-900 text-sm">No notifications yet</div>
+            <div className="mt-1 text-gray-600 text-sm">Notifications will appear here when events happen in your account.</div>
           </div>
         )}
       </div>
@@ -200,16 +200,16 @@ function NotificationsPage() {
           type="button"
           onClick={() => setPagination((p) => ({ ...p, currentPage: Math.max(1, Number(p.currentPage || 1) - 1) }))}
           disabled={!pagination?.prevPage && Number(pagination?.currentPage || 1) <= 1}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
         >
           Prev
         </button>
-        <div className="text-sm text-gray-600">Page {pagination?.currentPage || 1} of {pagination?.totalPages || 1}</div>
+        <div className="text-gray-600 text-sm">Page {pagination?.currentPage || 1} of {pagination?.totalPages || 1}</div>
         <button
           type="button"
           onClick={() => setPagination((p) => ({ ...p, currentPage: Math.min(Number(p.totalPages || 1), Number(p.currentPage || 1) + 1) }))}
           disabled={!pagination?.nextPage && Number(pagination?.currentPage || 1) >= Number(pagination?.totalPages || 1)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
         >
           Next
         </button>

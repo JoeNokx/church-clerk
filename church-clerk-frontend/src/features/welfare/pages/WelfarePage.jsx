@@ -11,6 +11,8 @@ import WelfareDisbursementForm from "../components/WelfareDisbursementForm.jsx";
 import WelfareDisbursementTable from "../components/WelfareDisbursementTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function WelfarePageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -103,8 +105,8 @@ function WelfarePageInner() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Welfare</h2>
-          <p className="mt-1 text-sm text-gray-500">Track welfare contributions and disbursements</p>
+          <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Welfare</h2>
+          <p className="mt-1 text-gray-500 text-sm">Track welfare contributions and disbursements</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -112,43 +114,31 @@ function WelfarePageInner() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
-              <span className="text-lg leading-none">+</span>
+              <span className="leading-none text-lg">+</span>
               {activeTab === "contributions" ? "Add Contribution" : "Add Disbursement"}
             </button>
           )}
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-xs font-semibold text-gray-500">Contributions (This Month)</div>
-          <div className="mt-2 text-lg font-semibold text-green-700">{formatMoney(kpi.thisMonthContribution || 0, currency)}</div>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-xs font-semibold text-gray-500">Disbursements (This Month)</div>
-          <div className="mt-2 text-lg font-semibold text-orange-600">{formatMoney(kpi.thisMonthDisbursement || 0, currency)}</div>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-xs font-semibold text-gray-500">Contributions (This Year)</div>
-          <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisYearContribution || 0, currency)}</div>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="text-xs font-semibold text-gray-500">Disbursements (This Year)</div>
-          <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisYearDisbursement || 0, currency)}</div>
-        </div>
-      </div>
+      <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
+        <KpiStatCard label="Contributions (This Month)" value={formatMoney(kpi.thisMonthContribution || 0, currency)} valueClassName="text-green-700 text-lg" />
+        <KpiStatCard label="Disbursements (This Month)" value={formatMoney(kpi.thisMonthDisbursement || 0, currency)} valueClassName="text-orange-600 text-lg" />
+        <KpiStatCard label="Contributions (This Year)" value={formatMoney(kpi.thisYearContribution || 0, currency)} />
+        <KpiStatCard label="Disbursements (This Year)" value={formatMoney(kpi.thisYearDisbursement || 0, currency)} />
+      </KpiGrid>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-4 border-b border-gray-200 p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="text-sm font-semibold text-gray-900">Welfare Records</div>
-              <div className="text-xs text-gray-500">View and manage welfare contributions and disbursements</div>
+              <div className="font-semibold text-gray-900 text-sm">Welfare Records</div>
+              <div className="text-gray-500 text-xs">View and manage welfare contributions and disbursements</div>
             </div>
 
-            <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+            <div className="cck-tab-bar inline-flex rounded-lg border border-gray-200 bg-white p-1">
               <button
                 type="button"
                 onClick={() => setActiveTab("contributions")}

@@ -39,11 +39,11 @@ function AttendanceFilters() {
   };
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+    <div className="grid grid-cols-2 gap-2 md:flex md:flex-row md:flex-wrap md:items-end md:justify-end">
       <select
         value={store?.attendanceFilters?.serviceType || ""}
         onChange={onServiceTypeChange}
-        className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-auto text-sm"
       >
         <option value="">All Services</option>
         {serviceTypeOptions.map((c) => (

@@ -9,15 +9,15 @@ function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = 
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className={`relative w-full ${maxWidthClass} rounded-2xl bg-white shadow-xl`}>
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 px-4 md:px-6">
           <div className="min-w-0">
-            <div className="truncate text-base font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-600">{subtitle}</div> : null}
+            <div className="truncate font-semibold text-gray-900 text-base">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-600 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -26,7 +26,7 @@ function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = 
           </button>
         </div>
 
-        <div className="px-6 py-5">{children}</div>
+        <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">{children}</div>
       </div>
     </div>
   );
@@ -88,19 +88,19 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
         }}
         className="space-y-4"
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label className="block font-medium text-gray-700 text-sm">Email</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
               placeholder="you@example.com"
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Mobile number</label>
+            <label className="block font-medium text-gray-700 text-sm">Mobile number</label>
             <div className="mt-1">
               <PhoneNumberInput
                 value={phone}
@@ -113,13 +113,13 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Message</label>
+          <label className="block font-medium text-gray-700 text-sm">Message</label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
             placeholder="Describe the features, workflows, and integrations you need..."
-            className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
           />
         </div>
 
@@ -139,23 +139,23 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            className="rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
           >
             {submitting ? "Submitting…" : "Submit"}
           </button>
         </div>
 
         <div className="mt-2 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-sm font-semibold text-gray-900">Contact details</div>
+          <div className="font-semibold text-gray-900 text-sm">Contact details</div>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
             <a
               href="https://wa.me/233546022758"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-800 hover:bg-gray-50 text-sm"
             >
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-700">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-green-50 text-green-700 md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
                   <path d="M20.52 3.48A11.82 11.82 0 0 0 12 .02C5.37.02.02 5.37.02 12c0 2.11.55 4.16 1.6 5.98L0 24l6.19-1.62A11.9 11.9 0 0 0 12 23.98c6.63 0 11.98-5.35 11.98-11.98 0-3.2-1.25-6.21-3.46-8.52ZM12 21.9c-1.87 0-3.71-.5-5.32-1.44l-.38-.23-3.67.96.98-3.58-.25-.37A9.87 9.87 0 0 1 2.1 12C2.1 6.52 6.52 2.1 12 2.1c2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.91 7c0 5.48-4.42 9.9-9.9 9.9Zm5.73-7.42c-.31-.16-1.83-.9-2.12-1-.29-.1-.5-.16-.71.16-.21.31-.81 1-.99 1.2-.18.21-.36.23-.67.08-.31-.16-1.31-.48-2.5-1.54-.92-.82-1.54-1.83-1.72-2.14-.18-.31-.02-.48.13-.63.14-.14.31-.36.46-.54.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.54-.08-.16-.71-1.71-.97-2.34-.26-.62-.53-.54-.71-.55h-.61c-.21 0-.54.08-.82.39-.28.31-1.08 1.06-1.08 2.59s1.1 3.01 1.25 3.22c.16.21 2.16 3.29 5.23 4.61.73.31 1.3.5 1.74.64.73.23 1.4.2 1.93.12.59-.09 1.83-.75 2.09-1.48.26-.73.26-1.35.18-1.48-.08-.13-.29-.21-.6-.36Z" />
                 </svg>
@@ -165,9 +165,9 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
 
             <a
               href="tel:0546022758"
-              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-800 hover:bg-gray-50 text-sm"
             >
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-900 md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                   <path
                     d="M9.2 6.6c.3-.8.6-1 1.4-1h2.8c.8 0 1.1.2 1.4 1l.6 1.6c.2.6.1 1-.4 1.4l-1.2 1c.7 1.4 1.8 2.5 3.2 3.2l1-1.2c.4-.5.8-.6 1.4-.4l1.6.6c.8.3 1 .6 1 1.4v2.8c0 .8-.2 1.1-1 1.4-1 .4-2 .6-3 .6-7.2 0-13-5.8-13-13 0-1 .2-2 .6-3Z"
@@ -182,9 +182,9 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
 
             <a
               href="mailto:josephyankey06@gmail.com"
-              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-800 hover:bg-gray-50 text-sm"
             >
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-900">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-50 text-indigo-900 md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                   <path d="M4 6h16v12H4V6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                   <path d="M4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />

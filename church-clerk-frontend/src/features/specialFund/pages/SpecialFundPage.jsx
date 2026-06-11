@@ -7,6 +7,7 @@ import SpecialFundForm from "../components/SpecialFundForm.jsx";
 import SpecialFundTable from "../components/SpecialFundTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function SpecialFundPageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -66,8 +67,8 @@ function SpecialFundPageInner() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Special Funds</h2>
-          <p className="mt-1 text-sm text-gray-500">Track and manage special church funds</p>
+          <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Special Funds</h2>
+          <p className="mt-1 text-gray-500 text-sm">Track and manage special church funds</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -75,23 +76,23 @@ function SpecialFundPageInner() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
-              <span className="text-lg leading-none">+</span>
+              <span className="leading-none text-lg">+</span>
               Add Fund
             </button>
           )}
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <KpiGrid className="mt-6 gap-4 md:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs font-semibold text-gray-500">This Week</div>
-              <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisWeek || 0, currency)}</div>
+              <div className="font-semibold text-gray-500 text-xs">This Week</div>
+              <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisWeek || 0, currency)}</div>
             </div>
-            <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-600">
                 <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -102,13 +103,13 @@ function SpecialFundPageInner() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs font-semibold text-gray-500">This Month</div>
-              <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisMonth || 0, currency)}</div>
+              <div className="font-semibold text-gray-500 text-xs">This Month</div>
+              <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisMonth || 0, currency)}</div>
             </div>
-            <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-lg bg-orange-50 flex items-center justify-center md:h-12 md:w-12">
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-500">
                 <path d="M4 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -120,13 +121,13 @@ function SpecialFundPageInner() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs font-semibold text-gray-500">This Year</div>
-              <div className="mt-2 text-lg font-semibold text-gray-900">{formatMoney(kpi.thisYear || 0, currency)}</div>
+              <div className="font-semibold text-gray-500 text-xs">This Year</div>
+              <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisYear || 0, currency)}</div>
             </div>
-            <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-lg bg-green-50 flex items-center justify-center md:h-12 md:w-12">
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-600">
                 <path d="M4 17l6-6 4 4 6-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M20 7v6h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -134,13 +135,13 @@ function SpecialFundPageInner() {
             </div>
           </div>
         </div>
-      </div>
+      </KpiGrid>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="text-sm font-semibold text-gray-900">Special Funds Records</div>
-            <div className="text-xs text-gray-500">All special funds and their details</div>
+            <div className="font-semibold text-gray-900 text-sm">Special Funds Records</div>
+            <div className="text-gray-500 text-xs">All special funds and their details</div>
           </div>
 
           <SpecialFundFilters />

@@ -20,7 +20,9 @@ import {
   createChurchUser,
   updateChurchUser,
   setChurchUserStatus,
-  canCreateChurchUser
+  canCreateChurchUser,
+  getGovernanceFlagsSnapshot,
+  toggleGovernanceFlags
 } from "../services/settings.api.js";
 
 const humanizeKey = (key) => {
@@ -129,6 +131,12 @@ function SettingsPage() {
     return localStorage.getItem("userIsActive") !== "0";
   }, []);
 
+  const isSystemAdmin = useMemo(() => {
+    const raw = String(user?.role || "").trim().toLowerCase();
+    const norm = raw.replace(/[\s_\-]+/g, "");
+    return norm === "superadmin" || norm === "supportadmin";
+  }, [user?.role]);
+
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const requestedTab = String(sp.get("tab") || "").trim().toLowerCase();
@@ -146,6 +154,10 @@ function SettingsPage() {
     }
     if (requestedTab === "audit") {
       setTab("audit");
+      return;
+    }
+    if (requestedTab === "system" || requestedTab === "governance") {
+      setTab("system");
       return;
     }
   }, [location.search]);
@@ -738,6 +750,54 @@ function SettingsPage() {
   const [editPhone, setEditPhone] = useState("");
   const [editRole, setEditRole] = useState("");
 
+  // Governance flags state (System tab)
+  const [govLoading, setGovLoading] = useState(false);
+  const [govError, setGovError] = useState("");
+  const [enforceBackdating, setEnforceBackdating] = useState(false);
+  const [enforceImmutability, setEnforceImmutability] = useState(false);
+
+  useEffect(() => {
+    if (!isSystemAdmin) return;
+    if (tab !== "system") return;
+    let cancelled = false;
+    (async () => {
+      setGovLoading(true);
+      setGovError("");
+      try {
+        const res = await getGovernanceFlagsSnapshot();
+        if (cancelled) return;
+        const data = res?.data || {};
+        setEnforceBackdating(Boolean(data?.enforceBackdating));
+        setEnforceImmutability(Boolean(data?.enforceImmutability));
+      } catch (e) {
+        if (cancelled) return;
+        setGovError(e?.response?.data?.message || e?.message || "Failed to load governance flags");
+      } finally {
+        if (cancelled) return;
+        setGovLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [tab, isSystemAdmin]);
+
+  const handleToggleFlag = async (key, value) => {
+    if (!isSystemAdmin) return;
+    setGovError("");
+    setGovLoading(true);
+    const prev = { enforceBackdating, enforceImmutability };
+    if (key === "enforceBackdating") setEnforceBackdating(value);
+    if (key === "enforceImmutability") setEnforceImmutability(value);
+    try {
+      await toggleGovernanceFlags({ [key]: value });
+    } catch (e) {
+      setGovError(e?.response?.data?.message || e?.message || "Failed to update flag");
+      setEnforceBackdating(prev.enforceBackdating);
+      setEnforceImmutability(prev.enforceImmutability);
+    } finally {
+      setGovLoading(false);
+    }
+  };
+
   const loadRoles = async () => {
     setRolesLoading(true);
     setRolesError("");
@@ -1087,8 +1147,8 @@ function SettingsPage() {
   if (!canRead) {
     return (
       <div className="max-w-6xl">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Settings</h2>
-        <p className="mt-1 text-sm text-gray-500">You do not have permission to view settings.</p>
+        <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Settings</h2>
+        <p className="mt-1 text-gray-500 text-sm">You do not have permission to view settings.</p>
       </div>
     );
   }
@@ -1096,40 +1156,47 @@ function SettingsPage() {
   return (
     <div className="max-w-6xl">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Settings</h2>
-        <p className="mt-1 text-sm text-gray-500">Manage your church profile, users and roles</p>
+        <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Settings</h2>
+        <p className="mt-1 text-gray-500 text-sm">Manage your church profile, users and roles</p>
       </div>
 
-      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
+      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3 md:p-4">
         <div className="overflow-x-auto">
           <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1 min-w-max">
             <button
               type="button"
               onClick={() => setTab("my-profile")}
-              className={`rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold whitespace-nowrap ${tab === "my-profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "my-profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
             >
               My Profile
             </button>
             <button
               type="button"
               onClick={() => setTab("profile")}
-              className={`rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold whitespace-nowrap ${tab === "profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
             >
               Church Profile
             </button>
             <button
               type="button"
               onClick={() => setTab("users")}
-              className={`rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold whitespace-nowrap ${tab === "users" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "users" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
             >
               Users &amp; Roles
             </button>
             <button
               type="button"
               onClick={() => setTab("audit")}
-              className={`rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-sm font-semibold whitespace-nowrap ${tab === "audit" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
+              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "audit" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
             >
               Audit Log
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("system")}
+              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "system" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
+            >
+              System
             </button>
           </div>
         </div>
@@ -1137,18 +1204,18 @@ function SettingsPage() {
 
       {tab === "my-profile" ? (
         <div className="mt-6">
-          {myProfileError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{myProfileError}</div> : null}
-          {myProfileSuccess ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{myProfileSuccess}</div> : null}
+          {myProfileError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{myProfileError}</div> : null}
+          {myProfileSuccess ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{myProfileSuccess}</div> : null}
 
-          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <div className="text-sm font-semibold text-gray-900">User Details</div>
-                <div className="mt-1 text-xs text-gray-500">Update your account information and profile picture.</div>
+                <div className="font-semibold text-gray-900 text-sm">User Details</div>
+                <div className="mt-1 text-gray-500 text-xs">Update your account information and profile picture.</div>
               </div>
             </div>
 
-            <div className="mt-4 flex items-start gap-5 flex-wrap">
+            <div className="mt-4 flex items-start gap-4 flex-wrap md:gap-5">
               <div className="shrink-0">
                 <div className="relative h-24 w-24">
                   {avatarUrl ? (
@@ -1158,7 +1225,7 @@ function SettingsPage() {
                       className="h-24 w-24 rounded-full object-cover border border-gray-200"
                     />
                   ) : (
-                    <div className="h-24 w-24 rounded-full bg-blue-900 text-white flex items-center justify-center text-2xl font-semibold">
+                    <div className="h-24 w-24 rounded-full bg-blue-900 text-white flex items-center justify-center font-semibold md:text-3xl lg:text-4xl text-xl md:text-2xl">
                       {(user?.fullName || "U").slice(0, 1).toUpperCase()}
                     </div>
                   )}
@@ -1167,7 +1234,7 @@ function SettingsPage() {
                     type="button"
                     onClick={handlePickAvatar}
                     disabled={!isUserActive}
-                    className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                    className="absolute -bottom-1 -right-1 h-11 w-11 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 md:h-12 md:w-12"
                     title="Edit"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-700">
@@ -1190,31 +1257,31 @@ function SettingsPage() {
 
               <form onSubmit={handleSaveMyProfile} className="flex-1 min-w-[260px] space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                   <input
                     type="text"
                     value={myFullName}
                     onChange={(e) => setMyFullName(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!isUserActive}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">Email</label>
                   <input
                     type="email"
                     value={myEmail}
                     onChange={(e) => setMyEmail(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!isUserActive}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
                   <PhoneNumberInput
                     value={myPhone}
                     onChange={setMyPhone}
@@ -1225,19 +1292,19 @@ function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">Role</label>
                   <input
                     type="text"
                     value={myRole}
                     readOnly
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 bg-gray-50"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-gray-700 bg-gray-50 text-sm"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={myProfileLoading || !isUserActive}
-                  className="w-full bg-blue-900 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50"
+                  className="w-full bg-blue-900 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
                   {myProfileLoading ? "Saving..." : "Save Profile"}
                 </button>
@@ -1245,21 +1312,21 @@ function SettingsPage() {
             </div>
           </div>
 
-          <div ref={passwordSectionRef} className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Change Password</div>
-            <div className="mt-1 text-xs text-gray-500">Update your password using your current password.</div>
+          <div ref={passwordSectionRef} className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+            <div className="font-semibold text-gray-900 text-sm">Change Password</div>
+            <div className="mt-1 text-gray-500 text-xs">Update your password using your current password.</div>
 
-            {pwError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{pwError}</div> : null}
-            {pwSuccess ? <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{pwSuccess}</div> : null}
+            {pwError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{pwError}</div> : null}
+            {pwSuccess ? <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-green-700 text-sm">{pwSuccess}</div> : null}
 
             <form onSubmit={handleUpdateMyPassword} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Old Password</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Old Password</label>
                 <input
                   type="password"
                   value={pwOld}
                   onChange={(e) => setPwOld(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                   disabled={!isUserActive}
                 />
@@ -1267,23 +1334,23 @@ function SettingsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">New Password</label>
                   <input
                     type="password"
                     value={pwNew}
                     onChange={(e) => setPwNew(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!isUserActive}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">Confirm Password</label>
                   <input
                     type="password"
                     value={pwConfirm}
                     onChange={(e) => setPwConfirm(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!isUserActive}
                   />
@@ -1293,7 +1360,7 @@ function SettingsPage() {
               <button
                 type="submit"
                 disabled={pwLoading || !isUserActive}
-                className="w-full bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50"
+                className="w-full bg-blue-700 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
               >
                 {pwLoading ? "Updating..." : "Update Password"}
               </button>
@@ -1302,108 +1369,163 @@ function SettingsPage() {
         </div>
       ) : null}
 
+      {tab === "system" ? (
+        <div className="mt-6 space-y-4">
+          {!isSystemAdmin ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 md:p-6 lg:p-8 text-sm">
+              System-level settings are visible to system administrators only.
+            </div>
+          ) : (
+            <>
+              {govError ? (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{govError}</div>
+              ) : null}
+
+              <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+                <div className="font-semibold text-gray-900 text-sm">Financial Governance</div>
+                <div className="mt-1 text-gray-500 text-xs">Feature flags are OFF by default. Toggle to enforce.</div>
+
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="font-medium text-gray-900 text-sm">Enforce Backdating Control</div>
+                      <div className="mt-0.5 text-gray-500 text-xs">Backdated creates require admin approval.</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={enforceBackdating}
+                        onChange={(e) => handleToggleFlag("enforceBackdating", e.target.checked)}
+                        disabled={govLoading}
+                      />
+                      <span className="text-gray-700 text-sm">{enforceBackdating ? "On" : "Off"}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="font-medium text-gray-900 text-sm">Enforce Immutability</div>
+                      <div className="mt-0.5 text-gray-500 text-xs">Updates/deletes are disabled; use adjustments.</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={enforceImmutability}
+                        onChange={(e) => handleToggleFlag("enforceImmutability", e.target.checked)}
+                        disabled={govLoading}
+                      />
+                      <span className="text-gray-700 text-sm">{enforceImmutability ? "On" : "Off"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
+
       {auditDetailOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setAuditDetailOpen(false)} />
           <div className="relative w-full max-w-4xl rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
-            <div className="border-b border-gray-200 px-6 py-4 flex items-start justify-between gap-4">
+            <div className="border-b border-gray-200 py-4 flex items-start justify-between gap-4 px-4 md:px-6">
               <div>
-                <div className="text-lg font-semibold text-gray-900">Audit Log Details</div>
-                <div className="mt-1 text-xs text-gray-500">All captured fields for this activity.</div>
+                <div className="font-semibold text-gray-900 text-lg">Audit Log Details</div>
+                <div className="mt-1 text-gray-500 text-xs">All captured fields for this activity.</div>
               </div>
               <button
                 type="button"
                 onClick={() => setAuditDetailOpen(false)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
               >
                 Close
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 md:p-6 lg:p-8">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Timestamp</div>
+                    <div className="font-semibold text-gray-500 text-xs">Timestamp</div>
                     <div className="mt-1 text-gray-900">
                       {auditDetailRow?.createdAt ? new Date(auditDetailRow.createdAt).toLocaleString() : "—"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Status</div>
+                    <div className="font-semibold text-gray-500 text-xs">Status</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.status || "—"}</div>
                   </div>
 
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">User</div>
+                    <div className="font-semibold text-gray-500 text-xs">User</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.user?.fullName || auditDetailRow?.userName || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Role</div>
+                    <div className="font-semibold text-gray-500 text-xs">Role</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.user?.role || auditDetailRow?.userRole || "—"}</div>
                   </div>
 
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Module</div>
+                    <div className="font-semibold text-gray-500 text-xs">Module</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.module || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Action</div>
+                    <div className="font-semibold text-gray-500 text-xs">Action</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.action || "—"}</div>
                   </div>
 
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Activity</div>
+                    <div className="font-semibold text-gray-500 text-xs">Activity</div>
                     <div className="mt-1 text-gray-900">{activityTextFromLog(auditDetailRow) || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Description</div>
+                    <div className="font-semibold text-gray-500 text-xs">Description</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.description || "—"}</div>
                   </div>
 
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">HTTP Method</div>
+                    <div className="font-semibold text-gray-500 text-xs">HTTP Method</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.httpMethod || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Path</div>
+                    <div className="font-semibold text-gray-500 text-xs">Path</div>
                     <div className="mt-1 text-gray-900 break-all">{auditDetailRow?.path || "—"}</div>
                   </div>
 
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Resource</div>
+                    <div className="font-semibold text-gray-500 text-xs">Resource</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.resource || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Response Code</div>
+                    <div className="font-semibold text-gray-500 text-xs">Response Code</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.responseStatusCode ?? "—"}</div>
                   </div>
 
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Device Type</div>
+                    <div className="font-semibold text-gray-500 text-xs">Device Type</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.deviceType || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Model</div>
+                    <div className="font-semibold text-gray-500 text-xs">Model</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.model || "—"}</div>
                   </div>
 
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Browser</div>
+                    <div className="font-semibold text-gray-500 text-xs">Browser</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.browser || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">OS</div>
+                    <div className="font-semibold text-gray-500 text-xs">OS</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.os || "—"}</div>
                   </div>
 
                   <div className="md:col-span-2">
-                    <div className="text-xs font-semibold text-gray-500">User Agent</div>
+                    <div className="font-semibold text-gray-500 text-xs">User Agent</div>
                     <div className="mt-1 text-gray-900 break-all">{auditDetailRow?.userAgent || "—"}</div>
                   </div>
 
                   <div className="md:col-span-2">
-                    <div className="text-xs font-semibold text-gray-500">IP Address</div>
+                    <div className="font-semibold text-gray-500 text-xs">IP Address</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.ipAddress || "—"}</div>
                   </div>
                 </div>
@@ -1415,58 +1537,58 @@ function SettingsPage() {
 
       {tab === "profile" ? (
         <div className="mt-6">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+              <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-700">
                   <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
                   <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-900">Current Church Type: {type || "—"}</div>
-                <div className="mt-1 text-sm text-gray-600">{getChurchTypeInfo(type) || "—"}</div>
+                <div className="font-semibold text-gray-900 text-sm">Current Church Type: {type || "—"}</div>
+                <div className="mt-1 text-gray-600 text-sm">{getChurchTypeInfo(type) || "—"}</div>
               </div>
             </div>
           </div>
 
-          {profileError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{profileError}</div> : null}
-          {profileSuccess ? <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{profileSuccess}</div> : null}
+          {profileError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{profileError}</div> : null}
+          {profileSuccess ? <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{profileSuccess}</div> : null}
 
-          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Church Name</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Church Name</label>
                 <input
                   type="text"
                   placeholder="Your church name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                   disabled={!canWrite}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Pastor's Name</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Pastor's Name</label>
                 <input
                   type="text"
                   placeholder="Pastor's full name"
                   value={pastor}
                   onChange={(e) => setPastor(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                   disabled={!canWrite}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Church Type</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Church Type</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   disabled={!canWrite}
                 >
                   <option value="Headquarters">Headquarters</option>
@@ -1477,7 +1599,7 @@ function SettingsPage() {
 
               {type === "Branch" ? (
                 <div ref={hqBoxRef} className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Parent Church ID (HQ)</label>
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">Parent Church ID (HQ)</label>
                   <input type="hidden" name="parentId" value={parentChurchId} />
                   <input
                     type="text"
@@ -1490,22 +1612,22 @@ function SettingsPage() {
                       setHqDropdownOpen(true);
                     }}
                     onFocus={() => setHqDropdownOpen(true)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!canWrite}
                   />
 
                   {selectedHqLabel && parentChurchId ? (
-                    <div className="mt-1 text-xs text-gray-500">Selected: {selectedHqLabel}</div>
+                    <div className="mt-1 text-gray-500 text-xs">Selected: {selectedHqLabel}</div>
                   ) : null}
 
                   {hqDropdownOpen ? (
                     <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
                       <div className="max-h-72 overflow-y-auto">
                         {hqLoading ? (
-                          <div className="px-4 py-3 text-sm text-gray-600">Searching…</div>
+                          <div className="px-4 py-3 text-gray-600 text-sm">Searching…</div>
                         ) : hqMessage && !hqResults.length ? (
-                          <div className="px-4 py-3 text-sm text-gray-600">{hqMessage}</div>
+                          <div className="px-4 py-3 text-gray-600 text-sm">{hqMessage}</div>
                         ) : hqResults.length ? (
                           hqResults.map((c) => (
                             <button
@@ -1522,14 +1644,14 @@ function SettingsPage() {
                               className="w-full text-left px-4 py-3 hover:bg-gray-50"
                               disabled={!canWrite}
                             >
-                              <div className="text-sm font-semibold text-gray-900 truncate">{c?.name || "—"}</div>
-                              <div className="mt-0.5 text-xs text-gray-600 truncate">
+                              <div className="font-semibold text-gray-900 truncate text-sm">{c?.name || "—"}</div>
+                              <div className="mt-0.5 text-gray-600 truncate text-xs">
                                 {`${c?.city || ""}${c?.region ? `, ${c.region}` : ""}`.trim() || "—"}
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="px-4 py-3 text-sm text-gray-600">Type to search headquarters churches.</div>
+                          <div className="px-4 py-3 text-gray-600 text-sm">Type to search headquarters churches.</div>
                         )}
                       </div>
                     </div>
@@ -1538,7 +1660,7 @@ function SettingsPage() {
               ) : null}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
                 <PhoneNumberInput
                   value={phoneNumber}
                   onChange={setPhoneNumber}
@@ -1549,19 +1671,19 @@ function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Email (optional)</label>
                 <input
                   type="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   disabled={!canWrite}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Country</label>
                 <Select
                   inputId="church-country"
                   isSearchable
@@ -1602,7 +1724,7 @@ function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Region</label>
                 <Select
                   inputId="church-region"
                   isSearchable
@@ -1639,20 +1761,20 @@ function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Location</label>
                 <input
                   type="text"
                   placeholder="Enter your location"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                   disabled={!canWrite}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Currency</label>
                 <Select
                   inputId="church-currency"
                   isSearchable
@@ -1676,7 +1798,7 @@ function SettingsPage() {
                     singleValue: (base) => ({ ...base, color: "#111827" })
                   }}
                 />
-                <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-xs">
                   <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 text-amber-700" aria-hidden="true">
                     <path
                       d="M12 9v4m0 4h.01M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z"
@@ -1691,24 +1813,24 @@ function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Founded Date (optional)</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Founded Date (optional)</label>
                 <input
                   type="date"
                   value={foundedDate}
                   onChange={(e) => setFoundedDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   disabled={!canWrite}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Referral Code (optional)</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Referral Code (optional)</label>
                 <input
                   type="text"
                   placeholder="Referral code"
                   value={referralCodeInput}
                   onChange={(e) => setReferralCodeInput(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   disabled
                 />
               </div>
@@ -1716,37 +1838,37 @@ function SettingsPage() {
               <div className="border-t border-gray-100 pt-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">SMS Sender ID</div>
-                    <div className="mt-1 text-xs text-gray-500">Request a custom sender ID for your church (requires manual approval).</div>
+                    <div className="font-semibold text-gray-900 text-sm">SMS Sender ID</div>
+                    <div className="mt-1 text-gray-500 text-xs">Request a custom sender ID for your church (requires manual approval).</div>
                   </div>
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${senderStatusMeta.cls}`}>{senderStatusMeta.label}</span>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold ${senderStatusMeta.cls} text-xs`}>{senderStatusMeta.label}</span>
                 </div>
 
-                {senderIdError ? <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{senderIdError}</div> : null}
-                {senderIdSuccess ? <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{senderIdSuccess}</div> : null}
+                {senderIdError ? <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{senderIdError}</div> : null}
+                {senderIdSuccess ? <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">{senderIdSuccess}</div> : null}
 
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-500">Requested Sender ID</div>
-                    <div className="mt-1 text-sm font-semibold text-gray-900">{senderIdCurrent || "Default (CHURCHCLERK)"}</div>
-                    <div className="mt-1 text-xs text-gray-500">Requested: {formatDateTimeShort(senderIdRequestedAt)}</div>
-                    <div className="mt-1 text-xs text-gray-500">Approved: {formatDateTimeShort(senderIdApprovedAt)}</div>
-                    <div className="mt-2 text-xs text-gray-600">
+                    <div className="font-semibold text-gray-500 text-xs">Requested Sender ID</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{senderIdCurrent || "Default (CHURCHCLERK)"}</div>
+                    <div className="mt-1 text-gray-500 text-xs">Requested: {formatDateTimeShort(senderIdRequestedAt)}</div>
+                    <div className="mt-1 text-gray-500 text-xs">Approved: {formatDateTimeShort(senderIdApprovedAt)}</div>
+                    <div className="mt-2 text-gray-600 text-xs">
                       Your members will see your sender ID as: {senderStatusMeta.raw === "approved" ? (senderIdCurrent || "CHURCHCLERK") : "CHURCHCLERK"}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">New Sender ID</label>
+                    <label className="block font-medium text-gray-700 mb-1 text-sm">New Sender ID</label>
                     <input
                       value={senderIdInput}
                       onChange={(e) => setSenderIdInput(String(e.target.value || "").toUpperCase())}
                       maxLength={11}
                       placeholder="E.g. MYCHURCH"
-                      className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                      className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                       disabled={!canWrite || senderIdLoading}
                     />
-                    <div className="mt-1 text-xs text-gray-500">
+                    <div className="mt-1 text-gray-500 text-xs">
                       Max 11 characters. Letters and numbers only. {senderIdInputLen}/11 ({senderIdCharsLeft} left)
                     </div>
 
@@ -1755,7 +1877,7 @@ function SettingsPage() {
                         type="button"
                         onClick={handleRequestSenderId}
                         disabled={!canWrite || senderIdLoading || !String(senderIdInput || "").trim()}
-                        className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                        className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                       >
                         {senderIdLoading ? "Submitting..." : senderStatusMeta.raw === "pending" ? "Resubmit Request" : "Request Sender ID"}
                       </button>
@@ -1767,7 +1889,7 @@ function SettingsPage() {
                           setSenderIdInput("");
                         }}
                         disabled={senderIdLoading}
-                        className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                       >
                         Clear
                       </button>
@@ -1779,7 +1901,7 @@ function SettingsPage() {
               <button
                 type="submit"
                 disabled={profileLoading || !canWrite || (type === "Branch" && !parentChurchId)}
-                className="w-full bg-blue-900 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50"
+                className="w-full bg-blue-900 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
               >
                 {profileLoading ? "Saving..." : "Update Church Profile"}
               </button>
@@ -1790,23 +1912,23 @@ function SettingsPage() {
 
       {tab === "users" ? (
         <div className="mt-6">
-          {rolesError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{rolesError}</div> : null}
-          {usersError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{usersError}</div> : null}
+          {rolesError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{rolesError}</div> : null}
+          {usersError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{usersError}</div> : null}
 
-          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <div className="flex flex-col md:flex-row gap-3 w-full">
                 <input
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   placeholder="Search user name, email or phone…"
-                  className="w-full sm:max-w-sm rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                  className="w-full md:max-w-sm rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                 />
 
                 <select
                   value={userRoleFilter}
                   onChange={(e) => setUserRoleFilter(e.target.value)}
-                  className="w-full sm:max-w-xs rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                  className="w-full md:max-w-xs rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                 >
                   <option value="">All roles</option>
                   {churchRoles.map((r) => (
@@ -1820,7 +1942,7 @@ function SettingsPage() {
                   type="button"
                   onClick={handleOpenAdd}
                   disabled={!canWrite}
-                  className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
                   Add User
                 </button>
@@ -1828,7 +1950,7 @@ function SettingsPage() {
             </div>
 
             {usersLoading ? (
-              <div className="mt-4 text-sm text-gray-600">Loading users…</div>
+              <div className="mt-4 text-gray-600 text-sm">Loading users…</div>
             ) : (
               <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
                 <table className="min-w-full text-sm">
@@ -1853,7 +1975,7 @@ function SettingsPage() {
                             <td className="px-4 py-3 text-gray-700">{row?.phoneNumber || "—"}</td>
                             <td className="px-4 py-3 text-gray-700">{row?.role || "—"}</td>
                             <td className="px-4 py-3">
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}>
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"} text-xs`}>
                                 {isActive ? "Active" : "Deactivated"}
                               </span>
                             </td>
@@ -1863,7 +1985,7 @@ function SettingsPage() {
                                   type="button"
                                   onClick={() => handleOpenEdit(row)}
                                   disabled={!canWrite}
-                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
                                 >
                                   Edit
                                 </button>
@@ -1871,7 +1993,7 @@ function SettingsPage() {
                                   <button
                                     type="button"
                                     onClick={() => openDeactivateConfirm(row)}
-                                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}`}
+                                    className={`rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}`}
                                   >
                                     {isActive ? "Deactivate" : "Activate"}
                                   </button>
@@ -1883,7 +2005,7 @@ function SettingsPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="px-4 py-6 text-center text-gray-600">No users found.</td>
+                        <td colSpan={6} className="px-4 text-center text-gray-600 py-4 md:py-6">No users found.</td>
                       </tr>
                     )}
                   </tbody>
@@ -1892,11 +2014,11 @@ function SettingsPage() {
             )}
           </div>
 
-          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-sm font-semibold text-gray-900">Available Roles</div>
-                <div className="mt-1 text-xs text-gray-500">Roles and what they can do in the system</div>
+                <div className="font-semibold text-gray-900 text-sm">Available Roles</div>
+                <div className="mt-1 text-gray-500 text-xs">Roles and what they can do in the system</div>
                 <div className="mt-2 text-[11px] text-gray-500">
                   ✓ = has permission, × = no permission, - = not supported
                 </div>
@@ -1904,7 +2026,7 @@ function SettingsPage() {
             </div>
 
             {rolesLoading ? (
-              <div className="mt-4 text-sm text-gray-600">Loading roles…</div>
+              <div className="mt-4 text-gray-600 text-sm">Loading roles…</div>
             ) : churchRoles.length ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {churchRoles.map((r) => {
@@ -1915,7 +2037,7 @@ function SettingsPage() {
 
                   return (
                     <div key={r} className="rounded-lg border border-gray-200 p-4">
-                      <div className="text-sm font-semibold text-gray-900">{r}</div>
+                      <div className="font-semibold text-gray-900 text-sm">{r}</div>
                       <div className="mt-3">
                         {modules.length ? (
                           <div className="overflow-x-auto rounded-lg border border-gray-200">
@@ -1966,7 +2088,7 @@ function SettingsPage() {
                             </table>
                           </div>
                         ) : (
-                          <div className="text-xs text-gray-600">No permissions configured.</div>
+                          <div className="text-gray-600 text-xs">No permissions configured.</div>
                         )}
                       </div>
                     </div>
@@ -1974,7 +2096,7 @@ function SettingsPage() {
                 })}
               </div>
             ) : (
-              <div className="mt-4 text-sm text-gray-600">No role data available.</div>
+              <div className="mt-4 text-gray-600 text-sm">No role data available.</div>
             )}
           </div>
         </div>
@@ -1982,35 +2104,35 @@ function SettingsPage() {
 
       {tab === "audit" ? (
         <div className="mt-6">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <div className="text-sm font-semibold text-gray-900">Audit Log</div>
-                <div className="mt-1 text-xs text-gray-500">Search and filter user activity within your current church context.</div>
+                <div className="font-semibold text-gray-900 text-sm">Audit Log</div>
+                <div className="mt-1 text-gray-500 text-xs">Search and filter user activity within your current church context.</div>
               </div>
             </div>
 
             {auditError ? (
-              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{auditError}</div>
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{auditError}</div>
             ) : null}
 
             <div className="mt-4 flex flex-nowrap items-end gap-3 overflow-x-auto">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">Search:</span>
+                <span className="font-semibold text-gray-500 text-xs">Search:</span>
                 <input
                   value={auditSearch}
                   onChange={(e) => setAuditSearch(e.target.value)}
-                  className="h-9 w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   placeholder="User name"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">Module:</span>
+                <span className="font-semibold text-gray-500 text-xs">Module:</span>
                 <select
                   value={auditModule}
                   onChange={(e) => setAuditModule(e.target.value)}
-                  className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 >
                   <option value="">All Modules</option>
                   {auditModuleOptions.map((m) => (
@@ -2022,11 +2144,11 @@ function SettingsPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">Action:</span>
+                <span className="font-semibold text-gray-500 text-xs">Action:</span>
                 <select
                   value={auditAction}
                   onChange={(e) => setAuditAction(e.target.value)}
-                  className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 >
                   <option value="">All Actions</option>
                   <option value="Create">Create</option>
@@ -2043,11 +2165,11 @@ function SettingsPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">Role:</span>
+                <span className="font-semibold text-gray-500 text-xs">Role:</span>
                 <select
                   value={auditRole}
                   onChange={(e) => setAuditRole(e.target.value)}
-                  className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 >
                   <option value="">All Roles</option>
                   <option value="churchadmin">churchadmin</option>
@@ -2062,7 +2184,7 @@ function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setAuditDatePickerOpen((v) => !v)}
-                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 md:h-12 text-sm"
                 >
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
                     <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -2070,13 +2192,13 @@ function SettingsPage() {
                     <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
                   </svg>
                   <span className="text-gray-700">Date</span>
-                  <span className="text-xs text-gray-500">{auditDateFrom || auditDateTo ? "Filtered" : "All"}</span>
+                  <span className="text-gray-500 text-xs">{auditDateFrom || auditDateTo ? "Filtered" : "All"}</span>
                 </button>
 
                 {auditDatePickerOpen ? (
                   <div className="cck-date-dropdown absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
                     <div className="flex items-center justify-between gap-3 pb-3">
-                      <div className="text-xs font-semibold text-gray-500">Filter by date</div>
+                      <div className="font-semibold text-gray-500 text-xs">Filter by date</div>
                       <button
                         type="button"
                         onClick={() => {
@@ -2086,7 +2208,7 @@ function SettingsPage() {
                           setAuditDateTo("");
                           setAuditDatePickerOpen(false);
                         }}
-                        className="text-xs font-semibold text-gray-600 hover:text-gray-900"
+                        className="font-semibold text-gray-600 hover:text-gray-900 text-xs"
                       >
                         Clear
                       </button>
@@ -2094,7 +2216,7 @@ function SettingsPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <div className="text-xs font-semibold text-gray-500">From</div>
+                        <div className="font-semibold text-gray-500 text-xs">From</div>
                         <input
                           type="date"
                           value={auditDraftFrom}
@@ -2105,17 +2227,17 @@ function SettingsPage() {
                               setAuditDraftTo("");
                             }
                           }}
-                          className="mt-2 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                         />
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-gray-500">To</div>
+                        <div className="font-semibold text-gray-500 text-xs">To</div>
                         <input
                           type="date"
                           value={auditDraftTo}
                           min={auditDraftFrom || undefined}
                           onChange={(e) => setAuditDraftTo(e.target.value)}
-                          className="mt-2 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                         />
                       </div>
                     </div>
@@ -2146,7 +2268,7 @@ function SettingsPage() {
                           setAuditDateTo(to);
                           setAuditDatePickerOpen(false);
                         }}
-                        className="h-9 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                        className="h-11 rounded-lg bg-blue-600 px-4 font-semibold text-white shadow-sm hover:bg-blue-700 md:h-12 text-sm"
                       >
                         Apply
                       </button>
@@ -2201,14 +2323,14 @@ function SettingsPage() {
                           <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{timestamp}</td>
                           <td className="px-4 py-3">
                             <div className="font-semibold text-gray-900">{userName}</div>
-                            <div className="text-xs text-gray-500">{userRole}</div>
+                            <div className="text-gray-500 text-xs">{userRole}</div>
                           </td>
                           <td className="px-4 py-3 text-gray-700">{row?.action || "—"}</td>
                           <td className="px-4 py-3 text-gray-700">{row?.module || "—"}</td>
                           <td className="px-4 py-3 text-gray-700">{activity}</td>
                           <td className="px-4 py-3 text-gray-700">{deviceType}</td>
                           <td className="px-4 py-3">
-                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold text-xs ${ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                               {row?.status || "—"}
                             </span>
                           </td>
@@ -2216,7 +2338,7 @@ function SettingsPage() {
                             <button
                               type="button"
                               onClick={() => openAuditDetail(row)}
-                              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                             >
                               View
                             </button>
@@ -2226,7 +2348,7 @@ function SettingsPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={8} className="px-4 py-6 text-center text-gray-600">No audit logs found.</td>
+                      <td colSpan={8} className="px-4 text-center text-gray-600 py-4 md:py-6">No audit logs found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -2235,7 +2357,7 @@ function SettingsPage() {
           </div>
 
           <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
-            <div className="text-xs text-gray-500">
+            <div className="text-gray-500 text-xs">
               Total: <span className="font-semibold text-gray-700">{auditPagination?.total ?? 0}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -2247,11 +2369,11 @@ function SettingsPage() {
                   fetchAuditLogs({ page: prev });
                 }}
                 disabled={!auditPagination?.prevPage || auditLoading}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
               >
                 Prev
               </button>
-              <div className="text-xs text-gray-600">
+              <div className="text-gray-600 text-xs">
                 Page <span className="font-semibold">{auditPagination?.currentPage ?? 1}</span> of <span className="font-semibold">{auditPagination?.totalPages ?? 1}</span>
               </div>
               <button
@@ -2262,7 +2384,7 @@ function SettingsPage() {
                   fetchAuditLogs({ page: next });
                 }}
                 disabled={!auditPagination?.nextPage || auditLoading}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
               >
                 Next
               </button>
@@ -2274,10 +2396,10 @@ function SettingsPage() {
       {confirmOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmOpen(false)} />
-          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
-            <div className="text-lg font-semibold text-gray-900">Confirm Action</div>
+          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
+            <div className="font-semibold text-gray-900 text-lg">Confirm Action</div>
 
-            <div className="mt-2 text-sm text-gray-700">
+            <div className="mt-2 text-gray-700 text-sm">
               {confirmUser?.isActive === false
                 ? "Activate this user? They will regain all permissions allowed by their role."
                 : "Deactivate this user? They will no longer be able to create, edit or delete anything in the system, but can still view what their role permits."}
@@ -2287,7 +2409,7 @@ function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
               >
                 Cancel
               </button>
@@ -2295,7 +2417,7 @@ function SettingsPage() {
                 type="button"
                 onClick={handleToggleActive}
                 disabled={!canWrite}
-                className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
               >
                 Confirm
               </button>
@@ -2307,50 +2429,50 @@ function SettingsPage() {
       {addOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setAddOpen(false)} />
-          <div className="relative w-full max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
+          <div className="relative w-full max-w-lg rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-lg font-semibold text-gray-900">Add User</div>
-                <div className="mt-1 text-sm text-gray-600">Create a new user and assign a role.</div>
+                <div className="font-semibold text-gray-900 text-lg">Add User</div>
+                <div className="mt-1 text-gray-600 text-sm">Create a new user and assign a role.</div>
               </div>
               <button
                 type="button"
                 onClick={() => setAddOpen(false)}
-                className="rounded-md px-2 py-1 text-sm font-semibold text-gray-500 hover:text-gray-900"
+                className="rounded-md px-2 py-1 font-semibold text-gray-500 hover:text-gray-900 text-sm"
               >
                 ×
               </button>
             </div>
 
-            {addError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{addError}</div> : null}
+            {addError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{addError}</div> : null}
 
             <form onSubmit={handleCreateUser} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                 <input
                   type="text"
                   placeholder="John Doe"
                   value={newFullName}
                   onChange={(e) => setNewFullName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
                 <input
                   type="email"
                   placeholder="you@example.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
                 <PhoneNumberInput
                   value={newPhone}
                   onChange={setNewPhone}
@@ -2360,23 +2482,23 @@ function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Password</label>
                 <input
                   type="password"
                   placeholder="Create a password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Role</label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 >
                   <option value="">Select role</option>
@@ -2390,14 +2512,14 @@ function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setAddOpen(false)}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addLoading}
-                  className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                  className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
                   {addLoading ? "Saving..." : "Add User"}
                 </button>
@@ -2410,48 +2532,48 @@ function SettingsPage() {
       {editOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setEditOpen(false)} />
-          <div className="relative w-full max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
+          <div className="relative w-full max-w-lg rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-lg font-semibold text-gray-900">Edit User</div>
-                <div className="mt-1 text-sm text-gray-600">Update user details and role.</div>
+                <div className="font-semibold text-gray-900 text-lg">Edit User</div>
+                <div className="mt-1 text-gray-600 text-sm">Update user details and role.</div>
               </div>
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
-                className="rounded-md px-2 py-1 text-sm font-semibold text-gray-500 hover:text-gray-900"
+                className="rounded-md px-2 py-1 font-semibold text-gray-500 hover:text-gray-900 text-sm"
               >
                 ×
               </button>
             </div>
 
-            {editError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{editError}</div> : null}
+            {editError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{editError}</div> : null}
 
             <form onSubmit={handleSaveEdit} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                 <input
                   type="text"
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
                 <input
                   type="email"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
                 <PhoneNumberInput
                   value={editPhone}
                   onChange={setEditPhone}
@@ -2461,11 +2583,11 @@ function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">Role</label>
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 >
                   <option value="">Select role</option>
@@ -2479,14 +2601,14 @@ function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setEditOpen(false)}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={editLoading}
-                  className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                  className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
                   {editLoading ? "Saving..." : "Save Changes"}
                 </button>
@@ -2500,14 +2622,14 @@ function SettingsPage() {
       {userLimitModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setUserLimitModalOpen(false)} />
-          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
-            <div className="text-lg font-semibold text-gray-900">Limit Reached</div>
-            <p className="mt-2 text-sm text-gray-600">{userLimitMessage}</p>
+          <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
+            <div className="font-semibold text-gray-900 text-lg">Limit Reached</div>
+            <p className="mt-2 text-gray-600 text-sm">{userLimitMessage}</p>
             <div className="mt-5 flex justify-end">
               <button
                 type="button"
                 onClick={() => setUserLimitModalOpen(false)}
-                className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
               >
                 Close
               </button>

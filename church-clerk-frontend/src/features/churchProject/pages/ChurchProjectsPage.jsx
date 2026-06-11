@@ -49,15 +49,15 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
-            <div className="text-lg font-semibold text-gray-900">{title}</div>
-            {subtitle ? <div className="mt-1 text-sm text-gray-500">{subtitle}</div> : null}
+            <div className="font-semibold text-gray-900 text-lg">{title}</div>
+            {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -65,7 +65,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </div>
     </div>
   );
@@ -75,6 +75,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -83,6 +84,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
     setName("");
     setTargetAmount("");
     setDescription("");
+    setStartDate("");
     setError("");
     setSaving(false);
   }, [open]);
@@ -110,7 +112,8 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
       name: String(name).trim(),
       targetAmount: Number(targetAmount),
       description: String(description).trim(),
-      status: "Active"
+      status: "Active",
+      ...(startDate ? { startDate } : {})
     };
 
     setSaving(true);
@@ -132,51 +135,63 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Project Name</label>
+          <label className="block font-semibold text-gray-500 text-xs">Project Name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="e.g., New Church Building"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">{currency ? `Target Amount (${currency})` : "Target Amount"}</label>
+          <label className="block font-semibold text-gray-500 text-xs">{currency ? `Target Amount (${currency})` : "Target Amount"}</label>
           <input
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             type="number"
             placeholder="0.00"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+            className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
             placeholder="Project details"
           />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Start Date</label>
+            <input
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              type="date"
+            />
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={disabled || saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Add Project
           </button>
@@ -249,46 +264,46 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Contributor</label>
+          <label className="block font-semibold text-gray-500 text-xs">Contributor</label>
           <input
             value={contributorName}
             onChange={(e) => setContributorName(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="e.g., John Mensah"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="number"
               placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Notes</label>
+          <label className="block font-semibold text-gray-500 text-xs">Notes</label>
           <input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
             maxLength={25}
           />
@@ -298,14 +313,14 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={disabled || saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Add Contribution
           </button>
@@ -378,46 +393,46 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Spent On</label>
+          <label className="block font-semibold text-gray-500 text-xs">Spent On</label>
           <input
             value={spentOn}
             onChange={(e) => setSpentOn(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="e.g., Foundation materials"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="number"
               placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               type="date"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description</label>
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
             maxLength={25}
           />
@@ -427,14 +442,14 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={disabled || saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Record Expense
           </button>
@@ -565,8 +580,8 @@ function ChurchProjectsPageInner() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-2xl font-semibold text-gray-900">Church Projects</div>
-          <div className="mt-2 text-sm text-gray-600">Track building funds and special projects</div>
+          <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Church Projects</div>
+          <div className="mt-2 text-gray-600 text-sm">Track building funds and special projects</div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -574,16 +589,16 @@ function ChurchProjectsPageInner() {
             <button
               type="button"
               onClick={() => setAddProjectOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
             >
-              <span className="text-lg leading-none">+</span>
+              <span className="leading-none text-lg">+</span>
               Add Project
             </button>
           ) : null}
         </div>
       </div>
 
-      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard
@@ -624,19 +639,19 @@ function ChurchProjectsPageInner() {
             const badge = statusBadge(p?.status);
 
             return (
-              <div key={p?._id ?? `p-${idx}`} className="rounded-xl border border-gray-200 bg-white p-5">
+              <div key={p?._id ?? `p-${idx}`} className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900 truncate">{p?.name || "—"}</div>
-                    <div className="mt-1 text-xs text-gray-500">
+                    <div className="font-semibold text-gray-900 truncate text-sm">{p?.name || "—"}</div>
+                    <div className="mt-1 text-gray-500 text-xs">
                       Target: {formatCurrency(target, currency)} | Raised: {formatCurrency(raised, currency)} | Left: {formatCurrency(target - raised, currency)}
                     </div>
                   </div>
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${badge.cls} text-xs`}>{badge.label}</span>
                 </div>
 
                 <div className="mt-4">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-gray-500 text-xs">
                     <div>Progress</div>
                     <div className="text-blue-700 font-semibold">{formatPercent(percent)}</div>
                   </div>
@@ -647,26 +662,26 @@ function ChurchProjectsPageInner() {
 
                 <div className="mt-5 grid grid-cols-3 gap-3">
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Amount Raised</div>
-                    <div className="mt-1 text-sm font-semibold text-green-700">{formatCurrency(raised, currency)}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Amount Raised</div>
+                    <div className="mt-1 font-semibold text-green-700 text-sm">{formatCurrency(raised, currency)}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Amount Spent</div>
-                    <div className="mt-1 text-sm font-semibold text-orange-600">{formatCurrency(spent, currency)}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Amount Spent</div>
+                    <div className="mt-1 font-semibold text-orange-600 text-sm">{formatCurrency(spent, currency)}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500">Balance</div>
-                    <div className="mt-1 text-sm font-semibold text-blue-900">{formatCurrency(balance, currency)}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Balance</div>
+                    <div className="mt-1 font-semibold text-blue-900 text-sm">{formatCurrency(balance, currency)}</div>
                   </div>
                 </div>
 
-                <div className="mt-5 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="mt-5 flex items-center gap-2 flex-wrap md:flex-nowrap">
                   {canEdit ? (
                     <>
                       <button
                         type="button"
                         onClick={() => openContribution(p)}
-                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
                       >
                         Add Contribution
                       </button>
@@ -674,7 +689,7 @@ function ChurchProjectsPageInner() {
                       <button
                         type="button"
                         onClick={() => openExpense(p)}
-                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
                       >
                         Record Expense
                       </button>
@@ -685,7 +700,7 @@ function ChurchProjectsPageInner() {
                     <button
                       type="button"
                       onClick={() => viewDetails(p)}
-                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
                     >
                       View
                     </button>
@@ -696,7 +711,7 @@ function ChurchProjectsPageInner() {
                       <button
                         type="button"
                         onClick={() => openEdit(p)}
-                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
                       >
                         Edit
                       </button>
@@ -704,7 +719,7 @@ function ChurchProjectsPageInner() {
                       <button
                         type="button"
                         onClick={() => openDelete(p)}
-                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 shadow-sm hover:bg-red-50"
+                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-red-50 text-xs"
                       >
                         Delete
                       </button>
@@ -852,46 +867,46 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
     <BaseModal open={open} title="Edit Project" subtitle="Update project details" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         {error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
         ) : null}
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Project Name</label>
+          <label className="block font-semibold text-gray-500 text-xs">Project Name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="e.g., New Church Building"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">{currency ? `Target Amount (${currency})` : "Target Amount"}</label>
+          <label className="block font-semibold text-gray-500 text-xs">{currency ? `Target Amount (${currency})` : "Target Amount"}</label>
           <input
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             type="number"
             placeholder="0.00"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+            className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
             placeholder="Project details"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500">Status</label>
+          <label className="block font-semibold text-gray-500 text-xs">Status</label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           >
             <option value="Active">Active</option>
             <option value="Completed">Completed</option>
@@ -902,14 +917,14 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Save
           </button>
@@ -924,22 +939,22 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
           >
             {confirmLabel}
           </button>
@@ -956,8 +971,8 @@ function ChurchProjectsPage() {
   if (!canRead) {
     return (
       <div className="max-w-6xl">
-        <div className="text-2xl font-semibold text-gray-900">Church Projects</div>
-        <p className="mt-2 text-sm text-gray-600">You do not have permission to view this page.</p>
+        <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Church Projects</div>
+        <p className="mt-2 text-gray-600 text-sm">You do not have permission to view this page.</p>
       </div>
     );
   }

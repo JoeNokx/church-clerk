@@ -46,13 +46,13 @@ function Login() {
       subtitle="Sign in to access your account"
       footer={
         <div className="space-y-3">
-          <div className="text-sm text-gray-600">
+          <div className="text-gray-600 text-sm">
             Don&apos;t have an account?{" "}
             <Link to="/register" className="font-semibold text-blue-900 hover:underline">
               Create one
             </Link>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-gray-500 text-sm">
             <Link to="/" className="hover:text-blue-900 hover:underline">
               Back to home
             </Link>
@@ -60,35 +60,35 @@ function Login() {
         </div>
       }
     >
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
 
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Password</label>
           <input
             type="password"
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
 
         <div className="flex items-center justify-between">
-          <label className="inline-flex items-center gap-2 text-sm text-gray-600">
+          <label className="inline-flex items-center gap-2 text-gray-600 text-sm">
             <input
               type="checkbox"
               checked={rememberMe}
@@ -98,7 +98,7 @@ function Login() {
             Remember me
           </label>
 
-          <Link to="/forgot-password" className="text-sm font-medium text-blue-900 hover:underline">
+          <Link to="/forgot-password" className="font-medium text-blue-900 hover:underline text-sm">
             Forgot password?
           </Link>
         </div>
@@ -106,7 +106,7 @@ function Login() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-900 text-white py-3 sm:py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50"
+          className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
         >
           {loading ? "Signing in..." : "Sign In"}
         </button>

@@ -31,7 +31,7 @@ function RouteSkeletonFallback() {
           <div key={i} className="h-24 rounded-lg bg-gray-200" />
         ))}
       </div>
-      <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3 md:p-6 lg:p-8">
         <div className="h-4 w-1/2 rounded bg-gray-200" />
         <div className="h-3 w-full rounded bg-gray-200" />
         <div className="h-3 w-full rounded bg-gray-200" />

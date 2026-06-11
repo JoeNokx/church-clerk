@@ -9,17 +9,17 @@ function ConfirmChurchSwitchModal({ open, churchDisplayName, mode = "branch", on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
-            <div className="text-lg font-semibold text-gray-900">Confirm Switch</div>
-            <div className="mt-1 text-sm text-gray-600">
+            <div className="font-semibold text-gray-900 text-lg">Confirm Switch</div>
+            <div className="mt-1 text-gray-600 text-sm">
               You are about to open <span className="font-semibold text-gray-900">{name}</span>.
             </div>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
             aria-label="Close"
             disabled={loading}
           >
@@ -29,13 +29,13 @@ function ConfirmChurchSwitchModal({ open, churchDisplayName, mode = "branch", on
           </button>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
           {isBranch ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
               You are switching to a branch church data. Creating, editing, or deleting data of your branch isn't allowed
             </div>
           ) : (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-900 text-sm">
               You are switching back to your headquarters church data.
             </div>
           )}
@@ -45,7 +45,7 @@ function ConfirmChurchSwitchModal({ open, churchDisplayName, mode = "branch", on
               type="button"
               onClick={onCancel}
               disabled={loading}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 text-sm"
             >
               Cancel
             </button>
@@ -53,7 +53,7 @@ function ConfirmChurchSwitchModal({ open, churchDisplayName, mode = "branch", on
               type="button"
               onClick={onConfirm}
               disabled={loading}
-              className="rounded-lg bg-blue-700 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50"
+              className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
             >
               {loading ? "Switching…" : "Confirm & View"}
             </button>

@@ -10,7 +10,7 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 import mongoSanitize from "mongo-sanitize";
 import rateLimit from "express-rate-limit";
-import csurf from "csurf";
+import Tokens from "csrf";
 
 import * as Routes from "./routes/index.js"; // imports the named exports from routes/index.js
 import { activityLogMiddleware } from "./middleware/activityLogMiddleware.js";
@@ -63,7 +63,7 @@ app.use(compression());
 // 4. helmet
 // 5. rate-limit (general)
 // 6. cookie-parser
-// 7. csurf
+// 7. csrf (custom middleware)
 // ------------------------------
 
 const isPaystackWebhookRoute = (req) => {
@@ -243,14 +243,46 @@ app.use((req, res, next) => {
 // 6) Cookies
 app.use(cookieParser());
 
-// 7) CSRF (cookie-based)
-const csrfProtection = csurf({
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax"
+// 7) CSRF (cookie-based) — uses csrf package with custom middleware
+const _csrfTokens = new Tokens();
+const _CSRF_COOKIE = "_csrf";
+
+function csrfProtection(req, res, next) {
+  let secret = req.cookies?.[_CSRF_COOKIE];
+  if (!secret) {
+    secret = _csrfTokens.secretSync();
+    res.cookie(_CSRF_COOKIE, secret, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/"
+    });
   }
-});
+
+  req.csrfToken = () => _csrfTokens.create(secret);
+
+  const method = String(req.method || "").toUpperCase();
+  if (["GET", "HEAD", "OPTIONS"].includes(method)) {
+    return next();
+  }
+
+  const token =
+    req.headers["csrf-token"] ||
+    req.headers["x-csrf-token"] ||
+    req.headers["x-xsrf-token"] ||
+    req.body?._csrf ||
+    req.query?._csrf ||
+    "";
+
+  if (!_csrfTokens.verify(secret, String(token))) {
+    const err = new Error("invalid csrf token");
+    err.code = "EBADCSRFTOKEN";
+    err.status = 403;
+    return next(err);
+  }
+
+  return next();
+}
 
 app.use((req, res, next) => {
   if (isPaystackWebhookRoute(req)) return next();
