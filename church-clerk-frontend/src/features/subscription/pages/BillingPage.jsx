@@ -643,6 +643,21 @@ function BillingPage() {
       return;
     }
 
+    // New subscription - no existing paid plan (free trial / no plan yet)
+    if (!subscribedPlanId) {
+      setPlanId(String(nextId));
+      setProrationData(null);
+      setError("");
+      setPaymentResult(null);
+      setShowPaymentResult(false);
+      setShowPaymentMethod(false);
+      if (savedPaymentMethods.length > 0) {
+        setSelectedSavedMethodIndex(0);
+      }
+      setShowPaymentSummary(true);
+      return;
+    }
+
     // UPGRADE with proration preview
     setProrationLoading(true);
     setError("");

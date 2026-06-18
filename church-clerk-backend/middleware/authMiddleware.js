@@ -4,6 +4,9 @@ import User from "../models/userModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 import Church from "../models/churchModel.js";
+import { FEATURE_ROUTE_MAP, isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
+import { getSystemSettingsSnapshot } from "../controller/systemSettingsController.js";
+import { releaseExpiredTrialForChurch } from "../controller/billingController/subscriptionService.js";
 
 
 
@@ -157,18 +160,86 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
           }
         }
 
+        // --- Grace period handling: on-the-fly Free Lite assignment ---
         const now = new Date();
-        const isTrialExpired =
+        let effectiveSub = subscription;
+        let inTrialGracePeriod = false;
+
+        if (
           (subscription.status === "free trial" || subscription.status === "trialing") &&
           subscription.trialEnd &&
-          now > new Date(subscription.trialEnd);
+          now > new Date(subscription.trialEnd)
+        ) {
+          try {
+            const { gracePeriodDays } = await getSystemSettingsSnapshot();
+            const graceMs = Number(gracePeriodDays || 7) * 24 * 60 * 60 * 1000;
+            const gracePassed = now.getTime() > new Date(subscription.trialEnd).getTime() + graceMs;
+
+            if (gracePassed) {
+              const updated = await releaseExpiredTrialForChurch(req.activeChurch._id);
+              if (updated) {
+                effectiveSub = updated;
+                req.subscription = updated;
+              }
+            } else {
+              inTrialGracePeriod = true;
+            }
+          } catch {
+            inTrialGracePeriod = true;
+          }
+        }
+
+        // --- Free Lite plan: enforce feature-level access ---
+        const isEffectiveTrial = effectiveSub.status === "free trial" || effectiveSub.status === "trialing";
+        if (!isEffectiveTrial && effectiveSub.plan) {
+          const freeLitePlan = await Plan.findById(effectiveSub.plan).lean();
+          const isFreeLite = String(freeLitePlan?.name || "").trim().toLowerCase() === "free lite";
+
+          if (isFreeLite) {
+            const trialUsedSet = new Set(
+              Array.isArray(effectiveSub.trialFeaturesUsed) ? effectiveSub.trialFeaturesUsed : []
+            );
+            const path = req.originalUrl || "";
+
+            const matchedFeature = FEATURE_ROUTE_MAP.find((m) =>
+              m.prefixes.some((p) => path.startsWith(p))
+            );
+
+            if (matchedFeature) {
+              const inPlan = isFeatureEnabledInPlan(freeLitePlan?.features, matchedFeature.feature);
+
+              if (!inPlan) {
+                if (trialUsedSet.has(matchedFeature.feature)) {
+                  if (isWrite) {
+                    return res.status(403).json({
+                      message: "Upgrade your plan to make changes. This feature is read-only on your current plan.",
+                      readOnly: true
+                    });
+                  }
+                } else {
+                  return res.status(403).json({
+                    message: "This feature is not available on your current plan. Please upgrade.",
+                    readOnly: false
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        // --- Block writes for fully expired/suspended subscriptions ---
+        const isTrialExpired =
+          !inTrialGracePeriod &&
+          (effectiveSub.status === "free trial" || effectiveSub.status === "trialing") &&
+          effectiveSub.trialEnd &&
+          now > new Date(effectiveSub.trialEnd);
 
         const isGraceExpired =
-          subscription.status === "past_due" &&
-          subscription.gracePeriodEnd &&
-          now > new Date(subscription.gracePeriodEnd);
+          effectiveSub.status === "past_due" &&
+          effectiveSub.gracePeriodEnd &&
+          now > new Date(effectiveSub.gracePeriodEnd);
 
-        const isSuspended = subscription.status === "suspended";
+        const isSuspended = effectiveSub.status === "suspended";
 
         const path = req.originalUrl || "";
         const isSubscriptionPaymentRoute =

@@ -59,6 +59,23 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   };
 
+  const isReadOnly = (moduleFlagKey) => {
+
+    if (isMonitoringBranch) return false;
+
+    return activeChurch?.modules?.[moduleFlagKey] === "readOnly";
+
+  };
+
+  const LockBadge = () => (
+    <span title="Read-only: upgrade to unlock" className="ml-auto flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100">
+      <svg viewBox="0 0 24 24" fill="none" className="h-2.5 w-2.5 text-amber-600">
+        <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    </span>
+  );
+
 
 
   const canSeeSettings = () => {
@@ -329,6 +346,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     Members
 
+                    {isReadOnly("Members") ? <LockBadge /> : null}
+
                   </NavLink>
 
                 ) : null}
@@ -352,6 +371,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Attendance
+
+                    {isReadOnly("Attendance") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -377,6 +398,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     Programs &amp; Events
 
+                    {isReadOnly("ProgramsEvents") ? <LockBadge /> : null}
+
                   </NavLink>
 
                 ) : null}
@@ -398,6 +421,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Ministries
+
+                    {isReadOnly("Ministries") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -422,6 +447,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Announcements
+
+                    {isReadOnly("Announcements") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -461,6 +488,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     Tithe
 
+                    {isReadOnly("Tithe") ? <LockBadge /> : null}
+
                   </NavLink>
 
                 ) : null}
@@ -484,6 +513,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Budgeting
+
+                    {isReadOnly("Budgeting") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -511,6 +542,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     Church Projects
 
+                    {isReadOnly("ChurchProjects") ? <LockBadge /> : null}
+
                   </NavLink>
 
                 ) : null}
@@ -534,6 +567,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Special Funds
+
+                    {isReadOnly("SpecialFunds") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -559,6 +594,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     Offerings
 
+                    {isReadOnly("Offerings") ? <LockBadge /> : null}
+
                   </NavLink>
 
                 ) : null}
@@ -580,6 +617,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Welfare
+
+                    {isReadOnly("Welfare") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -605,6 +644,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     Pledges
 
+                    {isReadOnly("Pledges") ? <LockBadge /> : null}
+
                   </NavLink>
 
                 ) : null}
@@ -628,6 +669,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Business Ventures
+
+                    {isReadOnly("BusinessVentures") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -653,6 +696,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     Expenses
 
+                    {isReadOnly("Expenses") ? <LockBadge /> : null}
+
                   </NavLink>
 
                 ) : null}
@@ -676,6 +721,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Financial Statement
+
+                    {isReadOnly("FinancialStatement") ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -714,6 +761,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Reports &amp; Analytics
+
+                    {isReadOnly("ReportsAnalytics") ? <LockBadge /> : null}
 
                   </NavLink>
 

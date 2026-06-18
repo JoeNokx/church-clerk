@@ -4,6 +4,8 @@ import Subscription from "../models/billingModel/subscriptionModel.js";
 
 import Plan from "../models/billingModel/planModel.js";
 
+import { isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
+
 
 
 export const setActiveChurch = async (req, res, next) => {
@@ -220,47 +222,58 @@ export const setActiveChurch = async (req, res, next) => {
 
 
 
+    const isFreeLitePlan = effectivePlan &&
+      String(effectivePlan.name || "").trim().toLowerCase() === "free lite";
+
+    const trialUsedSet = new Set(
+      Array.isArray(subscription?.trialFeaturesUsed) ? subscription.trialFeaturesUsed : []
+    );
+
+    const computeModule = (moduleKey) => {
+      if (isTrial) return true;
+      if (!isFreeLitePlan) return true;
+      const allowed = isFeatureEnabledInPlan(effectivePlan?.features, moduleKey);
+      if (allowed) return true;
+      return trialUsedSet.has(moduleKey) ? "readOnly" : false;
+    };
+
     const baseModules = {
 
-      Dashboard: true,
+      Dashboard: featureEnabled("dashboard"),
 
       Branches: req.activeChurch.type === "Headquarters",
 
-      Members: true,
+      Members: computeModule("Members"),
 
-      Attendance: true,
+      Attendance: computeModule("Attendance"),
 
-      ProgramsEvents: true,
+      ProgramsEvents: computeModule("ProgramsEvents"),
 
-      Ministries: true,
+      Ministries: computeModule("Ministries"),
 
-      Announcements: true,
+      Announcements: computeModule("Announcements"),
 
-      Tithe: true,
+      Tithe: computeModule("Tithe"),
 
-      Budgeting: true,
+      Budgeting: computeModule("Budgeting"),
 
+      ChurchProjects: computeModule("ChurchProjects"),
 
+      SpecialFunds: computeModule("SpecialFunds"),
 
-      ChurchProjects: true,
+      Offerings: computeModule("Offerings"),
 
-      SpecialFunds: true,
+      Welfare: computeModule("Welfare"),
 
-      Offerings: true,
+      Pledges: computeModule("Pledges"),
 
-      Welfare: true,
+      BusinessVentures: computeModule("BusinessVentures"),
 
-      Pledges: true,
+      Expenses: computeModule("Expenses"),
 
-      BusinessVentures: true,
+      FinancialStatement: computeModule("FinancialStatement"),
 
-      Expenses: true,
-
-      FinancialStatement: true,
-
-      ReportsAnalytics: true,
-
-
+      ReportsAnalytics: computeModule("ReportsAnalytics"),
 
       Billing: true,
 
@@ -271,10 +284,6 @@ export const setActiveChurch = async (req, res, next) => {
       support: true
 
     };
-
-
-
-    baseModules.Dashboard = featureEnabled("dashboard");
 
 
 

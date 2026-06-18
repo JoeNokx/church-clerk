@@ -185,6 +185,11 @@ const subscriptionSchema = new mongoose.Schema(
     freeMonths: {
       earned: { type: Number, default: 0 },
       used: { type: Number, default: 0 }
+    },
+
+    trialFeaturesUsed: {
+      type: [String],
+      default: []
     }
   },
   { timestamps: true }

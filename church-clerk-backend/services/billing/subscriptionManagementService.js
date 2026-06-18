@@ -1,7 +1,7 @@
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
-import { createSubscriptionForChurch, upgradeTrialToPlans, runBillingCycles } from "../../controller/billingController/subscriptionService.js";
+import { createSubscriptionForChurch, upgradeTrialToPlans, runBillingCycles, releaseExpiredTrials } from "../../controller/billingController/subscriptionService.js";
 
 const planRank = (plan) => {
   const n = String(plan?.name || "")
@@ -124,6 +124,7 @@ async function upgradeTrial(churchId, planId) {
 }
 
 async function executeBillingCycle() {
+  await releaseExpiredTrials();
   await runBillingCycles();
 }
 

@@ -19,6 +19,8 @@ import {
   sendDowngradeAppliedEmail
 } from "../../utils/subscriptionEmails.js";
 
+import { detectTrialFeatureUsage } from "../../utils/featureUsageChecker.js";
+
 const validatePlanForChurch = (church, plan) => {
   if (church.type === "Headquarters" && String(plan.name || "").toLowerCase() !== "premium") {
     throw new Error("HQ churches must subscribe to Premium plan only");
@@ -400,5 +402,81 @@ export const runBillingCycles = async () => {
 
 };
 
+
+
+// =============================
+// Release a single expired trial to Free Lite (on-the-fly, called per request)
+// =============================
+
+export const releaseExpiredTrialForChurch = async (churchId) => {
+  const freeLitePlan = await Plan.findOne({
+    name: { $regex: /^free\s*lite$/i },
+    isActive: true
+  }).lean();
+  if (!freeLitePlan) return null;
+
+  const subscription = await Subscription.findOne({ church: churchId });
+  if (!subscription) return null;
+
+  if (subscription.status !== "free trial" && subscription.status !== "trialing") {
+    return subscription.toObject();
+  }
+
+  const usedFeatures = await detectTrialFeatureUsage(churchId);
+  subscription.plan = freeLitePlan._id;
+  subscription.status = "active";
+  subscription.trialStart = null;
+  subscription.trialEnd = null;
+  subscription.gracePeriodEnd = null;
+  subscription.trialFeaturesUsed = usedFeatures;
+  subscription.nextBillingDate = addInterval(new Date(), subscription.billingInterval);
+  if (subscription.expiryWarning) subscription.expiryWarning.shown = false;
+  await subscription.save();
+
+  return subscription.toObject();
+};
+
+// =============================
+// Release expired trials to Free Lite
+// =============================
+
+export const releaseExpiredTrials = async () => {
+  const { gracePeriodDays } = await getSystemSettingsSnapshot();
+  const graceMs = Number(gracePeriodDays || 7) * 24 * 60 * 60 * 1000;
+  const cutoff = new Date(Date.now() - graceMs);
+
+  const expiredTrials = await Subscription.find({
+    status: { $in: ["free trial", "trialing"] },
+    trialEnd: { $lt: cutoff }
+  });
+
+  if (!expiredTrials.length) return;
+
+  const freeLitePlan = await Plan.findOne({
+    name: { $regex: /^free\s*lite$/i },
+    isActive: true
+  }).lean();
+
+  if (!freeLitePlan) return;
+
+  for (const subscription of expiredTrials) {
+    try {
+      const usedFeatures = await detectTrialFeatureUsage(subscription.church);
+
+      subscription.plan = freeLitePlan._id;
+      subscription.status = "active";
+      subscription.trialStart = null;
+      subscription.trialEnd = null;
+      subscription.gracePeriodEnd = null;
+      subscription.trialFeaturesUsed = usedFeatures;
+      subscription.nextBillingDate = addInterval(new Date(), subscription.billingInterval);
+      subscription.expiryWarning.shown = false;
+
+      await subscription.save();
+    } catch {
+      // do not abort cycle for a single subscription failure
+    }
+  }
+};
 
 
