@@ -38,8 +38,8 @@ export const createMemberSchema = Joi.object({
   country: Joi.string().trim().max(120).allow("", null).optional(),
   maritalStatus: Joi.string().valid("single", "married", "divorced", "widowed", "other").allow("", null).optional(),
 
-  department: objectId.allow("", null).optional(),
-  cell: objectId.allow("", null).optional(),
+  department: Joi.array().items(objectId).max(50).optional(),
+  cell: Joi.array().items(objectId).max(10).optional(),
   group: Joi.array().items(objectId).max(50).optional()
 });
 

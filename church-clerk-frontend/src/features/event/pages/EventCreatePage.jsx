@@ -377,19 +377,19 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
 
               <Field label="Time From">
                 <input
+                  type="time"
                   value={timeFrom}
                   onChange={(e) => setTimeFrom(e.target.value)}
                   className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  placeholder="10:00AM"
                 />
               </Field>
 
               <Field label="Time To">
                 <input
+                  type="time"
                   value={timeTo}
                   onChange={(e) => setTimeTo(e.target.value)}
                   className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  placeholder="1:00PM"
                 />
               </Field>
 

@@ -195,7 +195,7 @@ function AttendanceForm({ open, mode, initialData, onClose, onSuccess }) {
               disabled={store?.attendanceLoading}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {mode === "edit" ? "Update" : "Save"}
+              {store?.attendanceLoading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
             </button>
           </div>
         </form>

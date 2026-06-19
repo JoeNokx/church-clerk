@@ -379,7 +379,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
               disabled={store?.loading}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {mode === "edit" ? "Update" : pendingEntries.length ? "Save All" : "Save"}
+              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : pendingEntries.length ? "Save All" : "Save"}
             </button>
           </div>
         </form>

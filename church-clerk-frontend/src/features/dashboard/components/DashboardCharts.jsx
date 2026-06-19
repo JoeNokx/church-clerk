@@ -29,16 +29,27 @@ function DashboardCharts({ attendanceGraph, genderData, analytics, year }) {
         <div className="mt-1 text-gray-600 text-sm">Active members breakdown</div>
 
         <div className="mt-4 h-56 flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={genderData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={80} paddingAngle={2}>
-                {genderData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
-            </PieChart>
-          </ResponsiveContainer>
+          {genderData.every((d) => !d.value) ? (
+            <div className="flex flex-col items-center justify-center gap-2 text-center">
+              <svg viewBox="0 0 48 48" fill="none" className="h-12 w-12 text-gray-200">
+                <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" strokeDasharray="6 4" />
+                <circle cx="24" cy="24" r="10" stroke="currentColor" strokeWidth="3" />
+              </svg>
+              <div className="font-semibold text-gray-400 text-sm">No gender data yet</div>
+              <div className="text-gray-400 text-xs">Add member gender info to see distribution</div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={genderData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={80} paddingAngle={2}>
+                  {genderData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-3">

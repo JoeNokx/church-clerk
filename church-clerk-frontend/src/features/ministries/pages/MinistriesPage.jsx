@@ -411,7 +411,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
               disabled={saving}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {mode === "edit" ? "Update" : "Save"}
+              {saving ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
             </button>
           </div>
         </form>
@@ -554,9 +554,31 @@ function MinistriesPage() {
     }
   }, []);
 
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [grpRes, deptRes, cellRes] = await Promise.all([getGroups(), getDepartments(), getCells()]);
+      const grpPayload = grpRes?.data?.data ?? grpRes?.data;
+      const deptPayload = deptRes?.data?.data ?? deptRes?.data;
+      const cellPayload = cellRes?.data?.data ?? cellRes?.data;
+      setGroups(Array.isArray(grpPayload?.groups) ? grpPayload.groups : Array.isArray(grpPayload?.data?.groups) ? grpPayload.data.groups : []);
+      setDepartments(Array.isArray(deptPayload?.departments) ? deptPayload.departments : Array.isArray(deptPayload?.data?.departments) ? deptPayload.data.departments : []);
+      setCells(Array.isArray(cellPayload?.cells) ? cellPayload.cells : Array.isArray(cellPayload?.data?.cells) ? cellPayload.data.cells : []);
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to load ministries");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadKpi();
   }, [loadKpi]);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
   useEffect(() => {
     loadLists(activeTab);
@@ -692,7 +714,7 @@ function MinistriesPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
+              placeholder={activeTab === "groups" ? "Search group name..." : activeTab === "departments" ? "Search department name..." : "Search cell name..."}
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
             />
           </div>

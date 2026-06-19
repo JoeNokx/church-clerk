@@ -27,6 +27,7 @@ const emptyFilters = {
 
 export function EventProvider({ children }) {
   const [filters, setFiltersState] = useState(emptyFilters);
+  const [activeStatus, setActiveStatus] = useState("upcoming");
 
   const queryClient = useQueryClient();
 
@@ -61,7 +62,7 @@ export function EventProvider({ children }) {
 
   const eventsQuery = useEventsListQuery({
     activeChurchId: activeChurch,
-    status: activeStatusRef.current,
+    status: activeStatus,
     filters,
     enabled: true
   });
@@ -95,6 +96,7 @@ export function EventProvider({ children }) {
 
       if (status) {
         activeStatusRef.current = status;
+        setActiveStatus(status);
       }
 
       const patch = partial || {};

@@ -1146,7 +1146,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm hover:bg-gray-50"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 hover:bg-gray-50"
 
 
 
@@ -1210,7 +1210,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-              <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
 
 
 
@@ -1506,7 +1506,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-            className="relative h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100 md:h-12 md:w-12"
+            className="relative h-11 w-11 inline-flex items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 md:h-12 md:w-12"
 
 
 

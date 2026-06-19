@@ -1,6 +1,5 @@
 import DashboardHeader from "../features/dashboard/components/Header.jsx";
 import Sidebar from "../features/dashboard/components/Sidebar.jsx";
-import Footer from "../features/dashboard/components/Footer.jsx";
 import { Outlet, useLocation } from "react-router-dom";
 import { useContext, useMemo, useState } from "react";
 import { useAuth } from "../features/auth/useAuth.js";
@@ -198,9 +197,6 @@ function DashboardLayout() {
             </div>
           )}
         </main>
-        
-        {/* footer */}
-        <Footer />
       </div>
 
     </div>

@@ -60,7 +60,7 @@ function MemberFilters() {
           value={searchValue}
           onChange={onSearchChange}
           className="h-11 w-full md:w-[220px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          placeholder="Search"
+          placeholder="Search name, phone or email..."
         />
       </div>
 

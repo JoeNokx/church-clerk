@@ -262,20 +262,17 @@ function ReportsAnalyticsPage() {
 
             <div className="w-full md:w-auto">
               <div className="font-semibold text-gray-600 mb-1 text-xs">Year</div>
-              <select
+              <input
+                type="number"
                 value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (v > 0) setYear(v);
+                }}
+                min={1900}
+                max={2100}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-40 text-sm"
-              >
-                {Array.from({ length: 10 }).map((_, idx) => {
-                  const y = new Date().getFullYear() - idx;
-                  return (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  );
-                })}
-              </select>
+              />
             </div>
           </div>
         </div>

@@ -692,13 +692,6 @@ function MemberFormPageInner() {
                 <div>
                   <div className="flex items-center justify-between">
                     <label className="block font-semibold text-gray-500 text-xs">Cell</label>
-                    <button
-                      type="button"
-                      onClick={() => setAddCellOpen(true)}
-                      className="font-semibold text-blue-700 hover:underline text-xs"
-                    >
-                      Add cell
-                    </button>
                   </div>
                   <select
                     value={cellId}
@@ -718,13 +711,6 @@ function MemberFormPageInner() {
                 <div>
                   <div className="flex items-center justify-between">
                     <label className="block font-semibold text-gray-500 text-xs">Departments</label>
-                    <button
-                      type="button"
-                      onClick={() => setAddDepartmentOpen(true)}
-                      className="font-semibold text-blue-700 hover:underline text-xs"
-                    >
-                      Add department
-                    </button>
                   </div>
                   <select
                     value={departmentSelectId}
@@ -776,13 +762,6 @@ function MemberFormPageInner() {
                 <div className="md:col-span-2">
                   <div className="flex items-center justify-between">
                     <label className="block font-semibold text-gray-500 text-xs">Groups</label>
-                    <button
-                      type="button"
-                      onClick={() => setAddGroupOpen(true)}
-                      className="font-semibold text-blue-700 hover:underline text-xs"
-                    >
-                      Add group
-                    </button>
                   </div>
                   <select
                     value={groupSelectId}
@@ -839,7 +818,7 @@ function MemberFormPageInner() {
                 disabled={store?.loading}
                 className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
               >
-                {pageMode === "edit" ? "Update" : "Save"}
+                {store?.loading ? (pageMode === "edit" ? "Updating..." : "Saving...") : pageMode === "edit" ? "Update" : "Save"}
               </button>
             </div>
           </form>
@@ -847,79 +826,7 @@ function MemberFormPageInner() {
       </div>
 
       <SimpleModal
-        open={addCellOpen}
-        title="Add Cell"
-        onClose={() => {
-          setAddCellOpen(false);
-          setAddCellError(null);
-        }}
-      >
-        {addCellError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{addCellError}</div>
-        )}
-        <Field label="Cell Name">
-          <input
-            value={addCellName}
-            onChange={(e) => setAddCellName(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          />
-        </Field>
-        <div className="mt-5 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => setAddCellOpen(false)}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={createNewCell}
-            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-          >
-            Save
-          </button>
-        </div>
-      </SimpleModal>
-
-      <SimpleModal
-        open={addDepartmentOpen}
-        title="Add Department"
-        onClose={() => {
-          setAddDepartmentOpen(false);
-          setAddDepartmentError(null);
-        }}
-      >
-        {addDepartmentError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{addDepartmentError}</div>
-        )}
-        <Field label="Department Name">
-          <input
-            value={addDepartmentName}
-            onChange={(e) => setAddDepartmentName(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          />
-        </Field>
-        <div className="mt-5 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => setAddDepartmentOpen(false)}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={createNewDepartment}
-            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-          >
-            Save
-          </button>
-        </div>
-      </SimpleModal>
-
-      <SimpleModal
-        open={addGroupOpen}
+        open={false}
         title="Add Group"
         onClose={() => {
           setAddGroupOpen(false);

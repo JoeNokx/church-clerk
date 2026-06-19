@@ -74,7 +74,7 @@ function AttendancePageInner() {
   };
 
   const isService = activeTab === "service";
-  const visitorBadge = Number(store?.visitorStats?.thisMonthVisitors || 0);
+  const visitorBadge = Number(store?.visitorStats?.totalVisitors || 0);
 
   return (
     <div className="w-full max-w-6xl overflow-x-hidden lg:overflow-x-visible">

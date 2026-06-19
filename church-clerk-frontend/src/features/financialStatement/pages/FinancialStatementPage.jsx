@@ -60,12 +60,20 @@ const MONTH_OPTIONS = [
   { value: 12, label: "December" }
 ];
 
-function buildYearOptions({ fromYear, toYear }) {
-  const years = [];
-  for (let y = toYear; y >= fromYear; y -= 1) {
-    years.push(y);
-  }
-  return years;
+function YearInput({ value, onChange }) {
+  return (
+    <input
+      type="number"
+      value={value}
+      onChange={(e) => {
+        const v = Number(e.target.value);
+        if (v > 0) onChange(v);
+      }}
+      min={1900}
+      max={2100}
+      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm w-24"
+    />
+  );
 }
 
 function FinancialStatementPage() {
@@ -80,8 +88,6 @@ function FinancialStatementPage() {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
   const currentQuarter = getCurrentQuarter(now.getMonth());
-
-  const yearOptions = useMemo(() => buildYearOptions({ fromYear: currentYear - 10, toYear: currentYear + 1 }), [currentYear]);
 
   const [tab, setTab] = useState("monthly");
 
@@ -306,17 +312,7 @@ function FinancialStatementPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
-                  <select
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-                    value={monthYear}
-                    onChange={(e) => setMonthYear(Number(e.target.value))}
-                  >
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
+                  <YearInput value={monthYear} onChange={setMonthYear} />
                 </div>
               </>
             ) : null}
@@ -338,17 +334,7 @@ function FinancialStatementPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
-                  <select
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-                    value={quarterYear}
-                    onChange={(e) => setQuarterYear(Number(e.target.value))}
-                  >
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
+                  <YearInput value={quarterYear} onChange={setQuarterYear} />
                 </div>
               </>
             ) : null}
@@ -356,17 +342,7 @@ function FinancialStatementPage() {
             {tab === "annual" ? (
               <div className="flex items-center gap-2">
                 <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
-                <select
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-                  value={annualYear}
-                  onChange={(e) => setAnnualYear(Number(e.target.value))}
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
+                <YearInput value={annualYear} onChange={setAnnualYear} />
               </div>
             ) : null}
           </div>

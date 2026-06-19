@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 function SupportHelpPage() {
@@ -23,6 +23,70 @@ function SupportHelpPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [openFaq, setOpenFaq] = useState(null);
+
+  const toggleFaq = useCallback((idx) => {
+    setOpenFaq((prev) => (prev === idx ? null : idx));
+  }, []);
+
+  const faqs = useMemo(() => [
+    {
+      q: "Why can't I see action buttons (Add, Edit, Delete)?",
+      a: "Your account may be deactivated or set to read-only by your administrator. Contact your church admin to activate your account or adjust your permissions."
+    },
+    {
+      q: "Why do I see 'Read-only' when switching church context?",
+      a: "As a Headquarters admin viewing a branch, your access is view-only. Only a branch admin can make changes to branch data directly."
+    },
+    {
+      q: "How do I change my password?",
+      a: "Click your avatar in the top-right corner, select 'Change Password', and follow the prompts. You will need your current password."
+    },
+    {
+      q: "How do I add a new member?",
+      a: "Go to Members from the sidebar, then click 'Add Member'. Fill in the required details and click 'Save'. The member will appear in your records immediately."
+    },
+    {
+      q: "Why is my subscription showing as expired or suspended?",
+      a: "Your trial or billing period may have ended. Go to Billing & Subscription in Settings to renew or upgrade your plan. During a grace period you can still view data."
+    },
+    {
+      q: "How do I record tithes and offerings?",
+      a: "Navigate to Tithes or Offerings from the Finance section in the sidebar. Use 'Add Record' to capture individual or aggregate contributions. You can also attach service type and offering type categories."
+    },
+    {
+      q: "How do I export financial reports?",
+      a: "Open Financial Statement or Reports & Analytics, set your desired period and filters, then click 'Export'. You can export as PDF or Excel. Make sure your role has export permissions."
+    },
+    {
+      q: "How do I create an event or program?",
+      a: "Go to Programs & Events from the sidebar and click 'Create Event'. Fill in the title, category, date range, time, and venue, then save. The event will appear in the Upcoming tab."
+    },
+    {
+      q: "How do I manage groups, departments, and cells (Ministries)?",
+      a: "Go to Ministries in the sidebar. Use the Groups, Departments, and Cells tabs to view and manage each type. Click 'Add' to create a new entry, or use Edit/Delete on any existing record."
+    },
+    {
+      q: "How do I add a branch church?",
+      a: "From your Headquarters account, go to Settings and navigate to the Branches section. Click 'Add Branch' and fill in the branch details. Branches can then be viewed from the header context switcher."
+    },
+    {
+      q: "Why is attendance data not showing in charts?",
+      a: "Charts require at least one attendance record to be saved. Make sure attendance has been recorded under the Attendance module. Data updates on the dashboard after records are added."
+    },
+    {
+      q: "How do I record visitor information?",
+      a: "Go to Attendance from the sidebar and switch to the Visitors tab. Click 'Add Visitor' to log a visitor's details. Visitor counts are tracked separately from regular member attendance."
+    },
+    {
+      q: "Can I recover deleted records?",
+      a: "Deleted records cannot be recovered from the system. Please exercise caution when deleting members, transactions, or events. Contact support immediately if a critical record was deleted by mistake."
+    },
+    {
+      q: "How do I update church profile or settings?",
+      a: "Go to Settings from the sidebar. You can update church details, currency, logo, and other preferences from the Church Profile tab. Changes take effect immediately."
+    }
+  ], []);
 
   useEffect(() => {
     if (!location?.hash) return;
@@ -261,14 +325,33 @@ function SupportHelpPage() {
         </div>
 
         <div id="faq" className="mt-8 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-900 text-sm">FAQ</div>
-          <div className="mt-4 space-y-4">
+          <div className="font-semibold text-gray-900 text-sm">Frequently Asked Questions</div>
+          <div className="mt-1 text-gray-500 text-xs">Click a question to expand the answer.</div>
+          <div className="mt-4 divide-y divide-gray-100">
+            {faqs.map((item, idx) => (
+              <div key={idx}>
+                <button
+                  type="button"
+                  onClick={() => toggleFaq(idx)}
+                  className="flex w-full items-center justify-between gap-4 py-4 text-left"
+                >
+                  <span className="font-semibold text-gray-900 text-sm">{item.q}</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className={`h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 ${openFaq === idx ? "rotate-180" : ""}`}
+                  >
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {openFaq === idx && (
+                  <div className="pb-4 text-gray-600 text-sm leading-relaxed">{item.a}</div>
+                )}
+              </div>
+            ))}{/*
             <div className="rounded-xl border border-gray-200 p-4">
               <div className="font-semibold text-gray-900 text-sm">Why can’t I see action buttons?</div>
               <div className="mt-1 text-gray-600 text-sm">
-                If your account is deactivated, the system is read-only for you. Contact your administrator to activate your account.
-              </div>
-            </div>
             <div className="rounded-xl border border-gray-200 p-4">
               <div className="font-semibold text-gray-900 text-sm">Why do I get “Read-only” when switching church?</div>
               <div className="mt-1 text-gray-600 text-sm">
@@ -280,7 +363,7 @@ function SupportHelpPage() {
               <div className="mt-1 text-gray-600 text-sm">
                 Use the account menu in the top-right corner and select “Change Password”.
               </div>
-            </div>
+            </div>*/}
           </div>
         </div>
       </div>

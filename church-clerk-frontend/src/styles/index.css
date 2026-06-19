@@ -94,10 +94,12 @@
   header button[aria-label="Toggle sidebar"] svg {
     display: inline-block !important;
   }
-  header button.relative.h-11.w-11 svg {
+  header button.relative.h-11.w-11 svg,
+  header button.relative.h-11.w-11.rounded-lg svg {
     display: inline-block !important;
   }
-  header button.relative.h-11.w-11 span {
+  header button.relative.h-11.w-11 span,
+  header button.relative.h-11.w-11.rounded-lg span {
     font-size: 10px !important;
     line-height: 1rem !important;
   }

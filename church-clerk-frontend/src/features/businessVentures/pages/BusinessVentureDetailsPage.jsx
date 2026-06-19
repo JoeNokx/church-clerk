@@ -190,7 +190,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
       <button
         type="button"
         onClick={() => setDatePickerOpen((v) => !v)}
-        className="inline-flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 md:h-12 text-sm"
+        className="inline-flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 hover:bg-gray-50 md:h-12 text-sm"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
           <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -201,7 +201,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
       </button>
 
       {datePickerOpen && (
-        <div className="cck-date-dropdown absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+        <div className="cck-date-dropdown absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3">
           <div className="flex items-center justify-between gap-3 pb-3">
             <div className="font-semibold text-gray-500 text-xs">Filter by date</div>
             <button type="button" onClick={clearDates} className="font-semibold text-gray-600 hover:text-gray-900 text-xs">
@@ -838,7 +838,7 @@ function BusinessVentureDetailsPage() {
                   setExpenseSearch(e.target.value);
                   setExpensePage(1);
                 }}
-                placeholder="Search..."
+                placeholder="Search description or vendor..."
                 className="h-11 w-64 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               />
 

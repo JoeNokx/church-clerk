@@ -41,7 +41,7 @@ function BudgetingFilters() {
         value={search}
         onChange={onChange}
         className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
-        placeholder="Budget name..."
+        placeholder="Search budget name..."
       />
       <div className="grid grid-cols-2 gap-2">
         <select
