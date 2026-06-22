@@ -2,6 +2,7 @@ import ApprovalRequest, { ApprovalStatuses, ApprovalActionTypes } from "../../mo
 import FinancialAdjustment, { AdjustmentStatuses, ImpactLevels } from "../../models/financeModel/governance/financialAdjustmentModel.js";
 import FinancialAuditLog from "../../models/financeModel/governance/financialAuditLogModel.js";
 import { getSystemSettingsSnapshot } from "../../controller/systemSettingsController.js";
+import { getModelForEntity } from "./govModelRegistry.js";
 
 export const GovernanceModules = Object.freeze({
   TITHES: "tithes",
@@ -33,19 +34,19 @@ export async function logAudit({ actor, action, church, module, entityType, enti
   }
 }
 
-export async function enforceBackdating({ user, churchId, module, entityType, date, reason, onApprove }) {
-  const flags = await getSystemSettingsSnapshot();
-  const enforce = Boolean(flags.enforceBackdating);
-  if (!enforce) return { status: "APPROVED" };
-
+export async function enforceBackdating({ user, churchId, module, entityType, date, reason, fullBody, onApprove }) {
   const isAdmin = ["superadmin", "churchadmin"].includes(String(user?.role || ""));
-  if (isWithin24Hours(date) || isAdmin) {
-    return { status: "APPROVED" };
-  }
 
-  if (!reason || !String(reason).trim()) {
-    return { status: "PENDING_APPROVAL", error: "Backdating reason is required for dates older than 24 hours" };
-  }
+  // Admins can always backdate freely
+  if (isAdmin) return { status: "APPROVED" };
+
+  // Within 24 hours is fine for everyone
+  if (isWithin24Hours(date)) return { status: "APPROVED" };
+
+  // Non-admin backdating beyond 24 hours always requires approval
+  const safeBody = Object.assign({}, fullBody || {});
+  delete safeBody.reason;
+  delete safeBody.backdateReason;
 
   const reqDoc = await ApprovalRequest.create({
     church: churchId,
@@ -53,8 +54,8 @@ export async function enforceBackdating({ user, churchId, module, entityType, da
     entityType,
     actionType: ApprovalActionTypes.BACKDATE_CREATE,
     requestedBy: user._id,
-    reason: String(reason).trim(),
-    payload: { date }
+    reason: String(reason || "").trim() || null,
+    payload: { date, fullBody: safeBody }
   });
 
   await logAudit({ actor: user._id, action: "BACKDATE_REQUESTED", church: churchId, module, entityType, meta: { approvalRequestId: reqDoc._id } });
@@ -89,25 +90,20 @@ export async function createAdjustment({ user, churchId, module, entityType, ori
     return { status: "APPROVED", adjustmentId: adj._id };
   }
 
-  if (isHigh) {
-    const reqDoc = await ApprovalRequest.create({
-      church: churchId,
-      module,
-      entityType,
-      actionType: ApprovalActionTypes.ADJUSTMENT_HIGH_IMPACT,
-      requestedBy: user._id,
-      reason: String(reason || "").trim(),
-      payload: { originalId: original._id, patch }
-    });
+  // When enforcement is ON, ALL adjustments require admin approval regardless of impact level
+  const reqDoc = await ApprovalRequest.create({
+    church: churchId,
+    module,
+    entityType,
+    actionType: ApprovalActionTypes.ADJUSTMENT_HIGH_IMPACT,
+    requestedBy: user._id,
+    reason: String(reason || "").trim(),
+    payload: { originalId: original._id, patch, originalSnapshot: original }
+  });
 
-    const adj = await FinancialAdjustment.create({ ...base, status: AdjustmentStatuses.PENDING_APPROVAL, approvalRequestId: reqDoc._id });
-    await logAudit({ actor: user._id, action: "ADJUSTMENT_REQUESTED", church: churchId, module, entityType, entityId: original._id, meta: { adjustmentId: adj._id, approvalRequestId: reqDoc._id } });
-    return { status: "PENDING_APPROVAL", adjustmentId: adj._id, requestId: reqDoc._id };
-  }
-
-  const adj = await FinancialAdjustment.create({ ...base, status: AdjustmentStatuses.APPLIED, appliedAt: new Date() });
-  await logAudit({ actor: user._id, action: "ADJUSTMENT_APPLIED", church: churchId, module, entityType, entityId: original._id, meta: { adjustmentId: adj._id } });
-  return { status: "APPROVED", adjustmentId: adj._id };
+  const adj = await FinancialAdjustment.create({ ...base, status: AdjustmentStatuses.PENDING_APPROVAL, approvalRequestId: reqDoc._id });
+  await logAudit({ actor: user._id, action: "ADJUSTMENT_REQUESTED", church: churchId, module, entityType, entityId: original._id, meta: { adjustmentId: adj._id, approvalRequestId: reqDoc._id } });
+  return { status: "PENDING_APPROVAL", adjustmentId: adj._id, requestId: reqDoc._id };
 }
 
 function buildDifference(original, patch) {
@@ -133,12 +129,30 @@ export async function approveRequest({ requestId, approverId }) {
   reqDoc.decidedAt = new Date();
   await reqDoc.save();
 
-  // Apply side-effects for related adjustments
   if (reqDoc.actionType === ApprovalActionTypes.ADJUSTMENT_HIGH_IMPACT) {
+    const adjustments = await FinancialAdjustment.find({ approvalRequestId: reqDoc._id }).lean();
+    const Model = getModelForEntity(reqDoc.module, reqDoc.entityType);
+    for (const adj of adjustments) {
+      if (Model && adj.originalId && adj.correctedFields) {
+        await Model.findByIdAndUpdate(adj.originalId, { $set: adj.correctedFields }).catch(() => {});
+      }
+    }
     await FinancialAdjustment.updateMany(
       { approvalRequestId: reqDoc._id },
       { $set: { status: AdjustmentStatuses.APPLIED, appliedAt: new Date() } }
     );
+  }
+
+  if (reqDoc.actionType === ApprovalActionTypes.BACKDATE_CREATE) {
+    const Model = getModelForEntity(reqDoc.module, reqDoc.entityType);
+    if (Model && reqDoc.payload?.fullBody) {
+      await Model.create({
+        ...reqDoc.payload.fullBody,
+        church: reqDoc.church,
+        createdBy: reqDoc.requestedBy,
+        _backdateApprovalId: reqDoc._id
+      }).catch(() => {});
+    }
   }
 
   await logAudit({ actor: approverId, action: "APPROVAL_APPROVED", church: reqDoc.church, module: reqDoc.module, entityType: reqDoc.entityType, meta: { requestId } });

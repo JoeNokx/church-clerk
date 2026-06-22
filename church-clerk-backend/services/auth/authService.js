@@ -201,7 +201,9 @@ async function loginUser(email, password, rememberMe, req) {
   }
 
   if (user.isEmailVerified === false) {
-    throw new Error("Please verify your email to continue.");
+    const err = new Error("Please verify your email before logging in.");
+    err.code = "EMAIL_NOT_VERIFIED";
+    throw err;
   }
 
   const isMatch = await user.comparePassword(password);

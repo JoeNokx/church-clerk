@@ -11,7 +11,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
   const deltaText = useMemo(() => {
     if (change === undefined || change === null) return "—";
     const sign = change > 0 ? "+" : "";
-    return `${sign}${change}%`;
+    return `${sign}${Math.round(change)}%`;
   }, [change]);
 
   const arrow = useMemo(() => {

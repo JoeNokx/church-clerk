@@ -80,6 +80,9 @@ const createAnnouncement = async ({ body, userId }) => {
   const bannerDurationMinutesRaw = body?.bannerDurationMinutes;
   const target = body?.target || { type: "all" };
   const sendMode = String(body?.sendMode || "draft").trim();
+  const expiresAtRaw = body?.expiresAt;
+  const expiresAt = expiresAtRaw ? new Date(expiresAtRaw) : null;
+  if (expiresAt && Number.isNaN(expiresAt.getTime())) throw new Error("Invalid expiresAt");
 
   if (!title) throw new Error("Title is required");
   if (!message) throw new Error("Message is required");
@@ -133,6 +136,7 @@ const createAnnouncement = async ({ body, userId }) => {
     status,
     scheduledAt,
     sentAt,
+    expiresAt: expiresAt || null,
     createdBy: userId || null,
     updatedBy: userId || null
   });
@@ -225,6 +229,12 @@ const updateAnnouncement = async ({ id, body, userId }) => {
     patch.scheduledAt = dt;
   }
 
+  if (body?.expiresAt !== undefined) {
+    const dt = body.expiresAt ? new Date(body.expiresAt) : null;
+    if (dt && Number.isNaN(dt.getTime())) throw new Error("Invalid expiresAt");
+    patch.expiresAt = dt;
+  }
+
   if (body?.sendMode !== undefined && String(patch.kind || existing.kind || "message") === "message") {
     const sendMode = String(body.sendMode || "").trim();
     if (sendMode === "now") {
@@ -276,7 +286,11 @@ const listActiveForUser = async (user) => {
 
   await releaseDueScheduledSystemInAppAnnouncements();
 
-  const announcements = await SystemInAppAnnouncement.find({ status: "sent" })
+  const now = new Date();
+  const announcements = await SystemInAppAnnouncement.find({
+    status: "sent",
+    $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
+  })
     .sort({ sentAt: -1, createdAt: -1 })
     .limit(50)
     .lean();

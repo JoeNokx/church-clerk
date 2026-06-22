@@ -487,121 +487,79 @@ function BusinessVenturesPage() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
-          <div>
-            <div className="font-semibold text-gray-900 text-sm">Business Ventures</div>
-            <div className="text-gray-500 text-xs">All ventures and financials</div>
-          </div>
-
-          <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-end md:justify-end">
-            <input
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
-              placeholder="Search business name"
-            />
-          </div>
+      <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="font-semibold text-gray-900 text-sm">Business Ventures</div>
+          <div className="text-gray-500 text-xs">All ventures and financials</div>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-100">
-              <tr className="text-left font-semibold text-gray-500 text-xs">
-                <th className="py-3 whitespace-nowrap px-4 md:px-6">Business Name</th>
-                <th className="py-3 whitespace-nowrap px-4 md:px-6">Description</th>
-                <th className="py-3 whitespace-nowrap px-4 md:px-6">Manager</th>
-                <th className="py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
-                <th className="py-3 whitespace-nowrap px-4 md:px-6">Income</th>
-                <th className="py-3 whitespace-nowrap px-4 md:px-6">Expenses</th>
-                <th className="py-3 whitespace-nowrap px-4 md:px-6">Net</th>
-                <th className="py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {loading ? (
-                [0, 1, 2, 3].map((i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
-                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-36 rounded bg-gray-200" /></td>
-                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200 ml-auto" /></td>
-                  </tr>
-                ))
-              ) : filteredVentures.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-500 text-sm px-4 md:px-6">
-                    {searchValue ? "No business ventures found matching your search." : "No business ventures found. Click <span className=\"font-semibold\">Add Venture</span> to get started."}
-                  </td>
-                </tr>
-              ) : (
-                filteredVentures.map((v, idx) => (
-                  <tr key={v?._id ?? `v-${idx}`} className="text-gray-700 hover:bg-gray-50 text-sm">
-                    <td className="py-3 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">{v?.businessName || "—"}</td>
-                    <td className="py-3 text-gray-600 max-w-xs truncate px-4 md:px-6">{v?.description || "—"}</td>
-                    <td className="py-3 whitespace-nowrap px-4 md:px-6">{v?.manager || "—"}</td>
-                    <td className="py-3 whitespace-nowrap px-4 md:px-6">{v?.phoneNumber || "—"}</td>
-                    <td className="py-3 font-semibold text-green-700 whitespace-nowrap px-4 md:px-6">{formatMoney(v?.totalIncome, currency)}</td>
-                    <td className="py-3 font-semibold text-orange-600 whitespace-nowrap px-4 md:px-6">{formatMoney(v?.totalExpenses, currency)}</td>
-                    <td className="py-3 font-semibold text-blue-900 whitespace-nowrap px-4 md:px-6">{formatMoney(v?.net, currency)}</td>
-                    <td className="py-3 whitespace-nowrap px-4 md:px-6">
-                      <div className="flex items-center justify-end gap-2">
-                        {canView ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => viewIncome(v)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-green-700 hover:bg-gray-50 text-xs"
-                            >
-                              Income
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => viewExpenses(v)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-orange-600 hover:bg-gray-50 text-xs"
-                            >
-                              Expenses
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => viewDetails(v)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                            >
-                              View
-                            </button>
-                          </>
-                        ) : null}
-                        {canEdit ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => openEdit(v)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openDelete(v)}
-                              className="rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-red-50 text-xs"
-                            >
-                              Delete
-                            </button>
-                          </>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <input
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
+          placeholder="Search business name"
+        />
       </div>
+
+      {loading ? (
+        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <Skeleton height={14} count={4} />
+        </div>
+      ) : filteredVentures.length === 0 ? (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500 text-sm">
+          {searchValue ? "No business ventures matching your search." : "No business ventures found. Click Add Venture to get started."}
+        </div>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {filteredVentures.map((v, idx) => (
+            <div key={v?._id ?? `v-${idx}`} className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-gray-900 truncate text-sm">{v?.businessName || "—"}</div>
+                  {v?.description ? <div className="mt-0.5 text-gray-500 text-xs truncate">{v.description}</div> : null}
+                </div>
+              </div>
+
+              {(v?.manager || v?.phoneNumber) ? (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                  {v?.manager ? <span>Manager: <span className="font-medium text-gray-700">{v.manager}</span></span> : null}
+                  {v?.phoneNumber ? <span>{v.phoneNumber}</span> : null}
+                </div>
+              ) : null}
+
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Income</div>
+                  <div className="mt-1 font-semibold text-green-700 text-sm">{formatMoney(v?.totalIncome, currency)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Expenses</div>
+                  <div className="mt-1 font-semibold text-orange-600 text-sm">{formatMoney(v?.totalExpenses, currency)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Net</div>
+                  <div className="mt-1 font-semibold text-blue-900 text-sm">{formatMoney(v?.net, currency)}</div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center gap-2 flex-wrap">
+                {canView ? (
+                  <>
+                    <button type="button" onClick={() => viewIncome(v)} className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-green-700 shadow-sm hover:bg-gray-50 text-xs">Income</button>
+                    <button type="button" onClick={() => viewExpenses(v)} className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-orange-600 shadow-sm hover:bg-gray-50 text-xs">Expenses</button>
+                    <button type="button" onClick={() => viewDetails(v)} className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">View</button>
+                  </>
+                ) : null}
+                {canEdit ? (
+                  <>
+                    <button type="button" onClick={() => openEdit(v)} className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
+                    <button type="button" onClick={() => openDelete(v)} className="whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-red-50 text-xs">Delete</button>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <AddBusinessModal
         open={addOpen}

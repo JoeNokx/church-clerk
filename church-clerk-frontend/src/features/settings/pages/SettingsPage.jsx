@@ -125,6 +125,9 @@ function SettingsPage() {
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState("");
   const passwordSectionRef = useRef(null);
+  const [pwOldShow, setPwOldShow] = useState(false);
+  const [pwNewShow, setPwNewShow] = useState(false);
+  const [pwConfirmShow, setPwConfirmShow] = useState(false);
 
   const isUserActive = useMemo(() => {
     if (typeof window === "undefined") return true;
@@ -1191,13 +1194,6 @@ function SettingsPage() {
             >
               Audit Log
             </button>
-            <button
-              type="button"
-              onClick={() => setTab("system")}
-              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "system" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
-            >
-              System
-            </button>
           </div>
         </div>
       </div>
@@ -1322,38 +1318,53 @@ function SettingsPage() {
             <form onSubmit={handleUpdateMyPassword} className="mt-4 space-y-4">
               <div>
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Old Password</label>
-                <input
-                  type="password"
-                  value={pwOld}
-                  onChange={(e) => setPwOld(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                  required
-                  disabled={!isUserActive}
-                />
+                <div className="relative">
+                  <input
+                    type={pwOldShow ? "text" : "password"}
+                    value={pwOld}
+                    onChange={(e) => setPwOld(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                    required
+                    disabled={!isUserActive}
+                  />
+                  <button type="button" onClick={() => setPwOldShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                    {pwOldShow ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M1 1l22 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> : <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/></svg>}
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-medium text-gray-700 mb-1 text-sm">New Password</label>
-                  <input
-                    type="password"
-                    value={pwNew}
-                    onChange={(e) => setPwNew(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                    required
-                    disabled={!isUserActive}
-                  />
+                  <div className="relative">
+                    <input
+                      type={pwNewShow ? "text" : "password"}
+                      value={pwNew}
+                      onChange={(e) => setPwNew(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                      required
+                      disabled={!isUserActive}
+                    />
+                    <button type="button" onClick={() => setPwNewShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                      {pwNewShow ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M1 1l22 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> : <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/></svg>}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block font-medium text-gray-700 mb-1 text-sm">Confirm Password</label>
-                  <input
-                    type="password"
-                    value={pwConfirm}
-                    onChange={(e) => setPwConfirm(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                    required
-                    disabled={!isUserActive}
-                  />
+                  <div className="relative">
+                    <input
+                      type={pwConfirmShow ? "text" : "password"}
+                      value={pwConfirm}
+                      onChange={(e) => setPwConfirm(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                      required
+                      disabled={!isUserActive}
+                    />
+                    <button type="button" onClick={() => setPwConfirmShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                      {pwConfirmShow ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M1 1l22 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> : <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/></svg>}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1369,60 +1380,6 @@ function SettingsPage() {
         </div>
       ) : null}
 
-      {tab === "system" ? (
-        <div className="mt-6 space-y-4">
-          {!isSystemAdmin ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 md:p-6 lg:p-8 text-sm">
-              System-level settings are visible to system administrators only.
-            </div>
-          ) : (
-            <>
-              {govError ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{govError}</div>
-              ) : null}
-
-              <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-                <div className="font-semibold text-gray-900 text-sm">Financial Governance</div>
-                <div className="mt-1 text-gray-500 text-xs">Feature flags are OFF by default. Toggle to enforce.</div>
-
-                <div className="mt-4 space-y-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="font-medium text-gray-900 text-sm">Enforce Backdating Control</div>
-                      <div className="mt-0.5 text-gray-500 text-xs">Backdated creates require admin approval.</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={enforceBackdating}
-                        onChange={(e) => handleToggleFlag("enforceBackdating", e.target.checked)}
-                        disabled={govLoading}
-                      />
-                      <span className="text-gray-700 text-sm">{enforceBackdating ? "On" : "Off"}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="font-medium text-gray-900 text-sm">Enforce Immutability</div>
-                      <div className="mt-0.5 text-gray-500 text-xs">Updates/deletes are disabled; use adjustments.</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={enforceImmutability}
-                        onChange={(e) => handleToggleFlag("enforceImmutability", e.target.checked)}
-                        disabled={govLoading}
-                      />
-                      <span className="text-gray-700 text-sm">{enforceImmutability ? "On" : "Off"}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      ) : null}
 
       {auditDetailOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -1478,28 +1435,6 @@ function SettingsPage() {
                     <div className="font-semibold text-gray-500 text-xs">Activity</div>
                     <div className="mt-1 text-gray-900">{activityTextFromLog(auditDetailRow) || "—"}</div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">Description</div>
-                    <div className="mt-1 text-gray-900">{auditDetailRow?.description || "—"}</div>
-                  </div>
-
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">HTTP Method</div>
-                    <div className="mt-1 text-gray-900">{auditDetailRow?.httpMethod || "—"}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">Path</div>
-                    <div className="mt-1 text-gray-900 break-all">{auditDetailRow?.path || "—"}</div>
-                  </div>
-
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">Resource</div>
-                    <div className="mt-1 text-gray-900">{auditDetailRow?.resource || "—"}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">Response Code</div>
-                    <div className="mt-1 text-gray-900">{auditDetailRow?.responseStatusCode ?? "—"}</div>
-                  </div>
 
                   <div>
                     <div className="font-semibold text-gray-500 text-xs">Device Type</div>
@@ -1517,11 +1452,6 @@ function SettingsPage() {
                   <div>
                     <div className="font-semibold text-gray-500 text-xs">OS</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.os || "—"}</div>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <div className="font-semibold text-gray-500 text-xs">User Agent</div>
-                    <div className="mt-1 text-gray-900 break-all">{auditDetailRow?.userAgent || "—"}</div>
                   </div>
 
                   <div className="md:col-span-2">

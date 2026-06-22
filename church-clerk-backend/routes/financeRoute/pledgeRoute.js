@@ -20,7 +20,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("pledges", "create"),
   backdatingGuard({ dateField: "pledgeDate", module: "pledges", entityType: "pledge" }),
   createPledge
@@ -51,7 +51,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("pledges", "update"),
   conditionalImmutableGuard(),
   updatePledge
@@ -62,7 +62,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("pledges", "delete"),
   conditionalImmutableGuard(),
   deletePledge
@@ -114,7 +114,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("pledges", "create"),
   backdatingGuard({ dateField: "paymentDate", module: "pledges", entityType: "pledgePayment" }),
   createPledgePayment
@@ -135,7 +135,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("pledges", "update"),
   conditionalImmutableGuard(),
   updatePledgePayment
@@ -146,7 +146,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("pledges", "delete"),
   conditionalImmutableGuard(),
   deletePledgePayment

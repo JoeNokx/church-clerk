@@ -237,6 +237,7 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
 }
 
 function PledgeDetailsPageInner() {
+  const store = useContext(PledgeContext);
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "";
   const { can } = useContext(PermissionContext) || {};
@@ -472,37 +473,39 @@ function PledgeDetailsPageInner() {
           </div>
         </div>
 
-        <div className="mt-5 divide-y divide-gray-200">
-          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
             <div className="font-semibold text-gray-500 text-xs">Phone Number</div>
-            <div className="font-semibold text-gray-900 text-sm">{pledge?.phoneNumber || "—"}</div>
+            <div className="mt-1 font-semibold text-gray-900 text-sm">{pledge?.phoneNumber || "—"}</div>
           </div>
 
-          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
             <div className="font-semibold text-gray-500 text-xs">Pledge Date</div>
-            <div className="font-semibold text-gray-900 text-sm">{formatDate(pledge?.pledgeDate)}</div>
+            <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(pledge?.pledgeDate)}</div>
           </div>
 
-          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
             <div className="font-semibold text-gray-500 text-xs">Days Until Deadline</div>
-            <div className="font-semibold text-gray-900 text-sm">{daysUntilDeadline ?? "—"}</div>
+            <div className="mt-1 font-semibold text-gray-900 text-sm">{daysUntilDeadline ?? "—"}</div>
           </div>
 
-          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
             <div className="font-semibold text-gray-500 text-xs">Service Type</div>
-            <div className="font-semibold text-gray-900 text-sm">{pledge?.serviceType || "—"}</div>
+            <div className="mt-1 font-semibold text-gray-900 text-sm">{pledge?.serviceType || "—"}</div>
           </div>
 
-          <div className="flex flex-col gap-1 py-3 md:flex-row md:items-center md:justify-between">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
             <div className="font-semibold text-gray-500 text-xs">Deadline</div>
-            <div className="font-semibold text-gray-900 text-sm">{formatDate(pledge?.deadline)}</div>
-          </div>
-
-          <div className="py-3">
-            <div className="font-semibold text-gray-500 text-xs">Note</div>
-            <div className="mt-1 font-semibold text-gray-900 break-words text-sm">{pledge?.note || "—"}</div>
+            <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(pledge?.deadline)}</div>
           </div>
         </div>
+
+        {pledge?.note ? (
+          <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+            <div className="font-semibold text-gray-500 text-xs">Note</div>
+            <div className="mt-1 text-gray-900 break-words text-sm">{pledge.note}</div>
+          </div>
+        ) : null}
       </div>
 
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-3">

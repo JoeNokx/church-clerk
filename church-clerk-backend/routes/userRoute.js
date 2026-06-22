@@ -33,14 +33,12 @@ router.get(
   protect,
   setActiveChurch,
   attachPermissions,
-  requirePermission("settingsMyProfile", "read"),
   myProfile
 );
 router.put(
   "/me/profile",
   protect,
   attachPermissions,
-  requirePermission("settingsMyProfile", "update"),
   uploadMemoryFile.single("avatar"),
   updateMyProfile
 );
@@ -48,7 +46,6 @@ router.put(
   "/me/password",
   protect,
   attachPermissions,
-  requirePermission("settingsMyProfile", "update"),
   updateMyPassword
 );
 
@@ -109,7 +106,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("settingsUsersRoles", "create"),
   canCreateChurchUser
 );

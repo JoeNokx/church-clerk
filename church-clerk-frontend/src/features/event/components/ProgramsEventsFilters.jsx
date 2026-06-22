@@ -72,7 +72,7 @@ function ProgramsEventsFilters({ activeStatus }) {
       <select
         value={store?.filters?.category || ""}
         onChange={onCategoryChange}
-        className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        className="h-11 w-full md:w-auto rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm truncate"
       >
         <option value="">All Categories</option>
         {categoryOptions.map((c) => (

@@ -34,7 +34,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("welfare", "create"),
   validateRequest(createWelfareContributionSchema),
   backdatingGuard({ dateField: "date", module: "welfare", entityType: "welfareContribution" }),
@@ -56,7 +56,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("welfare", "update"),
   conditionalImmutableGuard(),
   updateWelfareContribution
@@ -67,7 +67,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("welfare", "delete"),
   conditionalImmutableGuard(),
   deleteWelfareContribution
@@ -113,7 +113,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("welfare", "create"),
   validateRequest(createWelfareDisbursementSchema),
   backdatingGuard({ dateField: "date", module: "welfare", entityType: "welfareDisbursement" }),
@@ -135,7 +135,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("welfare", "update"),
   conditionalImmutableGuard(),
   updateWelfareDisbursement
@@ -146,7 +146,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("welfare", "delete"),
   conditionalImmutableGuard(),
   deleteWelfareDisbursement

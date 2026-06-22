@@ -56,7 +56,7 @@ router.get(
    setActiveChurch,
    readOnlyBranchGuard,
    attachPermissions,
-   authorizeRoles("superadmin", "churchadmin"),
+   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
    requirePermission("members", "create"),
    canCreateMember
  );
@@ -94,7 +94,7 @@ router.get(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("members", "import"),
   downloadMembersImportTemplate
 );
@@ -105,7 +105,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("members", "import"),
   uploadMemberCsv,
   previewMembersImport
@@ -118,7 +118,7 @@ router.post(
   readOnlyBranchGuard,
   attachPermissions,
   blockMemberCreationIfOverdue,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("members", "import"),
   uploadMemberCsv,
   importMembersCsv
@@ -129,7 +129,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("members", "update"),
   validateRequest(updateMemberSchema),
   updateMember
@@ -140,7 +140,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("members", "delete"),
   deleteMember
 );

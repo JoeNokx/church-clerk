@@ -14,7 +14,8 @@ export function backdatingGuard({ dateField, module, entityType }) {
         module,
         entityType,
         date,
-        reason
+        reason,
+        fullBody: req.body
       });
 
       if (result.status === "PENDING_APPROVAL") {
@@ -28,20 +29,25 @@ export function backdatingGuard({ dateField, module, entityType }) {
   };
 }
 
-// immutableGuard blocks direct changes; controllers should be altered later to call createAdjustment instead of performing updates
+const IMMUTABLE_MSG = "This record is locked. To make changes, please submit a correction request with a reason — your admin will review and apply it.";
+
+// immutableGuard blocks direct changes unconditionally
 export function immutableGuard() {
   return async (_req, res) => {
-    return res.status(405).json({ message: "Direct edits are not allowed. Use adjustment entries.", status: "REJECTED" });
+    return res.status(405).json({ message: IMMUTABLE_MSG, status: "REJECTED" });
   };
 }
 
-// Conditional wrapper: only blocks when enforceImmutability flag is ON
+// Conditional wrapper: only blocks when enforceImmutability flag is ON.
+// Superadmin and churchadmin are exempt — they can always edit directly.
 export function conditionalImmutableGuard() {
   return async (req, res, next) => {
     try {
       const flags = await getSystemSettingsSnapshot();
       if (!flags.enforceImmutability) return next();
-      return res.status(405).json({ message: "Direct edits are not allowed. Use adjustment entries.", status: "REJECTED" });
+      const role = String(req.user?.role || "").toLowerCase();
+      if (role === "superadmin" || role === "churchadmin") return next();
+      return res.status(405).json({ message: IMMUTABLE_MSG, status: "REJECTED" });
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }

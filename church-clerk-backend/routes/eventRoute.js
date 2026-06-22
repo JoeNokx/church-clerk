@@ -32,6 +32,7 @@ import {
 } from "../controller/eventController/eventOfferingController.js";
 
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
+import { backdatingGuard, conditionalImmutableGuard } from "../middleware/financialGovernance.js";
 
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
@@ -293,6 +294,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("events", "create"),
+  backdatingGuard({ dateField: "offeringDate", module: "eventOffering", entityType: "eventOffering" }),
   createEventOffering
 );
 
@@ -315,6 +317,7 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("events", "update"),
+  conditionalImmutableGuard(),
   updateEventOffering
 );
 
@@ -326,6 +329,7 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("events", "delete"),
+  conditionalImmutableGuard(),
   deleteEventOffering
 );
 

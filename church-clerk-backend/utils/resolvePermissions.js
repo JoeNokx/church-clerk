@@ -109,6 +109,27 @@ const expandLegacyPermissions = (resolved) => {
   return out;
 };
 
+const deepMergePermissions = (configDefaults, dbPermissions) => {
+  if (!configDefaults) return dbPermissions;
+  if (!dbPermissions || typeof dbPermissions !== "object") return configDefaults;
+
+  if (dbPermissions.__all__) return dbPermissions;
+
+  const result = { ...configDefaults };
+
+  for (const moduleKey of Object.keys(MODULES)) {
+    const dbModule = dbPermissions[moduleKey];
+    if (!dbModule || typeof dbModule !== "object") continue;
+
+    const hasAnyTrue = Object.values(dbModule).some(Boolean);
+    if (hasAnyTrue) {
+      result[moduleKey] = dbModule;
+    }
+  }
+
+  return result;
+};
+
 export const resolvePermissions = async (role, roleRef = null, scope = "") => {
   const effectiveRole = normalizeRoleKey(role);
   if (!effectiveRole) return {};
@@ -120,7 +141,7 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
       const dbRole = await Role.findOne({ _id: roleRef }).select("permissions isActive").lean();
       if (dbRole?._id && dbRole?.isActive === false) return {};
       if (dbRole?.permissions && typeof dbRole.permissions === "object") {
-        const merged = roleDefaults ? { ...roleDefaults, ...dbRole.permissions } : dbRole.permissions;
+        const merged = deepMergePermissions(roleDefaults, dbRole.permissions);
         const resolved = resolveFromPermissionObject(merged);
         if (Object.keys(resolved).length) return expandLegacyPermissions(resolved);
       }
@@ -131,7 +152,7 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
 
       if (dbRole?._id && dbRole?.isActive === false) return {};
       if (dbRole?.permissions && typeof dbRole.permissions === "object") {
-        const merged = roleDefaults ? { ...roleDefaults, ...dbRole.permissions } : dbRole.permissions;
+        const merged = deepMergePermissions(roleDefaults, dbRole.permissions);
         const resolved = resolveFromPermissionObject(merged);
         if (Object.keys(resolved).length) return expandLegacyPermissions(resolved);
       }

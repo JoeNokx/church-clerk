@@ -56,7 +56,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachBillingBanner,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("expenses", "delete"),
   conditionalImmutableGuard(),
   deleteGeneralExpenses

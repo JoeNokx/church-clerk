@@ -356,6 +356,7 @@ app.use("/api/v1/church-project", Routes.churchProjectRoute);
 app.use("/api/v1/welfare", Routes.welfareRoute);
 app.use("/api/v1/business-ventures", Routes.businessVenturesRoute);
 app.use("/api/v1/referral", Routes.referralSystemRoute);
+app.use("/api/v1/church-governance", Routes.churchGovernanceRoute);
 
 // 404
 app.use((req, res) => {

@@ -24,7 +24,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "create"),
   backdatingGuard({ dateField: "startDate", module: "business", entityType: "businessVenture" }),
   createBusinessVentures
@@ -55,7 +55,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "update"),
   conditionalImmutableGuard(),
   updateBusinessVentures
@@ -66,7 +66,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "delete"),
   conditionalImmutableGuard(),
   deleteBusinessVentures
@@ -122,7 +122,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "create"),
   backdatingGuard({ dateField: "date", module: "business", entityType: "businessIncome" }),
   createBusinessIncome
@@ -143,7 +143,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "update"),
   conditionalImmutableGuard(),
   updateBusinessIncome
@@ -154,7 +154,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "delete"),
   conditionalImmutableGuard(),
   deleteBusinessIncome
@@ -199,7 +199,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "create"),
   backdatingGuard({ dateField: "date", module: "business", entityType: "businessExpense" }),
   createBusinessExpenses
@@ -220,7 +220,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "update"),
   conditionalImmutableGuard(),
   updateBusinessExpenses
@@ -231,7 +231,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "delete"),
   conditionalImmutableGuard(),
   deleteBusinessExpenses

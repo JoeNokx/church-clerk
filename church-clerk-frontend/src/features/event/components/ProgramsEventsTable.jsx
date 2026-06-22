@@ -30,6 +30,15 @@ function formatTimeRange(from, to, legacy) {
   return String(legacy);
 }
 
+function truncateTitle(title) {
+  if (!title || title === "-") return title;
+  const words = title.trim().split(/\s+/);
+  if (title.length > 20 && words.length > 2) {
+    return `${words[0]} ${words[1]}\u2026`;
+  }
+  return title;
+}
+
 function ProgramsEventsTable({ status, onEdit }) {
   const store = useContext(EventContext);
   const { can } = useContext(PermissionContext) || {};
@@ -140,21 +149,21 @@ function ProgramsEventsTable({ status, onEdit }) {
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Time</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Venue</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.title || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.category || "-"}</td>
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{truncateTitle(row?.title || "-")}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{formatRange(row?.dateFrom, row?.dateTo)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{formatTimeRange(row?.timeFrom, row?.timeTo, row?.time)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.venue || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.category || "-"}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <div className="flex items-center justify-end gap-2">
                     {canView && (

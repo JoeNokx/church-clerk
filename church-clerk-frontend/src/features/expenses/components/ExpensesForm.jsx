@@ -195,10 +195,17 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
               <label className="block font-semibold text-gray-500 text-xs">Description</label>
               <input
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const words = val.trim() === "" ? [] : val.trim().split(/\s+/);
+                  if (words.length <= 20) setDescription(val);
+                }}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder="Optional"
+                placeholder="Optional (max 20 words)"
               />
+              <div className="mt-1 text-right text-gray-400 text-xs">
+                {description.trim() === "" ? 0 : description.trim().split(/\s+/).length}/20 words
+              </div>
             </div>
           </div>
 

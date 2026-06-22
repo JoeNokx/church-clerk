@@ -10,6 +10,20 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+function formatDateWithDay(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const day = d.toLocaleDateString(undefined, { weekday: "short" });
+  const date = d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+  return `${day}, ${date}`;
+}
+
+function truncateSpeaker(name) {
+  if (!name) return "-";
+  return name.length > 20 ? name.slice(0, 20) + "…" : name;
+}
+
 function AttendanceTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
@@ -103,8 +117,8 @@ function AttendanceTable({ onEdit, onDeleted }) {
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Service Type</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="sticky left-0 z-20 bg-slate-100 py-2 whitespace-nowrap px-3 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Service Type</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Total</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -113,9 +127,9 @@ function AttendanceTable({ onEdit, onDeleted }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.serviceType || "-"}</td>
-                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.serviceDate)}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.mainSpeaker || "-"}</td>
+                <td className="sticky left-0 z-10 bg-white py-1.5 text-gray-900 whitespace-nowrap px-3 md:px-6">{formatDateWithDay(row?.serviceDate)}</td>
+                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.serviceType || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{truncateSpeaker(row?.mainSpeaker)}</td>
                 <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{Number(row?.totalNumber || 0).toLocaleString()}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <div className="flex items-center justify-end gap-2">

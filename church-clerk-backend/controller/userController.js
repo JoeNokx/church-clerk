@@ -7,6 +7,7 @@ import { MODULES } from "../config/permissions.js"
 import { resolvePermissions } from "../utils/resolvePermissions.js"
 import Subscription from "../models/billingModel/subscriptionModel.js"
 import Plan from "../models/billingModel/planModel.js"
+import { sendRegistrationVerificationEmail } from "../services/auth/emailVerificationService.js"
 
 //GET: fetch my profile
 const myProfile =  async (req, res) => {
@@ -258,7 +259,11 @@ const createChurchUser = async (req, res) => {
 
     user.password = undefined;
 
-    return res.status(201).json({ message: "User created", user });
+    sendRegistrationVerificationEmail(user).catch((err) => {
+      console.error("[createChurchUser] Failed to send verification email:", err.message);
+    });
+
+    return res.status(201).json({ message: "User created. A verification email has been sent to their inbox.", user });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -354,8 +359,23 @@ const setChurchUserActiveStatus = async (req, res) => {
       return res.status(400).json({ message: "isActive must be boolean" });
     }
 
-    if (String(req.user?._id || "") === String(id) && isActive === false) {
-      return res.status(400).json({ message: "You cannot deactivate your own account" });
+    if (String(req.user?._id || "") === String(id)) {
+      return res.status(400).json({ message: "You cannot change your own account status" });
+    }
+
+    const actorRole = String(req.user?.role || "");
+    const isAdminActor = ["churchadmin", "superadmin", "supportadmin"].includes(actorRole);
+    if (!isAdminActor) {
+      return res.status(403).json({ message: "Only church admins can activate or deactivate user accounts" });
+    }
+
+    const target = await User.findOne({ _id: id, church: churchId }).select("role fullName email phoneNumber isActive").lean();
+    if (!target) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (actorRole === "churchadmin" && target.role === "churchadmin") {
+      return res.status(403).json({ message: "You cannot deactivate another church admin" });
     }
 
     const user = await User.findOneAndUpdate(
@@ -365,10 +385,6 @@ const setChurchUserActiveStatus = async (req, res) => {
     )
       .select("fullName email phoneNumber role isActive createdAt")
       .lean();
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
 
     return res.status(200).json({ message: "User status updated", user });
   } catch (error) {
@@ -387,9 +403,9 @@ const getRolePermissionMatrix = async (req, res) => {
       ? dbChurchRoles.map((r) => String(r?.key || "").trim().toLowerCase()).filter(Boolean)
       : [];
 
-    const churchRoles = dbChurchRoleKeys.length
-      ? Array.from(new Set(dbChurchRoleKeys))
-      : Array.from(new Set(CHURCH_ROLES || []));
+    // Always include built-in roles merged with DB roles so the matrix never
+    // drops built-in roles when custom roles exist.
+    const churchRoles = Array.from(new Set([...(CHURCH_ROLES || []), ...dbChurchRoleKeys]));
 
     const roles = {};
     for (const roleKey of churchRoles) {

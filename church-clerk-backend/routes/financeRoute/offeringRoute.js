@@ -19,7 +19,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("offerings", "create"),
   validateRequest(createOfferingSchema),
   backdatingGuard({ dateField: "serviceDate", module: "offerings", entityType: "offering" }),
@@ -41,7 +41,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("offerings", "update"),
   conditionalImmutableGuard(),
   updateOffering
@@ -52,7 +52,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("offerings", "delete"),
   conditionalImmutableGuard(),
   deleteOffering

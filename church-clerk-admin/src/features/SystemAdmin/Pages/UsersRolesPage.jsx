@@ -9,7 +9,8 @@ import {
   listCustomRoles,
   updateCustomRole,
   updateSystemUser,
-  deleteSystemUserApi
+  deleteSystemUserApi,
+  verifyUserEmailByAdminApi
 } from "../Services/systemAdmin.api.js";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
@@ -71,6 +72,8 @@ function UsersRolesPage() {
   const [deleteUserModal, setDeleteUserModal] = useState(null);
   const [deleteUserLoading, setDeleteUserLoading] = useState(false);
   const [suspendUserLoading, setSuspendUserLoading] = useState(null);
+  const [verifyEmailModal, setVerifyEmailModal] = useState(null);
+  const [verifyEmailLoading, setVerifyEmailLoading] = useState(false);
 
   const allRoles = useMemo(() => {
     const list = roles?.allRoles;
@@ -349,6 +352,21 @@ function UsersRolesPage() {
     }
   };
 
+  const onVerifyUserEmail = async () => {
+    if (!verifyEmailModal?._id) return;
+    setVerifyEmailLoading(true);
+    setError("");
+    try {
+      await verifyUserEmailByAdminApi(verifyEmailModal._id);
+      setVerifyEmailModal(null);
+      await load({ nextPage: page });
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to verify email");
+    } finally {
+      setVerifyEmailLoading(false);
+    }
+  };
+
   const onDeleteUser = async () => {
     if (!deleteUserModal?._id) return;
     setDeleteUserLoading(true);
@@ -433,6 +451,7 @@ function UsersRolesPage() {
                   <th className="py-3 text-left font-semibold">Role</th>
                   <th className="py-3 text-left font-semibold">Church</th>
                   <th className="py-3 text-left font-semibold">Status</th>
+                  <th className="py-3 text-left font-semibold">Email Status</th>
                   <th className="py-3 text-left font-semibold">Created</th>
                   <th className="py-3 text-right font-semibold">Actions</th>
                 </tr>
@@ -448,6 +467,7 @@ function UsersRolesPage() {
                         <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                         <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
                         <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                        <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
                         <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                         <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                       </tr>
@@ -455,11 +475,11 @@ function UsersRolesPage() {
                   </>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-6 text-center text-gray-500">
+                    <td colSpan={9} className="py-6 text-center text-gray-500">
                       No users found.
                     </td>
                   </tr>
-                ) : (
+                  ) : (
                   rows.map((u) => (
                     <tr key={u?._id} className="border-b last:border-b-0">
                       <td className="py-3 text-gray-900">{u?.fullName || "—"}</td>
@@ -472,6 +492,11 @@ function UsersRolesPage() {
                           u?.isActive === false ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
                         }`}>{u?.isActive === false ? "Inactive" : "Active"}</span>
                       </td>
+                      <td className="py-3">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          u?.isEmailVerified === false ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
+                        }`}>{u?.isEmailVerified === false ? "Unverified" : "Verified"}</span>
+                      </td>
                       <td className="py-3 text-gray-700">{fmtDateTime(u?.createdAt)}</td>
                       <td className="py-3 text-right">
                         <div className="inline-flex items-center gap-1 justify-end">
@@ -479,6 +504,12 @@ function UsersRolesPage() {
                             className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                             Edit
                           </button>
+                          {u?.isEmailVerified === false ? (
+                            <button type="button" onClick={() => setVerifyEmailModal(u)}
+                              className="rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                              Verify Email
+                            </button>
+                          ) : null}
                           <button type="button"
                             onClick={() => onToggleSuspendUser(u)}
                             disabled={suspendUserLoading === u._id}
@@ -1108,6 +1139,42 @@ function UsersRolesPage() {
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {verifyEmailModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+              <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-gray-900 text-base">Verify Email Address</div>
+              <div className="mt-2 text-sm text-gray-600">
+                This will immediately mark <span className="font-semibold text-gray-900">{verifyEmailModal.fullName || verifyEmailModal.email}</span>&apos;s email as verified, bypassing the email link. Only do this if the user cannot receive the verification email.
+              </div>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setVerifyEmailModal(null)}
+                disabled={verifyEmailLoading}
+                className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onVerifyUserEmail}
+                disabled={verifyEmailLoading}
+                className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {verifyEmailLoading ? "Verifying…" : "Yes, Verify"}
               </button>
             </div>
           </div>

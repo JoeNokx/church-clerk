@@ -72,9 +72,14 @@ function AnnouncementsPage() {
   const churchPickerRef = useRef(null);
   const rolePickerRef = useRef(null);
 
+  const [composeExpiresAt, setComposeExpiresAt] = useState("");
+
   const [composeSaving, setComposeSaving] = useState(false);
   const [composeError, setComposeError] = useState("");
   const [composeSuccess, setComposeSuccess] = useState("");
+
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState(null);
+  const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
 
   const balanceGhs = useMemo(() => {
     const per = Number(creditsPerGhs);
@@ -239,6 +244,12 @@ function AnnouncementsPage() {
       const kind = isTemplate ? "template" : "message";
       const sendMode = isTemplate ? "draft" : composeSendMode;
 
+      const isSending = sendMode === "now" || sendMode === "schedule";
+      if (isSending && !composeExpiresAt) {
+        setComposeError("Expiration date is required before sending or scheduling an announcement.");
+        return;
+      }
+
       const payload = {
         title: String(composeTitle || "").trim(),
         message: String(composeMessage || "").trim(),
@@ -252,7 +263,8 @@ function AnnouncementsPage() {
           roles: composeTargetType === "roles" ? composeRoles : []
         },
         sendMode,
-        scheduledAt: sendMode === "schedule" ? composeScheduledAt : undefined
+        scheduledAt: sendMode === "schedule" ? composeScheduledAt : undefined,
+        expiresAt: composeExpiresAt || undefined
       };
 
       if (composeEditingId) {
@@ -282,6 +294,7 @@ function AnnouncementsPage() {
       setComposeSendMode("now");
       setComposeKind("message");
       setComposeScheduledAt("");
+      setComposeExpiresAt("");
       setComposeEditingId(null);
 
       if (commTab !== "compose") {
@@ -315,6 +328,14 @@ function AnnouncementsPage() {
     setComposeChurchIds(Array.isArray(r?.target?.churchIds) ? r.target.churchIds.map((x) => String(x)) : []);
     setComposeRoles(Array.isArray(r?.target?.roles) ? r.target.roles.map((x) => String(x)) : []);
 
+    const expDt = r?.expiresAt ? new Date(r.expiresAt) : null;
+    if (expDt && !Number.isNaN(expDt.getTime())) {
+      const pad = (n) => String(n).padStart(2, "0");
+      setComposeExpiresAt(`${expDt.getFullYear()}-${pad(expDt.getMonth() + 1)}-${pad(expDt.getDate())}T${pad(expDt.getHours())}:${pad(expDt.getMinutes())}`);
+    } else {
+      setComposeExpiresAt("");
+    }
+
     const kind = String(r?.kind || "message");
     setComposeKind(kind);
 
@@ -346,6 +367,7 @@ function AnnouncementsPage() {
       setComposeKind("message");
       setComposeSendMode("now");
       setComposeScheduledAt("");
+      setComposeExpiresAt("");
     }
 
     setTab("communications");
@@ -353,6 +375,25 @@ function AnnouncementsPage() {
     setComposeError("");
     setComposeSuccess("");
   }, []);
+
+  const handleDeleteConfirmed = async () => {
+    if (!deleteConfirmModal?.row?._id) return;
+    setDeleteConfirmLoading(true);
+    try {
+      await deleteSystemInAppAnnouncement(deleteConfirmModal.row._id);
+      const { kind } = deleteConfirmModal;
+      setDeleteConfirmModal(null);
+      if (kind === "scheduled") void loadAnnouncements({ status: "scheduled", kind: "message" });
+      else if (kind === "draft") void loadAnnouncements({ status: "draft", kind: "message" });
+      else if (kind === "template") void loadAnnouncements({ status: "draft", kind: "template" });
+      else void loadAnnouncements({ status: "sent", kind: "message" });
+    } catch (e) {
+      setAnnError(e?.response?.data?.message || e?.message || "Failed to delete");
+      setDeleteConfirmModal(null);
+    } finally {
+      setDeleteConfirmLoading(false);
+    }
+  };
 
   const onUseDraft = useCallback(
     async (row) => {
@@ -635,6 +676,25 @@ function AnnouncementsPage() {
                   </div>
                 ) : null}
 
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">
+                    Expiration Date &amp; Time
+                    {(composeSendMode === "now" || composeSendMode === "schedule") ? (
+                      <span className="ml-1 text-red-500">*</span>
+                    ) : (
+                      <span className="ml-1 font-normal text-gray-400">(optional for drafts/templates)</span>
+                    )}
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={composeExpiresAt}
+                    onChange={(e) => setComposeExpiresAt(e.target.value)}
+                    disabled={composeSaving}
+                    className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                  <div className="mt-1 text-xs text-gray-500">After this date/time, the announcement will no longer be shown to users (including newly registered users).</div>
+                </div>
+
                 {composeTargetType === "churches" ? (
                   <div>
                     <div className="text-xs font-semibold text-gray-600">Select Churches</div>
@@ -812,6 +872,7 @@ function AnnouncementsPage() {
                         setComposeSendMode("now");
                         setComposeKind("message");
                         setComposeScheduledAt("");
+                        setComposeExpiresAt("");
                       }}
                       disabled={composeSaving}
                       className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
@@ -870,16 +931,8 @@ function AnnouncementsPage() {
                                 </button>
                               <button
                                 type="button"
-                                onClick={async () => {
-                                  if (!r?._id) return;
-                                  try {
-                                    await deleteSystemInAppAnnouncement(r._id);
-                                    void loadAnnouncements({ status: "scheduled", kind: "message" });
-                                  } catch {
-                                    void 0;
-                                  }
-                                }}
-                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                onClick={() => setDeleteConfirmModal({ row: r, kind: "scheduled" })}
+                                className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                               >
                                 Delete
                               </button>
@@ -949,16 +1002,8 @@ function AnnouncementsPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={async () => {
-                                    if (!r?._id) return;
-                                    try {
-                                      await deleteSystemInAppAnnouncement(r._id);
-                                      void loadAnnouncements({ status: "draft", kind: "message" });
-                                    } catch {
-                                      void 0;
-                                    }
-                                  }}
-                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                  onClick={() => setDeleteConfirmModal({ row: r, kind: "draft" })}
+                                  className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                                 >
                                   Delete
                                 </button>
@@ -1025,16 +1070,8 @@ function AnnouncementsPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={async () => {
-                                    if (!r?._id) return;
-                                    try {
-                                      await deleteSystemInAppAnnouncement(r._id);
-                                      void loadAnnouncements({ status: "draft", kind: "template" });
-                                    } catch {
-                                      void 0;
-                                    }
-                                  }}
-                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                  onClick={() => setDeleteConfirmModal({ row: r, kind: "template" })}
+                                  className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                                 >
                                   Delete
                                 </button>
@@ -1086,16 +1123,8 @@ function AnnouncementsPage() {
                             <td className="py-3">
                               <button
                                 type="button"
-                                onClick={async () => {
-                                  if (!r?._id) return;
-                                  try {
-                                    await deleteSystemInAppAnnouncement(r._id);
-                                    void loadAnnouncements({ status: "sent", kind: "message" });
-                                  } catch {
-                                    void 0;
-                                  }
-                                }}
-                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                onClick={() => setDeleteConfirmModal({ row: r, kind: "history" })}
+                                className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                               >
                                 Delete
                               </button>
@@ -1120,6 +1149,43 @@ function AnnouncementsPage() {
           </div>
         </div>
       )}
+      {deleteConfirmModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-gray-900 text-base">Delete Announcement?</div>
+              <div className="mt-2 text-sm text-gray-600">
+                Are you sure you want to permanently delete{" "}
+                <span className="font-semibold text-gray-900">&ldquo;{deleteConfirmModal.row?.title || "this announcement"}&rdquo;</span>?
+                This cannot be undone.
+              </div>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmModal(null)}
+                disabled={deleteConfirmLoading}
+                className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirmed}
+                disabled={deleteConfirmLoading}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteConfirmLoading ? "Deleting…" : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

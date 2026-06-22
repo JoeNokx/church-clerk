@@ -41,7 +41,7 @@ function Login() {
       }
     } catch (err) {
       if (err?.response?.data?.needsEmailVerification) {
-        navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
+        setError(`verify:${email}`);
         return;
       }
 
@@ -71,7 +71,22 @@ function Login() {
         </div>
       }
     >
-      {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
+      {error && (
+        error.startsWith("verify:") ? (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+            Your email address is not yet verified.{" "}
+            <Link
+              to={`/verify-email?email=${encodeURIComponent(error.slice(7))}`}
+              className="font-semibold underline hover:text-amber-900"
+            >
+              Click here to verify your email
+            </Link>
+            {" "}and resend the verification link if needed.
+          </div>
+        ) : (
+          <p className="text-red-600 mb-4 text-sm">{error}</p>
+        )
+      )}
 
       <form onSubmit={handleLogin} className="space-y-4">
         <div>

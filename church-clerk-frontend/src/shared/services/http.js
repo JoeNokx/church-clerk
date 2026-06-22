@@ -124,6 +124,11 @@ api.interceptors.response.use(
   (response) => {
     stopProgress();
 
+    if (response.status === 202 && response.data?.status === "PENDING_APPROVAL") {
+      window.dispatchEvent(new CustomEvent("backdatePendingApproval", { detail: response.data }));
+      return response;
+    }
+
     const method = String(response?.config?.method || "get").toLowerCase();
     const shouldToastSuccess = method !== "get" && response?.config?.toastSuccess !== false;
     if (shouldToastSuccess) {
@@ -195,6 +200,21 @@ api.interceptors.response.use(
       window.dispatchEvent(new CustomEvent("subscriptionLocked", {
         detail: { message: error.response.data.message || "Your subscription is suspended. Please contact support." }
       }));
+    }
+
+    if (error.response?.status === 405) {
+      const method = String(error?.config?.method || "").toLowerCase();
+      if (method === "put" || method === "patch") {
+        let patchData = {};
+        try { patchData = JSON.parse(error.config?.data || "{}"); } catch { patchData = {}; }
+        window.dispatchEvent(new CustomEvent("adjustmentRequired", {
+          detail: {
+            resourceUrl: error.config?.url || "",
+            patch: patchData,
+            message: error.response?.data?.message || "Direct edits are not allowed. Submit an adjustment request."
+          }
+        }));
+      }
     }
 
     return Promise.reject(error);

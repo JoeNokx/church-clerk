@@ -82,6 +82,11 @@ const systemInAppAnnouncementSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    expiresAt: {
+      type: Date,
+      default: null,
+      index: true
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

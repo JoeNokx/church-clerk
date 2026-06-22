@@ -300,6 +300,7 @@ function MinistryDetailsPage() {
   const [individualViewLoading, setIndividualViewLoading] = useState(false);
   const [individualViewing, setIndividualViewing] = useState(null);
   const [individualViewError, setIndividualViewError] = useState("");
+  const [individualViewTab, setIndividualViewTab] = useState("present");
 
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [attendanceMode, setAttendanceMode] = useState("create");
@@ -623,6 +624,7 @@ function MinistryDetailsPage() {
     setIndividualViewError("");
     setIndividualViewing(null);
     setIndividualViewOpen(true);
+    setIndividualViewTab("present");
     setIndividualViewLoading(true);
 
     try {
@@ -998,8 +1000,17 @@ function MinistryDetailsPage() {
         ) : !entity ? (
           <div className="text-gray-600 text-sm">No record found.</div>
         ) : (
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between md:gap-6">
-            <div className="flex items-start gap-4 min-w-0">
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between md:gap-6">
+            {/* Edit button: absolute top-right on mobile, hidden on desktop (rendered in sidebar) */}
+            <button
+              type="button"
+              onClick={openEdit}
+              className="absolute top-0 right-0 lg:hidden rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
+            >
+              Edit
+            </button>
+
+            <div className="flex items-start gap-4 min-w-0 pr-16 lg:pr-0">
               <div
                 className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ring-1 ${
                   type === "group"
@@ -1017,6 +1028,13 @@ function MinistryDetailsPage() {
                   <Chip color={typeColor}>{title}</Chip>
                   {entity?.status ? <Chip>{entity.status}</Chip> : null}
                 </div>
+
+                {/* Total members: mobile inline, hidden on desktop (shown in sidebar) */}
+                <div className="lg:hidden mt-2 flex items-center gap-1.5 text-xs text-gray-500">
+                  <span>Total Members:</span>
+                  <span className="font-semibold text-gray-900 text-sm">{totalMembersValue}</span>
+                </div>
+
                 <div className="mt-2 font-semibold text-gray-900 truncate md:text-3xl lg:text-4xl text-xl md:text-2xl">{entity?.name || "—"}</div>
                 <div className="mt-2 text-gray-600 max-w-3xl whitespace-pre-wrap text-sm">{entity?.description || "—"}</div>
 
@@ -1042,7 +1060,8 @@ function MinistryDetailsPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 w-full lg:w-auto lg:min-w-44">
+            {/* Desktop sidebar: total members card + edit button */}
+            <div className="hidden lg:flex flex-col gap-3 lg:w-auto lg:min-w-44">
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="font-semibold text-gray-500 text-xs">Total Members</div>
                 <div className="mt-1 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{totalMembersValue}</div>
@@ -1074,17 +1093,35 @@ function MinistryDetailsPage() {
       {activeTab === "members" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
           <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
-            <div>
-              <div className="font-semibold text-gray-900 text-sm">Members</div>
-              <div className="text-gray-500 text-xs">Manage members in this {title.toLowerCase()}</div>
+            {/* Title row with Add Member on same line for mobile */}
+            <div className="flex items-center justify-between gap-3 md:block">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Members</div>
+                <div className="text-gray-500 text-xs">Manage members in this {title.toLowerCase()}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddMemberError("");
+                  setAddMemberValue("");
+                  setAddMemberRole("member");
+                  setAddMemberCandidates([]);
+                  setAddMemberCandidatesError("");
+                  setAddMemberSelectedIds([]);
+                  setAddMemberOpen(true);
+                }}
+                className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white shadow-sm hover:bg-blue-700 text-xs"
+              >
+                + Add Member
+              </button>
             </div>
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="flex items-center gap-3">
               <input
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
                 placeholder="Search members..."
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
+                className="h-11 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 md:flex-none text-sm"
               />
               <button
                 type="button"
@@ -1097,7 +1134,7 @@ function MinistryDetailsPage() {
                   setAddMemberSelectedIds([]);
                   setAddMemberOpen(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+                className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
                 Add Member
@@ -1134,10 +1171,12 @@ function MinistryDetailsPage() {
                 <tbody className="divide-y divide-gray-200">
                   {members.map((m, idx) => {
                     const member = m?.member || {};
-                    const name = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() || "-";
+                    const fullName = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() || "-";
+                    const nameParts = fullName.split(/\s+/);
+                    const displayName = fullName.length > 20 && nameParts.length > 2 ? `${nameParts[0]} ${nameParts[nameParts.length - 1]}` : fullName;
                     return (
                       <tr key={m?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
-                        <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{name}</td>
+                        <td className="sticky left-0 z-10 bg-white max-md:px-3 py-1.5 text-gray-900 whitespace-nowrap px-3 md:px-5">{displayName}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.phoneNumber || "-"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.email || "-"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{m?.role || "member"}</td>
@@ -1747,36 +1786,65 @@ function MinistryDetailsPage() {
                       <div className="mt-4 border-b border-gray-200" />
 
                       <div className="mt-4">
-                        <div className="font-semibold text-gray-900 text-sm">Present members</div>
-                        <div className="mt-2 rounded-xl border border-gray-200 overflow-hidden">
-                          <div className="max-h-80 overflow-y-auto">
-                            {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).length === 0 ? (
-                              <div className="px-4 py-3 text-gray-600 text-sm">No members marked present.</div>
-                            ) : (
-                              <table className="min-w-full">
-                                <thead className="bg-slate-100">
-                                  <tr className="text-left font-semibold text-gray-500 text-xs">
-                                    <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 whitespace-nowrap">Name</th>
-                                    <th className="px-4 py-2 whitespace-nowrap">Phone</th>
-                                    <th className="px-4 py-2 whitespace-nowrap">Email</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).map((m, idx) => {
-                                    const name = `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-";
-                                    return (
-                                      <tr key={m?._id || idx} className="text-gray-700 text-sm">
-                                        <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{name}</td>
-                                        <td className="px-4 py-1.5 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
-                                        <td className="px-4 py-1.5 whitespace-nowrap">{m?.email || "-"}</td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            )}
-                          </div>
+                        {/* Present / Absent tabs */}
+                        <div className="flex gap-1 rounded-full bg-gray-100 p-1 w-fit mb-3">
+                          {["present", "absent"].map((tab) => (
+                            <button
+                              key={tab}
+                              type="button"
+                              onClick={() => setIndividualViewTab(tab)}
+                              className={`rounded-full px-4 py-1 text-xs font-semibold capitalize transition-colors ${
+                                individualViewTab === tab
+                                  ? "bg-white text-gray-900 shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              {tab === "present"
+                                ? `Present (${Number(individualViewing?.presentCount ?? 0)})`
+                                : `Absent (${Number(individualViewing?.absentCount ?? 0)})`}
+                            </button>
+                          ))}
                         </div>
+
+                        {individualViewTab === "present" ? (
+                          <div className="rounded-xl border border-gray-200 overflow-hidden">
+                            <div className="max-h-80 overflow-y-auto">
+                              {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).length === 0 ? (
+                                <div className="px-4 py-3 text-gray-600 text-sm">No members marked present.</div>
+                              ) : (
+                                <table className="min-w-full">
+                                  <thead className="bg-slate-100">
+                                    <tr className="text-left font-semibold text-gray-500 text-xs">
+                                      <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 whitespace-nowrap">Name</th>
+                                      <th className="px-4 py-2 whitespace-nowrap">Phone</th>
+                                      <th className="px-4 py-2 whitespace-nowrap">Email</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).map((m, idx) => {
+                                      const fullN = `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-";
+                                      const nParts = fullN.split(/\s+/);
+                                      const dispN = fullN.length > 20 && nParts.length > 2 ? `${nParts[0]} ${nParts[nParts.length - 1]}` : fullN;
+                                      return (
+                                        <tr key={m?._id || idx} className="text-gray-700 text-sm">
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{dispN}</td>
+                                          <td className="px-4 py-1.5 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
+                                          <td className="px-4 py-1.5 whitespace-nowrap">{m?.email || "-"}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-gray-200 px-4 py-6 text-center text-gray-500 text-sm">
+                            {Number(individualViewing?.absentCount ?? 0) === 0
+                              ? "No absent members."
+                              : `${Number(individualViewing?.absentCount ?? 0)} member${Number(individualViewing?.absentCount ?? 0) !== 1 ? "s" : ""} absent. Individual absent member list is not tracked.`}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2015,12 +2083,21 @@ function MinistryDetailsPage() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block font-semibold text-gray-500 text-xs">Note</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-gray-500 text-xs">Note</label>
+                    <span className="text-xs text-gray-400">{offeringNote.trim().split(/\s+/).filter(Boolean).length}/5 words</span>
+                  </div>
                   <textarea
                     value={offeringNote}
-                    onChange={(e) => setOfferingNote(e.target.value)}
+                    onChange={(e) => {
+                      const words = e.target.value.trim().split(/\s+/).filter(Boolean);
+                      if (words.length <= 5 || e.target.value.length < offeringNote.length) {
+                        setOfferingNote(e.target.value);
+                      }
+                    }}
                     rows={3}
                     className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
+                    placeholder="Max 5 words"
                   />
                 </div>
               </div>

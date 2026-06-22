@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import {
@@ -76,10 +77,33 @@ function YearInput({ value, onChange }) {
   );
 }
 
+const INCOME_KEY_PAGE = {
+  tithes: "tithe",
+  tithesAggregate: "tithe",
+  offerings: "offerings",
+  eventOfferings: "offerings",
+  cellOfferings: "offerings",
+  groupOfferings: "offerings",
+  departmentOfferings: "offerings",
+  projectContributions: "church-projects",
+  welfareContributions: "welfare",
+  specialFunds: "special-funds",
+  businessIncome: "business-ventures",
+  pledgesPaid: "pledges"
+};
+
+const EXPENSE_KEY_PAGE = {
+  generalExpenses: "expenses",
+  welfareDisbursements: "welfare",
+  projectExpenses: "church-projects",
+  businessExpenses: "business-ventures"
+};
+
 function FinancialStatementPage() {
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const money = useMemo(() => (value) => formatCurrency(value, currency), [currency]);
+  const { toPage } = useDashboardNavigator();
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("financialStatement", "read") : true), [can]);
   const canExport = useMemo(() => (typeof can === "function" ? can("financialStatement", "export") : false), [can]);
@@ -428,25 +452,36 @@ function FinancialStatementPage() {
                   <div className="text-gray-600 text-sm">No income records found for this period.</div>
                 ) : (
                   <div className="space-y-4">
-                    {sortedIncome.map((row) => (
-                      <div key={row.key} className="space-y-2 rounded-lg border border-gray-200 p-3">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="font-semibold text-gray-900 text-sm">{row.label}</div>
-                          <div className="font-semibold text-gray-900 text-sm">{money(row.amount)}</div>
-                        </div>
-                        <div className="flex items-center justify-between gap-4 text-gray-500 text-xs">
-                          <div>{Math.round(Number(row.percentage || 0) * 10) / 10}% of income</div>
-                          <div className="w-full max-w-xs">
-                            <div className="h-2 w-full rounded-full bg-gray-100">
-                              <div
-                                className="h-2 rounded-full bg-green-500"
-                                style={{ width: `${clampPercent(row.percentage)}%` }}
-                              />
+                    {sortedIncome.map((row) => {
+                      const page = INCOME_KEY_PAGE[row.key];
+                      return (
+                        <div
+                          key={row.key}
+                          className={`space-y-2 rounded-lg border border-gray-200 p-3 ${page ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
+                          onClick={page ? () => toPage(page) : undefined}
+                          role={page ? "button" : undefined}
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="font-semibold text-gray-900 text-sm">{row.label}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900 text-sm">{money(row.amount)}</span>
+                              {page ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-400 flex-shrink-0"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> : null}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-4 text-gray-500 text-xs">
+                            <div>{Math.round(Number(row.percentage || 0) * 10) / 10}% of income</div>
+                            <div className="w-full max-w-xs">
+                              <div className="h-2 w-full rounded-full bg-gray-100">
+                                <div
+                                  className="h-2 rounded-full bg-green-500"
+                                  style={{ width: `${clampPercent(row.percentage)}%` }}
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -462,25 +497,36 @@ function FinancialStatementPage() {
                   <div className="text-gray-600 text-sm">No expense records found for this period.</div>
                 ) : (
                   <div className="space-y-4">
-                    {sortedExpenses.map((row) => (
-                      <div key={row.key} className="space-y-2 rounded-lg border border-gray-200 p-3">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="font-semibold text-gray-900 text-sm">{row.label}</div>
-                          <div className="font-semibold text-gray-900 text-sm">{money(row.amount)}</div>
-                        </div>
-                        <div className="flex items-center justify-between gap-4 text-gray-500 text-xs">
-                          <div>{Math.round(Number(row.percentage || 0) * 10) / 10}% of expenses</div>
-                          <div className="w-full max-w-xs">
-                            <div className="h-2 w-full rounded-full bg-gray-100">
-                              <div
-                                className="h-2 rounded-full bg-orange-500"
-                                style={{ width: `${clampPercent(row.percentage)}%` }}
-                              />
+                    {sortedExpenses.map((row) => {
+                      const page = EXPENSE_KEY_PAGE[row.key];
+                      return (
+                        <div
+                          key={row.key}
+                          className={`space-y-2 rounded-lg border border-gray-200 p-3 ${page ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
+                          onClick={page ? () => toPage(page) : undefined}
+                          role={page ? "button" : undefined}
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="font-semibold text-gray-900 text-sm">{row.label}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900 text-sm">{money(row.amount)}</span>
+                              {page ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-400 flex-shrink-0"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> : null}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-4 text-gray-500 text-xs">
+                            <div>{Math.round(Number(row.percentage || 0) * 10) / 10}% of expenses</div>
+                            <div className="w-full max-w-xs">
+                              <div className="h-2 w-full rounded-full bg-gray-100">
+                                <div
+                                  className="h-2 rounded-full bg-orange-500"
+                                  style={{ width: `${clampPercent(row.percentage)}%` }}
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -5,6 +5,15 @@ import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext from "../member.store.js";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 
+function truncateName(name) {
+  if (!name || name === "-") return name;
+  const parts = name.trim().split(/\s+/);
+  if (name.length > 20 && parts.length > 2) {
+    return `${parts[0]} ${parts[parts.length - 1]}`;
+  }
+  return name;
+}
+
 function formatDate(value) {
   if (!value) return "";
   const d = new Date(value);
@@ -128,10 +137,11 @@ function MemberTable({ onEdit, onDeleted }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => {
               const name = row?.fullName || [row?.firstName, row?.lastName].filter(Boolean).join(" ") || "-";
+              const displayName = truncateName(name);
 
               return (
                 <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{name}</td>
+                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{displayName}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || "-"}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.email || "-"}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.city || "-"}</td>

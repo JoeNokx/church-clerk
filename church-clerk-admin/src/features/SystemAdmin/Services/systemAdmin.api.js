@@ -64,6 +64,10 @@ export const deleteSystemUserApi = async (id) => {
   return await http.delete(`/system-admin/users/${id}`);
 };
 
+export const verifyUserEmailByAdminApi = async (id) => {
+  return await http.patch(`/system-admin/users/${id}/verify-email`);
+};
+
 export const getSystemAuditLogs = async (params) => {
   return await http.get("/system-admin/audit-logs", { params });
 };

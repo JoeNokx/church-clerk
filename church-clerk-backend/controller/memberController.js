@@ -311,6 +311,12 @@ const updateMember = async (req, res) => {
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
     }
+
+    if (member.visitorId && (req.body.firstName !== undefined || req.body.lastName !== undefined)) {
+      const fullName = [member.firstName, member.lastName].filter(Boolean).join(" ");
+      await Visitor.findByIdAndUpdate(member.visitorId, { fullName });
+    }
+
     return res.status(200).json({
       message: "member updated successfully",
       member

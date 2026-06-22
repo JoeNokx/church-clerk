@@ -132,6 +132,13 @@ const loginUserController = async (req, res) => {
       token: token
     });
   } catch (error) {
+    if (error.code === "EMAIL_NOT_VERIFIED") {
+      return res.status(401).json({
+        status: "error",
+        message: error.message,
+        needsEmailVerification: true
+      });
+    }
     return res.status(500).json({
       status: "error",
       message: error.message

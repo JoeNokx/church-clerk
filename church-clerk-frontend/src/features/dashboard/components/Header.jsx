@@ -1066,11 +1066,11 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-    <header className="sticky top-0 z-20 bg-white border-b border-gray-200">
+    <header className="sticky top-0 z-20 bg-white border-b border-gray-200 pt-2 md:pt-0">
 
 
 
-      <div className="h-14 px-4 md:px-8 flex items-center justify-between gap-4 md:h-16">
+      <div className="min-h-14 px-4 md:px-8 flex items-center justify-between gap-4 md:h-16 pb-2 md:pb-0">
 
 
 
@@ -1105,14 +1105,8 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-          <div className="font-bold text-gray-900 md:text-2xl lg:text-3xl text-base">Dashboard</div>
-          <div className="block md:hidden text-[11px] font-medium text-gray-400 truncate mt-0.5">{viewingChurchName}</div>
-
-
-
-          <div className="hidden md:block text-[15px] text-gray-600 truncate">Welcome back! Here’s what’s happening with your church</div>
-
-
+          <div className="block md:hidden text-[11px] font-medium text-gray-400 truncate mt-0.5 text-center">{viewingChurchName}</div>
+          {/*’s what’s happening with your church */}
 
         </div>
 

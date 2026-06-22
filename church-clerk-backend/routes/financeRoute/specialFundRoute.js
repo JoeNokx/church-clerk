@@ -19,7 +19,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("specialFunds", "create"),
   validateRequest(createSpecialFundSchema),
   backdatingGuard({ dateField: "givingDate", module: "special_funds", entityType: "specialFund" }),
@@ -41,7 +41,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("specialFunds", "update"),
   conditionalImmutableGuard(),
   updateSpecialFund
@@ -52,7 +52,7 @@ router.delete(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
-  authorizeRoles("superadmin", "churchadmin"),
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("specialFunds", "delete"),
   conditionalImmutableGuard(),
   deleteSpecialFund

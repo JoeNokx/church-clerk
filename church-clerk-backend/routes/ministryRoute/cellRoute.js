@@ -11,6 +11,7 @@ import {
 } from "../../controller/ministryController/cellIndividualAttendanceController.js";
 import { createCellOffering, updateCellOffering, deleteCellOffering, getAllCellOfferings } from "../../controller/ministryController/cellOfferingController.js";
 import { getMinistryKPI } from "../../controller/ministryController/groupController.js";
+import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
@@ -267,6 +268,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
   requirePermission("ministry", "create"),
+  backdatingGuard({ dateField: "date", module: "cellOffering", entityType: "cellOffering" }),
   createCellOffering
 );
 router.get(
@@ -287,6 +289,7 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
   requirePermission("ministry", "update"),
+  conditionalImmutableGuard(),
   updateCellOffering
 );
 router.delete(
@@ -297,6 +300,7 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
   requirePermission("ministry", "delete"),
+  conditionalImmutableGuard(),
   deleteCellOffering
 );
 

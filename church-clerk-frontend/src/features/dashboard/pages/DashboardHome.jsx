@@ -80,6 +80,8 @@ const NotificationsPage = React.lazy(() => import("../../notifications/pages/Not
 
 const AnnouncementPage = React.lazy(() => import("../../announcement/pages/AnnouncementPage.jsx"));
 
+const ApprovalsPage = React.lazy(() => import("../../governance/pages/ApprovalsPage.jsx"));
+
 
 function formatPercent(value) {
 
@@ -786,7 +788,7 @@ function DashboardOverview({ onNavigate }) {
 
         <KpiCard
 
-          title="New Members This Month"
+          title="Members This Month"
 
           value={kpis?.newMembersThisMonth ?? 0}
 
@@ -900,19 +902,19 @@ function DashboardOverview({ onNavigate }) {
 
                       onClick={() => goToMemberDetails(m?._id)}
 
-                      className="w-full text-left flex items-center justify-between gap-3 py-1.5 hover:bg-gray-50"
+                      className="w-full text-left flex items-start justify-between gap-3 py-2 hover:bg-gray-50"
 
                     >
 
                       <div className="min-w-0">
 
-                        <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
 
-                        <div className="mt-0.5 text-gray-500 text-sm">{formatShortDate(m?.nextBirthday)}</div>
+                        <div className="mt-1 text-gray-500 text-xs md:text-sm">{formatShortDate(m?.nextBirthday)}</div>
 
                       </div>
 
-                      <div className="font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                      <div className="shrink-0 font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
 
                     </button>
 
@@ -922,19 +924,19 @@ function DashboardOverview({ onNavigate }) {
 
                       key={`${m?._id || "b"}-${idx}`}
 
-                      className="w-full text-left flex items-center justify-between gap-3 py-1.5"
+                      className="w-full text-left flex items-start justify-between gap-3 py-2"
 
                     >
 
                       <div className="min-w-0">
 
-                        <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
 
-                        <div className="mt-0.5 text-gray-500 text-sm">{formatShortDate(m?.nextBirthday)}</div>
+                        <div className="mt-1 text-gray-500 text-xs md:text-sm">{formatShortDate(m?.nextBirthday)}</div>
 
                       </div>
 
-                      <div className="font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                      <div className="shrink-0 font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
 
                     </div>
 
@@ -1004,15 +1006,15 @@ function DashboardOverview({ onNavigate }) {
 
                       onClick={() => goToMemberDetails(m?._id)}
 
-                      className="w-full text-left flex items-center justify-between gap-3 py-2 hover:bg-gray-50"
+                      className="w-full text-left flex items-start justify-between gap-3 py-2 hover:bg-gray-50"
 
                     >
 
                       <div className="min-w-0">
 
-                        <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
 
-                        <div className="mt-0.5 text-gray-500 text-sm">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                        <div className="mt-1 text-gray-500 text-xs md:text-sm">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
 
                       </div>
 
@@ -1026,15 +1028,15 @@ function DashboardOverview({ onNavigate }) {
 
                       key={`${m?._id || "rm"}-${idx}`}
 
-                      className="w-full text-left flex items-center justify-between gap-3 py-2"
+                      className="w-full text-left flex items-start justify-between gap-3 py-2"
 
                     >
 
                       <div className="min-w-0">
 
-                        <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
 
-                        <div className="mt-0.5 text-gray-500 text-sm">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                        <div className="mt-1 text-gray-500 text-xs md:text-sm">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
 
                       </div>
 
@@ -1144,15 +1146,15 @@ function DashboardOverview({ onNavigate }) {
 
                           <div className="min-w-0">
 
-                            <div className="font-semibold text-gray-900 truncate text-base">{ev?.title || ev?.name || "—"}</div>
+                            <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{ev?.title || ev?.name || "—"}</div>
 
-                            <div className="mt-0.5 text-gray-500 text-sm">
+                            <div className="mt-1 text-gray-500 text-xs md:text-sm">
 
                               {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
 
                             </div>
 
-                            <div className="mt-0.5 text-gray-500 text-sm">
+                            <div className="mt-0.5 text-gray-500 text-xs md:text-sm">
 
                               {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
 
@@ -1182,15 +1184,15 @@ function DashboardOverview({ onNavigate }) {
 
                           <div className="min-w-0">
 
-                            <div className="font-semibold text-gray-900 truncate text-base">{ev?.title || ev?.name || "—"}</div>
+                            <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{ev?.title || ev?.name || "—"}</div>
 
-                            <div className="mt-0.5 text-gray-500 text-sm">
+                            <div className="mt-1 text-gray-500 text-xs md:text-sm">
 
                               {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
 
                             </div>
 
-                            <div className="mt-0.5 text-gray-500 text-sm">
+                            <div className="mt-0.5 text-gray-500 text-xs md:text-sm">
 
                               {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
 
@@ -1630,6 +1632,8 @@ function DashboardHome() {
   if (page === "notifications") PageComponent = NotificationsPage;
 
   if (page === "announcements") PageComponent = AnnouncementPage;
+
+  if (page === "approvals") PageComponent = ApprovalsPage;
 
 
 

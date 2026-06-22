@@ -605,22 +605,18 @@ function ChurchProjectsPageInner() {
           title="Total Projects"
           value={totals.totalProjects}
           subtitle={`${totals.activeCount} active`}
-          accent="bg-blue-600"
         />
         <KpiCard
           title="Total Raised"
           value={formatCurrency(totals.totalRaised, currency)}
-          accent="bg-green-600"
         />
         <KpiCard
           title="Total Target"
           value={formatCurrency(totals.totalTarget, currency)}
-          accent="bg-purple-600"
         />
         <KpiCard
           title="Total Spent"
           value={formatCurrency(totals.totalSpent, currency)}
-          accent="bg-orange-600"
         />
       </div>
 

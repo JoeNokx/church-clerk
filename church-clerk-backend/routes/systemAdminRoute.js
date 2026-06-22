@@ -20,7 +20,8 @@ import {
   getGlobalAnnouncementWalletKpis,
   listChurchSenderIdRequests,
   approveChurchSenderId,
-  rejectChurchSenderId
+  rejectChurchSenderId,
+  verifyUserEmailByAdmin
 } from "../controller/systemAdminController.js";
 import {
   listSystemInAppAnnouncements,
@@ -194,6 +195,14 @@ router.patch(
   authorizeRoles("superadmin", "supportadmin"),
   requirePermission("settingsUsersRoles", "create"),
   updateSystemUser
+);
+router.patch(
+  "/users/:id/verify-email",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  requirePermission("settingsUsersRoles", "update"),
+  verifyUserEmailByAdmin
 );
 router.delete(
   "/users/:id",

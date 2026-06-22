@@ -78,29 +78,35 @@ export const ROLE_PERMISSIONS = {
     expenses: ["read", "create", "update"],
     financialStatement: ["read"],
     reportsAnalytics: ["read"],
-    referrals: ["read"]
+    referrals: ["read"],
+    settingsMyProfile: ["read", "update"]
   },
 
   associateadmin: {
     dashboard: ["read"],
-    billing: ["read"]
+    billing: ["read"],
+    settingsMyProfile: ["read", "update"]
   },
 
   admin: {
-    ministry: ["read", "create", "update", "delete"]
+    dashboard: ["read"],
+    ministry: ["read", "create", "update", "delete"],
+    settingsMyProfile: ["read", "update"]
   },
 
   secretary: {
     dashboard: ["read"],
     members: ["read", "create", "update"],
     announcements: ["read", "create"],
-    attendance: ["read", "create"]
+    attendance: ["read", "create"],
+    settingsMyProfile: ["read", "update"]
   },
 
   leader: {
     dashboard: ["read"],
     members: ["read"],
     attendance: ["read"],
-    reportsAnalytics: ["read"]
+    reportsAnalytics: ["read"],
+    settingsMyProfile: ["read", "update"]
   }
 };

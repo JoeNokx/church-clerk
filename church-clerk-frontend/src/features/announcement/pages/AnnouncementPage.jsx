@@ -514,7 +514,6 @@ function TemplatesTab({ open, onUseTemplate }) {
             className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           >
             <option value="sms">SMS</option>
-            <option value="whatsapp">WhatsApp</option>
           </select>
 
           <textarea
@@ -1178,7 +1177,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
   const [memberIds, setMemberIds] = useState([]);
   const [memberNameById, setMemberNameById] = useState({});
 
-  const [channels, setChannels] = useState({ sms: true, whatsapp: false });
+  const [channels, setChannels] = useState({ sms: true });
 
   const [sendMode, setSendMode] = useState("now");
   const [scheduleDate, setScheduleDate] = useState("");
@@ -1197,9 +1196,8 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
 
   const costPerRecipient = useMemo(() => {
     const smsCost = channels.sms ? 5 : 0;
-    const waCost = channels.whatsapp ? 20 : 0;
-    return smsCost + waCost;
-  }, [channels.sms, channels.whatsapp]);
+    return smsCost;
+  }, [channels.sms]);
 
   const estimatedTotalCost = useMemo(() => {
     if (audienceType === "members") return totalRecipientsPreview * costPerRecipient;
@@ -1233,8 +1231,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
 
     const arr = Array.isArray(prefill?.channels) ? prefill.channels : [];
     setChannels({
-      sms: arr.includes("sms") || (!arr.includes("whatsapp") && String(prefill?.channel || "") === "sms"),
-      whatsapp: arr.includes("whatsapp") || String(prefill?.channel || "") === "whatsapp"
+      sms: arr.includes("sms") || String(prefill?.channel || "") === "sms" || true
     });
 
     setSendMode("now");
@@ -1435,7 +1432,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
     setMemberResults([]);
     setMemberIds([]);
     setMemberNameById({});
-    setChannels({ sms: true, whatsapp: false });
+    setChannels({ sms: true });
     setSendMode("now");
     setScheduleDate("");
     setScheduleTime("");
@@ -1832,14 +1829,6 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
               />
               SMS
             </label>
-            <label className="flex items-center gap-2 text-gray-700 text-sm">
-              <input
-                type="checkbox"
-                checked={channels.whatsapp}
-                onChange={(e) => setChannels((prev) => ({ ...prev, whatsapp: e.target.checked }))}
-              />
-              WhatsApp
-            </label>
           </div>
         </div>
 
@@ -2161,7 +2150,7 @@ function AnnouncementPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Announcement</h2>
-          <p className="mt-1 text-gray-500 text-sm">Send announcements via SMS, WhatsApp, or both. Track delivery and manage wallet credits.</p>
+          <p className="mt-1 text-gray-500 text-sm">Send announcements via SMS. Track delivery and manage wallet credits.</p>
         </div>
       </div>
 

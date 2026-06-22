@@ -277,7 +277,8 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={submit} className="p-4 md:p-6 lg:p-8">
+        <form onSubmit={submit} className="flex max-h-[80vh] flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           {formError && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{formError}</div>
           )}
@@ -397,7 +398,9 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
             ) : null}
           </div>
 
-          <div className="mt-5 flex items-center justify-end gap-3">
+          </div>
+
+          <div className="border-t border-gray-200 p-4 md:px-6 flex items-center justify-end gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}

@@ -123,6 +123,27 @@ function WelfarePageInner() {
         </div>
       </div>
 
+      <div className="cck-tab-bar mt-4 flex flex-wrap w-full rounded-lg border border-gray-200 bg-white p-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab("contributions")}
+          className={`px-4 py-1.5 text-sm font-semibold rounded-md inline-flex items-center gap-2 ${
+            activeTab === "contributions" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          Contributions
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("disbursements")}
+          className={`ml-1 px-4 py-1.5 text-sm font-semibold rounded-md inline-flex items-center gap-2 ${
+            activeTab === "disbursements" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          Disbursements
+        </button>
+      </div>
+
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
         <KpiStatCard label="Contributions (This Month)" value={formatMoney(kpi.thisMonthContribution || 0, currency)} valueClassName="text-green-700 text-lg" />
         <KpiStatCard label="Disbursements (This Month)" value={formatMoney(kpi.thisMonthDisbursement || 0, currency)} valueClassName="text-orange-600 text-lg" />
@@ -131,36 +152,18 @@ function WelfarePageInner() {
       </KpiGrid>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:p-6 lg:p-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="font-semibold text-gray-900 text-sm">Welfare Records</div>
-              <div className="text-gray-500 text-xs">View and manage welfare contributions and disbursements</div>
+              <div className="font-semibold text-gray-900 text-sm">
+                {activeTab === "contributions" ? "Contribution Records" : "Disbursement Records"}
+              </div>
+              <div className="text-gray-500 text-xs">
+                {activeTab === "contributions" ? "View and manage welfare contributions" : "View and manage welfare disbursements"}
+              </div>
             </div>
-
-            <div className="cck-tab-bar inline-flex rounded-lg border border-gray-200 bg-white p-1">
-              <button
-                type="button"
-                onClick={() => setActiveTab("contributions")}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-md ${
-                  activeTab === "contributions" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Contributions
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("disbursements")}
-                className={`ml-1 px-4 py-1.5 text-sm font-semibold rounded-md ${
-                  activeTab === "disbursements" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Disbursements
-              </button>
-            </div>
+            {activeTab === "contributions" ? <WelfareContributionFilters /> : <WelfareDisbursementFilters />}
           </div>
-
-          {activeTab === "contributions" ? <WelfareContributionFilters /> : <WelfareDisbursementFilters />}
         </div>
 
         {activeTab === "contributions" ? (

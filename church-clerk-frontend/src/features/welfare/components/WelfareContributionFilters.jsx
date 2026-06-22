@@ -46,7 +46,7 @@ function WelfareContributionFilters() {
         value={searchValue}
         onChange={onSearchChange}
         className="h-11 w-full md:w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Member name"
+        placeholder="Search member name"
       />
 
       <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />

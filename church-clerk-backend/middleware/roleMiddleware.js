@@ -8,6 +8,10 @@ const normalizeRole = (role) => {
 const authorizeRoles = (...roles) => {
   const allowed = roles.map(normalizeRole);
   return (req, res, next) => {
+    if (req.permissions != null) {
+      return next();
+    }
+
     let userRole = normalizeRole(req.user?.role);
 
     const clientApp = String(req.headers?.["x-client-app"] || "").trim().toLowerCase();

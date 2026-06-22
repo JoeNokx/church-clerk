@@ -161,7 +161,6 @@ const getAllSystemUsers = async (req, res) => {
 
 const getSystemRoles = async (req, res) => {
   try {
-    const hasAnyDbRole = Boolean(await Role.exists({}));
     const dbRoles = await Role.find({ isActive: true }).select("key scope").lean();
     const dbSystemRoles = (dbRoles || [])
       .filter((r) => r?.scope === "system")
@@ -172,8 +171,10 @@ const getSystemRoles = async (req, res) => {
       .map((r) => String(r?.key || "").trim().toLowerCase())
       .filter(Boolean);
 
-    const systemRoles = hasAnyDbRole ? Array.from(new Set(dbSystemRoles)) : Array.from(new Set(SYSTEM_ROLES || []));
-    const churchRoles = hasAnyDbRole ? Array.from(new Set(dbChurchRoles)) : Array.from(new Set(CHURCH_ROLES || []));
+    // Always merge built-in config roles with DB roles so built-in roles
+    // never disappear from dropdowns when custom roles are added.
+    const systemRoles = Array.from(new Set([...(SYSTEM_ROLES || []), ...dbSystemRoles]));
+    const churchRoles = Array.from(new Set([...(CHURCH_ROLES || []), ...dbChurchRoles]));
     const allRoles = Array.from(new Set([...(systemRoles || []), ...(churchRoles || [])]));
 
     res.status(200).json({
@@ -230,7 +231,7 @@ const updateSystemUser = async (req, res) => {
         update.role = nextRole;
         update.roleRef = dbRole?._id || null;
       } else {
-        const dbRole = await Role.findOne({ key: nextRole, scope: "system", isActive: true }).select("_id").lean();
+        const dbRole = await Role.findOne({ key: nextRole, isActive: true }).select("_id").lean();
         if (!dbRole?._id) {
           return res.status(400).json({ message: "Invalid role" });
         }
@@ -842,6 +843,23 @@ const deleteSystemUser = async (req, res) => {
   }
 };
 
+const verifyUserEmailByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id).select("fullName email isEmailVerified").lean();
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (user.isEmailVerified === true) {
+      return res.status(400).json({ message: "Email is already verified" });
+    }
+    await User.findByIdAndUpdate(id, { isEmailVerified: true, emailVerificationToken: null });
+    return res.status(200).json({ message: `Email verified for ${user.fullName || user.email}` });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   getAllChurches,
   getSystemChurchById,
@@ -861,5 +879,6 @@ export {
   getGlobalAnnouncementWalletKpis,
   listChurchSenderIdRequests,
   approveChurchSenderId,
-  rejectChurchSenderId
+  rejectChurchSenderId,
+  verifyUserEmailByAdmin
 };
