@@ -20,6 +20,12 @@ const planRank = (name) => {
 
 export const cancelSubscription = async (req, res) => {
   try {
+    if (req.activeChurch.type === "Headquarters") {
+      return res.status(400).json({
+        message: "Headquarters churches cannot cancel their Premium subscription."
+      });
+    }
+
     const subscription = await Subscription.findOne({
       church: req.activeChurch._id
     });
@@ -149,6 +155,12 @@ export const changePlan = async (req, res) => {
       ? "premium"
       : (subscription?.plan?.name || "free lite");
     const isUpgrade = planRank(newPlan?.name) > planRank(currentName);
+
+    if (!isUpgrade && req.activeChurch.type === "Headquarters") {
+      return res.status(400).json({
+        message: "Headquarters churches must remain on the Premium plan and cannot downgrade."
+      });
+    }
 
     if (isUpgrade) {
       // IMMEDIATE

@@ -136,9 +136,7 @@ function DashboardLayout() {
           <div
             className={`relative ${isReadOnly ? "pointer-events-none select-none" : ""}`}
             onClickCapture={isInBranchContext ? (e) => {
-              const actionable = e.target.closest(
-                'button, a, input, textarea, select, [role="button"], [tabindex]'
-              );
+              const actionable = e.target.closest('[data-hq-action="true"]');
               if (!actionable) return;
               e.stopPropagation();
               e.preventDefault();

@@ -70,3 +70,15 @@ export const adminGetInvoiceDownloadUrl = (id) => {
 export const adminGetWebhookLogs = async (params) => {
   return await http.get("/admin/billing/webhook-logs", { params });
 };
+
+export const adminDevFastForward = async (churchId, minutes) => {
+  return await http.post(`/system-admin/dev/subscriptions/${churchId}/fast-forward`, { minutes });
+};
+
+export const adminDevRunBillingCycle = async () => {
+  return await http.post("/system-admin/dev/billing/run-cycle");
+};
+
+export const adminDevRunCycleForChurch = async (churchId) => {
+  return await http.post(`/system-admin/dev/subscriptions/${churchId}/run-cycle`);
+};

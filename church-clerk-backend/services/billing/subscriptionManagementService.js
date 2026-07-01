@@ -1,7 +1,7 @@
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
-import { createSubscriptionForChurch, upgradeTrialToPlans, runBillingCycles, releaseExpiredTrials } from "../../controller/billingController/subscriptionService.js";
+import { createSubscriptionForChurch, upgradeTrialToPlans, runBillingCycles, runBillingCycleForChurch, releaseExpiredTrials } from "../../controller/billingController/subscriptionService.js";
 
 const planRank = (plan) => {
   const n = String(plan?.name || "")
@@ -128,6 +128,22 @@ async function executeBillingCycle() {
   await runBillingCycles();
 }
 
+async function executeBillingCycleForChurch(churchId) {
+  const now = new Date();
+
+  const sub = await Subscription.findOne({ church: churchId }).lean();
+  if (!sub) throw new Error("Subscription not found");
+
+  const isTrial = sub.status === "free trial" || sub.status === "trialing";
+  if (isTrial && sub.trialEnd && now > new Date(sub.trialEnd)) {
+    await releaseExpiredTrials();
+    return;
+  }
+
+  // Run billing cycle scoped to this church only
+  await runBillingCycleForChurch(churchId);
+}
+
 async function getAvailablePlans() {
   const plans = await Plan.find({ isActive: true }).lean();
   const sanitized = sortPlans(plans).map(sanitizePlanCurrencies);
@@ -143,5 +159,6 @@ export {
   chooseSubscriptionPlan,
   upgradeTrial,
   executeBillingCycle,
+  executeBillingCycleForChurch,
   getAvailablePlans
 };

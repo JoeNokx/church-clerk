@@ -14,6 +14,10 @@ import ChurchContext from "../../church/church.store.js";
 
 
 
+import PermissionContext from "../../permissions/permission.store.js";
+
+
+
 import { getMyBranches } from "../../church/services/church.api.js";
 
 
@@ -63,6 +67,10 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
     const churchCtx = useContext(ChurchContext);
+
+
+
+    const { can } = useContext(PermissionContext) || {};
 
 
 
@@ -242,11 +250,22 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-    const canSwitchContext = isHeadquartersUser;
+    const canReadBranches = useMemo(() => {
+      if (typeof can !== "function") return true;
+      return can("branches", "read");
+    }, [can]);
+
+    const planAllowsBranches = useMemo(() => {
+      const modules = activeChurch?.modules;
+      if (!modules || Object.keys(modules).length === 0) return true;
+      return Boolean(modules?.["Branches"]);
+    }, [activeChurch?.modules]);
+
+    const canSwitchContext = isHeadquartersUser && canReadBranches && planAllowsBranches;
 
 
 
-    const canViewBranches = activeChurch?.type === "Headquarters" && String(activeChurch?._id || "") === String(homeChurchId || "");
+    const canViewBranches = activeChurch?.type === "Headquarters" && String(activeChurch?._id || "") === String(homeChurchId || "") && canReadBranches && planAllowsBranches;
 
 
 

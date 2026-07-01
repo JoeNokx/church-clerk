@@ -80,6 +80,7 @@ function AnnouncementsPage() {
 
   const [deleteConfirmModal, setDeleteConfirmModal] = useState(null);
   const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
+  const [archivingId, setArchivingId] = useState(null);
 
   const balanceGhs = useMemo(() => {
     const per = Number(creditsPerGhs);
@@ -392,6 +393,19 @@ function AnnouncementsPage() {
       setDeleteConfirmModal(null);
     } finally {
       setDeleteConfirmLoading(false);
+    }
+  };
+
+  const handleArchive = async (id) => {
+    if (!id) return;
+    setArchivingId(id);
+    try {
+      await updateSystemInAppAnnouncement(id, { status: "archived" });
+      void loadAnnouncements({ status: "sent", kind: "message" });
+    } catch (e) {
+      setAnnError(e?.response?.data?.message || e?.message || "Failed to archive");
+    } finally {
+      setArchivingId(null);
     }
   };
 
@@ -1121,13 +1135,23 @@ function AnnouncementsPage() {
                             <td className="py-3 text-gray-700">{fmtDateTime(r?.sentAt)}</td>
                             <td className="py-3 text-gray-700">{r?.status || "—"}</td>
                             <td className="py-3">
-                              <button
-                                type="button"
-                                onClick={() => setDeleteConfirmModal({ row: r, kind: "history" })}
-                                className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
-                              >
-                                Delete
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleArchive(r?._id)}
+                                  disabled={archivingId === r?._id}
+                                  className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                                >
+                                  {archivingId === r?._id ? "Archiving…" : "Archive"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteConfirmModal({ row: r, kind: "history" })}
+                                  className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))

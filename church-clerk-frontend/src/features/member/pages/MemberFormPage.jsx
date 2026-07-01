@@ -591,21 +591,26 @@ function MemberFormPageInner() {
 
             <Section title="Address Information" subtitle="Where the member lives">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="md:col-span-2">
-                  <Field label="Street Address">
-                    <input
-                      value={streetAddress}
-                      onChange={(e) => setStreetAddress(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                    />
-                  </Field>
-                </div>
+                <Field label="Country">
+                  <Select
+                    inputId="member-country"
+                    isSearchable
+                    isClearable
+                    options={countryOptions}
+                    value={selectedCountryOption}
+                    onChange={(opt) => {
+                      if (!opt) {
+                        setCountry("");
+                        setRegion("");
+                        return;
+                      }
 
-                <Field label="City">
-                  <input
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                      setCountry(String(opt?.label || ""));
+                      setRegion("");
+                    }}
+                    placeholder="Select country"
+                    menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                    styles={selectStyles}
                   />
                 </Field>
 
@@ -630,28 +635,23 @@ function MemberFormPageInner() {
                   />
                 </Field>
 
-                <Field label="Country">
-                  <Select
-                    inputId="member-country"
-                    isSearchable
-                    isClearable
-                    options={countryOptions}
-                    value={selectedCountryOption}
-                    onChange={(opt) => {
-                      if (!opt) {
-                        setCountry("");
-                        setRegion("");
-                        return;
-                      }
-
-                      setCountry(String(opt?.label || ""));
-                      setRegion("");
-                    }}
-                    placeholder="Select country"
-                    menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-                    styles={selectStyles}
+                <Field label="City">
+                  <input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                   />
                 </Field>
+
+                <div className="md:col-span-2">
+                  <Field label="Street Address">
+                    <input
+                      value={streetAddress}
+                      onChange={(e) => setStreetAddress(e.target.value)}
+                      className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    />
+                  </Field>
+                </div>
               </div>
             </Section>
 

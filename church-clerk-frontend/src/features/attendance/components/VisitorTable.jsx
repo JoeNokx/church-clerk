@@ -269,6 +269,7 @@ function VisitorTable({ onEdit, onDeleted }) {
                     {canConvert && (
                       <button
                         type="button"
+                        data-hq-action="true"
                         onClick={() => {
                           if (row?.status === "converted") return;
                           openConvert(row);
@@ -308,6 +309,7 @@ function VisitorTable({ onEdit, onDeleted }) {
                             {canEdit && (
                               <button
                                 type="button"
+                                data-hq-action="true"
                                 onClick={() => {
                                   closeMenu();
                                   const id = row?._id ?? row?.id;
@@ -323,6 +325,7 @@ function VisitorTable({ onEdit, onDeleted }) {
                             {canDelete && (
                               <button
                                 type="button"
+                                data-hq-action="true"
                                 onClick={() => {
                                   closeMenu();
                                   const id = row?._id ?? row?.id;

@@ -5,7 +5,10 @@ import {
   adminGetSubscriptions,
   adminUpdateSubscription,
   adminSuspendSubscription,
-  adminResumeSubscription
+  adminResumeSubscription,
+  adminDevFastForward,
+  adminDevRunCycleForChurch,
+  adminDevRunBillingCycle
 } from "../Services/adminBilling.api.js";
 
 const fmtDate = (v) => {
@@ -23,6 +26,11 @@ function BillingSubscriptionsPage() {
   const [changePlanModal, setChangePlanModal] = useState(null);
   const [changePlanId, setChangePlanId] = useState("");
   const [actionLoading, setActionLoading] = useState("");
+  const [fastForwardModal, setFastForwardModal] = useState(null);
+  const [fastForwardMinutes, setFastForwardMinutes] = useState("2");
+  const [cycleLoadingId, setCycleLoadingId] = useState("");
+  const [globalCycleLoading, setGlobalCycleLoading] = useState(false);
+  const [cycleMessage, setCycleMessage] = useState("");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -120,12 +128,9 @@ function BillingSubscriptionsPage() {
       runAction("resume", () => adminResumeSubscription(id));
       return;
     }
-    if (action === "extend") {
-      const current = sub?.nextBillingDate ? new Date(sub.nextBillingDate) : new Date();
-      if (Number.isNaN(current.getTime())) return;
-      const next = new Date(current);
-      next.setDate(next.getDate() + 30);
-      runAction("extend", () => adminUpdateSubscription(id, { nextBillingDate: next.toISOString() }));
+    if (action === "fastForward") {
+      setFastForwardModal(sub);
+      setFastForwardMinutes("2");
       return;
     }
     if (action === "changePlan") {
@@ -142,6 +147,46 @@ function BillingSubscriptionsPage() {
     setChangePlanModal(null);
   };
 
+  const submitFastForward = async () => {
+    const churchId = fastForwardModal?.church?._id;
+    if (!churchId) return;
+    const mins = Math.max(1, Math.min(Number(fastForwardMinutes || 2), 1440));
+    await runAction("fastForward", () => adminDevFastForward(churchId, mins));
+    setFastForwardModal(null);
+  };
+
+  const runGlobalCycle = async () => {
+    setGlobalCycleLoading(true);
+    setCycleMessage("");
+    setError("");
+    try {
+      await adminDevRunBillingCycle();
+      setCycleMessage("Global billing cycle executed — all overdue subscriptions processed.");
+      await load();
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to run global billing cycle");
+    } finally {
+      setGlobalCycleLoading(false);
+    }
+  };
+
+  const runCycleForChurch = async (sub) => {
+    const churchId = sub?.church?._id;
+    if (!churchId) return;
+    setCycleLoadingId(String(churchId));
+    setCycleMessage("");
+    setError("");
+    try {
+      const res = await adminDevRunCycleForChurch(churchId);
+      setCycleMessage(res?.data?.message || "Billing cycle ran for this church.");
+      await load();
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to run billing cycle");
+    } finally {
+      setCycleLoadingId("");
+    }
+  };
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -150,6 +195,15 @@ function BillingSubscriptionsPage() {
           <div className="mt-1 text-sm text-gray-600">View and override subscriptions across churches.</div>
         </div>
         <div className="flex-1" />
+        <button
+          type="button"
+          onClick={runGlobalCycle}
+          disabled={globalCycleLoading}
+          title="Runs billing cycle for ALL churches with overdue nextBillingDate — same as the nightly scheduled job"
+          className="shrink-0 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
+        >
+          {globalCycleLoading ? "Running…" : "⚡ Run Global Cycle"}
+        </button>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -193,6 +247,7 @@ function BillingSubscriptionsPage() {
       </div>
 
       {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
+      {cycleMessage ? <div className="mt-4 text-sm text-green-600">{cycleMessage}</div> : null}
 
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full text-sm">
@@ -278,10 +333,17 @@ function BillingSubscriptionsPage() {
                             Resume
                           </button>
                         )}
-                        <button type="button" onClick={() => onQuickAction(s, "extend")}
+                        <button type="button" onClick={() => onQuickAction(s, "fastForward")}
                           disabled={!!actionLoading}
-                          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                          +30 Days
+                          title="Dev only: fast-forward billing date by N minutes"
+                          className="rounded-md border border-purple-200 bg-white px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-50 disabled:opacity-50">
+                          ⚡ Fast Forward
+                        </button>
+                        <button type="button" onClick={() => runCycleForChurch(s)}
+                          disabled={!!actionLoading || cycleLoadingId === String(s?.church?._id)}
+                          title="Dev only: run billing cycle for this church only"
+                          className="rounded-md border border-indigo-200 bg-white px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">
+                          {cycleLoadingId === String(s?.church?._id) ? "Running…" : "▶ Run Cycle"}
                         </button>
                         <button type="button" onClick={() => onQuickAction(s, "changePlan")}
                           disabled={!!actionLoading}
@@ -297,6 +359,37 @@ function BillingSubscriptionsPage() {
           </tbody>
         </table>
       </div>
+
+      {fastForwardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <div className="text-base font-semibold text-gray-900 mb-1">⚡ Fast Forward Billing</div>
+            <div className="text-xs text-gray-500 mb-1">{fastForwardModal?.church?.name}</div>
+            <div className="mb-4 text-xs text-purple-700 bg-purple-50 rounded-lg px-3 py-2">
+              Sets <strong>nextBillingDate</strong> to N minutes from now. Then click <strong>Run Billing Cycle</strong> to trigger it.
+            </div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Minutes from now</label>
+            <input
+              type="number"
+              min={1}
+              max={1440}
+              value={fastForwardMinutes}
+              onChange={(e) => setFastForwardMinutes(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-100 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setFastForwardModal(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+              <button type="button" onClick={submitFastForward} disabled={!!actionLoading}
+                className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800 disabled:opacity-50">
+                {actionLoading === "fastForward" ? "Saving…" : "Fast Forward"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {changePlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

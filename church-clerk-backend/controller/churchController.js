@@ -231,6 +231,21 @@ const updateMyChurchProfile = async (req, res) => {
       return res.status(400).json({ message: "Invalid church type" });
     }
 
+    // Block switching TO Headquarters unless the church already holds an active Premium subscription
+    if (updateData.type === "Headquarters") {
+      const currentChurch = await Church.findOne(query).select("type").lean();
+      if (currentChurch && currentChurch.type !== "Headquarters") {
+        const sub = await Subscription.findOne({ church: currentChurch._id }).populate("plan").lean();
+        const planName = String(sub?.plan?.name || "").trim().toLowerCase();
+        const status = String(sub?.status || "").trim().toLowerCase();
+        if (planName !== "premium" || status !== "active") {
+          return res.status(403).json({
+            message: "Your church must have an active Premium subscription before switching to Headquarters type. Please upgrade to Premium first."
+          });
+        }
+      }
+    }
+
     if (
       updateData.titheRecordingMode &&
       !["individual", "aggregate"].includes(updateData.titheRecordingMode)

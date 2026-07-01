@@ -8,6 +8,7 @@ import { toGhanaNationalFromE164, validatePhoneNumber } from "../../utils/valida
 import { computeProration } from "./prorationController.js";
 import { getPaystackSecretKey, paystackRequest } from "../../utils/paystackHelpers.js";
 import { normalizeBillingIntervalKey } from "../../utils/planHelpers.js";
+import { rewardReferralIfEligible } from "../referralSystemController.js";
 
 const getSupportedPaystackCurrencies = () => {
   const raw = String(process.env.PAYSTACK_SUPPORTED_CURRENCIES || "").trim();
@@ -576,6 +577,13 @@ export const verifyPaystackPayment = async (req, res) => {
         }
 
         await subscription.save();
+
+        // Fire referral reward for the referrer church (idempotent — no-op if already rewarded)
+        try {
+          await rewardReferralIfEligible(subscription.church);
+        } catch (referralErr) {
+          console.error("[verifyPaystackPayment] referral reward error:", referralErr?.message || referralErr);
+        }
       }
 
       const populated = await Subscription.findById(subscription._id).populate("plan").lean();

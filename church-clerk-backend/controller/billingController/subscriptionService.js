@@ -314,6 +314,56 @@ export const processSubscriptionBillings = async (subscription) => {
 
 // =============================
 
+export const runBillingCycleForChurch = async (churchId) => {
+  const today = new Date();
+
+  const subscriptions = await Subscription.find({
+    church: churchId,
+    nextBillingDate: { $lte: today },
+    status: { $in: ["active", "past_due"] }
+  });
+
+  for (const subscription of subscriptions) {
+    let pendingActionApplied = false;
+    let pendingAction = null;
+    let newPlan = null;
+
+    if (subscription.pendingPlan) {
+      const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
+      if (effectiveAt && new Date(effectiveAt) <= today) {
+        pendingAction = subscription.pendingPlanAction;
+        newPlan = await Plan.findById(subscription.pendingPlan).lean();
+        subscription.plan = subscription.pendingPlan;
+        subscription.pendingPlan = null;
+        subscription.pendingPlanEffectiveDate = null;
+        subscription.pendingPlanAction = null;
+        pendingActionApplied = true;
+        await subscription.save();
+        try {
+          const church = await Church.findById(subscription.church).lean();
+          if (pendingAction === "cancel") await sendCancellationAppliedEmail(church);
+          else if (pendingAction === "downgrade") await sendDowngradeAppliedEmail(church, newPlan?.name || "new plan");
+        } catch { /* email failure must not abort */ }
+      }
+    }
+
+    if (pendingActionApplied && pendingAction === "cancel") continue;
+
+    const result = await processSubscriptionBillings(subscription);
+
+    if (result.charged) {
+      try {
+        await chargeWithPaystack(subscription);
+      } catch {
+        const { gracePeriodDays } = await getSystemSettingsSnapshot();
+        subscription.status = "past_due";
+        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
+        await subscription.save();
+      }
+    }
+  }
+};
+
 export const runBillingCycles = async () => {
 
   const today = new Date();

@@ -1525,6 +1525,14 @@ function SettingsPage() {
                   <option value="Branch">Branch</option>
                   <option value="Independent">Independent</option>
                 </select>
+                {type === "Headquarters" && activeChurch?.type !== "Headquarters" && (
+                  <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-xs">
+                    <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700" aria-hidden="true">
+                      <path d="M12 9v4m0 4h.01M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <div>Switching to <strong>Headquarters</strong> requires an active <strong>Premium</strong> subscription. Please upgrade to Premium on the Billing page first.</div>
+                  </div>
+                )}
               </div>
 
               {type === "Branch" ? (

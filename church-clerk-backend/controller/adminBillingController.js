@@ -5,6 +5,7 @@ import Church from "../models/churchModel.js";
 import WebhookLog from "../models/billingModel/webhookLogModel.js";
 import PDFDocument from "pdfkit";
 import { sendSuspensionEmail } from "../utils/subscriptionEmails.js";
+import { rewardReferralIfEligible } from "./referralSystemController.js";
 import {
   BILLING_INTERVALS,
   toPaystackInterval,
@@ -320,6 +321,14 @@ export const verifyPayment = async (req, res) => {
         status: "active",
         gracePeriodEnd: null
       });
+
+      // Fire referral reward (idempotent — no-op if already rewarded)
+      try {
+        const sub = await Subscription.findById(billing.subscription).lean();
+        if (sub?.church) await rewardReferralIfEligible(sub.church);
+      } catch (referralErr) {
+        console.error("[adminVerifyPayment] referral reward error:", referralErr?.message || referralErr);
+      }
     } else if (paystackStatus === "failed" || paystackStatus === "abandoned") {
       billing.status = "failed";
       await billing.save();

@@ -8,6 +8,7 @@ import {
   chooseSubscriptionPlan,
   upgradeTrial,
   executeBillingCycle,
+  executeBillingCycleForChurch,
   getAvailablePlans as getAvailablePlansService,
   getSubscriptionForChurch,
   getEffectivePlan
@@ -169,6 +170,57 @@ export const runBillingCycle = async (req, res) => {
     res.json({ message: "Billing cycle executed successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const devRunBillingCycleForChurch = async (req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ message: "Not found" });
+  }
+  try {
+    const churchId = req.params?.churchId;
+    if (!churchId) return res.status(400).json({ message: "churchId is required" });
+
+    await executeBillingCycleForChurch(churchId);
+
+    const updated = await Subscription.findOne({ church: churchId }).populate("plan").lean();
+    return res.json({
+      message: "Billing cycle ran for this church only",
+      subscription: updated
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const devFastForwardSubscription = async (req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ message: "Not found" });
+  }
+  try {
+    const churchId = req.params?.churchId;
+    if (!churchId) return res.status(400).json({ message: "churchId is required" });
+
+    const minutes = Math.max(1, Math.min(Number(req.body?.minutes || 2), 1440));
+    if (!Number.isFinite(minutes)) return res.status(400).json({ message: "Invalid minutes" });
+
+    const subscription = await Subscription.findOne({ church: churchId });
+    if (!subscription) return res.status(404).json({ message: "Subscription not found" });
+
+    const newDate = new Date(Date.now() + minutes * 60 * 1000);
+    subscription.nextBillingDate = newDate;
+    if (subscription.status === "free trial" || subscription.status === "trialing") {
+      subscription.trialEnd = newDate;
+    }
+    await subscription.save();
+
+    return res.json({
+      message: `nextBillingDate fast-forwarded by ${minutes} minute(s)`,
+      nextBillingDate: subscription.nextBillingDate,
+      status: subscription.status
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 

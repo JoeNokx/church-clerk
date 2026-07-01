@@ -30,6 +30,7 @@ import {
   updateSystemInAppAnnouncement,
   deleteSystemInAppAnnouncement
 } from "../controller/systemInAppAnnouncementController.js";
+import { runBillingCycle, devFastForwardSubscription, devRunBillingCycleForChurch } from "../controller/billingController/subscriptionController.js";
 import { getSystemSettings, updateSystemSettings } from "../controller/systemSettingsController.js";
 import {
   getPermissionCatalog,
@@ -320,6 +321,33 @@ router.patch(
   authorizeRoles("superadmin", "supportadmin"),
   requirePermission("settingsChurchProfile", "update"),
   updateSystemSettings
+);
+
+router.post(
+  "/dev/billing/run-cycle",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin"),
+  requirePermission("billing", "update"),
+  runBillingCycle
+);
+
+router.post(
+  "/dev/subscriptions/:churchId/fast-forward",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin"),
+  requirePermission("billing", "update"),
+  devFastForwardSubscription
+);
+
+router.post(
+  "/dev/subscriptions/:churchId/run-cycle",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin"),
+  requirePermission("billing", "update"),
+  devRunBillingCycleForChurch
 );
 
 // Mount additional admin subroutes

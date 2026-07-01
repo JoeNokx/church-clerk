@@ -136,6 +136,7 @@ function AttendanceTable({ onEdit, onDeleted }) {
                     {canEdit && (
                       <button
                         type="button"
+                        data-hq-action="true"
                         onClick={() => {
                           if (!row?._id) return;
                           onEdit?.(row);
@@ -149,6 +150,7 @@ function AttendanceTable({ onEdit, onDeleted }) {
                     {canDelete && (
                       <button
                         type="button"
+                        data-hq-action="true"
                         onClick={() => {
                           if (!row?._id) return;
                           openConfirmDelete(row._id);

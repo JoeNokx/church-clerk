@@ -396,51 +396,6 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Street Address (optional)</label>
-          <input
-            type="text"
-            placeholder="Street address"
-            value={streetAddress}
-            onChange={(e) => setStreetAddress(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">City</label>
-          <input
-            type="text"
-            placeholder="City"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Region (optional)</label>
-          <Select
-            inputId="church-region"
-            isSearchable
-            isClearable
-            options={regionOptions}
-            value={selectedRegionOption}
-            onChange={(opt) => {
-              if (!opt) {
-                setRegion("");
-                return;
-              }
-
-              setRegion(String(opt?.label || ""));
-            }}
-            placeholder={selectedCountryOption ? "Select region" : "Select country first"}
-            isDisabled={!selectedCountryOption}
-            styles={selectStyles}
-          />
-        </div>
-
-        <div>
           <label className="block font-medium text-gray-700 mb-1 text-sm">Country (optional)</label>
           <Select
             inputId="church-country"
@@ -471,6 +426,51 @@ function RegisterChurch() {
             }}
             placeholder="Select country"
             styles={selectStyles}
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Region (optional)</label>
+          <Select
+            inputId="church-region"
+            isSearchable
+            isClearable
+            options={regionOptions}
+            value={selectedRegionOption}
+            onChange={(opt) => {
+              if (!opt) {
+                setRegion("");
+                return;
+              }
+
+              setRegion(String(opt?.label || ""));
+            }}
+            placeholder={selectedCountryOption ? "Select region" : "Select country first"}
+            isDisabled={!selectedCountryOption}
+            styles={selectStyles}
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">City</label>
+          <input
+            type="text"
+            placeholder="City"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Street Address (optional)</label>
+          <input
+            type="text"
+            placeholder="Street address"
+            value={streetAddress}
+            onChange={(e) => setStreetAddress(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 

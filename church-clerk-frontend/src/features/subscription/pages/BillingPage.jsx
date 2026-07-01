@@ -217,6 +217,8 @@ function BillingPage() {
   const [history, setHistory] = useState([]);
   const [historyPagination, setHistoryPagination] = useState({ currentPage: 1, nextPage: null, prevPage: null });
 
+  const plansRef = useRef(null);
+
   const [loading, setLoading] = useState(true);
   const [payLoading, setPayLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -609,8 +611,17 @@ function BillingPage() {
     return Number(ghsAmount);
   };
 
+  const isHQ = activeChurch?.type === "Headquarters";
+
   const currentPriceGhs = currentPlan?.pricing?.GHS?.[overviewInterval] ?? currentPlan?.priceByCurrency?.GHS?.[overviewInterval] ?? null;
   const currentPriceDisplay = toDisplayPrice(currentPriceGhs);
+
+  const pendingPlanData = subscription?.pendingPlan || null;
+  const hasPendingDowngrade = subscription?.pendingPlanAction === "downgrade" && !!pendingPlanData;
+  const nextBillingPriceGhs = hasPendingDowngrade
+    ? (pendingPlanData?.pricing?.GHS?.[overviewInterval] ?? pendingPlanData?.priceByCurrency?.GHS?.[overviewInterval] ?? currentPriceGhs)
+    : currentPriceGhs;
+  const nextBillingPriceDisplay = toDisplayPrice(nextBillingPriceGhs);
 
   const selectedPriceGhs = selectedPlan?.pricing?.GHS?.[billingInterval] ?? selectedPlan?.priceByCurrency?.GHS?.[billingInterval] ?? null;
   const selectedPriceDisplay = toDisplayPrice(selectedPriceGhs);
@@ -632,12 +643,18 @@ function BillingPage() {
     const nextLimit = limitValue(plan?.memberLimit);
     const nextName = String(plan?.name || "").toLowerCase();
     const isFreeLite = nextName === "free lite";
+    const wouldBeDowngrade = isFreeLite || (subscribedPlanId && nextLimit <= subscribedLimit);
+
+    if (isHQ && (wouldBeDowngrade || nextName !== "premium")) {
+      setError("Headquarters churches must remain on the Premium plan and cannot downgrade or cancel.");
+      return;
+    }
 
     if (isFreeLite && isFreeTrial) {
       return;
     }
 
-    if (isFreeLite || (subscribedPlanId && nextLimit <= subscribedLimit)) {
+    if (wouldBeDowngrade) {
       setPendingDowngradePlan(plan);
       setShowDowngradeConfirm(true);
       return;
@@ -686,7 +703,7 @@ function BillingPage() {
   const isPaidPlan = ["basic", "standard", "premium"].includes(currentPlanName);
 
   const planManagementCard = (
-    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+    <div ref={plansRef} className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
       <div>
         <div className="font-semibold text-gray-900 text-sm">Plan Management</div>
         <div className="text-gray-500 text-xs">Change your subscription plan or cancel anytime</div>
@@ -726,13 +743,9 @@ function BillingPage() {
           <div className="inline-flex flex-wrap items-center justify-center gap-2">
             <div className="inline-flex flex-wrap rounded-lg border border-gray-200 bg-white p-1 gap-0.5">
               {[
-                { key: "hourly",    label: "Hourly" },
-                { key: "daily",     label: "Daily" },
-                { key: "weekly",    label: "Weekly" },
-                { key: "monthly",   label: "Monthly" },
-                { key: "quarterly", label: "Quarterly" },
-                { key: "halfYear",  label: "6 Months" },
-                { key: "yearly",    label: "Yearly" }
+                { key: "monthly",  label: "Monthly" },
+                { key: "halfYear", label: "6 Months" },
+                { key: "yearly",   label: "Yearly" }
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -778,6 +791,7 @@ function BillingPage() {
 
           const isFreeLite = name.toLowerCase() === "free lite";
           const isFreeLiteDuringTrial = Boolean(isFreeLite && isFreeTrial);
+          const isHQLockedPlan = isHQ && name.toLowerCase() !== "premium";
 
           const nextLimit = limitValue(p?.memberLimit);
           const isUpgrade = Boolean(subscribedPlanId && nextLimit > subscribedLimit);
@@ -787,15 +801,17 @@ function BillingPage() {
             ? paymentRequired
               ? "Subscribe now"
               : "Current plan"
-            : isFreeLiteDuringTrial
-              ? "Starts after trial"
-              : !subscribedPlanId
-                ? "Subscribe now"
-                : isUpgrade
-                  ? "Upgrade now"
-                  : isDowngrade
-                    ? "Downgrade now"
-                    : "Subscribe now";
+            : isHQLockedPlan
+              ? "HQ: Premium only"
+              : isFreeLiteDuringTrial
+                ? "Starts after trial"
+                : !subscribedPlanId
+                  ? "Subscribe now"
+                  : isUpgrade
+                    ? "Upgrade now"
+                    : isDowngrade
+                      ? "Downgrade now"
+                      : "Subscribe now";
 
           return (
             <PriceCard
@@ -811,7 +827,7 @@ function BillingPage() {
               features={planFeatures}
               actionLabel={actionLabel}
               onAction={() => onPlanAction(p)}
-              disabled={payLoading || manageLoading || prorationLoading || isFreeLiteDuringTrial || (isCurrent && !paymentRequired)}
+              disabled={payLoading || manageLoading || prorationLoading || isFreeLiteDuringTrial || isHQLockedPlan || (isCurrent && !paymentRequired)}
               loading={prorationLoading && isUpgrade && String(id) === String(planId)}
               variant="billing"
             />
@@ -870,7 +886,8 @@ function BillingPage() {
           <button
             type="button"
             onClick={onCancel}
-            disabled={manageLoading}
+            disabled={manageLoading || isFreeTrial || isHQ}
+            title={isFreeTrial ? "Cannot cancel during free trial" : isHQ ? "Headquarters churches cannot cancel their Premium subscription" : undefined}
             className="rounded-lg border border-red-200 bg-white px-4 py-2 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 text-xs"
           >
             Cancel Subscription
@@ -1005,12 +1022,7 @@ function BillingPage() {
             </div>
             <button
               type="button"
-              onClick={() => {
-                const firstPaid = plansSorted.find(
-                  (p) => String(p?.name || "").trim().toLowerCase() !== "free lite" && p?.isActive !== false
-                );
-                if (firstPaid) onPlanAction(firstPaid);
-              }}
+              onClick={() => plansRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
               className="shrink-0 rounded-lg bg-orange-600 px-4 py-2 font-semibold text-white hover:bg-orange-700 text-xs"
             >
               Upgrade Now
@@ -1078,7 +1090,7 @@ function BillingPage() {
             <div className="font-semibold text-gray-500 text-xs">Current Plan</div>
             <div className="mt-1 font-semibold text-gray-900 text-lg">{isFreeTrial ? "Free trial" : currentPlan?.name || "—"}</div>
             <div className="text-gray-500 text-xs">
-              {currentPriceGhs && currentPriceDisplay !== null ? `${formatCurrency(currentPriceDisplay, displayCurrency)}/${overviewIntervalLabel}` : ""}
+              {!isFreeTrial && currentPriceGhs && currentPriceDisplay !== null ? `${formatCurrency(currentPriceDisplay, displayCurrency)}/${overviewIntervalLabel}` : ""}
             </div>
           </div>
 
@@ -1089,14 +1101,10 @@ function BillingPage() {
           </div>
 
           <div>
-            <div className="font-semibold text-gray-500 text-xs">Next Billing Date</div>
+            <div className="font-semibold text-gray-500 text-xs">{isFreeTrial ? "Trial Ends" : "Next Billing Date"}</div>
             <div className="mt-2 font-semibold text-gray-900 text-sm">{nextBillingText}</div>
             <div className="text-gray-500 text-xs">
-              You will be charged {currentPriceGhs
-                ? currentPriceDisplay !== null
-                  ? formatCurrency(currentPriceDisplay, displayCurrency)
-                  : "—"
-                : "—"} on this date
+              {isFreeTrial ? "Your free trial ends on this date" : `You will be charged ${nextBillingPriceGhs ? (nextBillingPriceDisplay !== null ? formatCurrency(nextBillingPriceDisplay, displayCurrency) : "—") : "—"} on this date`}
             </div>
           </div>
         </div>
