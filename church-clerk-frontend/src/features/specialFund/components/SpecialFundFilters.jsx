@@ -60,28 +60,32 @@ function SpecialFundFilters() {
   };
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-end">
+    <div className="flex flex-col gap-2 w-full">
       <input
         value={searchValue}
         onChange={onSearchChange}
-        className="h-11 w-full md:w-[220px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
         placeholder="Search giver name"
       />
 
-      <select
-        value={store?.filters?.category || ""}
-        onChange={onCategoryChange}
-        className="h-11 w-full md:w-auto rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-      >
-        <option value="">All Categories</option>
-        {categoryOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+      <div className="flex items-center gap-2 w-full">
+        <select
+          value={store?.filters?.category || ""}
+          onChange={onCategoryChange}
+          className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        >
+          <option value="">All Categories</option>
+          {categoryOptions.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
 
-      <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
+        <div className="flex-1 min-w-0">
+          <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
+        </div>
+      </div>
     </div>
   );
 }

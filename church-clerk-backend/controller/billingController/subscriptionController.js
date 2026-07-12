@@ -382,6 +382,26 @@ export const removePaymentMethod = async (req, res) => {
     }
 
     subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
+
+    const target = subscription.paymentMethods.find((m) => String(m?._id || "") === String(methodId));
+    if (!target) {
+      return res.status(404).json({ message: "Payment method not found" });
+    }
+
+    const targetType = String(target.type || "");
+    const remainingOfType = subscription.paymentMethods.filter(
+      (m) => String(m?._id || "") !== String(methodId) &&
+             String(m?.type || "") === targetType &&
+             m?.authorizationCode
+    );
+
+    if (remainingOfType.length === 0) {
+      const label = targetType === "mobile_money" ? "mobile money number" : "card";
+      return res.status(400).json({
+        message: `You must keep at least one ${label}. Add a new ${label} before removing this one.`
+      });
+    }
+
     const before = subscription.paymentMethods.length;
     subscription.paymentMethods = subscription.paymentMethods.filter((m) => String(m?._id || "") !== String(methodId));
     if (subscription.paymentMethods.length !== before) {

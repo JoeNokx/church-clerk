@@ -1838,13 +1838,50 @@ function MinistryDetailsPage() {
                               )}
                             </div>
                           </div>
-                        ) : (
-                          <div className="rounded-xl border border-gray-200 px-4 py-6 text-center text-gray-500 text-sm">
-                            {Number(individualViewing?.absentCount ?? 0) === 0
-                              ? "No absent members."
-                              : `${Number(individualViewing?.absentCount ?? 0)} member${Number(individualViewing?.absentCount ?? 0) !== 1 ? "s" : ""} absent. Individual absent member list is not tracked.`}
-                          </div>
-                        )}
+                        ) : (() => {
+                          const presentIds = new Set(
+                            (Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : [])
+                              .map((m) => String(m?._id || "")).filter(Boolean)
+                          );
+                          const apiAbsent = Array.isArray(individualViewing?.absentMembers) && individualViewing.absentMembers.length > 0
+                            ? individualViewing.absentMembers.map((m) => ({
+                                key: m?._id || String(Math.random()),
+                                name: `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-",
+                                phone: m?.phoneNumber || "-",
+                                email: m?.email || "-"
+                              }))
+                            : individualMembers
+                                .filter((m) => !presentIds.has(String(m?.id || "")))
+                                .map((m) => ({ key: String(m?.id), name: m?.name || "-", phone: "-", email: "-" }));
+                          return (
+                            <div className="rounded-xl border border-gray-200 overflow-hidden">
+                              <div className="max-h-80 overflow-y-auto">
+                                {apiAbsent.length === 0 ? (
+                                  <div className="px-4 py-3 text-gray-600 text-sm">No members marked absent.</div>
+                                ) : (
+                                  <table className="min-w-full">
+                                    <thead className="bg-slate-100">
+                                      <tr className="text-left font-semibold text-gray-500 text-xs">
+                                        <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 whitespace-nowrap">Name</th>
+                                        <th className="px-4 py-2 whitespace-nowrap">Phone</th>
+                                        <th className="px-4 py-2 whitespace-nowrap">Email</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                      {apiAbsent.map((m) => (
+                                        <tr key={m.key} className="text-gray-700 text-sm">
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{m.name}</td>
+                                          <td className="px-4 py-1.5 whitespace-nowrap">{m.phone}</td>
+                                          <td className="px-4 py-1.5 whitespace-nowrap">{m.email}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

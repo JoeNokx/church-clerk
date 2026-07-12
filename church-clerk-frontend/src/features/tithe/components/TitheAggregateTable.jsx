@@ -112,12 +112,7 @@ function TitheAggregateTable({ onEdit, onDeleted }) {
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
                 <td className="sticky left-0 z-10 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl bg-green-50 text-green-700 flex items-center justify-center md:h-12 md:w-12">
-                      <span className="text-[10px] font-semibold leading-none">{currency}</span>
-                    </div>
-                    <div className="text-blue-700">{formatMoney(row?.amount || 0, currency)}</div>
-                  </div>
+                  <div className="font-semibold text-gray-900">{formatMoney(row?.amount || 0, currency)}</div>
                 </td>
                 <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                 <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || row?.createdBy?.email || "-"}</td>

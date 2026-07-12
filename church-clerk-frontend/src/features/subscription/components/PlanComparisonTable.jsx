@@ -158,7 +158,7 @@ function PlanComparisonTable({
         <table className="min-w-[720px] w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-white px-4 py-3 text-left font-semibold text-gray-600 border-b border-gray-200 text-xs">Feature</th>
+              <th className="sticky left-0 z-10 bg-white pl-3 pr-2 md:px-4 py-3 text-left font-semibold text-gray-600 border-b border-gray-200 text-xs w-24 md:w-40">Feature</th>
               {rows.map((p) => (
                 <th key={p?._id || p?.name} className="px-4 py-3 text-left font-semibold text-gray-600 border-b border-gray-200 text-xs">
                   {p?.name || "—"}
@@ -168,7 +168,7 @@ function PlanComparisonTable({
           </thead>
           <tbody>
             <tr>
-              <td className="sticky left-0 z-10 bg-white px-4 py-3 font-semibold text-gray-700 border-b border-gray-100 text-xs">Member limit</td>
+              <td className="sticky left-0 z-10 bg-white pl-3 pr-2 md:px-4 py-3 font-semibold text-gray-700 border-b border-gray-100 text-xs w-24 md:w-40">Member limit</td>
               {rows.map((p) => (
                 <td key={`${p?._id || p?.name}-memberLimit`} className="px-4 py-3 text-gray-700 border-b border-gray-100 text-xs">
                   <span className="font-semibold">{renderLimit(p?.memberLimit)}</span>
@@ -176,7 +176,7 @@ function PlanComparisonTable({
               ))}
             </tr>
             <tr>
-              <td className="sticky left-0 z-10 bg-white px-4 py-3 font-semibold text-gray-700 border-b border-gray-200 text-xs">User limit</td>
+              <td className="sticky left-0 z-10 bg-white pl-3 pr-2 md:px-4 py-3 font-semibold text-gray-700 border-b border-gray-200 text-xs w-24 md:w-40">User limit</td>
               {rows.map((p) => (
                 <td key={`${p?._id || p?.name}-userLimit`} className="px-4 py-3 text-gray-700 border-b border-gray-200 text-xs">
                   <span className="font-semibold">{renderLimit(p?.userLimit)}</span>
@@ -186,7 +186,7 @@ function PlanComparisonTable({
 
             {visibleKeys.map((k) => (
               <tr key={k}>
-                <td className="sticky left-0 z-10 bg-white px-4 py-3 text-gray-700 border-b border-gray-100 text-xs">{featureLabels[k] || humanizeFeatureKey(k)}</td>
+                <td className="sticky left-0 z-10 bg-white pl-3 pr-2 md:px-4 py-3 text-gray-700 border-b border-gray-100 text-xs w-24 md:w-40 max-w-[96px] md:max-w-none break-words">{featureLabels[k] || humanizeFeatureKey(k)}</td>
                 {rows.map((p) => (
                   <td key={`${p?._id || p?.name}-${k}`} className="px-4 py-3 text-gray-700 border-b border-gray-100 text-xs">
                     {renderBool(Boolean(getFeatureValue(p, k)), `${k} ${getFeatureValue(p, k) ? "enabled" : "disabled"}`)}

@@ -319,12 +319,16 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                         </td>
 
                         <td className="px-4 md:max-lg:px-6 py-2">
-                          <input
-                            value={row?.notes || ""}
-                            onChange={(e) => updateItem(idx, { notes: e.target.value })}
-                            className="h-11 w-64 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                            placeholder="Optional"
-                          />
+                          <div className="flex flex-col gap-0.5">
+                            <input
+                              value={row?.notes || ""}
+                              onChange={(e) => updateItem(idx, { notes: e.target.value.slice(0, 20) })}
+                              maxLength={20}
+                              className="h-11 w-52 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                              placeholder="Optional"
+                            />
+                            <div className="text-[10px] text-gray-400 text-right w-52">{(row?.notes || "").length}/20</div>
+                          </div>
                         </td>
 
                         <td className="px-4 md:max-lg:px-6 py-2 whitespace-nowrap">

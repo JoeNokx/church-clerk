@@ -23,6 +23,7 @@ import {
   verifyPayment,
   updatePlan
 } from "../controller/adminBillingController.js";
+import { runDailyBillingJob } from "../cron/billingCronController.js";
 
 const router = express.Router();
 
@@ -52,5 +53,15 @@ router.put("/invoices/:id/status", requirePermission("billing", "update"), markI
 router.get("/invoices/:id/download", requirePermission("billing", "read"), downloadInvoice);
 
 router.get("/webhook-logs", requirePermission("billing", "read"), getWebhookLogs);
+
+router.post("/test/run-billing-cron", async (req, res) => {
+  try {
+    console.log("[AdminRoute] Manual billing cron triggered");
+    await runDailyBillingJob();
+    return res.json({ message: "Billing cron completed. Check server logs for details." });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
 
 export default router;

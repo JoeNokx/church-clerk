@@ -19,6 +19,7 @@ import {
   uploadEventAttendanceFile
 } from "../attendanceFiles/services/eventAttendanceFiles.api.js";
 import FileUploadButton from "../../../shared/components/FileUploadButton.jsx";
+import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import EventCreatePage from "./EventCreatePage.jsx";
 import EventOfferingPage from "../offerings/pages/EventOfferingPage.jsx";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -161,6 +162,18 @@ function EventDetailsPage() {
 
   const [fileMenuOpenId, setFileMenuOpenId] = useState(null);
   const openFileMenuRootRef = useRef(null);
+
+  const [regSearch, setRegSearch] = useState("");
+  const [regDateFrom, setRegDateFrom] = useState("");
+  const [regDateTo, setRegDateTo] = useState("");
+
+  const [totalSearch, setTotalSearch] = useState("");
+  const [totalDateFrom, setTotalDateFrom] = useState("");
+  const [totalDateTo, setTotalDateTo] = useState("");
+
+  const [filesSearch, setFilesSearch] = useState("");
+  const [filesDateFrom, setFilesDateFrom] = useState("");
+  const [filesDateTo, setFilesDateTo] = useState("");
 
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerSaving, setRegisterSaving] = useState(false);
@@ -710,6 +723,54 @@ function EventDetailsPage() {
     }
   };
 
+  const filterByDateRange = (dateStr, from, to) => {
+    if (!from && !to) return true;
+    if (!dateStr) return false;
+    const d = dateStr.slice(0, 10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  };
+
+  const filteredAttendees = useMemo(() => {
+    const q = regSearch.toLowerCase();
+    return attendees.filter((r) => {
+      const matchSearch = !q ||
+        (r?.fullName || "").toLowerCase().includes(q) ||
+        (r?.email || "").toLowerCase().includes(q) ||
+        (r?.phoneNumber || "").toLowerCase().includes(q);
+      const matchDate = filterByDateRange(r?.createdAt, regDateFrom, regDateTo);
+      return matchSearch && matchDate;
+    });
+  }, [attendees, regSearch, regDateFrom, regDateTo]);
+
+  const filteredTotals = useMemo(() => {
+    const q = totalSearch.toLowerCase();
+    return totals.filter((r) => {
+      const matchSearch = !q ||
+        (r?.mainSpeaker || "").toLowerCase().includes(q) ||
+        formatDate(r?.date).toLowerCase().includes(q);
+      const matchDate = filterByDateRange(r?.date, totalDateFrom, totalDateTo);
+      return matchSearch && matchDate;
+    });
+  }, [totals, totalSearch, totalDateFrom, totalDateTo]);
+
+  const filteredFiles = useMemo(() => {
+    const q = filesSearch.toLowerCase();
+    return files.filter((f) => {
+      const matchSearch = !q || (f?.originalName || "").toLowerCase().includes(q);
+      const matchDate = filterByDateRange(f?.createdAt, filesDateFrom, filesDateTo);
+      return matchSearch && matchDate;
+    });
+  }, [files, filesSearch, filesDateFrom, filesDateTo]);
+
+  const truncateAttendanceName = (name) => {
+    if (!name) return "\u2014";
+    const words = name.trim().split(/\s+/);
+    if (name.length > 20 && words.length > 3) return `${words[0]} ${words[1]}\u2026`;
+    return name;
+  };
+
   const tabClass = (key) => {
     const isActive = activeTab === key;
     return `flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
@@ -915,7 +976,7 @@ function EventDetailsPage() {
           </div>
 
           <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
-            <div className="cck-tab-bar rounded-full bg-gray-100 p-1 flex items-center gap-2">
+            <div className="cck-tab-bar rounded-full bg-gray-100 p-1 flex items-center gap-1 overflow-x-auto">
               <button type="button" onClick={() => setActiveTab("registration")} className={tabClass("registration")}>
                 By Registration
               </button>
@@ -929,39 +990,58 @@ function EventDetailsPage() {
 
             {activeTab === "registration" ? (
               <div className="mt-6">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="text-gray-600 text-sm">View registered members and add new registrations for this event</div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={onExportAttendees}
-                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                        <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        <path d="M8 9l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      </svg>
-                      Export
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRegisterError(null);
-                        setRegisterOpen(true);
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 font-semibold text-white hover:bg-green-800 text-sm"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                        <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        <path d="M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      </svg>
-                      Register
-                    </button>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">By Registration</div>
+                    <div className="text-gray-500 text-xs mt-0.5">Record and manage attendance collected for this event.</div>
+                  </div>
+                  <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRegisterError(null);
+                          setRegisterOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                          <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          <path d="M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                        Register
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onExportAttendees}
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                          <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          <path d="M8 9l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                        Export
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <input
+                        value={regSearch}
+                        onChange={(e) => setRegSearch(e.target.value)}
+                        placeholder="Search name, email, phone"
+                        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
+                      />
+                      <DateRangeFilter
+                        appliedFrom={regDateFrom}
+                        appliedTo={regDateTo}
+                        onApply={(from, to) => { setRegDateFrom(from || ""); setRegDateTo(to || ""); }}
+                        onClear={() => { setRegDateFrom(""); setRegDateTo(""); }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
+                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-white">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
@@ -998,11 +1078,12 @@ function EventDetailsPage() {
                           </td>
                         </tr>
                       ) : (
-                        attendees.map((r, idx) => (
+                        filteredAttendees.map((r, idx) => (
                           <tr key={r?._id || `att-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                             <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                              <button type="button" className="text-blue-700 hover:underline">
-                                {r?.fullName || "—"}
+                              <button type="button" className="text-blue-700 hover:underline" title={r?.fullName || "—"}>
+                                <span className="md:hidden">{truncateAttendanceName(r?.fullName)}</span>
+                                <span className="hidden md:inline">{r?.fullName || "—"}</span>
                               </button>
                             </td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.email || "—"}</td>
@@ -1039,22 +1120,43 @@ function EventDetailsPage() {
               </div>
             ) : activeTab === "total" ? (
               <div className="mt-6">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="text-gray-600 text-sm">Record the total number of attendees without listing individual names</div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRecordError(null);
-                      setRecordOpen(true);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 font-semibold text-white hover:bg-green-800 text-sm"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Record Attendance
-                  </button>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">Total Number</div>
+                    <div className="text-gray-500 text-xs mt-0.5">Record the total number of attendees without listing individual names.</div>
+                  </div>
+                  <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRecordError(null);
+                          setRecordOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
+                      >
+                        <span className="leading-none text-lg">+</span>
+                        Record Attendance
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <input
+                        value={totalSearch}
+                        onChange={(e) => setTotalSearch(e.target.value)}
+                        placeholder="Search speaker or date"
+                        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
+                      />
+                      <DateRangeFilter
+                        appliedFrom={totalDateFrom}
+                        appliedTo={totalDateTo}
+                        onApply={(from, to) => { setTotalDateFrom(from || ""); setTotalDateTo(to || ""); }}
+                        onClear={() => { setTotalDateFrom(""); setTotalDateTo(""); }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
+                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-white">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
@@ -1089,7 +1191,7 @@ function EventDetailsPage() {
                           </td>
                         </tr>
                       ) : (
-                        totals.map((r, idx) => (
+                        filteredTotals.map((r, idx) => (
                           <tr key={r?._id || `tot-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                             <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <button type="button" className="text-blue-700 hover:underline">
@@ -1129,21 +1231,42 @@ function EventDetailsPage() {
               </div>
             ) : (
               <div className="mt-6">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="text-gray-600 text-sm">Upload attendance files from Excel, Word, or image formats</div>
-                  <FileUploadButton
-                    accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
-                    disabled={fileUploading}
-                    onFile={onUploadFile}
-                    className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 font-semibold text-white hover:bg-green-800 disabled:opacity-60 text-sm"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                      <path d="M12 3v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      <path d="M8 7l4-4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                    {fileUploading ? "Uploading..." : "Upload File"}
-                  </FileUploadButton>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">File Upload</div>
+                    <div className="text-gray-500 text-xs mt-0.5">Upload attendance files from Excel, Word, PDF, or image formats.</div>
+                  </div>
+                  <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                    <div className="flex items-center gap-2">
+                      <FileUploadButton
+                        accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
+                        disabled={fileUploading}
+                        onFile={onUploadFile}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                          <path d="M12 3v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          <path d="M8 7l4-4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                        {fileUploading ? "Uploading..." : "Upload File"}
+                      </FileUploadButton>
+                    </div>
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <input
+                        value={filesSearch}
+                        onChange={(e) => setFilesSearch(e.target.value)}
+                        placeholder="Search file name"
+                        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
+                      />
+                      <DateRangeFilter
+                        appliedFrom={filesDateFrom}
+                        appliedTo={filesDateTo}
+                        onApply={(from, to) => { setFilesDateFrom(from || ""); setFilesDateTo(to || ""); }}
+                        onClear={() => { setFilesDateFrom(""); setFilesDateTo(""); }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {filesError ? (
@@ -1181,7 +1304,7 @@ function EventDetailsPage() {
                           </td>
                         </tr>
                       ) : (
-                        files.map((f, idx) => (
+                        filteredFiles.map((f, idx) => (
                           <tr key={f?._id || `f-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                             <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{f?.originalName || "—"}</td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{guessFileType(f?.mimeType, f?.originalName)}</td>

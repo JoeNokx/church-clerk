@@ -133,7 +133,7 @@ function SupportHelpPage() {
   };
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 w-full overflow-x-hidden">
       <div className="max-w-5xl">
         <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Help &amp; Support</div>
         <div className="mt-1 text-gray-600 text-sm">
@@ -324,7 +324,7 @@ function SupportHelpPage() {
           </div>
         </div>
 
-        <div id="faq" className="mt-8 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+        <div id="faq" className="mt-8 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8 overflow-hidden">
           <div className="font-semibold text-gray-900 text-sm">Frequently Asked Questions</div>
           <div className="mt-1 text-gray-500 text-xs">Click a question to expand the answer.</div>
           <div className="mt-4 divide-y divide-gray-100">
@@ -332,10 +332,12 @@ function SupportHelpPage() {
               <div key={idx}>
                 <button
                   type="button"
+                  aria-label={`Toggle FAQ: ${item.q}`}
                   onClick={() => toggleFaq(idx)}
-                  className="flex w-full items-center justify-between gap-4 py-4 text-left"
+                  className="cck-allow-icons flex w-full items-center justify-between gap-4 py-4 text-left"
+                  style={{ whiteSpace: "normal" }}
                 >
-                  <span className="font-semibold text-gray-900 text-sm">{item.q}</span>
+                  <span className="min-w-0 break-words font-semibold text-gray-900 text-sm">{item.q}</span>
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -344,9 +346,9 @@ function SupportHelpPage() {
                     <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
-                {openFaq === idx && (
-                  <div className="pb-4 text-gray-600 text-sm leading-relaxed">{item.a}</div>
-                )}
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openFaq === idx ? "max-h-96" : "max-h-0"}`}>
+                  <div className="pb-4 text-gray-600 text-sm leading-relaxed break-words">{item.a}</div>
+                </div>
               </div>
             ))}{/*
             <div className="rounded-xl border border-gray-200 p-4">

@@ -2,6 +2,7 @@ import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
+import User from "../../models/userModel.js";
 import { addDays, addInterval } from "../../utils/dateBillingUtils.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 import { toGhanaNationalFromE164, validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
@@ -23,7 +24,7 @@ const getSupportedPaystackCurrencies = () => {
 
 export const chargeWithPaystack = async (subscription) => {
   const paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
-  const card = paymentMethods.find(
+  const card = [...paymentMethods].reverse().find(
     (pm) => String(pm?.type || "") === "card" && pm?.authorizationCode
   );
 
@@ -35,7 +36,9 @@ export const chargeWithPaystack = async (subscription) => {
 
   const billing = await BillingHistory.findOne({
     subscription: subscription._id,
-    status: "pending"
+    status: "pending",
+    type: "payment",
+    amount: { $gt: 0 }
   }).sort({ createdAt: -1 });
 
   if (!billing) return;
@@ -61,6 +64,10 @@ export const chargeWithPaystack = async (subscription) => {
   if (!email) {
     const church = await Church.findById(subscription.church).lean();
     email = String(church?.email || "").trim();
+  }
+  if (!email) {
+    const adminUser = await User.findOne({ church: subscription.church, role: "churchadmin" }).select("email").lean();
+    email = String(adminUser?.email || "").trim();
   }
   if (!email) {
     throw new Error("No email available for automatic card charge. Please re-add your card.");
@@ -106,6 +113,9 @@ export const chargeWithPaystack = async (subscription) => {
     subscription.nextBillingDate = addInterval(now, subscription.billingInterval);
     await subscription.save();
   } else {
+    billing.status = "failed";
+    billing.providerReference = reference;
+    await billing.save();
     throw new Error(`Paystack auto-charge failed with status: ${chargeStatus}`);
   }
 };
@@ -516,7 +526,7 @@ export const verifyPaystackPayment = async (req, res) => {
         const authorization = verification?.data?.authorization || null;
         const authCode = authorization?.authorization_code;
         const customerEmail = String(verification?.data?.customer?.email || "").trim() || null;
-        if (authCode) {
+        if (authCode && authorization?.reusable !== false) {
           subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
           const authLast4 = String(authorization?.last4 || "");
           const existingIdx = subscription.paymentMethods.findIndex(

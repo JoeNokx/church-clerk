@@ -68,6 +68,15 @@ export const processBillingForSubscription = async (subscription) => {
 
   if (price == null) throw new Error("Pricing not configured");
 
+  if (Number(price) <= 0) {
+    const { referralBonusDays } = await getSystemSettingsSnapshot();
+    subscription.nextBillingDate = addDays(subscription.nextBillingDate, Number(referralBonusDays || 30));
+    subscription.status = "active";
+    subscription.gracePeriodEnd = null;
+    await subscription.save();
+    return { charged: false, reason: "free_plan" };
+  }
+
   await BillingHistory.create({
   church: subscription.church,
   subscription: subscription._id,

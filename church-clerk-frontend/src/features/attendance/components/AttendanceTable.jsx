@@ -130,7 +130,7 @@ function AttendanceTable({ onEdit, onDeleted }) {
                 <td className="sticky left-0 z-10 bg-white py-1.5 text-gray-900 whitespace-nowrap px-3 md:px-6">{formatDateWithDay(row?.serviceDate)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.serviceType || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{truncateSpeaker(row?.mainSpeaker)}</td>
-                <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{Number(row?.totalNumber || 0).toLocaleString()}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{Number(row?.totalNumber || 0).toLocaleString()}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <div className="flex items-center justify-end gap-2">
                     {canEdit && (

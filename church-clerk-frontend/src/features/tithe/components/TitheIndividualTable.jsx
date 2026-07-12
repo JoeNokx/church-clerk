@@ -20,6 +20,15 @@ function memberName(member) {
   return full || "-";
 }
 
+function truncateMobileName(name) {
+  if (!name || name === "-") return name || "-";
+  const words = name.trim().split(/\s+/);
+  if (words.length > 3 && name.length > 20) {
+    return words.slice(0, 2).join(" ") + "\u2026";
+  }
+  return name;
+}
+
 function TitheIndividualTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(TitheContext);
@@ -134,7 +143,10 @@ function TitheIndividualTable({ onEdit, onDeleted }) {
                         <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <div className="font-semibold text-gray-900">{memberName(row?.member)}</div>
+                    <div className="font-semibold text-gray-900">
+                      <span className="sm:hidden">{truncateMobileName(memberName(row?.member))}</span>
+                      <span className="hidden sm:inline">{memberName(row?.member)}</span>
+                    </div>
                   </div>
                 </td>
                 <td className="max-md:px-4 py-3 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(row?.amount || 0, currency)}</td>

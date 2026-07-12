@@ -158,6 +158,15 @@ function TemplatesAndDraftsTab({ open, onUseTemplate, onUseDraft, onOpenDelivery
   );
 }
 
+function truncateMobileTitle(title) {
+  if (!title) return "—";
+  const words = title.trim().split(/\s+/);
+  if (words.length > 3 && title.length > 20) {
+    return words.slice(0, 2).join(" ") + "\u2026";
+  }
+  return title;
+}
+
 function formatInt(value) {
   const n = Number(value || 0);
   if (!Number.isFinite(n)) return "0";
@@ -765,7 +774,10 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
             ) : (
               rows.map((m, idx) => (
                 <tr key={m?._id || `m-${idx}`} className="text-gray-700 text-sm">
-                  <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{m?.title || "—"}</td>
+                  <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap" title={m?.title || ""}>
+                    <span className="sm:hidden">{truncateMobileTitle(m?.title)}</span>
+                    <span className="hidden sm:inline">{m?.title || "—"}</span>
+                  </td>
                   <td className="py-2 pr-4 text-gray-600">{Array.isArray(m?.channels) ? m.channels.map((c) => String(c).toUpperCase()).join(", ") : "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{typeof m?.recipientCount === "number" ? m.recipientCount : "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{typeof m?.deliveredCount === "number" ? m.deliveredCount : "—"}</td>

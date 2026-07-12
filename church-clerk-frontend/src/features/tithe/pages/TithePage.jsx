@@ -80,7 +80,7 @@ function DateRangePopover({ valueFrom, valueTo, onApply, onClear }) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-10 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-lg">
+        <div className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-lg">
           <div className="p-4">
             <div className="font-semibold text-gray-900 mb-3 text-sm">Filter by date range</div>
             <div className="space-y-3">
@@ -336,7 +336,11 @@ function ModeSwitchCards({ currentMode, onPick }) {
             <div className="mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs">
               Current Mode
             </div>
-          ) : null}
+          ) : (
+            <div className="mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs">
+              Change Mode
+            </div>
+          )}
         </div>
       </button>
 
@@ -363,7 +367,11 @@ function ModeSwitchCards({ currentMode, onPick }) {
             <div className="mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs">
               Current Mode
             </div>
-          ) : null}
+          ) : (
+            <div className="mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-green-700 px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs">
+              Change Mode
+            </div>
+          )}
         </div>
       </button>
     </div>
@@ -670,9 +678,9 @@ function TithePageInner() {
             </KpiGrid>
           ) : null}
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8 overflow-visible">
             <div className="font-semibold text-gray-900 text-sm">Filter by Date</div>
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 overflow-visible">
               <input
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}

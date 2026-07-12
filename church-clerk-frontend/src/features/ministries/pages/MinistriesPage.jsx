@@ -71,9 +71,26 @@ function Chip({ color = "gray", children }) {
   return <span className={`inline-flex items-center rounded-full px-3 py-1 font-semibold ${styles} text-xs`}>{children}</span>;
 }
 
+function MeetingRow({ mtg, rightAlign = false }) {
+  return (
+    <div className="grid grid-cols-3 gap-3 text-xs">
+      <div className="text-gray-600">
+        <span className="font-semibold text-gray-700">Day:</span> {mtg?.meetingDay || "—"}
+      </div>
+      <div className="text-gray-600">
+        <span className="font-semibold text-gray-700">Time:</span> {mtg?.meetingTime || "—"}
+      </div>
+      <div className={`text-gray-600 ${rightAlign ? "text-right" : ""}`}>
+        <span className="font-semibold text-gray-700">Venue:</span> {mtg?.meetingVenue || "—"}
+      </div>
+    </div>
+  );
+}
+
 function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
   const meetings = normalizeMeetingSchedule(row);
   const firstMeeting = meetings?.[0] || null;
+  const extraCount = meetings.length > 1 ? meetings.length - 1 : 0;
 
   const typeColor = type === "group" ? "blue" : type === "cell" ? "orange" : "purple";
   const typeLabel = type === "group" ? "Group" : type === "cell" ? "Cell" : "Department";
@@ -98,18 +115,42 @@ function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
 
       <div className="mt-3 text-gray-600 line-clamp-3 whitespace-pre-wrap text-sm">{row?.description || "—"}</div>
 
-      {firstMeeting ? (
-        <div className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-3">
-          <div className="grid grid-cols-1 gap-1 md:grid-cols-3 md:gap-3 text-xs">
-            <div className="text-gray-600">
-              <span className="font-semibold text-gray-700">Day:</span> {firstMeeting?.meetingDay || "—"}
+      {meetings.length > 0 ? (
+        <div className="mt-4">
+          {/* Desktop: show all meetings */}
+          <div className="hidden lg:block space-y-2">
+            {meetings.map((mtg, i) => (
+              <div key={i} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 md:px-4 md:py-3">
+                <MeetingRow mtg={mtg} rightAlign />
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile / Tablet: first meeting only + "N more" badge */}
+          <div className="lg:hidden">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2.5 md:px-4 md:py-3">
+              <div className="grid grid-cols-1 gap-1 md:grid-cols-3 md:gap-3 text-xs">
+                <div className="text-gray-600">
+                  <span className="font-semibold text-gray-700">Day:</span> {firstMeeting?.meetingDay || "—"}
+                </div>
+                <div className="text-gray-600">
+                  <span className="font-semibold text-gray-700">Time:</span> {firstMeeting?.meetingTime || "—"}
+                </div>
+                <div className="text-gray-600 md:text-right">
+                  <span className="font-semibold text-gray-700">Venue:</span> {firstMeeting?.meetingVenue || "—"}
+                </div>
+              </div>
             </div>
-            <div className="text-gray-600">
-              <span className="font-semibold text-gray-700">Time:</span> {firstMeeting?.meetingTime || "—"}
-            </div>
-            <div className="text-gray-600 md:text-right">
-              <span className="font-semibold text-gray-700">Venue:</span> {firstMeeting?.meetingVenue || "—"}
-            </div>
+            {extraCount > 0 ? (
+              <div className="mt-2">
+                <span className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3" aria-hidden="true">
+                    <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm.75 8.75h-1.5v-4h1.5v4zm0-5.5h-1.5V3.75h1.5v1.5z"/>
+                  </svg>
+                  +{extraCount} more meeting{extraCount > 1 ? "s" : ""}
+                </span>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -730,7 +771,7 @@ function MinistriesPage() {
         ) : filteredRows.length === 0 ? (
           <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No record found.</div>
         ) : (
-          <div className="p-4 md:p-6 lg:p-8">
+          <div className="p-2 md:p-6 lg:p-8">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredRows.map((row, index) => {
                 const ministryType = activeTab === "groups" ? "group" : activeTab === "cells" ? "cell" : "department";

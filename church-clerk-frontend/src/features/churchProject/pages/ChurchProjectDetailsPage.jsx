@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
@@ -476,18 +476,6 @@ function ChurchProjectDetailsPage() {
 
   const [tab, setTab] = useState("contributions");
 
-  const [actionMenuId, setActionMenuId] = useState(null);
-  const actionMenuRef = useRef(null);
-
-  useEffect(() => {
-    if (!actionMenuId) return;
-    const onDoc = (e) => {
-      if (!actionMenuRef.current?.contains(e.target)) setActionMenuId(null);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [actionMenuId]);
-
   const [kpiLoading, setKpiLoading] = useState(true);
   const [kpiError, setKpiError] = useState("");
   const [kpi, setKpi] = useState(null);
@@ -835,25 +823,7 @@ function ChurchProjectDetailsPage() {
                           <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[320px] break-words px-4 md:px-6">{row?.notes || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <div className="md:hidden relative flex justify-end" ref={actionMenuId === `c-${row?._id}` ? actionMenuRef : null}>
-                              <button
-                                type="button"
-                                aria-label="Row actions"
-                                onClick={() => setActionMenuId((p) => p === `c-${row?._id}` ? null : `c-${row?._id}`)}
-                                className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
-                              >
-                                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-gray-500">
-                                  <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
-                                </svg>
-                              </button>
-                              {actionMenuId === `c-${row?._id}` && (
-                                <div className="absolute right-0 top-full z-50 mt-1 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1">
-                                  <button type="button" onClick={() => { openEditContribution(row); setActionMenuId(null); }} className="w-full px-3 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs">Edit</button>
-                                  <button type="button" onClick={() => { openConfirmDelete("contribution", row?._id); setActionMenuId(null); }} className="w-full px-3 py-2 text-left font-semibold text-red-600 hover:bg-gray-50 text-xs">Delete</button>
-                                </div>
-                              )}
-                            </div>
-                            <div className="hidden md:flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-end gap-2">
                               <button type="button" onClick={() => openEditContribution(row)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
                               <button type="button" onClick={() => openConfirmDelete("contribution", row?._id)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs">Delete</button>
                             </div>
@@ -924,25 +894,7 @@ function ChurchProjectDetailsPage() {
                           <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[320px] break-words px-4 md:px-6">{row?.description || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <div className="md:hidden relative flex justify-end" ref={actionMenuId === `e-${row?._id}` ? actionMenuRef : null}>
-                              <button
-                                type="button"
-                                aria-label="Row actions"
-                                onClick={() => setActionMenuId((p) => p === `e-${row?._id}` ? null : `e-${row?._id}`)}
-                                className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
-                              >
-                                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-gray-500">
-                                  <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
-                                </svg>
-                              </button>
-                              {actionMenuId === `e-${row?._id}` && (
-                                <div className="absolute right-0 top-full z-50 mt-1 w-28 rounded-lg border border-gray-200 bg-white shadow-lg py-1">
-                                  <button type="button" onClick={() => { openEditExpense(row); setActionMenuId(null); }} className="w-full px-3 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs">Edit</button>
-                                  <button type="button" onClick={() => { openConfirmDelete("expense", row?._id); setActionMenuId(null); }} className="w-full px-3 py-2 text-left font-semibold text-red-600 hover:bg-gray-50 text-xs">Delete</button>
-                                </div>
-                              )}
-                            </div>
-                            <div className="hidden md:flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-end gap-2">
                               <button type="button" onClick={() => openEditExpense(row)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
                               <button type="button" onClick={() => openConfirmDelete("expense", row?._id)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs">Delete</button>
                             </div>

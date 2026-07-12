@@ -419,10 +419,12 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
             <label className="block font-semibold text-gray-500 text-xs">Note</label>
             <input
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(e) => setNote(e.target.value.slice(0, 20))}
+              maxLength={20}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="Optional"
+              placeholder="Optional (max 20 chars)"
             />
+            <div className="mt-1 text-right text-gray-400 text-xs">{note.length}/20</div>
           </div>
         </div>
 
@@ -475,6 +477,15 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
       </div>
     </div>
   );
+}
+
+function truncatePledgeName(name) {
+  if (!name) return "—";
+  const words = name.trim().split(/\s+/);
+  if (name.length > 20 && words.length > 3) {
+    return `${words[0]} ${words[1]}\u2026`;
+  }
+  return name;
 }
 
 function PledgesPageInner() {
@@ -782,7 +793,7 @@ function PledgesPageInner() {
             <div className="text-gray-500 text-xs">All pledges and balances</div>
           </div>
 
-          <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-end md:justify-end md:gap-3">
+          <div className="flex flex-col gap-2">
             <input
               value={searchValue}
               onChange={onSearchChange}
@@ -790,38 +801,40 @@ function PledgesPageInner() {
               placeholder="Search name or phone"
             />
 
-            <select
-              value={store?.filters?.serviceType || ""}
-              onChange={onServiceTypeChange}
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
-            >
-              <option value="">All Service Types</option>
-              {serviceTypeOptions.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-row flex-wrap gap-2 items-end justify-end">
+              <select
+                value={store?.filters?.serviceType || ""}
+                onChange={onServiceTypeChange}
+                className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-44 text-sm"
+              >
+                <option value="">All Service Types</option>
+                {serviceTypeOptions.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
 
-            <select
-              value={store?.filters?.status || ""}
-              onChange={onStatusChange}
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-44 text-sm"
-            >
-              <option value="">All Status</option>
-              {STATUS_OPTIONS.map((s) => (
+              <select
+                value={store?.filters?.status || ""}
+                onChange={onStatusChange}
+                className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-36 text-sm"
+              >
+                <option value="">All Status</option>
+                {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
               </select>
 
-            <DateRangeFilter
-              appliedFrom={store?.filters?.dateFrom || ""}
-              appliedTo={store?.filters?.dateTo || ""}
-              onApply={onApplyDates}
-              onClear={onClearDates}
-            />
+              <DateRangeFilter
+                appliedFrom={store?.filters?.dateFrom || ""}
+                appliedTo={store?.filters?.dateTo || ""}
+                onApply={onApplyDates}
+                onClear={onClearDates}
+              />
+            </div>
           </div>
         </div>
 
@@ -878,7 +891,7 @@ function PledgesPageInner() {
                 <tbody className="divide-y divide-gray-200">
                   {rows.map((row, index) => (
                     <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.name || "—"}</td>
+                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.name || "—"}>{truncatePledgeName(row?.name)}</td>
                       <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || "—"}</td>
                       <td className="max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
                       <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.totalPaid || 0, currency)}</td>

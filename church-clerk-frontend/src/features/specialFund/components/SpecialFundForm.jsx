@@ -14,7 +14,7 @@ const CATEGORY_OPTIONS = [
   "Scholarship Fund"
 ];
 
-const MAX_DESCRIPTION_LENGTH = 40;
+const MAX_DESCRIPTION_LENGTH = 15;
 
 function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};

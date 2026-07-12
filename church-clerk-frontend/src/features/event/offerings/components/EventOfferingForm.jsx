@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import EventOfferingContext from "../eventOfferings.store.js";
+import AddLookupValueButton from "../../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../../lookups/hooks/useLookupValues.js";
 
 const OFFERING_TYPES = [
   "first offering",
@@ -16,6 +18,9 @@ function EventOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("events", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("events", "update") : false), [can]);
+
+  const { values: lookupOfferingTypes, reload: reloadOfferingTypes } = useLookupValues("offeringType");
+  const offeringTypeOptions = lookupOfferingTypes?.length ? lookupOfferingTypes : OFFERING_TYPES;
 
   const [offeringType, setOfferingType] = useState("first offering");
   const [offeringDate, setOfferingDate] = useState("");
@@ -112,13 +117,25 @@ function EventOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Offering Type</label>
+              <div className="flex items-center justify-between">
+                <label className="block font-semibold text-gray-500 text-xs">Offering Type</label>
+                {canCreate || canEdit ? (
+                  <AddLookupValueButton
+                    label="Add type"
+                    kind="offeringType"
+                    onCreated={async (value) => {
+                      await reloadOfferingTypes();
+                      setOfferingType(value);
+                    }}
+                  />
+                ) : null}
+              </div>
               <select
                 value={offeringType}
                 onChange={(e) => setOfferingType(e.target.value)}
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               >
-                {OFFERING_TYPES.map((c) => (
+                {offeringTypeOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>

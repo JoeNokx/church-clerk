@@ -40,11 +40,11 @@ function OfferingFilters() {
   };
 
   return (
-    <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-end md:justify-end">
+    <div className="flex items-center gap-2 w-full">
       <select
         value={store?.filters?.serviceType || ""}
         onChange={onServiceTypeChange}
-        className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
       >
         <option value="">All Services</option>
         {serviceTypeOptions.map((c) => (
@@ -54,7 +54,9 @@ function OfferingFilters() {
         ))}
       </select>
 
-      <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
+      <div className="flex-1 min-w-0">
+        <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
+      </div>
     </div>
   );
 }

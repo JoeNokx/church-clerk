@@ -35,10 +35,6 @@ export const computeProration = (subscription, currentPlan, newPlan, intervalKey
   const now = new Date();
   const nextBilling = subscription.nextBillingDate ? new Date(subscription.nextBillingDate) : now;
 
-  const remainingMs = Math.max(0, nextBilling.getTime() - now.getTime());
-  const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
-  const remainingFraction = Math.min(1, Math.max(0, remainingDays / days));
-
   const normalizedKey = normalizeBillingIntervalKey(intervalKey);
   const currentPrice = Number(
     currentPlan?.pricing?.GHS?.[normalizedKey] ??
@@ -49,9 +45,58 @@ export const computeProration = (subscription, currentPlan, newPlan, intervalKey
     newPlan?.priceByCurrency?.GHS?.[normalizedKey] ?? 0
   );
 
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+  // Upgrading from a free plan: no credit to give, start a fresh full billing cycle from today.
+  if (currentPrice === 0) {
+    const freshNextBillingDate = new Date(now.getTime() + days * MS_PER_DAY);
+    return {
+      totalDays: days,
+      remainingDays: days,
+      remainingFraction: 1,
+      currentPlanPrice: 0,
+      newPlanPrice: newPrice,
+      currentPlanCredit: 0,
+      newPlanCost: newPrice,
+      proratedAmount: newPrice,
+      retainNextBillingDate: freshNextBillingDate,
+      currency: "GHS",
+    };
+  }
+
+  const remainingMs = Math.max(0, nextBilling.getTime() - now.getTime());
+  const remainingDays = Math.ceil(remainingMs / MS_PER_DAY);
+  const remainingFraction = Math.min(1, Math.max(0, remainingDays / days));
+
+  // Billing cycle has already expired: no meaningful remaining period to prorate.
+  // Charge the full new plan price and start a fresh cycle from today.
+  if (remainingDays === 0) {
+    const freshNextBillingDate = new Date(now.getTime() + days * MS_PER_DAY);
+    return {
+      totalDays: days,
+      remainingDays: days,
+      remainingFraction: 1,
+      currentPlanPrice: currentPrice,
+      newPlanPrice: newPrice,
+      currentPlanCredit: 0,
+      newPlanCost: newPrice,
+      proratedAmount: newPrice,
+      retainNextBillingDate: freshNextBillingDate,
+      currency: "GHS",
+    };
+  }
+
   const currentCredit = Math.round(currentPrice * remainingFraction * 100) / 100;
   const newCost = Math.round(newPrice * remainingFraction * 100) / 100;
   const proratedAmount = Math.max(0, Math.round((newCost - currentCredit) * 100) / 100);
+
+  // If the next billing date is within 24 hours (e.g. end-of-day tonight), the cron would
+  // re-fire immediately after the upgrade payment. Advance by one full cycle so the user
+  // gets the prorated period PLUS a clean gap before the next full charge.
+  let retainNextBillingDate = nextBilling;
+  if (retainNextBillingDate.getTime() <= now.getTime() + MS_PER_DAY) {
+    retainNextBillingDate = new Date(retainNextBillingDate.getTime() + days * MS_PER_DAY);
+  }
 
   return {
     totalDays: days,
@@ -62,7 +107,7 @@ export const computeProration = (subscription, currentPlan, newPlan, intervalKey
     currentPlanCredit: currentCredit,
     newPlanCost: newCost,
     proratedAmount,
-    retainNextBillingDate: nextBilling,
+    retainNextBillingDate,
     currency: "GHS",
   };
 };

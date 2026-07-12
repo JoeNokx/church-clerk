@@ -74,6 +74,9 @@ const updateMyProfile = async (req, res) => {
         if (req.body?.phoneNumber !== undefined) update.phoneNumber = validatedPhoneNumber;
 
         const file = req.file;
+        if (!file && req.body?.removeAvatar === "true") {
+            update.profileImageUrl = "";
+        }
         if (file) {
             if (!file.buffer) {
                 return res.status(400).json({ message: "File buffer is missing" });

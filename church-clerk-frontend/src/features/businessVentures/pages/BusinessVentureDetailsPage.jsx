@@ -778,94 +778,94 @@ function BusinessVentureDetailsPage() {
           <Skeleton height={14} count={4} />
         </div>
       ) : (
-        <div className="mt-8">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+        <div className="mt-8 rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="cck-tab-bar flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => changeTab("incomes")}
-                className={`rounded-lg px-4 py-2 font-semibold text-sm ${activeTab === "incomes" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"}`}
+                className={`rounded-lg px-4 py-2 font-semibold text-sm ${activeTab === "incomes" ? "bg-blue-50 text-blue-900 ring-1 ring-blue-100" : "text-gray-700 hover:bg-gray-50"}`}
               >
                 Income
               </button>
               <button
                 type="button"
                 onClick={() => changeTab("expenses")}
-                className={`rounded-lg px-4 py-2 font-semibold text-sm ${activeTab === "expenses" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"}`}
+                className={`rounded-lg px-4 py-2 font-semibold text-sm ${activeTab === "expenses" ? "bg-blue-50 text-blue-900 ring-1 ring-blue-100" : "text-gray-700 hover:bg-gray-50"}`}
               >
                 Expenses
               </button>
             </div>
 
-            <div className="flex items-center gap-3">
-              <DateRangeFilter
-                appliedFrom={activeTab === "incomes" ? incomeDateFrom : expenseDateFrom}
-                appliedTo={activeTab === "incomes" ? incomeDateTo : expenseDateTo}
-                onApply={async (from, to) => {
-                  if (activeTab === "incomes") {
-                    setIncomeDateFrom(from);
-                    setIncomeDateTo(to);
-                    setIncomePage(1);
-                    return;
-                  }
-
-                  setExpenseDateFrom(from);
-                  setExpenseDateTo(to);
-                  setExpensePage(1);
-                }}
-                onClear={async () => {
-                  if (activeTab === "incomes") {
-                    setIncomeDateFrom("");
-                    setIncomeDateTo("");
-                    setIncomePage(1);
-                    return;
-                  }
-
-                  setExpenseDateFrom("");
-                  setExpenseDateTo("");
-                  setExpensePage(1);
-                }}
-              />
-
-              <input
-                value={activeTab === "incomes" ? incomeSearch : expenseSearch}
-                onChange={(e) => {
-                  if (activeTab === "incomes") {
-                    setIncomeSearch(e.target.value);
-                    setIncomePage(1);
-                    return;
-                  }
-                  setExpenseSearch(e.target.value);
-                  setExpensePage(1);
-                }}
-                placeholder="Search description or vendor..."
-                className="h-11 w-64 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              />
-
+            <div className="flex flex-col gap-2">
               {canEdit ? (
                 activeTab === "incomes" ? (
                   <button
                     type="button"
                     onClick={() => setAddIncomeOpen(true)}
-                    className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
+                    className="self-start inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                   >
-                    + Add Income
+                    <span className="leading-none text-lg">+</span>
+                    Add Income
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setAddExpenseOpen(true)}
-                    className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
+                    className="self-start inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                   >
-                    + Add Expense
+                    <span className="leading-none text-lg">+</span>
+                    Add Expense
                   </button>
                 )
               ) : null}
+              <div className="flex flex-row flex-wrap items-center gap-2">
+                <input
+                  value={activeTab === "incomes" ? incomeSearch : expenseSearch}
+                  onChange={(e) => {
+                    if (activeTab === "incomes") {
+                      setIncomeSearch(e.target.value);
+                      setIncomePage(1);
+                      return;
+                    }
+                    setExpenseSearch(e.target.value);
+                    setExpensePage(1);
+                  }}
+                  placeholder="Search..."
+                  className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-52 text-sm"
+                />
+                <DateRangeFilter
+                  appliedFrom={activeTab === "incomes" ? incomeDateFrom : expenseDateFrom}
+                  appliedTo={activeTab === "incomes" ? incomeDateTo : expenseDateTo}
+                  onApply={async (from, to) => {
+                    if (activeTab === "incomes") {
+                      setIncomeDateFrom(from);
+                      setIncomeDateTo(to);
+                      setIncomePage(1);
+                      return;
+                    }
+                    setExpenseDateFrom(from);
+                    setExpenseDateTo(to);
+                    setExpensePage(1);
+                  }}
+                  onClear={async () => {
+                    if (activeTab === "incomes") {
+                      setIncomeDateFrom("");
+                      setIncomeDateTo("");
+                      setIncomePage(1);
+                      return;
+                    }
+                    setExpenseDateFrom("");
+                    setExpenseDateTo("");
+                    setExpensePage(1);
+                  }}
+                />
+              </div>
             </div>
           </div>
 
           {activeTab === "incomes" ? (
-            <div className="mt-5 rounded-xl border border-gray-200 bg-white">
+            <div>
               {incomeRows.length ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
@@ -943,7 +943,7 @@ function BusinessVentureDetailsPage() {
               </div>
             </div>
           ) : (
-            <div className="mt-5 rounded-xl border border-gray-200 bg-white">
+            <div>
               {expenseRows.length ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full">

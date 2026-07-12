@@ -62,16 +62,25 @@ const MONTH_OPTIONS = [
 ];
 
 function YearInput({ value, onChange }) {
+  const [raw, setRaw] = useState(String(value));
+
+  useEffect(() => {
+    setRaw(String(value));
+  }, [value]);
+
   return (
     <input
-      type="number"
-      value={value}
+      type="text"
+      inputMode="numeric"
+      value={raw}
       onChange={(e) => {
-        const v = Number(e.target.value);
-        if (v > 0) onChange(v);
+        const cleaned = e.target.value.replace(/\D/g, "").slice(0, 4);
+        setRaw(cleaned);
+        const n = Number(cleaned);
+        if (n >= 1900 && n <= 2100) onChange(n);
       }}
-      min={1900}
-      max={2100}
+      maxLength={4}
+      placeholder="YYYY"
       className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm w-24"
     />
   );
@@ -317,7 +326,7 @@ function FinancialStatementPage() {
             </button>
           </div>
 
-          <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3">
+          <div className="flex flex-row flex-wrap gap-2 items-center">
             {tab === "monthly" ? (
               <>
                 <div className="flex items-center gap-2">

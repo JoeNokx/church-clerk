@@ -116,6 +116,8 @@ function SettingsPage() {
   const [myRole, setMyRole] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
+  const [removeAvatarConfirmOpen, setRemoveAvatarConfirmOpen] = useState(false);
   const avatarInputRef = useRef(null);
 
   const [pwOld, setPwOld] = useState("");
@@ -303,14 +305,14 @@ function SettingsPage() {
 
   const isBranch = type === "Branch";
 
-  const avatarUrl =
-    avatarPreviewUrl ||
+  const avatarUrl = avatarPreviewUrl || (avatarRemoved ? "" : (
     user?.profileImageUrl ||
     user?.avatarUrl ||
     user?.photoUrl ||
     user?.imageUrl ||
     user?.image ||
-    "";
+    ""
+  ));
 
   const handlePickAvatar = () => {
     avatarInputRef.current?.click?.();
@@ -335,6 +337,8 @@ function SettingsPage() {
       fd.append("phoneNumber", myPhone);
       if (avatarFile) {
         fd.append("avatar", avatarFile);
+      } else if (avatarRemoved) {
+        fd.append("removeAvatar", "true");
       }
 
       await updateMyProfile(fd);
@@ -1221,34 +1225,91 @@ function SettingsPage() {
                       className="h-24 w-24 rounded-full object-cover border border-gray-200"
                     />
                   ) : (
-                    <div className="h-24 w-24 rounded-full bg-blue-900 text-white flex items-center justify-center font-semibold md:text-3xl lg:text-4xl text-xl md:text-2xl">
+                    <div className="h-24 w-24 rounded-full bg-blue-900 text-white flex items-center justify-center font-semibold text-2xl">
                       {(user?.fullName || "U").slice(0, 1).toUpperCase()}
                     </div>
                   )}
 
                   <button
                     type="button"
+                    aria-label="Edit profile photo"
                     onClick={handlePickAvatar}
                     disabled={!isUserActive}
-                    className="absolute -bottom-1 -right-1 h-11 w-11 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 md:h-12 md:w-12"
-                    title="Edit"
+                    className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                    title="Change photo"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-700">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-700">
                       <path d="M4 20h4l10.5-10.5a2 2 0 10-4-4L4 16v4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                       <path d="M13.5 6.5l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                   </button>
+
+                  {avatarUrl ? (
+                    <button
+                      type="button"
+                      aria-label="Remove profile photo"
+                      onClick={() => setRemoveAvatarConfirmOpen(true)}
+                      disabled={!isUserActive}
+                      className="absolute -top-1 -left-1 h-7 w-7 rounded-full bg-red-600 text-white border-2 border-white flex items-center justify-center hover:bg-red-700 disabled:opacity-50"
+                      title="Remove photo"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  ) : null}
+
+                  {removeAvatarConfirmOpen ? (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+                      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+                        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+                          <div className="font-semibold text-gray-900 text-sm">Remove Profile Photo</div>
+                          <button type="button" onClick={() => setRemoveAvatarConfirmOpen(false)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
+                            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                          </button>
+                        </div>
+                        <div className="p-5">
+                          <p className="text-gray-600 text-sm">Are you sure you want to remove your profile photo? This will be applied when you save your profile.</p>
+                          <div className="mt-5 flex items-center justify-end gap-3">
+                            <button type="button" onClick={() => setRemoveAvatarConfirmOpen(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Cancel</button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAvatarFile(null);
+                                setAvatarRemoved(true);
+                                setMyProfileError("");
+                                if (avatarInputRef.current) avatarInputRef.current.value = "";
+                                setRemoveAvatarConfirmOpen(false);
+                              }}
+                              className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
+                            >
+                              Remove Photo
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
                   <input
                     ref={avatarInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0] || null;
+                      if (f && f.size > 2 * 1024 * 1024) {
+                        setMyProfileError("Photo must be under 2 MB. Please choose a smaller image.");
+                        e.target.value = "";
+                        return;
+                      }
+                      setMyProfileError("");
+                      setAvatarRemoved(false);
                       setAvatarFile(f);
                     }}
                   />
                 </div>
+                <div className="mt-2 text-center text-gray-400 text-xs">Max 2 MB · JPG PNG WEBP</div>
               </div>
 
               <form onSubmit={handleSaveMyProfile} className="flex-1 min-w-[260px] space-y-4">
@@ -1258,7 +1319,7 @@ function SettingsPage() {
                     type="text"
                     value={myFullName}
                     onChange={(e) => setMyFullName(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!isUserActive}
                   />
@@ -1270,7 +1331,7 @@ function SettingsPage() {
                     type="email"
                     value={myEmail}
                     onChange={(e) => setMyEmail(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!isUserActive}
                   />
@@ -1282,7 +1343,7 @@ function SettingsPage() {
                     value={myPhone}
                     onChange={setMyPhone}
                     error={Boolean(myProfileError && String(myProfileError).toLowerCase().includes("invalid phone"))}
-                    inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                    inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                     disabled={!isUserActive}
                   />
                 </div>
@@ -1323,11 +1384,11 @@ function SettingsPage() {
                     type={pwOldShow ? "text" : "password"}
                     value={pwOld}
                     onChange={(e) => setPwOld(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!isUserActive}
                   />
-                  <button type="button" onClick={() => setPwOldShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                  <button type="button" aria-label="Toggle password visibility" onClick={() => setPwOldShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
                     {pwOldShow ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M1 1l22 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> : <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/></svg>}
                   </button>
                 </div>
@@ -1341,11 +1402,11 @@ function SettingsPage() {
                       type={pwNewShow ? "text" : "password"}
                       value={pwNew}
                       onChange={(e) => setPwNew(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                       required
                       disabled={!isUserActive}
                     />
-                    <button type="button" onClick={() => setPwNewShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                    <button type="button" aria-label="Toggle password visibility" onClick={() => setPwNewShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
                       {pwNewShow ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M1 1l22 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> : <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/></svg>}
                     </button>
                   </div>
@@ -1357,11 +1418,11 @@ function SettingsPage() {
                       type={pwConfirmShow ? "text" : "password"}
                       value={pwConfirm}
                       onChange={(e) => setPwConfirm(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                       required
                       disabled={!isUserActive}
                     />
-                    <button type="button" onClick={() => setPwConfirmShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                    <button type="button" aria-label="Toggle password visibility" onClick={() => setPwConfirmShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
                       {pwConfirmShow ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M1 1l22 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> : <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/></svg>}
                     </button>
                   </div>
@@ -1494,7 +1555,7 @@ function SettingsPage() {
                   placeholder="Your church name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                   disabled={!canWrite}
                 />
@@ -1507,7 +1568,7 @@ function SettingsPage() {
                   placeholder="Pastor's full name"
                   value={pastor}
                   onChange={(e) => setPastor(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                   disabled={!canWrite}
                 />
@@ -1518,7 +1579,7 @@ function SettingsPage() {
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   disabled={!canWrite}
                 >
                   <option value="Headquarters">Headquarters</option>
@@ -1550,7 +1611,7 @@ function SettingsPage() {
                       setHqDropdownOpen(true);
                     }}
                     onFocus={() => setHqDropdownOpen(true)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
                     disabled={!canWrite}
                   />
@@ -1603,7 +1664,7 @@ function SettingsPage() {
                   value={phoneNumber}
                   onChange={setPhoneNumber}
                   error={Boolean(profileError && String(profileError).toLowerCase().includes("invalid phone"))}
-                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                   disabled={!canWrite}
                 />
               </div>
@@ -1615,7 +1676,7 @@ function SettingsPage() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   disabled={!canWrite}
                 />
               </div>
@@ -1705,7 +1766,7 @@ function SettingsPage() {
                   placeholder="Enter your location"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                   disabled={!canWrite}
                 />
@@ -1756,7 +1817,7 @@ function SettingsPage() {
                   type="date"
                   value={foundedDate}
                   onChange={(e) => setFoundedDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   disabled={!canWrite}
                 />
               </div>
@@ -1768,7 +1829,7 @@ function SettingsPage() {
                   placeholder="Referral code"
                   value={referralCodeInput}
                   onChange={(e) => setReferralCodeInput(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   disabled
                 />
               </div>
@@ -1803,7 +1864,7 @@ function SettingsPage() {
                       onChange={(e) => setSenderIdInput(String(e.target.value || "").toUpperCase())}
                       maxLength={11}
                       placeholder="E.g. MYCHURCH"
-                      className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                      className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                       disabled={!canWrite || senderIdLoading}
                     />
                     <div className="mt-1 text-gray-500 text-xs">
@@ -1894,7 +1955,7 @@ function SettingsPage() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50 text-gray-600">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold">Name</th>
+                      <th className="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left font-semibold">Name</th>
                       <th className="px-4 py-3 text-left font-semibold">Email</th>
                       <th className="px-4 py-3 text-left font-semibold">Phone</th>
                       <th className="px-4 py-3 text-left font-semibold">Role</th>
@@ -1908,7 +1969,7 @@ function SettingsPage() {
                         const isActive = row?.isActive !== false;
                         return (
                           <tr key={row?._id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-semibold text-gray-900">{row?.fullName || "—"}</td>
+                            <td className="sticky left-0 z-10 bg-white px-4 py-3 font-semibold text-gray-900">{row?.fullName || "—"}</td>
                             <td className="px-4 py-3 text-gray-700">{row?.email || "—"}</td>
                             <td className="px-4 py-3 text-gray-700">{row?.phoneNumber || "—"}</td>
                             <td className="px-4 py-3 text-gray-700">{row?.role || "—"}</td>
@@ -2222,7 +2283,7 @@ function SettingsPage() {
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50 text-gray-700">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold">Timestamp</th>
+                    <th className="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left font-semibold">Timestamp</th>
                     <th className="px-4 py-3 text-left font-semibold">User</th>
                     <th className="px-4 py-3 text-left font-semibold">Action</th>
                     <th className="px-4 py-3 text-left font-semibold">Module</th>
@@ -2237,7 +2298,7 @@ function SettingsPage() {
                     <>
                       {[0, 1, 2, 3].map((i) => (
                         <tr key={i} className="animate-pulse">
-                          <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                          <td className="sticky left-0 z-10 bg-white px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                           <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
                           <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
                           <td className="px-4 py-3"><div className="h-4 w-28 rounded bg-gray-200" /></td>
@@ -2258,7 +2319,7 @@ function SettingsPage() {
                       const deviceType = String(row?.deviceType || "").trim() || "—";
                       return (
                         <tr key={row?._id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{timestamp}</td>
+                          <td className="sticky left-0 z-10 bg-white px-4 py-3 text-gray-700 whitespace-nowrap">{timestamp}</td>
                           <td className="px-4 py-3">
                             <div className="font-semibold text-gray-900">{userName}</div>
                             <div className="text-gray-500 text-xs">{userRole}</div>
@@ -2392,7 +2453,7 @@ function SettingsPage() {
                   placeholder="John Doe"
                   value={newFullName}
                   onChange={(e) => setNewFullName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
@@ -2404,7 +2465,7 @@ function SettingsPage() {
                   placeholder="you@example.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
@@ -2415,7 +2476,7 @@ function SettingsPage() {
                   value={newPhone}
                   onChange={setNewPhone}
                   error={Boolean(addError && String(addError).toLowerCase().includes("invalid phone"))}
-                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                 />
               </div>
 
@@ -2426,7 +2487,7 @@ function SettingsPage() {
                   placeholder="Create a password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
@@ -2436,7 +2497,7 @@ function SettingsPage() {
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 >
                   <option value="">Select role</option>
@@ -2494,7 +2555,7 @@ function SettingsPage() {
                   type="text"
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
@@ -2505,7 +2566,7 @@ function SettingsPage() {
                   type="email"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
               </div>
@@ -2516,7 +2577,7 @@ function SettingsPage() {
                   value={editPhone}
                   onChange={setEditPhone}
                   error={Boolean(editError && String(editError).toLowerCase().includes("invalid phone"))}
-                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+                  inputClassName="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
                 />
               </div>
 
@@ -2525,7 +2586,7 @@ function SettingsPage() {
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 >
                   <option value="">Select role</option>

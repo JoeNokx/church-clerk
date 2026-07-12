@@ -158,7 +158,7 @@ export const paystackWebhook = async (req, res) => {
         const whAuthorization = event?.data?.authorization || null;
         const whAuthCode = whAuthorization?.authorization_code;
         const whCustomerEmail = String(event?.data?.customer?.email || "").trim() || null;
-        if (whAuthCode) {
+        if (whAuthCode && whAuthorization?.reusable !== false) {
           subscription.paymentMethods = Array.isArray(subscription.paymentMethods) ? subscription.paymentMethods : [];
           const whLast4 = String(whAuthorization?.last4 || "");
           const whIdx = subscription.paymentMethods.findIndex(

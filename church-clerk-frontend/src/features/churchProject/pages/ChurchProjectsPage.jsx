@@ -474,6 +474,10 @@ function ChurchProjectsPageInner() {
   const [error, setError] = useState("");
   const [projects, setProjects] = useState([]);
 
+  const [searchValue, setSearchValue] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [contributionOpen, setContributionOpen] = useState(false);
   const [expenseOpen, setExpenseOpen] = useState(false);
@@ -499,6 +503,8 @@ function ChurchProjectsPageInner() {
         })
       );
 
+      setSearchValue("");
+      setCurrentPage(1);
       const toAutoComplete = rows.filter(
         (p) => String(p?.status || "").toLowerCase() === "active" && isAutoCompletedProject(p) && p?._id
       );
@@ -520,6 +526,18 @@ function ChurchProjectsPageInner() {
   useEffect(() => {
     load();
   }, []);
+
+  const filteredProjects = useMemo(() => {
+    const q = searchValue.trim().toLowerCase();
+    if (!q) return projects;
+    return projects.filter((p) => String(p?.name || "").toLowerCase().includes(q));
+  }, [projects, searchValue]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
+  const paginatedProjects = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredProjects.slice(start, start + PAGE_SIZE);
+  }, [filteredProjects, currentPage]);
 
   const totals = useMemo(() => {
     const rows = Array.isArray(projects) ? projects : [];
@@ -620,13 +638,22 @@ function ChurchProjectsPageInner() {
         />
       </div>
 
+      <div className="mt-5 flex items-center gap-3">
+        <input
+          value={searchValue}
+          onChange={(e) => { setSearchValue(e.target.value); setCurrentPage(1); }}
+          className="h-11 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+          placeholder="Search project name..."
+        />
+      </div>
+
       {loading ? (
         <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
           <Skeleton height={14} count={4} />
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {projects.map((p, idx) => {
+          {paginatedProjects.map((p, idx) => {
             const raised = Number(p?.totalContributions || 0);
             const spent = Number(p?.totalExpenses || 0);
             const target = Number(p?.targetAmount || 0);
@@ -727,6 +754,28 @@ function ChurchProjectsPageInner() {
           })}
         </div>
       )}
+
+      {!loading && filteredProjects.length > 0 ? (
+        <div className="mt-5 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage <= 1}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+          >
+            Prev
+          </button>
+          <div className="text-gray-600 text-sm">Page {currentPage} of {totalPages}</div>
+          <button
+            type="button"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage >= totalPages}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+          >
+            Next
+          </button>
+        </div>
+      ) : null}
 
       <AddProjectModal
         open={addProjectOpen}

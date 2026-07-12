@@ -5,6 +5,15 @@ import SpecialFundContext from "../specialFund.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 
+function truncateMobileName(name) {
+  if (!name) return "-";
+  const words = name.trim().split(/\s+/);
+  if (words.length > 3 && name.length > 20) {
+    return words.slice(0, 2).join(" ") + "\u2026";
+  }
+  return name;
+}
+
 function formatDate(value) {
   if (!value) return "";
   const d = new Date(value);
@@ -108,9 +117,9 @@ function SpecialFundTable({ onEdit, onDeleted }) {
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Giver Name</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Description</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
@@ -118,10 +127,13 @@ function SpecialFundTable({ onEdit, onDeleted }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((fund, index) => (
               <tr key={fund?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fund?.giverName || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{fund?.category || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(fund?.totalAmount || 0, currency)}</td>
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
+                  <span className="sm:hidden">{truncateMobileName(fund?.giverName)}</span>
+                  <span className="hidden sm:inline">{fund?.giverName || "-"}</span>
+                </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(fund?.givingDate)}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{fund?.category || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{formatMoney(fund?.totalAmount || 0, currency)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[360px] break-words px-4 md:px-6">{fund?.description || "-"}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <div className="flex items-center justify-end gap-2">

@@ -46,6 +46,7 @@ function ReportsAnalyticsPage() {
   const [activeTab, setActiveTab] = useState("analytics");
 
   const [year, setYear] = useState(() => new Date().getFullYear());
+  const [yearDisplay, setYearDisplay] = useState(() => String(new Date().getFullYear()));
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -261,16 +262,18 @@ function ReportsAnalyticsPage() {
             </div>
 
             <div className="w-full md:w-auto">
-              <div className="font-semibold text-gray-600 mb-1 text-xs">Year</div>
               <input
-                type="number"
-                value={year}
+                type="text"
+                inputMode="numeric"
+                value={yearDisplay}
                 onChange={(e) => {
-                  const v = Number(e.target.value);
-                  if (v > 0) setYear(v);
+                  const raw = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  setYearDisplay(raw);
+                  const n = Number(raw);
+                  if (n >= 1900 && n <= 2100) setYear(n);
                 }}
-                min={1900}
-                max={2100}
+                maxLength={4}
+                placeholder="YYYY"
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-40 text-sm"
               />
             </div>
@@ -389,9 +392,8 @@ function ReportsAnalyticsPage() {
       ) : (
         <>
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-3">
               <div className="w-full lg:w-64">
-                <div className="font-semibold text-gray-600 mb-1 text-xs">Module</div>
                 <select
                   value={reportModule}
                   onChange={(e) => setReportModule(e.target.value)}
@@ -406,8 +408,7 @@ function ReportsAnalyticsPage() {
                 </select>
               </div>
 
-              <div className="w-full lg:w-auto">
-                <div className="font-semibold text-gray-600 mb-1 text-xs">Date</div>
+              <div className="flex flex-wrap items-center gap-2">
                 <DateRangeFilter
                   appliedFrom={reportFrom}
                   appliedTo={reportTo}
@@ -420,9 +421,6 @@ function ReportsAnalyticsPage() {
                     setReportTo("");
                   }}
                 />
-              </div>
-
-              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   disabled={!reportModule || reportLoading}

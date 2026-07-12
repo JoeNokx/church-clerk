@@ -102,6 +102,8 @@
   header button.relative.h-11.w-11.rounded-lg span {
     font-size: 10px !important;
     line-height: 1rem !important;
+    top: 4px !important;
+    right: 4px !important;
   }
 
   button.cck-allow-icons svg,
@@ -171,5 +173,21 @@ h3, .card-title {
     right: auto !important;
     width: calc(100vw - 2rem) !important;
     max-width: 300px;
+  }
+}
+
+/* Scrollable modals on mobile / tablet —
+   Targets every modal overlay (fixed inset-0) and its card child.
+   Overlay becomes scrollable; card is capped at the visible viewport
+   height so it never overflows on small screens. */
+@media (max-width: 1023px) {
+  .fixed.inset-0 {
+    overflow-y: auto !important;
+  }
+  .fixed.inset-0 > div {
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
 }
