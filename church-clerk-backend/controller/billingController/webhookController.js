@@ -107,10 +107,10 @@ export const paystackWebhook = async (req, res) => {
 
         if (event.event === "invoice.payment_failed") {
           subscription.status = "past_due";
-          {
-            const { gracePeriodDays } = await getSystemSettingsSnapshot();
-            subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 7));
-          }
+          const { gracePeriodDays } = await getSystemSettingsSnapshot();
+          const graceEnd = addDays(new Date(), Number(gracePeriodDays ?? 0));
+          subscription.gracePeriodEnd = graceEnd;
+          subscription.nextBillingDate = graceEnd;
         }
 
         await subscription.save();
@@ -295,10 +295,10 @@ export const paystackWebhook = async (req, res) => {
       if (!subscription) return res.sendStatus(200);
 
       subscription.status = "past_due";
-      {
-        const { gracePeriodDays } = await getSystemSettingsSnapshot();
-        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 7));
-      }
+      const { gracePeriodDays } = await getSystemSettingsSnapshot();
+      const graceEnd = addDays(new Date(), Number(gracePeriodDays ?? 0));
+      subscription.gracePeriodEnd = graceEnd;
+      subscription.nextBillingDate = graceEnd;
 
       await subscription.save();
     }

@@ -1737,7 +1737,7 @@ function MinistryDetailsPage() {
                       disabled={individualAttendanceSaving}
                       className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                     >
-                      {individualAttendanceMode === "edit" ? "Update" : "Save"}
+                      {individualAttendanceSaving ? (individualAttendanceMode === "edit" ? "Updating..." : "Saving...") : individualAttendanceMode === "edit" ? "Update" : "Save"}
                     </button>
                   </div>
                 </form>
@@ -2007,7 +2007,7 @@ function MinistryDetailsPage() {
                       disabled={attendanceSaving}
                       className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                     >
-                      {attendanceMode === "edit" ? "Update" : "Save"}
+                      {attendanceSaving ? (attendanceMode === "edit" ? "Updating..." : "Saving...") : attendanceMode === "edit" ? "Update" : "Save"}
                     </button>
                   </div>
                 </form>
@@ -2152,7 +2152,7 @@ function MinistryDetailsPage() {
                   disabled={offeringSaving}
                   className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                 >
-                  {offeringMode === "edit" ? "Update" : "Save"}
+                  {offeringSaving ? (offeringMode === "edit" ? "Updating..." : "Saving...") : offeringMode === "edit" ? "Update" : "Save"}
                 </button>
               </div>
             </form>

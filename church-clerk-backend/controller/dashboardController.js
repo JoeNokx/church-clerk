@@ -187,12 +187,8 @@ const getDashboardAnalytics = async (req, res) => {
   },
   {
     $addFields: {
-      year: { $year: "$serviceDate" },
       month: { $month: "$serviceDate" }
     }
-  },
-  {
-    $match: { year: year } // ensures only the correct year
   },
   {
     $group: {

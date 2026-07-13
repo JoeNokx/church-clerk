@@ -441,7 +441,7 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
             disabled={saving}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
-            {mode === "edit" ? "Save" : "Create"}
+            {saving ? (mode === "edit" ? "Saving..." : "Creating...") : mode === "edit" ? "Save" : "Create"}
           </button>
         </div>
       </form>

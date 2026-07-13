@@ -607,10 +607,10 @@ export const verifyPaystackPayment = async (req, res) => {
       }
 
       subscription.status = "past_due";
-      {
-        const { gracePeriodDays } = await getSystemSettingsSnapshot();
-        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 7));
-      }
+      const { gracePeriodDays } = await getSystemSettingsSnapshot();
+      const graceEnd = addDays(new Date(), Number(gracePeriodDays ?? 0));
+      subscription.gracePeriodEnd = graceEnd;
+      subscription.nextBillingDate = graceEnd;
       await subscription.save();
 
       const populated = await Subscription.findById(subscription._id).populate("plan").lean();

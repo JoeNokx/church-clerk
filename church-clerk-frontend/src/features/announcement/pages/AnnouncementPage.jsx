@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../../church/church.store.js";
@@ -376,7 +377,7 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-4 text-gray-600 text-sm">Loading...</td>
+                  <td colSpan={5} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
                 </tr>
               ) : !transactions.length ? (
                 <tr>
@@ -579,7 +580,7 @@ function TemplatesTab({ open, onUseTemplate }) {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-4 text-gray-600 text-sm">Loading...</td>
+                  <td colSpan={4} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
                 </tr>
               ) : !rows.length ? (
                 <tr>
@@ -765,7 +766,7 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={7} className="py-4 text-gray-600 text-sm">Loading...</td>
+                <td colSpan={7} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
               </tr>
             ) : !rows.length ? (
               <tr>
@@ -1125,7 +1126,7 @@ function DeliveryReportModal({ open, onClose, message }) {
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-gray-600 text-sm">Loading...</td>
+                    <td colSpan={4} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
                   </tr>
                 ) : !rows.length ? (
                   <tr>

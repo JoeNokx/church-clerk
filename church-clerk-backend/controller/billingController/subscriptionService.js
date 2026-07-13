@@ -13,6 +13,7 @@ import Church from "../../models/churchModel.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
 import { chargeWithPaystack } from "./paystackController.js";
+import { handlePaymentFailure } from "./gracePeriodController.js";
 
 import {
   sendCancellationAppliedEmail,
@@ -355,10 +356,7 @@ export const runBillingCycleForChurch = async (churchId) => {
       try {
         await chargeWithPaystack(subscription);
       } catch {
-        const { gracePeriodDays } = await getSystemSettingsSnapshot();
-        subscription.status = "past_due";
-        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
-        await subscription.save();
+        await handlePaymentFailure(subscription);
       }
     }
   }
@@ -429,23 +427,11 @@ export const runBillingCycles = async () => {
     const result = await processSubscriptionBillings(subscription);
 
     if (result.charged) {
-
       try {
-
         await chargeWithPaystack(subscription);
-
       } catch {
-
-        const { gracePeriodDays } = await getSystemSettingsSnapshot();
-
-        subscription.status = "past_due";
-
-        subscription.gracePeriodEnd = addDays(new Date(), Number(gracePeriodDays || 3));
-
-        await subscription.save();
-
+        await handlePaymentFailure(subscription);
       }
-
     }
 
   }
@@ -492,7 +478,7 @@ export const releaseExpiredTrialForChurch = async (churchId) => {
 
 export const releaseExpiredTrials = async () => {
   const { gracePeriodDays } = await getSystemSettingsSnapshot();
-  const graceMs = Number(gracePeriodDays || 7) * 24 * 60 * 60 * 1000;
+  const graceMs = Number(gracePeriodDays ?? 0) * 24 * 60 * 60 * 1000;
   const cutoff = new Date(Date.now() - graceMs);
 
   const expiredTrials = await Subscription.find({

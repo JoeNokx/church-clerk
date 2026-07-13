@@ -12,6 +12,15 @@ const getSingletonSettings = async () => {
   return settings;
 };
 
+let _snapshotCache = null;
+let _snapshotCachedAt = 0;
+const SNAPSHOT_TTL_MS = 60_000;
+
+const clearSnapshotCache = () => {
+  _snapshotCache = null;
+  _snapshotCachedAt = 0;
+};
+
 export const getSystemSettings = async (req, res) => {
   try {
     const settings = await getSingletonSettings();
@@ -124,6 +133,7 @@ export const updateSystemSettings = async (req, res) => {
 
     settings.set(update);
     await settings.save();
+    clearSnapshotCache();
 
     if (update.trialDays !== undefined) {
       const n = Number(update.trialDays);
@@ -189,18 +199,25 @@ export const updateSystemSettings = async (req, res) => {
 };
 
 export const getSystemSettingsSnapshot = async () => {
+  const now = Date.now();
+  if (_snapshotCache && now - _snapshotCachedAt < SNAPSHOT_TTL_MS) {
+    return _snapshotCache;
+  }
   const settings = await getSingletonSettings();
-  return {
+  const snapshot = {
     trialDays: Number(settings.trialDays || 14),
-    gracePeriodDays: Number(settings.gracePeriodDays || 7),
+    gracePeriodDays: Number(settings.gracePeriodDays ?? 7),
     creditsPerGhs: Number(settings.creditsPerGhs || 100),
-    smsCostCredits: Number(settings.smsCostCredits || 5),
-    whatsappCostCredits: Number(settings.whatsappCostCredits || 20),
+    smsCostCredits: Number(settings.smsCostCredits ?? 5),
+    whatsappCostCredits: Number(settings.whatsappCostCredits ?? 20),
     referralBonusDays: Number(settings.referralBonusDays || 30),
-    usdToGhsRate: Number(settings.usdToGhsRate || 0),
+    usdToGhsRate: Number(settings.usdToGhsRate ?? 0),
     enforceBackdating: Boolean(settings.enforceBackdating),
     enforceImmutability: Boolean(settings.enforceImmutability)
   };
+  _snapshotCache = snapshot;
+  _snapshotCachedAt = Date.now();
+  return snapshot;
 };
 
 export const getPublicExchangeRate = async (req, res) => {

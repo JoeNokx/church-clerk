@@ -56,4 +56,9 @@ memberSchema.set('toObject', { virtuals: true });
 //for unique member id
 memberSchema.index({ memberId: 1, church: 1 }, { unique: true });
 
+// Compound indexes for common query patterns (dashboard KPI, widgets, analytics)
+memberSchema.index({ church: 1, status: 1 });
+memberSchema.index({ church: 1, dateJoined: 1 });
+memberSchema.index({ church: 1, createdAt: -1 });
+
 export default mongoose.model('Member', memberSchema);

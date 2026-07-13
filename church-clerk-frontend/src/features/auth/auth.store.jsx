@@ -60,7 +60,6 @@ export function AuthProvider({ children }) {
           void Promise.allSettled([
             queryClient.prefetchQuery({
               queryKey: ["dashboard", "kpi", churchId],
-              staleTime: 0,
               queryFn: async () => {
                 const res = await getDashboardKPI();
                 return res?.data?.kpis || null;
@@ -68,7 +67,6 @@ export function AuthProvider({ children }) {
             }),
             queryClient.prefetchQuery({
               queryKey: ["dashboard", "widgets", churchId],
-              staleTime: 0,
               queryFn: async () => {
                 const res = await getDashboardWidgets();
                 return res?.data?.dashboardWidget || null;
@@ -76,7 +74,6 @@ export function AuthProvider({ children }) {
             }),
             queryClient.prefetchQuery({
               queryKey: ["dashboard", "analytics", churchId, year],
-              staleTime: 0,
               queryFn: async () => {
                 const res = await getDashboardAnalytics({ year });
                 return res?.data?.analyticsDashboard || null;
@@ -158,7 +155,6 @@ export function AuthProvider({ children }) {
       await Promise.allSettled([
         queryClient.prefetchQuery({
           queryKey: ["dashboard", "kpi", churchId],
-          staleTime: 0,
           queryFn: async () => {
             const res = await getDashboardKPI();
             return res?.data?.kpis || null;
@@ -166,7 +162,6 @@ export function AuthProvider({ children }) {
         }),
         queryClient.prefetchQuery({
           queryKey: ["dashboard", "widgets", churchId],
-          staleTime: 0,
           queryFn: async () => {
             const res = await getDashboardWidgets();
             return res?.data?.dashboardWidget || null;
@@ -174,7 +169,6 @@ export function AuthProvider({ children }) {
         }),
         queryClient.prefetchQuery({
           queryKey: ["dashboard", "analytics", churchId, year],
-          staleTime: 0,
           queryFn: async () => {
             const res = await getDashboardAnalytics({ year });
             return res?.data?.analyticsDashboard || null;

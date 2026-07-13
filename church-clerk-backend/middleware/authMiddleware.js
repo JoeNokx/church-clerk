@@ -10,6 +10,19 @@ import { releaseExpiredTrialForChurch } from "../controller/billingController/su
 
 
 
+// --- In-process TTL cache: reduces per-request DB queries for stable auth data ---
+const _ac = new Map();
+const _AC_TTL = { c: 30_000, s: 30_000, p: 300_000 }; // church 30s, sub 30s, plan 5min
+
+function _acGet(key) {
+  const e = _ac.get(key);
+  if (!e) return undefined;
+  if (Date.now() > e.exp) { _ac.delete(key); return undefined; }
+  return e.v;
+}
+function _acSet(key, val, ttl) { _ac.set(key, { v: val, exp: Date.now() + ttl }); }
+export function bustAuthCacheForChurch(churchId) { _ac.delete(`s:${String(churchId)}`); }
+
 const protectWithCookie = (cookieNames) => async (req, res, next) => {
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -65,6 +78,13 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
 
     // Branch/Independent users should never switch context via header.
     // If a stale/foreign x-active-church is present, force it back to their home church.
+    const _getChurch = async (id) => {
+      const k = `c:${String(id)}`;
+      let doc = _acGet(k);
+      if (!doc) { doc = await Church.findById(id).lean(); if (doc) _acSet(k, doc, _AC_TTL.c); }
+      return doc;
+    };
+
     let userChurch = null;
     if (
       effectiveRole !== "superadmin" &&
@@ -73,7 +93,7 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
       userChurchId &&
       headerChurchId.toString() !== userChurchId.toString()
     ) {
-      userChurch = await Church.findById(userChurchId).lean();
+      userChurch = await _getChurch(userChurchId);
 
       if (!userChurch || userChurch.type !== "Headquarters") {
         activeChurchId = userChurchId;
@@ -86,7 +106,7 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
       return next();
     }
 
-    const activeChurch = await Church.findById(activeChurchId).lean();
+    const activeChurch = await _getChurch(activeChurchId);
 
     if (!activeChurch) {
       return res.status(404).json({ message: "Church context not found" });
@@ -99,7 +119,7 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
       activeChurchId.toString() !== userChurchId.toString()
     ) {
       if (!userChurch) {
-        userChurch = await Church.findById(userChurchId).lean();
+        userChurch = await _getChurch(userChurchId);
       }
 
       if (
@@ -114,7 +134,12 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
     req.activeChurch = activeChurch;
 
     if (req.user?.church) {
-      const subscription = await Subscription.findOne({ church: req.activeChurch._id }).lean();
+      const _subKey = `s:${String(req.activeChurch._id)}`;
+      let subscription = _acGet(_subKey);
+      if (!subscription) {
+        subscription = await Subscription.findOne({ church: req.activeChurch._id }).lean();
+        if (subscription) _acSet(_subKey, subscription, _AC_TTL.s);
+      }
       req.subscription = subscription || null;
 
       if (subscription) {
@@ -145,7 +170,9 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
             if (subscription.status === "free trial" || subscription.status === "trialing") {
               planName = "premium";
             } else if (subscription.plan) {
-              const plan = await Plan.findById(subscription.plan).lean();
+              const _pk = `p:${String(subscription.plan)}`;
+              let plan = _acGet(_pk);
+              if (!plan) { plan = await Plan.findById(subscription.plan).lean(); if (plan) _acSet(_pk, plan, _AC_TTL.p); }
               planName = plan?.name || "basic";
             }
 
@@ -172,7 +199,7 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
         ) {
           try {
             const { gracePeriodDays } = await getSystemSettingsSnapshot();
-            const graceMs = Number(gracePeriodDays || 7) * 24 * 60 * 60 * 1000;
+            const graceMs = Number(gracePeriodDays ?? 0) * 24 * 60 * 60 * 1000;
             const gracePassed = now.getTime() > new Date(subscription.trialEnd).getTime() + graceMs;
 
             if (gracePassed) {
@@ -180,6 +207,7 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
               if (updated) {
                 effectiveSub = updated;
                 req.subscription = updated;
+                _ac.delete(`s:${String(req.activeChurch._id)}`);
               }
             } else {
               inTrialGracePeriod = true;
@@ -192,10 +220,12 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
         // --- Free Lite plan: enforce feature-level access ---
         const isEffectiveTrial = effectiveSub.status === "free trial" || effectiveSub.status === "trialing";
         if (!isEffectiveTrial && effectiveSub.plan) {
-          const freeLitePlan = await Plan.findById(effectiveSub.plan).lean();
+          const _fpk = `p:${String(effectiveSub.plan)}`;
+          let freeLitePlan = _acGet(_fpk);
+          if (!freeLitePlan) { freeLitePlan = await Plan.findById(effectiveSub.plan).lean(); if (freeLitePlan) _acSet(_fpk, freeLitePlan, _AC_TTL.p); }
           const isFreeLite = String(freeLitePlan?.name || "").trim().toLowerCase() === "free lite";
 
-          if (isFreeLite) {
+          if (isFreeLite && freeLitePlan) {
             const trialUsedSet = new Set(
               Array.isArray(effectiveSub.trialFeaturesUsed) ? effectiveSub.trialFeaturesUsed : []
             );
