@@ -3,6 +3,12 @@ import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
+import AuthContext from "../../auth/auth.store.jsx";
+import {
+  getRegistrationToken,
+  generateRegistrationToken,
+  revokeRegistrationToken
+} from "../../church/services/church.api.js";
 import MemberFilters from "../components/MemberFilters.jsx";
 import MemberTable from "../components/MemberTable.jsx";
 import {
@@ -15,14 +21,82 @@ import { useMembersKpiQuery } from "../hooks/useMembers.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
+const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://churchclerkapp.com";
+
 function MembersPageInner() {
   const { can } = useContext(PermissionContext) || {};
+  const { user } = useContext(AuthContext) || {};
   const store = useContext(MemberContext);
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
   const canImport = useMemo(() => (typeof can === "function" ? can("members", "import") : false), [can]);
+
+  const isChurchAdmin = useMemo(() => {
+    const raw = String(user?.role || "").trim().toLowerCase().replace(/[\s_\-]+/g, "");
+    return raw === "churchadmin";
+  }, [user?.role]);
+
+  const [regLinkOpen, setRegLinkOpen] = useState(false);
+  const [regToken, setRegToken] = useState(null);
+  const [regTokenActive, setRegTokenActive] = useState(false);
+  const [regLinkLoading, setRegLinkLoading] = useState(false);
+  const [regLinkError, setRegLinkError] = useState("");
+  const [regLinkCopied, setRegLinkCopied] = useState(false);
+
+  const regLink = regToken ? `${BASE_URL}/join/${regToken}` : null;
+
+  const openRegLink = async () => {
+    setRegLinkOpen(true);
+    setRegLinkError("");
+    setRegLinkLoading(true);
+    try {
+      const res = await getRegistrationToken();
+      setRegToken(res?.data?.token || null);
+      setRegTokenActive(res?.data?.registrationTokenActive || false);
+    } catch (e) {
+      setRegLinkError(e?.response?.data?.message || "Failed to load registration link.");
+    } finally {
+      setRegLinkLoading(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    setRegLinkError("");
+    setRegLinkLoading(true);
+    try {
+      const res = await generateRegistrationToken();
+      setRegToken(res?.data?.token || null);
+      setRegTokenActive(true);
+    } catch (e) {
+      setRegLinkError(e?.response?.data?.message || "Failed to generate link.");
+    } finally {
+      setRegLinkLoading(false);
+    }
+  };
+
+  const handleRevoke = async () => {
+    setRegLinkError("");
+    setRegLinkLoading(true);
+    try {
+      await revokeRegistrationToken();
+      setRegToken(null);
+      setRegTokenActive(false);
+    } catch (e) {
+      setRegLinkError(e?.response?.data?.message || "Failed to revoke link.");
+    } finally {
+      setRegLinkLoading(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (!regLink) return;
+    navigator.clipboard.writeText(regLink).then(() => {
+      setRegLinkCopied(true);
+      setTimeout(() => setRegLinkCopied(false), 2000);
+    });
+  };
 
   const [importOpen, setImportOpen] = useState(false);
   const [importStep, setImportStep] = useState("upload");
@@ -182,6 +256,15 @@ function MembersPageInner() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 md:gap-3">
+          {isChurchAdmin && (
+            <button
+              type="button"
+              onClick={openRegLink}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 md:px-4 py-2.5 md:py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
+            >
+              Registration Link
+            </button>
+          )}
           {canImport && (
             <button
               type="button"
@@ -439,6 +522,98 @@ function MembersPageInner() {
                   ) : null}
                 </div>
               ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Registration Link modal */}
+      {regLinkOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Member Registration Link</div>
+                <div className="mt-1 text-gray-500 text-xs">Share this link so people can register as members from home.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRegLinkOpen(false)}
+                className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0 md:h-12 md:w-12"
+                aria-label="Close"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-4 md:p-6 space-y-4">
+              {regLinkError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{regLinkError}</div>
+              )}
+
+              {regLinkLoading ? (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 w-32 rounded bg-gray-200" />
+                  <div className="h-11 rounded-lg bg-gray-200" />
+                </div>
+              ) : regToken && regTokenActive ? (
+                <>
+                  <div>
+                    <div className="font-semibold text-gray-600 text-xs mb-1.5">Shareable Link</div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700 text-xs font-mono break-all">
+                        {regLink}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopy}
+                        className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+                      >
+                        {regLinkCopied ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">
+                    Link is <span className="font-semibold">active</span>. Anyone with this link can register as a church member.
+                  </div>
+
+                  <div className="flex flex-col gap-2 md:flex-row">
+                    <button
+                      type="button"
+                      onClick={handleGenerate}
+                      disabled={regLinkLoading}
+                      className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                    >
+                      Generate New Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRevoke}
+                      disabled={regLinkLoading}
+                      className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm"
+                    >
+                      Revoke Link
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-4 text-center">
+                    <div className="text-gray-500 text-sm mb-3">No active registration link. Generate one to start sharing.</div>
+                    <button
+                      type="button"
+                      onClick={handleGenerate}
+                      disabled={regLinkLoading}
+                      className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm"
+                    >
+                      Generate Link
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

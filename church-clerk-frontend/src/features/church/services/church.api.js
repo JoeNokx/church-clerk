@@ -30,3 +30,15 @@ export const requestMyChurchSenderId = async (payload) => {
 export const searchHeadquartersChurches = async (params) => {
   return await http.get("/church/churches", { params });
 };
+
+export const getRegistrationToken = async () => {
+  return await http.get("/church/registration-link");
+};
+
+export const generateRegistrationToken = async () => {
+  return await http.post("/church/registration-link/generate", {});
+};
+
+export const revokeRegistrationToken = async () => {
+  return await http.delete("/church/registration-link/revoke");
+};

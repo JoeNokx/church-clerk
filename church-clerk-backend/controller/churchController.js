@@ -489,6 +489,64 @@ const requestMyChurchSenderId = async (req, res) => {
   }
 };
 
+const generateRegistrationToken = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+
+    const token = crypto.randomUUID().replace(/-/g, "");
+
+    const church = await Church.findByIdAndUpdate(
+      churchId,
+      { registrationToken: token, registrationTokenActive: true },
+      { new: true }
+    );
+
+    if (!church) return res.status(404).json({ message: "Church not found." });
+
+    return res.status(200).json({
+      message: "Registration link generated.",
+      token,
+      registrationTokenActive: church.registrationTokenActive
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to generate link.", error: error.message });
+  }
+};
+
+const revokeRegistrationToken = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+
+    await Church.findByIdAndUpdate(churchId, {
+      registrationToken: null,
+      registrationTokenActive: false
+    });
+
+    return res.status(200).json({ message: "Registration link revoked." });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to revoke link.", error: error.message });
+  }
+};
+
+const getMyRegistrationToken = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+
+    const church = await Church.findById(churchId).select("registrationToken registrationTokenActive").lean();
+    if (!church) return res.status(404).json({ message: "Church not found." });
+
+    return res.status(200).json({
+      token: church.registrationToken || null,
+      registrationTokenActive: church.registrationTokenActive || false
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch registration link.", error: error.message });
+  }
+};
+
 export {
   createMyChurch,
   searchHeadquartersChurches,
@@ -496,5 +554,8 @@ export {
   updateMyChurchProfile,
   getMyBranches,
   getActiveChurchContext,
-  requestMyChurchSenderId
+  requestMyChurchSenderId,
+  generateRegistrationToken,
+  revokeRegistrationToken,
+  getMyRegistrationToken
 }

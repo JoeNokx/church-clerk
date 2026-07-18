@@ -71,6 +71,11 @@ const isPaystackWebhookRoute = (req) => {
   return url.startsWith("/api/v1/subscription/webhooks/paystack");
 };
 
+const isPublicRegistrationRoute = (req) => {
+  const url = String(req.originalUrl || "");
+  return url.startsWith("/api/v1/public");
+};
+
 const sanitizeXssString = (value) => {
   if (typeof value !== "string") return value;
   return value.replace(/<[^>]*>/g, "");
@@ -286,6 +291,7 @@ function csrfProtection(req, res, next) {
 
 app.use((req, res, next) => {
   if (isPaystackWebhookRoute(req)) return next();
+  if (isPublicRegistrationRoute(req)) return next();
   return csrfProtection(req, res, next);
 });
 
@@ -357,6 +363,7 @@ app.use("/api/v1/welfare", Routes.welfareRoute);
 app.use("/api/v1/business-ventures", Routes.businessVenturesRoute);
 app.use("/api/v1/referral", Routes.referralSystemRoute);
 app.use("/api/v1/church-governance", Routes.churchGovernanceRoute);
+app.use("/api/v1/public", Routes.publicRoute);
 
 // 404
 app.use((req, res) => {

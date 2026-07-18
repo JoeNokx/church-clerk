@@ -97,6 +97,19 @@ const churchSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
+  },
+
+  registrationToken: {
+    type: String,
+    default: null,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
+
+  registrationTokenActive: {
+    type: Boolean,
+    default: false
   }
 
 }, { timestamps: true });

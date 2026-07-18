@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { createMyChurch, searchHeadquartersChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getActiveChurchContext, requestMyChurchSenderId } from "../controller/churchController.js"
+import { createMyChurch, searchHeadquartersChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getActiveChurchContext, requestMyChurchSenderId, generateRegistrationToken, revokeRegistrationToken, getMyRegistrationToken } from "../controller/churchController.js"
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
@@ -62,5 +62,32 @@ router.post(
 );
 
 router.get("/churches", searchHeadquartersChurches);
+
+router.get(
+  "/registration-link",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("churchadmin"),
+  getMyRegistrationToken
+);
+
+router.post(
+  "/registration-link/generate",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("churchadmin"),
+  generateRegistrationToken
+);
+
+router.delete(
+  "/registration-link/revoke",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("churchadmin"),
+  revokeRegistrationToken
+);
 
 export default router
