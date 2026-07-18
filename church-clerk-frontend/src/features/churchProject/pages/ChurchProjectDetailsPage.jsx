@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
@@ -130,12 +130,31 @@ function ConfirmModal({ open, title, message, confirmLabel, onCancel, onConfirm 
 }
 
 function DateRangePopover({ dateFrom, dateTo, onChangeFrom, onChangeTo, onClear }) {
+  const wrapperRef = useRef(null);
   const [open, setOpen] = useState(false);
+  const [panelStyle, setPanelStyle] = useState(null);
+
+  const toggleOpen = () => {
+    if (open) { setOpen(false); return; }
+    const isMobileTablet = window.innerWidth < 1024;
+    if (isMobileTablet && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const PANEL_W = 320; const EDGE = 8; const vw = window.innerWidth;
+      const w = Math.min(PANEL_W, vw - EDGE * 2);
+      let left = Math.round(rect.right - w);
+      left = Math.max(EDGE, Math.min(left, vw - w - EDGE));
+      setPanelStyle({ position: "fixed", top: Math.round(rect.bottom) + EDGE, left, width: w, zIndex: 50 });
+    } else {
+      setPanelStyle(null);
+    }
+    setOpen(true);
+  };
+
   return (
-    <div className="relative">
+    <div className="relative" ref={wrapperRef}>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={toggleOpen}
         className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -144,7 +163,10 @@ function DateRangePopover({ dateFrom, dateTo, onChangeFrom, onChangeTo, onClear 
         {dateFrom || dateTo ? "Filter" : "Date"}
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-lg">
+        <div
+          className={`rounded-xl border border-gray-200 bg-white shadow-lg${panelStyle ? "" : " absolute right-0 z-50 mt-2 w-80"}`}
+          style={panelStyle || undefined}
+        >
           <div className="p-4">
             <div className="font-semibold text-gray-900 mb-3 text-sm">Filter by date range</div>
             <div className="space-y-3">

@@ -345,6 +345,8 @@ function BusinessVenturesPage() {
   const [ventures, setVentures] = useState([]);
   const [kpi, setKpi] = useState(null);
   const [searchValue, setSearchValue] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -396,6 +398,8 @@ function BusinessVenturesPage() {
     return { totalVentures, totalIncome, totalExpenses, net };
   }, [ventures, kpi]);
 
+  useEffect(() => { setPage(1); }, [searchValue]);
+
   const filteredVentures = useMemo(() => {
     if (!searchValue.trim()) return ventures;
     const searchLower = searchValue.toLowerCase();
@@ -403,6 +407,12 @@ function BusinessVenturesPage() {
       String(v?.businessName || "").toLowerCase().includes(searchLower)
     );
   }, [ventures, searchValue]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredVentures.length / PAGE_SIZE));
+  const pagedVentures = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredVentures.slice(start, start + PAGE_SIZE);
+  }, [filteredVentures, page, PAGE_SIZE]);
 
   const viewDetails = (row) => {
     if (!row?._id) return;
@@ -509,8 +519,9 @@ function BusinessVenturesPage() {
           {searchValue ? "No business ventures matching your search." : "No business ventures found. Click Add Venture to get started."}
         </div>
       ) : (
+        <>
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {filteredVentures.map((v, idx) => (
+          {pagedVentures.map((v, idx) => (
             <div key={v?._id ?? `v-${idx}`} className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -559,6 +570,29 @@ function BusinessVenturesPage() {
             </div>
           ))}
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+            >
+              Prev
+            </button>
+            <span className="text-gray-600 text-sm">Page {page} of {totalPages}</span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+            >
+              Next
+            </button>
+          </div>
+        )}
+        </>
       )}
 
       <AddBusinessModal

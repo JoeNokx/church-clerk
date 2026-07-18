@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
 
@@ -326,6 +327,15 @@ function MinistryDetailsPage() {
   const [offeringSaving, setOfferingSaving] = useState(false);
   const [offeringFormError, setOfferingFormError] = useState("");
 
+  const [memberDateFrom, setMemberDateFrom] = useState("");
+  const [memberDateTo, setMemberDateTo] = useState("");
+  const [attendanceDateFrom, setAttendanceDateFrom] = useState("");
+  const [attendanceDateTo, setAttendanceDateTo] = useState("");
+  const [indivDateFrom, setIndivDateFrom] = useState("");
+  const [indivDateTo, setIndivDateTo] = useState("");
+  const [offeringDateFrom, setOfferingDateFrom] = useState("");
+  const [offeringDateTo, setOfferingDateTo] = useState("");
+
   const title = type === "cell" ? "Cell" : type === "department" ? "Department" : "Group";
 
   const loadEntity = useCallback(async () => {
@@ -484,6 +494,50 @@ function MinistryDetailsPage() {
     if (activeTab !== "members") return;
     loadMembers();
   }, [activeTab, loadMembers, debouncedMemberSearch]);
+
+  const filteredMembers = useMemo(() => {
+    if (!memberDateFrom && !memberDateTo) return members;
+    return members.filter((m) => {
+      const d = (m?.joinedAt || m?.createdAt || "").slice(0, 10);
+      if (!d) return true;
+      if (memberDateFrom && d < memberDateFrom) return false;
+      if (memberDateTo && d > memberDateTo) return false;
+      return true;
+    });
+  }, [members, memberDateFrom, memberDateTo]);
+
+  const filteredAttendances = useMemo(() => {
+    if (!attendanceDateFrom && !attendanceDateTo) return attendances;
+    return attendances.filter((r) => {
+      const d = (r?.date || "").slice(0, 10);
+      if (!d) return true;
+      if (attendanceDateFrom && d < attendanceDateFrom) return false;
+      if (attendanceDateTo && d > attendanceDateTo) return false;
+      return true;
+    });
+  }, [attendances, attendanceDateFrom, attendanceDateTo]);
+
+  const filteredIndividualAttendances = useMemo(() => {
+    if (!indivDateFrom && !indivDateTo) return individualAttendances;
+    return individualAttendances.filter((r) => {
+      const d = (r?.date || "").slice(0, 10);
+      if (!d) return true;
+      if (indivDateFrom && d < indivDateFrom) return false;
+      if (indivDateTo && d > indivDateTo) return false;
+      return true;
+    });
+  }, [individualAttendances, indivDateFrom, indivDateTo]);
+
+  const filteredOfferings = useMemo(() => {
+    if (!offeringDateFrom && !offeringDateTo) return offerings;
+    return offerings.filter((r) => {
+      const d = (r?.date || "").slice(0, 10);
+      if (!d) return true;
+      if (offeringDateFrom && d < offeringDateFrom) return false;
+      if (offeringDateTo && d > offeringDateTo) return false;
+      return true;
+    });
+  }, [offerings, offeringDateFrom, offeringDateTo]);
 
   const mainTabClass = (key) => {
     const isActive = activeTab === key;
@@ -1116,12 +1170,17 @@ function MinistryDetailsPage() {
               </button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <input
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
                 placeholder="Search members..."
                 className="h-11 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 md:flex-none text-sm"
+              />
+              <DateRangeFilter
+                appliedFrom={memberDateFrom}
+                appliedTo={memberDateTo}
+                onApply={(from, to) => { setMemberDateFrom(from); setMemberDateTo(to); }}
               />
               <button
                 type="button"
@@ -1154,7 +1213,7 @@ function MinistryDetailsPage() {
                 </div>
               ))}
             </div>
-          ) : members.length === 0 ? (
+          ) : filteredMembers.length === 0 ? (
             <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No member record found.</div>
           ) : (
             <div className="overflow-x-auto">
@@ -1169,7 +1228,7 @@ function MinistryDetailsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {members.map((m, idx) => {
+                  {filteredMembers.map((m, idx) => {
                     const member = m?.member || {};
                     const fullName = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() || "-";
                     const nameParts = fullName.split(/\s+/);
@@ -1516,31 +1575,46 @@ function MinistryDetailsPage() {
 
       {activeTab === "attendance" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-          <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
             <div>
               <div className="font-semibold text-gray-900 text-sm">Attendance</div>
               <div className="text-gray-500 text-xs">Record attendance</div>
             </div>
 
-            {attendanceView === "individual" ? (
-              <button
-                type="button"
-                onClick={() => void openIndividualAttendanceForm("create", null)}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-              >
-                <span className="leading-none text-lg">+</span>
-                Record Attendance
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openAttendanceForm("create", null)}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-              >
-                <span className="leading-none text-lg">+</span>
-                Add Attendance
-              </button>
-            )}
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              {attendanceView === "individual" ? (
+                <DateRangeFilter
+                  appliedFrom={indivDateFrom}
+                  appliedTo={indivDateTo}
+                  onApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
+                />
+              ) : (
+                <DateRangeFilter
+                  appliedFrom={attendanceDateFrom}
+                  appliedTo={attendanceDateTo}
+                  onApply={(from, to) => { setAttendanceDateFrom(from); setAttendanceDateTo(to); }}
+                />
+              )}
+              {attendanceView === "individual" ? (
+                <button
+                  type="button"
+                  onClick={() => void openIndividualAttendanceForm("create", null)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Record Attendance
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openAttendanceForm("create", null)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Add Attendance
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="px-4 md:px-5 lg:px-6 pt-4 pb-4">
@@ -1587,7 +1661,7 @@ function MinistryDetailsPage() {
                     </div>
                   ))}
                 </div>
-              ) : individualAttendances.length === 0 ? (
+              ) : filteredIndividualAttendances.length === 0 ? (
                 <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No attendance record found.</div>
               ) : (
                 <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-6">
@@ -1602,7 +1676,7 @@ function MinistryDetailsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {individualAttendances.map((r, idx) => (
+                      {filteredIndividualAttendances.map((r, idx) => (
                         <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDay(r?.date) || "-"}</td>
@@ -1901,7 +1975,7 @@ function MinistryDetailsPage() {
                     </div>
                   ))}
                 </div>
-              ) : attendances.length === 0 ? (
+              ) : filteredAttendances.length === 0 ? (
                 <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No attendance record found.</div>
               ) : (
                 <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-6">
@@ -1916,7 +1990,7 @@ function MinistryDetailsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {attendances.map((r, idx) => (
+                      {filteredAttendances.map((r, idx) => (
                         <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0)}</td>
@@ -2019,20 +2093,27 @@ function MinistryDetailsPage() {
 
       {activeTab === "offerings" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-          <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
             <div>
               <div className="font-semibold text-gray-900 text-sm">Offerings</div>
               <div className="text-gray-500 text-xs">Record ministry offerings</div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => openOfferingForm("create", null)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-            >
-              <span className="leading-none text-lg">+</span>
-              Add Offering
-            </button>
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <DateRangeFilter
+                appliedFrom={offeringDateFrom}
+                appliedTo={offeringDateTo}
+                onApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); }}
+              />
+              <button
+                type="button"
+                onClick={() => openOfferingForm("create", null)}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+              >
+                <span className="leading-none text-lg">+</span>
+                Add Offering
+              </button>
+            </div>
           </div>
 
           {offeringError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{offeringError}</div> : null}
@@ -2060,7 +2141,7 @@ function MinistryDetailsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {offerings.map((r, idx) => (
+                  {filteredOfferings.map((r, idx) => (
                     <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                       <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(r?.amount || 0, currency)}</td>
