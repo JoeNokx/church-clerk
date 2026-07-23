@@ -146,6 +146,9 @@ export const paystackWebhook = async (req, res) => {
       // Update billing record
       billing.status = "paid";
       billing.providerReference = reference;
+      const webhookChannel = String(event?.data?.channel || "").trim().toLowerCase();
+      if (webhookChannel === "card") billing.paymentMethodType = "card";
+      else if (webhookChannel === "mobile_money") billing.paymentMethodType = "mobile_money";
       await billing.save();
 
       // Load subscription

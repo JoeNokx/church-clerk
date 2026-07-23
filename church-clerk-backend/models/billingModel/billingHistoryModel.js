@@ -67,6 +67,12 @@ const billingHistorySchema = new mongoose.Schema(
     providerReference: {
       type: String,
       default: null
+    },
+
+    paymentMethodType: {
+      type: String,
+      enum: ["card", "mobile_money", null],
+      default: null
     }
   },
   { timestamps: true }

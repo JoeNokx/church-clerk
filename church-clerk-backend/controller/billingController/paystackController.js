@@ -104,6 +104,7 @@ export const chargeWithPaystack = async (subscription) => {
   if (chargeStatus === "success") {
     billing.status = "paid";
     billing.providerReference = reference;
+    billing.paymentMethodType = "card";
     await billing.save();
 
     const now = new Date();
@@ -233,6 +234,7 @@ export const initializePaystackPayment = async (req, res) => {
       currency,
       status: "pending",
       paymentProvider: "paystack",
+      paymentMethodType: isCardPayment ? "card" : "mobile_money",
       invoiceSnapshot: {
         planId: plan._id,
         planName: plan.name,
@@ -366,6 +368,7 @@ export const chargePaystackMobileMoney = async (req, res) => {
       currency,
       status: "pending",
       paymentProvider: "paystack",
+      paymentMethodType: "mobile_money",
       invoiceSnapshot: {
         planId: plan._id,
         planName: plan.name,

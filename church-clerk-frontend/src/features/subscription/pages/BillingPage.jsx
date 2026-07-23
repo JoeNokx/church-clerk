@@ -1071,6 +1071,47 @@ function BillingPage() {
           </div>
         )}
 
+        {subscription?.status === "suspended" && (
+          <div className="mt-4 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              <div className="text-red-800 text-xs">
+                <strong>Subscription suspended.</strong> Your grace period has ended and access to write actions is locked. Renew to restore full access.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setPlanId(String(currentPlanId)); onPay(); }}
+              disabled={!currentPlanId || manageLoading}
+              className="ml-2 flex-shrink-0 rounded-lg bg-red-600 px-3 py-1.5 font-semibold text-white hover:bg-red-700 disabled:opacity-60 text-xs"
+            >
+              Renew Now
+            </button>
+          </div>
+        )}
+
+        {subscription?.status === "cancelled" && (
+          <div className="mt-4 flex items-start justify-between gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <div className="text-orange-800 text-xs">
+                <strong>Subscription cancelled.</strong> Choose a plan below and subscribe to reactivate your account.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { plansRef.current?.scrollIntoView({ behavior: "smooth" }); }}
+              className="ml-2 flex-shrink-0 rounded-lg bg-orange-600 px-3 py-1.5 font-semibold text-white hover:bg-orange-700 text-xs"
+            >
+              View Plans
+            </button>
+          </div>
+        )}
+
         {subscription?.pendingPlanAction && subscription?.pendingPlanEffectiveDate && (
           <div className="mt-4 flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3">
             <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1613,6 +1654,7 @@ function BillingPage() {
               <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                 <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                 <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Payment Method</th>
                 <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                 <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Currency</th>
                 <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
@@ -1624,6 +1666,9 @@ function BillingPage() {
                 <tr key={row?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                   <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{row?.createdAt ? formatShortDate(row.createdAt) : "—"}</td>
                   <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{row?.type === "free_month" ? "Free Days" : "Payment"}</td>
+                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
+                    {row?.paymentMethodType === "card" ? "Card" : row?.paymentMethodType === "mobile_money" ? "Mobile Money" : "—"}
+                  </td>
                   <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{row?.type === "free_month" ? "—" : (isGhana || !usdToGhs ? formatCurrency(row?.amount || 0, row?.currency || "GHS") : formatCurrency((row?.amount || 0) / Number(usdToGhs), "USD"))}</td>
                   <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{isGhana || !usdToGhs ? (row?.currency || "—") : "USD"}</td>
                   <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
