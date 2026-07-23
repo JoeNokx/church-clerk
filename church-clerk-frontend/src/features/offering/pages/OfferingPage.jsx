@@ -9,7 +9,7 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
-export function OfferingPageInner({ hideKpi = false, embedded = false }) {
+export function OfferingPageInner({ hideKpi = false, embedded = false, noHeader = false, openCreateRef = null }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(OfferingContext);
   const churchStore = useContext(ChurchContext);
@@ -53,6 +53,8 @@ export function OfferingPageInner({ hideKpi = false, embedded = false }) {
     setIsFormOpen(true);
   };
 
+  if (openCreateRef) openCreateRef.current = openCreate;
+
   const openEdit = (offering) => {
     setEditingOffering(offering);
     setIsFormOpen(true);
@@ -65,25 +67,27 @@ export function OfferingPageInner({ hideKpi = false, embedded = false }) {
 
   return (
     <div className={embedded ? "w-full" : "max-w-6xl"}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Offerings</h2>
-          <p className="mt-1 text-gray-500 text-sm">Record and manage church offerings</p>
-        </div>
+      {!noHeader && (
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Offerings</h2>
+            <p className="mt-1 text-gray-500 text-sm">Record and manage church offerings</p>
+          </div>
 
-        <div className="flex items-center gap-3">
-          {canCreate && (
-            <button
-              type="button"
-              onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-            >
-              <span className="leading-none text-lg">+</span>
-              Add Offering
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {canCreate && (
+              <button
+                type="button"
+                onClick={openCreate}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+              >
+                <span className="leading-none text-lg">+</span>
+                Add Offering
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {!hideKpi ? (
         <KpiGrid className="mt-6 gap-4 md:grid-cols-3">

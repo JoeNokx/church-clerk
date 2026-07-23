@@ -22,11 +22,9 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 const DashboardCharts = React.lazy(() => import("../components/DashboardCharts.jsx"));
 
 
-const SpecialFundPage = React.lazy(() => import("../../specialFund/pages/SpecialFundPage.jsx"));
+const OfferingFundsPage = React.lazy(() => import("../../offering/pages/OfferingFundsPage.jsx"));
 
 const ReferralProgramPage = React.lazy(() => import("../../referral/pages/ReferralProgramPage.jsx"));
-
-const OfferingPage = React.lazy(() => import("../../offering/pages/OfferingPage.jsx"));
 
 const TithePage = React.lazy(() => import("../../tithe/pages/TithePage.jsx"));
 
@@ -1577,9 +1575,7 @@ function DashboardHome() {
 
   if (page === "billing") PageComponent = BillingPage;
 
-  if (page === "special-funds") PageComponent = SpecialFundPage;
-
-  if (page === "offerings") PageComponent = OfferingPage;
+  if (page === "offerings" || page === "special-funds" || page === "offering-funds") PageComponent = OfferingFundsPage;
 
   if (page === "tithe") PageComponent = TithePage;
 

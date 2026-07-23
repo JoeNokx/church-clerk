@@ -9,7 +9,7 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
-function SpecialFundPageInner() {
+export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, embedded = false }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(SpecialFundContext);
   const churchStore = useContext(ChurchContext);
@@ -53,6 +53,8 @@ function SpecialFundPageInner() {
     setIsFormOpen(true);
   };
 
+  if (openCreateRef) openCreateRef.current = openCreate;
+
   const openEdit = (fund) => {
     setEditingFund(fund);
     setIsFormOpen(true);
@@ -64,26 +66,28 @@ function SpecialFundPageInner() {
   };
 
   return (
-    <div className="max-w-6xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Special Funds</h2>
-          <p className="mt-1 text-gray-500 text-sm">Track and manage special church funds</p>
-        </div>
+    <div className={embedded ? "w-full" : "max-w-6xl"}>
+      {!noHeader && (
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Special Funds</h2>
+            <p className="mt-1 text-gray-500 text-sm">Track and manage special church funds</p>
+          </div>
 
-        <div className="flex items-center gap-3">
-          {canCreate && (
-            <button
-              type="button"
-              onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-            >
-              <span className="leading-none text-lg">+</span>
-              Add Fund
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {canCreate && (
+              <button
+                type="button"
+                onClick={openCreate}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+              >
+                <span className="leading-none text-lg">+</span>
+                Add Fund
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <KpiGrid className="mt-6 gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
