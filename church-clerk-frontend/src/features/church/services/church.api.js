@@ -31,6 +31,10 @@ export const searchHeadquartersChurches = async (params) => {
   return await http.get("/church/churches", { params });
 };
 
+export const searchBranchChurches = async (params) => {
+  return await http.get("/church/branch-churches", { params });
+};
+
 export const getRegistrationToken = async () => {
   return await http.get("/church/registration-link");
 };

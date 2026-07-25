@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../useAuth.js";
-import { createChurch, searchHeadquartersChurches } from "../../church/services/church.api.js";
+import { createChurch, searchHeadquartersChurches, searchBranchChurches } from "../../church/services/church.api.js";
 import AuthCard from "../components/AuthCard.jsx";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
@@ -33,6 +33,16 @@ function RegisterChurch() {
   const [hqMessage, setHqMessage] = useState("");
   const [hqResults, setHqResults] = useState([]);
   const hqBoxRef = useRef(null);
+  const branchBoxRef = useRef(null);
+
+  const [selectedBranches, setSelectedBranches] = useState([]);
+  const [branchSearch, setBranchSearch] = useState("");
+  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
+  const [branchLoading, setBranchLoading] = useState(false);
+  const [branchMessage, setBranchMessage] = useState("");
+  const [branchResults, setBranchResults] = useState([]);
+
+  const isHeadquarters = type === "Headquarters";
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState(user?.email || "");
   const [streetAddress, setStreetAddress] = useState("");
@@ -150,6 +160,49 @@ function RegisterChurch() {
   }, [isBranch]);
 
   useEffect(() => {
+    if (!isHeadquarters) {
+      setSelectedBranches([]);
+      setBranchSearch("");
+      setBranchResults([]);
+      setBranchMessage("");
+      setBranchDropdownOpen(false);
+    }
+  }, [isHeadquarters]);
+
+  useEffect(() => {
+    const handleOutside = (event) => {
+      if (!branchBoxRef.current) return;
+      if (branchBoxRef.current.contains(event.target)) return;
+      setBranchDropdownOpen(false);
+    };
+    if (branchDropdownOpen) document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [branchDropdownOpen]);
+
+  useEffect(() => {
+    if (!isHeadquarters) return;
+    const q = String(branchSearch || "").trim();
+    if (!q) { setBranchResults([]); setBranchMessage(""); return; }
+    setBranchLoading(true);
+    setBranchMessage("");
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchBranchChurches({ search: q });
+        const data = res?.data;
+        const rows = Array.isArray(data) ? data : Array.isArray(data?.churches) ? data.churches : [];
+        setBranchResults(rows);
+        setBranchMessage(rows.length ? "" : (data?.message || "No branch matched your search"));
+      } catch (e) {
+        setBranchResults([]);
+        setBranchMessage(e?.response?.data?.message || "Failed to search branches");
+      } finally {
+        setBranchLoading(false);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [branchSearch, isHeadquarters]);
+
+  useEffect(() => {
     const handleOutside = (event) => {
       const el = hqBoxRef.current;
       if (!el) return;
@@ -221,12 +274,6 @@ function RegisterChurch() {
       return;
     }
 
-    if (type === "Branch" && !parentChurchId) {
-      setLoading(false);
-      setError("Please select a headquarters church from the list");
-      return;
-    }
-
     if (!String(city || "").trim()) {
       setLoading(false);
       setError("Location is required");
@@ -239,6 +286,7 @@ function RegisterChurch() {
         pastor,
         type,
         parentChurchId: type === "Branch" ? parentChurchId : undefined,
+        branchIds: type === "Headquarters" ? selectedBranches.map((b) => b._id) : undefined,
         phoneNumber,
         email,
         streetAddress,
@@ -311,13 +359,71 @@ function RegisterChurch() {
           </select>
         </div>
 
+        {type === "Headquarters" && (
+          <div ref={branchBoxRef} className="relative">
+            <label className="block font-medium text-gray-700 mb-1 text-sm">Link Branch Churches (optional)</label>
+            {selectedBranches.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {selectedBranches.map((b) => (
+                  <span key={b._id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-blue-800 text-xs font-medium">
+                    {b.name}
+                    <button type="button" onClick={() => setSelectedBranches((prev) => prev.filter((x) => x._id !== b._id))} className="ml-0.5 text-blue-500 hover:text-blue-700">✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <input
+              type="text"
+              placeholder="Search branch churches to link"
+              value={branchSearch}
+              onChange={(e) => { setBranchSearch(e.target.value); setBranchDropdownOpen(true); }}
+              onFocus={() => setBranchDropdownOpen(true)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            />
+            {branchDropdownOpen && (
+              <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                <div className="max-h-72 overflow-y-auto">
+                  {branchLoading ? (
+                    <div className="px-4 py-3 text-gray-600 text-sm">Searching…</div>
+                  ) : branchMessage && !branchResults.length ? (
+                    <div className="px-4 py-3 text-gray-600 text-sm">{branchMessage}</div>
+                  ) : branchResults.length ? (
+                    branchResults
+                      .filter((c) => !selectedBranches.some((s) => s._id === c._id))
+                      .map((c) => (
+                        <button
+                          key={c._id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedBranches((prev) => [...prev, c]);
+                            setBranchSearch("");
+                            setBranchResults([]);
+                            setBranchDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-50"
+                        >
+                          <div className="font-semibold text-gray-900 truncate text-sm">{c.name || "—"}</div>
+                          <div className="mt-0.5 text-gray-500 truncate text-xs">
+                            {`${c.city || ""}${c.region ? `, ${c.region}` : ""}`.trim() || "—"}
+                          </div>
+                        </button>
+                      ))
+                  ) : (
+                    <div className="px-4 py-3 text-gray-600 text-sm">Type to search branch churches.</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {type === "Branch" && (
           <div ref={hqBoxRef} className="relative">
-            <label className="block font-medium text-gray-700 mb-1 text-sm">Parent Church ID (HQ)</label>
+            <label className="block font-medium text-gray-700 mb-1 text-sm">Parent Church ID (HQ) (optional)</label>
             <input type="hidden" name="parentId" value={parentChurchId} />
             <input
               type="text"
-              placeholder="Search headquarters church"
+              placeholder="Search headquarters church (optional)"
               value={hqSearch}
               onChange={(e) => {
                 setHqSearch(e.target.value);
@@ -327,7 +433,6 @@ function RegisterChurch() {
               }}
               onFocus={() => setHqDropdownOpen(true)}
               className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-              required
             />
 
             {selectedHqLabel && parentChurchId ? (
@@ -525,7 +630,7 @@ function RegisterChurch() {
 
         <button
           type="submit"
-          disabled={loading || (type === "Branch" && !parentChurchId)}
+          disabled={loading}
           className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
         >
           {loading ? "Saving..." : "Register Church"}

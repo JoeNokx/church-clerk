@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { createMyChurch, searchHeadquartersChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getActiveChurchContext, requestMyChurchSenderId, generateRegistrationToken, revokeRegistrationToken, getMyRegistrationToken } from "../controller/churchController.js"
+import { createMyChurch, searchHeadquartersChurches, searchBranchChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getActiveChurchContext, requestMyChurchSenderId, generateRegistrationToken, revokeRegistrationToken, getMyRegistrationToken } from "../controller/churchController.js"
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
@@ -62,6 +62,7 @@ router.post(
 );
 
 router.get("/churches", searchHeadquartersChurches);
+router.get("/branch-churches", searchBranchChurches);
 
 router.get(
   "/registration-link",

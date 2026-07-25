@@ -127,6 +127,7 @@ function AttendancePageInner() {
   const [indivConfirmId, setIndivConfirmId] = useState(null);
   const [indivConfirmLoading, setIndivConfirmLoading] = useState(false);
 
+  const [indivFormModalOpen, setIndivFormModalOpen] = useState(false);
   const [indivLinkModalOpen, setIndivLinkModalOpen] = useState(false);
   const [indivLinkRecordId, setIndivLinkRecordId] = useState(null);
   const [indivLinkToken, setIndivLinkToken] = useState(null);
@@ -230,7 +231,7 @@ function AttendancePageInner() {
     setIndivFormEditing(row || null);
     setIndivFormDate((row?.date || "").slice(0, 10));
     setIndivFormServiceType(row?.serviceType || "");
-    setIndivPage("form");
+    setIndivFormModalOpen(true);
   };
 
   const submitIndivForm = async (e) => {
@@ -256,17 +257,16 @@ function AttendancePageInner() {
         if (!attendanceId) return;
         await updateServiceIndividualAttendance(attendanceId, payload);
         setIndivFormEditing(null);
-        setIndivPage("list");
+        setIndivFormModalOpen(false);
         await loadIndivRecords(1);
       } else {
         const res = await createServiceIndividualAttendance(payload);
         const newRecord = res?.data?.attendance;
         setIndivFormEditing(null);
+        setIndivFormModalOpen(false);
         await loadIndivRecords(1);
         if (newRecord?._id) {
           await openIndivView(newRecord);
-        } else {
-          setIndivPage("list");
         }
       }
     } catch (e2) {
@@ -560,64 +560,7 @@ function AttendancePageInner() {
               </div>
             </div>
 
-          ) : indivPage === "form" ? (
-            <div className="mt-6">
-              <div className="mb-5 flex items-center gap-3">
-                <button type="button" onClick={() => setIndivPage("list")} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  Back
-                </button>
-                <h3 className="font-semibold text-gray-900">{indivFormMode === "edit" ? "Edit Attendance" : "Start Attendance"}</h3>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-white">
-                <form onSubmit={submitIndivForm} className="p-6 md:p-8">
-                  {indivFormError ? (
-                    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{indivFormError}</div>
-                  ) : null}
-                  {indivFormMode === "create" ? (
-                    <p className="mb-5 text-gray-500 text-sm">Start a new attendance session. You can mark members and share a check-in link from the session details.</p>
-                  ) : null}
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block font-semibold text-gray-500 text-xs">Date</label>
-                      <input
-                        value={indivFormDate}
-                        onChange={(e) => setIndivFormDate(e.target.value)}
-                        type="date"
-                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
-                        {(canCreateAttendance || canUpdateAttendance) ? (
-                          <AddLookupValueButton label="+ Add" kind="serviceType" onCreated={async (value) => { await reloadServiceTypes(); setIndivFormServiceType(value); }} />
-                        ) : null}
-                      </div>
-                      <select
-                        value={indivFormServiceType}
-                        onChange={(e) => setIndivFormServiceType(e.target.value)}
-                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                      >
-                        <option value="">Select service type</option>
-                        {serviceTypeOptions.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
-                    <button type="button" onClick={() => setIndivPage("list")} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Cancel</button>
-                    <button type="submit" disabled={indivFormSaving} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm">
-                      {indivFormSaving ? (indivFormMode === "edit" ? "Updating..." : "Starting...") : (indivFormMode === "edit" ? "Update" : "Start Session")}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )
-
-          : indivPage === "view" ? (() => {
+          ) : indivPage === "view" ? (() => {
             const VIEW_PAGE_SIZE = 15;
             const allPresent = Array.isArray(indivViewing?.presentMembers) ? indivViewing.presentMembers : [];
             const presentTotalPages = Math.max(1, Math.ceil(allPresent.length / VIEW_PAGE_SIZE));
@@ -858,26 +801,48 @@ function AttendancePageInner() {
                     <div className="px-4 py-4 text-gray-600 text-sm">No members found.</div>
                   ) : (
                     <>
-                      <div className="divide-y divide-gray-200">
-                        {markPaged.map((m) => {
-                          const isPresent = indivMarkingSelected.includes(String(m.id));
-                          return (
-                            <label key={m.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm">
-                              <input
-                                type="checkbox"
-                                checked={isPresent}
-                                onChange={() => {
-                                  const mid = String(m.id);
-                                  setIndivMarkingSelected((prev) => {
-                                    if (prev.includes(mid)) return prev.filter((x) => x !== mid);
-                                    return [...prev, mid];
-                                  });
-                                }}
-                              />
-                              <span className="text-gray-900">{m.name}</span>
-                            </label>
-                          );
-                        })}
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                          <thead className="bg-slate-100">
+                            <tr className="text-left font-semibold text-gray-500 text-xs">
+                              <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
+                              <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
+                              <th className="px-4 py-2.5 whitespace-nowrap">Street Address</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {markPaged.map((m) => {
+                              const isPresent = indivMarkingSelected.includes(String(m.id));
+                              return (
+                                <tr
+                                  key={m.id}
+                                  className="cursor-pointer hover:bg-gray-50 text-sm"
+                                  onClick={() => {
+                                    const mid = String(m.id);
+                                    setIndivMarkingSelected((prev) => {
+                                      if (prev.includes(mid)) return prev.filter((x) => x !== mid);
+                                      return [...prev, mid];
+                                    });
+                                  }}
+                                >
+                                  <td className="sticky left-0 z-10 bg-white px-4 py-2.5 whitespace-nowrap">
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={isPresent}
+                                        onChange={() => {}}
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                      <span className={isPresent ? "text-green-700 font-semibold" : "text-gray-900"}>{truncateName(m.name)}</span>
+                                    </label>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
+                                  <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.streetAddress || "-"}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                       <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2.5">
                         <button type="button" onClick={() => setIndivMarkingPage((p) => Math.max(1, p - 1))} disabled={indivMarkingPage <= 1} className="rounded border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-40">Prev</button>
@@ -890,6 +855,57 @@ function AttendancePageInner() {
               </div>
             );
           })() : null}
+
+          {/* Start / Edit Attendance modal */}
+          <SimpleModal
+            open={indivFormModalOpen}
+            title={indivFormMode === "edit" ? "Edit Attendance" : "Start Attendance"}
+            onClose={() => { if (!indivFormSaving) { setIndivFormModalOpen(false); setIndivFormError(""); } }}
+          >
+            <form onSubmit={submitIndivForm}>
+              {indivFormError ? (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{indivFormError}</div>
+              ) : null}
+              {indivFormMode === "create" ? (
+                <p className="mb-5 text-gray-500 text-sm">Start a new attendance session. You can mark members and share a check-in link from the session details.</p>
+              ) : null}
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                  <input
+                    value={indivFormDate}
+                    onChange={(e) => setIndivFormDate(e.target.value)}
+                    type="date"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
+                    {(canCreateAttendance || canUpdateAttendance) ? (
+                      <AddLookupValueButton label="+ Add" kind="serviceType" onCreated={async (value) => { await reloadServiceTypes(); setIndivFormServiceType(value); }} />
+                    ) : null}
+                  </div>
+                  <select
+                    value={indivFormServiceType}
+                    onChange={(e) => setIndivFormServiceType(e.target.value)}
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  >
+                    <option value="">Select service type</option>
+                    {serviceTypeOptions.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
+                <button type="button" onClick={() => { setIndivFormModalOpen(false); setIndivFormError(""); }} disabled={indivFormSaving} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Cancel</button>
+                <button type="submit" disabled={indivFormSaving} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm">
+                  {indivFormSaving ? (indivFormMode === "edit" ? "Updating..." : "Starting...") : (indivFormMode === "edit" ? "Update" : "Start Session")}
+                </button>
+              </div>
+            </form>
+          </SimpleModal>
 
           {/* Generate Link modal */}
           {indivLinkModalOpen ? (

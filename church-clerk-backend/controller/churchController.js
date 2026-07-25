@@ -24,6 +24,7 @@ const createMyChurch = async (req, res) => {
       name,
       type,
       parentChurchId,
+      branchIds,
       phoneNumber,
       pastor,
       email,
@@ -50,11 +51,7 @@ const createMyChurch = async (req, res) => {
     }
 
     let parentChurch = null;
-    if (type === "Branch") {
-      if (!parentChurchId) {
-        return res.status(400).json({ message: "Branch must belong to HQ" });
-      }
-
+    if (type === "Branch" && parentChurchId) {
       const hq = await Church.findById(parentChurchId);
       if (!hq || hq.type !== "Headquarters") {
         return res.status(400).json({ message: "Invalid HQ selected" });
@@ -97,6 +94,13 @@ const createMyChurch = async (req, res) => {
       return res.status(400).json({ message: e.message });
     }
 
+    if (type === "Headquarters" && Array.isArray(branchIds) && branchIds.length) {
+      await Church.updateMany(
+        { _id: { $in: branchIds }, type: "Branch" },
+        { $set: { parentChurch: church._id } }
+      );
+    }
+
     const updatedUser = await assignUserRole({ userId: req.user._id, churchId: church._id, currentRole: req.user.role });
 
     try {
@@ -123,6 +127,32 @@ const createMyChurch = async (req, res) => {
         church: updatedUser.church
       }
     });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const searchBranchChurches = async (req, res) => {
+  try {
+    const { search = "", excludeId } = req.query;
+    if (!String(search || "").trim()) return res.status(200).json([]);
+
+    const filter = {
+      type: "Branch",
+      parentChurch: null,
+      name: { $regex: search, $options: "i" }
+    };
+
+    if (excludeId) filter._id = { $ne: excludeId };
+
+    const churches = await Church.find(filter)
+      .select("_id name city region parentChurch")
+      .limit(10)
+      .lean();
+
+    if (!churches.length) return res.status(200).json({ message: "No branch matched your search" });
+
+    return res.status(200).json(churches);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -301,6 +331,9 @@ const updateMyChurchProfile = async (req, res) => {
       updateData.parentChurch = null;
     }
 
+    const branchIds = updateData.branchIds;
+    delete updateData.branchIds;
+
     // Update church
     const updatedChurch = await Church.findOneAndUpdate(
       query,
@@ -310,6 +343,18 @@ const updateMyChurchProfile = async (req, res) => {
         runValidators: true
       }
     ).lean();
+
+    if (
+      updatedChurch &&
+      updateData.type === "Headquarters" &&
+      Array.isArray(branchIds) &&
+      branchIds.length
+    ) {
+      await Church.updateMany(
+        { _id: { $in: branchIds }, type: "Branch" },
+        { $set: { parentChurch: updatedChurch._id } }
+      );
+    }
 
     if (!updatedChurch) {
       return res.status(404).json({
@@ -550,6 +595,7 @@ const getMyRegistrationToken = async (req, res) => {
 export {
   createMyChurch,
   searchHeadquartersChurches,
+  searchBranchChurches,
   getMyChurchProfile,
   updateMyChurchProfile,
   getMyBranches,
