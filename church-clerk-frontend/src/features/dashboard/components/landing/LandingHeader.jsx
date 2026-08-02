@@ -1,88 +1,79 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+
+const NAV = [
+  { label: "Features", href: "#features" },
+  { label: "How it Works", href: "#how" },
+  { label: "Pricing", href: "#pricing" }
+];
+
+function scrollTo(href) {
+  const id = href.replace("#", "");
+  const el = document.getElementById(id);
+  if (!el) return;
+  const offset = 72;
+  const top = el.getBoundingClientRect().top + window.scrollY - offset;
+  window.scrollTo({ top, behavior: "smooth" });
+}
 
 function LandingHeader() {
   const [open, setOpen] = useState(false);
 
-  const navItems = useMemo(() => {
-    return [
-      { label: "Features", href: "#features" },
-      { label: "How it Works", href: "#how" },
-      { label: "Pricing", href: "#pricing" },
-      { label: "FAQ", href: "#faq" }
-    ];
-  }, []);
-
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-200">
-      <div className="mx-auto w-full max-w-6xl px-4 py-4 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="h-11 w-11 rounded-xl bg-blue-900 text-white flex items-center justify-center font-semibold md:h-12 md:w-12">C</div>
-          <div className="leading-tight">
-            <div className="font-semibold text-gray-900 tracking-tight text-sm">ChurchClerk</div>
-            <div className="text-[11px] text-gray-500">Church management</div>
+    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/95 backdrop-blur-md">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3.5 md:px-6">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M12 3L4 8v12a1 1 0 001 1h14a1 1 0 001-1V8L12 3Z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" />
+              <path d="M9 21V12h6v9" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
+          <span className="text-[15px] font-bold tracking-tight text-slate-900">ChurchClerk</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-4 md:gap-6">
-          {navItems.map((item) => (
-            <a key={item.href} href={item.href} className="font-medium text-gray-700 hover:text-blue-900 text-sm">
+        <nav className="hidden items-center gap-1 md:flex">
+          {NAV.map((item) => (
+            <a key={item.href} href={item.href} onClick={e => { e.preventDefault(); scrollTo(item.href); }} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">
               {item.label}
             </a>
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
-          <Link to="/login" className="font-medium text-gray-700 hover:text-blue-900 text-sm">
-            Login
-          </Link>
-          <Link
-            to="/register"
-            className="font-semibold text-white bg-blue-900 hover:bg-blue-800 px-4 py-2 rounded-lg shadow-sm text-sm"
-          >
-            Get Started
-          </Link>
+        <div className="hidden items-center gap-2 md:flex">
+          <Link to="/login" className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Log in</Link>
+          <Link to="/register" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">Start Free Trial</Link>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
-          aria-label="Toggle menu"
-        >
+        <button type="button" onClick={() => setOpen(v => !v)} className="md:hidden rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Menu">
           <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d={open ? "M6 6l12 12M18 6L6 18" : "M4 7h16M4 12h16M4 17h16"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         </button>
       </div>
 
-      {open ? (
-        <div className="md:hidden border-t border-gray-200 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-4 py-4 space-y-3">
-            <div className="grid gap-2">
-              {navItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-2 font-medium text-gray-700 hover:bg-gray-50 text-sm"
-                >
-                  {item.label}
-                </a>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="absolute left-0 right-0 top-full z-50 border-t border-slate-100 bg-white shadow-2xl md:hidden"
+          >
+            <div className="mx-auto max-w-7xl space-y-1 px-4 py-3">
+              {NAV.map(item => (
+                <a key={item.href} href={item.href} onClick={e => { e.preventDefault(); scrollTo(item.href); setOpen(false); }} className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">{item.label}</a>
               ))}
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <Link to="/login" onClick={() => setOpen(false)} className="rounded-lg border border-slate-200 py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50">Log in</Link>
+                <Link to="/register" onClick={() => setOpen(false)} className="rounded-lg bg-blue-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-700">Get Started</Link>
+              </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Link to="/login" className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 text-center hover:bg-gray-50 text-sm">
-                Login
-              </Link>
-              <Link to="/register" className="rounded-lg bg-blue-900 px-4 py-2 font-semibold text-white text-center hover:bg-blue-800 text-sm">
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </div>
-      ) : null}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

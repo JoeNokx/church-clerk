@@ -77,83 +77,90 @@ function Register() {
       title="Create an account"
       subtitle="Start by creating your admin account"
       footer={
-        <div className="text-gray-600 text-sm">
-          Already have an account?{" "}
-          <a href="/login" className="font-semibold text-blue-900 hover:underline">
-            Sign in
-          </a>
+        <div className="space-y-3">
+          <div className="text-slate-500 text-sm">
+            Already have an account?{" "}
+            <a href="/login" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+              Sign in
+            </a>
+          </div>
+          <div className="text-slate-400 text-sm">
+            <a href="/" className="hover:text-blue-600 hover:underline">
+              ← Back to home
+            </a>
+          </div>
         </div>
       }
     >
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
 
-      <form onSubmit={handleRegister} className="space-y-4">
+      <form onSubmit={handleRegister} className="space-y-5">
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Full Name</label>
           <input
             type="text"
             placeholder="John Doe"
             value={fullName}
             onChange={(e) => { setFullName(e.target.value); setFieldErrors((p) => ({ ...p, fullName: undefined })); }}
-            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
               fieldErrors.fullName
-                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
-                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+                ? "border-red-400 focus:ring-red-300 focus:border-red-400"
+                : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
             }`}
           />
           {fieldErrors.fullName && <p className="mt-1 text-xs text-red-600">{fieldErrors.fullName}</p>}
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
-            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
               fieldErrors.email
-                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
-                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+                ? "border-red-400 focus:ring-red-300 focus:border-red-400"
+                : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
             }`}
           />
           {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Phone Number</label>
           <PhoneNumberInput
             value={phoneNumber}
             onChange={(v) => { setPhoneNumber(v); setFieldErrors((p) => ({ ...p, phoneNumber: undefined })); }}
             error={Boolean(fieldErrors.phoneNumber)}
-            inputClassName={`w-full border rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 ${
+            inputClassName={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
               fieldErrors.phoneNumber
-                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
-                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+                ? "border-red-400 focus:ring-red-300 focus:border-red-400"
+                : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
             }`}
           />
           {fieldErrors.phoneNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.phoneNumber}</p>}
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Password</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Create a password (min. 8 characters)"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
-              className={`w-full border rounded-lg px-3 pr-10 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              className={`w-full rounded-xl border px-4 pr-11 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
                 fieldErrors.password
-                  ? "border-red-500 focus:ring-red-400 focus:border-red-500"
-                  : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+                  ? "border-red-400 focus:ring-red-300 focus:border-red-400"
+                  : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
               }`}
             />
             <button
               type="button"
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               tabIndex={-1}
             >
               {showPassword ? (
@@ -176,9 +183,9 @@ function Register() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
+          className="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
         >
-          {loading ? "Creating account..." : "Create account"}
+          {loading ? "Creating account..." : "Create Account"}
         </button>
       </form>
     </AuthCard>

@@ -1089,7 +1089,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-      <div className="min-h-14 px-4 md:px-8 flex items-center justify-between gap-4 md:h-16 pb-2 md:pb-0">
+      <div className="relative min-h-14 px-4 md:px-8 flex items-center justify-between gap-4 md:h-16 pb-2 md:pb-0">
 
 
 
@@ -1135,11 +1135,11 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-        <div className="hidden md:flex items-center justify-center flex-1">
+        <div className="hidden md:flex items-center absolute inset-x-0 justify-center pointer-events-none">
 
 
 
-          <div className="relative" ref={menuRef}>
+          <div className="relative pointer-events-auto" ref={menuRef}>
 
 
 

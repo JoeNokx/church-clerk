@@ -1,4 +1,6 @@
 import { useContext } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getApprovals } from "../../governance/services/governance.api.js";
 
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -164,6 +166,18 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
+  const canSeeApprovals = user?.role === "superadmin" || user?.role === "churchadmin";
+
+  const { data: pendingApprovalsCount = 0 } = useQuery({
+    queryKey: ["church-governance", "PENDING_APPROVAL", "sidebar-count"],
+    queryFn: () => getApprovals({ status: "PENDING_APPROVAL", limit: 1 }).then(r => r.data?.pagination?.total || 0),
+    enabled: canSeeApprovals,
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+
+  const pendingApprovalCount = typeof pendingApprovalsCount === "number" ? pendingApprovalsCount : 0;
+
   const location = useLocation();
 
   const isBillingPath = location.pathname === "/dashboard/billing";
@@ -295,9 +309,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                   <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
 
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                      <path d="M4 7h16M7 7v14m10-14v14M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
+                      <path d="M9 3h6v4H9zM2 17h6v4H2zM16 17h6v4h-6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                      <path d="M12 7v4M12 11H5v6M12 11h7v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                     </svg>
 
                   </span>
@@ -504,9 +517,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
-                        <path d="M7 4h10v16H7V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                        <path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M3 20h18M3 4v16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M6 16h8M6 12h12M6 8h5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
 
                       </svg>
 
@@ -564,9 +576,11 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
-                          <path d="M4 8h16v12H4V8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                          <path d="M8 8V6a4 4 0 018 0v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          <path d="M20 12v9H4v-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M22 7H2v5h20V7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                          <path d="M12 22V7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                          <path d="M12 7H7.5a2.5 2.5 0 010-5C10 2 12 7 12 7z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M12 7h4.5a2.5 2.5 0 000-5C14 2 12 7 12 7z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
 
                         </svg>
 
@@ -616,9 +630,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
-                        <path d="M7 3h10v18H7V3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                        <path d="M9 7h6M9 11h6M9 15h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 010 3h-3a1.5 1.5 0 000 3H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
 
                       </svg>
 
@@ -668,9 +681,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
-                        <path d="M6 6h12M6 10h12M6 14h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
-                        <path d="M4 4h16v16H4V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                        <path d="M8 8h8M8 12h8M8 16h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
 
                       </svg>
 
@@ -694,9 +706,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
-                        <path d="M7 3h10v18H7V3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                        <path d="M9 8h6M9 12h6M9 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M2 3h8a2 2 0 012 2v14a2 2 0 00-2-2H2V3z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                        <path d="M22 3h-8a2 2 0 00-2 2v14a2 2 0 012-2h8V3z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
 
                       </svg>
 
@@ -784,9 +795,10 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
-                        <path d="M7 7h10v10H7V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                        <path d="M4 12h3M17 12h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                        <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                        <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
 
                       </svg>
 
@@ -820,6 +832,12 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     Approvals
 
+                    {pendingApprovalCount > 0 ? (
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
+                        {pendingApprovalCount > 99 ? "99+" : pendingApprovalCount}
+                      </span>
+                    ) : null}
+
                   </NavLink>
 
                 ) : null}
@@ -834,9 +852,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
-                        <path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7Z" stroke="currentColor" strokeWidth="1.8" />
-
-                        <path d="M19.4 15a8.1 8.1 0 000-6l-2 1.2a6.2 6.2 0 00-1.5-1.5L17 6.6a8.1 8.1 0 00-6 0l1.2 2a6.2 6.2 0 00-1.5 1.5L8.6 9a8.1 8.1 0 000 6l2-1.2a6.2 6.2 0 001.5 1.5L11 17.4a8.1 8.1 0 006 0l-1.2-2a6.2 6.2 0 001.5-1.5l2.1 1.1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="1.8"/>
 
                       </svg>
 

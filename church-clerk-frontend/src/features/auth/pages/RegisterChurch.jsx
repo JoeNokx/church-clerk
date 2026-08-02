@@ -274,9 +274,21 @@ function RegisterChurch() {
       return;
     }
 
+    if (!String(country || "").trim()) {
+      setLoading(false);
+      setError("Country is required");
+      return;
+    }
+
+    if (!String(region || "").trim()) {
+      setLoading(false);
+      setError("Region is required");
+      return;
+    }
+
     if (!String(city || "").trim()) {
       setLoading(false);
-      setError("Location is required");
+      setError("City is required");
       return;
     }
 
@@ -501,7 +513,7 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Country (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Country <span className="text-red-500">*</span></label>
           <Select
             inputId="church-country"
             isSearchable
@@ -535,7 +547,7 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Region (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Region <span className="text-red-500">*</span></label>
           <Select
             inputId="church-region"
             isSearchable
@@ -569,7 +581,7 @@ function RegisterChurch() {
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Street Address (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Location (optional)</label>
           <input
             type="text"
             placeholder="Street address"

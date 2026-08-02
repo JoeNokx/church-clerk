@@ -664,7 +664,7 @@ function AttendancePageInner() {
                                   <tr className="text-left font-semibold text-gray-500 text-xs">
                                     <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
                                     <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
-                                    <th className="px-4 py-2.5 whitespace-nowrap">Street Address</th>
+                                    <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
@@ -699,7 +699,7 @@ function AttendancePageInner() {
                                   <tr className="text-left font-semibold text-gray-500 text-xs">
                                     <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
                                     <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
-                                    <th className="px-4 py-2.5 whitespace-nowrap">Street Address</th>
+                                    <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
@@ -807,7 +807,7 @@ function AttendancePageInner() {
                             <tr className="text-left font-semibold text-gray-500 text-xs">
                               <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
                               <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
-                              <th className="px-4 py-2.5 whitespace-nowrap">Street Address</th>
+                              <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">

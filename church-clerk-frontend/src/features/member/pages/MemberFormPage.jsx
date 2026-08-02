@@ -644,7 +644,7 @@ function MemberFormPageInner() {
                 </Field>
 
                 <div className="md:col-span-2">
-                  <Field label="Street Address">
+                  <Field label="Location">
                     <input
                       value={streetAddress}
                       onChange={(e) => setStreetAddress(e.target.value)}

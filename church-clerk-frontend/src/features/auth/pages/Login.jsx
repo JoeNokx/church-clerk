@@ -57,15 +57,15 @@ function Login() {
       subtitle="Sign in to access your account"
       footer={
         <div className="space-y-3">
-          <div className="text-gray-600 text-sm">
+          <div className="text-slate-500 text-sm">
             Don&apos;t have an account?{" "}
-            <Link to="/register" className="font-semibold text-blue-900 hover:underline">
+            <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
               Create one
             </Link>
           </div>
-          <div className="text-gray-500 text-sm">
-            <Link to="/" className="hover:text-blue-900 hover:underline">
-              Back to home
+          <div className="text-slate-400 text-sm">
+            <Link to="/" className="hover:text-blue-600 hover:underline">
+              ← Back to home
             </Link>
           </div>
         </div>
@@ -88,35 +88,35 @@ function Login() {
         )
       )}
 
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-5">
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
-            className={`w-full border rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
               fieldErrors.email
-                ? "border-red-500 focus:ring-red-400 focus:border-red-500"
-                : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+                ? "border-red-400 focus:ring-red-300 focus:border-red-400"
+                : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
             }`}
           />
           {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Password</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
-              className={`w-full border rounded-lg px-3 pr-10 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+              className={`w-full rounded-xl border px-4 pr-11 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
                 fieldErrors.password
-                  ? "border-red-500 focus:ring-red-400 focus:border-red-500"
-                  : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+                  ? "border-red-400 focus:ring-red-300 focus:border-red-400"
+                  : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
               }`}
             />
             <button
@@ -144,17 +144,17 @@ function Login() {
         </div>
 
         <div className="flex items-center justify-between">
-          <label className="inline-flex items-center gap-2 text-gray-600 text-sm">
+          <label className="inline-flex items-center gap-2 text-slate-600 text-sm">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
+              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
             Remember me
           </label>
 
-          <Link to="/forgot-password" className="font-medium text-blue-900 hover:underline text-sm">
+          <Link to="/forgot-password" className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -162,7 +162,7 @@ function Login() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
+          className="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
         >
           {loading ? "Signing in..." : "Sign In"}
         </button>

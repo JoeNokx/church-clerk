@@ -277,7 +277,7 @@ function MemberDetailsPageInner() {
 
             <BigCard title="Address Information" subtitle="Address details">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
-                <DataPair label="Street Address" value={member?.streetAddress} />
+                <DataPair label="Location" value={member?.streetAddress} />
                 <DataPair label="City" value={member?.city} />
                 <DataPair label="Region" value={member?.region} />
                 <DataPair label="Country" value={member?.country} />
