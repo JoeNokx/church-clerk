@@ -20,6 +20,7 @@ import ResetPassword from "../features/auth/pages/ResetPassword.jsx";
 import DashboardHome from "../features/dashboard/pages/DashboardHome.jsx";
 import Profile from "../features/dashboard/pages/Profile.jsx";
 import LandingPage from "../features/dashboard/pages/LandingPage.jsx";
+import ComingSoonPage from "../features/dashboard/pages/ComingSoonPage.jsx";
 
 const BillingPage = lazy(() => import("../features/subscription/pages/BillingPage.jsx"));
 const OfferingPage = lazy(() => import("../features/offering/pages/OfferingPage.jsx"));
@@ -47,7 +48,7 @@ function RouteSkeletonFallback() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<ComingSoonPage />} />
 
       <Route element={<AuthLayout />}>
         <Route path="/register" element={<Register />} />
