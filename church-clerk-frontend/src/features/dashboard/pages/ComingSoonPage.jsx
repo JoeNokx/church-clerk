@@ -19,6 +19,9 @@ function ComingSoonPage() {
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
           </Link>
         </div>
+        <Link to="/test-guide" className="text-xs text-slate-400 hover:text-slate-300 transition-colors underline underline-offset-2">
+          Beta tester? View the testing guide →
+        </Link>
       </div>
     </div>
   );
