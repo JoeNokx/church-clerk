@@ -8,7 +8,7 @@ function ComingSoonPage() {
       <LandingHeader />
       <div className="flex flex-1 flex-col items-center justify-center gap-8">
         <p className="text-4xl font-bold text-white tracking-tight md:text-5xl">
-          Coming soon...
+          Home Page Coming soon...
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link to="/login" className="rounded-xl border border-white/20 bg-white/5 px-7 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">

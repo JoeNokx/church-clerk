@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 const AREAS = [
@@ -24,7 +24,7 @@ const AREAS = [
       "From the sidebar, click 'Members'.",
       "Create member and check details.",
     ],
-    note: "Try adding at least 3–5 membersof different gender so later steps feel realistic. Try and later add members to cell, groups or department. Again try out the members link."
+    note: "Try adding at least 3–5 membersof different gender so later steps feel realistic. Try and later add members to cell, groups or department. Again try out the members registration link."
   },
   {
     id: "attendance",
@@ -204,7 +204,7 @@ const AREAS = [
     steps: [
       "In the sidebar, click 'Support and Help'",
       "Simply observe help documentation, an FAQ, or a contact form is .",
-      "tTy submitting a test message.",
+      "Try submitting a test message.",
     ],
     note: "Just confirm help resources are accessible and there is a clear way to reach support.",
   },
@@ -218,16 +218,8 @@ const FEEDBACK = [
 ];
 
 export default function TestGuidePage() {
-  const [done, setDone] = useState({});
-
-  function toggle(id) {
-    setDone(prev => ({ ...prev, [id]: !prev[id] }));
-  }
-
-  const completedCount = Object.values(done).filter(Boolean).length;
-
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3.5">
@@ -255,8 +247,8 @@ export default function TestGuidePage() {
             Thanks for testing ChurchClerk!
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-blue-100">
-            ChurchClerk helps churches manage their members, attendance, and finances in one place.
-            This guide walks you through the key areas — just follow the steps and let us know what you find.
+            ChurchClerk helps churches manage their members, attendance, finances and branches in one place.
+            This guide walks you through the key areas — just follow the steps and let us know what you find. Kindly document your observation.
           </p>
           <p className="mt-4 text-xs text-blue-200">
             ⏱ Takes about <strong className="text-white">15–30 minutes</strong> to go through everything.
@@ -266,40 +258,15 @@ export default function TestGuidePage() {
           </p>
         </div>
 
-        {/* Progress */}
-        {completedCount > 0 && (
-          <div className="mb-6 flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 shrink-0 text-emerald-500">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-            </svg>
-            <p className="text-sm font-medium text-emerald-700">
-              {completedCount} of {AREAS.length} areas completed — great progress!
-            </p>
-          </div>
-        )}
-
         {/* Testing areas */}
         <div className="space-y-5">
           {AREAS.map((area) => (
-            <div key={area.id} className={`rounded-2xl border p-6 ${area.color} ${done[area.id] ? "opacity-60" : ""} transition-opacity`}>
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className={`rounded-lg px-2.5 py-0.5 text-xs font-bold ${area.badge}`}>
-                    {area.number}
-                  </span>
-                  <h2 className="text-base font-semibold text-slate-900">{area.title}</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => toggle(area.id)}
-                  className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    done[area.id]
-                      ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
-                  }`}
-                >
-                  {done[area.id] ? "✓ Done" : "Mark done"}
-                </button>
+            <div key={area.id} className={`rounded-2xl border p-6 ${area.color}`}>
+              <div className="mb-4 flex items-center gap-3">
+                <span className={`rounded-lg px-2.5 py-0.5 text-xs font-bold ${area.badge}`}>
+                  {area.number}
+                </span>
+                <h2 className="text-base font-semibold text-slate-900">{area.title}</h2>
               </div>
 
               <ol className="space-y-2">

@@ -84,6 +84,7 @@ function SubscriptionStatusBanner() {
 
   const isFreeTrial = statusNorm === "free_trial" || statusNorm === "trialing" || statusNorm === "free";
   const isPastDue = statusNorm === "past_due";
+  const isLocked = statusNorm === "locked" || statusNorm === "suspended" || statusNorm === "canceled" || statusNorm === "expired" || statusNorm === "inactive";
 
   const trialDaysRemaining = useMemo(() => (isFreeTrial ? daysLeft(subscription?.trialEnd) : null), [isFreeTrial, subscription?.trialEnd]);
   const graceDaysRemaining = useMemo(() => (isPastDue ? daysLeft(subscription?.gracePeriodEnd) : null), [isPastDue, subscription?.gracePeriodEnd]);
@@ -132,6 +133,24 @@ function SubscriptionStatusBanner() {
           safeRemaining === null
             ? "You are currently on a free trial. Upgrade to keep using more features."
             : `You are on a free trial. ${safeRemaining} day${safeRemaining === 1 ? "" : "s"} left. Upgrade to continue.`,
+        showUpgrade: true
+      };
+    }
+
+    if (isLocked) {
+      return {
+        variant: "danger",
+        title: "Subscription required",
+        message: "Your subscription has ended. You can view your data but all actions are blocked. Renew to restore access.",
+        showUpgrade: true
+      };
+    }
+
+    if (readOnly) {
+      return {
+        variant: "danger",
+        title: "Actions blocked",
+        message: "Your account is in read-only mode. Renew your subscription to restore full access.",
         showUpgrade: true
       };
     }

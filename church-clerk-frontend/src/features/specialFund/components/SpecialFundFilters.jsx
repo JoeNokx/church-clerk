@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import SpecialFundContext from "../specialFund.store.js";
@@ -22,11 +22,14 @@ function SpecialFundFilters() {
 
   const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
 
-  const debouncedSearch = useMemo(() => {
-    return debounce((next) => {
-      store?.fetchSpecialFunds?.({ search: next, page: 1 });
-    }, 400);
-  }, [store]);
+  const fetchRef = useRef(store?.fetchSpecialFunds);
+  useEffect(() => {
+    fetchRef.current = store?.fetchSpecialFunds;
+  });
+
+  const debouncedSearch = useMemo(() => debounce((next) => {
+    fetchRef.current?.({ search: next, page: 1 });
+  }, 400), []);
 
   const appliedDateFrom = store?.filters?.dateFrom || "";
   const appliedDateTo = store?.filters?.dateTo || "";
@@ -36,9 +39,7 @@ function SpecialFundFilters() {
   }, [store?.filters?.search]);
 
   useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
+    return () => { debouncedSearch.cancel(); };
   }, [debouncedSearch]);
 
   const onCategoryChange = async (e) => {
