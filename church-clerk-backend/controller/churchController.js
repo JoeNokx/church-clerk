@@ -565,7 +565,7 @@ const revokeRegistrationToken = async (req, res) => {
     if (!churchId) return res.status(400).json({ message: "Church context not found." });
 
     await Church.findByIdAndUpdate(churchId, {
-      registrationToken: null,
+      $unset: { registrationToken: "" },
       registrationTokenActive: false
     });
 

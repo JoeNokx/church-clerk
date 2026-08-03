@@ -101,7 +101,6 @@ const churchSchema = new mongoose.Schema({
 
   registrationToken: {
     type: String,
-    default: null,
     trim: true,
     unique: true,
     sparse: true
