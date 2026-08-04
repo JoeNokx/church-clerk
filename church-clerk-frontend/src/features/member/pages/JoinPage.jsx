@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getChurchInfoByToken, submitSelfRegistration } from "../services/publicRegistration.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -17,6 +17,16 @@ const MARITAL_STATUS_OPTIONS = [
   { label: "Other", value: "other" }
 ];
 
+const AGE_GROUP_OPTIONS = [
+  { label: "Children", value: "children" },
+  { label: "Youth", value: "youth" },
+  { label: "Adult", value: "adult" },
+  { label: "Elderly", value: "elderly" }
+];
+
+const INPUT_CLS = "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200";
+const SELECT_CLS = "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200";
+
 function Field({ label, required, children }) {
   return (
     <div>
@@ -27,6 +37,10 @@ function Field({ label, required, children }) {
       {children}
     </div>
   );
+}
+
+function SectionTitle({ children }) {
+  return <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">{children}</div>;
 }
 
 export default function JoinPage() {
@@ -44,6 +58,7 @@ export default function JoinPage() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [occupation, setOccupation] = useState("");
   const [nationality, setNationality] = useState("");
+  const [ageGroup, setAgeGroup] = useState("");
   const [maritalStatus, setMaritalStatus] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
@@ -51,6 +66,11 @@ export default function JoinPage() {
   const [country, setCountry] = useState("Ghana");
   const [churchRole, setChurchRole] = useState("");
   const [dateJoined, setDateJoined] = useState("");
+  const [note, setNote] = useState("");
+
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
+  const photoInputRef = useRef(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -61,14 +81,26 @@ export default function JoinPage() {
     setLoadingChurch(true);
     setChurchError("");
     getChurchInfoByToken(token)
-      .then((res) => {
-        setChurch(res?.data?.church || null);
-      })
-      .catch((e) => {
-        setChurchError(e?.response?.data?.message || "This registration link is invalid or has expired.");
-      })
+      .then((res) => { setChurch(res?.data?.church || null); })
+      .catch((e) => { setChurchError(e?.response?.data?.message || "This registration link is invalid or has expired."); })
       .finally(() => setLoadingChurch(false));
   }, [token]);
+
+  useEffect(() => {
+    if (!photoFile) { setPhotoPreviewUrl(""); return; }
+    const url = URL.createObjectURL(photoFile);
+    setPhotoPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photoFile]);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setFormError("Photo must be under 5MB."); return; }
+    setFormError("");
+    setPhotoFile(file);
+    e.target.value = "";
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,25 +113,27 @@ export default function JoinPage() {
 
     setSubmitting(true);
     try {
-      const payload = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phoneNumber,
-        email: email.trim() || undefined,
-        gender: gender || undefined,
-        dateOfBirth: dateOfBirth || undefined,
-        occupation: occupation.trim() || undefined,
-        nationality: nationality.trim() || undefined,
-        maritalStatus: maritalStatus || undefined,
-        streetAddress: streetAddress.trim() || undefined,
-        city: city.trim() || undefined,
-        region: region.trim() || undefined,
-        country: country.trim() || "Ghana",
-        churchRole: churchRole.trim() || undefined,
-        dateJoined: dateJoined || undefined
-      };
+      const fd = new FormData();
+      fd.append("firstName", firstName.trim());
+      fd.append("lastName", lastName.trim());
+      fd.append("phoneNumber", phoneNumber);
+      if (email.trim()) fd.append("email", email.trim());
+      if (gender) fd.append("gender", gender);
+      if (dateOfBirth) fd.append("dateOfBirth", dateOfBirth);
+      if (occupation.trim()) fd.append("occupation", occupation.trim());
+      if (nationality.trim()) fd.append("nationality", nationality.trim());
+      if (ageGroup) fd.append("ageGroup", ageGroup);
+      if (maritalStatus) fd.append("maritalStatus", maritalStatus);
+      if (streetAddress.trim()) fd.append("streetAddress", streetAddress.trim());
+      if (city.trim()) fd.append("city", city.trim());
+      if (region.trim()) fd.append("region", region.trim());
+      fd.append("country", country.trim() || "Ghana");
+      if (churchRole.trim()) fd.append("churchRole", churchRole.trim());
+      if (dateJoined) fd.append("dateJoined", dateJoined);
+      if (note.trim()) fd.append("note", note.trim());
+      if (photoFile) fd.append("photo", photoFile);
 
-      const res = await submitSelfRegistration(token, payload);
+      const res = await submitSelfRegistration(token, fd);
       setSuccess({
         message: res?.data?.message || "Registration successful!",
         memberId: res?.data?.memberId || null
@@ -176,10 +210,10 @@ export default function JoinPage() {
 
   return (
     <BgShell>
-      <div className="rounded-2xl bg-white px-8 py-10 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.55)] md:px-10 md:py-12">
+      <div className="rounded-2xl bg-white px-6 py-8 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.55)] md:px-8 md:py-10">
 
         {/* Church header */}
-        <div className="mb-7 text-center">
+        <div className="mb-6 text-center">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 mb-3">
             <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -196,20 +230,43 @@ export default function JoinPage() {
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{formError}</div>
           )}
 
+          {/* Photo */}
+          <div className="flex flex-col items-center gap-3">
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="group relative h-20 w-20 rounded-full border-2 border-dashed border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 transition-colors overflow-hidden flex items-center justify-center"
+            >
+              {photoPreviewUrl ? (
+                <img src={photoPreviewUrl} alt="Preview" className="h-full w-full object-cover rounded-full" />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-10 w-10 text-gray-300 group-hover:text-blue-300 transition-colors">
+                  <path d="M12 12c2.67 0 4.8-2.13 4.8-4.8S14.67 2.4 12 2.4 7.2 4.53 7.2 7.2 9.33 12 12 12zm0 2.4c-3.2 0-9.6 1.61-9.6 4.8v2.4h19.2v-2.4c0-3.19-6.4-4.8-9.6-4.8z" />
+                </svg>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </button>
+            <p className="text-xs text-gray-400">Click to upload photo (optional)</p>
+            <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+          </div>
+
+          <div className="border-t border-gray-100" />
+
           {/* Personal Information */}
           <div>
-            <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">Personal Information</div>
+            <SectionTitle>Personal Information</SectionTitle>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="First Name" required>
-                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g. John" />
+                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={INPUT_CLS} placeholder="e.g. John" />
                 </Field>
                 <Field label="Last Name" required>
-                  <input value={lastName} onChange={(e) => setLastName(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g. Doe" />
+                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={INPUT_CLS} placeholder="e.g. Doe" />
                 </Field>
               </div>
               <Field label="Phone Number" required>
@@ -217,42 +274,41 @@ export default function JoinPage() {
                   error={Boolean(formError && !isValidPhoneNumber(phoneNumber || ""))} />
               </Field>
               <Field label="Email">
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="e.g. john@example.com" />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={INPUT_CLS} placeholder="e.g. john@example.com" />
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Gender">
-                  <select value={gender} onChange={(e) => setGender(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                  <select value={gender} onChange={(e) => setGender(e.target.value)} className={SELECT_CLS}>
                     <option value="">Select</option>
                     {GENDER_OPTIONS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
                   </select>
                 </Field>
                 <Field label="Date of Birth">
-                  <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                  <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className={INPUT_CLS} />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Occupation">
-                  <input value={occupation} onChange={(e) => setOccupation(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g. Teacher" />
+                  <input value={occupation} onChange={(e) => setOccupation(e.target.value)} className={INPUT_CLS} placeholder="e.g. Teacher" />
                 </Field>
                 <Field label="Nationality">
-                  <input value={nationality} onChange={(e) => setNationality(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g. Ghanaian" />
+                  <input value={nationality} onChange={(e) => setNationality(e.target.value)} className={INPUT_CLS} placeholder="e.g. Ghanaian" />
                 </Field>
               </div>
-              <Field label="Marital Status">
-                <select value={maritalStatus} onChange={(e) => setMaritalStatus(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                  <option value="">Select status</option>
-                  {MARITAL_STATUS_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                </select>
-              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Marital Status">
+                  <select value={maritalStatus} onChange={(e) => setMaritalStatus(e.target.value)} className={SELECT_CLS}>
+                    <option value="">Select status</option>
+                    {MARITAL_STATUS_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
+                </Field>
+                <Field label="Age Group">
+                  <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} className={SELECT_CLS}>
+                    <option value="">Select age group</option>
+                    {AGE_GROUP_OPTIONS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+                  </select>
+                </Field>
+              </div>
             </div>
           </div>
 
@@ -260,30 +316,22 @@ export default function JoinPage() {
 
           {/* Address */}
           <div>
-            <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">Address</div>
+            <SectionTitle>Address</SectionTitle>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Country">
-                  <input value={country} onChange={(e) => setCountry(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g. Ghana" />
+                  <input value={country} onChange={(e) => setCountry(e.target.value)} className={INPUT_CLS} placeholder="e.g. Ghana" />
                 </Field>
                 <Field label="Region">
-                  <input value={region} onChange={(e) => setRegion(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g. Greater Accra" />
+                  <input value={region} onChange={(e) => setRegion(e.target.value)} className={INPUT_CLS} placeholder="e.g. Greater Accra" />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="City">
-                  <input value={city} onChange={(e) => setCity(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g. Accra" />
+                  <input value={city} onChange={(e) => setCity(e.target.value)} className={INPUT_CLS} placeholder="e.g. Accra" />
                 </Field>
-                <Field label="Location">
-                  <input value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="e.g. 12 Main St" />
+                <Field label="Location / Residential Address">
+                  <input value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} className={INPUT_CLS} placeholder="e.g. 12 Main St" />
                 </Field>
               </div>
             </div>
@@ -291,18 +339,22 @@ export default function JoinPage() {
 
           <div className="border-t border-gray-100" />
 
-          {/* Church Info */}
+          {/* Church Information */}
           <div>
-            <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">Church Information</div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Church Role">
-                <input value={churchRole} onChange={(e) => setChurchRole(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="e.g. Deacon" />
-              </Field>
-              <Field label="Date Joined">
-                <input type="date" value={dateJoined} onChange={(e) => setDateJoined(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
+            <SectionTitle>Church Information</SectionTitle>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Church Role">
+                  <input value={churchRole} onChange={(e) => setChurchRole(e.target.value)} className={INPUT_CLS} placeholder="e.g. Deacon" />
+                </Field>
+                <Field label="Date Joined">
+                  <input type="date" value={dateJoined} onChange={(e) => setDateJoined(e.target.value)} className={INPUT_CLS} />
+                </Field>
+              </div>
+              <Field label="Note">
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  placeholder="Any additional information..." />
               </Field>
             </div>
           </div>

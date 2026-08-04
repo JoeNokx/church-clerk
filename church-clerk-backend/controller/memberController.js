@@ -1,5 +1,6 @@
 import Member from "../models/memberModel.js"
 import Church from "../models/churchModel.js"
+import cloudinary from "../config/cloudinary.js"
 import Visitor from "../models/visitorsModel.js"
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
@@ -183,7 +184,7 @@ const importMembersCsv = async (req, res) => {
 
 const createMember = async (req, res) => {
   try {
-    const { firstName, lastName, email, visitorId, phoneNumber, gender, occupation, nationality, status, note, dateOfBirth, churchRole, dateJoined, streetAddress, city, region, country, maritalStatus, department, group: groupIds, cell } = req.body;
+    const { firstName, lastName, email, visitorId, phoneNumber, gender, occupation, nationality, ageGroup, status, note, dateOfBirth, churchRole, dateJoined, streetAddress, city, region, country, maritalStatus, department, group: groupIds, cell } = req.body;
 
     if (!firstName || !lastName || !phoneNumber) {
       return res.status(400).json({ message: "first name, last name and phone number are required" })
@@ -230,6 +231,7 @@ const createMember = async (req, res) => {
         gender,
         occupation,
         nationality,
+        ageGroup,
         status,
         note,
         dateOfBirth,
@@ -503,26 +505,23 @@ const getAllMembersKPI = async (req, res) => {
 
     const [
       totalMembers,
-      currentMembers,
+      activeMembers,
       inactiveMembers,
-      newMembersThisMonth
+      formerMembers
     ] = await Promise.all([
       Member.countDocuments(query),
       Member.countDocuments({ ...query, status: "active" }),
-      Member.countDocuments({ ...query, status: "inactive" }),
-      Member.countDocuments({
-        ...query,
-        createdAt: { $gte: startOfMonth }
-      })
+      Member.countDocuments({ ...query, status: { $in: ["dormant", "temporarily_away"] } }),
+      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church"] } })
     ]);
 
     return res.status(200).json({
       message: "Member KPI fetched successfully",
       memberKPI: {
         totalMembers,
-        currentMembers,
+        activeMembers,
         inactiveMembers,
-        newMembersThisMonth
+        formerMembers
       }
     });
   } catch (error) {
@@ -530,6 +529,50 @@ const getAllMembersKPI = async (req, res) => {
       message: "Member KPI could not be fetched",
       error: error.message
     });
+  }
+};
+
+const uploadMemberPhoto = async (req, res) => {
+  try {
+    const memberId = req.params.id;
+    const query = { _id: memberId, church: req.activeChurch._id };
+
+    const file = req.file;
+    if (!file?.buffer) {
+      return res.status(400).json({ message: "Photo file is required" });
+    }
+
+    const mt = String(file.mimetype || "").toLowerCase();
+    if (!mt.startsWith("image/")) {
+      return res.status(400).json({ message: "Only image files are allowed" });
+    }
+
+    const folder = `church-clerk/members/${req.activeChurch._id}`;
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder, resource_type: "image", use_filename: true, unique_filename: true },
+        (err, result) => { if (err) reject(err); else resolve(result); }
+      );
+      stream.end(file.buffer);
+    });
+
+    if (!uploadResult?.secure_url) {
+      return res.status(502).json({ message: "Failed to upload photo" });
+    }
+
+    const member = await Member.findOneAndUpdate(
+      query,
+      { photoUrl: uploadResult.secure_url },
+      { new: true }
+    );
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    return res.status(200).json({ message: "Photo uploaded successfully", photoUrl: uploadResult.secure_url, member });
+  } catch (error) {
+    return res.status(400).json({ message: "Failed to upload photo", error: error.message });
   }
 };
 
@@ -580,5 +623,6 @@ export {
   downloadMembersImportTemplate,
   previewMembersImport,
   importMembersCsv,
-  canCreateMember
+  canCreateMember,
+  uploadMemberPhoto
 }

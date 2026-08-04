@@ -6,9 +6,18 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
-  { label: "Inactive", value: "inactive" },
-  { label: "Visitor", value: "visitor" },
-  { label: "Former", value: "former" }
+  { label: "Dormant", value: "dormant" },
+  { label: "Transferred", value: "transferred" },
+  { label: "Left Church", value: "left_church" },
+  { label: "Deceased", value: "deceased" },
+  { label: "Temporarily Away", value: "temporarily_away" },
+];
+
+const AGE_GROUP_OPTIONS = [
+  { label: "Children", value: "children" },
+  { label: "Youth", value: "youth" },
+  { label: "Adult", value: "adult" },
+  { label: "Elderly", value: "elderly" },
 ];
 
 function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
@@ -24,6 +33,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
   const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
   const [status, setStatus] = useState("active");
+  const [ageGroup, setAgeGroup] = useState("");
   const [note, setNote] = useState("");
   const [visitorId, setVisitorId] = useState(null);
   const [formError, setFormError] = useState(null);
@@ -40,6 +50,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
       setEmail(initialData.email || "");
       setCity(initialData.city || "");
       setStatus(initialData.status || "active");
+      setAgeGroup(initialData.ageGroup || "");
       setNote(initialData.note || "");
       setVisitorId(initialData.visitorId || null);
       return;
@@ -51,6 +62,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
     setEmail(initialData?.email || "");
     setCity(initialData?.city || "");
     setStatus(initialData?.status || "active");
+    setAgeGroup(initialData?.ageGroup || "");
     setNote(initialData?.note || "");
     setVisitorId(initialData?.visitorId || null);
   }, [open, mode, initialData]);
@@ -76,6 +88,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
       email,
       city,
       status,
+      ageGroup: ageGroup || undefined,
       note,
       visitorId: visitorId || null
     };
@@ -159,7 +172,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">City</label>
+              <label className="block font-semibold text-gray-500 text-xs">Location / Residential Address</label>
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
@@ -169,7 +182,23 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Status</label>
+              <label className="block font-semibold text-gray-500 text-xs">Age Group</label>
+              <select
+                value={ageGroup}
+                onChange={(e) => setAgeGroup(e.target.value)}
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+              >
+                <option value="">Select age group</option>
+                {AGE_GROUP_OPTIONS.map((a) => (
+                  <option key={a.value} value={a.value}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-500 text-xs">Membership Status</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}

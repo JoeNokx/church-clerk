@@ -1,9 +1,98 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext from "../member.store.js";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
+import { updateMember as apiUpdateMember } from "../services/member.api.js";
+
+const STATUS_OPTIONS = [
+  { label: "Active", value: "active" },
+  { label: "Dormant", value: "dormant" },
+  { label: "Transferred", value: "transferred" },
+  { label: "Left Church", value: "left_church" },
+  { label: "Deceased", value: "deceased" },
+  { label: "Temporarily Away", value: "temporarily_away" },
+];
+
+const CHIP_STYLES = {
+  active: "border-green-200 bg-green-50 text-green-700",
+  dormant: "border-gray-200 bg-gray-100 text-gray-600",
+  transferred: "border-blue-200 bg-blue-50 text-blue-700",
+  left_church: "border-orange-200 bg-orange-50 text-orange-700",
+  deceased: "border-red-200 bg-red-50 text-red-700",
+  temporarily_away: "border-yellow-200 bg-yellow-50 text-yellow-700",
+  inactive: "border-gray-200 bg-gray-50 text-gray-700",
+  visitor: "border-yellow-200 bg-yellow-50 text-yellow-700",
+  former: "border-red-200 bg-red-50 text-red-700",
+};
+
+const CHIP_LABELS = {
+  left_church: "Left Church",
+  temporarily_away: "Temporarily Away",
+};
+
+function InlineStatusPicker({ row, onUpdate, updating }) {
+  const [open, setOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const v = String(row?.status || "").toLowerCase().replace(/\s+/g, "_");
+  const chipStyles = CHIP_STYLES[v] || "border-gray-200 bg-gray-50 text-gray-700";
+  const label = CHIP_LABELS[v] || row?.status || "-";
+  const isUpdating = updating === row?._id;
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setOpen((o) => !o);
+  };
+
+  return (
+    <div className="inline-block">
+      <button
+        ref={btnRef}
+        type="button"
+        disabled={isUpdating}
+        onClick={handleOpen}
+        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-semibold text-xs cursor-pointer disabled:opacity-60 ${chipStyles}`}
+      >
+        {isUpdating ? (
+          <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" /></svg>
+        ) : null}
+        {label}
+        <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && typeof document !== "undefined" && createPortal(
+        <>
+          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
+          <div
+            className="z-[9999] w-44 rounded-lg border border-gray-200 bg-white shadow-xl py-1"
+            style={{ position: "fixed", top: menuPos.top, left: menuPos.left }}
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                onClick={() => { setOpen(false); onUpdate(row._id, s.value); }}
+                className={`block w-full px-4 py-2 text-left text-xs font-medium hover:bg-gray-50 ${
+                  s.value === v ? "text-blue-600 bg-blue-50" : "text-gray-700"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}
 
 function truncateName(name) {
   if (!name || name === "-") return name;
@@ -28,6 +117,7 @@ function MemberTable({ onEdit, onDeleted }) {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
+  const [statusUpdating, setStatusUpdating] = useState(null);
 
   const canView = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("members", "update") : false), [can]);
@@ -43,6 +133,15 @@ function MemberTable({ onEdit, onDeleted }) {
     const nextPage = store?.pagination?.nextPage;
     if (!nextPage) return;
     await store?.fetchMembers({ page: nextPage });
+  };
+
+  const updateStatus = async (memberId, newStatus) => {
+    setStatusUpdating(memberId);
+    try {
+      await apiUpdateMember(memberId, { status: newStatus });
+      await store?.fetchMembers();
+    } catch (_) {}
+    finally { setStatusUpdating(null); }
   };
 
   const onDelete = async (id) => {
@@ -131,7 +230,7 @@ function MemberTable({ onEdit, onDeleted }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">City</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Added</th>
-              <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -146,7 +245,11 @@ function MemberTable({ onEdit, onDeleted }) {
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.email || "-"}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.city || "-"}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-                    <StatusChip value={row?.status} />
+                    {canEdit ? (
+                      <InlineStatusPicker row={row} onUpdate={updateStatus} updating={statusUpdating} />
+                    ) : (
+                      <StatusChip value={row?.status} />
+                    )}
                   </td>
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.createdAt || row?.dateJoined)}</td>
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">

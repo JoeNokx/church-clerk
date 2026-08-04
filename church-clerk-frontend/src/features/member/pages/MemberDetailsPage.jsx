@@ -6,21 +6,30 @@ import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
 import Skeleton from "react-loading-skeleton";
 
+const STATUS_STYLES = {
+  active: "border-green-200 bg-green-50 text-green-700",
+  dormant: "border-gray-200 bg-gray-100 text-gray-600",
+  transferred: "border-blue-200 bg-blue-50 text-blue-700",
+  left_church: "border-orange-200 bg-orange-50 text-orange-700",
+  deceased: "border-red-200 bg-red-50 text-red-700",
+  temporarily_away: "border-yellow-200 bg-yellow-50 text-yellow-700",
+  inactive: "border-gray-200 bg-gray-50 text-gray-700",
+  visitor: "border-yellow-200 bg-yellow-50 text-yellow-700",
+  former: "border-red-200 bg-red-50 text-red-700",
+};
+
+const STATUS_LABELS = {
+  left_church: "Left Church",
+  temporarily_away: "Temporarily Away",
+};
+
 function StatusChip({ value }) {
-  const v = String(value || "").toLowerCase();
-  const styles =
-    v === "active"
-      ? "border-green-200 bg-green-50 text-green-700"
-      : v === "inactive"
-        ? "border-gray-200 bg-gray-50 text-gray-700"
-        : v === "visitor"
-          ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-          : v === "former"
-            ? "border-red-200 bg-red-50 text-red-700"
-            : "border-gray-200 bg-gray-50 text-gray-700";
+  const v = String(value || "").toLowerCase().replace(/\s+/g, "_");
+  const styles = STATUS_STYLES[v] || "border-gray-200 bg-gray-50 text-gray-700";
+  const label = STATUS_LABELS[v] || value || "-";
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold ${styles} text-xs`}>
-      {v || "-"}
+      {label}
     </span>
   );
 }
@@ -239,18 +248,30 @@ function MemberDetailsPageInner() {
           <>
             <div className="rounded-xl border border-gray-200 bg-white">
               <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-                <div className="font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">{name}</div>
-                <div className="mt-2 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-4">
+                  {(member?.photoUrl || member?.profileImageUrl) ? (
+                    <img
+                      src={member?.photoUrl || member?.profileImageUrl}
+                      alt={name}
+                      className="h-16 w-16 shrink-0 rounded-full object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 shrink-0 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-9 w-9 text-gray-400">
+                        <path d="M12 12c2.67 0 4.8-2.13 4.8-4.8S14.67 2.4 12 2.4 7.2 4.53 7.2 7.2 9.33 12 12 12zm0 2.4c-3.2 0-9.6 1.61-9.6 4.8v2.4h19.2v-2.4c0-3.19-6.4-4.8-9.6-4.8z" />
+                      </svg>
+                    </div>
+                  )}
                   <div>
-                    <div className="font-semibold text-gray-500 text-xs">Member ID</div>
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">{name}</div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-gray-500 text-xs">Member ID:</span>
                       <IdChip value={member?.memberId} />
                       <StatusChip value={member?.status} />
                     </div>
                   </div>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 md:p-6 lg:p-8 md:gap-5">
                 <DataPair label="Email" value={member?.email} />
                 <DataPair label="Phone" value={member?.phoneNumber} />
@@ -271,13 +292,14 @@ function MemberDetailsPageInner() {
                   value={member?.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : ""}
                 />
                 <DataPair label="Occupation" value={member?.occupation} />
+                <DataPair label="Age Group" value={member?.ageGroup} />
                 <DataPair label="Nationality" value={member?.nationality} />
               </div>
             </BigCard>
 
             <BigCard title="Address Information" subtitle="Address details">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
-                <DataPair label="Location" value={member?.streetAddress} />
+                <DataPair label="Location / Residential Address" value={member?.streetAddress} />
                 <DataPair label="City" value={member?.city} />
                 <DataPair label="Region" value={member?.region} />
                 <DataPair label="Country" value={member?.country} />
@@ -285,16 +307,26 @@ function MemberDetailsPageInner() {
             </BigCard>
 
             <BigCard title="Church Information" subtitle="Church membership details">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
-                <DataPair label="Member ID" value={<IdChip value={member?.memberId} />} />
-                <DataPair label="Status" value={<StatusChip value={member?.status} />} />
-                <DataPair label="Church Role" value={member?.churchRole} />
-                <DataPair label="Date Joined" value={joined} />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+                  <DataPair label="Member ID" value={<IdChip value={member?.memberId} />} />
+                  <DataPair label="Status" value={<StatusChip value={member?.status} />} />
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
+                  <div className="space-y-4">
+                    <DataPair label="Church Role" value={member?.churchRole} />
+                    <DataPair label="Date Joined" value={joined} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <div className="font-semibold text-gray-500 text-xs">Note</div>
+                    <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{member?.note || "-"}</div>
+                  </div>
+                </div>
               </div>
             </BigCard>
 
             <BigCard title="Ministry Information" subtitle="Cells, departments, and groups">
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
                   <div className="font-semibold text-gray-500 text-xs">Cells</div>
                   <div className="mt-2">{renderMinistryChips(cells)}</div>
@@ -310,9 +342,6 @@ function MemberDetailsPageInner() {
               </div>
             </BigCard>
 
-            <BigCard title="Notes" subtitle="Additional information">
-              <div className="text-gray-900 whitespace-pre-wrap text-sm">{member?.note || "-"}</div>
-            </BigCard>
           </>
         )}
       </div>

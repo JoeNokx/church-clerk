@@ -9,7 +9,7 @@ export const getMembersQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(200).default(10),
   search: Joi.string().allow("").max(200).optional(),
   fastSearch: Joi.string().valid("0", "1").optional(),
-  status: Joi.string().valid("all", "active", "inactive", "visitor", "former").optional(),
+  status: Joi.string().valid("all", "active", "dormant", "transferred", "left_church", "deceased", "temporarily_away", "inactive", "visitor", "former").optional(),
   dateFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional(),
   dateTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional()
 });
@@ -25,7 +25,8 @@ export const createMemberSchema = Joi.object({
   gender: Joi.string().valid("male", "female").allow("", null).optional(),
   occupation: Joi.string().trim().max(120).allow("", null).optional(),
   nationality: Joi.string().trim().max(80).allow("", null).optional(),
-  status: Joi.string().valid("active", "inactive", "visitor", "former").allow("", null).optional(),
+  ageGroup: Joi.string().valid("children", "youth", "adult", "elderly").allow("", null).optional(),
+  status: Joi.string().valid("active", "dormant", "transferred", "left_church", "deceased", "temporarily_away", "inactive", "visitor", "former").allow("", null).optional(),
   note: Joi.string().trim().max(2000).allow("", null).optional(),
 
   dateOfBirth: dateISO.allow("", null).optional(),

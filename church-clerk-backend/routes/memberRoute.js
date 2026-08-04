@@ -10,7 +10,8 @@ import {
   downloadMembersImportTemplate,
   previewMembersImport,
   importMembersCsv,
-  canCreateMember
+  canCreateMember,
+  uploadMemberPhoto
 } from "../controller/memberController.js"
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
@@ -123,6 +124,23 @@ router.post(
   uploadMemberCsv,
   importMembersCsv
 );
+router.put(
+  "/members/:id/photo",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("members", "update"),
+  (req, res, next) => {
+    uploadMemoryFile.single("photo")(req, res, (err) => {
+      if (!err) return next();
+      return res.status(400).json({ message: err?.message || "File upload failed" });
+    });
+  },
+  uploadMemberPhoto
+);
+
 router.put(
   "/members/:id",
   protect,

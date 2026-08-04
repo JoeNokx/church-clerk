@@ -45,3 +45,9 @@ export const importMembersCsv = async (file) => {
 export const canCreateMember = async () => {
   return await http.get("/member/members/can-create");
 };
+
+export const uploadMemberPhoto = async (id, file) => {
+  const fd = new FormData();
+  fd.append("photo", file);
+  return await http.put(`/member/members/${id}/photo`, fd);
+};

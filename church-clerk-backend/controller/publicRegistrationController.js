@@ -2,6 +2,7 @@ import Church from "../models/churchModel.js";
 import Member from "../models/memberModel.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import { getChurchPrefix, generateMemberId, parseOptionalDate } from "../utils/memberHelpers.js";
+import cloudinary from "../config/cloudinary.js";
 
 export const getChurchByToken = async (req, res) => {
   try {
@@ -52,6 +53,7 @@ export const selfRegisterMember = async (req, res) => {
       gender,
       occupation,
       nationality,
+      ageGroup,
       dateOfBirth,
       streetAddress,
       city,
@@ -59,7 +61,8 @@ export const selfRegisterMember = async (req, res) => {
       country,
       maritalStatus,
       churchRole,
-      dateJoined
+      dateJoined,
+      note
     } = req.body;
 
     if (!firstName || !String(firstName).trim()) {
@@ -109,6 +112,7 @@ export const selfRegisterMember = async (req, res) => {
       gender: gender || undefined,
       occupation: occupation || undefined,
       nationality: nationality || undefined,
+      ageGroup: ageGroup || undefined,
       dateOfBirth: dob || undefined,
       streetAddress: streetAddress || undefined,
       city: city || undefined,
@@ -117,10 +121,27 @@ export const selfRegisterMember = async (req, res) => {
       maritalStatus: maritalStatus || undefined,
       churchRole: churchRole || undefined,
       dateJoined: joined || new Date(),
+      note: note || undefined,
       status: "active",
       church: church._id,
       createdBy
     });
+
+    if (req.file?.buffer) {
+      try {
+        const folder = `church-clerk/members/${church._id}`;
+        const uploadResult = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder, resource_type: "image", unique_filename: true },
+            (err, result) => { if (err) reject(err); else resolve(result); }
+          );
+          stream.end(req.file.buffer);
+        });
+        if (uploadResult?.secure_url) {
+          await Member.findByIdAndUpdate(member._id, { photoUrl: uploadResult.secure_url });
+        }
+      } catch (_) {}
+    }
 
     const totalMembers = await Member.countDocuments({ church: church._id });
     await Church.findByIdAndUpdate(church._id, { memberCount: totalMembers });

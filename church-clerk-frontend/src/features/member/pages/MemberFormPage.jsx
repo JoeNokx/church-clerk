@@ -1,9 +1,9 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
-import { getMember as apiGetMember } from "../services/member.api.js";
+import { getMember as apiGetMember, createMember as apiCreateMember, uploadMemberPhoto } from "../services/member.api.js";
 import Skeleton from "react-loading-skeleton";
 import { getCells, createCell as apiCreateCell } from "../../cell/services/cell.api.js";
 import { getDepartments, createDepartment as apiCreateDepartment } from "../../department/services/department.api.js";
@@ -16,9 +16,18 @@ import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
-  { label: "Inactive", value: "inactive" },
-  { label: "Visitor", value: "visitor" },
-  { label: "Former", value: "former" }
+  { label: "Dormant", value: "dormant" },
+  { label: "Transferred", value: "transferred" },
+  { label: "Left Church", value: "left_church" },
+  { label: "Deceased", value: "deceased" },
+  { label: "Temporarily Away", value: "temporarily_away" },
+];
+
+const AGE_GROUP_OPTIONS = [
+  { label: "Children", value: "children" },
+  { label: "Youth", value: "youth" },
+  { label: "Adult", value: "adult" },
+  { label: "Elderly", value: "elderly" },
 ];
 
 const GENDER_OPTIONS = [
@@ -51,30 +60,6 @@ function Section({ title, subtitle, children }) {
         {subtitle ? <div className="mt-1 text-gray-500 text-xs">{subtitle}</div> : null}
       </div>
       <div className="p-4 md:p-6 lg:p-8">{children}</div>
-    </div>
-  );
-}
-
-function StatusChipPicker({ value, onChange }) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {STATUS_OPTIONS.map((s) => {
-        const active = s.value === value;
-        return (
-          <button
-            key={s.value}
-            type="button"
-            onClick={() => onChange?.(s.value)}
-            className={
-              active
-                ? "rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
-                : "rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-            }
-          >
-            {s.label}
-          </button>
-        );
-      })}
     </div>
   );
 }
@@ -185,10 +170,11 @@ function MemberFormPageInner() {
 
   const [departmentIds, setDepartmentIds] = useState([]);
   const [groupIds, setGroupIds] = useState([]);
-  const [cellId, setCellId] = useState("");
+  const [cellIds, setCellIds] = useState([]);
 
   const [departmentSelectId, setDepartmentSelectId] = useState("");
   const [groupSelectId, setGroupSelectId] = useState("");
+  const [cellSelectId, setCellSelectId] = useState("");
   const [status, setStatus] = useState("active");
   const [note, setNote] = useState("");
   const [visitorId, setVisitorId] = useState(null);
@@ -218,6 +204,14 @@ function MemberFormPageInner() {
   const [addGroupMeetingVenue, setAddGroupMeetingVenue] = useState("");
   const [addGroupError, setAddGroupError] = useState(null);
 
+  const [ageGroup, setAgeGroup] = useState("");
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState("");
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
+  const [photoRemoved, setPhotoRemoved] = useState(false);
+  const [removePhotoConfirmOpen, setRemovePhotoConfirmOpen] = useState(false);
+  const photoInputRef = useRef(null);
+
   const hydrateFromMember = useCallback((m) => {
     setFirstName(m?.firstName || "");
     setLastName(m?.lastName || "");
@@ -239,9 +233,12 @@ function MemberFormPageInner() {
 
     setDepartmentIds(Array.isArray(m?.department) ? m.department.map((d) => (typeof d === "string" ? d : d?._id)).filter(Boolean) : []);
     setGroupIds(Array.isArray(m?.group) ? m.group.map((g) => (typeof g === "string" ? g : g?._id)).filter(Boolean) : []);
-    const firstCell = Array.isArray(m?.cell) ? m.cell[0] : m?.cell;
-    setCellId(typeof firstCell === "string" ? firstCell : firstCell?._id || "");
+    setCellIds(Array.isArray(m?.cell) ? m.cell.map((c) => (typeof c === "string" ? c : c?._id)).filter(Boolean) : []);
 
+    setAgeGroup(m?.ageGroup || "");
+    setExistingPhotoUrl(m?.photoUrl || m?.profileImageUrl || "");
+    setPhotoFile(null);
+    setPhotoRemoved(false);
     setStatus(m?.status || "active");
     setNote(m?.note || "");
     setVisitorId(m?.visitorId || null);
@@ -281,6 +278,13 @@ function MemberFormPageInner() {
       setMinistryLoading(false);
     }
   }, [store?.activeChurch]);
+
+  useEffect(() => {
+    if (!photoFile) { setPhotoPreviewUrl(""); return; }
+    const url = URL.createObjectURL(photoFile);
+    setPhotoPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photoFile]);
 
   useEffect(() => {
     const state = location.state;
@@ -435,8 +439,9 @@ function MemberFormPageInner() {
 
       department: departmentIds,
       group: groupIds,
-      cell: cellId ? [cellId] : [],
+      cell: cellIds,
 
+      ageGroup: ageGroup || undefined,
       status,
       note,
       visitorId: visitorId || null
@@ -446,9 +451,17 @@ function MemberFormPageInner() {
       if (pageMode === "edit") {
         if (!canEdit) return;
         await store?.updateMember(memberId, payload);
+        if (photoFile) {
+          try { await uploadMemberPhoto(memberId, photoFile); } catch (_) {}
+        }
       } else {
         if (!canCreate) return;
-        await store?.createMember(payload);
+        const res = await apiCreateMember(payload);
+        const newId = res?.data?.data?._id || res?.data?.member?._id || res?.data?._id;
+        if (photoFile && newId) {
+          try { await uploadMemberPhoto(newId, photoFile); } catch (_) {}
+        }
+        await store?.fetchMembers();
       }
 
       toPage("members");
@@ -457,6 +470,8 @@ function MemberFormPageInner() {
       setError(message);
     }
   };
+
+  const photoUrl = photoPreviewUrl || (photoRemoved ? "" : existingPhotoUrl);
 
   return (
     <div className="max-w-6xl">
@@ -500,6 +515,32 @@ function MemberFormPageInner() {
           <form onSubmit={submit} className="space-y-5">
             <Section title="Personal Information" subtitle="Basic information about the member">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Field label="Member Photo">
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-20 w-20 shrink-0">
+                        {photoUrl ? (
+                          <img src={photoUrl} alt="Member photo" className="h-20 w-20 rounded-full object-cover border border-gray-200" />
+                        ) : (
+                          <div className="h-20 w-20 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center font-bold text-gray-400 text-xl">
+                            {((firstName?.[0] || "") + (lastName?.[0] || "")).toUpperCase() || "?"}
+                          </div>
+                        )}
+                        <button type="button" aria-label="Change photo" onClick={() => photoInputRef.current?.click()} className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50" title="Change photo">
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-gray-700"><path d="M4 20h4l10.5-10.5a2 2 0 10-4-4L4 16v4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+                        </button>
+                        {photoUrl ? (
+                          <button type="button" aria-label="Remove photo" onClick={() => setRemovePhotoConfirmOpen(true)} className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-red-600 text-white border-2 border-white flex items-center justify-center hover:bg-red-700" title="Remove photo">
+                            <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                          </button>
+                        ) : null}
+                        <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0] || null; if (f && f.size > 2 * 1024 * 1024) { setError("Photo must be under 2 MB."); e.target.value = ""; return; } setError(null); setPhotoRemoved(false); setPhotoFile(f); }} />
+                      </div>
+                      <div className="text-gray-500 text-xs">JPG, PNG or WebP, max 2 MB</div>
+                    </div>
+                  </Field>
+                </div>
+
                 <Field label="First Name">
                   <input
                     value={firstName}
@@ -583,8 +624,29 @@ function MemberFormPageInner() {
                   </select>
                 </Field>
 
-                <Field label="Status">
-                  <StatusChipPicker value={status} onChange={setStatus} />
+                <Field label="Age Group">
+                  <select
+                    value={ageGroup}
+                    onChange={(e) => setAgeGroup(e.target.value)}
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  >
+                    <option value="">Select age group</option>
+                    {AGE_GROUP_OPTIONS.map((a) => (
+                      <option key={a.value} value={a.value}>{a.label}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Membership Status">
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
                 </Field>
               </div>
             </Section>
@@ -643,59 +705,61 @@ function MemberFormPageInner() {
                   />
                 </Field>
 
-                <div className="md:col-span-2">
-                  <Field label="Location">
-                    <input
-                      value={streetAddress}
-                      onChange={(e) => setStreetAddress(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                    />
-                  </Field>
-                </div>
+                <Field label="Location / Residential Address">
+                  <input
+                    value={streetAddress}
+                    onChange={(e) => setStreetAddress(e.target.value)}
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
+                </Field>
               </div>
             </Section>
 
             <Section title="Church Information" subtitle="Role and membership dates">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Church Role">
-                  <input
-                    value={churchRole}
-                    onChange={(e) => setChurchRole(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  />
-                </Field>
-
-                <Field label="Date Joined">
-                  <input
-                    type="date"
-                    value={dateJoined}
-                    onChange={(e) => setDateJoined(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  />
-                </Field>
-
-                <div className="md:col-span-2">
-                  <Field label="Note">
-                    <textarea
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
-                      rows={3}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+                <div className="space-y-4">
+                  <Field label="Church Role">
+                    <input
+                      value={churchRole}
+                      onChange={(e) => setChurchRole(e.target.value)}
+                      className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    />
+                  </Field>
+                  <Field label="Date Joined">
+                    <input
+                      type="date"
+                      value={dateJoined}
+                      onChange={(e) => setDateJoined(e.target.value)}
+                      className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                     />
                   </Field>
                 </div>
+                <Field label="Note">
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    className="w-full h-full min-h-[5.5rem] rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
+                    rows={3}
+                  />
+                </Field>
               </div>
             </Section>
 
             <Section title="Ministry Information" subtitle="Cells, departments and groups">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
                   <div className="flex items-center justify-between">
                     <label className="block font-semibold text-gray-500 text-xs">Cell</label>
                   </div>
                   <select
-                    value={cellId}
-                    onChange={(e) => setCellId(e.target.value)}
+                    value={cellSelectId}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      setCellSelectId(nextId);
+                      if (!nextId) return;
+                      setCellIds((prev) => (prev.includes(nextId) ? prev : [...prev, nextId]));
+                      setCellSelectId("");
+                    }}
                     disabled={ministryLoading}
                     className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 disabled:opacity-50 md:h-12 text-sm"
                   >
@@ -706,6 +770,31 @@ function MemberFormPageInner() {
                       </option>
                     ))}
                   </select>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {cellIds.length ? (
+                      cellIds.map((id) => {
+                        const label = cells.find((c) => c?._id === id)?.name || id;
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 font-semibold text-gray-700 text-xs"
+                          >
+                            {label}
+                            <button
+                              type="button"
+                              onClick={() => setCellIds((prev) => prev.filter((x) => x !== id))}
+                              className="text-gray-500 hover:text-gray-900"
+                              aria-label="Remove cell"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <div className="text-gray-500 text-xs">No cell selected</div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -759,7 +848,7 @@ function MemberFormPageInner() {
                   </div>
                 </div>
 
-                <div className="md:col-span-2">
+                <div>
                   <div className="flex items-center justify-between">
                     <label className="block font-semibold text-gray-500 text-xs">Groups</label>
                   </div>
@@ -901,6 +990,26 @@ function MemberFormPageInner() {
           </button>
         </div>
       </SimpleModal>
+
+      {removePhotoConfirmOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Remove Member Photo</div>
+              <button type="button" onClick={() => setRemovePhotoConfirmOpen(false)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-gray-600 text-sm">Remove the member photo? This will take effect when you save.</p>
+              <div className="mt-5 flex items-center justify-end gap-3">
+                <button type="button" onClick={() => setRemovePhotoConfirmOpen(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Cancel</button>
+                <button type="button" onClick={() => { setPhotoFile(null); setPhotoRemoved(true); if (photoInputRef.current) photoInputRef.current.value = ""; setRemovePhotoConfirmOpen(false); }} className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm">Remove Photo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

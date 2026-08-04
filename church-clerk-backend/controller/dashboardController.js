@@ -102,6 +102,13 @@ const getDashboardKPI = async (req, res) => {
           lastSundayAttendance: pctChange(thisSundayAttendance, lastSundayAttendancePrevWeek)
         };
 
+        const diff = {
+          totalMembers: totalMembers - totalMembersPrev,
+          currentMembers: currentMembers - currentMembersPrev,
+          newMembersThisMonth: newMembersThisMonth - newMembersPrevMonth,
+          lastSundayAttendance: thisSundayAttendance - lastSundayAttendancePrevWeek
+        };
+
         return {
           message: "Dashboard KPI fetched successfully",
           kpis: {
@@ -110,6 +117,7 @@ const getDashboardKPI = async (req, res) => {
             newMembersThisMonth,
             lastSundayAttendance: thisSundayAttendance,
             change,
+            diff,
             lastSundayInfo: `${serviceCount} service${serviceCount !== 1 ? 's' : ''} · ${thisSundayDate}`
           }
         };

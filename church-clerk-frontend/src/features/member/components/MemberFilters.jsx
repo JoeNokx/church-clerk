@@ -6,9 +6,11 @@ import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.js
 const STATUS_OPTIONS = [
   { label: "All", value: "all" },
   { label: "Active", value: "active" },
-  { label: "Inactive", value: "inactive" },
-  { label: "Visitor", value: "visitor" },
-  { label: "Former", value: "former" }
+  { label: "Dormant", value: "dormant" },
+  { label: "Transferred", value: "transferred" },
+  { label: "Left Church", value: "left_church" },
+  { label: "Deceased", value: "deceased" },
+  { label: "Temporarily Away", value: "temporarily_away" },
 ];
 
 function MemberFilters() {

@@ -292,10 +292,10 @@ function MembersPageInner() {
             <div className="text-gray-600 col-span-2 lg:col-span-4 text-sm">Loading KPI...</div>
           ) : (
             <>
-              <KpiCard title="Total Members" value={memberKPI?.totalMembers} />
-              <KpiCard title="Active Members" value={memberKPI?.currentMembers} />
-              <KpiCard title="Inactive Members" value={memberKPI?.inactiveMembers} />
-              <KpiCard title="New This Month" value={memberKPI?.newMembersThisMonth} />
+              <KpiCard title="Total Members" value={memberKPI?.totalMembers} tooltip="The total count of everyone registered in your church, regardless of their current status." />
+              <KpiCard title="Active Members" value={memberKPI?.activeMembers ?? memberKPI?.currentMembers} tooltip="Members who are currently attending and actively participating in church life." />
+              <KpiCard title="Inactive Members" value={memberKPI?.inactiveMembers} tooltip="Members who are dormant or temporarily away — still part of the church but not currently active." />
+              <KpiCard title="Former Members" value={memberKPI?.formerMembers} tooltip="People who have left the church, transferred to another congregation, or are deceased." />
             </>
           )}
       </KpiGrid>

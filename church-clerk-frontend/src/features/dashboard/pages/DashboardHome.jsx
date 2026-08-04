@@ -695,121 +695,66 @@ function DashboardOverview({ onNavigate }) {
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
 
         <KpiCard
-
           title="Total Members"
-
           value={kpis?.totalMembers ?? 0}
-
           change={kpis?.change?.totalMembers}
-
-          compareLabel="vs last month"
-
-          onClick={() => onNavigate("members")}
-
+          diff={kpis?.diff?.totalMembers}
+          compareLabel="last month"
           icon={
-
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
               <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="1.8" />
-
               <path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="1.8" />
-
               <path d="M3 20c0-3 2-5 5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
               <path d="M21 20c0-3-2-5-5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
               <path d="M8 20c0-3 1.8-5 4-5s4 2 4 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
             </svg>
-
           }
-
         />
 
         <KpiCard
-
           title="Current Members"
-
           value={kpis?.currentMembers ?? 0}
-
           change={kpis?.change?.currentMembers}
-
-          compareLabel="vs last month"
-
-          onClick={() => onNavigate("members")}
-
+          diff={kpis?.diff?.currentMembers}
+          compareLabel="last month"
           icon={
-
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
               <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
-
               <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
               <path d="M17 11l1.5 1.5L21 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-
             </svg>
-
           }
-
         />
 
         <KpiCard
-
           title="This Sunday Attendance"
-
           value={kpis?.lastSundayAttendance ?? 0}
-
           change={kpis?.change?.lastSundayAttendance}
-
+          diff={kpis?.diff?.lastSundayAttendance}
           subtitle={kpis?.lastSundayInfo || ""}
-
-          compareLabel="vs last Sunday"
-
-          onClick={() => onNavigate("attendance")}
-
+          compareLabel="last Sunday"
           icon={
-
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
               <path d="M7 3v3M17 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
               <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
-
               <path d="M8 12h8M8 16h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
             </svg>
-
           }
-
         />
 
         <KpiCard
-
           title="Members This Month"
-
           value={kpis?.newMembersThisMonth ?? 0}
-
           change={kpis?.change?.newMembersThisMonth}
-
-          compareLabel="vs last month"
-
-          onClick={() => onNavigate("members")}
-
+          diff={kpis?.diff?.newMembersThisMonth}
+          compareLabel="last month"
           icon={
-
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
               <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
-
               <path d="M4 20c0-4 4-6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
               <path d="M20 11v6M17 14h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
             </svg>
-
           }
-
         />
 
       </div>
