@@ -44,7 +44,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
   const topBar = accent || null;
   const isSimpleVariant = !icon && !change && !onClick;
   const isColoredIconVariant = iconBg && !onClick;
-  const isStaticIconVariant = !!(icon && !onClick && !iconBg);
+  const isStaticIconVariant = !!(icon && !onClick);
 
   if (isSimpleVariant) {
     return (
@@ -79,7 +79,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
 
   if (isStaticIconVariant) {
     return (
-      <div className="rounded-[2rem] border border-gray-200 bg-white px-4 py-4 md:px-5 md:py-4">
+      <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4 md:px-5 md:py-4">
         {/* Single top row: left = title + number + badge, right = icon */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -95,7 +95,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
             </div>
           </div>
           {icon ? (
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 [&>svg]:h-4 [&>svg]:w-4 mt-0.5">
+            <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl mt-0.5 [&>svg]:h-4 [&>svg]:w-4 ${iconBg || "bg-gray-100"} ${iconColor || "text-gray-600"}`}>
               {icon}
             </span>
           ) : null}

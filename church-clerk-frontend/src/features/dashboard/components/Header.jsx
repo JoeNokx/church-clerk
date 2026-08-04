@@ -1120,12 +1120,8 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
         <div className="min-w-0 flex-1">
-          
 
 
-
-          <div className="block md:hidden text-[11px] font-medium text-gray-400 truncate mt-0.5 text-center">{viewingChurchName}</div>
-          {/*’s what’s happening with your church */}
 
         </div>
 
@@ -1135,7 +1131,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-        <div className="hidden md:flex items-center absolute inset-x-0 justify-center pointer-events-none">
+        <div className="hidden">
 
 
 

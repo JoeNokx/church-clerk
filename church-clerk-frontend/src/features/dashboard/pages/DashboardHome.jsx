@@ -16,6 +16,8 @@ import PermissionContext from "../../permissions/permission.store.js";
 
 import ChurchContext from "../../church/church.store.js";
 
+import AuthContext from "../../auth/auth.store.jsx";
+
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 
 
@@ -227,6 +229,8 @@ function DashboardOverview({ onNavigate }) {
   const { toPage } = useDashboardNavigator();
 
   const { can } = useContext(PermissionContext) || {};
+
+  const { user: authUser } = useContext(AuthContext) || {};
 
   const churchCtx = useContext(ChurchContext);
 
@@ -572,9 +576,9 @@ function DashboardOverview({ onNavigate }) {
 
       <div className="w-full max-w-none">
 
-        <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Dashboard Overview</div>
+        <div className="font-medium text-gray-900 md:text-2xl lg:text-3xl text-lg">Welcome back, {authUser?.fullName?.split(" ")[0] || "there"}!</div>
 
-        <div className="mt-1 text-gray-500 text-sm">A quick summary of what's happening with your church.</div>
+        <div className="mt-1 text-gray-500 text-sm">Here is a quick summary of what's happening with your church.</div>
 
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3 lg:grid-cols-4">
 
@@ -678,9 +682,9 @@ function DashboardOverview({ onNavigate }) {
 
         <div>
 
-          <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Dashboard Overview</div>
+          <div className="font-medium text-gray-900 md:text-2xl lg:text-3xl text-lg">Welcome back, {authUser?.fullName?.split(" ")[0] || "there"}!</div>
 
-          <div className="mt-1 text-gray-500 text-sm">A quick summary of what's happening with your church.</div>
+          <div className="mt-1 text-gray-500 text-sm">Here is a quick summary of what's happening with your church.</div>
 
         </div>
 
@@ -700,6 +704,8 @@ function DashboardOverview({ onNavigate }) {
           change={kpis?.change?.totalMembers}
           diff={kpis?.diff?.totalMembers}
           compareLabel="last month"
+          iconBg="bg-blue-50"
+          iconColor="text-blue-500"
           icon={
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="1.8" />
@@ -717,6 +723,8 @@ function DashboardOverview({ onNavigate }) {
           change={kpis?.change?.currentMembers}
           diff={kpis?.diff?.currentMembers}
           compareLabel="last month"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
           icon={
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
@@ -733,6 +741,8 @@ function DashboardOverview({ onNavigate }) {
           diff={kpis?.diff?.lastSundayAttendance}
           subtitle={kpis?.lastSundayInfo || ""}
           compareLabel="last Sunday"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-500"
           icon={
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M7 3v3M17 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -748,6 +758,8 @@ function DashboardOverview({ onNavigate }) {
           change={kpis?.change?.newMembersThisMonth}
           diff={kpis?.diff?.newMembersThisMonth}
           compareLabel="last month"
+          iconBg="bg-amber-50"
+          iconColor="text-amber-500"
           icon={
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
