@@ -1,5 +1,6 @@
 import DashboardHeader from "../features/dashboard/components/Header.jsx";
 import Sidebar from "../features/dashboard/components/Sidebar.jsx";
+import NotificationsDrawer from "../features/notifications/components/NotificationsDrawer.jsx";
 import { Outlet, useLocation } from "react-router-dom";
 import { useContext, useMemo, useState } from "react";
 import { useAuth } from "../features/auth/useAuth.js";
@@ -16,6 +17,7 @@ function DashboardLayout() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showBranchBlock, setShowBranchBlock] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const homeChurchId = useMemo(() => {
     const c = user?.church;
@@ -77,7 +79,11 @@ function DashboardLayout() {
       <div className='flex-1 flex flex-col min-h-0 min-w-0 w-full'>
 
         {/* header */}
-        <DashboardHeader onToggleSidebar={() => setIsSidebarOpen((v) => !v)} />
+        <DashboardHeader
+          onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
+          onNotificationsClick={() => setNotifOpen(true)}
+        />
+        <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} />
 
         {/* branch context navigation bar — hidden when user switched to HQ sidebar view */}
         {isHqMonitoringBranch && isInBranchContext && (

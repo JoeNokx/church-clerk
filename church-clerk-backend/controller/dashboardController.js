@@ -2,6 +2,7 @@ import Member from "../models/memberModel.js"
 import Attendance from "../models/attendanceModel.js"
 import Event from "../models/eventModel.js"; 
 import Offering from "../models/financeModel/offeringModel.js";
+import Visitor from "../models/visitorsModel.js";
 import { withCacheJson } from "../utils/cache.js";
 
 
@@ -156,9 +157,9 @@ const getDashboardAnalytics = async (req, res) => {
       ttlSeconds: 60,
       getValue: async () => {
 
-        // --- Gender Distribution ---
+        // --- Gender Distribution (all members) ---
         const genderAgg = await Member.aggregate([
-          { $match: { ...query, status: "active" } },
+          { $match: { ...query } },
           { $group: { _id: "$gender", count: { $sum: 1 } } }
         ]);
 
@@ -177,53 +178,84 @@ const getDashboardAnalytics = async (req, res) => {
           femalePercentage: totalMembers ? ((femaleCount / totalMembers) * 100).toFixed(1) : 0
         };
 
-    // --- Attendance Graph per month (sum of all Sunday services) ---
-       const attendanceAgg = await Attendance.aggregate([
-  {
-    $match: {
-      church: query.church,
-      serviceDate: { $gte: startOfYear, $lte: endOfYear }
-    }
-  },
-  {
-    $match: {
-      $or: [
-        { serviceType: { $regex: /^Sunday/i } },
-        { $expr: { $eq: [{ $dayOfWeek: "$serviceDate" }, 1] } }
-      ]
-    }
-  },
-  {
-    $addFields: {
-      month: { $month: "$serviceDate" }
-    }
-  },
-  {
-    $group: {
-      _id: "$month",
-      totalAttendance: { $sum: "$totalNumber" }
-    }
-  },
-  { $sort: { "_id": 1 } }
-]);
+        // --- Last 10 Sundays Attendance (across all time) ---
+        const last10SundaysAgg = await Attendance.aggregate([
+          { $match: { church: query.church, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$serviceDate" }, 1] } }] } },
+          { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$serviceDate" } }, totalAttendance: { $sum: "$totalNumber" }, records: { $push: { serviceType: "$serviceType", totalNumber: "$totalNumber" } } } },
+          { $sort: { "_id": -1 } },
+          { $limit: 10 },
+          { $sort: { "_id": 1 } }
+        ]);
+        const last10SundaysGraph = last10SundaysAgg.map(s => {
+          const d = new Date(s._id + "T00:00:00");
+          return { date: s._id, label: d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }), totalAttendance: s.totalAttendance, records: s.records };
+        });
 
-
-        // Map into all 12 months for chart (default 0 if no data)
+        // --- Monthly Attendance Graph (Sundays, for selected year) ---
+        const monthlyAttAgg = await Attendance.aggregate([
+          { $match: { church: query.church, serviceDate: { $gte: startOfYear, $lte: endOfYear }, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$serviceDate" }, 1] } }] } },
+          { $addFields: { month: { $month: "$serviceDate" } } },
+          { $group: { _id: "$month", totalAttendance: { $sum: "$totalNumber" } } },
+          { $sort: { "_id": 1 } }
+        ]);
         const attendanceGraph = [];
         for (let m = 1; m <= 12; m++) {
-          const record = attendanceAgg.find(a => a._id === m);
-          attendanceGraph.push({
-            month: new Date(year, m - 1).toLocaleString("default", { month: "long" }),
-            totalAttendance: record ? record.totalAttendance : 0
+          const rec = monthlyAttAgg.find(a => a._id === m);
+          attendanceGraph.push({ month: new Date(year, m - 1).toLocaleString("default", { month: "long" }), totalAttendance: rec ? rec.totalAttendance : 0 });
+        }
+
+        // --- Age Group Distribution (all members) ---
+        const ageGroupAgg = await Member.aggregate([
+          { $match: { ...query, ageGroup: { $exists: true, $ne: null } } },
+          { $group: { _id: "$ageGroup", count: { $sum: 1 } } }
+        ]);
+        const totalWithAgeGroup = ageGroupAgg.reduce((s, g) => s + g.count, 0);
+        const AGE_GROUP_COLORS = { children: "#8b5cf6", youth: "#3b82f6", adult: "#10b981", elderly: "#f59e0b" };
+        const ageGroupDistribution = ["children", "youth", "adult", "elderly"].map(ag => {
+          const found = ageGroupAgg.find(g => g._id === ag);
+          const count = found ? found.count : 0;
+          return {
+            name: ag.charAt(0).toUpperCase() + ag.slice(1),
+            value: count,
+            percentage: totalWithAgeGroup ? parseFloat(((count / totalWithAgeGroup) * 100).toFixed(1)) : 0,
+            color: AGE_GROUP_COLORS[ag]
+          };
+        });
+
+        // --- Monthly New Members vs Visitors ---
+        const [membersPerMonth, visitorsPerMonth] = await Promise.all([
+          Member.aggregate([
+            { $match: { ...query, dateJoined: { $gte: startOfYear, $lte: endOfYear } } },
+            { $addFields: { month: { $month: "$dateJoined" } } },
+            { $group: { _id: "$month", count: { $sum: 1 } } },
+            { $sort: { "_id": 1 } }
+          ]),
+          Visitor.aggregate([
+            { $match: { church: query.church, createdAt: { $gte: startOfYear, $lte: endOfYear } } },
+            { $addFields: { month: { $month: "$createdAt" } } },
+            { $group: { _id: "$month", count: { $sum: 1 } } },
+            { $sort: { "_id": 1 } }
+          ])
+        ]);
+        const membersVsVisitorsGraph = [];
+        for (let m = 1; m <= 12; m++) {
+          const mRec = membersPerMonth.find(r => r._id === m);
+          const vRec = visitorsPerMonth.find(r => r._id === m);
+          membersVsVisitorsGraph.push({
+            month: new Date(year, m - 1).toLocaleString("default", { month: "short" }),
+            newMembers: mRec ? mRec.count : 0,
+            visitors: vRec ? vRec.count : 0
           });
         }
 
-
         return {
-          message: `Analytics Dashboard  data for ${year} fetched successfully`,
-          analyticsDashboard : {
+          message: `Analytics Dashboard data for ${year} fetched successfully`,
+          analyticsDashboard: {
             genderDistribution: genderData,
-            attendanceGraph
+            attendanceGraph,
+            last10SundaysGraph,
+            ageGroupDistribution,
+            membersVsVisitorsGraph
           }
         };
       }
@@ -293,7 +325,7 @@ const getDashboardWidget = async (req, res) => {
         const recentMembers = await Member.find(query)
           .sort({ createdAt: -1 })
           .limit(10)
-          .select("firstName lastName createdAt status")
+          .select("firstName lastName createdAt status phoneNumber ageGroup city")
           .lean();
 
         // --- 3. Upcoming Events ---

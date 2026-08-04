@@ -398,6 +398,28 @@ function DashboardOverview({ onNavigate }) {
   const [birthdaysPage, setBirthdaysPage] = useState(1);
 
 
+  const last10SundaysGraph = useMemo(() => {
+
+    const rows = analytics?.last10SundaysGraph;
+
+    if (!Array.isArray(rows)) return [];
+
+    return rows.map((r) => ({
+
+      date: r?.date || "",
+
+      label: r?.label || "",
+
+      totalAttendance: Number(r?.totalAttendance || 0),
+
+      records: Array.isArray(r?.records) ? r.records : []
+
+    }));
+
+  }, [analytics]);
+
+
+
   const attendanceGraph = useMemo(() => {
 
     const rows = analytics?.attendanceGraph;
@@ -433,6 +455,33 @@ function DashboardOverview({ onNavigate }) {
     ];
 
   }, [analytics]);
+
+
+
+  const ageGroupData = useMemo(() => {
+
+    const rows = analytics?.ageGroupDistribution;
+
+    if (!Array.isArray(rows)) return [];
+
+    return rows.map((r) => ({ name: r.name, value: Number(r.value || 0), percentage: Number(r.percentage || 0), color: r.color }));
+
+  }, [analytics]);
+
+
+
+  const membersVsVisitorsGraph = useMemo(() => {
+
+    const rows = analytics?.membersVsVisitorsGraph;
+
+    if (!Array.isArray(rows)) return [];
+
+    return rows.map((r) => ({ month: r.month, newMembers: Number(r.newMembers || 0), visitors: Number(r.visitors || 0) }));
+
+  }, [analytics]);
+
+
+
 
 
 
@@ -718,7 +767,7 @@ function DashboardOverview({ onNavigate }) {
         />
 
         <KpiCard
-          title="Current Members"
+          title="Active Members"
           value={kpis?.currentMembers ?? 0}
           change={kpis?.change?.currentMembers}
           diff={kpis?.diff?.currentMembers}
@@ -753,7 +802,7 @@ function DashboardOverview({ onNavigate }) {
         />
 
         <KpiCard
-          title="Members This Month"
+          title="New Members This Month"
           value={kpis?.newMembersThisMonth ?? 0}
           change={kpis?.change?.newMembersThisMonth}
           diff={kpis?.diff?.newMembersThisMonth}
@@ -773,155 +822,51 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-      <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
+      <div className="mt-5">
 
         <React.Suspense
 
           fallback={
 
-            <>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6">
 
-              <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
+              <div className="h-4 w-32 rounded bg-gray-200" />
 
-                <div className="h-4 w-32 rounded bg-gray-200" />
+              <div className="mt-4 h-72 rounded-lg bg-gray-200" />
 
-                <div className="mt-4 h-64 rounded-lg bg-gray-200" />
-
-              </div>
-
-              <div className="rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
-
-                <div className="h-4 w-32 rounded bg-gray-200" />
-
-                <div className="mt-4 h-64 rounded-lg bg-gray-200" />
-
-              </div>
-
-            </>
+            </div>
 
           }
 
         >
 
-          <DashboardCharts attendanceGraph={attendanceGraph} genderData={genderData} analytics={analytics} year={year} />
+          <DashboardCharts
+            last10SundaysGraph={last10SundaysGraph}
+            attendanceGraph={attendanceGraph}
+            genderData={genderData}
+            analytics={analytics}
+            ageGroupData={ageGroupData}
+            membersVsVisitorsGraph={membersVsVisitorsGraph}
+            year={year}
+          />
 
         </React.Suspense>
 
-
-
-        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-
-          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
-
-            <div>
-
-              <div className="font-semibold text-gray-900 text-base">Upcoming Birthdays</div>
-
-              <div className="mt-1 text-gray-600 text-sm">Next 30 days</div>
-
-            </div>
-
-            <button
-
-              type="button"
-
-              onClick={openBirthdaysModal}
-
-              className="font-semibold text-blue-700 hover:underline text-base"
-
-            >
-
-              View All
-
-            </button>
-
-          </div>
+      </div>
 
 
 
-          <div className="px-4 md:px-5 lg:px-6 pb-5">
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
 
-            <div className="mt-4 divide-y divide-gray-200">
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden lg:col-span-2">
 
-              {upcomingBirthdays.length ? (
-
-                upcomingBirthdays.map((m, idx) =>
-
-                  canViewMembers ? (
-
-                    <button
-
-                      key={`${m?._id || "b"}-${idx}`}
-
-                      type="button"
-
-                      onClick={() => goToMemberDetails(m?._id)}
-
-                      className="w-full text-left flex items-start justify-between gap-3 py-2 hover:bg-gray-50"
-
-                    >
-
-                      <div className="min-w-0">
-
-                        <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
-
-                        <div className="mt-1 text-gray-500 text-xs md:text-sm">{formatShortDate(m?.nextBirthday)}</div>
-
-                      </div>
-
-                      <div className="shrink-0 font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
-
-                    </button>
-
-                  ) : (
-
-                    <div
-
-                      key={`${m?._id || "b"}-${idx}`}
-
-                      className="w-full text-left flex items-start justify-between gap-3 py-2"
-
-                    >
-
-                      <div className="min-w-0">
-
-                        <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
-
-                        <div className="mt-1 text-gray-500 text-xs md:text-sm">{formatShortDate(m?.nextBirthday)}</div>
-
-                      </div>
-
-                      <div className="shrink-0 font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
-
-                    </div>
-
-                  )
-
-                )
-
-              ) : (
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No birthdays in the next 30 days.</div>
-
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-
-        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-
-          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
 
             <div>
 
-              <div className="font-semibold text-gray-900 text-base">Recent Members</div>
+              <div className="font-semibold text-gray-900 text-sm">Recent Members</div>
 
-              <div className="mt-1 text-gray-600 text-sm">Recently registered</div>
+              <div className="text-gray-500 text-xs">Recently registered</div>
 
             </div>
 
@@ -931,7 +876,7 @@ function DashboardOverview({ onNavigate }) {
 
               onClick={() => onNavigate("members")}
 
-              className="font-semibold text-blue-700 hover:underline text-base"
+              className="font-semibold text-blue-700 hover:underline text-xs"
 
             >
 
@@ -943,316 +888,209 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-          <div className="px-4 md:px-5 lg:px-6 pb-5">
+          <div className="pb-2 overflow-x-auto">
 
-            <div className="mt-4 divide-y divide-gray-200">
+            {recentMembers.length ? (
 
-              {recentMembers.length ? (
+              <table className="w-full min-w-[520px] text-xs border-collapse">
 
-                recentMembers.map((m, idx) =>
+                <thead>
 
-                  canViewMembers ? (
+                  <tr className="border-b border-gray-100">
 
-                    <button
+                    <th className="sticky left-0 z-10 bg-white text-left py-2 pr-4 pl-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap">Name</th>
 
-                      key={`${m?._id || "rm"}-${idx}`}
+                    <th className="text-left py-2 px-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap">Phone</th>
 
-                      type="button"
+                    <th className="text-left py-2 px-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap">Age Group</th>
 
-                      onClick={() => goToMemberDetails(m?._id)}
+                    <th className="text-left py-2 px-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap">City</th>
 
-                      className="w-full text-left flex items-start justify-between gap-3 py-2 hover:bg-gray-50"
+                    <th className="text-left py-2 pl-3 pr-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap">Joined</th>
 
-                    >
+                  </tr>
 
-                      <div className="min-w-0">
+                </thead>
 
-                        <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
+                <tbody className="divide-y divide-gray-50">
 
-                        <div className="mt-1 text-gray-500 text-xs md:text-sm">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                  {recentMembers.map((m, idx) => (
 
-                      </div>
-
-                      <div className="shrink-0 font-semibold text-gray-700 text-sm">View</div>
-
-                    </button>
-
-                  ) : (
-
-                    <div
+                    <tr
 
                       key={`${m?._id || "rm"}-${idx}`}
 
-                      className="w-full text-left flex items-start justify-between gap-3 py-2"
+                      className={`hover:bg-gray-50 group ${canViewMembers ? "cursor-pointer" : ""}`}
+
+                      onClick={canViewMembers ? () => goToMemberDetails(m?._id) : undefined}
 
                     >
 
-                      <div className="min-w-0">
+                      <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 py-1.5 pr-4 pl-3 whitespace-nowrap">
 
-                        <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}</div>
+                        <span className={`font-semibold text-xs ${canViewMembers ? "text-blue-700" : "text-gray-900"}`}>
 
-                        <div className="mt-1 text-gray-500 text-xs md:text-sm">Joined {formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</div>
+                          {`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}
 
-                      </div>
+                        </span>
 
-                    </div>
+                      </td>
 
-                  )
+                      <td className="py-1.5 px-3 text-gray-500 whitespace-nowrap">{m?.phoneNumber || "—"}</td>
 
-                )
+                      <td className="py-1.5 px-3 text-gray-500 whitespace-nowrap capitalize">{m?.ageGroup || "—"}</td>
 
-              ) : (
+                      <td className="py-1.5 px-3 text-gray-500 whitespace-nowrap">{m?.city || "—"}</td>
 
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No recent members.</div>
+                      <td className="py-1.5 pl-3 pr-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</td>
 
-              )}
+                    </tr>
 
-            </div>
+                  ))}
+
+                </tbody>
+
+              </table>
+
+            ) : (
+
+              <div className="px-3 pt-3 rounded-lg border border-gray-200 bg-gray-50 py-3 text-gray-600 text-sm mx-3 mt-2">No recent members yet.</div>
+
+            )}
 
           </div>
 
         </div>
 
-
-
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-
-          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
-
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
             <div>
-
-              <div className="font-semibold text-gray-900 text-base">Upcoming Events</div>
-
-              <div className="mt-1 text-gray-600 text-sm">Next scheduled programs</div>
-
+              <div className="font-semibold text-gray-900 text-sm">Upcoming Birthdays</div>
+              <div className="text-gray-500 text-xs">Next 30 days</div>
             </div>
-
-            <button
-
-              type="button"
-
-              onClick={() => onNavigate("programs-events")}
-
-              className="font-semibold text-blue-700 hover:underline text-base"
-
-            >
-
-              View All
-
-            </button>
-
+            <button type="button" onClick={openBirthdaysModal} className="font-semibold text-blue-700 hover:underline text-xs">View All</button>
           </div>
-
-
-
-          <div className="px-4 md:px-5 lg:px-6 pb-5">
-
-            <div className="mt-4">
-
-              {upcomingEventsLoading ? (
-
-                <div className="divide-y divide-gray-200 rounded-lg border border-gray-200 animate-pulse">
-
-                  {[0, 1, 2, 3].map((i) => (
-
-                    <div key={i} className="px-4 py-3 flex items-start justify-between gap-3">
-
+          <div className="px-3 pb-3">
+            <div className="mt-2 divide-y divide-gray-200">
+              {upcomingBirthdays.length ? (
+                upcomingBirthdays.map((m, idx) =>
+                  canViewMembers ? (
+                    <button key={`${m?._id || "b"}-${idx}`} type="button" onClick={() => goToMemberDetails(m?._id)} className="w-full text-left flex items-start justify-between gap-2 py-1 hover:bg-gray-50">
                       <div className="min-w-0">
-
-                        <div className="h-4 w-28 rounded bg-gray-200" />
-
-                        <div className="mt-1 h-3 w-20 rounded bg-gray-200" />
-
+                        <div className="font-semibold text-gray-900 truncate text-xs">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
                       </div>
-
-                      <div className="h-3 w-11 rounded bg-gray-200 md:w-12" />
-
+                      <div className="shrink-0 text-gray-500 text-xs">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                    </button>
+                  ) : (
+                    <div key={`${m?._id || "b"}-${idx}`} className="w-full text-left flex items-start justify-between gap-2 py-1">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate text-xs">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
+                      </div>
+                      <div className="shrink-0 text-gray-500 text-xs">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
                     </div>
-
-                  ))}
-
-                </div>
-
-              ) : upcomingEventsError ? (
-
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{upcomingEventsError}</div>
-
-              ) : upcomingEvents.length ? (
-
-                <div className="divide-y divide-gray-200 rounded-lg border border-gray-200">
-
-                  {upcomingEvents.map((ev, idx) =>
-
-                    canViewEvents ? (
-
-                      <button
-
-                        key={`${ev?._id || "ev"}-${idx}`}
-
-                        type="button"
-
-                        onClick={() => goToEventDetails(ev?._id)}
-
-                        className="w-full text-left px-4 py-3 hover:bg-gray-50"
-
-                      >
-
-                        <div className="flex items-start justify-between gap-3">
-
-                          <div className="min-w-0">
-
-                            <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{ev?.title || ev?.name || "—"}</div>
-
-                            <div className="mt-1 text-gray-500 text-xs md:text-sm">
-
-                              {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
-
-                            </div>
-
-                            <div className="mt-0.5 text-gray-500 text-xs md:text-sm">
-
-                              {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
-
-                              {ev?.location ? ` • ${ev.location}` : ""}
-
-                            </div>
-
-                          </div>
-
-                          <div className="shrink-0 font-semibold text-gray-700 text-sm">View</div>
-
-                        </div>
-
-                      </button>
-
-                    ) : (
-
-                      <div
-
-                        key={`${ev?._id || "ev"}-${idx}`}
-
-                        className="w-full text-left px-4 py-3"
-
-                      >
-
-                        <div className="flex items-start justify-between gap-3">
-
-                          <div className="min-w-0">
-
-                            <div className="font-semibold text-gray-900 truncate text-sm md:text-base">{ev?.title || ev?.name || "—"}</div>
-
-                            <div className="mt-1 text-gray-500 text-xs md:text-sm">
-
-                              {formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}
-
-                            </div>
-
-                            <div className="mt-0.5 text-gray-500 text-xs md:text-sm">
-
-                              {formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}
-
-                              {ev?.location ? ` • ${ev.location}` : ""}
-
-                            </div>
-
-                          </div>
-
-                        </div>
-
-                      </div>
-
-                    )
-
-                  )}
-
-                </div>
-
+                  )
+                )
               ) : (
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No upcoming events.</div>
-
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No birthdays in the next 30 days.</div>
               )}
-
             </div>
-
           </div>
-
         </div>
 
       </div>
 
 
 
-      <div className="mt-4 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white overflow-hidden">
-
-        <div className="flex items-start justify-between gap-4 border-b border-blue-100 bg-white/70 px-4 md:px-5 lg:px-6 py-4">
-
-          <div>
-
-            <div className="font-semibold text-gray-900 text-base">Referral Program</div>
-
-            <div className="mt-1 text-gray-600 text-sm">Invite members and earn free days</div>
-
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
+        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
+            <div>
+              <div className="font-semibold text-gray-900 text-sm">Upcoming Events</div>
+              <div className="text-gray-500 text-xs">Next scheduled programs</div>
+            </div>
+            <button type="button" onClick={() => onNavigate("programs-events")} className="font-semibold text-blue-700 hover:underline text-xs">View All</button>
           </div>
-
-          <button
-
-            type="button"
-
-            onClick={() => onNavigate("referrals")}
-
-            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-3 md:px-4 py-2 font-semibold text-white hover:bg-blue-800 active:bg-blue-900 whitespace-nowrap md:text-sm text-xs"
-
-          >
-
-            View Referrals
-
-          </button>
-
-        </div>
-
-
-
-        <div className="px-4 md:px-5 lg:px-6 pb-5">
-
-          <div className="mt-4 grid grid-cols-2 md:flex md:flex-wrap gap-3">
-
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 md:w-44">
-
-              <div className="font-semibold text-blue-900/70 text-sm">Total Referrals</div>
-
-              <div className="mt-1 font-semibold text-blue-900 text-base">{referral?.totalReferrals ?? 0}</div>
-
+          <div className="px-3 pb-3">
+            <div className="mt-2">
+              {upcomingEventsLoading ? (
+                <div className="divide-y divide-gray-200 rounded-lg border border-gray-200 animate-pulse">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="px-4 py-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="h-4 w-28 rounded bg-gray-200" />
+                        <div className="mt-1 h-3 w-20 rounded bg-gray-200" />
+                      </div>
+                      <div className="h-3 w-11 rounded bg-gray-200 md:w-12" />
+                    </div>
+                  ))}
+                </div>
+              ) : upcomingEventsError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{upcomingEventsError}</div>
+              ) : upcomingEvents.length ? (
+                <div className="divide-y divide-gray-200 rounded-lg border border-gray-200">
+                  {upcomingEvents.map((ev, idx) =>
+                    canViewEvents ? (
+                      <button key={`${ev?._id || "ev"}-${idx}`} type="button" onClick={() => goToEventDetails(ev?._id)} className="w-full text-left px-3 py-1.5 hover:bg-gray-50">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 truncate text-xs">{ev?.title || ev?.name || "—"}</div>
+                            <div className="text-gray-500 text-xs">{formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}</div>
+                            <div className="text-gray-400 text-xs">{formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}{ev?.location ? ` • ${ev.location}` : ""}</div>
+                          </div>
+                          <div className="shrink-0 text-gray-400 text-xs">View</div>
+                        </div>
+                      </button>
+                    ) : (
+                      <div key={`${ev?._id || "ev"}-${idx}`} className="w-full text-left px-3 py-1.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 truncate text-xs">{ev?.title || ev?.name || "—"}</div>
+                            <div className="text-gray-500 text-xs">{formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}</div>
+                            <div className="text-gray-400 text-xs">{formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}{ev?.location ? ` • ${ev.location}` : ""}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No upcoming events.</div>
+              )}
             </div>
-
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 md:w-44">
-
-              <div className="font-semibold text-blue-900/70 text-sm">Free Days Earned</div>
-
-              <div className="mt-1 font-semibold text-blue-900 text-base">{(referral?.totalFreeMonthsEarned ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
-
-            </div>
-
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 md:w-44">
-
-              <div className="font-semibold text-blue-900/70 text-sm">Free Days Used</div>
-
-              <div className="mt-1 font-semibold text-blue-900 text-base">{(referral?.totalFreeMonthsUsed ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
-
-            </div>
-
-            <div className="rounded-lg border border-blue-100 bg-white/70 px-3 py-2.5 md:w-44">
-
-              <div className="font-semibold text-blue-900/70 text-sm">Free Days Remaining</div>
-
-              <div className="mt-1 font-semibold text-blue-900 text-base">{(referral?.freeMonthsRemaining ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
-
-            </div>
-
           </div>
-
         </div>
-
+        <div className="rounded-xl overflow-hidden" style={{ background: "#363535" }}>
+          <div className="px-4 pt-4 pb-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#c7d2fe" }}>Referral Program</div>
+                <div className="text-white font-bold text-base mt-0.5">Invite &amp; Earn</div>
+                <div className="text-xs mt-0.5" style={{ color: "#e0e7ff" }}>Free days for every referral</div>
+              </div>
+              <button type="button" onClick={() => onNavigate("referrals")} className="mt-0.5 shrink-0 text-xs font-semibold hover:text-white" style={{ color: "#c7d2fe" }}>Details →</button>
+            </div>
+            <div className="mt-3 rounded-lg px-3 py-2.5 text-center" style={{ background: "rgba(255,255,255,0.15)" }}>
+              <div className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#c7d2fe" }}>Free Days Remaining</div>
+              <div className="text-white font-extrabold text-3xl mt-0.5 leading-none">{(referral?.freeMonthsRemaining ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
+            </div>
+          </div>
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}>
+              <span className="text-xs" style={{ color: "#c7d2fe" }}>Total Referrals</span>
+              <span className="font-bold text-white text-xs">{referral?.totalReferrals ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}>
+              <span className="text-xs" style={{ color: "#c7d2fe" }}>Days Earned</span>
+              <span className="font-bold text-white text-xs">{(referral?.totalFreeMonthsEarned ?? 0) * (referral?.referralBonusDays ?? 30)}</span>
+            </div>
+            <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}>
+              <span className="text-xs" style={{ color: "#c7d2fe" }}>Days Used</span>
+              <span className="font-bold text-white text-xs">{(referral?.totalFreeMonthsUsed ?? 0) * (referral?.referralBonusDays ?? 30)}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
 

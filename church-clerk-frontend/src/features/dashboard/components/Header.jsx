@@ -46,7 +46,7 @@ import {
 
 
 
-function DashboardHeader({ onToggleSidebar = () => {} }) {
+function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
@@ -1511,7 +1511,7 @@ function DashboardHeader({ onToggleSidebar = () => {} }) {
 
 
 
-            onClick={() => navigate("/dashboard?page=notifications")}
+            onClick={() => { if (typeof onNotificationsClick === "function") { onNotificationsClick(); } else { navigate("/dashboard?page=notifications"); } }}
 
 
 
