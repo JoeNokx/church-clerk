@@ -70,8 +70,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
   };
 
   const LockBadge = () => (
-    <span title="Read-only: upgrade to unlock" className="ml-auto flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100">
-      <svg viewBox="0 0 24 24" fill="none" className="h-2.5 w-2.5 text-amber-600">
+    <span title="Read-only: upgrade to unlock" className="ml-auto flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
+      <svg viewBox="0 0 24 24" fill="none" className="h-2.5 w-2.5 text-amber-400">
         <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2" />
       </svg>
@@ -184,29 +184,35 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   const isOfferingPath = location.pathname === "/offering";
 
+  const isSettingsPath = location.pathname.startsWith("/dashboard/settings");
+
   const rawPage = new URLSearchParams(location.search).get("page") || "dashboard";
 
   const page = isBillingPath
 
     ? "billing"
 
-    : isOfferingPath
+    : isSettingsPath
 
-      ? "offerings"
+      ? "settings"
 
-      : rawPage === "offering"
+      : isOfferingPath
 
         ? "offerings"
 
-        : rawPage;
+        : rawPage === "offering"
+
+          ? "offerings"
+
+          : rawPage;
 
 
 
-  const linkBase = "flex items-center gap-3 px-3 py-2.5 md:py-2 rounded-lg text-[15px]";
+  const linkBase = "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150";
 
-  const linkInactive = "text-gray-700 hover:bg-gray-50";
+  const linkInactive = "text-slate-400 hover:bg-white/[0.06] hover:text-white";
 
-  const linkActive = "bg-blue-50 text-blue-900 font-medium";
+  const linkActive = "bg-indigo-500/[0.15] text-white font-medium before:absolute before:left-0 before:inset-y-1 before:w-[3px] before:rounded-r-full before:bg-indigo-400";
 
 
 
@@ -234,29 +240,29 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   return (
 
-    <aside className="w-72 bg-white border-r border-gray-200 h-screen flex flex-col md:w-72">
+    <aside className="w-72 bg-slate-900 h-screen flex flex-col">
 
-      <div className="h-16 px-4 flex items-center gap-3 border-b border-gray-200">
+      <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-800 shrink-0">
 
-        <div className="h-11 w-11 rounded-xl bg-blue-50 flex items-center justify-center ring-1 ring-blue-100 md:h-12 md:w-12">
+        <div className="h-8 w-8 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0">
 
-          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-blue-900">
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white">
 
-            <path d="M12 3L4 8V21H20V8L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M12 3L4 8V21H20V8L12 3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
 
-            <path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
 
           </svg>
 
         </div>
 
-        <div className="text-[15px] font-semibold text-blue-900">ChurchClerk</div>
+        <span className="font-semibold text-white text-[15px] tracking-tight">ChurchClerk</span>
 
       </div>
 
 
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin] [scrollbar-color:#334155_transparent]">
 
         <div
           className="space-y-6"
@@ -276,10 +282,11 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
               <NavLink to={toPage("dashboard")} className={itemClass("dashboard")}>
 
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
-
-                  <path d="M4 13h7V4H4v9Zm0 7h7v-5H4v5Zm9 0h7V11h-7v9Zm0-16v5h7V4h-7Z" stroke="currentColor" strokeWidth="1.8" />
-
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
                 </svg>
 
                 Dashboard
@@ -300,13 +307,13 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
             <div>
 
-              <div className="px-3 font-semibold text-gray-400 tracking-wider text-xs">HEADQUARTERS</div>
+              <div className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">HEADQUARTERS</div>
 
               <div className="mt-2 space-y-1">
 
                 <NavLink to={toPage("branches-overview")} className={itemClass("branches-overview")}>
 
-                  <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                  <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                       <path d="M9 3h6v4H9zM2 17h6v4H2zM16 17h6v4h-6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
@@ -331,7 +338,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
             <div>
 
-              <div className="px-3 font-semibold text-gray-400 tracking-wider text-xs">PEOPLE &amp; MINISTRIES</div>
+              <div className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">PEOPLE &amp; MINISTRIES</div>
 
               <div className="mt-2 space-y-1">
 
@@ -339,7 +346,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("members")} className={itemClass("members")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -371,7 +378,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("attendance")} className={itemClass("attendance")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -397,7 +404,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("programs-events")} className={itemClass("programs-events")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -423,12 +430,12 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("ministries")} className={itemClass("ministries")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M12 3v18M5 7h14M5 17h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                       </svg>
 
                     </span>
@@ -447,7 +454,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("announcements")} className={itemClass("announcements")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -479,7 +486,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
             <div>
 
-              <div className="px-3 font-semibold text-gray-400 tracking-wider text-xs">FINANCE</div>
+              <div className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">FINANCE</div>
 
               <div className="mt-2 space-y-1">
 
@@ -487,14 +494,12 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("tithe")} className={itemClass("tithe")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M12 3v18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
-                        <path d="M16 7H10a3 3 0 100 6h4a3 3 0 110 6H8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
+                        <rect x="2" y="7" width="20" height="10" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M6 12h.01M18 12h.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
                       </svg>
 
                     </span>
@@ -513,7 +518,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("budgeting")} className={itemClass("budgeting")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -538,7 +543,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("church-projects")} className={itemClass("church-projects")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -572,7 +577,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     <NavLink to={toPage("offering-funds")} className={`${linkBase} ${isActive ? linkActive : linkInactive}`}>
 
-                      <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                      <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -602,7 +607,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("welfare")} className={itemClass("welfare")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -626,7 +631,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("pledges")} className={itemClass("pledges")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -651,14 +656,11 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("business-ventures")} className={itemClass("business-ventures")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M4 7h16v14H4V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                        <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
+                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        <polyline points="16 7 22 7 22 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
 
                     </span>
@@ -677,7 +679,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("expenses")} className={itemClass("expenses")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -702,7 +704,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("financial-statement")} className={itemClass("financial-statement")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -733,7 +735,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
             <div>
 
-              <div className="px-3 font-semibold text-gray-400 tracking-wider text-xs">ADMINISTRATION</div>
+              <div className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">ADMINISTRATION</div>
 
               <div className="mt-2 space-y-1">
 
@@ -741,14 +743,11 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("reports-analytics")} className={itemClass("reports-analytics")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M4 20V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
-                        <path d="M7 16l4-5 4 3 3-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-
+                        <path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M2 20h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                       </svg>
 
                     </span>
@@ -767,14 +766,12 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("billing")} className={itemClass("billing")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M4 7h16v10H4V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-
-                        <path d="M7 12h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                        <path d="M14 2v6h6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                        <path d="M16 13H8M16 17H8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                       </svg>
 
                     </span>
@@ -791,7 +788,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("referrals")} className={itemClass("referrals")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -816,7 +813,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("approvals")} className={itemClass("approvals")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -833,7 +830,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     Approvals
 
                     {pendingApprovalCount > 0 ? (
-                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-500 px-1 text-[11px] font-bold text-white">
                         {pendingApprovalCount > 99 ? "99+" : pendingApprovalCount}
                       </span>
                     ) : null}
@@ -848,7 +845,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("settings")} className={itemClass("settings")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -871,7 +868,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                   <NavLink to={toPage("support-help")} className={itemClass("support-help")}>
 
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-gray-400">
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
 
@@ -900,6 +897,36 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
         </div>
 
       </nav>
+
+      {activeChurch?._id ? (
+        <div className="px-3 pb-4 pt-1 shrink-0">
+          <div className="h-px bg-slate-800 mb-3" />
+          <NavLink
+            to="/dashboard/settings?tab=church-profile"
+            onClick={() => { onBeforeNavigate?.(); onNavigate?.(); }}
+            className="group flex items-center gap-3 rounded-xl border border-slate-700/50 bg-slate-800/70 px-3 py-2.5 hover:bg-slate-800 transition-colors"
+            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2)" }}
+          >
+            <div
+              className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm text-white"
+              style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)" }}
+            >
+              {(activeChurch?.name || "C").charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-semibold text-slate-100 truncate leading-tight">
+                {activeChurch?.name || "My Church"}
+              </div>
+              <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                {activeChurch?.type || "Church Profile"}
+              </div>
+            </div>
+            <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-400 shrink-0 transition-colors" stroke="currentColor" strokeWidth="2">
+              <path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </NavLink>
+        </div>
+      ) : null}
 
     </aside>
 
