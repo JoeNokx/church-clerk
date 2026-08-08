@@ -20,6 +20,7 @@ function NotificationsDrawer({ open, onClose }) {
     total: 0, totalPages: 1, currentPage: 1, limit: 20, nextPage: null, prevPage: null
   });
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [cachedCounts, setCachedCounts] = useState({ all: 0, unread: 0 });
 
   const query = useMemo(() => ({
     page: pagination.currentPage,
@@ -34,16 +35,18 @@ function NotificationsDrawer({ open, onClose }) {
       const res = await getMyNotifications(query);
       const rows = Array.isArray(res?.data?.notifications) ? res.data.notifications : [];
       const p = res?.data?.pagination || {};
+      const total = Number(p?.total || 0);
       setNotifications(rows);
       setPagination((prev) => ({
         ...prev,
-        total: Number(p?.total || 0),
+        total,
         totalPages: Math.max(1, Number(p?.totalPages || 1)),
         currentPage: Math.max(1, Number(p?.currentPage || prev.currentPage || 1)),
         limit: Math.max(1, Number(p?.limit || prev.limit || 20)),
         nextPage: p?.nextPage ?? null,
         prevPage: p?.prevPage ?? null
       }));
+      setCachedCounts((prev) => unreadOnly ? { ...prev, unread: total } : { ...prev, all: total });
     } catch (e) {
       setNotifications([]);
       setError(e?.response?.data?.message || e?.message || "Failed to load notifications");
@@ -60,6 +63,15 @@ function NotificationsDrawer({ open, onClose }) {
     () => notifications.reduce((acc, n) => acc + (n?.readStatus ? 0 : 1), 0),
     [notifications]
   );
+
+  const displayedNotifications = useMemo(() => {
+    return notifications.filter((n) => {
+      const type = String(n?.type || "").toLowerCase();
+      const title = String(n?.title || "").toLowerCase();
+      return !type.includes("tithe") && !type.includes("offering") &&
+             !title.includes("tithe recorded") && !title.includes("offering recorded");
+    });
+  }, [notifications]);
 
   const emitUnreadChanged = useCallback(() => {
     try { window.dispatchEvent(new Event("cck:notifications:unread-changed")); } catch { void 0; }
@@ -90,13 +102,22 @@ function NotificationsDrawer({ open, onClose }) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => { setUnreadOnly((v) => !v); setPagination((p) => ({ ...p, currentPage: 1 })); }}
-              className={`rounded-lg border px-2.5 py-1.5 font-semibold text-xs ${unreadOnly ? "border-blue-200 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
-            >
-              {unreadOnly ? `Unread (${unreadCountLocal})` : "Unread only"}
-            </button>
+            <div className="flex items-center rounded-lg bg-gray-100 p-0.5">
+              <button
+                type="button"
+                onClick={() => { setUnreadOnly(false); setPagination((p) => ({ ...p, currentPage: 1 })); }}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${!unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                All{cachedCounts.all > 0 ? ` (${cachedCounts.all})` : ""}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUnreadOnly(true); setPagination((p) => ({ ...p, currentPage: 1 })); }}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Unread{cachedCounts.unread > 0 ? ` (${cachedCounts.unread})` : ""}
+              </button>
+            </div>
             <button
               type="button"
               onClick={async () => {
@@ -142,9 +163,9 @@ function NotificationsDrawer({ open, onClose }) {
                 </div>
               ))}
             </div>
-          ) : notifications.length ? (
+          ) : displayedNotifications.length ? (
             <div className="divide-y divide-gray-100">
-              {notifications.map((n) => (
+              {displayedNotifications.map((n) => (
                 <div key={n?._id} className={`px-5 py-4 ${!n?.readStatus ? "bg-blue-50/40" : ""}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">

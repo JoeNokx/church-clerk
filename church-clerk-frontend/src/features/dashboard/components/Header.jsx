@@ -1515,7 +1515,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-            className="relative h-11 w-11 inline-flex items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 md:h-12 md:w-12"
+            className="relative h-10 w-10 inline-flex items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100"
 
 
 
@@ -1523,18 +1523,10 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-600">
-
-
-
-              <path d="M15 17H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
-
-
-              <path d="M18 9a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-
-
-
+            <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+              <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
             </svg>
 
 
@@ -1607,7 +1599,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-                  className="h-11 rounded-full object-cover border border-gray-200 md:h-12 md:w-12 w-11"
+                  className="h-10 w-10 rounded-full object-cover border border-gray-200"
 
 
 
@@ -1619,7 +1611,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-                <div className="h-11 rounded-full bg-blue-900 text-white flex items-center justify-center font-semibold md:h-12 md:w-12 text-sm w-11">
+                <div className="h-10 w-10 rounded-full bg-blue-900 text-white flex items-center justify-center font-semibold text-sm">
 
 
 

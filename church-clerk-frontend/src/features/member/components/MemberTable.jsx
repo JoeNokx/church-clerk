@@ -226,7 +226,7 @@ function MemberTable({ onEdit, onDeleted }) {
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Age Group</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">City</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Added</th>
@@ -241,9 +241,9 @@ function MemberTable({ onEdit, onDeleted }) {
               return (
                 <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
                   <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{displayName}</td>
-                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || "-"}</td>
-                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.email || "-"}</td>
-                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.city || "-"}</td>
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || <span className="text-gray-400 italic">Not Specified</span>}</td>
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 capitalize">{row?.ageGroup || <span className="text-gray-400 italic">Not Specified</span>}</td>
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.city || <span className="text-gray-400 italic">Not Specified</span>}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                     {canEdit ? (
                       <InlineStatusPicker row={row} onUpdate={updateStatus} updating={statusUpdating} />

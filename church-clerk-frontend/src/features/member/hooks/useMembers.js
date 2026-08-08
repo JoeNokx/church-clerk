@@ -17,6 +17,7 @@ export const memberQueryKeys = {
     Number(filters?.limit || 10),
     String(filters?.search || ""),
     String(filters?.status || "all"),
+    String(filters?.ageGroup || "all"),
     String(filters?.dateFrom || ""),
     String(filters?.dateTo || "")
   ],
@@ -33,6 +34,7 @@ function buildMembersParams(filters) {
 
   if (next.search) params.search = next.search;
   if (next.status && next.status !== "all") params.status = next.status;
+  if (next.ageGroup && next.ageGroup !== "all") params.ageGroup = next.ageGroup;
   if (next.dateFrom) params.dateFrom = next.dateFrom;
   if (next.dateTo) params.dateTo = next.dateTo;
 

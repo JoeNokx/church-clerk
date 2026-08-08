@@ -337,7 +337,8 @@ const getAllMembers = async (req, res) => {
       fastSearch = "0",
       dateFrom,
       dateTo,
-      status, // active | inactive
+      status,
+      ageGroup,
     } = req.query;
 
     if (dateFrom && isNaN(Date.parse(dateFrom))) {
@@ -372,7 +373,11 @@ const getAllMembers = async (req, res) => {
     }
 
     if (status && status !== "all") {
-      query.status = status; // "active" or "inactive"
+      query.status = status;
+    }
+
+    if (ageGroup && ageGroup !== "all") {
+      query.ageGroup = ageGroup;
     }
 
     if (dateFrom || dateTo) {
@@ -393,7 +398,7 @@ const getAllMembers = async (req, res) => {
 
     const members = await Member.find(query)
       .sort({ createdAt: -1 })
-      .select("firstName lastName phoneNumber email dateJoined createdAt churchRole city status")
+      .select("firstName lastName phoneNumber email dateJoined createdAt churchRole city status ageGroup")
       .skip(skip)
       .limit(limitNum);
 

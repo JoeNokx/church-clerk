@@ -34,6 +34,7 @@ function SundayTooltip({ active, payload }) {
 
 function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageGroupData, membersVsVisitorsGraph, year }) {
   const [attView, setAttView] = useState("sundays");
+  const [genderHovered, setGenderHovered] = useState(null);
 
   const hasGender = Array.isArray(genderData) && genderData.some((d) => d.value > 0);
   const hasAge = Array.isArray(ageGroupData) && ageGroupData.some((d) => d.value > 0);
@@ -54,7 +55,7 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
     if (!pct) return null;
     return (
       <g>
-        <circle cx={x} cy={y} r={13} fill="white" opacity={0.9} />
+        <circle cx={x} cy={y} r={13} fill="white" opacity={0.95} style={{ filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.13))" }} />
         <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={9} fontWeight={700} fill={color}>{pct}%</text>
       </g>
     );
@@ -105,26 +106,26 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
         {/* Age Group donut */}
         <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm flex flex-col">
           <div className="font-semibold text-gray-800 text-sm">Age Groups</div>
-          <div className="mt-0.5 text-gray-400 text-xs">All members by age</div>
+          <div className="mt-0.5 text-gray-400 text-xs">All active and inactive members by age</div>
           {hasAge ? (
             <>
-              <div className="mt-2 h-44 shrink-0">
+              <div className="mt-2 h-48 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={[{ value: 1 }]} dataKey="value" cx="50%" cy="50%" innerRadius={24} outerRadius={80} fill="#e2e8f0" stroke="none" isAnimationActive={false} startAngle={0} endAngle={360} />
-                    <Pie data={ageGroupData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={28} outerRadius={76} paddingAngle={4} labelLine={false} label={AgeLabelRenderer}>
+                    <Pie data={[{ value: 1 }]} dataKey="value" cx="50%" cy="50%" innerRadius={38} outerRadius={88} fill="#e2e8f0" stroke="none" isAnimationActive={false} startAngle={0} endAngle={360} />
+                    <Pie data={ageGroupData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={42} outerRadius={84} paddingAngle={4} labelLine={false} label={AgeLabelRenderer}>
                       {(ageGroupData || []).map((entry) => <Cell key={entry.name} fill={entry.color} />)}
                     </Pie>
                     <Tooltip contentStyle={TS} formatter={(v, n) => [`${v} members`, n]} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-2 space-y-1.5">
+              <div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1.5">
                 {(ageGroupData || []).map((g) => (
-                  <div key={g.name} className="flex items-center gap-2">
+                  <div key={g.name} className="flex items-center gap-1 min-w-0">
                     <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: g.color }} />
-                    <span className="flex-1 text-xs text-gray-500">{g.name}</span>
-                    <span className="text-xs font-semibold text-gray-900">{g.value}</span>
+                    <span className="text-xs text-gray-500 truncate">{g.name}</span>
+                    <span className="text-xs font-semibold text-gray-900 ml-1 shrink-0">{g.value}</span>
                   </div>
                 ))}
               </div>
@@ -147,45 +148,57 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
           </div>
           <div className="mt-3 flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={membersVsVisitorsGraph || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="30%" barGap={4}>
+              <BarChart data={membersVsVisitorsGraph || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="18%" barGap={3}>
                 <CartesianGrid stroke="#f3f4f6" strokeDasharray="4 4" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => String(v || "").slice(0, 3)} />
                 <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={TS} labelStyle={LS} cursor={{ fill: "#f9fafb" }} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-                <Bar dataKey="newMembers" name="New Members" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="visitors" name="Visitors" fill="#a78bfa" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="newMembers" name="New Members" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={44} />
+                <Bar dataKey="visitors" name="Visitors" fill="#a78bfa" radius={[4, 4, 0, 0]} maxBarSize={44} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Gender semi-donut — bigger, same structure as age group card */}
+        {/* Gender Distribution — horizontal compact bars */}
         <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm flex flex-col">
           <div className="font-semibold text-gray-800 text-sm">Gender Distribution</div>
-          <div className="mt-0.5 text-gray-400 text-xs">All members</div>
+          <div className="mt-0.5 text-gray-400 text-xs">All active and inactive members</div>
           {hasGender ? (
-            <>
-              <div className="mt-2 h-44 shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={genderData} dataKey="value" nameKey="name" startAngle={180} endAngle={0} innerRadius={16} outerRadius={82} paddingAngle={2} cx="50%" cy="90%">
-                      {(genderData || []).map((entry) => <Cell key={entry.name} fill={entry.color} />)}
-                    </Pie>
-                    <Tooltip contentStyle={TS} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-2 space-y-1.5">
-                {(genderData || []).map((g) => (
-                  <div key={g.name} className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: g.color }} />
-                    <span className="flex-1 text-xs text-gray-500">{g.name}</span>
-                    <span className="text-xs font-semibold text-gray-900">{g.value}</span>
-                  </div>
-                ))}
-              </div>
-            </>
+            <div className="mt-4 flex flex-col justify-center flex-1 gap-4">
+              {(() => {
+                const total = (genderData || []).reduce((s, d) => s + (d.value || 0), 0);
+                return (genderData || []).map((g) => {
+                  const pct = total > 0 ? Math.round((g.value / total) * 100) : 0;
+                  return (
+                    <div key={g.name}>
+                      <div
+                        className="relative w-full bg-gray-100 rounded-xl overflow-hidden"
+                        style={{ height: 64 }}
+                        onMouseEnter={() => setGenderHovered(g.name)}
+                        onMouseLeave={() => setGenderHovered(null)}
+                      >
+                        <div style={{ width: `${pct}%`, backgroundColor: g.color, height: "100%", borderRadius: 12, transition: "width 0.6s ease" }} />
+                        {genderHovered === g.name && (
+                          <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "white", borderRadius: 12, border: "1px solid #e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.07)", padding: "8px 12px", zIndex: 10, whiteSpace: "nowrap", pointerEvents: "none" }}>
+                            <div style={{ fontWeight: 700, color: "#111827", marginBottom: 3, fontSize: 12 }}>{g.name}</div>
+                            <div style={{ fontSize: 11, color: "#6b7280" }}>{g.value} members ({pct}%)</div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: g.color }} />
+                          <span className="text-xs font-semibold text-gray-700">{g.name}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{g.value} ({pct}%)</span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
           ) : (
             <div className="mt-4 flex flex-col items-center justify-center py-8 text-center">
               <div className="text-gray-300 text-3xl mb-1">◔</div>

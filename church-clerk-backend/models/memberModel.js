@@ -12,7 +12,7 @@ const memberSchema = new mongoose.Schema({
   gender: { type: String, enum: ['male', 'female'] },
   occupation: { type: String, trim: true },
   nationality: { type: String, trim: true },
-  ageGroup: { type: String, enum: ['children', 'youth', 'adult', 'elderly'], trim: true },
+  ageGroup: { type: String, enum: ['children', 'teenagers', 'youth', 'adult', 'elderly'], trim: true },
   status: { type: String, enum: ['active', 'dormant', 'transferred', 'left_church', 'deceased', 'temporarily_away', 'inactive', 'visitor', 'former'], default: 'active' },
   photoUrl: { type: String, trim: true },
   note: {type: String, trim: true},

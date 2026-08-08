@@ -25,6 +25,7 @@ const STATUS_OPTIONS = [
 
 const AGE_GROUP_OPTIONS = [
   { label: "Children", value: "children" },
+  { label: "Teenagers", value: "teenagers" },
   { label: "Youth", value: "youth" },
   { label: "Adult", value: "adult" },
   { label: "Elderly", value: "elderly" },

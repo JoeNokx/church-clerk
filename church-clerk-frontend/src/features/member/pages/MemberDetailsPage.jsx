@@ -88,7 +88,7 @@ function DataPair({ label, value }) {
   return (
     <div>
       <div className="font-semibold text-gray-500 text-xs">{label}</div>
-      <div className="mt-1 font-semibold text-gray-900 text-sm">{value ?? "-"}</div>
+      <div className="mt-1 font-semibold text-gray-900 text-sm">{value ?? "Not Specified"}</div>
     </div>
   );
 }
@@ -318,8 +318,8 @@ function MemberDetailsPageInner() {
                     <DataPair label="Date Joined" value={joined} />
                   </div>
                   <div className="md:col-span-2">
-                    <div className="font-semibold text-gray-500 text-xs">Note</div>
-                    <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{member?.note || "-"}</div>
+                    <div className="font-semibold text-gray-500 text-xs">Additional Information</div>
+                    <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{member?.note || "Not Specified"}</div>
                   </div>
                 </div>
               </div>

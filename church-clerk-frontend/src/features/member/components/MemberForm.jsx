@@ -13,6 +13,11 @@ const STATUS_OPTIONS = [
   { label: "Temporarily Away", value: "temporarily_away" },
 ];
 
+const GENDER_OPTIONS = [
+  { label: "Male", value: "male" },
+  { label: "Female", value: "female" },
+];
+
 const AGE_GROUP_OPTIONS = [
   { label: "Children", value: "children" },
   { label: "Youth", value: "youth" },
@@ -34,6 +39,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
   const [city, setCity] = useState("");
   const [status, setStatus] = useState("active");
   const [ageGroup, setAgeGroup] = useState("");
+  const [gender, setGender] = useState("");
   const [note, setNote] = useState("");
   const [visitorId, setVisitorId] = useState(null);
   const [formError, setFormError] = useState(null);
@@ -51,6 +57,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
       setCity(initialData.city || "");
       setStatus(initialData.status || "active");
       setAgeGroup(initialData.ageGroup || "");
+      setGender(initialData.gender || "");
       setNote(initialData.note || "");
       setVisitorId(initialData.visitorId || null);
       return;
@@ -63,6 +70,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
     setCity(initialData?.city || "");
     setStatus(initialData?.status || "active");
     setAgeGroup(initialData?.ageGroup || "");
+    setGender(initialData?.gender || "");
     setNote(initialData?.note || "");
     setVisitorId(initialData?.visitorId || null);
   }, [open, mode, initialData]);
@@ -81,14 +89,30 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
       return;
     }
 
+    if (!gender) {
+      setFormError("Please select a gender.");
+      return;
+    }
+
+    if (!ageGroup) {
+      setFormError("Please select an age group.");
+      return;
+    }
+
+    if (!city?.trim()) {
+      setFormError("Location / Residential address is required.");
+      return;
+    }
+
     const payload = {
       firstName,
       lastName,
       phoneNumber,
       email,
+      gender,
       city,
       status,
-      ageGroup: ageGroup || undefined,
+      ageGroup,
       note,
       visitorId: visitorId || null
     };
@@ -140,7 +164,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder=""
+                placeholder="e.g. John"
               />
             </div>
 
@@ -150,7 +174,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder=""
+                placeholder="e.g. Doe"
               />
             </div>
 
@@ -167,7 +191,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder=""
+                placeholder="e.g. john.doe@email.com (optional)"
               />
             </div>
 
@@ -177,8 +201,22 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder=""
+                placeholder="e.g. Accra, Greater Accra"
               />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-500 text-xs">Gender</label>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+              >
+                <option value="">Select gender</option>
+                {GENDER_OPTIONS.map((g) => (
+                  <option key={g.value} value={g.value}>{g.label}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -213,12 +251,13 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block font-semibold text-gray-500 text-xs">Note</label>
+              <label className="block font-semibold text-gray-500 text-xs">Additional Information</label>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                 rows={3}
+                placeholder="Any extra notes about this member (optional)"
               />
             </div>
           </div>

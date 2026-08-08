@@ -210,8 +210,8 @@ const getDashboardAnalytics = async (req, res) => {
           { $group: { _id: "$ageGroup", count: { $sum: 1 } } }
         ]);
         const totalWithAgeGroup = ageGroupAgg.reduce((s, g) => s + g.count, 0);
-        const AGE_GROUP_COLORS = { children: "#8b5cf6", youth: "#3b82f6", adult: "#10b981", elderly: "#f59e0b" };
-        const ageGroupDistribution = ["children", "youth", "adult", "elderly"].map(ag => {
+        const AGE_GROUP_COLORS = { children: "#8b5cf6", teenagers: "#ec4899", youth: "#3b82f6", adult: "#10b981", elderly: "#f59e0b" };
+        const ageGroupDistribution = ["children", "teenagers", "youth", "adult", "elderly"].map(ag => {
           const found = ageGroupAgg.find(g => g._id === ag);
           const count = found ? found.count : 0;
           return {
@@ -300,8 +300,9 @@ const getDashboardWidget = async (req, res) => {
       getValue: async () => {
         // --- 1. Upcoming Birthdays (next 30 days) ---
         // MongoDB cannot match by month/day directly, so we handle in JS after fetching
-        const allMembers = await Member.find({ ...query, status: "active" },
-          "firstName lastName dateOfBirth").lean();
+        const birthdayQuery = { ...query, status: { $in: ["active", "dormant", "temporarily_away"] } };
+        const allMembers = await Member.find(birthdayQuery,
+          "firstName lastName dateOfBirth profileImageUrl photoUrl").lean();
 
         const upcomingBirthdays = allMembers
           .map(m => {
@@ -312,10 +313,7 @@ const getDashboardWidget = async (req, res) => {
               nextBirthday.setFullYear(today.getFullYear() + 1);
             }
             const diffDays = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
-            if (diffDays <= 30) {
-              return { ...m, nextBirthday: nextBirthday.toISOString().split("T")[0], daysAway: diffDays };
-            }
-            return null;
+            return { ...m, nextBirthday: nextBirthday.toISOString().split("T")[0], daysAway: diffDays };
           })
           .filter(Boolean)
           .sort((a, b) => a.daysAway - b.daysAway)
@@ -325,7 +323,7 @@ const getDashboardWidget = async (req, res) => {
         const recentMembers = await Member.find(query)
           .sort({ createdAt: -1 })
           .limit(10)
-          .select("firstName lastName createdAt status phoneNumber ageGroup city")
+          .select("firstName lastName createdAt status phoneNumber ageGroup city profileImageUrl photoUrl")
           .lean();
 
         // --- 3. Upcoming Events ---

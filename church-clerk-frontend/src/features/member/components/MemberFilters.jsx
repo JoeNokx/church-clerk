@@ -3,6 +3,15 @@ import debounce from "../../../shared/utils/debounce.js";
 import MemberContext from "../member.store.js";
 import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 
+const AGE_GROUP_OPTIONS = [
+  { label: "All Ages", value: "all" },
+  { label: "Children", value: "children" },
+  { label: "Teenagers", value: "teenagers" },
+  { label: "Youth", value: "youth" },
+  { label: "Adult", value: "adult" },
+  { label: "Elderly", value: "elderly" },
+];
+
 const STATUS_OPTIONS = [
   { label: "All", value: "all" },
   { label: "Active", value: "active" },
@@ -50,6 +59,12 @@ function MemberFilters() {
     await store?.fetchMembers({ status: value, page: 1 });
   };
 
+  const onAgeGroupChange = async (e) => {
+    const value = e.target.value;
+    store?.setFilters({ ageGroup: value, page: 1 });
+    await store?.fetchMembers({ ageGroup: value, page: 1 });
+  };
+
   const applyDates = async (from, to) => {
     store?.setFilters({ dateFrom: from, dateTo: to, page: 1 });
     await store?.fetchMembers({ dateFrom: from, dateTo: to, page: 1 });
@@ -64,7 +79,7 @@ function MemberFilters() {
         placeholder="Search name, phone or email..."
       />
 
-      <div className="flex items-center gap-2 w-full md:w-auto">
+      <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
         <select
           value={store?.filters?.status || "all"}
           onChange={onStatusChange}
@@ -73,6 +88,18 @@ function MemberFilters() {
           {STATUS_OPTIONS.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={store?.filters?.ageGroup || "all"}
+          onChange={onAgeGroupChange}
+          className="h-11 flex-1 md:flex-none rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        >
+          {AGE_GROUP_OPTIONS.map((a) => (
+            <option key={a.value} value={a.value}>
+              {a.label}
             </option>
           ))}
         </select>

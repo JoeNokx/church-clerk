@@ -106,7 +106,7 @@ function formatShortDate(value) {
 
   if (Number.isNaN(d.getTime())) return "—";
 
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
 }
 
@@ -206,6 +206,30 @@ function formatRange(from, to) {
 
 }
 
+
+function getDaysUntil(dateStr) {
+  if (!dateStr) return null;
+  const target = new Date(dateStr);
+  if (isNaN(target.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+}
+
+function CalendarAvatar({ dateStr }) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  const day = d.getDate();
+  const month = d.toLocaleDateString("en-GB", { month: "short" }).toUpperCase();
+  return (
+    <div className="shrink-0 flex flex-col items-center rounded-lg overflow-hidden border border-indigo-100" style={{ width: 38, minWidth: 38 }}>
+      <div className="w-full bg-indigo-100 text-indigo-600 text-center font-bold py-0.5" style={{ fontSize: 8, letterSpacing: "0.05em" }}>{month}</div>
+      <div className="text-gray-900 font-bold text-sm leading-none py-1 text-center w-full bg-white">{day}</div>
+    </div>
+  );
+}
 
 function formatTimeRange(from, to, legacy) {
 
@@ -733,9 +757,17 @@ function DashboardOverview({ onNavigate }) {
 
           <div className="font-medium text-gray-900 md:text-2xl lg:text-3xl text-lg">Welcome back, {authUser?.fullName?.split(" ")[0] || "there"}!</div>
 
-          <div className="mt-1 text-gray-500 text-sm">Here is a quick summary of what's happening with your church.</div>
+          <div className="mt-1 text-gray-500 text-sm">Here is a quick summary of what's happening at {churchCtx?.activeChurch?.name || "your church"}.</div>
 
         </div>
+
+        <button
+          type="button"
+          onClick={() => onNavigate("referrals")}
+          className="shrink-0 mt-1 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2.5 md:py-2 font-semibold text-indigo-700 hover:bg-indigo-100 whitespace-nowrap text-sm"
+        >
+          🎁 Earn a free subscription
+        </button>
 
       </div>
 
@@ -858,7 +890,7 @@ function DashboardOverview({ onNavigate }) {
 
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
 
-        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden lg:col-span-2">
+        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
 
           <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
 
@@ -866,7 +898,7 @@ function DashboardOverview({ onNavigate }) {
 
               <div className="font-semibold text-gray-900 text-sm">Recent Members</div>
 
-              <div className="text-gray-500 text-xs">Recently registered</div>
+              <div className="text-gray-500 text-xs">Members recently registered with your church</div>
 
             </div>
 
@@ -876,11 +908,12 @@ function DashboardOverview({ onNavigate }) {
 
               onClick={() => onNavigate("members")}
 
-              className="font-semibold text-blue-700 hover:underline text-xs"
+              className="inline-flex items-center gap-0.5 text-gray-400 hover:text-blue-600 text-[11px]"
 
             >
 
               View All
+              <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2"><path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/></svg>
 
             </button>
 
@@ -926,23 +959,30 @@ function DashboardOverview({ onNavigate }) {
 
                     >
 
-                      <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 py-1.5 pr-4 pl-3 whitespace-nowrap">
+                      <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 py-2.5 pr-4 pl-3 whitespace-nowrap">
 
-                        <span className={`font-semibold text-xs ${canViewMembers ? "text-blue-700" : "text-gray-900"}`}>
-
-                          {`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}
-
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {(m?.profileImageUrl || m?.photoUrl) ? (
+                            <img src={m.profileImageUrl || m.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover border border-gray-200 shrink-0" />
+                          ) : (
+                            <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-[10px] shrink-0">
+                              {(m?.firstName || "?").slice(0, 1).toUpperCase()}
+                            </div>
+                          )}
+                          <span className="font-semibold text-xs text-gray-900">
+                            {`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}
+                          </span>
+                        </div>
 
                       </td>
 
-                      <td className="py-1.5 px-3 text-gray-500 whitespace-nowrap">{m?.phoneNumber || "—"}</td>
+                      <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{m?.phoneNumber || "—"}</td>
 
-                      <td className="py-1.5 px-3 text-gray-500 whitespace-nowrap capitalize">{m?.ageGroup || "—"}</td>
+                      <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap capitalize">{m?.ageGroup || "—"}</td>
 
-                      <td className="py-1.5 px-3 text-gray-500 whitespace-nowrap">{m?.city || "—"}</td>
+                      <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{m?.city || "—"}</td>
 
-                      <td className="py-1.5 pl-3 pr-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</td>
+                      <td className="py-2.5 pl-3 pr-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(m?.createdAt || m?.dateJoined || m?.joinedAt)}</td>
 
                     </tr>
 
@@ -962,55 +1002,70 @@ function DashboardOverview({ onNavigate }) {
 
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
+        <div className="lg:row-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden flex flex-col shadow-sm">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5 shrink-0">
             <div>
               <div className="font-semibold text-gray-900 text-sm">Upcoming Birthdays</div>
-              <div className="text-gray-500 text-xs">Next 30 days</div>
+              <div className="text-gray-500 text-xs">Sorted by soonest</div>
             </div>
-            <button type="button" onClick={openBirthdaysModal} className="font-semibold text-blue-700 hover:underline text-xs">View All</button>
+            <button type="button" onClick={openBirthdaysModal} className="inline-flex items-center gap-0.5 text-gray-400 hover:text-blue-600 text-[11px]">
+              View All
+              <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2"><path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
           </div>
-          <div className="px-3 pb-3">
+          <div className="px-3 pb-3 flex-1 overflow-hidden">
             <div className="mt-2 divide-y divide-gray-200">
               {upcomingBirthdays.length ? (
                 upcomingBirthdays.map((m, idx) =>
                   canViewMembers ? (
-                    <button key={`${m?._id || "b"}-${idx}`} type="button" onClick={() => goToMemberDetails(m?._id)} className="w-full text-left flex items-start justify-between gap-2 py-1 hover:bg-gray-50">
-                      <div className="min-w-0">
+                    <button key={`${m?._id || "b"}-${idx}`} type="button" onClick={() => goToMemberDetails(m?._id)} className="w-full text-left flex items-center gap-2.5 py-2 hover:bg-gray-50">
+                      {(m?.profileImageUrl || m?.photoUrl) ? (
+                        <img src={m.profileImageUrl || m.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover border border-gray-200 shrink-0" />
+                      ) : (
+                        <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-[10px] shrink-0">
+                          {(m?.firstName || "?").slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
                         <div className="font-semibold text-gray-900 truncate text-xs">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
                         <div className="text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
                       </div>
-                      <div className="shrink-0 text-gray-500 text-xs">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                      <div className="shrink-0 text-gray-600 text-[10px] font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{Number(m?.daysAway || 0)} day(s)</div>
                     </button>
                   ) : (
-                    <div key={`${m?._id || "b"}-${idx}`} className="w-full text-left flex items-start justify-between gap-2 py-1">
-                      <div className="min-w-0">
+                    <div key={`${m?._id || "b"}-${idx}`} className="w-full flex items-center gap-2.5 py-2">
+                      {(m?.profileImageUrl || m?.photoUrl) ? (
+                        <img src={m.profileImageUrl || m.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover border border-gray-200 shrink-0" />
+                      ) : (
+                        <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-[10px] shrink-0">
+                          {(m?.firstName || "?").slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
                         <div className="font-semibold text-gray-900 truncate text-xs">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
                         <div className="text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
                       </div>
-                      <div className="shrink-0 text-gray-500 text-xs">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                      <div className="shrink-0 text-gray-600 text-[10px] font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{Number(m?.daysAway || 0)} day(s)</div>
                     </div>
                   )
                 )
               ) : (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No birthdays in the next 30 days.</div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No upcoming birthdays.</div>
               )}
             </div>
           </div>
         </div>
 
-      </div>
-
-
-
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
-        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
           <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
             <div>
-              <div className="font-semibold text-gray-900 text-sm">Upcoming Events</div>
+              <div className="font-semibold text-gray-900 text-sm">Upcoming Programs</div>
               <div className="text-gray-500 text-xs">Next scheduled programs</div>
             </div>
-            <button type="button" onClick={() => onNavigate("programs-events")} className="font-semibold text-blue-700 hover:underline text-xs">View All</button>
+            <button type="button" onClick={() => onNavigate("programs-events")} className="inline-flex items-center gap-0.5 text-gray-400 hover:text-blue-600 text-[11px]">
+              View All
+              <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2"><path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
           </div>
           <div className="px-3 pb-3">
             <div className="mt-2">
@@ -1029,65 +1084,41 @@ function DashboardOverview({ onNavigate }) {
               ) : upcomingEventsError ? (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{upcomingEventsError}</div>
               ) : upcomingEvents.length ? (
-                <div className="divide-y divide-gray-200 rounded-lg border border-gray-200">
-                  {upcomingEvents.map((ev, idx) =>
-                    canViewEvents ? (
-                      <button key={`${ev?._id || "ev"}-${idx}`} type="button" onClick={() => goToEventDetails(ev?._id)} className="w-full text-left px-3 py-1.5 hover:bg-gray-50">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
+                <div className="divide-y divide-gray-200">
+                  {upcomingEvents.map((ev, idx) => {
+                    const evDate = ev?.dateFrom || ev?.startDate || ev?.date;
+                    const daysLeft = getDaysUntil(evDate);
+                    const daysLabel = daysLeft === null ? "" : daysLeft === 0 ? "Today" : daysLeft === 1 ? "1 day" : `${daysLeft} days`;
+                    return canViewEvents ? (
+                      <button key={`${ev?._id || "ev"}-${idx}`} type="button" onClick={() => goToEventDetails(ev?._id)} className="w-full text-left px-2 py-2 hover:bg-gray-50">
+                        <div className="flex items-center gap-2.5">
+                          <CalendarAvatar dateStr={evDate} />
+                          <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate text-xs">{ev?.title || ev?.name || "—"}</div>
-                            <div className="text-gray-500 text-xs">{formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}</div>
+                            <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
                             <div className="text-gray-400 text-xs">{formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}{ev?.location ? ` • ${ev.location}` : ""}</div>
                           </div>
-                          <div className="shrink-0 text-gray-400 text-xs">View</div>
+                          {daysLabel ? <div className="shrink-0 text-gray-600 text-[10px] font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{daysLabel}</div> : null}
                         </div>
                       </button>
                     ) : (
-                      <div key={`${ev?._id || "ev"}-${idx}`} className="w-full text-left px-3 py-1.5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
+                      <div key={`${ev?._id || "ev"}-${idx}`} className="w-full px-2 py-2">
+                        <div className="flex items-center gap-2.5">
+                          <CalendarAvatar dateStr={evDate} />
+                          <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate text-xs">{ev?.title || ev?.name || "—"}</div>
-                            <div className="text-gray-500 text-xs">{formatRange(ev?.dateFrom || ev?.startDate || ev?.date, ev?.dateTo || ev?.endDate)}</div>
+                            <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
                             <div className="text-gray-400 text-xs">{formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}{ev?.location ? ` • ${ev.location}` : ""}</div>
                           </div>
+                          {daysLabel ? <div className="shrink-0 text-gray-600 text-[10px] font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{daysLabel}</div> : null}
                         </div>
                       </div>
-                    )
-                  )}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No upcoming events.</div>
               )}
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl overflow-hidden" style={{ background: "#363535" }}>
-          <div className="px-4 pt-4 pb-3">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#c7d2fe" }}>Referral Program</div>
-                <div className="text-white font-bold text-base mt-0.5">Invite &amp; Earn</div>
-                <div className="text-xs mt-0.5" style={{ color: "#e0e7ff" }}>Free days for every referral</div>
-              </div>
-              <button type="button" onClick={() => onNavigate("referrals")} className="mt-0.5 shrink-0 text-xs font-semibold hover:text-white" style={{ color: "#c7d2fe" }}>Details →</button>
-            </div>
-            <div className="mt-3 rounded-lg px-3 py-2.5 text-center" style={{ background: "rgba(255,255,255,0.15)" }}>
-              <div className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#c7d2fe" }}>Free Days Remaining</div>
-              <div className="text-white font-extrabold text-3xl mt-0.5 leading-none">{(referral?.freeMonthsRemaining ?? 0) * (referral?.referralBonusDays ?? 30)}</div>
-            </div>
-          </div>
-          <div className="px-4 pb-4">
-            <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}>
-              <span className="text-xs" style={{ color: "#c7d2fe" }}>Total Referrals</span>
-              <span className="font-bold text-white text-xs">{referral?.totalReferrals ?? 0}</span>
-            </div>
-            <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}>
-              <span className="text-xs" style={{ color: "#c7d2fe" }}>Days Earned</span>
-              <span className="font-bold text-white text-xs">{(referral?.totalFreeMonthsEarned ?? 0) * (referral?.referralBonusDays ?? 30)}</span>
-            </div>
-            <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}>
-              <span className="text-xs" style={{ color: "#c7d2fe" }}>Days Used</span>
-              <span className="font-bold text-white text-xs">{(referral?.totalFreeMonthsUsed ?? 0) * (referral?.referralBonusDays ?? 30)}</span>
             </div>
           </div>
         </div>

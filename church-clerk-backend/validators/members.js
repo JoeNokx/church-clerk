@@ -25,7 +25,7 @@ export const createMemberSchema = Joi.object({
   gender: Joi.string().valid("male", "female").allow("", null).optional(),
   occupation: Joi.string().trim().max(120).allow("", null).optional(),
   nationality: Joi.string().trim().max(80).allow("", null).optional(),
-  ageGroup: Joi.string().valid("children", "youth", "adult", "elderly").allow("", null).optional(),
+  ageGroup: Joi.string().valid("children", "teenagers", "youth", "adult", "elderly").allow("", null).optional(),
   status: Joi.string().valid("active", "dormant", "transferred", "left_church", "deceased", "temporarily_away", "inactive", "visitor", "former").allow("", null).optional(),
   note: Joi.string().trim().max(2000).allow("", null).optional(),
 
