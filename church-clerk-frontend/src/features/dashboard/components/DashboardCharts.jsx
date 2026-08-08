@@ -72,7 +72,7 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
             <div>
               <div className="font-semibold text-gray-800 text-sm">Sundays Attendance Trends</div>
               <div className="mt-0.5 text-gray-400 text-xs">
-                {attView === "sundays" ? "Last 10 Sunday services · hover for details" : `Monthly totals · ${year}`}
+                {attView === "sundays" ? "Last 10 Sunday services." : `Monthly totals · ${year}`}
               </div>
             </div>
             <div className="flex items-center rounded-lg bg-gray-100 p-0.5 shrink-0">

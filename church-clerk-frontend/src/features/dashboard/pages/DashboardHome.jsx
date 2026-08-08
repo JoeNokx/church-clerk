@@ -421,6 +421,8 @@ function DashboardOverview({ onNavigate }) {
 
   const [birthdaysPage, setBirthdaysPage] = useState(1);
 
+  const [birthdaysMonthFilter, setBirthdaysMonthFilter] = useState("");
+
 
   const last10SundaysGraph = useMemo(() => {
 
@@ -472,9 +474,9 @@ function DashboardOverview({ onNavigate }) {
 
     return [
 
-      { name: "Male", value: male, color: "#1d4ed8" },
+      { name: "Male", value: male, color: "#f59e0b" },
 
-      { name: "Female", value: female, color: "#f97316" }
+      { name: "Female", value: female, color: "#8b5cf6" }
 
     ];
 
@@ -540,6 +542,8 @@ function DashboardOverview({ onNavigate }) {
     setBirthdaysSearch("");
 
     setBirthdaysPage(1);
+
+    setBirthdaysMonthFilter("");
 
     setBirthdaysModalError("");
 
@@ -611,7 +615,14 @@ function DashboardOverview({ onNavigate }) {
 
     const q = String(birthdaysSearch || "").trim().toLowerCase();
 
-    const rows = Array.isArray(allBirthdays) ? allBirthdays : [];
+    let rows = Array.isArray(allBirthdays) ? allBirthdays : [];
+
+    if (birthdaysMonthFilter) {
+      rows = rows.filter((m) => {
+        const d = new Date(m?.nextBirthday);
+        return !isNaN(d) && String(d.getMonth() + 1) === birthdaysMonthFilter;
+      });
+    }
 
     if (!q) return rows;
 
@@ -623,7 +634,7 @@ function DashboardOverview({ onNavigate }) {
 
     });
 
-  }, [allBirthdays, birthdaysSearch]);
+  }, [allBirthdays, birthdaysSearch, birthdaysMonthFilter]);
 
 
 
@@ -1188,7 +1199,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-              <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
 
                 <input
 
@@ -1204,53 +1215,29 @@ function DashboardOverview({ onNavigate }) {
 
                   placeholder="Search members"
 
-                  className="w-full md:flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 text-sm"
+                  className="flex-1 min-w-[160px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 text-sm"
 
                 />
 
+                <select
 
+                  value={birthdaysMonthFilter}
 
-                <div className="flex items-center gap-2 shrink-0">
+                  onChange={(e) => { setBirthdaysMonthFilter(e.target.value); setBirthdaysPage(1); }}
 
-                  <button
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm shrink-0"
 
-                    type="button"
+                >
 
-                    onClick={() => setBirthdaysPage((p) => Math.max(1, p - 1))}
+                  <option value="">All months</option>
 
-                    disabled={birthdaysSafePage <= 1}
+                  {["January","February","March","April","May","June","July","August","September","October","November","December"].map((mo, i) => (
 
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
+                    <option key={i + 1} value={String(i + 1)}>{mo}</option>
 
-                  >
+                  ))}
 
-                    Prev
-
-                  </button>
-
-                  <div className="text-gray-600 text-sm">
-
-                    Page {birthdaysSafePage} of {birthdaysTotalPages}
-
-                  </div>
-
-                  <button
-
-                    type="button"
-
-                    onClick={() => setBirthdaysPage((p) => Math.min(birthdaysTotalPages, p + 1))}
-
-                    disabled={birthdaysSafePage >= birthdaysTotalPages}
-
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-
-                  >
-
-                    Next
-
-                  </button>
-
-                </div>
+                </select>
 
               </div>
 
@@ -1288,19 +1275,27 @@ function DashboardOverview({ onNavigate }) {
 
                           onClick={() => goToMemberDetails(m?._id)}
 
-                          className="w-full text-left flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50"
+                          className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
 
                         >
 
-                          <div className="min-w-0">
+                          {(m?.profileImageUrl || m?.photoUrl) ? (
+                            <img src={m.profileImageUrl || m.photoUrl} alt="" className="h-9 w-9 rounded-full object-cover border border-gray-200 shrink-0" />
+                          ) : (
+                            <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-sm shrink-0">
+                              {(m?.firstName || "?").slice(0, 1).toUpperCase()}
+                            </div>
+                          )}
 
-                            <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                          <div className="min-w-0 flex-1">
 
-                            <div className="mt-0.5 text-gray-500 text-sm">{formatShortDate(m?.nextBirthday)}</div>
+                            <div className="font-semibold text-gray-900 truncate text-sm">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+
+                            <div className="mt-0.5 text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
 
                           </div>
 
-                          <div className="shrink-0 font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                          <div className="shrink-0 text-gray-600 text-xs font-medium whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
 
                         </button>
 
@@ -1310,19 +1305,27 @@ function DashboardOverview({ onNavigate }) {
 
                           key={`${m?._id || "bd"}-${idx}`}
 
-                          className="w-full text-left flex items-center justify-between gap-3 px-4 py-3"
+                          className="w-full flex items-center gap-3 px-4 py-3"
 
                         >
 
-                          <div className="min-w-0">
+                          {(m?.profileImageUrl || m?.photoUrl) ? (
+                            <img src={m.profileImageUrl || m.photoUrl} alt="" className="h-9 w-9 rounded-full object-cover border border-gray-200 shrink-0" />
+                          ) : (
+                            <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-sm shrink-0">
+                              {(m?.firstName || "?").slice(0, 1).toUpperCase()}
+                            </div>
+                          )}
 
-                            <div className="font-semibold text-gray-900 truncate text-base">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                          <div className="min-w-0 flex-1">
 
-                            <div className="mt-0.5 text-gray-500 text-sm">{formatShortDate(m?.nextBirthday)}</div>
+                            <div className="font-semibold text-gray-900 truncate text-sm">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+
+                            <div className="mt-0.5 text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
 
                           </div>
 
-                          <div className="shrink-0 font-semibold text-gray-700 text-sm">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
+                          <div className="shrink-0 text-gray-600 text-xs font-medium whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1">{Number(m?.daysAway || 0)} day{Number(m?.daysAway || 0) === 1 ? "" : "s"}</div>
 
                         </div>
 
@@ -1337,6 +1340,50 @@ function DashboardOverview({ onNavigate }) {
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No birthdays found.</div>
 
                 )}
+
+              </div>
+
+            </div>
+
+            <div className="border-t border-gray-200 flex items-center justify-between px-4 py-3 gap-2 shrink-0 md:px-6">
+
+              <div className="text-gray-500 text-sm">{filteredBirthdays.length} {filteredBirthdays.length === 1 ? "member" : "members"}</div>
+
+              <div className="flex items-center gap-2">
+
+                <button
+
+                  type="button"
+
+                  onClick={() => setBirthdaysPage((p) => Math.max(1, p - 1))}
+
+                  disabled={birthdaysSafePage <= 1}
+
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
+
+                >
+
+                  Prev
+
+                </button>
+
+                <div className="text-gray-600 text-sm">Page {birthdaysSafePage} of {birthdaysTotalPages}</div>
+
+                <button
+
+                  type="button"
+
+                  onClick={() => setBirthdaysPage((p) => Math.min(birthdaysTotalPages, p + 1))}
+
+                  disabled={birthdaysSafePage >= birthdaysTotalPages}
+
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
+
+                >
+
+                  Next
+
+                </button>
 
               </div>
 

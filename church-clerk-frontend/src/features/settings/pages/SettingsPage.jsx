@@ -118,7 +118,12 @@ function SettingsPage() {
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
   const [avatarRemoved, setAvatarRemoved] = useState(false);
   const [removeAvatarConfirmOpen, setRemoveAvatarConfirmOpen] = useState(false);
+  const [avatarEnlarged, setAvatarEnlarged] = useState(false);
   const avatarInputRef = useRef(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
+  const [logoEnlarged, setLogoEnlarged] = useState(false);
+  const logoInputRef = useRef(null);
 
   const [pwOld, setPwOld] = useState("");
   const [pwNew, setPwNew] = useState("");
@@ -578,6 +583,7 @@ function SettingsPage() {
         setCurrencyLocked(lockFlag);
         setCurrency(lockFlag ? (nextCurrency || "GHS") : (AFRICAN_CURRENCY_CODES.includes(nextCurrency) ? nextCurrency : "GHS"));
         setFoundedDate(formatYmdLocal(church?.foundedDate));
+        setLogoPreviewUrl(church?.logoUrl || "");
         setReferralCodeInput("");
 
         const sStatus = String(church?.sender_id_status || "none").trim() || "none";
@@ -724,7 +730,18 @@ function SettingsPage() {
         payload.currency = String(currency || "").trim().toUpperCase();
       }
 
-      await updateChurchProfile(activeChurch._id, payload);
+      if (logoFile) {
+        const fd = new FormData();
+        Object.entries(payload).forEach(([k, v]) => {
+          if (Array.isArray(v)) { v.forEach((item) => fd.append(k, item)); }
+          else if (v !== null && v !== undefined) { fd.append(k, String(v)); }
+        });
+        fd.append("logo", logoFile);
+        await updateChurchProfile(activeChurch._id, fd);
+        setLogoFile(null);
+      } else {
+        await updateChurchProfile(activeChurch._id, payload);
+      }
 
       if (typeof switchChurch === "function") {
         try {
@@ -1270,7 +1287,8 @@ function SettingsPage() {
                     <img
                       src={avatarUrl}
                       alt={user?.fullName || "User"}
-                      className="h-24 w-24 rounded-full object-cover border border-gray-200"
+                      className="h-24 w-24 rounded-full object-cover border border-gray-200 cursor-zoom-in"
+                      onClick={() => setAvatarEnlarged(true)}
                     />
                   ) : (
                     <div className="h-24 w-24 rounded-full bg-blue-900 text-white flex items-center justify-center font-semibold text-2xl">
@@ -1359,6 +1377,17 @@ function SettingsPage() {
                 </div>
                 <div className="mt-2 text-center text-gray-400 text-xs">Max 2 MB · JPG PNG WEBP</div>
               </div>
+
+              {avatarEnlarged && avatarUrl ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setAvatarEnlarged(false)}>
+                  <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <img src={avatarUrl} alt={user?.fullName || "User"} className="max-h-[85vh] max-w-[85vw] rounded-2xl object-contain shadow-2xl" />
+                    <button type="button" className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50" onClick={() => setAvatarEnlarged(false)}>
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <form onSubmit={handleSaveMyProfile} className="flex-1 min-w-[260px] space-y-4">
                 <div>
@@ -1580,8 +1609,10 @@ function SettingsPage() {
             <div className="flex items-start gap-3">
               <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-700">
-                  <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
-                  <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M12 3v3M10.5 6h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                  <path d="M4 21V11l8-5 8 5v10" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                  <path d="M9 21V15h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                  <path d="M2 21h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
               </div>
               <div>
@@ -1596,6 +1627,37 @@ function SettingsPage() {
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
+                <div className="relative h-20 w-20 shrink-0">
+                  {logoPreviewUrl ? (
+                    <img src={logoPreviewUrl} alt="Church logo" className="h-20 w-20 rounded-xl object-cover border border-gray-200 cursor-zoom-in" onClick={() => setLogoEnlarged(true)} />
+                  ) : (
+                    <div className="h-20 w-20 rounded-xl bg-blue-50 border border-gray-200 flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-blue-300"><path d="M12 3L4 8V21H20V8L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+                    </div>
+                  )}
+                  <button type="button" onClick={() => logoInputRef.current?.click()} disabled={!canWrite} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50" title="Change logo">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-700"><path d="M4 20h4l10.5-10.5a2 2 0 10-4-4L4 16v4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M13.5 6.5l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                  </button>
+                  <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 2 * 1024 * 1024) { setProfileError("Logo must be under 2 MB"); return; } setProfileError(""); const url = URL.createObjectURL(f); setLogoPreviewUrl(url); setLogoFile(f); }} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-700">Church Logo</div>
+                  <div className="mt-0.5 text-xs text-gray-400">Click the pencil to upload · Max 2 MB · JPG PNG WEBP</div>
+                </div>
+              </div>
+
+              {logoEnlarged && logoPreviewUrl ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setLogoEnlarged(false)}>
+                  <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <img src={logoPreviewUrl} alt="Church logo" className="max-h-[85vh] max-w-[85vw] rounded-2xl object-contain shadow-2xl" />
+                    <button type="button" className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50" onClick={() => setLogoEnlarged(false)}>
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
               <div>
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Church Name</label>
                 <input

@@ -7,6 +7,7 @@ import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js
 import authorizeRoles from "../middleware/roleMiddleware.js";   
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../middleware/permissionMiddleware.js";
+import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 
 router.get(
   "/churches/:id",
@@ -27,6 +28,7 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("settingsChurchProfile", "update"),
+  uploadMemoryFile.single("logo"),
   updateMyChurchProfile
 );
 router.get(

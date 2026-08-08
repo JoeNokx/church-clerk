@@ -109,7 +109,10 @@ const churchSchema = new mongoose.Schema({
   registrationTokenActive: {
     type: Boolean,
     default: false
-  }
+  },
+
+  logoUrl: { type: String, default: "" },
+  logoPublicId: { type: String, default: "" }
 
 }, { timestamps: true });
 

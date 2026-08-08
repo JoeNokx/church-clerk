@@ -381,11 +381,9 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M7 3v3M17 3v3M4 8h16M6 12h4M6 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
-                        <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
-
+                        <path d="M9 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M1 20c0-4 3.5-6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M15 16l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
 
                     </span>
@@ -407,11 +405,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
-                        <path d="M3 6h1M3 12h1M3 18h1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
+                        <path d="M7 3v3M17 3v3M4 8h16M6 12h4M6 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8"/>
                       </svg>
 
                     </span>
@@ -659,8 +654,9 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        <polyline points="16 7 22 7 22 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M2 13h20" stroke="currentColor" strokeWidth="1.8"/>
                       </svg>
 
                     </span>
@@ -769,9 +765,10 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
-                        <path d="M14 2v6h6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
-                        <path d="M16 13H8M16 17H8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M2 10h20" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M6 14h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M14 14h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                       </svg>
 
                     </span>
@@ -907,12 +904,20 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
             className="group flex items-center gap-3 rounded-xl border border-slate-700/50 bg-slate-800/70 px-3 py-2.5 hover:bg-slate-800 transition-colors"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2)" }}
           >
-            <div
-              className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm text-white"
-              style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)" }}
-            >
-              {(activeChurch?.name || "C").charAt(0).toUpperCase()}
-            </div>
+            {activeChurch?.logoUrl ? (
+              <img
+                src={activeChurch.logoUrl}
+                alt={activeChurch.name}
+                className="h-9 w-9 rounded-xl object-cover shrink-0"
+              />
+            ) : (
+              <div
+                className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm text-white"
+                style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)" }}
+              >
+                {(activeChurch?.name || "C").charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-semibold text-slate-100 truncate leading-tight">
                 {activeChurch?.name || "My Church"}

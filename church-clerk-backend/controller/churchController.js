@@ -1,5 +1,6 @@
 import Church from "../models/churchModel.js";
 import User from "../models/userModel.js";
+import cloudinary from "../config/cloudinary.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import { sendEmail } from "../services/emailService.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
@@ -329,6 +330,32 @@ const updateMyChurchProfile = async (req, res) => {
     // Prevent illegal parentChurch usage
     if (updateData.type !== "Branch") {
       updateData.parentChurch = null;
+    }
+
+    // Handle logo upload
+    const file = req.file;
+    if (file) {
+      if (!file.buffer) {
+        return res.status(400).json({ message: "File buffer is missing" });
+      }
+      const mt = String(file.mimetype || "").toLowerCase();
+      if (!mt.startsWith("image/")) {
+        return res.status(400).json({ message: "Only image files are allowed for the logo" });
+      }
+      const churchId = query._id || req.activeChurch._id;
+      const folder = `church-clerk/churches/${churchId}/logo`;
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder, resource_type: "image", use_filename: true, unique_filename: true },
+          (err, result) => { if (err) return reject(err); resolve(result); }
+        );
+        stream.end(file.buffer);
+      });
+      if (!uploadResult?.secure_url) {
+        return res.status(502).json({ message: "Failed to upload logo" });
+      }
+      updateData.logoUrl = uploadResult.secure_url;
+      updateData.logoPublicId = uploadResult.public_id || "";
     }
 
     const branchIds = updateData.branchIds;
