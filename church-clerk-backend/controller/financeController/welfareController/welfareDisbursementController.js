@@ -82,7 +82,7 @@ const getAllWelfareDisbursement = async (req, res) => {
                     
                         // FETCH welfare Disbursement 
                         const welfareDisbursement = await WelfareDisbursements.find(query)
-                        .select("beneficiaryName category amount date description paymentMethod createdBy")
+                        .select("beneficiaryName category amount date description paymentMethod createdBy referenceId")
                             .sort({ createdAt: -1 })
                             .skip(skip)
                             .limit(limitNum)

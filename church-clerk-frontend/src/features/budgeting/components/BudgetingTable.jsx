@@ -83,6 +83,7 @@ function BudgetingTable({ onView, onEdit }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-24 rounded bg-gray-200" /></th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
             </tr>
           </thead>
@@ -129,6 +130,7 @@ function BudgetingTable({ onView, onEdit }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Planned Income</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Planned Expenses</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Created</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
@@ -150,6 +152,11 @@ function BudgetingTable({ onView, onEdit }) {
                   <td className="max-md:px-4 py-2 text-green-700 font-semibold whitespace-nowrap px-4 md:px-6">{plannedIncome.toLocaleString()}</td>
                   <td className="max-md:px-4 py-2 text-orange-700 font-semibold whitespace-nowrap px-4 md:px-6">{plannedExpense.toLocaleString()}</td>
                   <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(row?.createdAt)}</td>
+                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
+                    {row?.referenceId ? (
+                      <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
+                    ) : <span className="text-gray-300 text-xs">—</span>}
+                  </td>
                   <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                     <div className="flex items-center justify-end gap-2">
                       <button

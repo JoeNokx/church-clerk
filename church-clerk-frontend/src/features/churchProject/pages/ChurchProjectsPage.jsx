@@ -666,6 +666,11 @@ function ChurchProjectsPageInner() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-semibold text-gray-900 truncate text-sm">{p?.name || "—"}</div>
+                    {p?.referenceId ? (
+                      <div className="mt-0.5">
+                        <span className="font-mono text-[10px] text-gray-400 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">{p.referenceId}</span>
+                      </div>
+                    ) : null}
                     <div className="mt-1 text-gray-500 text-xs">
                       Target: {formatCurrency(target, currency)} | Raised: {formatCurrency(raised, currency)} | Left: {formatCurrency(target - raised, currency)}
                     </div>

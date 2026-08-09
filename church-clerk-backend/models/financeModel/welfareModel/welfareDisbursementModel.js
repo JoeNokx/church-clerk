@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { generateReferenceId } from "../../../utils/generateReferenceId.js";
 
 const welfareDisbursementSchema = new mongoose.Schema({
 
@@ -25,6 +26,13 @@ const welfareDisbursementSchema = new mongoose.Schema({
   },
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  referenceId: { type: String, unique: true, sparse: true, index: true },
 }, { timestamps: true });
+
+welfareDisbursementSchema.pre("save", async function () {
+  if (this.isNew && !this.referenceId) {
+    this.referenceId = await generateReferenceId("WLF");
+  }
+});
 
 export default mongoose.model('WelfareDisbursements', welfareDisbursementSchema);

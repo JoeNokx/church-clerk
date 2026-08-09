@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { generateReferenceId } from "../../utils/generateReferenceId.js";
 
 const eventOfferingSchema = new mongoose.Schema(
   {
@@ -20,11 +21,18 @@ const eventOfferingSchema = new mongoose.Schema(
       min: 0
     },
 
-    note: { type: String, trim: true }
+    note: { type: String, trim: true },
+    referenceId: { type: String, unique: true, sparse: true, index: true }
   },
   { timestamps: true }
 );
 
 eventOfferingSchema.index({ church: 1, event: 1, offeringDate: 1 });
+
+eventOfferingSchema.pre("save", async function () {
+  if (this.isNew && !this.referenceId) {
+    this.referenceId = await generateReferenceId("EVT");
+  }
+});
 
 export default mongoose.model("EventOffering", eventOfferingSchema);

@@ -46,7 +46,7 @@ const getAllCellOfferings = async (req, res) => {
     const query = { cell: cellId, church: churchId };
 
     const offerings = await Offering.find(query)
-      .select("date amount note cell createdBy")
+      .select("date amount note cell createdBy referenceId")
       .populate("cell", "name")
       .sort({ createdAt: -1 })
       .skip(skip)

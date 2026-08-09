@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { generateReferenceId } from "../../../utils/generateReferenceId.js";
 
 const pledgePaymentSchema = new mongoose.Schema(
   {
@@ -41,11 +42,18 @@ const pledgePaymentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
-    }
+    },
+    referenceId: { type: String, unique: true, sparse: true, index: true }
   },
   {
     timestamps: true
   }
 );
+
+pledgePaymentSchema.pre("save", async function () {
+  if (this.isNew && !this.referenceId) {
+    this.referenceId = await generateReferenceId("PPY");
+  }
+});
 
 export default mongoose.model("PledgePayment", pledgePaymentSchema);

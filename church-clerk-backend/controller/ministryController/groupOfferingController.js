@@ -58,7 +58,7 @@ const getAllGroupOfferings = async(req, res) => {
     }
 
     const offerings = await Offering.find(query)
-      .select("date amount note group createdBy")
+      .select("date amount note group createdBy referenceId")
           .populate("group", "name")
           .sort({ createdAt: -1 })
           .skip(skip)

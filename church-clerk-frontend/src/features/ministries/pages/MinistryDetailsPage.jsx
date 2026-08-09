@@ -2137,6 +2137,7 @@ function MinistryDetailsPage() {
                     <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Note</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                     <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                   </tr>
                 </thead>
@@ -2146,6 +2147,11 @@ function MinistryDetailsPage() {
                       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                       <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(r?.amount || 0, currency)}</td>
                       <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[420px] break-words px-4 md:px-6">{r?.note || "-"}</td>
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                        {r?.referenceId ? (
+                          <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{r.referenceId}</span>
+                        ) : <span className="text-gray-300 text-xs">—</span>}
+                      </td>
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <div className="flex items-center justify-end gap-2">
                           <button

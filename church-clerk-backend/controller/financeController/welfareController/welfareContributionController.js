@@ -147,7 +147,7 @@ const getAllWelfareContribution = async (req, res) => {
              
                 // FETCH welfare Disbursement
                 const welfareContribution = await WelfareContributions.find(query)
-                .select("member amount date paymentMethod createdBy")
+                .select("member amount date paymentMethod createdBy referenceId")
                 .populate("member", "firstName lastName email phoneNumber")
                     .sort({ createdAt: -1 })
                     .skip(skip)

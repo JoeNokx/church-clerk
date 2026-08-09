@@ -46,7 +46,7 @@ const getAllDepartmentOfferings = async (req, res) => {
     const query = { department: departmentId, church: churchId };
 
     const offerings = await Offering.find(query)
-      .select("date amount note department createdBy")
+      .select("date amount note department createdBy referenceId")
       .populate("department", "name")
       .sort({ createdAt: -1 })
       .skip(skip)

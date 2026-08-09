@@ -109,7 +109,7 @@ const getAllBusinessExpenses = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const businessExpenses = await BusinessExpenses.find(query)
-                .select("spentBy category date amount description createdBy")
+                .select("spentBy category date amount description createdBy referenceId")
                 .populate("createdBy", "fullName")
                 .populate("businessVentures", "businessName")
                     .sort({ createdAt: -1 })

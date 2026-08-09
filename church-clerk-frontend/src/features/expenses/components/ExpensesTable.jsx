@@ -66,6 +66,7 @@ function ExpensesTable({ onEdit, onDeleted }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-20 rounded bg-gray-200" /></th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-24 rounded bg-gray-200" /></th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
             </tr>
           </thead>
@@ -77,6 +78,7 @@ function ExpensesTable({ onEdit, onDeleted }) {
                 <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                 <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                 <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
                 <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
               </tr>
             ))}
@@ -111,6 +113,7 @@ function ExpensesTable({ onEdit, onDeleted }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Payment Method</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Description</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
@@ -122,6 +125,11 @@ function ExpensesTable({ onEdit, onDeleted }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.paymentMethod || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[360px] break-words px-4 md:px-6">{row?.description || "-"}</td>
+                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                  {row?.referenceId ? (
+                    <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
+                  ) : <span className="text-gray-300 text-xs">—</span>}
+                </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <div className="flex items-center justify-end gap-2">
                     {canEdit && (

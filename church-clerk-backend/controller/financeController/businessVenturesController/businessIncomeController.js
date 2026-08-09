@@ -102,7 +102,7 @@ const getAllBusinessIncome = async (req, res) => {
             
                 // FETCH BUSINESS INCOME
                 const businessIncome = await BusinessIncome.find(query)
-                .select("recievedFrom date amount note createdBy")
+                .select("recievedFrom date amount note createdBy referenceId")
                 .populate("createdBy", "fullName")
                 .populate("businessVentures", "businessName")
                     .sort({ createdAt: -1 })

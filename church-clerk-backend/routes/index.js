@@ -58,6 +58,7 @@ import lookupRoute from "./lookupRoute.js";
 import inAppAnnouncementRoute from "./inAppAnnouncementRoute.js";
 import churchGovernanceRoute from "./financeRoute/churchGovernanceRoute.js";
 import publicRoute from "./publicRoute.js";
+import globalSearchRoute from "./globalSearchRoute.js";
 
 // export all routes
 export {
@@ -95,5 +96,6 @@ export {
   lookupRoute,
   inAppAnnouncementRoute,
   churchGovernanceRoute,
-  publicRoute
+  publicRoute,
+  globalSearchRoute
 };

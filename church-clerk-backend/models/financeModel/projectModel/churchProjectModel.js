@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { generateReferenceId } from "../../../utils/generateReferenceId.js";
 
 const churchProjectSchema = new mongoose.Schema({
   church: { type: mongoose.Schema.Types.ObjectId, ref: 'Church', required: true },
@@ -16,8 +17,15 @@ const churchProjectSchema = new mongoose.Schema({
   },
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  referenceId: { type: String, unique: true, sparse: true, index: true }
 }, { timestamps: true });
 
 churchProjectSchema.index({ church: 1, startDate: 1 });
+
+churchProjectSchema.pre("save", async function () {
+  if (this.isNew && !this.referenceId) {
+    this.referenceId = await generateReferenceId("PRJ");
+  }
+});
 
 export default mongoose.model('ChurchProject', churchProjectSchema);

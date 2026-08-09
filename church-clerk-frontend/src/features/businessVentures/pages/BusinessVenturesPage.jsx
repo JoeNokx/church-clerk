@@ -526,6 +526,11 @@ function BusinessVenturesPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="font-semibold text-gray-900 truncate text-sm">{v?.businessName || "—"}</div>
+                  {v?.referenceId ? (
+                    <div className="mt-0.5">
+                      <span className="font-mono text-[10px] text-gray-400 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">{v.referenceId}</span>
+                    </div>
+                  ) : null}
                   {v?.description ? <div className="mt-0.5 text-gray-500 text-xs truncate">{v.description}</div> : null}
                 </div>
               </div>

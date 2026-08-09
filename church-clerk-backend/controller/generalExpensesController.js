@@ -66,7 +66,7 @@ const getAllGeneralExpenses = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const generalExpenses = await GeneralExpenses.find(query)
-                .select("category amount description date paymentMethod status createdBy")
+                .select("category amount description date paymentMethod status createdBy referenceId")
                     .sort({ createdAt: -1 })
                     .skip(skip)
                     .limit(limitNum)

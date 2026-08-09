@@ -231,6 +231,7 @@ function ConfirmModal({ open, onCancel, onConfirm }) {
         <div className="py-4 md:py-5 lg:py-6 text-gray-600 text-sm px-4 md:px-6">
           <div>Changing your tithe recording mode will affect how new tithe records are entered.</div>
           <div className="mt-3 font-semibold text-gray-700">Your previous records will remain safe.</div>
+          <div className="mt-2 text-gray-500">This will also become your new default mode when you open Tithes.</div>
         </div>
 
         <div className="flex items-center justify-end gap-3 pb-6 px-4 md:px-6">
@@ -386,7 +387,10 @@ function TithePageInner() {
   const store = useContext(TitheContext);
 
   const [kpi, setKpi] = useState(null);
-  const [view, setView] = useState("landing"); // landing | individual | aggregate
+  const [view, setView] = useState(() => {
+    const saved = localStorage.getItem("tithe_default_mode");
+    return saved === "individual" || saved === "aggregate" ? saved : "landing";
+  }); // landing | individual | aggregate
 
   const [isIndividualFormOpen, setIsIndividualFormOpen] = useState(false);
   const [isAggregateFormOpen, setIsAggregateFormOpen] = useState(false);
@@ -532,6 +536,7 @@ function TithePageInner() {
   const confirmSwitch = async () => {
     const next = pendingMode;
     if (!next) return;
+    localStorage.setItem("tithe_default_mode", next);
     await store?.setRecordingMode?.(next);
     setView(next);
     closeChangeMode();
@@ -570,6 +575,7 @@ function TithePageInner() {
                 kind="individual"
                 disabled={!canUpdateMode || store?.loading}
                 onSelect={async () => {
+                  localStorage.setItem("tithe_default_mode", "individual");
                   await store?.setRecordingMode?.("individual");
                   setView("individual");
                 }}
@@ -578,6 +584,7 @@ function TithePageInner() {
                 kind="aggregate"
                 disabled={!canUpdateMode || store?.loading}
                 onSelect={async () => {
+                  localStorage.setItem("tithe_default_mode", "aggregate");
                   await store?.setRecordingMode?.("aggregate");
                   setView("aggregate");
                 }}

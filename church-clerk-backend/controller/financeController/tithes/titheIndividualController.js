@@ -1,5 +1,6 @@
 import TitheIndividual from '../../../models/financeModel/tithesModel/titheIndividualModel.js'
 import Member from '../../../models/memberModel.js'
+import { generateReferenceId } from '../../../utils/generateReferenceId.js'
 
 const searchMembersForTithe = async (req, res) => {
   try {
@@ -54,14 +55,17 @@ const createTitheIndividual = async (req, res) => {
                 return res.status(404).json({ message: "Members not found" });
               }
 
-              const docs = members.map((m) => ({
-                amount,
-                paymentMethod,
-                date,
-                member: m._id,
-                church: req.activeChurch._id,
-                createdBy: req.user._id
-              }));
+              const docs = await Promise.all(
+                members.map(async (m) => ({
+                  amount,
+                  paymentMethod,
+                  date,
+                  member: m._id,
+                  church: req.activeChurch._id,
+                  createdBy: req.user._id,
+                  referenceId: await generateReferenceId("TTH")
+                }))
+              );
 
               const titheIndividuals = await TitheIndividual.insertMany(docs);
 

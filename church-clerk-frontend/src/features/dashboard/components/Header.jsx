@@ -34,11 +34,13 @@ import {
 
 
 
-  getUnreadNotificationsCount
+  getUnreadNotificationsCount,
 
 
 
 } from "../../notifications/services/notifications.api.js";
+
+import GlobalSearch from "../../search/components/GlobalSearch.jsx";
 
 
 
@@ -1119,9 +1121,9 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 flex items-center">
 
-
+          <GlobalSearch />
 
         </div>
 

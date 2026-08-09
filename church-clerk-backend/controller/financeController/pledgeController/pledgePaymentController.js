@@ -102,7 +102,7 @@ const getAllPledgePayments = async (req, res) => {
 
     // FETCH ATTENDANCES
     const pledgePayments = await PledgePayment.find(query)
-      .select("paymentDate amount paymentMethod note createdBy")
+      .select("paymentDate amount paymentMethod note createdBy referenceId")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)

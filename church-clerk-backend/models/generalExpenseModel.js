@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { generateReferenceId } from "../utils/generateReferenceId.js";
 
 const generalExpenseSchema = new mongoose.Schema(
   {
@@ -37,11 +38,18 @@ const generalExpenseSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }
+    },
+    referenceId: { type: String, unique: true, sparse: true, index: true }
   },
   {
     timestamps: true,
   }
 );
+
+generalExpenseSchema.pre("save", async function () {
+  if (this.isNew && !this.referenceId) {
+    this.referenceId = await generateReferenceId("EXP");
+  }
+});
 
 export default mongoose.model("GeneralExpenses", generalExpenseSchema);

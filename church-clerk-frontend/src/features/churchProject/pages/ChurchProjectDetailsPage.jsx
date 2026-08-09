@@ -833,6 +833,7 @@ function ChurchProjectDetailsPage() {
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Notes</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
@@ -844,6 +845,11 @@ function ChurchProjectDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[320px] break-words px-4 md:px-6">{row?.notes || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            {row?.referenceId ? (
+                              <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
+                            ) : <span className="text-gray-300 text-xs">—</span>}
+                          </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center justify-end gap-2">
                               <button type="button" onClick={() => openEditContribution(row)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
@@ -904,6 +910,7 @@ function ChurchProjectDetailsPage() {
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Description</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
@@ -915,6 +922,11 @@ function ChurchProjectDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[320px] break-words px-4 md:px-6">{row?.description || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            {row?.referenceId ? (
+                              <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
+                            ) : <span className="text-gray-300 text-xs">—</span>}
+                          </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center justify-end gap-2">
                               <button type="button" onClick={() => openEditExpense(row)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>

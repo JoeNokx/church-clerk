@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { generateReferenceId } from "../../utils/generateReferenceId.js";
 
 const budgetItemSchema = new mongoose.Schema(
   {
@@ -69,10 +70,17 @@ const budgetingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null
-    }
+    },
+    referenceId: { type: String, unique: true, sparse: true, index: true }
   },
   { timestamps: true }
 );
+
+budgetingSchema.pre("save", async function () {
+  if (this.isNew && !this.referenceId) {
+    this.referenceId = await generateReferenceId("BDG");
+  }
+});
 
 budgetingSchema.index({ church: 1, fiscalYear: 1, status: 1, createdAt: -1 });
 
