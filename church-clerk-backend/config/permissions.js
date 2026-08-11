@@ -12,6 +12,7 @@ export const MODULES = {
   visitors: [...CRUD_VIEW, "convert"],
   attendance: CRUD_VIEW,
   announcements: CRUD_VIEW,
+  outreach: CRUD_VIEW,
   tithe: CRUD_VIEW,
   budgeting: CRUD_VIEW,
   churchProjects: CRUD_VIEW,

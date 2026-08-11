@@ -191,3 +191,15 @@ h3, .card-title {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+@keyframes cck-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.cck-marquee-track {
+  animation: cck-marquee 14s linear infinite;
+  animation-play-state: running;
+}
+.cck-marquee-track:hover {
+  animation-play-state: paused;
+}

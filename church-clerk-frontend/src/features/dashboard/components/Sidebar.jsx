@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getApprovals } from "../../governance/services/governance.api.js";
 
@@ -13,6 +13,33 @@ import PermissionContext from "../../permissions/permission.store.js";
 
 
 
+
+function ChurchNameMarquee({ name }) {
+  const containerRef = useRef(null);
+  const [overflow, setOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setOverflow(el.scrollWidth > el.clientWidth);
+  }, [name]);
+
+  if (!overflow) {
+    return (
+      <div ref={containerRef} className="overflow-hidden whitespace-nowrap text-[13px] font-semibold text-slate-100 leading-tight">
+        {name}
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden whitespace-nowrap text-[13px] font-semibold text-slate-100 leading-tight">
+      <span className="cck-marquee-track inline-block">
+        {name}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{name}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </span>
+    </div>
+  );
+}
 
 function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
@@ -469,6 +496,25 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                 ) : null}
 
+                {canRead("outreach") ? (
+
+                  <NavLink to={toPage("outreach")} className={itemClass("outreach")}>
+
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
+
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                        <path d="M12 22s-7-4.5-7-10a4 4 0 017-2 4 4 0 017 2c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="M17 3l1.5 1.5M19.5 5.5l1.5 1.5M17 9l2-2M21 3l-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+
+                    </span>
+
+                    Outreach
+
+                  </NavLink>
+
+                ) : null}
+
               </div>
 
             </div>
@@ -918,10 +964,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                 {(activeChurch?.name || "C").charAt(0).toUpperCase()}
               </div>
             )}
-            <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-semibold text-slate-100 truncate leading-tight">
-                {activeChurch?.name || "My Church"}
-              </div>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <ChurchNameMarquee name={activeChurch?.name || "My Church"} />
               <div className="text-[10px] text-slate-500 truncate mt-0.5">
                 {activeChurch?.type || "Church Profile"}
               </div>

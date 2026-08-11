@@ -82,6 +82,10 @@ const AnnouncementPage = React.lazy(() => import("../../announcement/pages/Annou
 
 const ApprovalsPage = React.lazy(() => import("../../governance/pages/ApprovalsPage.jsx"));
 
+const OutreachPage = React.lazy(() => import("../../outreach/pages/OutreachPage.jsx"));
+
+const OutreachEventDetailPage = React.lazy(() => import("../../outreach/pages/OutreachEventDetailPage.jsx"));
+
 
 function formatPercent(value) {
 
@@ -1503,6 +1507,10 @@ function DashboardHome() {
   if (page === "announcements") PageComponent = AnnouncementPage;
 
   if (page === "approvals") PageComponent = ApprovalsPage;
+
+  if (page === "outreach") PageComponent = OutreachPage;
+
+  if (page === "outreach-event-details") PageComponent = OutreachEventDetailPage;
 
 
 
