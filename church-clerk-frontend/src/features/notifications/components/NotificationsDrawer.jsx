@@ -88,7 +88,7 @@ function NotificationsDrawer({ open, onClose }) {
 
       {/* Drawer panel */}
       <div
-        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed right-0 top-0 z-50 h-full w-[85vw] max-w-[360px] md:max-w-md bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}
         aria-modal="true"
         role="dialog"
         aria-label="Notifications"

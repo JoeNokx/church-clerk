@@ -664,9 +664,9 @@ function DashboardOverview({ onNavigate }) {
 
       <div className="w-full max-w-none">
 
-        <div className="font-medium text-gray-900 md:text-2xl lg:text-3xl text-lg">Welcome back, {authUser?.fullName?.split(" ")[0] || "there"}!</div>
+        <div className="hidden md:block font-medium text-gray-900 md:text-2xl lg:text-3xl text-lg">Welcome back, {authUser?.fullName?.split(" ")[0] || "there"}!</div>
 
-        <div className="mt-1 text-gray-500 text-sm">Here is a quick summary of what's happening with your church.</div>
+        <div className="hidden md:block mt-1 text-gray-500 text-sm">Here is a quick summary of what's happening with your church.</div>
 
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3 lg:grid-cols-4">
 
@@ -766,7 +766,7 @@ function DashboardOverview({ onNavigate }) {
 
     <div className="w-full max-w-none">
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="hidden md:flex items-start justify-between gap-4">
 
         <div>
 

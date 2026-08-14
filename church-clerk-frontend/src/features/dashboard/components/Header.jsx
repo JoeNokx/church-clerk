@@ -1087,13 +1087,15 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-    <header className="sticky top-0 z-20 bg-white border-b border-gray-200 pt-2 md:pt-0">
+    <header className="sticky top-0 z-20 bg-white md:border-b md:border-gray-200">
 
 
 
-      <div className="relative min-h-14 px-4 md:px-8 flex items-center justify-between gap-4 md:h-16 pb-2 md:pb-0">
+      <div className="relative h-14 md:h-16 px-4 md:px-8 flex items-center justify-between gap-3">
 
 
+
+        <div className="flex items-center gap-2 md:contents">
 
         <button
 
@@ -1101,7 +1103,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
           onClick={onToggleSidebar}
 
-          className="inline-flex items-center justify-center h-11 w-11 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100 flex md:hidden md:h-12 md:w-12"
+          className="inline-flex items-center justify-center p-2 -ml-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 md:hidden shrink-0"
 
           aria-label="Toggle sidebar"
 
@@ -1121,7 +1123,11 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-        <div className="min-w-0 flex-1 flex items-center">
+        <span className="font-bold text-gray-900 text-[15px] tracking-tight md:hidden">ChurchClerk</span>
+
+        </div>
+
+        <div className="hidden md:flex min-w-0 flex-1 items-center">
 
           <GlobalSearch />
 
@@ -1501,7 +1507,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
 
 
 
@@ -1517,7 +1523,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-            className="relative h-10 w-10 inline-flex items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+            className="relative h-11 w-11 inline-flex items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100"
 
 
 
@@ -1653,6 +1659,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
+              <span className="hidden md:inline-flex">
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-gray-500">
 
 
@@ -1662,6 +1669,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
               </svg>
+              </span>
 
 
 
@@ -2001,38 +2009,31 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
+      {/* Mobile: search bar full width */}
+      <div className="md:hidden px-4 pb-2 pt-2 bg-slate-50">
+        <GlobalSearch />
+      </div>
 
-
-
+      {/* Mobile: welcome greeting */}
+      <div className="md:hidden px-4 pt-2 pb-1 bg-slate-50">
+        <div className="text-lg font-bold text-gray-900">Welcome back, {user?.fullName?.split(" ")[0] || "User"}!</div>
+        <div className="text-xs text-gray-500 mt-1">Here is a quick summary of what&apos;s happening in {viewingChurchName || "your church"}.</div>
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard?page=billing")}
+          className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2.5 font-semibold text-indigo-700 hover:bg-indigo-100 text-sm transition-colors"
+        >
+          🎁 Earn a free subscription
+        </button>
+      </div>
 
       <ConfirmChurchSwitchModal
-
-
-
         open={confirmOpen}
-
-
-
         churchDisplayName={pendingSwitch?.name}
-
-
-
         mode={pendingSwitch?.mode}
-
-
-
         onCancel={cancelConfirm}
-
-
-
         onConfirm={confirmSwitch}
-
-
-
         loading={switching}
-
-
-
       />
 
 
