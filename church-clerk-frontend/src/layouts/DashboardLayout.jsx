@@ -1,7 +1,7 @@
 import DashboardHeader from "../features/dashboard/components/Header.jsx";
 import Sidebar from "../features/dashboard/components/Sidebar.jsx";
 import NotificationsDrawer from "../features/notifications/components/NotificationsDrawer.jsx";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useMemo, useState } from "react";
 import { useAuth } from "../features/auth/useAuth.js";
 import ChurchContext from "../features/church/church.store.js";
@@ -9,6 +9,27 @@ import SubscriptionStatusBanner from "../shared/components/SubscriptionStatusBan
 import { AnimatePresence, motion } from "framer-motion";
 import InAppAnnouncementsHost from "../features/inAppAnnouncements/components/InAppAnnouncementsHost.jsx";
 import BranchContextNav from "../features/dashboard/components/BranchContextNav.jsx";
+import GlobalSearch from "../features/search/components/GlobalSearch.jsx";
+
+function MobileSearchBanner({ user, churchName }) {
+  const navigate = useNavigate();
+  return (
+    <div className="md:hidden -mx-4 -mt-4 px-4 pt-3 pb-3 bg-slate-50 mb-4">
+      <GlobalSearch />
+      <div className="pt-3">
+        <div className="text-lg font-bold text-gray-900">Welcome back, {user?.fullName?.split(" ")[0] || "User"}!</div>
+        <div className="text-xs text-gray-500 mt-1">Here is a quick summary of what&apos;s happening in {churchName || "your church"}.</div>
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard?page=billing")}
+          className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2.5 font-semibold text-indigo-700 hover:bg-indigo-100 text-sm transition-colors"
+        >
+          🎁 Earn a free subscription
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function DashboardLayout() {
   const { user } = useAuth();
@@ -94,6 +115,10 @@ function DashboardLayout() {
         )}
 
         <main className="flex-1 min-h-0 min-w-0 w-full p-[16px] md:p-[24px] overflow-y-auto md:p-8 lg:p-4">
+
+          {/* Mobile: search + greeting — scrolls with page content */}
+          <MobileSearchBanner user={user} churchName={activeChurch?.name || homeChurchName} />
+
           {isUserSuspended && (
             <div className="mb-4 rounded-xl border-2 border-red-500 bg-red-50 px-4 py-3 text-red-900 text-sm">
               <div className="flex items-start gap-3">

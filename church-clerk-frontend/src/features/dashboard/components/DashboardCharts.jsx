@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ResponsiveContainer,
   AreaChart, Area,
@@ -35,12 +35,57 @@ function SundayTooltip({ active, payload }) {
 function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageGroupData, membersVsVisitorsGraph, year }) {
   const [attView, setAttView] = useState("sundays");
   const [genderHovered, setGenderHovered] = useState(null);
+  const [sundayPage, setSundayPage] = useState(0);
+  const [monthPage, setMonthPage] = useState(0);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const h = () => setIsMobile(mq.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
 
   const hasGender = Array.isArray(genderData) && genderData.some((d) => d.value > 0);
   const hasAge = Array.isArray(ageGroupData) && ageGroupData.some((d) => d.value > 0);
 
-  const attData = attView === "sundays" ? (last10SundaysGraph || []) : (attendanceGraph || []);
+  const allSundayData = last10SundaysGraph || [];
+  const allMonthData = attendanceGraph || [];
+  const attData = attView === "sundays" ? allSundayData : allMonthData;
   const attXKey = attView === "sundays" ? "label" : "month";
+
+  const SUNDAY_SIZE = 5;
+  const MONTH_SIZE = 6;
+  const totalSundayPages = Math.max(1, Math.ceil(allSundayData.length / SUNDAY_SIZE));
+  const totalMonthPages = Math.max(1, Math.ceil(allMonthData.length / MONTH_SIZE));
+
+  // sundays: page 0 = oldest 5, last page = most recent 5
+  const sundayPageData = allSundayData.slice(sundayPage * SUNDAY_SIZE, (sundayPage + 1) * SUNDAY_SIZE);
+  // months: page 0 = Jan-Jun, page 1 = Jul-Dec
+  const monthPageData = allMonthData.slice(monthPage * MONTH_SIZE, (monthPage + 1) * MONTH_SIZE);
+
+  const canGoLeft = attView === "sundays" ? sundayPage > 0 : monthPage > 0;
+  const canGoRight = attView === "sundays" ? (sundayPage + 1) < totalSundayPages : (monthPage + 1) < totalMonthPages;
+
+  const handleGoLeft = () => {
+    if (attView === "sundays") setSundayPage(p => Math.max(0, p - 1));
+    else setMonthPage(p => Math.max(0, p - 1));
+  };
+  const handleGoRight = () => {
+    if (attView === "sundays") setSundayPage(p => Math.min(totalSundayPages - 1, p + 1));
+    else setMonthPage(p => Math.min(totalMonthPages - 1, p + 1));
+  };
+
+  // start sundays at most-recent page when data loads
+  useEffect(() => {
+    if (allSundayData.length > 0) setSundayPage(Math.max(0, totalSundayPages - 1));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allSundayData.length]);
+
+  // mobile chart data (paginated); desktop shows full set
+  const chartData = isMobile
+    ? (attView === "sundays" ? sundayPageData : monthPageData)
+    : attData;
 
   function AgeLabelRenderer(props) {
     const { cx, cy, midAngle, outerRadius, percent, name } = props;
@@ -80,9 +125,29 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
               <button type="button" onClick={() => setAttView("month")} className={`rounded-md px-2 py-0.5 text-xs font-medium transition-colors ${attView === "month" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>{year}</button>
             </div>
           </div>
-          <div className="mt-2 flex-1 min-h-0">
+          <div className="mt-2 flex-1 min-h-0 relative">
+            {/* Mobile: left chevron — vertically centred */}
+            <button
+              type="button"
+              onClick={handleGoLeft}
+              disabled={!canGoLeft}
+              aria-label="Previous"
+              className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 shadow border border-gray-200 text-gray-500 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" /></svg>
+            </button>
+            {/* Mobile: right chevron — vertically centred */}
+            <button
+              type="button"
+              onClick={handleGoRight}
+              disabled={!canGoRight}
+              aria-label="Next"
+              className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 shadow border border-gray-200 text-gray-500 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
+            </button>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={attData} margin={{ top: 6, right: 12, left: -14, bottom: -8 }}>
+              <AreaChart data={chartData} margin={{ top: 6, right: 12, left: -14, bottom: -8 }}>
                 <defs>
                   <linearGradient id="attGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.42} />

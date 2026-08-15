@@ -341,7 +341,7 @@ export default function GlobalSearch() {
     <div ref={containerRef} className="relative flex-1 min-w-0 max-w-xl">
       {/* ── Input ── */}
       <div
-        className={`flex items-center gap-2 rounded-xl border px-3 py-2 transition-all bg-gray-50 ${
+        className={`flex items-center gap-2 rounded-full md:rounded-xl border px-3 py-2 transition-all bg-gray-50 ${
           open
             ? "border-indigo-400 bg-white ring-2 ring-indigo-100 shadow-sm"
             : "border-gray-200 hover:border-gray-300"
@@ -359,7 +359,7 @@ export default function GlobalSearch() {
           value={query}
           onChange={handleChange}
           onFocus={() => setOpen(true)}
-          placeholder="Search members, finance, programs, attendance, ministries, etc…"
+          placeholder="Search members, finance, attendance…"
           className="flex-1 min-w-0 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none"
           autoComplete="off"
           spellCheck={false}

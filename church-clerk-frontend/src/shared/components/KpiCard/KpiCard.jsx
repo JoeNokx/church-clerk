@@ -95,7 +95,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
             </div>
           </div>
           {icon ? (
-            <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl mt-0.5 [&>svg]:h-4 [&>svg]:w-4 ${iconBg || "bg-gray-100"} ${iconColor || "text-gray-600"}`}>
+            <span className={`hidden md:inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl mt-0.5 [&>svg]:h-4 [&>svg]:w-4 ${iconBg || "bg-gray-100"} ${iconColor || "text-gray-600"}`}>
               {icon}
             </span>
           ) : null}
