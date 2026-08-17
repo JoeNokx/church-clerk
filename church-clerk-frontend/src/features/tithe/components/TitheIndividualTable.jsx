@@ -4,6 +4,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -165,54 +166,34 @@ function TitheIndividualTable({ onEdit, onDeleted }) {
                   ) : <span className="text-gray-300 text-xs">—</span>}
                 </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                  <div className="flex items-center justify-end gap-2">
-                    {canEdit && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!row?._id) return;
-                          onEdit?.(row);
-                        }}
-                        className="h-11 inline-flex items-center justify-center rounded-lg bg-white text-blue-700 hover:bg-blue-50 md:h-12 md:w-11 w-11 md:w-12"
-                        aria-label="Edit"
-                      >
+                  <TableKebabMenu items={[
+                    canEdit && {
+                      label: "Edit",
+                      onClick: () => { if (!row?._id) return; onEdit?.(row); },
+                      desktopClassName: "h-11 inline-flex items-center justify-center rounded-lg bg-white text-blue-700 hover:bg-blue-50 md:h-12 md:w-11 w-11 md:w-12",
+                      desktopContent: (
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                          <path
-                            d="M4 20h4l10.5-10.5a2 2 0 0 0 0-3L16.5 4a2 2 0 0 0-3 0L3 14.5V20Z"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinejoin="round"
-                          />
+                          <path d="M4 20h4l10.5-10.5a2 2 0 0 0 0-3L16.5 4a2 2 0 0 0-3 0L3 14.5V20Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                           <path d="M13.5 6.5 17.5 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                         </svg>
-                      </button>
-                    )}
-
-                    {canDelete && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!row?._id) return;
-                          openConfirmDelete(row._id);
-                        }}
-                        className="h-11 inline-flex items-center justify-center rounded-lg bg-white text-red-600 hover:bg-red-50 md:h-12 md:w-11 w-11 md:w-12"
-                        aria-label="Delete"
-                      >
+                      )
+                    },
+                    canDelete && {
+                      label: "Delete",
+                      onClick: () => { if (!row?._id) return; openConfirmDelete(row._id); },
+                      danger: true,
+                      desktopClassName: "h-11 inline-flex items-center justify-center rounded-lg bg-white text-red-600 hover:bg-red-50 md:h-12 md:w-11 w-11 md:w-12",
+                      desktopContent: (
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                           <path d="M4 7h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                           <path d="M10 11v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                           <path d="M14 11v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path
-                            d="M6 7l1 14h10l1-14"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinejoin="round"
-                          />
+                          <path d="M6 7l1 14h10l1-14" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                           <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" strokeWidth="1.8" />
                         </svg>
-                      </button>
-                    )}
-                  </div>
+                      )
+                    }
+                  ]} />
                 </td>
               </tr>
             ))}

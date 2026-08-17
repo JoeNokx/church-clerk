@@ -24,6 +24,7 @@ import EventCreatePage from "./EventCreatePage.jsx";
 import EventOfferingPage from "../offerings/pages/EventOfferingPage.jsx";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -1090,26 +1091,10 @@ function EventDetailsPage() {
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.phoneNumber || "—"}</td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.location || "—"}</td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                              <div className="flex items-center justify-end gap-2">
-                                {canEdit ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => openEditAttendee(r)}
-                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                                  >
-                                    Edit
-                                  </button>
-                                ) : null}
-                                {canDelete ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => onDeleteAttendee(r)}
-                                    className="rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 hover:bg-red-50 text-xs"
-                                  >
-                                    Delete
-                                  </button>
-                                ) : null}
-                              </div>
+                              <TableKebabMenu items={[
+                                canEdit && { label: "Edit", onClick: () => openEditAttendee(r) },
+                                canDelete && { label: "Delete", onClick: () => onDeleteAttendee(r), danger: true }
+                              ]} />
                             </td>
                           </tr>
                         ))
@@ -1201,26 +1186,10 @@ function EventDetailsPage() {
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0) || "—"}</td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "—"}</td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                              <div className="flex items-center justify-end gap-2">
-                                {canEdit ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => openEditTotal(r)}
-                                    className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                                  >
-                                    Edit
-                                  </button>
-                                ) : null}
-                                {canDelete ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => onDeleteTotal(r)}
-                                    className="rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 hover:bg-red-50 text-xs"
-                                  >
-                                    Delete
-                                  </button>
-                                ) : null}
-                              </div>
+                              <TableKebabMenu items={[
+                                canEdit && { label: "Edit", onClick: () => openEditTotal(r) },
+                                canDelete && { label: "Delete", onClick: () => onDeleteTotal(r), danger: true }
+                              ]} />
                             </td>
                           </tr>
                         ))
@@ -1311,89 +1280,12 @@ function EventDetailsPage() {
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatBytes(f?.size)}</td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(f?.createdAt)}</td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (!f?.url) return;
-                                    window.open(f.url, "_blank", "noopener,noreferrer");
-                                  }}
-                                  className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs"
-                                >
-                                  View
-                                </button>
-
-                                <div
-                                  ref={fileMenuOpenId === String(f?._id || "") ? openFileMenuRootRef : null}
-                                  className={`relative ${fileMenuOpenId === String(f?._id || "") ? "z-[9999]" : "z-0"}`}
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const id = String(f?._id || "");
-                                      if (!id) return;
-                                      setFileMenuOpenId((prev) => (prev === id ? null : id));
-                                    }}
-                                    className="h-11 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-11 w-11 md:w-12"
-                                    aria-label="More actions"
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                                      <path d="M12 5.5h.01M12 12h.01M12 18.5h.01" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-                                    </svg>
-                                  </button>
-
-                                  {fileMenuOpenId === String(f?._id || "") ? (
-                                    <div
-                                      className="absolute right-0 top-full z-[9999] mt-2 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      {canEdit ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            closeFileMenu();
-                                            openEditFile(f);
-                                          }}
-                                          className="block w-full px-4 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                                        >
-                                          Edit
-                                        </button>
-                                      ) : null}
-
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          closeFileMenu();
-                                          if (!f?._id) return;
-                                          const a = document.createElement("a");
-                                          a.href = getEventAttendanceFileDownloadUrl(eventId, f._id);
-                                          a.download = f.originalName || "attendance_file";
-                                          a.target = "_blank";
-                                          a.rel = "noopener noreferrer";
-                                          a.click();
-                                        }}
-                                        className="block w-full px-4 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                                      >
-                                        Download
-                                      </button>
-
-                                      {canDelete ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            closeFileMenu();
-                                            onDeleteFile(f);
-                                          }}
-                                          className="block w-full px-4 py-2 text-left font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                                        >
-                                          Delete
-                                        </button>
-                                      ) : null}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              </div>
+                              <TableKebabMenu items={[
+                                { label: "View", onClick: () => { if (!f?.url) return; window.open(f.url, "_blank", "noopener,noreferrer"); }, desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                                canEdit && { label: "Edit", onClick: () => openEditFile(f) },
+                                { label: "Download", onClick: () => { if (!f?._id) return; const a = document.createElement("a"); a.href = getEventAttendanceFileDownloadUrl(eventId, f._id); a.download = f.originalName || "attendance_file"; a.target = "_blank"; a.rel = "noopener noreferrer"; a.click(); } },
+                                canDelete && { label: "Delete", onClick: () => onDeleteFile(f), danger: true }
+                              ]} />
                             </td>
                           </tr>
                         ))

@@ -252,6 +252,18 @@ function formatTimeRange(from, to, legacy) {
 }
 
 
+function birthdayNameMobile(firstName, lastName) {
+  const first = (firstName || "").trim().split(/\s+/)[0] || "";
+  const last = (lastName || "").trim().split(/\s+/).pop() || "";
+  return [first, last].filter(Boolean).join(" ") || "—";
+}
+
+function truncateEventTitle(title, max) {
+  const t = title || "";
+  return t.length > max ? t.slice(0, max) + "\u2026" : t || "—";
+}
+
+
 function DashboardOverview({ onNavigate }) {
 
   const { toPage } = useDashboardNavigator();
@@ -521,7 +533,7 @@ function DashboardOverview({ onNavigate }) {
 
     if (!Array.isArray(rows)) return [];
 
-    return rows.slice(0, 6);
+    return rows.slice(0, 15);
 
   }, [widgets]);
 
@@ -1046,7 +1058,10 @@ function DashboardOverview({ onNavigate }) {
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-gray-900 truncate text-xs">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-xs">
+                          <span className="sm:hidden">{birthdayNameMobile(m?.firstName, m?.lastName)}</span>
+                          <span className="hidden sm:inline">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</span>
+                        </div>
                         <div className="text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
                       </div>
                       <div className="shrink-0 text-xs text-gray-600 font-medium whitespace-nowrap rounded-full bg-gray-100 px-1.5 py-0.5">{Number(m?.daysAway || 0)} day(s)</div>
@@ -1061,7 +1076,10 @@ function DashboardOverview({ onNavigate }) {
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-gray-900 truncate text-xs">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
+                        <div className="font-semibold text-gray-900 truncate text-xs">
+                          <span className="sm:hidden">{birthdayNameMobile(m?.firstName, m?.lastName)}</span>
+                          <span className="hidden sm:inline">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</span>
+                        </div>
                         <div className="text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
                       </div>
                       <div className="shrink-0 text-xs text-gray-600 font-medium whitespace-nowrap rounded-full bg-gray-100 px-1.5 py-0.5">{Number(m?.daysAway || 0)} day(s)</div>
@@ -1113,7 +1131,10 @@ function DashboardOverview({ onNavigate }) {
                         <div className="flex items-center" style={{gap:"8px"}}>
                           <CalendarAvatar dateStr={evDate} />
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-gray-900 truncate text-xs">{ev?.title || ev?.name || "—"}</div>
+                            <div className="font-semibold text-gray-900 truncate text-xs">
+                              <span className="sm:hidden">{truncateEventTitle(ev?.title || ev?.name, 25)}</span>
+                              <span className="hidden sm:inline">{ev?.title || ev?.name || "—"}</span>
+                            </div>
                             <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
                             <div className="text-gray-400 text-xs">{formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}{ev?.location ? ` • ${ev.location}` : ""}</div>
                           </div>
@@ -1125,7 +1146,10 @@ function DashboardOverview({ onNavigate }) {
                         <div className="flex items-center" style={{gap:"8px"}}>
                           <CalendarAvatar dateStr={evDate} />
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-gray-900 truncate text-xs">{ev?.title || ev?.name || "—"}</div>
+                            <div className="font-semibold text-gray-900 truncate text-xs">
+                              <span className="sm:hidden">{truncateEventTitle(ev?.title || ev?.name, 25)}</span>
+                              <span className="hidden sm:inline">{ev?.title || ev?.name || "—"}</span>
+                            </div>
                             <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
                             <div className="text-gray-400 text-xs">{formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}{ev?.location ? ` • ${ev.location}` : ""}</div>
                           </div>
@@ -1171,7 +1195,7 @@ function DashboardOverview({ onNavigate }) {
 
                 <div className="font-semibold text-gray-900 text-lg">Upcoming Birthdays</div>
 
-                <div className="mt-1 text-gray-600 text-sm">All birthdays in the next 30 days</div>
+                <div className="mt-1 text-gray-600 text-sm">All upcoming birthdays, sorted by soonest</div>
 
               </div>
 

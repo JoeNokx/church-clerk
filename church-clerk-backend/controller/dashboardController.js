@@ -286,7 +286,7 @@ const getDashboardWidget = async (req, res) => {
     const today = new Date();
 
     const rawBirthdaysLimit = req.query?.birthdaysLimit;
-    let birthdaysLimit = 10;
+    let birthdaysLimit = 15;
     if (rawBirthdaysLimit !== undefined && rawBirthdaysLimit !== null && rawBirthdaysLimit !== "") {
       const parsed = parseInt(rawBirthdaysLimit);
       if (!Number.isNaN(parsed)) birthdaysLimit = parsed;
@@ -298,7 +298,7 @@ const getDashboardWidget = async (req, res) => {
       key: cacheKey,
       ttlSeconds: 60,
       getValue: async () => {
-        // --- 1. Upcoming Birthdays (next 30 days) ---
+        // --- 1. Upcoming Birthdays (soonest N, no date-window filter) ---
         // MongoDB cannot match by month/day directly, so we handle in JS after fetching
         const birthdayQuery = { ...query, status: { $in: ["active", "dormant", "temporarily_away"] } };
         const allMembers = await Member.find(birthdayQuery,

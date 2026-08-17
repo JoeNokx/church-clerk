@@ -9,6 +9,7 @@ import { getGroups } from "../../group/services/group.api.js";
 import { getCells } from "../../cell/services/cell.api.js";
 import { getDepartments } from "../../department/services/department.api.js";
 import { getMembers } from "../../member/services/member.api.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import {
   createCommunicationMessage,
   fundWalletInitiate,
@@ -593,29 +594,11 @@ function TemplatesTab({ open, onUseTemplate }) {
                     <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{String(t?.channel || "").toUpperCase() || "—"}</td>
                     <td className="py-2 pr-4 text-gray-600">{String(t?.message || "").slice(0, 60) || "—"}</td>
                     <td className="py-2">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onUseTemplate?.(t)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs"
-                        >
-                          Use
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onEdit(t)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(t?._id)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      <TableKebabMenu items={[
+                        { label: "Use", onClick: () => onUseTemplate?.(t), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                        { label: "Edit", onClick: () => onEdit(t) },
+                        { label: "Delete", onClick: () => onDelete(t?._id), danger: true }
+                      ]} />
                     </td>
                   </tr>
                 ))
@@ -785,65 +768,12 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                   <td className="py-2 pr-4 text-gray-600">{typeof m?.failedCount === "number" ? m.failedCount : "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
                   <td className="py-2">
-                    <div className="flex items-center justify-end gap-2">
-                      {showUse ? (
-                        <button
-                          type="button"
-                          onClick={() => onUse?.(m)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs"
-                        >
-                          Use
-                        </button>
-                      ) : null}
-                      {canView ? (
-                        <button
-                          type="button"
-                          onClick={() => onOpenDeliveryReport(m)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs"
-                        >
-                          View Report
-                        </button>
-                      ) : null}
-
-                      {allowedMenuStatuses.includes(String(m?.status || "")) && (canUpdate || canDelete) ? (
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={() => setMenuId((cur) => (cur === m?._id ? null : m?._id))}
-                            disabled={actionLoadingId === m?._id}
-                            className="rounded-md border border-gray-200 bg-white px-2 py-1 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-xs"
-                            aria-label="More actions"
-                          >
-                            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-                              <path d="M10 4.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 4.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 4.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
-                            </svg>
-                          </button>
-
-                          {menuId === m?._id ? (
-                            <div className="absolute right-0 mt-1 w-32 rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden z-10">
-                              {canUpdate ? (
-                                <button
-                                  type="button"
-                                  onClick={() => openEdit(m)}
-                                  className="w-full px-3 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                                >
-                                  Edit
-                                </button>
-                              ) : null}
-                              {canDelete ? (
-                                <button
-                                  type="button"
-                                  onClick={() => onDeleteRow(m)}
-                                  className="w-full px-3 py-2 text-left font-semibold text-red-600 hover:bg-red-50 text-xs"
-                                >
-                                  Delete
-                                </button>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
+                    <TableKebabMenu items={[
+                      showUse && { label: "Use", onClick: () => onUse?.(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                      canView && { label: "View Report", onClick: () => onOpenDeliveryReport(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                      allowedMenuStatuses.includes(String(m?.status || "")) && canUpdate && { label: "Edit", onClick: () => openEdit(m), disabled: actionLoadingId === m?._id },
+                      allowedMenuStatuses.includes(String(m?.status || "")) && canDelete && { label: "Delete", onClick: () => onDeleteRow(m), danger: true, disabled: actionLoadingId === m?._id }
+                    ]} />
                   </td>
                 </tr>
               ))

@@ -18,6 +18,7 @@ import {
   updateProjectExpense
 } from "../expenses/services/projectExpenses.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -851,10 +852,10 @@ function ChurchProjectDetailsPage() {
                             ) : <span className="text-gray-300 text-xs">—</span>}
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <div className="flex items-center justify-end gap-2">
-                              <button type="button" onClick={() => openEditContribution(row)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
-                              <button type="button" onClick={() => openConfirmDelete("contribution", row?._id)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs">Delete</button>
-                            </div>
+                            <TableKebabMenu items={[
+                              { label: "Edit", onClick: () => openEditContribution(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              { label: "Delete", onClick: () => openConfirmDelete("contribution", row?._id), danger: true, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs" }
+                            ]} />
                           </td>
                         </tr>
                       ))}
@@ -928,10 +929,10 @@ function ChurchProjectDetailsPage() {
                             ) : <span className="text-gray-300 text-xs">—</span>}
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <div className="flex items-center justify-end gap-2">
-                              <button type="button" onClick={() => openEditExpense(row)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
-                              <button type="button" onClick={() => openConfirmDelete("expense", row?._id)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs">Delete</button>
-                            </div>
+                            <TableKebabMenu items={[
+                              { label: "Edit", onClick: () => openEditExpense(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              { label: "Delete", onClick: () => openConfirmDelete("expense", row?._id), danger: true, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs" }
+                            ]} />
                           </td>
                         </tr>
                       ))}

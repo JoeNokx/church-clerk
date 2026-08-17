@@ -14,6 +14,7 @@ import {
 } from "../payments/services/pledgePayments.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -567,27 +568,10 @@ function PledgeDetailsPageInner() {
                           ) : <span className="text-gray-300 text-xs">—</span>}
                         </td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                          <div className="flex items-center justify-end gap-2">
-                            {canEditPayment ? (
-                              <button
-                                type="button"
-                                onClick={() => openEdit(p)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                              >
-                                Edit
-                              </button>
-                            ) : null}
-
-                            {canDeletePayment ? (
-                              <button
-                                type="button"
-                                onClick={() => openDelete(p)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                              >
-                                Delete
-                              </button>
-                            ) : null}
-                          </div>
+                          <TableKebabMenu items={[
+                            canEditPayment && { label: "Edit", onClick: () => openEdit(p) },
+                            canDeletePayment && { label: "Delete", onClick: () => openDelete(p), danger: true }
+                          ]} />
                         </td>
                       </tr>
                     ))}

@@ -14,6 +14,7 @@ import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -939,62 +940,11 @@ function PledgesPageInner() {
                         <StatusChip value={row?.status} />
                       </td>
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                        <div className="flex items-center justify-end gap-2">
-                          {canView && (
-                            <button
-                              type="button"
-                              onClick={() => viewDetails(row)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                            >
-                              View
-                            </button>
-                          )}
-
-                          {(canEdit || canDelete) ? (
-                            <div className="relative" ref={menuRef}>
-                              <button
-                                type="button"
-                                onClick={() => setMenuOpenId((prev) => (prev === row?._id ? null : row?._id))}
-                                className="h-11 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-11 w-11 md:w-12"
-                                aria-label="More actions"
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                                  <path d="M12 5.5h.01M12 12h.01M12 18.5h.01" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-                                </svg>
-                              </button>
-
-                              {menuOpenId === row?._id ? (
-                                <div className="absolute right-0 z-20 mt-2 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-                                  {canEdit ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setMenuOpenId(null);
-                                        openEdit(row);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 text-sm"
-                                    >
-                                      Edit
-                                    </button>
-                                  ) : null}
-
-                                  {canDelete ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setMenuOpenId(null);
-                                        openDelete(row);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-50 text-sm"
-                                    >
-                                      Delete
-                                    </button>
-                                  ) : null}
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </div>
+                        <TableKebabMenu items={[
+                          canView && { label: "View", onClick: () => viewDetails(row) },
+                          canEdit && { label: "Edit", onClick: () => openEdit(row) },
+                          canDelete && { label: "Delete", onClick: () => openDelete(row), danger: true }
+                        ]} />
                       </td>
                     </tr>
                   ))}

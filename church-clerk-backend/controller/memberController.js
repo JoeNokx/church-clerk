@@ -525,11 +525,11 @@ const getAllMembersKPI = async (req, res) => {
       Member.countDocuments(query),
       Member.countDocuments({ ...query, status: "active" }),
       Member.countDocuments({ ...query, status: { $in: ["dormant", "temporarily_away"] } }),
-      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church"] } }),
+      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church", "deceased"] } }),
       Member.countDocuments({ ...query, dateJoined: { $lt: startOfMonth } }),
       Member.countDocuments({ ...query, status: "active", dateJoined: { $lt: startOfMonth } }),
       Member.countDocuments({ ...query, status: { $in: ["dormant", "temporarily_away"] }, dateJoined: { $lt: startOfMonth } }),
-      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church"] }, dateJoined: { $lt: startOfMonth } })
+      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church", "deceased"] }, dateJoined: { $lt: startOfMonth } })
     ]);
 
     const change = {

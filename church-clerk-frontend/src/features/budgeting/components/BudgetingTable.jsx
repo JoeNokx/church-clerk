@@ -3,6 +3,7 @@ import Skeleton from "react-loading-skeleton";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import BudgetingContext from "../budgeting.store.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -158,35 +159,11 @@ function BudgetingTable({ onView, onEdit }) {
                     ) : <span className="text-gray-300 text-xs">—</span>}
                   </td>
                   <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => row?._id && onView?.(row)}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                      >
-                        View
-                      </button>
-
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          onClick={() => row?._id && onEdit?.(row)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                        >
-                          Edit
-                        </button>
-                      ) : null}
-
-                      {canDelete ? (
-                        <button
-                          type="button"
-                          onClick={() => row?._id && openConfirmDelete(row._id)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                        >
-                          Delete
-                        </button>
-                      ) : null}
-                    </div>
+                    <TableKebabMenu items={[
+                      { label: "View", onClick: () => row?._id && onView?.(row) },
+                      canEdit && { label: "Edit", onClick: () => row?._id && onEdit?.(row) },
+                      canDelete && { label: "Delete", onClick: () => row?._id && openConfirmDelete(row._id), danger: true }
+                    ]} />
                   </td>
                 </tr>
               );

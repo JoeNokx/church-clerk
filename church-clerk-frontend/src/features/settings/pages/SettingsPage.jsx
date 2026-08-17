@@ -14,6 +14,7 @@ import { updateMyPassword, updateMyProfile } from "../../auth/services/auth.api.
 import { getActivityLogMeta, getActivityLogs } from "../../activityLog/services/activityLog.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -2148,25 +2149,10 @@ function SettingsPage() {
                               </span>
                             </td>
                             <td className="px-4 py-3">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenEdit(row)}
-                                  disabled={!canWrite}
-                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
-                                >
-                                  Edit
-                                </button>
-                                {canDeactivateUsers ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => openDeactivateConfirm(row)}
-                                    className={`rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}`}
-                                  >
-                                    {isActive ? "Deactivate" : "Activate"}
-                                  </button>
-                                ) : null}
-                              </div>
+                              <TableKebabMenu items={[
+                                { label: "Edit", onClick: () => handleOpenEdit(row), disabled: !canWrite, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
+                                canDeactivateUsers && { label: isActive ? "Deactivate" : "Activate", onClick: () => openDeactivateConfirm(row), danger: isActive, desktopClassName: `rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}` }
+                              ]} />
                             </td>
                           </tr>
                         );

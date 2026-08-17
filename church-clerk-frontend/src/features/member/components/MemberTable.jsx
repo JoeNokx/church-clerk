@@ -1,4 +1,5 @@
 import { useContext, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
@@ -6,6 +7,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext from "../member.store.js";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import { updateMember as apiUpdateMember } from "../services/member.api.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
@@ -35,7 +37,8 @@ const CHIP_LABELS = {
 
 function InlineStatusPicker({ row, onUpdate, updating }) {
   const [open, setOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [openUp, setOpenUp] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: null, bottom: null, left: 0 });
   const btnRef = useRef(null);
   const v = String(row?.status || "").toLowerCase().replace(/\s+/g, "_");
   const chipStyles = CHIP_STYLES[v] || "border-gray-200 bg-gray-50 text-gray-700";
@@ -45,7 +48,15 @@ function InlineStatusPicker({ row, onUpdate, updating }) {
   const handleOpen = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, left: rect.left });
+      const estimatedHeight = STATUS_OPTIONS.length * 32 + 8;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const flipped = spaceBelow < estimatedHeight + 8;
+      if (flipped) {
+        setMenuPos({ top: null, bottom: window.innerHeight - rect.top + 4, left: rect.left });
+      } else {
+        setMenuPos({ top: rect.bottom + 4, bottom: null, left: rect.left });
+      }
+      setOpenUp(flipped);
     }
     setOpen((o) => !o);
   };
@@ -57,13 +68,13 @@ function InlineStatusPicker({ row, onUpdate, updating }) {
         type="button"
         disabled={isUpdating}
         onClick={handleOpen}
-        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-semibold text-xs cursor-pointer disabled:opacity-60 ${chipStyles}`}
+        className={`cck-allow-icons inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-semibold text-xs cursor-pointer disabled:opacity-60 ${chipStyles}`}
       >
         {isUpdating ? (
           <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" /></svg>
         ) : null}
         {label}
-        <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" className={`h-3 w-3 shrink-0 transition-transform${open && openUp ? " rotate-180" : ""}`} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
@@ -72,7 +83,7 @@ function InlineStatusPicker({ row, onUpdate, updating }) {
           <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
           <div
             className="z-[9999] w-44 rounded-lg border border-gray-200 bg-white shadow-xl py-1"
-            style={{ position: "fixed", top: menuPos.top, left: menuPos.left }}
+            style={menuPos.bottom != null ? { position: "fixed", bottom: menuPos.bottom, left: menuPos.left } : { position: "fixed", top: menuPos.top, left: menuPos.left }}
           >
             {STATUS_OPTIONS.map((s) => (
               <button
@@ -115,6 +126,8 @@ function MemberTable({ onEdit, onDeleted }) {
   const store = useContext(MemberContext);
   const { toPage } = useDashboardNavigator();
 
+  const queryClient = useQueryClient();
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(null);
@@ -140,6 +153,7 @@ function MemberTable({ onEdit, onDeleted }) {
     try {
       await apiUpdateMember(memberId, { status: newStatus });
       await store?.fetchMembers();
+      queryClient.invalidateQueries({ queryKey: ["members", "kpi"], exact: false });
     } catch (_) {}
     finally { setStatusUpdating(null); }
   };
@@ -253,46 +267,11 @@ function MemberTable({ onEdit, onDeleted }) {
                   </td>
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.createdAt || row?.dateJoined)}</td>
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                    <div className="flex items-center justify-end gap-2">
-                      {canView && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!row?._id) return;
-                            toPage("member-details", { id: row._id }, { state: { from: "members" } });
-                          }}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 md:py-1 font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 text-xs"
-                        >
-                          View
-                        </button>
-                      )}
-
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!row?._id) return;
-                            toPage("member-form", { id: row._id });
-                          }}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 md:py-1 font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 text-xs"
-                        >
-                          Edit
-                        </button>
-                      )}
-
-                      {canDelete && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!row?._id) return;
-                            openConfirmDelete(row._id);
-                          }}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 md:py-1 font-semibold text-red-600 hover:bg-gray-50 active:bg-red-50 text-xs"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
+                    <TableKebabMenu items={[
+                      canView && { label: "View", onClick: () => { if (!row?._id) return; toPage("member-details", { id: row._id }, { state: { from: "members" } }); } },
+                      canEdit && { label: "Edit", onClick: () => { if (!row?._id) return; toPage("member-form", { id: row._id }); } },
+                      canDelete && { label: "Delete", onClick: () => { if (!row?._id) return; openConfirmDelete(row._id); }, danger: true }
+                    ]} />
                   </td>
                 </tr>
               );

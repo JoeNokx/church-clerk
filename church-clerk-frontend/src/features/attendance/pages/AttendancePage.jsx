@@ -25,6 +25,7 @@ import {
 import { getMembers } from "../../member/services/member.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
 
@@ -538,15 +539,11 @@ function AttendancePageInner() {
                           <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.presentCount ?? 0)}</td>
                           <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
                           <td className="py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <div className="flex items-center justify-end gap-2">
-                              {canUpdateAttendance ? (
-                                <button type="button" onClick={() => void openIndivForm("edit", r)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs">Edit</button>
-                              ) : null}
-                              <button type="button" onClick={() => void openIndivView(r)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs">View</button>
-                              {canDeleteAttendance ? (
-                                <button type="button" onClick={() => confirmDelete(r?._id)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs">Delete</button>
-                              ) : null}
-                            </div>
+                            <TableKebabMenu items={[
+                              canUpdateAttendance && { label: "Edit", onClick: () => void openIndivForm("edit", r) },
+                              { label: "View", onClick: () => void openIndivView(r) },
+                              canDeleteAttendance && { label: "Delete", onClick: () => confirmDelete(r?._id), danger: true }
+                            ]} />
                           </td>
                         </tr>
                       ))}

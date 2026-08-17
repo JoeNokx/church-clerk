@@ -2,6 +2,7 @@ import { useContext, useMemo, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -132,35 +133,10 @@ function AttendanceTable({ onEdit, onDeleted }) {
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{truncateSpeaker(row?.mainSpeaker)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{Number(row?.totalNumber || 0).toLocaleString()}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                  <div className="flex items-center justify-end gap-2">
-                    {canEdit && (
-                      <button
-                        type="button"
-                        data-hq-action="true"
-                        onClick={() => {
-                          if (!row?._id) return;
-                          onEdit?.(row);
-                        }}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                      >
-                        Edit
-                      </button>
-                    )}
-
-                    {canDelete && (
-                      <button
-                        type="button"
-                        data-hq-action="true"
-                        onClick={() => {
-                          if (!row?._id) return;
-                          openConfirmDelete(row._id);
-                        }}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
+                  <TableKebabMenu items={[
+                    canEdit && { label: "Edit", onClick: () => { if (!row?._id) return; onEdit?.(row); } },
+                    canDelete && { label: "Delete", onClick: () => { if (!row?._id) return; openConfirmDelete(row._id); }, danger: true }
+                  ]} />
                 </td>
               </tr>
             ))}

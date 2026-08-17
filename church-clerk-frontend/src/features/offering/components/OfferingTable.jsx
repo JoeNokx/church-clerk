@@ -4,6 +4,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import OfferingContext from "../offering.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -130,33 +131,10 @@ function OfferingTable({ onEdit, onDeleted }) {
                   ) : <span className="text-gray-300 text-xs">—</span>}
                 </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                  <div className="flex items-center justify-end gap-2">
-                    {canEdit && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!offering?._id) return;
-                          onEdit?.(offering);
-                        }}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                      >
-                        Edit
-                      </button>
-                    )}
-
-                    {canDelete && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!offering?._id) return;
-                          openConfirmDelete(offering._id);
-                        }}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
+                  <TableKebabMenu items={[
+                    canEdit && { label: "Edit", onClick: () => { if (!offering?._id) return; onEdit?.(offering); } },
+                    canDelete && { label: "Delete", onClick: () => { if (!offering?._id) return; openConfirmDelete(offering._id); }, danger: true }
+                  ]} />
                 </td>
               </tr>
             ))}

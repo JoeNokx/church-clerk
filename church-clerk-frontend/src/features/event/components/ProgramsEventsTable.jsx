@@ -4,6 +4,7 @@ import Skeleton from "react-loading-skeleton";
 import EventContext from "../event.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { deleteEvent as apiDeleteEvent } from "../services/event.api.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -165,44 +166,11 @@ function ProgramsEventsTable({ status, onEdit }) {
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.venue || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.category || "-"}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                  <div className="flex items-center justify-end gap-2">
-                    {canView && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!row?._id) return;
-                          toPage("event-details", { id: row._id }, { state: { from: "programs-events" } });
-                        }}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                      >
-                        View
-                      </button>
-                    )}
-
-                    {canEdit ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!row?._id) return;
-                          onEdit?.(row);
-                        }}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                      >
-                        Edit
-                      </button>
-                    ) : null}
-
-                    {canDelete ? (
-                      <button
-                        type="button"
-                        disabled={deletingId === row?._id}
-                        onClick={() => openConfirmDelete(row)}
-                        className="rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 text-xs"
-                      >
-                        {deletingId === row?._id ? "Deleting..." : "Delete"}
-                      </button>
-                    ) : null}
-                  </div>
+                  <TableKebabMenu items={[
+                    canView && { label: "View", onClick: () => { if (!row?._id) return; toPage("event-details", { id: row._id }, { state: { from: "programs-events" } }); } },
+                    canEdit && { label: "Edit", onClick: () => { if (!row?._id) return; onEdit?.(row); } },
+                    canDelete && { label: deletingId === row?._id ? "Deleting..." : "Delete", onClick: () => openConfirmDelete(row), danger: true, disabled: deletingId === row?._id, desktopClassName: "rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 text-xs" }
+                  ]} />
                 </td>
               </tr>
             ))}

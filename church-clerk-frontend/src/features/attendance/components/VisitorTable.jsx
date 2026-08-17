@@ -1,8 +1,9 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -36,8 +37,6 @@ function VisitorTable({ onEdit, onDeleted }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
 
-  const [menuOpenId, setMenuOpenId] = useState(null);
-  const openMenuRootRef = useRef(null);
 
   const [convertOpen, setConvertOpen] = useState(false);
   const [convertRow, setConvertRow] = useState(null);
@@ -69,33 +68,6 @@ function VisitorTable({ onEdit, onDeleted }) {
     onDeleted?.();
   };
 
-  const closeMenu = () => setMenuOpenId(null);
-
-  useEffect(() => {
-    if (!menuOpenId) return;
-
-    const onMouseDownCapture = (e) => {
-      const root = openMenuRootRef.current;
-      if (!root) {
-        closeMenu();
-        return;
-      }
-
-      if (root.contains(e.target)) return;
-      closeMenu();
-    };
-
-    const onKeyDownCapture = (e) => {
-      if (e.key === "Escape") closeMenu();
-    };
-
-    document.addEventListener("mousedown", onMouseDownCapture, true);
-    document.addEventListener("keydown", onKeyDownCapture, true);
-    return () => {
-      document.removeEventListener("mousedown", onMouseDownCapture, true);
-      document.removeEventListener("keydown", onKeyDownCapture, true);
-    };
-  }, [menuOpenId]);
 
   const openConfirmDelete = (id) => {
     setConfirmId(id);
@@ -239,12 +211,6 @@ function VisitorTable({ onEdit, onDeleted }) {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
-              (() => {
-                const rowId = String(row?._id ?? row?.id ?? "");
-                const isMenuOpen = Boolean(rowId) && menuOpenId === rowId;
-                const openUp = index > 1;
-
-                return (
               <tr key={String(row?._id ?? row?.id ?? `row-${index}`)} className="max-md:text-xs text-gray-700 text-sm">
                 <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.fullName || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || "-"}</td>
@@ -255,97 +221,19 @@ function VisitorTable({ onEdit, onDeleted }) {
                 </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.serviceDate)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                  <div className="flex items-center justify-end gap-2">
-                    {canView && (
-                      <button
-                        type="button"
-                        onClick={() => openDetails(row)}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                      >
-                        view
-                      </button>
-                    )}
-
-                    {canConvert && (
-                      <button
-                        type="button"
-                        data-hq-action="true"
-                        onClick={() => {
-                          if (row?.status === "converted") return;
-                          openConvert(row);
-                        }}
-                        disabled={row?.status === "converted"}
-                        className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
-                      >
-                        {row?.status === "converted" ? "converted" : "convert"}
-                      </button>
-                    )}
-
-                    {(canEdit || canDelete) && (
-                      <div
-                        ref={isMenuOpen ? openMenuRootRef : null}
-                        className={`relative ${isMenuOpen ? "z-[9999]" : "z-0"}`}
-                      >
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!rowId) return;
-                            setMenuOpenId((prev) => (prev === rowId ? null : rowId));
-                          }}
-                          className="h-11 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-11 w-11 md:w-12"
-                          aria-label="More actions"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                            <path d="M12 5.5h.01M12 12h.01M12 18.5h.01" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-                          </svg>
-                        </button>
-
-                        {isMenuOpen && (
-                          <div
-                            className={`absolute right-0 z-[9999] w-32 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg ${openUp ? "bottom-full mb-2" : "top-full mt-2"}`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {canEdit && (
-                              <button
-                                type="button"
-                                data-hq-action="true"
-                                onClick={() => {
-                                  closeMenu();
-                                  const id = row?._id ?? row?.id;
-                                  if (!id) return;
-                                  onEdit?.(row);
-                                }}
-                                className="block w-full px-4 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                              >
-                                Edit
-                              </button>
-                            )}
-
-                            {canDelete && (
-                              <button
-                                type="button"
-                                data-hq-action="true"
-                                onClick={() => {
-                                  closeMenu();
-                                  const id = row?._id ?? row?.id;
-                                  if (!id) return;
-                                  openConfirmDelete(id);
-                                }}
-                                className="block w-full px-4 py-2 text-left font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <TableKebabMenu items={[
+                    canView && { label: "View", onClick: () => openDetails(row) },
+                    canConvert && {
+                      label: row?.status === "converted" ? "Converted" : "Convert",
+                      onClick: () => { if (row?.status === "converted") return; openConvert(row); },
+                      disabled: row?.status === "converted",
+                      desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
+                    },
+                    canEdit && { label: "Edit", onClick: () => { const id = row?._id ?? row?.id; if (!id) return; onEdit?.(row); } },
+                    canDelete && { label: "Delete", onClick: () => { const id = row?._id ?? row?.id; if (!id) return; openConfirmDelete(id); }, danger: true }
+                  ]} />
                 </td>
               </tr>
-                );
-              })()
             ))}
           </tbody>
         </table>

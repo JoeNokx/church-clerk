@@ -7,6 +7,7 @@ import Skeleton from "react-loading-skeleton";
 import ChurchContext from "../../church/church.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 import {
   getGroup,
@@ -1240,42 +1241,11 @@ function MinistryDetailsPage() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.email || "-"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{m?.role || "member"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                          <div className="flex items-center justify-end gap-2">
-                            {canViewMembers ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const memberId = member?._id;
-                                  if (!memberId) return;
-                                  toPage("member-details", { id: memberId });
-                                }}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                              >
-                                View
-                              </button>
-                            ) : null}
-
-                            <button
-                              type="button"
-                              onClick={() => openRoleModal(member?._id, m?.role || "member")}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                            >
-                              Edit Role
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openConfirm("remove-member", {
-                                  memberId: member?._id,
-                                  memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim()
-                                })
-                              }
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                            >
-                              Remove
-                            </button>
-                          </div>
+                          <TableKebabMenu items={[
+                            canViewMembers && { label: "View", onClick: () => { const memberId = member?._id; if (!memberId) return; toPage("member-details", { id: memberId }); } },
+                            { label: "Edit Role", onClick: () => openRoleModal(member?._id, m?.role || "member") },
+                            { label: "Remove", onClick: () => openConfirm("remove-member", { memberId: member?._id, memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() }), danger: true }
+                          ]} />
                         </td>
                       </tr>
                     );
@@ -1683,29 +1653,11 @@ function MinistryDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.presentCount ?? 0)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => void openIndividualAttendanceForm("edit", r)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void openIndividualView(r)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                              >
-                                View
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openConfirm("delete-individual-attendance", r?._id)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                              >
-                                Delete
-                              </button>
-                            </div>
+                            <TableKebabMenu items={[
+                              { label: "Edit", onClick: () => void openIndividualAttendanceForm("edit", r) },
+                              { label: "View", onClick: () => void openIndividualView(r) },
+                              { label: "Delete", onClick: () => openConfirm("delete-individual-attendance", r?._id), danger: true }
+                            ]} />
                           </td>
                         </tr>
                       ))}
@@ -1997,22 +1949,10 @@ function MinistryDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.activity || "-"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => openAttendanceForm("edit", r)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openConfirm("delete-attendance", r?._id)}
-                                className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                              >
-                                Delete
-                              </button>
-                            </div>
+                            <TableKebabMenu items={[
+                              { label: "Edit", onClick: () => openAttendanceForm("edit", r) },
+                              { label: "Delete", onClick: () => openConfirm("delete-attendance", r?._id), danger: true }
+                            ]} />
                           </td>
                         </tr>
                       ))}
@@ -2153,22 +2093,10 @@ function MinistryDetailsPage() {
                         ) : <span className="text-gray-300 text-xs">—</span>}
                       </td>
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openOfferingForm("edit", r)}
-                            className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openConfirm("delete-offering", r?._id)}
-                            className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        <TableKebabMenu items={[
+                          { label: "Edit", onClick: () => openOfferingForm("edit", r) },
+                          { label: "Delete", onClick: () => openConfirm("delete-offering", r?._id), danger: true }
+                        ]} />
                       </td>
                     </tr>
                   ))}
