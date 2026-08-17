@@ -116,8 +116,10 @@ function DashboardLayout() {
 
         <main className="flex-1 min-h-0 min-w-0 w-full p-[16px] md:p-[24px] overflow-y-auto md:p-8 lg:p-4">
 
-          {/* Mobile: search + greeting — scrolls with page content */}
-          <MobileSearchBanner user={user} churchName={activeChurch?.name || homeChurchName} />
+          {/* Mobile: search + greeting — only on dashboard home */}
+          {location.pathname === "/dashboard" && !new URLSearchParams(location.search).get("page") && (
+            <MobileSearchBanner user={user} churchName={activeChurch?.name || homeChurchName} />
+          )}
 
           {isUserSuspended && (
             <div className="mb-4 rounded-xl border-2 border-red-500 bg-red-50 px-4 py-3 text-red-900 text-sm">
