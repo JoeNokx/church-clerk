@@ -106,6 +106,30 @@
     right: 4px !important;
   }
 
+  button.cck-allow-icons,
+  button.cck-allow-icons * {
+    text-align: left !important;
+  }
+
+  button.cck-allow-icons .cck-avatar-initial {
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  button.cck-allow-icons .cck-calendar-month,
+  button.cck-allow-icons .cck-calendar-day {
+    text-align: center !important;
+  }
+
+  button.cck-allow-icons .cck-calendar-month {
+    font-size: 7px !important;
+  }
+
+  button.cck-allow-icons .cck-calendar-day {
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+  }
+
   button.cck-allow-icons svg,
   button.cck-allow-icons img {
     display: inline-block !important;

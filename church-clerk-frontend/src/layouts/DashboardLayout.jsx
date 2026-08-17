@@ -22,7 +22,7 @@ function MobileSearchBanner({ user, churchName }) {
         <button
           type="button"
           onClick={() => navigate("/dashboard?page=billing")}
-          className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2.5 font-semibold text-indigo-700 hover:bg-indigo-100 text-sm transition-colors"
+          className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 font-semibold text-indigo-700 hover:bg-indigo-100 text-sm transition-colors"
         >
           🎁 Earn a free subscription
         </button>

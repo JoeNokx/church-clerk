@@ -229,8 +229,8 @@ function CalendarAvatar({ dateStr }) {
   const month = d.toLocaleDateString("en-GB", { month: "short" }).toUpperCase();
   return (
     <div className="shrink-0 flex flex-col items-center rounded-lg overflow-hidden border border-indigo-100" style={{ width: 38, minWidth: 38 }}>
-      <div className="w-full bg-indigo-100 text-indigo-600 text-center font-bold py-0.5" style={{ fontSize: 8, letterSpacing: "0.05em" }}>{month}</div>
-      <div className="text-gray-900 font-bold text-sm leading-none py-1 text-center w-full bg-white">{day}</div>
+      <div className="cck-calendar-month w-full bg-indigo-100 text-indigo-600 text-center font-bold py-0.5" style={{ fontSize: 8, letterSpacing: "0.05em" }}>{month}</div>
+      <div className="cck-calendar-day text-gray-900 font-bold text-xs md:text-sm leading-none py-1 text-center w-full bg-white">{day}</div>
     </div>
   );
 }
@@ -923,7 +923,7 @@ function DashboardOverview({ onNavigate }) {
 
               onClick={() => onNavigate("members")}
 
-              className="inline-flex items-center gap-0.5 text-gray-400 hover:text-blue-600 text-[11px]"
+              className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 text-[11px]"
 
             >
 
@@ -985,7 +985,11 @@ function DashboardOverview({ onNavigate }) {
                             </div>
                           )}
                           <span className="font-semibold text-xs text-gray-900">
-                            {`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—"}
+                            {(() => {
+                              const raw = `${m?.firstName || ""} ${m?.lastName || ""}`.trim() || m?.fullName || "—";
+                              const parts = raw.split(" ").filter(Boolean);
+                              return parts.length > 2 ? `${parts[0]} ${parts[parts.length - 1]}` : raw;
+                            })()}
                           </span>
                         </div>
 
@@ -1017,13 +1021,13 @@ function DashboardOverview({ onNavigate }) {
 
         </div>
 
-        <div className="lg:row-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden flex flex-col shadow-sm">
+        <div className="order-3 lg:order-none lg:row-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden flex flex-col shadow-sm">
           <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5 shrink-0">
             <div>
               <div className="font-semibold text-gray-900 text-sm">Upcoming Birthdays</div>
               <div className="text-gray-500 text-xs">Sorted by soonest</div>
             </div>
-            <button type="button" onClick={openBirthdaysModal} className="inline-flex items-center gap-0.5 text-gray-400 hover:text-blue-600 text-[11px]">
+            <button type="button" onClick={openBirthdaysModal} className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 text-[11px]">
               View All
               <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2"><path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
@@ -1033,11 +1037,11 @@ function DashboardOverview({ onNavigate }) {
               {upcomingBirthdays.length ? (
                 upcomingBirthdays.map((m, idx) =>
                   canViewMembers ? (
-                    <button key={`${m?._id || "b"}-${idx}`} type="button" onClick={() => goToMemberDetails(m?._id)} className="w-full text-left flex items-center gap-2.5 py-2 hover:bg-gray-50">
+                    <button key={`${m?._id || "b"}-${idx}`} type="button" onClick={() => goToMemberDetails(m?._id)} className="cck-allow-icons w-full text-left flex items-center py-2 hover:bg-gray-50" style={{gap:"8px"}}>
                       {(m?.profileImageUrl || m?.photoUrl) ? (
-                        <img src={m.profileImageUrl || m.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover border border-gray-200 shrink-0" />
+                        <img src={m.profileImageUrl || m.photoUrl} alt="" className="rounded-full object-cover border border-gray-200" style={{width:28,height:28,minWidth:28}} />
                       ) : (
-                        <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-[10px] shrink-0">
+                        <div className="cck-avatar-initial rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-[10px]" style={{width:28,height:28,minWidth:28}}>
                           {(m?.firstName || "?").slice(0, 1).toUpperCase()}
                         </div>
                       )}
@@ -1045,14 +1049,14 @@ function DashboardOverview({ onNavigate }) {
                         <div className="font-semibold text-gray-900 truncate text-xs">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
                         <div className="text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
                       </div>
-                      <div className="shrink-0 text-gray-600 text-[10px] font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{Number(m?.daysAway || 0)} day(s)</div>
+                      <div className="shrink-0 text-xs text-gray-600 font-medium whitespace-nowrap rounded-full bg-gray-100 px-1.5 py-0.5">{Number(m?.daysAway || 0)} day(s)</div>
                     </button>
                   ) : (
-                    <div key={`${m?._id || "b"}-${idx}`} className="w-full flex items-center gap-2.5 py-2">
+                    <div key={`${m?._id || "b"}-${idx}`} className="w-full flex items-center py-2" style={{gap:"8px"}}>
                       {(m?.profileImageUrl || m?.photoUrl) ? (
-                        <img src={m.profileImageUrl || m.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover border border-gray-200 shrink-0" />
+                        <img src={m.profileImageUrl || m.photoUrl} alt="" className="rounded-full object-cover border border-gray-200" style={{width:28,height:28,minWidth:28}} />
                       ) : (
-                        <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-[10px] shrink-0">
+                        <div className="cck-avatar-initial rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-[10px]" style={{width:28,height:28,minWidth:28}}>
                           {(m?.firstName || "?").slice(0, 1).toUpperCase()}
                         </div>
                       )}
@@ -1060,7 +1064,7 @@ function DashboardOverview({ onNavigate }) {
                         <div className="font-semibold text-gray-900 truncate text-xs">{`${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "—"}</div>
                         <div className="text-gray-500 text-xs">{formatShortDate(m?.nextBirthday)}</div>
                       </div>
-                      <div className="shrink-0 text-gray-600 text-[10px] font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{Number(m?.daysAway || 0)} day(s)</div>
+                      <div className="shrink-0 text-xs text-gray-600 font-medium whitespace-nowrap rounded-full bg-gray-100 px-1.5 py-0.5">{Number(m?.daysAway || 0)} day(s)</div>
                     </div>
                   )
                 )
@@ -1071,13 +1075,13 @@ function DashboardOverview({ onNavigate }) {
           </div>
         </div>
 
-        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+        <div className="order-2 lg:order-none lg:col-span-2 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
           <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
             <div>
               <div className="font-semibold text-gray-900 text-sm">Upcoming Programs</div>
               <div className="text-gray-500 text-xs">Next scheduled programs</div>
             </div>
-            <button type="button" onClick={() => onNavigate("programs-events")} className="inline-flex items-center gap-0.5 text-gray-400 hover:text-blue-600 text-[11px]">
+            <button type="button" onClick={() => onNavigate("programs-events")} className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 text-[11px]">
               View All
               <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2"><path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
@@ -1105,27 +1109,27 @@ function DashboardOverview({ onNavigate }) {
                     const daysLeft = getDaysUntil(evDate);
                     const daysLabel = daysLeft === null ? "" : daysLeft === 0 ? "Today" : daysLeft === 1 ? "1 day" : `${daysLeft} days`;
                     return canViewEvents ? (
-                      <button key={`${ev?._id || "ev"}-${idx}`} type="button" onClick={() => goToEventDetails(ev?._id)} className="w-full text-left px-2 py-2 hover:bg-gray-50">
-                        <div className="flex items-center gap-2.5">
+                      <button key={`${ev?._id || "ev"}-${idx}`} type="button" onClick={() => goToEventDetails(ev?._id)} className="cck-allow-icons w-full text-left px-2 py-2 hover:bg-gray-50">
+                        <div className="flex items-center" style={{gap:"8px"}}>
                           <CalendarAvatar dateStr={evDate} />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate text-xs">{ev?.title || ev?.name || "—"}</div>
                             <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
                             <div className="text-gray-400 text-xs">{formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}{ev?.location ? ` • ${ev.location}` : ""}</div>
                           </div>
-                          {daysLabel ? <div className="shrink-0 text-gray-600 text-[10px] font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{daysLabel}</div> : null}
+                          {daysLabel ? <div className="shrink-0 text-xs text-gray-600 font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{daysLabel}</div> : null}
                         </div>
                       </button>
                     ) : (
                       <div key={`${ev?._id || "ev"}-${idx}`} className="w-full px-2 py-2">
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center" style={{gap:"8px"}}>
                           <CalendarAvatar dateStr={evDate} />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate text-xs">{ev?.title || ev?.name || "—"}</div>
                             <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
                             <div className="text-gray-400 text-xs">{formatTimeRange(ev?.startTime, ev?.endTime, ev?.time)}{ev?.location ? ` • ${ev.location}` : ""}</div>
                           </div>
-                          {daysLabel ? <div className="shrink-0 text-gray-600 text-[10px] font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{daysLabel}</div> : null}
+                          {daysLabel ? <div className="shrink-0 text-xs text-gray-600 font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">{daysLabel}</div> : null}
                         </div>
                       </div>
                     );

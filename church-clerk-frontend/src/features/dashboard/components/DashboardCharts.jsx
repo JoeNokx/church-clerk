@@ -37,6 +37,7 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
   const [genderHovered, setGenderHovered] = useState(null);
   const [sundayPage, setSundayPage] = useState(0);
   const [monthPage, setMonthPage] = useState(0);
+  const [mvvPage, setMvvPage] = useState(0);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
 
   useEffect(() => {
@@ -87,6 +88,11 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
     ? (attView === "sundays" ? sundayPageData : monthPageData)
     : attData;
 
+  // New Members vs Visitors pagination (mobile only, 6 per page)
+  const allMvvData = membersVsVisitorsGraph || [];
+  const totalMvvPages = Math.max(1, Math.ceil(allMvvData.length / MONTH_SIZE));
+  const mvvPageData = allMvvData.slice(mvvPage * MONTH_SIZE, (mvvPage + 1) * MONTH_SIZE);
+
   function AgeLabelRenderer(props) {
     const { cx, cy, midAngle, outerRadius, percent, name } = props;
     if (!percent) return null;
@@ -132,7 +138,7 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
               onClick={handleGoLeft}
               disabled={!canGoLeft}
               aria-label="Previous"
-              className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 shadow border border-gray-200 text-gray-500 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
+              className="md:hidden absolute -left-4 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 shadow border border-gray-200 text-gray-500 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" /></svg>
             </button>
@@ -142,7 +148,7 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
               onClick={handleGoRight}
               disabled={!canGoRight}
               aria-label="Next"
-              className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 shadow border border-gray-200 text-gray-500 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
+              className="md:hidden absolute -right-4 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 shadow border border-gray-200 text-gray-500 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
             </button>
@@ -211,9 +217,29 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
             <div className="font-semibold text-gray-800 text-sm">New Members vs Visitors</div>
             <div className="mt-0.5 text-gray-400 text-xs">Monthly comparison · {year}</div>
           </div>
-          <div className="mt-3 flex-1 min-h-0">
+          <div className="mt-3 flex-1 min-h-0 relative">
+            {/* Mobile: left chevron */}
+            <button
+              type="button"
+              onClick={() => setMvvPage(p => Math.max(0, p - 1))}
+              disabled={mvvPage === 0}
+              aria-label="Previous"
+              className="md:hidden absolute -left-4 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 shadow border border-gray-200 text-gray-500 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" /></svg>
+            </button>
+            {/* Mobile: right chevron */}
+            <button
+              type="button"
+              onClick={() => setMvvPage(p => Math.min(totalMvvPages - 1, p + 1))}
+              disabled={(mvvPage + 1) >= totalMvvPages}
+              aria-label="Next"
+              className="md:hidden absolute -right-4 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 shadow border border-gray-200 text-gray-500 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
+            </button>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={membersVsVisitorsGraph || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="18%" barGap={3}>
+              <BarChart data={isMobile ? mvvPageData : (membersVsVisitorsGraph || [])} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="18%" barGap={3}>
                 <CartesianGrid stroke="#f3f4f6" strokeDasharray="4 4" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => String(v || "").slice(0, 3)} />
                 <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />

@@ -94,26 +94,74 @@ function NotificationsDrawer({ open, onClose }) {
         aria-label="Notifications"
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-200 shrink-0">
-          <div>
-            <div className="font-semibold text-gray-900 text-base">Notifications</div>
-            {pagination.total > 0 && (
-              <div className="text-gray-500 text-xs mt-0.5">{pagination.total} total</div>
-            )}
+        <div className="border-b border-gray-200 shrink-0">
+          {/* Row 1: title + controls */}
+          <div className="flex items-center justify-between gap-3 px-4 md:px-5 py-3 md:py-4">
+            <div>
+              <div className="font-semibold text-gray-900 text-sm md:text-base">Notifications</div>
+              {pagination.total > 0 && (
+                <div className="text-gray-500 text-xs mt-0.5">{pagination.total} total</div>
+              )}
+            </div>
+            <div className="flex items-center gap-1 md:gap-2">
+              {/* Tabs — desktop only in this row */}
+              <div className="hidden md:flex items-center rounded-lg bg-gray-100 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => { setUnreadOnly(false); setPagination((p) => ({ ...p, currentPage: 1 })); }}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${!unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  All{cachedCounts.all > 0 ? ` (${cachedCounts.all})` : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setUnreadOnly(true); setPagination((p) => ({ ...p, currentPage: 1 })); }}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  Unread{cachedCounts.unread > 0 ? ` (${cachedCounts.unread})` : ""}
+                </button>
+              </div>
+              {/* Mark all read — desktop only in this row */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await markAllNotificationsRead();
+                    setNotifications((prev) => prev.map((n) => ({ ...n, readStatus: true })));
+                    emitUnreadChanged();
+                  } catch { void 0; }
+                }}
+                className="hidden md:block rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-600 hover:bg-gray-50 text-xs"
+              >
+                Mark all read
+              </button>
+              {/* Close — always visible */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label="Close notifications"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          {/* Row 2: mobile only — tabs + mark all read */}
+          <div className="flex md:hidden items-center justify-between gap-2 px-4 pb-2">
             <div className="flex items-center rounded-lg bg-gray-100 p-0.5">
               <button
                 type="button"
                 onClick={() => { setUnreadOnly(false); setPagination((p) => ({ ...p, currentPage: 1 })); }}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${!unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                className={`rounded-md px-2 py-0.5 text-xs font-medium transition-colors ${!unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
               >
                 All{cachedCounts.all > 0 ? ` (${cachedCounts.all})` : ""}
               </button>
               <button
                 type="button"
                 onClick={() => { setUnreadOnly(true); setPagination((p) => ({ ...p, currentPage: 1 })); }}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                className={`rounded-md px-2 py-0.5 text-xs font-medium transition-colors ${unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Unread{cachedCounts.unread > 0 ? ` (${cachedCounts.unread})` : ""}
               </button>
@@ -127,19 +175,9 @@ function NotificationsDrawer({ open, onClose }) {
                   emitUnreadChanged();
                 } catch { void 0; }
               }}
-              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-600 hover:bg-gray-50 text-xs"
+              className="rounded-lg border border-gray-200 bg-white px-2 py-0.5 font-semibold text-gray-600 hover:bg-gray-50 text-xs"
             >
               Mark all read
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="ml-1 flex h-8 w-8 items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
-              aria-label="Close notifications"
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-              </svg>
             </button>
           </div>
         </div>
@@ -191,7 +229,7 @@ function NotificationsDrawer({ open, onClose }) {
                             emitUnreadChanged();
                           } catch { void 0; }
                         }}
-                        className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-600 hover:bg-gray-50 text-xs"
+                        className="shrink-0 rounded-lg border border-gray-200 bg-white px-1.5 py-0.5 md:px-2.5 md:py-1.5 font-semibold text-gray-600 hover:bg-gray-50 text-xs"
                       >
                         Mark read
                       </button>

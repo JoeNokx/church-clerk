@@ -184,7 +184,8 @@ function ResultRow({ item, onNavigate }) {
       type="button"
       onMouseDown={(e) => e.preventDefault()}
       onClick={handleClick}
-      className="w-full text-left flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50 active:bg-indigo-100 transition-colors"
+      className="cck-allow-icons w-full text-left flex items-center px-4 py-2.5 hover:bg-indigo-50 active:bg-indigo-100 transition-colors"
+      style={{ gap: "8px" }}
     >
       <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}>
         {item.photoUrl ? (

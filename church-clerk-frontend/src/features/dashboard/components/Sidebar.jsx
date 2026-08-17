@@ -267,7 +267,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   return (
 
-    <aside className="w-72 bg-slate-900 h-screen flex flex-col">
+    <aside className="w-72 bg-slate-900 h-full flex flex-col">
 
       <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-800 shrink-0">
 
