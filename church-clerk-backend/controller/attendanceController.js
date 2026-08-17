@@ -238,8 +238,8 @@ const getAllVisitors = async (req, res) => {
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // MAIN QUERY
     const query = { church: req.activeChurch._id };
+    const churchQuery = { church: req.activeChurch._id };
 
     if (search) {
       query.$or = [
@@ -248,55 +248,80 @@ const getAllVisitors = async (req, res) => {
       ];
     }
 
-    // FETCH VISITORS
-    const visitors = await Visitor.find(query)
-    .select("fullName phoneNumber email location serviceType serviceDate invitedBy status")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // COUNT TOTAL VISITORS
-    const totalVisitors = await Visitor.countDocuments(query);
-
-    // COUNT THIS MONTH VISITORS
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const thisMonthVisitors = await Visitor.countDocuments({
-      church: req.activeChurch._id,
-      createdAt: { $gte: startOfMonth },
-    });
-
-    // COUNT THIS WEEK VISITORS
-    const startOfWeek = new Date();
+    const startOfWeek = new Date(now);
     const day = startOfWeek.getDay();
     const diffToMonday = day === 0 ? 6 : day - 1;
     startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const thisWeekVisitors = await Visitor.countDocuments({
-      church: req.activeChurch._id,
-      createdAt: { $gte: startOfWeek }
-    });
+    const startOfLastWeek = new Date(startOfWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
 
-    // COUNT CONVERTED VISITORS (member exists with same phoneNumber)
- const convertedVisitors = await Member.countDocuments({
-  visitorId: { $ne: null },
-  church: req.activeChurch._id
-});
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
 
-    // IF NO RESULTS
+    const [
+      visitors,
+      totalVisitors,
+      thisMonthVisitors,
+      thisWeekVisitors,
+      convertedVisitors,
+      totalVisitorsPrev,
+      lastMonthVisitors,
+      lastWeekVisitors,
+      convertedVisitorsPrev
+    ] = await Promise.all([
+      Visitor.find(query)
+        .select("fullName phoneNumber email location serviceType serviceDate invitedBy status")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Visitor.countDocuments(query),
+      Visitor.countDocuments({ ...churchQuery, createdAt: { $gte: startOfMonth } }),
+      Visitor.countDocuments({ ...churchQuery, createdAt: { $gte: startOfWeek } }),
+      Member.countDocuments({ visitorId: { $ne: null }, church: req.activeChurch._id }),
+      Visitor.countDocuments({ ...churchQuery, createdAt: { $lt: startOfMonth } }),
+      Visitor.countDocuments({ ...churchQuery, createdAt: { $gte: startOfLastMonth, $lt: startOfMonth } }),
+      Visitor.countDocuments({ ...churchQuery, createdAt: { $gte: startOfLastWeek, $lt: startOfWeek } }),
+      Member.countDocuments({ visitorId: { $ne: null }, church: req.activeChurch._id, createdAt: { $lt: startOfMonth } })
+    ]);
+
+    const change = {
+      totalVisitors: pctChange(totalVisitors, totalVisitorsPrev),
+      thisWeekVisitors: pctChange(thisWeekVisitors, lastWeekVisitors),
+      thisMonthVisitors: pctChange(thisMonthVisitors, lastMonthVisitors),
+      convertedVisitors: pctChange(convertedVisitors, convertedVisitorsPrev)
+    };
+
+    const diff = {
+      totalVisitors: totalVisitors - totalVisitorsPrev,
+      thisWeekVisitors: thisWeekVisitors - lastWeekVisitors,
+      thisMonthVisitors: thisMonthVisitors - lastMonthVisitors,
+      convertedVisitors: convertedVisitors - convertedVisitorsPrev
+    };
+
+    const stats = {
+      totalVisitors,
+      thisWeekVisitors,
+      thisMonthVisitors,
+      convertedVisitors,
+      change,
+      diff
+    };
+
     if (!visitors || visitors.length === 0) {
       return res.status(200).json({
         message: "No visitor found.",
-        stats: {
-          totalVisitors,
-          thisWeekVisitors,
-          thisMonthVisitors,
-          convertedVisitors,
-        },
+        stats,
         pagination: {
           totalResult: 0,
           totalPages: 0,
@@ -311,7 +336,6 @@ const getAllVisitors = async (req, res) => {
       });
     }
 
-    // PAGINATION DETAILS
     const totalPages = Math.ceil(totalVisitors / limitNum);
 
     const pagination = {
@@ -324,14 +348,8 @@ const getAllVisitors = async (req, res) => {
       nextPage: pageNum < totalPages ? pageNum + 1 : null,
     };
 
-    // SUCCESS RESPONSE
     return res.status(200).json({
-      stats: {
-        totalVisitors,
-        thisWeekVisitors,
-        thisMonthVisitors,
-        convertedVisitors,
-      },
+      stats,
       pagination,
       count: visitors.length,
       visitors,

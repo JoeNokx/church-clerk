@@ -400,39 +400,64 @@ async function computeKpis({ churchId, periodStart, periodEnd, prevStart, prevEn
 }
 
 async function computeOverallKpis({ churchId }) {
-  const incomeSums = await Promise.all(
-    INCOME_SOURCES.map((s) =>
-      sumAll({
-        Model: s.Model,
-        churchId,
-        amountField: s.amountField
-      })
-    )
-  );
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const expenseSums = await Promise.all(
-    EXPENSE_SOURCES.map((s) =>
-      sumAll({
-        Model: s.Model,
-        churchId,
-        amountField: s.amountField
-      })
-    )
-  );
+  const pctChange = (current, previous) => {
+    const c = clampToNumber(current);
+    const p = clampToNumber(previous);
+    if (!p) return c > 0 ? 100 : 0;
+    return ((c - p) / p) * 100;
+  };
+
+  const [
+    incomeSums,
+    prevIncomeSums,
+    expenseSums,
+    prevExpenseSums,
+    totalNewMembers,
+    prevNewMembers,
+    totalVisitors,
+    prevVisitors
+  ] = await Promise.all([
+    Promise.all(INCOME_SOURCES.map((s) => sumAll({ Model: s.Model, churchId, amountField: s.amountField }))),
+    Promise.all(INCOME_SOURCES.map((s) => sumAll({ Model: s.Model, churchId, amountField: s.amountField, extraMatch: { [s.dateField]: { $lt: startOfMonth } } }))),
+    Promise.all(EXPENSE_SOURCES.map((s) => sumAll({ Model: s.Model, churchId, amountField: s.amountField }))),
+    Promise.all(EXPENSE_SOURCES.map((s) => sumAll({ Model: s.Model, churchId, amountField: s.amountField, extraMatch: { [s.dateField]: { $lt: startOfMonth } } }))),
+    Member.countDocuments({ church: churchId }),
+    Member.countDocuments({ church: churchId, dateJoined: { $lt: startOfMonth } }),
+    Visitor.countDocuments({ church: churchId }),
+    Visitor.countDocuments({ church: churchId, createdAt: { $lt: startOfMonth } })
+  ]);
 
   const totalIncome = incomeSums.reduce((sum, v) => sum + clampToNumber(v), 0);
+  const prevTotalIncome = prevIncomeSums.reduce((sum, v) => sum + clampToNumber(v), 0);
   const totalExpenses = expenseSums.reduce((sum, v) => sum + clampToNumber(v), 0);
+  const prevTotalExpenses = prevExpenseSums.reduce((sum, v) => sum + clampToNumber(v), 0);
   const surplus = totalIncome - totalExpenses;
+  const prevSurplus = prevTotalIncome - prevTotalExpenses;
 
-  const totalNewMembers = await Member.countDocuments({ church: churchId });
-  const totalVisitors = await Visitor.countDocuments({ church: churchId });
+  const change = {
+    totalIncome: pctChange(totalIncome, prevTotalIncome),
+    totalExpenses: pctChange(totalExpenses, prevTotalExpenses),
+    surplus: pctChange(surplus, prevSurplus),
+    newMembers: pctChange(totalNewMembers, prevNewMembers),
+    visitors: pctChange(totalVisitors, prevVisitors)
+  };
+
+  const diff = {
+    newMembers: totalNewMembers - prevNewMembers,
+    visitors: totalVisitors - prevVisitors
+  };
 
   return {
     totalIncome,
     totalExpenses,
     surplus,
     newMembers: totalNewMembers,
-    visitors: totalVisitors
+    visitors: totalVisitors,
+    change,
+    diff
   };
 }
 

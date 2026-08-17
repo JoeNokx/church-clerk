@@ -201,48 +201,78 @@ const getOfferingKPI = async (req, res) => {
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     startOfYear.setHours(0, 0, 0, 0);
 
-    // ---- Query (matches your pattern) ----
+    // Last week
+    const endOfLastWeek = new Date(startOfWeek);
+    endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
+    endOfLastWeek.setHours(23, 59, 59, 999);
+    const startOfLastWeek = new Date(endOfLastWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 6);
+    startOfLastWeek.setHours(0, 0, 0, 0);
+
+    // Last year
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+
     const query = { church: req.activeChurch._id };
 
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
     // ---- Aggregations ----
-    const [week, month, lastMonth, year] = await Promise.all([
-      // This week
+    const [week, lastWeek, month, lastMonth, year, lastYear] = await Promise.all([
       Offering.aggregate([
         { $match: { ...query, serviceDate: { $gte: startOfWeek } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // This month
+      Offering.aggregate([
+        { $match: { ...query, serviceDate: { $gte: startOfLastWeek, $lte: endOfLastWeek } } },
+        { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+      ]),
       Offering.aggregate([
         { $match: { ...query, serviceDate: { $gte: startOfMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // Last month
       Offering.aggregate([
-        {
-          $match: {
-            ...query,
-            serviceDate: { $gte: startOfLastMonth, $lte: endOfLastMonth }
-          }
-        },
+        { $match: { ...query, serviceDate: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // This year
       Offering.aggregate([
         { $match: { ...query, serviceDate: { $gte: startOfYear } } },
+        { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+      ]),
+      Offering.aggregate([
+        { $match: { ...query, serviceDate: { $gte: startOfLastYear, $lte: endOfLastYear } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ])
     ]);
 
+    const thisWeek = week[0]?.totalAmount || 0;
+    const lastWeekVal = lastWeek[0]?.totalAmount || 0;
+    const thisMonth = month[0]?.totalAmount || 0;
+    const lastMonthVal = lastMonth[0]?.totalAmount || 0;
+    const thisYear = year[0]?.totalAmount || 0;
+    const lastYearVal = lastYear[0]?.totalAmount || 0;
+
+    const change = {
+      thisWeek: pctChange(thisWeek, lastWeekVal),
+      thisMonth: pctChange(thisMonth, lastMonthVal),
+      thisYear: pctChange(thisYear, lastYearVal)
+    };
+
     return res.status(200).json({
       message: "Offering KPI fetched successfully",
       data: {
-        thisWeek: week[0]?.totalAmount || 0,
-        thisMonth: month[0]?.totalAmount || 0,
-        lastMonth: lastMonth[0]?.totalAmount || 0,
-        thisYear: year[0]?.totalAmount || 0
+        thisWeek,
+        lastWeek: lastWeekVal,
+        thisMonth,
+        lastMonth: lastMonthVal,
+        thisYear,
+        lastYear: lastYearVal,
+        change
       }
     });
 

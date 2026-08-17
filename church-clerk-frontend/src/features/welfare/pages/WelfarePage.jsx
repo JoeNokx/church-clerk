@@ -11,7 +11,7 @@ import WelfareDisbursementForm from "../components/WelfareDisbursementForm.jsx";
 import WelfareDisbursementTable from "../components/WelfareDisbursementTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
-import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function WelfarePageInner() {
@@ -32,7 +32,8 @@ function WelfarePageInner() {
     thisMonthContribution: 0,
     thisMonthDisbursement: 0,
     thisYearContribution: 0,
-    thisYearDisbursement: 0
+    thisYearDisbursement: 0,
+    change: null
   });
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
@@ -48,14 +49,16 @@ function WelfarePageInner() {
         thisMonthContribution: Number(data?.thisMonthContribution || 0),
         thisMonthDisbursement: Number(data?.thisMonthDisbursement || 0),
         thisYearContribution: Number(data?.thisYearContribution || 0),
-        thisYearDisbursement: Number(data?.thisYearDisbursement || 0)
+        thisYearDisbursement: Number(data?.thisYearDisbursement || 0),
+        change: data?.change || null
       });
     } catch {
       setKpi({
         thisMonthContribution: 0,
         thisMonthDisbursement: 0,
         thisYearContribution: 0,
-        thisYearDisbursement: 0
+        thisYearDisbursement: 0,
+        change: null
       });
     }
   }, [store?.activeChurchId, store?.getWelfareKPI]);
@@ -145,10 +148,60 @@ function WelfarePageInner() {
       </div>
 
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
-        <KpiStatCard label="Contributions (This Month)" value={formatMoney(kpi.thisMonthContribution || 0, currency)} valueClassName="text-green-700 text-lg" />
-        <KpiStatCard label="Disbursements (This Month)" value={formatMoney(kpi.thisMonthDisbursement || 0, currency)} valueClassName="text-orange-600 text-lg" />
-        <KpiStatCard label="Contributions (This Year)" value={formatMoney(kpi.thisYearContribution || 0, currency)} />
-        <KpiStatCard label="Disbursements (This Year)" value={formatMoney(kpi.thisYearDisbursement || 0, currency)} />
+        <KpiCard
+          title="Contributions (This Month)"
+          value={formatMoney(kpi.thisMonthContribution || 0, currency)}
+          change={kpi.change?.thisMonthContribution}
+          compareLabel="last month"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Disbursements (This Month)"
+          value={formatMoney(kpi.thisMonthDisbursement || 0, currency)}
+          change={kpi.change?.thisMonthDisbursement}
+          compareLabel="last month"
+          iconBg="bg-orange-50"
+          iconColor="text-orange-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M3 8h18M3 8a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2v-8a2 2 0 00-2-2M3 8V6a2 2 0 012-2h14a2 2 0 012 2v2M12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Contributions (This Year)"
+          value={formatMoney(kpi.thisYearContribution || 0, currency)}
+          change={kpi.change?.thisYearContribution}
+          compareLabel="last year"
+          iconBg="bg-teal-50"
+          iconColor="text-teal-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M19 3v4M22 5h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Disbursements (This Year)"
+          value={formatMoney(kpi.thisYearDisbursement || 0, currency)}
+          change={kpi.change?.thisYearDisbursement}
+          compareLabel="last year"
+          iconBg="bg-rose-50"
+          iconColor="text-rose-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M3 8h18M3 8a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2v-8a2 2 0 00-2-2M3 8V6a2 2 0 012-2h14a2 2 0 012 2v2M12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M19 3v4M22 5h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
       </KpiGrid>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">

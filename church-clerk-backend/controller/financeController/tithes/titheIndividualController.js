@@ -308,56 +308,81 @@ const getTitheIndividualKPI = async (req, res) => {
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     startOfYear.setHours(0, 0, 0, 0);
 
+    // Last year
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+
     // ---- Query (matches your pattern) ----
     const query = { church: req.activeChurch._id };
 
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
     // ---- Aggregations ----
-    const [week, month, lastMonth, year, membersPaid] = await Promise.all([
-      // This week
+    const [week, month, lastMonth, year, lastYear, membersPaid, lastMonthMembersPaid] = await Promise.all([
       TitheIndividual.aggregate([
         { $match: { ...query, date: { $gte: startOfWeek } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // This month
       TitheIndividual.aggregate([
         { $match: { ...query, date: { $gte: startOfMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // Last month
       TitheIndividual.aggregate([
-        {
-          $match: {
-            ...query,
-            date: { $gte: startOfLastMonth, $lte: endOfLastMonth }
-          }
-        },
+        { $match: { ...query, date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // This year
       TitheIndividual.aggregate([
         { $match: { ...query, date: { $gte: startOfYear } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      //members paid this month
       TitheIndividual.aggregate([
-    { $match: {...query, member: { $ne: null }, date: { $gte: startOfMonth }}},
-    { $group: { _id: "$member" } },
-    { $count: "totalMembers" }])
+        { $match: { ...query, date: { $gte: startOfLastYear, $lte: endOfLastYear } } },
+        { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+      ]),
+      TitheIndividual.aggregate([
+        { $match: { ...query, member: { $ne: null }, date: { $gte: startOfMonth } } },
+        { $group: { _id: "$member" } },
+        { $count: "totalMembers" }
+      ]),
+      TitheIndividual.aggregate([
+        { $match: { ...query, member: { $ne: null }, date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+        { $group: { _id: "$member" } },
+        { $count: "totalMembers" }
+      ])
     ]);
+
+    const thisMonth = month[0]?.totalAmount || 0;
+    const lastMonthVal = lastMonth[0]?.totalAmount || 0;
+    const thisYear = year[0]?.totalAmount || 0;
+    const lastYearVal = lastYear[0]?.totalAmount || 0;
+    const membersPaidThisMonth = membersPaid[0]?.totalMembers || 0;
+    const membersPaidLastMonth = lastMonthMembersPaid[0]?.totalMembers || 0;
+
+    const change = {
+      thisMonth: pctChange(thisMonth, lastMonthVal),
+      thisYear: pctChange(thisYear, lastYearVal),
+      membersPaidThisMonth: pctChange(membersPaidThisMonth, membersPaidLastMonth)
+    };
+
+    const diff = {
+      membersPaidThisMonth: membersPaidThisMonth - membersPaidLastMonth
+    };
 
     return res.status(200).json({
       message: "TitheIndividual KPI fetched successfully",
       data: {
         thisWeek: week[0]?.totalAmount || 0,
-        thisMonth: month[0]?.totalAmount || 0,
-        lastMonth: lastMonth[0]?.totalAmount || 0,
-        thisYear: year[0]?.totalAmount || 0,
-        membersPaidThisMonth: membersPaid[0]?.totalMembers || 0
-
+        thisMonth,
+        lastMonth: lastMonthVal,
+        thisYear,
+        membersPaidThisMonth,
+        change,
+        diff
       }
     });
 

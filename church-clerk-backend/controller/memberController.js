@@ -502,23 +502,49 @@ const getAllMembersKPI = async (req, res) => {
   try {
     const query = { church: req.activeChurch._id };
 
-    const startOfMonth = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    );
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
 
     const [
       totalMembers,
       activeMembers,
       inactiveMembers,
-      formerMembers
+      formerMembers,
+      totalMembersPrev,
+      activeMembersPrev,
+      inactiveMembersPrev,
+      formerMembersPrev
     ] = await Promise.all([
       Member.countDocuments(query),
       Member.countDocuments({ ...query, status: "active" }),
       Member.countDocuments({ ...query, status: { $in: ["dormant", "temporarily_away"] } }),
-      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church"] } })
+      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church"] } }),
+      Member.countDocuments({ ...query, dateJoined: { $lt: startOfMonth } }),
+      Member.countDocuments({ ...query, status: "active", dateJoined: { $lt: startOfMonth } }),
+      Member.countDocuments({ ...query, status: { $in: ["dormant", "temporarily_away"] }, dateJoined: { $lt: startOfMonth } }),
+      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church"] }, dateJoined: { $lt: startOfMonth } })
     ]);
+
+    const change = {
+      totalMembers: pctChange(totalMembers, totalMembersPrev),
+      activeMembers: pctChange(activeMembers, activeMembersPrev),
+      inactiveMembers: pctChange(inactiveMembers, inactiveMembersPrev),
+      formerMembers: pctChange(formerMembers, formerMembersPrev)
+    };
+
+    const diff = {
+      totalMembers: totalMembers - totalMembersPrev,
+      activeMembers: activeMembers - activeMembersPrev,
+      inactiveMembers: inactiveMembers - inactiveMembersPrev,
+      formerMembers: formerMembers - formerMembersPrev
+    };
 
     return res.status(200).json({
       message: "Member KPI fetched successfully",
@@ -526,7 +552,9 @@ const getAllMembersKPI = async (req, res) => {
         totalMembers,
         activeMembers,
         inactiveMembers,
-        formerMembers
+        formerMembers,
+        change,
+        diff
       }
     });
   } catch (error) {

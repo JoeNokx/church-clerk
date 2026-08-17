@@ -6,7 +6,7 @@ import debounce from "../../../shared/utils/debounce.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import PledgeContext, { PledgeProvider } from "../pledge.store.js";
-import { getPledges as apiGetPledges } from "../services/pledge.api.js";
+import { getPledges as apiGetPledges, getPledgesKPI } from "../services/pledge.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
@@ -522,6 +522,7 @@ function PledgesPageInner() {
   const canEdit = useMemo(() => (typeof can === "function" ? can("pledges", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("pledges", "delete") : false), [can]);
   const [kpi, setKpi] = useState({ total: 0, pledged: 0, paid: 0, outstanding: 0 });
+  const [pledgesKpi, setPledgesKpi] = useState(null);
   const [newOpen, setNewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
@@ -637,10 +638,22 @@ function PledgesPageInner() {
     });
   }, [store?.activeChurchId, store?.filters]);
 
+  const loadPledgesKpi = useCallback(async () => {
+    if (!store?.activeChurchId) return;
+    try {
+      const res = await getPledgesKPI();
+      const payload = res?.data?.data ?? res?.data;
+      setPledgesKpi(payload?.kpi || null);
+    } catch {
+      setPledgesKpi(null);
+    }
+  }, [store?.activeChurchId]);
+
   useEffect(() => {
     if (!store?.activeChurchId) return;
     computeKpi().catch(() => null);
-  }, [computeKpi, store?.activeChurchId]);
+    loadPledgesKpi().catch(() => null);
+  }, [computeKpi, loadPledgesKpi, store?.activeChurchId]);
 
   const openCreate = () => {
     setEditingRow(null);
@@ -753,9 +766,11 @@ function PledgesPageInner() {
         <KpiCard
           title="Total Pledges"
           value={Number(kpi.total || 0).toLocaleString()}
-          subtitle="All pledges"
+          change={pledgesKpi?.change?.total}
+          diff={pledgesKpi?.diff?.total}
+          compareLabel="last month"
           iconBg="bg-blue-50"
-          iconColor="text-blue-700"
+          iconColor="text-blue-500"
           icon={
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M16 11c1.66 0 3-1.79 3-4s-1.34-4-3-4-3 1.79-3 4 1.34 4 3 4Z" stroke="currentColor" strokeWidth="1.8" />
@@ -768,9 +783,10 @@ function PledgesPageInner() {
         <KpiCard
           title="Total Amount Pledged"
           value={formatCurrency(kpi.pledged, currency)}
-          subtitle="Committed amount"
-          iconBg="bg-purple-50"
-          iconColor="text-purple-700"
+          change={pledgesKpi?.change?.pledged}
+          compareLabel="last month"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-500"
           icon={
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M12 1v22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -781,9 +797,10 @@ function PledgesPageInner() {
         <KpiCard
           title="Total Amount Paid"
           value={formatCurrency(kpi.paid, currency)}
-          subtitle="Payments received"
-          iconBg="bg-green-50"
-          iconColor="text-green-700"
+          change={pledgesKpi?.change?.paid}
+          compareLabel="last month"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
           icon={
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M20 7L10 17l-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -793,9 +810,10 @@ function PledgesPageInner() {
         <KpiCard
           title="Total Outstanding"
           value={formatCurrency(kpi.outstanding, currency)}
-          subtitle="Remaining balance"
+          change={pledgesKpi?.change?.outstanding}
+          compareLabel="last month"
           iconBg="bg-red-50"
-          iconColor="text-red-700"
+          iconColor="text-red-500"
           icon={
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M12 9v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

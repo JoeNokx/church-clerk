@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
@@ -8,11 +8,13 @@ import {
   createChurchProject,
   deleteChurchProject,
   getChurchProjects,
+  getChurchProjectsKPI,
   updateChurchProject
 } from "../services/churchProject.api.js";
 import { createProjectContribution } from "../contributions/services/projectContributions.api.js";
 import { createProjectExpense } from "../expenses/services/projectExpenses.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -473,6 +475,7 @@ function ChurchProjectsPageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [projects, setProjects] = useState([]);
+  const [projectsKpi, setProjectsKpi] = useState(null);
 
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -523,8 +526,19 @@ function ChurchProjectsPageInner() {
     }
   };
 
+  const loadKpi = useCallback(async () => {
+    try {
+      const res = await getChurchProjectsKPI();
+      const payload = res?.data?.data ?? res?.data;
+      setProjectsKpi(payload?.kpi || null);
+    } catch {
+      setProjectsKpi(null);
+    }
+  }, []);
+
   useEffect(() => {
     load();
+    loadKpi();
   }, []);
 
   const filteredProjects = useMemo(() => {
@@ -618,25 +632,64 @@ function ChurchProjectsPageInner() {
 
       {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
         <KpiCard
           title="Total Projects"
           value={totals.totalProjects}
-          subtitle={`${totals.activeCount} active`}
+          change={projectsKpi?.change?.totalProjects}
+          diff={projectsKpi?.diff?.totalProjects}
+          compareLabel="last month"
+          tooltip={`${totals.activeCount} of ${totals.totalProjects} project${totals.totalProjects !== 1 ? "s" : ""} currently active`}
+          iconBg="bg-blue-50"
+          iconColor="text-blue-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          }
         />
         <KpiCard
           title="Total Raised"
           value={formatCurrency(totals.totalRaised, currency)}
+          change={projectsKpi?.change?.totalRaised}
+          compareLabel="last month"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
         />
         <KpiCard
           title="Total Target"
           value={formatCurrency(totals.totalTarget, currency)}
+          change={projectsKpi?.change?.totalTarget}
+          compareLabel="last month"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+              <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.8" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+            </svg>
+          }
         />
         <KpiCard
           title="Total Spent"
           value={formatCurrency(totals.totalSpent, currency)}
+          change={projectsKpi?.change?.totalSpent}
+          compareLabel="last month"
+          iconBg="bg-orange-50"
+          iconColor="text-orange-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M3 8h18M3 8a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2v-8a2 2 0 00-2-2M3 8V6a2 2 0 012-2h14a2 2 0 012 2v2M12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
         />
-      </div>
+      </KpiGrid>
 
       <div className="mt-5 flex items-center gap-3">
         <input

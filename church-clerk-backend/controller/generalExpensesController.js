@@ -179,78 +179,82 @@ const getGeneralExpensesKPI = async (req, res) => {
     const now = new Date();
 
     // ---- Date ranges ----
-
-    // Start of week (Monday)
     const startOfWeek = new Date(now);
     const day = now.getDay() || 7;
     startOfWeek.setDate(now.getDate() - day + 1);
     startOfWeek.setHours(0, 0, 0, 0);
 
-    // Start of current month
+    const startOfLastWeek = new Date(startOfWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+    const endOfLastWeek = new Date(startOfWeek);
+    endOfLastWeek.setMilliseconds(-1);
+
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    // Start of last month
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    startOfLastMonth.setHours(0, 0, 0, 0);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
-    // End of last month
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-    endOfLastMonth.setHours(23, 59, 59, 999);
-
-    // Start of year
     const startOfYear = new Date(now.getFullYear(), 0, 1);
-    startOfYear.setHours(0, 0, 0, 0);
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
 
-    // ---- Query (matches your pattern) ----
-    const query = {
-      church: req.activeChurch._id
+    const query = { church: req.activeChurch._id };
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
     };
 
-
-    // if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-    //   query.church = req.user.church;
-    // }
-
     // ---- Aggregations ----
-    const [week, month, lastMonth, year] = await Promise.all([
-      // This week
+    const [week, lastWeek, month, lastMonth, year, lastYear] = await Promise.all([
       GeneralExpenses.aggregate([
         { $match: { ...query, date: { $gte: startOfWeek } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // This month
+      GeneralExpenses.aggregate([
+        { $match: { ...query, date: { $gte: startOfLastWeek, $lte: endOfLastWeek } } },
+        { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+      ]),
       GeneralExpenses.aggregate([
         { $match: { ...query, date: { $gte: startOfMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // Last month
       GeneralExpenses.aggregate([
-        {
-          $match: {
-            ...query,
-            date: { $gte: startOfLastMonth, $lte: endOfLastMonth }
-          }
-        },
+        { $match: { ...query, date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // This year
       GeneralExpenses.aggregate([
         { $match: { ...query, date: { $gte: startOfYear } } },
+        { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+      ]),
+      GeneralExpenses.aggregate([
+        { $match: { ...query, date: { $gte: startOfLastYear, $lte: endOfLastYear } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ])
     ]);
 
+    const thisWeek = week[0]?.totalAmount || 0;
+    const lastWeekVal = lastWeek[0]?.totalAmount || 0;
+    const thisMonth = month[0]?.totalAmount || 0;
+    const lastMonthVal = lastMonth[0]?.totalAmount || 0;
+    const thisYear = year[0]?.totalAmount || 0;
+    const lastYearVal = lastYear[0]?.totalAmount || 0;
+
+    const change = {
+      thisWeek: pctChange(thisWeek, lastWeekVal),
+      thisMonth: pctChange(thisMonth, lastMonthVal),
+      thisYear: pctChange(thisYear, lastYearVal)
+    };
+
     return res.status(200).json({
       message: "general Expenses KPI fetched successfully",
       data: {
-        thisWeek: week[0]?.totalAmount || 0,
-        thisMonth: month[0]?.totalAmount || 0,
-        lastMonth: lastMonth[0]?.totalAmount || 0,
-        thisYear: year[0]?.totalAmount || 0
+        thisWeek,
+        thisMonth,
+        lastMonth: lastMonthVal,
+        thisYear,
+        change
       }
     });
 

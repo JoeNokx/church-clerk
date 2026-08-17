@@ -292,10 +292,76 @@ function MembersPageInner() {
             <div className="text-gray-600 col-span-2 lg:col-span-4 text-sm">Loading KPI...</div>
           ) : (
             <>
-              <KpiCard title="Total Members" value={memberKPI?.totalMembers} tooltip="The total count of everyone registered in your church, regardless of their current status." />
-              <KpiCard title="Active Members" value={memberKPI?.activeMembers ?? memberKPI?.currentMembers} tooltip="Members who are currently attending and actively participating in church life." />
-              <KpiCard title="Inactive Members" value={memberKPI?.inactiveMembers} tooltip="Members who are dormant or temporarily away — still part of the church but not currently active." />
-              <KpiCard title="Former Members" value={memberKPI?.formerMembers} tooltip="People who have left the church, transferred to another congregation, or are deceased." />
+              <KpiCard
+                title="Total Members"
+                value={memberKPI?.totalMembers}
+                change={memberKPI?.change?.totalMembers}
+                diff={memberKPI?.diff?.totalMembers}
+                compareLabel="last month"
+                tooltip="The total count of everyone registered in your church, regardless of their current status."
+                iconBg="bg-blue-50"
+                iconColor="text-blue-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M3 20c0-3 2-5 5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M21 20c0-3-2-5-5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M8 20c0-3 1.8-5 4-5s4 2 4 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title="Active Members"
+                value={memberKPI?.activeMembers ?? memberKPI?.currentMembers}
+                change={memberKPI?.change?.activeMembers}
+                diff={memberKPI?.diff?.activeMembers}
+                compareLabel="last month"
+                tooltip="Members who are currently attending and actively participating in church life."
+                iconBg="bg-emerald-50"
+                iconColor="text-emerald-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M17 11l1.5 1.5L21 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title="Inactive Members"
+                value={memberKPI?.inactiveMembers}
+                change={memberKPI?.change?.inactiveMembers}
+                diff={memberKPI?.diff?.inactiveMembers}
+                compareLabel="last month"
+                tooltip="Members who are dormant or temporarily away — still part of the church but not currently active."
+                iconBg="bg-amber-50"
+                iconColor="text-amber-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M4 20c0-4 3.5-6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M16 14v5M19.5 14v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title="Former Members"
+                value={memberKPI?.formerMembers}
+                change={memberKPI?.change?.formerMembers}
+                diff={memberKPI?.diff?.formerMembers}
+                compareLabel="last month"
+                tooltip="People who have left the church, transferred to another congregation, or are deceased."
+                iconBg="bg-slate-100"
+                iconColor="text-slate-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M4 20c0-4 3.5-6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M15.5 14.5l4 4m0-4l-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                }
+              />
             </>
           )}
       </KpiGrid>

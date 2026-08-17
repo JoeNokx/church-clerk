@@ -268,4 +268,76 @@ const deletePledge = async (req, res) => {
         return res.status(400).json({message: "Pledges could not be deleted", error: error.message})
     }
 }
-export {createPledge, getAllPledge, getSinglePledge, updatePledge, deletePledge}
+const getPledgesKPI = async (req, res) => {
+  try {
+    const query = { church: req.activeChurch._id };
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
+    const [
+      totalPledges,
+      totalPledgesPrev,
+      [pledgedAgg],
+      [pledgedPrevAgg],
+      [paidAgg],
+      [paidPrevAgg]
+    ] = await Promise.all([
+      Pledge.countDocuments(query),
+      Pledge.countDocuments({ ...query, createdAt: { $lt: startOfMonth } }),
+      Pledge.aggregate([
+        { $match: query },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      Pledge.aggregate([
+        { $match: { ...query, createdAt: { $lt: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      PledgePayment.aggregate([
+        { $match: query },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      PledgePayment.aggregate([
+        { $match: { ...query, paymentDate: { $lt: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ])
+    ]);
+
+    const totalPledged = Number(pledgedAgg?.total || 0);
+    const totalPledgedPrev = Number(pledgedPrevAgg?.total || 0);
+    const totalPaid = Number(paidAgg?.total || 0);
+    const totalPaidPrev = Number(paidPrevAgg?.total || 0);
+    const outstanding = Math.max(0, totalPledged - totalPaid);
+    const outstandingPrev = Math.max(0, totalPledgedPrev - totalPaidPrev);
+
+    const change = {
+      total: pctChange(totalPledges, totalPledgesPrev),
+      pledged: pctChange(totalPledged, totalPledgedPrev),
+      paid: pctChange(totalPaid, totalPaidPrev),
+      outstanding: pctChange(outstanding, outstandingPrev)
+    };
+
+    const diff = {
+      total: totalPledges - totalPledgesPrev
+    };
+
+    return res.status(200).json({
+      message: "Pledges KPI fetched successfully",
+      kpi: { change, diff }
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Could not fetch Pledges KPI",
+      error: error.message
+    });
+  }
+};
+
+export {createPledge, getAllPledge, getSinglePledge, updatePledge, deletePledge, getPledgesKPI}

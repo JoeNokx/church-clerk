@@ -9,6 +9,8 @@ import {
   exportFinancialStatement
 } from "../services/financialStatement.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -182,9 +184,9 @@ function FinancialStatementPage() {
   const sortedExpenses = useMemo(() => [...expenseDetails].sort((a, b) => Number(b?.amount || 0) - Number(a?.amount || 0)), [expenseDetails]);
 
   const comparisonLabel = useMemo(() => {
-    if (tab === "monthly") return "vs from last month";
-    if (tab === "quarterly") return "vs from last quarter";
-    return "vs from last year";
+    if (tab === "monthly") return "last month";
+    if (tab === "quarterly") return "last quarter";
+    return "last year";
   }, [tab]);
 
   const summaryText = useMemo(() => {
@@ -396,59 +398,51 @@ function FinancialStatementPage() {
 
       {!loading && !error ? (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Total Income</div>
-                  <div className="mt-2 font-semibold text-gray-900 text-lg">{money(kpi.totalIncome)}</div>
-                  <div className="mt-1 font-semibold text-green-600 text-xs">{formatPercent(kpi.incomeChangePct)} {comparisonLabel}</div>
-                </div>
-                <div className="h-11 w-11 rounded-lg bg-green-50 flex items-center justify-center md:h-12 md:w-12">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-600">
-                    <path d="M12 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M7 10l5-5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Total Expenses</div>
-                  <div className="mt-2 font-semibold text-gray-900 text-lg">{money(kpi.totalExpenses)}</div>
-                  <div className="mt-1 font-semibold text-orange-600 text-xs">{formatPercent(kpi.expensesChangePct)} {comparisonLabel}</div>
-                </div>
-                <div className="h-11 w-11 rounded-lg bg-orange-50 flex items-center justify-center md:h-12 md:w-12">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-500">
-                    <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M17 14l-5 5-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Surplus / Deficit</div>
-                  <div className={`mt-2 font-semibold text-lg ${Number(kpi.surplus || 0) >= 0 ? "text-gray-900" : "text-red-700"}`}>
-                    {money(kpi.surplus)}
-                  </div>
-                  <div className="mt-1 font-semibold text-blue-700 text-xs">{formatPercent(kpi.surplusPctOfIncome)} of income</div>
-                </div>
-                <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-600">
-                    <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M7 17V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M12 17V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M17 17v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
+          <KpiGrid className="mt-6 gap-4 lg:grid-cols-3">
+            <KpiCard
+              title="Total Income"
+              value={money(kpi.totalIncome)}
+              change={kpi.incomeChangePct}
+              compareLabel={comparisonLabel}
+              iconBg="bg-emerald-50"
+              iconColor="text-emerald-500"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                  <path d="M12 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M7 10l5-5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }
+            />
+            <KpiCard
+              title="Total Expenses"
+              value={money(kpi.totalExpenses)}
+              change={kpi.expensesChangePct}
+              compareLabel={comparisonLabel}
+              iconBg="bg-orange-50"
+              iconColor="text-orange-500"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                  <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M17 14l-5 5-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }
+            />
+            <KpiCard
+              title="Surplus / Deficit"
+              value={money(kpi.surplus)}
+              subtitle={`${formatPercent(kpi.surplusPctOfIncome)} of income`}
+              iconBg={Number(kpi.surplus || 0) >= 0 ? "bg-blue-50" : "bg-red-50"}
+              iconColor={Number(kpi.surplus || 0) >= 0 ? "text-blue-500" : "text-red-500"}
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                  <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M7 17V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M12 17V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M17 17v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }
+            />
+          </KpiGrid>
 
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-xl border border-gray-200 bg-white">

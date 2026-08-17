@@ -97,7 +97,9 @@ export function AttendanceProvider({ children }) {
     totalVisitors: Number(visitorStatsPayload?.totalVisitors || 0),
     thisWeekVisitors: Number(visitorStatsPayload?.thisWeekVisitors || 0),
     thisMonthVisitors: Number(visitorStatsPayload?.thisMonthVisitors || 0),
-    convertedVisitors: Number(visitorStatsPayload?.convertedVisitors || 0)
+    convertedVisitors: Number(visitorStatsPayload?.convertedVisitors || 0),
+    change: visitorStatsPayload?.change || null,
+    diff: visitorStatsPayload?.diff || null
   };
 
   const attendanceMutations = useAttendanceMutations(activeChurch);

@@ -19,3 +19,7 @@ export const deleteChurchProject = async (id) => {
 export const getProjectContributionExpensesKPI = async (projectId) => {
   return await http.get(`/church-project/church-projects/${projectId}/contribution-expenses/kpi`);
 };
+
+export const getChurchProjectsKPI = async () => {
+  return await http.get("/church-project/church-projects/stats/kpi");
+};

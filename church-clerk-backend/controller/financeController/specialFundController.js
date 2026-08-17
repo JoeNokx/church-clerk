@@ -220,47 +220,79 @@ const getSpecialFundKPI = async (req, res) => {
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     startOfYear.setHours(0, 0, 0, 0);
 
+    // Last week
+    const endOfLastWeek = new Date(startOfWeek);
+    endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
+    endOfLastWeek.setHours(23, 59, 59, 999);
+    const startOfLastWeek = new Date(endOfLastWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 6);
+    startOfLastWeek.setHours(0, 0, 0, 0);
+
+    // Last year
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+
     // ---- Query (matches your pattern) ----
     const query = {
       church: req.activeChurch._id
     };
 
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
     // ---- Aggregations ----
-    const [week, month, lastMonth, year] = await Promise.all([
-      // This week
+    const [week, lastWeek, month, lastMonth, year, lastYear] = await Promise.all([
       SpecialFund.aggregate([
         { $match: { ...query, givingDate: { $gte: startOfWeek } } },
         { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } }
       ]),
-
-      // This month
+      SpecialFund.aggregate([
+        { $match: { ...query, givingDate: { $gte: startOfLastWeek, $lte: endOfLastWeek } } },
+        { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } }
+      ]),
       SpecialFund.aggregate([
         { $match: { ...query, givingDate: { $gte: startOfMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } }
       ]),
-
-      // Last month
       SpecialFund.aggregate([
-        {
-          $match: {...query, givingDate: { $gte: startOfLastMonth, $lte: endOfLastMonth }}
-        },
+        { $match: { ...query, givingDate: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } }
       ]),
-
-      // This year
       SpecialFund.aggregate([
         { $match: { ...query, givingDate: { $gte: startOfYear } } },
+        { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } }
+      ]),
+      SpecialFund.aggregate([
+        { $match: { ...query, givingDate: { $gte: startOfLastYear, $lte: endOfLastYear } } },
         { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } }
       ])
     ]);
 
+    const thisWeek = week[0]?.totalAmount || 0;
+    const lastWeekVal = lastWeek[0]?.totalAmount || 0;
+    const thisMonth = month[0]?.totalAmount || 0;
+    const lastMonthVal = lastMonth[0]?.totalAmount || 0;
+    const thisYear = year[0]?.totalAmount || 0;
+    const lastYearVal = lastYear[0]?.totalAmount || 0;
+
+    const change = {
+      thisWeek: pctChange(thisWeek, lastWeekVal),
+      thisMonth: pctChange(thisMonth, lastMonthVal),
+      thisYear: pctChange(thisYear, lastYearVal)
+    };
+
     return res.status(200).json({
       message: "SpecialFund KPI fetched successfully",
       data: {
-        thisWeek: week[0]?.totalAmount || 0,
-        thisMonth: month[0]?.totalAmount || 0,
-        lastMonth: lastMonth[0]?.totalAmount || 0,
-        thisYear: year[0]?.totalAmount || 0
+        thisWeek,
+        thisMonth,
+        lastMonth: lastMonthVal,
+        thisYear,
+        change
       }
     });
 

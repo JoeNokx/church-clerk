@@ -1,6 +1,32 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
 function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, icon, accent, iconBg, iconColor, tooltip }) {
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [tooltipSide, setTooltipSide] = useState("left");
+  const tooltipRef = useRef(null);
+
+  useEffect(() => {
+    if (!tooltipOpen) return;
+
+    if (tooltipRef.current) {
+      const rect = tooltipRef.current.getBoundingClientRect();
+      const tooltipWidth = 208;
+      setTooltipSide(rect.left + tooltipWidth > window.innerWidth ? "right" : "left");
+    }
+
+    function handleOutside(e) {
+      if (tooltipRef.current && !tooltipRef.current.contains(e.target)) {
+        setTooltipOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [tooltipOpen]);
+
   const deltaClass = useMemo(() => {
     if (change === undefined || change === null) return "bg-gray-100 text-gray-600";
     if (change > 0) return "bg-green-100 text-green-700";
@@ -41,49 +67,73 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
     return `No change from ${period}`;
   }, [diff, compareLabel]);
 
-  const topBar = accent || null;
-  const isSimpleVariant = !icon && !change && !onClick;
-  const isColoredIconVariant = iconBg && !onClick;
-  const isStaticIconVariant = !!(icon && !onClick);
-
-  if (isSimpleVariant) {
+  // Button (clickable) variant
+  if (onClick) {
     return (
-      <div className={`rounded-xl border border-gray-200 bg-white${topBar ? " overflow-hidden" : ""}`}>
-        {topBar && <div className={`h-1.5 ${topBar}`} />}
-        <div className="p-3 md:p-4">
-          <div className="flex items-center gap-1.5">
-            <div className="font-semibold text-gray-500 text-xs">{title}</div>
-            {tooltip && (
-              <div className="group relative flex-shrink-0">
-                <button
-                  type="button"
-                  className="flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label={`Info: ${title}`}
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-2.5 w-2.5">
-                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm.75 14.5h-1.5v-6h1.5v6zm0-7.5h-1.5V7.5h1.5V9z" />
-                  </svg>
-                </button>
-                <div className="pointer-events-none invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity absolute top-full left-0 z-50 mt-2 w-52 rounded-lg border border-gray-200 bg-white px-3 py-2 leading-relaxed text-gray-500 shadow-lg" style={{fontSize:'10px'}}>
-                  <div className="absolute bottom-full left-3 border-4 border-transparent border-b-gray-200" />
-                  {tooltip}
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl">{value}</div>
+      <button
+        type="button"
+        onClick={onClick}
+        className="cck-allow-icons w-full text-left rounded-3xl border border-gray-200 bg-white p-4 md:p-5 hover:border-blue-200 hover:bg-blue-50/20 active:bg-blue-50/40 transition-colors"
+      >
+        <div className="flex items-start justify-between gap-2">
+          {icon ? (
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-600 [&>svg]:h-5 [&>svg]:w-5">
+              {icon}
+            </span>
+          ) : <span />}
+          {change !== undefined && change !== null ? (
+            <span className={`inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 font-semibold text-xs ${deltaClass}`}>
+              {arrow}
+              {deltaText}
+            </span>
+          ) : null}
         </div>
-      </div>
+        <div className="mt-4">
+          <div className="text-gray-500 text-sm leading-snug">{title}</div>
+          <div className="mt-1 font-bold text-gray-900 tabular-nums leading-tight text-3xl md:text-4xl">{value ?? "—"}</div>
+          {subtitle ? (
+            <div className="mt-1.5 text-gray-400 text-xs leading-snug">{subtitle}</div>
+          ) : compareLabel ? (
+            <div className="mt-1.5 text-gray-400 text-xs">{compareLabel}</div>
+          ) : null}
+        </div>
+      </button>
     );
   }
 
-  if (isStaticIconVariant) {
-    return (
-      <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4 md:px-5 md:py-4">
-        {/* Single top row: left = title + number + badge, right = icon */}
+  // Standard (display) variant — unified design, all optional features supported
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white">
+      {accent ? <div className={`h-1.5 rounded-t-2xl ${accent}`} /> : null}
+      <div className="px-4 py-4 md:px-5 md:py-4">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="text-gray-500 text-xs leading-snug truncate">{title}</div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <div className="text-gray-500 text-xs leading-snug truncate">{title}</div>
+              {tooltip ? (
+                <div ref={tooltipRef} className="relative flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setTooltipOpen((v) => !v)}
+                    className="flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label={`Info: ${title}`}
+                    aria-expanded={tooltipOpen}
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-2.5 w-2.5">
+                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm.75 14.5h-1.5v-6h1.5v6zm0-7.5h-1.5V7.5h1.5V9z" />
+                    </svg>
+                  </button>
+                  <div
+                    role="tooltip"
+                    className={`absolute top-full z-50 mt-2 w-52 rounded-lg border border-gray-200 bg-white px-3 py-2 leading-relaxed text-gray-500 shadow-lg transition-opacity ${tooltipSide === "right" ? "right-0" : "left-0"} ${tooltipOpen ? "visible opacity-100 pointer-events-auto" : "invisible opacity-0 pointer-events-none"}`}
+                    style={{ fontSize: '10px' }}
+                  >
+                    <div className={`absolute bottom-full border-4 border-transparent border-b-gray-200 ${tooltipSide === "right" ? "right-3" : "left-3"}`} />
+                    {tooltip}
+                  </div>
+                </div>
+              ) : null}
+            </div>
             <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
               <span className="font-bold text-gray-900 tabular-nums leading-tight text-2xl md:text-3xl">{value ?? "—"}</span>
               {change !== undefined && change !== null ? (
@@ -100,67 +150,13 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
             </span>
           ) : null}
         </div>
-        {/* Diff / subtitle below */}
         {subtitle ? (
           <div className="mt-1 text-gray-400 text-xs leading-snug">{subtitle}</div>
         ) : diffLabel ? (
           <div className="mt-1 text-gray-400 text-xs">{diffLabel}</div>
         ) : null}
       </div>
-    );
-  }
-
-  if (isColoredIconVariant) {
-    return (
-      <div className="rounded-xl border border-gray-200 bg-white p-3 md:p-6 lg:p-8">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 md:gap-2">
-              <span className={`hidden md:inline-flex h-11 w-11 items-center justify-center rounded-lg ${iconBg} ${iconColor} md:h-12 md:w-12`}>
-                {icon}
-              </span>
-              <div className="font-semibold text-gray-500 truncate leading-tight text-xs">{title}</div>
-            </div>
-            <div className="mt-2 font-bold text-gray-900 tabular-nums leading-tight md:text-3xl lg:text-4xl text-xl">{value ?? "—"}</div>
-            {subtitle ? <div className="mt-1 text-gray-500 truncate text-xs">{subtitle}</div> : null}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="cck-allow-icons w-full text-left rounded-3xl border border-gray-200 bg-white p-4 md:p-5 hover:border-blue-200 hover:bg-blue-50/20 active:bg-blue-50/40 transition-colors"
-    >
-      {/* Top row: icon left, badge right */}
-      <div className="flex items-start justify-between gap-2">
-        {icon ? (
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-600 [&>svg]:h-5 [&>svg]:w-5">
-            {icon}
-          </span>
-        ) : <span />}
-        {change !== undefined && change !== null ? (
-          <span className={`inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 font-semibold text-xs ${deltaClass}`}>
-            {arrow}
-            {deltaText}
-          </span>
-        ) : null}
-      </div>
-
-      {/* Content below */}
-      <div className="mt-4">
-        <div className="text-gray-500 text-sm leading-snug">{title}</div>
-        <div className="mt-1 font-bold text-gray-900 tabular-nums leading-tight text-3xl md:text-4xl">{value ?? "—"}</div>
-        {subtitle ? (
-          <div className="mt-1.5 text-gray-400 text-xs leading-snug">{subtitle}</div>
-        ) : compareLabel ? (
-          <div className="mt-1.5 text-gray-400 text-xs">{compareLabel}</div>
-        ) : null}
-      </div>
-    </button>
+    </div>
   );
 }
 

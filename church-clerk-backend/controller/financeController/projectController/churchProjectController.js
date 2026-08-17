@@ -237,4 +237,89 @@ const deleteChurchProjects = async (req, res) => {
 
 
 
-export {createChurchProjects, getAllChurchProjects, getSingleChurchProjects, updateChurchProjects, deleteChurchProjects }
+const getChurchProjectsKPI = async (req, res) => {
+  try {
+    const query = { church: req.activeChurch._id };
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
+    const activeProjectDocs = await ChurchProject.find({ ...query, status: "Active" }).select("_id").lean();
+    const activeIds = activeProjectDocs.map((p) => p._id);
+
+    const [
+      totalProjects,
+      totalProjectsPrev,
+      [raisedAgg],
+      [raisedPrevAgg],
+      [targetAgg],
+      [targetPrevAgg],
+      [spentAgg],
+      [spentPrevAgg]
+    ] = await Promise.all([
+      ChurchProject.countDocuments(query),
+      ChurchProject.countDocuments({ ...query, createdAt: { $lt: startOfMonth } }),
+      ProjectContribution.aggregate([
+        { $match: { church: query.church, churchProject: { $in: activeIds } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      ProjectContribution.aggregate([
+        { $match: { church: query.church, churchProject: { $in: activeIds }, createdAt: { $lt: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      ChurchProject.aggregate([
+        { $match: { ...query, status: "Active" } },
+        { $group: { _id: null, total: { $sum: "$targetAmount" } } }
+      ]),
+      ChurchProject.aggregate([
+        { $match: { ...query, status: "Active", createdAt: { $lt: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: "$targetAmount" } } }
+      ]),
+      ProjectExpenses.aggregate([
+        { $match: { church: query.church, churchProject: { $in: activeIds } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      ProjectExpenses.aggregate([
+        { $match: { church: query.church, churchProject: { $in: activeIds }, createdAt: { $lt: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ])
+    ]);
+
+    const totalRaised = Number(raisedAgg?.total || 0);
+    const totalRaisedPrev = Number(raisedPrevAgg?.total || 0);
+    const totalTarget = Number(targetAgg?.total || 0);
+    const totalTargetPrev = Number(targetPrevAgg?.total || 0);
+    const totalSpent = Number(spentAgg?.total || 0);
+    const totalSpentPrev = Number(spentPrevAgg?.total || 0);
+
+    const change = {
+      totalProjects: pctChange(totalProjects, totalProjectsPrev),
+      totalRaised: pctChange(totalRaised, totalRaisedPrev),
+      totalTarget: pctChange(totalTarget, totalTargetPrev),
+      totalSpent: pctChange(totalSpent, totalSpentPrev)
+    };
+
+    const diff = {
+      totalProjects: totalProjects - totalProjectsPrev
+    };
+
+    return res.status(200).json({
+      message: "Church Projects KPI fetched successfully",
+      kpi: { change, diff }
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Could not fetch Church Projects KPI",
+      error: error.message
+    });
+  }
+};
+
+export {createChurchProjects, getAllChurchProjects, getSingleChurchProjects, updateChurchProjects, deleteChurchProjects, getChurchProjectsKPI }

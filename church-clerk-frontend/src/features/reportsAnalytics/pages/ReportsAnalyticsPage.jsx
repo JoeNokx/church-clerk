@@ -301,11 +301,76 @@ function ReportsAnalyticsPage() {
         <>
           {!loading ? (
             <KpiGrid className="mt-6 gap-4 xl:grid-cols-5">
-              <KpiCard title="Overall Revenue" value={formatCurrency(kpi?.kpis?.totalIncome)} accent="bg-green-600" />
-              <KpiCard title="Overall Expenses" value={formatCurrency(kpi?.kpis?.totalExpenses)} accent="bg-orange-600" />
-              <KpiCard title="Overall Surplus / Deficit" value={formatCurrency(kpi?.kpis?.surplus)} accent="bg-blue-700" />
-              <KpiCard title="Overall New Members" value={String(kpi?.kpis?.newMembers ?? 0)} accent="bg-purple-600" />
-              <KpiCard title="Overall Visitors" value={String(kpi?.kpis?.visitors ?? 0)} accent="bg-gray-800" />
+              <KpiCard
+                title="Overall Revenue"
+                value={formatCurrency(kpi?.kpis?.totalIncome)}
+                change={kpi?.kpis?.change?.totalIncome}
+                compareLabel="last month"
+                iconBg="bg-emerald-50"
+                iconColor="text-emerald-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title="Overall Expenses"
+                value={formatCurrency(kpi?.kpis?.totalExpenses)}
+                change={kpi?.kpis?.change?.totalExpenses}
+                compareLabel="last month"
+                iconBg="bg-orange-50"
+                iconColor="text-orange-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M3 8h18M3 8a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2v-8a2 2 0 00-2-2M3 8V6a2 2 0 012-2h14a2 2 0 012 2v2M12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title="Overall Surplus / Deficit"
+                value={formatCurrency(kpi?.kpis?.surplus)}
+                change={kpi?.kpis?.change?.surplus}
+                compareLabel="last month"
+                iconBg={Number(kpi?.kpis?.surplus || 0) >= 0 ? "bg-blue-50" : "bg-red-50"}
+                iconColor={Number(kpi?.kpis?.surplus || 0) >= 0 ? "text-blue-500" : "text-red-500"}
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M4 19h16M7 17V9M12 17V5M17 17v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title="Overall New Members"
+                value={String(kpi?.kpis?.newMembers ?? 0)}
+                change={kpi?.kpis?.change?.newMembers}
+                diff={kpi?.kpis?.diff?.newMembers}
+                compareLabel="last month"
+                iconBg="bg-violet-50"
+                iconColor="text-violet-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3M20 21c0-2.21-1.79-4-4-4M2 21v-1a7 7 0 0114 0v1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title="Overall Visitors"
+                value={String(kpi?.kpis?.visitors ?? 0)}
+                change={kpi?.kpis?.change?.visitors}
+                diff={kpi?.kpis?.diff?.visitors}
+                compareLabel="last month"
+                iconBg="bg-gray-100"
+                iconColor="text-gray-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M18 21v-2a4 4 0 00-4-4H10a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                }
+              />
             </KpiGrid>
           ) : null}
 

@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import {createPledge, getAllPledge, getSinglePledge, updatePledge, deletePledge } from "../../controller/financeController/pledgeController/pledgeController.js";
+import {createPledge, getAllPledge, getSinglePledge, updatePledge, deletePledge, getPledgesKPI } from "../../controller/financeController/pledgeController/pledgeController.js";
 import  {createPledgePayment, getAllPledgePayments, updatePledgePayment, deletePledgePayment} from "../../controller/financeController/pledgeController/pledgePaymentController.js" 
 import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
@@ -34,6 +34,16 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("pledges", "read"),
   getAllPledge
+);
+router.get(
+  "/pledges/stats/kpi",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("pledges", "read"),
+  getPledgesKPI
 );
 router.get(
   "/pledges/:id",

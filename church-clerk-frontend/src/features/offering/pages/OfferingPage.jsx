@@ -8,6 +8,7 @@ import OfferingTable from "../components/OfferingTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 
 export function OfferingPageInner({ hideKpi = false, embedded = false, noHeader = false, openCreateRef = null }) {
   const { can } = useContext(PermissionContext) || {};
@@ -17,7 +18,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false, noHeader 
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOffering, setEditingOffering] = useState(null);
-  const [kpi, setKpi] = useState({ thisWeek: 0, thisMonth: 0, thisYear: 0 });
+  const [kpi, setKpi] = useState({ thisWeek: 0, thisMonth: 0, thisYear: 0, change: {} });
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("offerings", "create") : false), [can]);
 
@@ -31,10 +32,11 @@ export function OfferingPageInner({ hideKpi = false, embedded = false, noHeader 
       setKpi({
         thisWeek: data?.thisWeek || 0,
         thisMonth: data?.thisMonth || 0,
-        thisYear: data?.thisYear || 0
+        thisYear: data?.thisYear || 0,
+        change: data?.change || {}
       });
     } catch {
-      setKpi({ thisWeek: 0, thisMonth: 0, thisYear: 0 });
+      setKpi({ thisWeek: 0, thisMonth: 0, thisYear: 0, change: {} });
     }
   }, [store?.activeChurch, store?.getOfferingKPI]);
 
@@ -91,55 +93,53 @@ export function OfferingPageInner({ hideKpi = false, embedded = false, noHeader 
 
       {!hideKpi ? (
         <KpiGrid className="mt-6 gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">This Week</div>
-                <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisWeek || 0, currency)}</div>
-              </div>
-              <div className="h-11 w-11 rounded-lg bg-blue-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-600">
-                  <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
-                  <path d="M8 12h8M8 16h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">This Month</div>
-                <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisMonth || 0, currency)}</div>
-              </div>
-              <div className="h-11 w-11 rounded-lg bg-orange-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-500">
-                  <path d="M4 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M8 17v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M12 17v-10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M16 17v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">This Year</div>
-                <div className="mt-2 font-semibold text-gray-900 text-lg">{formatMoney(kpi.thisYear || 0, currency)}</div>
-              </div>
-              <div className="h-11 w-11 rounded-lg bg-green-50 hidden md:flex items-center justify-center md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-600">
-                  <path d="M4 17l6-6 4 4 6-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M20 7v6h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
-          </div>
+          <KpiCard
+            title="This Week"
+            value={formatMoney(kpi.thisWeek || 0, currency)}
+            change={kpi.change?.thisWeek}
+            compareLabel="last week"
+            iconBg="bg-blue-50"
+            iconColor="text-blue-500"
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M8 12h8M8 16h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            }
+          />
+          <KpiCard
+            title="This Month"
+            value={formatMoney(kpi.thisMonth || 0, currency)}
+            change={kpi.change?.thisMonth}
+            compareLabel="last month"
+            iconBg="bg-orange-50"
+            iconColor="text-orange-500"
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path d="M4 19V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M8 17v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M12 17v-10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M16 17v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            }
+          />
+          <KpiCard
+            title="This Year"
+            value={formatMoney(kpi.thisYear || 0, currency)}
+            change={kpi.change?.thisYear}
+            compareLabel="last year"
+            iconBg="bg-emerald-50"
+            iconColor="text-emerald-500"
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path d="M4 17l6-6 4 4 6-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M20 7v6h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+          />
         </KpiGrid>
       ) : null}
 

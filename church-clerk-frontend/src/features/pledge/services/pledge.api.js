@@ -19,3 +19,7 @@ export const updatePledge = async (id, payload) => {
 export const deletePledge = async (id) => {
   return await http.delete(`/pledge/pledges/${id}`);
 };
+
+export const getPledgesKPI = async () => {
+  return await http.get("/pledge/pledges/stats/kpi");
+};

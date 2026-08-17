@@ -210,52 +210,74 @@ const getTitheAggregateKPI = async (req, res) => {
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     startOfYear.setHours(0, 0, 0, 0);
 
+    // Last year
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+
     // ---- Query (matches your pattern) ----
     const query = { church: req.activeChurch._id };
 
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
     // ---- Aggregations ----
-    const [week, month, lastMonth, year, thisMonthCount] = await Promise.all([
-      // This week
+    const [week, month, lastMonth, year, lastYear, thisMonthCount, lastMonthCount] = await Promise.all([
       TitheAggregate.aggregate([
         { $match: { ...query, date: { $gte: startOfWeek } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // This month
       TitheAggregate.aggregate([
         { $match: { ...query, date: { $gte: startOfMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // Last month
       TitheAggregate.aggregate([
-        {
-          $match: {
-            ...query,
-            date: { $gte: startOfLastMonth, $lte: endOfLastMonth }
-          }
-        },
+        { $match: { ...query, date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // This year
       TitheAggregate.aggregate([
         { $match: { ...query, date: { $gte: startOfYear } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
-
-      // Total records this month
-      TitheAggregate.countDocuments({ ...query, date: { $gte: startOfMonth } })
+      TitheAggregate.aggregate([
+        { $match: { ...query, date: { $gte: startOfLastYear, $lte: endOfLastYear } } },
+        { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+      ]),
+      TitheAggregate.countDocuments({ ...query, date: { $gte: startOfMonth } }),
+      TitheAggregate.countDocuments({ ...query, date: { $gte: startOfLastMonth, $lte: endOfLastMonth } })
     ]);
+
+    const thisMonth = month[0]?.totalAmount || 0;
+    const lastMonthVal = lastMonth[0]?.totalAmount || 0;
+    const thisYear = year[0]?.totalAmount || 0;
+    const lastYearVal = lastYear[0]?.totalAmount || 0;
+    const thisMonthRecords = thisMonthCount || 0;
+    const lastMonthRecords = lastMonthCount || 0;
+
+    const change = {
+      thisWeek: pctChange(week[0]?.totalAmount || 0, 0),
+      thisMonth: pctChange(thisMonth, lastMonthVal),
+      thisYear: pctChange(thisYear, lastYearVal),
+      thisMonthRecords: pctChange(thisMonthRecords, lastMonthRecords)
+    };
+
+    const diff = {
+      thisMonthRecords: thisMonthRecords - lastMonthRecords
+    };
 
     return res.status(200).json({
       message: "TitheAggregate KPI fetched successfully",
       data: {
         thisWeek: week[0]?.totalAmount || 0,
-        thisMonth: month[0]?.totalAmount || 0,
-        thisMonthRecords: thisMonthCount || 0,
-        lastMonth: lastMonth[0]?.totalAmount || 0,
-        thisYear: year[0]?.totalAmount || 0
+        thisMonth,
+        thisMonthRecords,
+        lastMonth: lastMonthVal,
+        thisYear,
+        change,
+        diff
       }
     });
 

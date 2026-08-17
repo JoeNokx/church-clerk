@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
-import { useContext } from "react";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
@@ -14,6 +13,8 @@ import {
 } from "../services/businessVentures.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
@@ -389,7 +390,7 @@ function BusinessVenturesPage() {
 
   const totals = useMemo(() => {
     const rows = Array.isArray(ventures) ? ventures : [];
-    const totalVentures = rows.length;
+    const totalVentures = Number(kpi?.totalVentures ?? rows.length);
 
     const totalIncome = Number(kpi?.totalIncome ?? 0);
     const totalExpenses = Number(kpi?.totalExpenses ?? 0);
@@ -475,27 +476,62 @@ function BusinessVenturesPage() {
 
       {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Total Ventures</div>
-          <div className="mt-3 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{totals.totalVentures}</div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Total Income</div>
-          <div className="mt-3 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatMoney(totals.totalIncome, currency)}</div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Total Expenses</div>
-          <div className="mt-3 font-semibold text-orange-600 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatMoney(totals.totalExpenses, currency)}</div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Net</div>
-          <div className="mt-3 font-semibold text-blue-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatMoney(totals.net, currency)}</div>
-        </div>
-      </div>
+      <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
+        <KpiCard
+          title="Total Ventures"
+          value={totals.totalVentures}
+          change={kpi?.change?.totalVentures}
+          diff={kpi?.diff?.totalVentures}
+          compareLabel="last month"
+          iconBg="bg-blue-50"
+          iconColor="text-blue-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+              <path d="M9 22V12h6v10" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Total Income"
+          value={formatMoney(totals.totalIncome, currency)}
+          change={kpi?.change?.totalIncome}
+          compareLabel="last month"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Total Expenses"
+          value={formatMoney(totals.totalExpenses, currency)}
+          change={kpi?.change?.totalExpenses}
+          compareLabel="last month"
+          iconBg="bg-orange-50"
+          iconColor="text-orange-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M3 8h18M3 8a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2v-8a2 2 0 00-2-2M3 8V6a2 2 0 012-2h14a2 2 0 012 2v2M12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Net"
+          value={formatMoney(totals.net, currency)}
+          change={kpi?.change?.net}
+          compareLabel="last month"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+      </KpiGrid>
 
       <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>

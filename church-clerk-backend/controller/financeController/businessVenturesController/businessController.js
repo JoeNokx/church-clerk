@@ -245,34 +245,71 @@ const deleteBusinessVentures = async (req, res) => {
 const getAllBusinessKPI = async(req, res) => {
 
     try {
-        
-        
-     // MAIN QUERY
-    const query = {};
 
-    // Restrict by church for non-admins
+    const query = {};
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
       query.church = req.activeChurch._id;
     }
-    
-      // ---- TOTAL INCOME AND EXPENSES ----
-    const [incomeAgg, expensesAgg] = await Promise.all([
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
+    const [
+      totalVentures,
+      totalVenturesPrev,
+      [incomeAgg],
+      [incomePrevAgg],
+      [expensesAgg],
+      [expensesPrevAgg]
+    ] = await Promise.all([
+      BusinessVentures.countDocuments(query),
+      BusinessVentures.countDocuments({ ...query, createdAt: { $lt: startOfMonth } }),
       BusinessIncome.aggregate([
         { $match: query },
-        { $group: { _id: null, totalIncome: { $sum: "$amount" } } }
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      BusinessIncome.aggregate([
+        { $match: { ...query, date: { $lt: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
       ]),
       BusinessExpenses.aggregate([
         { $match: query },
-        { $group: { _id: null, totalExpenses: { $sum: "$amount" } } }
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      BusinessExpenses.aggregate([
+        { $match: { ...query, date: { $lt: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
       ])
     ]);
 
-    const totalIncome = incomeAgg[0]?.totalIncome || 0;
-    const totalExpenses = expensesAgg[0]?.totalExpenses || 0;
+    const totalIncome = Number(incomeAgg?.total || 0);
+    const totalIncomePrev = Number(incomePrevAgg?.total || 0);
+    const totalExpenses = Number(expensesAgg?.total || 0);
+    const totalExpensesPrev = Number(expensesPrevAgg?.total || 0);
     const net = totalIncome - totalExpenses;
+    const netPrev = totalIncomePrev - totalExpensesPrev;
 
-    return res.status(200).json({ message: "Business KPI fetched successfully",
-        businessKPI: { totalIncome, totalExpenses, net }
+    const change = {
+      totalVentures: pctChange(totalVentures, totalVenturesPrev),
+      totalIncome: pctChange(totalIncome, totalIncomePrev),
+      totalExpenses: pctChange(totalExpenses, totalExpensesPrev),
+      net: pctChange(net, netPrev)
+    };
+
+    const diff = {
+      totalVentures: totalVentures - totalVenturesPrev
+    };
+
+    return res.status(200).json({
+      message: "Business KPI fetched successfully",
+      businessKPI: { totalVentures, totalIncome, totalExpenses, net, change, diff }
     });
 
     } catch (error) {

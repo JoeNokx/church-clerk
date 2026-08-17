@@ -580,14 +580,48 @@ const getMinistryKPI = async (req, res) => {
   try {
     const ministryQuery = { church: req.activeChurch._id };
 
-    // Run all counts in parallel
-    const [totalGroups, totalCells, totalDepartments] = await Promise.all([
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
+    const [
+      totalGroups,
+      totalCells,
+      totalDepartments,
+      totalGroupsPrev,
+      totalCellsPrev,
+      totalDepartmentsPrev
+    ] = await Promise.all([
       Group.countDocuments(ministryQuery),
       Cell.countDocuments(ministryQuery),
       Department.countDocuments(ministryQuery),
+      Group.countDocuments({ ...ministryQuery, createdAt: { $lt: startOfMonth } }),
+      Cell.countDocuments({ ...ministryQuery, createdAt: { $lt: startOfMonth } }),
+      Department.countDocuments({ ...ministryQuery, createdAt: { $lt: startOfMonth } }),
     ]);
 
     const totalMinistry = totalGroups + totalCells + totalDepartments;
+    const totalMinistryPrev = totalGroupsPrev + totalCellsPrev + totalDepartmentsPrev;
+
+    const change = {
+      totalGroups: pctChange(totalGroups, totalGroupsPrev),
+      totalCells: pctChange(totalCells, totalCellsPrev),
+      totalDepartments: pctChange(totalDepartments, totalDepartmentsPrev),
+      totalMinistry: pctChange(totalMinistry, totalMinistryPrev)
+    };
+
+    const diff = {
+      totalGroups: totalGroups - totalGroupsPrev,
+      totalCells: totalCells - totalCellsPrev,
+      totalDepartments: totalDepartments - totalDepartmentsPrev,
+      totalMinistry: totalMinistry - totalMinistryPrev
+    };
 
     return res.status(200).json({
       message: "Ministry KPI fetched successfully",
@@ -596,6 +630,8 @@ const getMinistryKPI = async (req, res) => {
         totalCells,
         totalDepartments,
         totalMinistry,
+        change,
+        diff
       },
     });
   } catch (error) {

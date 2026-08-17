@@ -9,6 +9,7 @@ import TitheIndividualForm from "../components/TitheIndividualForm.jsx";
 import TitheAggregateForm from "../components/TitheAggregateForm.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -547,6 +548,8 @@ function TithePageInner() {
 
   const thirdLabel = mode === "aggregate" ? "Total Records" : "Members Paid";
   const thirdValue = mode === "aggregate" ? Number(kpi?.thisMonthRecords || 0) : Number(kpi?.membersPaidThisMonth || 0);
+  const thirdChange = mode === "aggregate" ? kpi?.change?.thisMonthRecords : kpi?.change?.membersPaidThisMonth;
+  const thirdDiff = mode === "aggregate" ? kpi?.diff?.thisMonthRecords : kpi?.diff?.membersPaidThisMonth;
 
   return (
     <div className="max-w-6xl">
@@ -635,53 +638,55 @@ function TithePageInner() {
 
           {kpi ? (
             <KpiGrid className="mt-4 gap-3 lg:grid-cols-3">
-              <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">This Month</div>
-                    <div className="mt-2 font-semibold text-blue-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiThisMonth, currency)}</div>
-                    <div className="mt-1 text-gray-500 text-xs">{monthLabel()}</div>
-                  </div>
-                  <PillIcon color="blue">
+              <KpiCard
+                title="This Month"
+                value={formatCurrency(kpiThisMonth, currency)}
+                change={kpi?.change?.thisMonth}
+                compareLabel="last month"
+                iconBg="bg-blue-50"
+                iconColor="text-blue-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M8 3v3M16 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title="This Year"
+                value={formatCurrency(kpiThisYear, currency)}
+                change={kpi?.change?.thisYear}
+                compareLabel="last year"
+                iconBg="bg-emerald-50"
+                iconColor="text-emerald-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M5 15l5-5 4 4 5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                }
+              />
+              <KpiCard
+                title={thirdLabel}
+                value={Number(thirdValue || 0).toLocaleString()}
+                change={thirdChange}
+                diff={thirdDiff}
+                compareLabel="last month"
+                iconBg="bg-violet-50"
+                iconColor="text-violet-500"
+                icon={
+                  mode === "aggregate" ? (
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                      <path d="M8 3v3M16 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      <path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" />
+                      <path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" stroke="currentColor" strokeWidth="1.8" />
                     </svg>
-                  </PillIcon>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">This Year</div>
-                    <div className="mt-2 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiThisYear, currency)}</div>
-                    <div className="mt-1 text-gray-500 text-xs">{yearLabel()}</div>
-                  </div>
-                  <PillIcon color="green">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                      <path d="M5 15l5-5 4 4 5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </PillIcon>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">{thirdLabel}</div>
-                    <div className="mt-2 font-semibold text-purple-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{Number(thirdValue || 0).toLocaleString()}</div>
-                    <div className="mt-1 text-gray-500 text-xs">This month</div>
-                  </div>
-                  <PillIcon color="purple">
+                  ) : (
                     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                       <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
                       <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
-                  </PillIcon>
-                </div>
-              </div>
+                  )
+                }
+              />
             </KpiGrid>
           ) : null}
 
