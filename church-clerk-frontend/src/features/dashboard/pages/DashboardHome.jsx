@@ -1205,7 +1205,7 @@ function DashboardOverview({ onNavigate }) {
 
                 onClick={closeBirthdaysModal}
 
-                className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 shrink-0 md:h-12 md:w-12"
+                className="cck-allow-icons h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 shrink-0 md:h-12 md:w-12"
 
               >
 
@@ -1307,7 +1307,7 @@ function DashboardOverview({ onNavigate }) {
 
                           onClick={() => goToMemberDetails(m?._id)}
 
-                          className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
+                          className="cck-allow-icons w-full text-left flex items-center px-4 py-3 hover:bg-gray-50" style={{gap:"8px"}}
 
                         >
 
@@ -1337,7 +1337,7 @@ function DashboardOverview({ onNavigate }) {
 
                           key={`${m?._id || "bd"}-${idx}`}
 
-                          className="w-full flex items-center gap-3 px-4 py-3"
+                          className="w-full flex items-center px-4 py-3" style={{gap:"8px"}}
 
                         >
 
