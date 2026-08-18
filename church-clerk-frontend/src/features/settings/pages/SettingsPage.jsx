@@ -15,6 +15,7 @@ import { getActivityLogMeta, getActivityLogs } from "../../activityLog/services/
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -1233,40 +1234,18 @@ function SettingsPage() {
         <p className="mt-1 text-gray-500 text-sm">Manage your church profile, users and roles</p>
       </div>
 
-      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3 md:p-4">
-        <div className="overflow-x-auto">
-          <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1 min-w-max">
-            <button
-              type="button"
-              onClick={() => setTab("my-profile")}
-              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "my-profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
-            >
-              My Profile
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("profile")}
-              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "profile" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
-            >
-              Church Profile
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("users")}
-              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "users" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
-            >
-              Users &amp; Roles
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("audit")}
-              className={`rounded-md px-3 md:px-4 py-2.5 md:py-2 font-semibold whitespace-nowrap ${tab === "audit" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
-            >
-              Audit Log
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "my-profile", label: "My Profile" },
+          { key: "profile", label: "Church Profile" },
+          { key: "users", label: "Users & Roles" },
+          { key: "audit", label: "Audit Log" },
+        ]}
+        activeTab={tab}
+        onChange={setTab}
+        sticky={false}
+        className="mt-4"
+      />
 
       {tab === "my-profile" ? (
         <div className="mt-6">

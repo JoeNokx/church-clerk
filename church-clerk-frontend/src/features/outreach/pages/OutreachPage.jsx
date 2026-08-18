@@ -1,4 +1,5 @@
 import { useContext, useState, lazy, Suspense, useEffect } from "react";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import { getFollowUpsStats } from "../services/outreach.api.js";
 
@@ -20,14 +21,16 @@ function TabSkeleton() {
   );
 }
 
-const TABS = [
-  { key: "overview", label: "Overview" },
-  { key: "outreaches", label: "Outreaches" },
-  { key: "people", label: "People Reached" },
-  { key: "followups", label: "Follow-Ups" },
-  { key: "teams", label: "Teams" },
-  { key: "reports", label: "Reports" },
-];
+function buildTabs(overdueCount) {
+  return [
+    { key: "overview", label: "Overview" },
+    { key: "outreaches", label: "Outreaches" },
+    { key: "people", label: "People Reached" },
+    { key: "followups", label: "Follow-Ups", badge: overdueCount > 0 ? overdueCount : null, badgeColor: "bg-red-500 text-white" },
+    { key: "teams", label: "Teams" },
+    { key: "reports", label: "Reports" },
+  ];
+}
 
 export default function OutreachPage() {
   const { can } = useContext(PermissionContext) || {};
@@ -68,26 +71,13 @@ export default function OutreachPage() {
         </div>
       </div>
 
-      <div className="mt-5 border-b border-gray-200 sticky top-0 bg-slate-50 z-10">
-        <div className="flex -mb-px overflow-x-auto">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 shrink-0 px-4 py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-                tab === t.key
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              {t.label}
-              {t.key === "followups" && overdueCount > 0 ? (
-                <span className="rounded-full bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">{overdueCount}</span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageTabs
+        tabs={buildTabs(overdueCount)}
+        activeTab={tab}
+        onChange={setTab}
+        stickyBg="bg-slate-50"
+        className="mt-5"
+      />
 
       <Suspense fallback={<TabSkeleton />}>
         <ActiveTab />

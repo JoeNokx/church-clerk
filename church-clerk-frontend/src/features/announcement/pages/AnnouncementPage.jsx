@@ -10,6 +10,7 @@ import { getCells } from "../../cell/services/cell.api.js";
 import { getDepartments } from "../../department/services/department.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import {
   createCommunicationMessage,
   fundWalletInitiate,
@@ -135,12 +136,15 @@ function TemplatesAndDraftsTab({ open, onUseTemplate, onUseDraft, onOpenDelivery
 
   return (
     <div className="mt-5">
-      <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-1 flex-wrap">
-          <TabButton active={subTab === "templates"} onClick={() => setSubTab("templates")}>Templates</TabButton>
-          <TabButton active={subTab === "drafts"} onClick={() => setSubTab("drafts")}>Drafts</TabButton>
-        </div>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "templates", label: "Templates" },
+          { key: "drafts", label: "Drafts" },
+        ]}
+        activeTab={subTab}
+        onChange={setSubTab}
+        sticky={false}
+      />
 
       {subTab === "templates" ? (
         <TemplatesTab open={open} onUseTemplate={onUseTemplate} />
@@ -197,17 +201,6 @@ function toScheduleParts(dateValue) {
   return { scheduledDate: `${yyyy}-${mm}-${dd}`, scheduledTime: `${hh}:${mi}` };
 }
 
-function TabButton({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-md px-3 py-2.5 md:py-1.5 font-semibold ${active ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"} text-sm`}
-    >
-      {children}
-    </button>
-  );
-}
 
 function WalletCard({ wallet, onFund, onViewHistory, isGhana, usdToGhs }) {
   const balanceCredits = Number(wallet?.balanceCredits || 0);
@@ -2110,18 +2103,20 @@ function AnnouncementPage() {
         {walletLoading ? <div className="mt-2 text-gray-500 text-xs">Loading wallet...</div> : null}
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-nowrap items-center gap-1 rounded-lg bg-gray-50 p-0.5 overflow-x-auto">
-            <TabButton active={tab === "communication"} onClick={() => setTab("communication")}>Communication</TabButton>
-            <TabButton active={tab === "sent"} onClick={() => setTab("sent")}>Sent Messages</TabButton>
-            <TabButton active={tab === "scheduled"} onClick={() => setTab("scheduled")}>Scheduled Messages</TabButton>
-            <TabButton active={tab === "templates"} onClick={() => setTab("templates")}>Templates & Drafts</TabButton>
-            <TabButton active={tab === "wallet-history"} onClick={() => setTab("wallet-history")}>Wallet History</TabButton>
-            <TabButton active={tab === "message-history"} onClick={() => setTab("message-history")}>Message History</TabButton>
-          </div>
-        </div>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "communication", label: "Communication" },
+          { key: "sent", label: "Sent Messages" },
+          { key: "scheduled", label: "Scheduled Messages" },
+          { key: "templates", label: "Templates & Drafts" },
+          { key: "wallet-history", label: "Wallet History" },
+          { key: "message-history", label: "Message History" },
+        ]}
+        activeTab={tab}
+        onChange={setTab}
+        sticky={false}
+        className="mt-6"
+      />
 
       <CommunicationTab
         open={tab === "communication"}

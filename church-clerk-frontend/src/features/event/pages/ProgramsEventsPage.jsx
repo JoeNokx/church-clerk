@@ -1,9 +1,10 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import EventContext, { EventProvider } from "../event.store.js";
 import ProgramsEventsFilters from "../components/ProgramsEventsFilters.jsx";
 import ProgramsEventsTable from "../components/ProgramsEventsTable.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import EventCreatePage from "./EventCreatePage.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 function ProgramsEventsPageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -16,10 +17,10 @@ function ProgramsEventsPageInner() {
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("events", "create") : false), [can]);
 
-  const refreshLists = useCallback(async () => {
+  const refreshLists = async () => {
     await store?.fetchEventStats?.({ force: true });
     await store?.fetchEvents?.({ status: activeTab, page: store?.pagination?.currentPage || 1, force: true });
-  }, [store, activeTab]);
+  };
 
   const upcomingBadge = Number(store?.stats?.upcomingEvents || 0);
   const ongoingBadge = Number(store?.stats?.ongoingEvents || 0);
@@ -35,15 +36,6 @@ function ProgramsEventsPageInner() {
     store?.fetchEvents?.({ status: activeTab });
   }, [store?.activeChurch, activeTab]);
 
-  const tabClass = useCallback(
-    (value) => {
-      const isActive = activeTab === value;
-      return `px-4 py-1.5 text-sm font-semibold rounded-md inline-flex items-center gap-2 ${
-        isActive ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
-      }`;
-    },
-    [activeTab]
-  );
 
   return (
     <div className="w-full max-w-6xl overflow-x-hidden">
@@ -65,26 +57,17 @@ function ProgramsEventsPageInner() {
         </div>
         <p className="mt-2 text-gray-600 text-sm">Search and manage church events</p>
 
-        <div className="cck-tab-bar mt-4 flex flex-wrap w-full rounded-lg border border-gray-200 bg-white p-1">
-          <button type="button" onClick={() => setActiveTab("upcoming")} className={tabClass("upcoming")}>
-            Upcoming
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 font-semibold text-white text-xs">
-              {upcomingBadge}
-            </span>
-          </button>
-          <button type="button" onClick={() => setActiveTab("ongoing")} className={`ml-1 ${tabClass("ongoing")}`}>
-            Ongoing
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 font-semibold text-white text-xs">
-              {ongoingBadge}
-            </span>
-          </button>
-          <button type="button" onClick={() => setActiveTab("past")} className={`ml-1 ${tabClass("past")}`}>
-            Past
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-600 px-1.5 font-semibold text-white text-xs">
-              {pastBadge}
-            </span>
-          </button>
-        </div>
+        <PageTabs
+          tabs={[
+            { key: "upcoming", label: "Upcoming", badge: upcomingBadge, badgeColor: "bg-blue-600 text-white" },
+            { key: "ongoing", label: "Ongoing", badge: ongoingBadge, badgeColor: "bg-orange-500 text-white" },
+            { key: "past", label: "Past", badge: pastBadge, badgeColor: "bg-gray-600 text-white" },
+          ]}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          sticky={false}
+          className="mt-4"
+        />
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">

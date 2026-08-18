@@ -8,6 +8,7 @@ import ChurchContext from "../../church/church.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 import {
   getGroup,
@@ -540,12 +541,6 @@ function MinistryDetailsPage() {
     });
   }, [offerings, offeringDateFrom, offeringDateTo]);
 
-  const mainTabClass = (key) => {
-    const isActive = activeTab === key;
-    return `flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-      isActive ? "bg-blue-100 text-blue-900" : "text-gray-600 hover:bg-gray-100"
-    }`;
-  };
 
   const goBack = () => {
     toPage("ministries");
@@ -1133,17 +1128,17 @@ function MinistryDetailsPage() {
         )}
       </div>
 
-      <div className="cck-tab-bar mt-6 rounded-full bg-gray-100 p-1 flex items-center gap-2 max-w-xl">
-        <button type="button" onClick={() => setActiveTab("members")} className={mainTabClass("members")}>
-          Members
-        </button>
-        <button type="button" onClick={() => setActiveTab("attendance")} className={mainTabClass("attendance")}>
-          Attendance
-        </button>
-        <button type="button" onClick={() => setActiveTab("offerings")} className={mainTabClass("offerings")}>
-          Offerings
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "members", label: "Members" },
+          { key: "attendance", label: "Attendance" },
+          { key: "offerings", label: "Offerings" },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        sticky={false}
+        className="mt-6"
+      />
 
       {activeTab === "members" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
@@ -1587,36 +1582,20 @@ function MinistryDetailsPage() {
             </div>
           </div>
 
-          <div className="px-4 md:px-5 lg:px-6 pt-4 pb-4">
-            <div className="rounded-full bg-gray-100 p-1 flex items-center gap-2 max-w-md">
-              <button
-                type="button"
-                onClick={() => {
-                  setAttendanceView("total");
-                  setAttendanceError("");
-                  setIndividualAttendanceError("");
-                }}
-                className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  attendanceView === "total" ? "bg-blue-100 text-blue-900" : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                Total Attendance
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAttendanceView("individual");
-                  setAttendanceError("");
-                  setIndividualAttendanceError("");
-                }}
-                className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  attendanceView === "individual" ? "bg-blue-100 text-blue-900" : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                Individual Attendance
-              </button>
-            </div>
-          </div>
+          <PageTabs
+            tabs={[
+              { key: "total", label: "Total Attendance" },
+              { key: "individual", label: "Individual Attendance" },
+            ]}
+            activeTab={attendanceView}
+            onChange={(key) => {
+              setAttendanceView(key);
+              setAttendanceError("");
+              setIndividualAttendanceError("");
+            }}
+            sticky={false}
+            className="px-4 md:px-5 lg:px-6 pt-2"
+          />
 
           {attendanceView === "individual" ? (
             <>

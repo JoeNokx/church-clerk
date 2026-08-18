@@ -23,6 +23,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 function safeNumber(n) {
   const v = Number(n || 0);
@@ -232,26 +233,16 @@ function ReportsAnalyticsPage() {
         </div>
       </div>
 
-      <div className="cck-tab-bar mt-5 inline-flex rounded-lg border border-gray-200 bg-white p-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab("analytics")}
-          className={`px-4 py-1.5 text-sm font-semibold rounded-md ${
-            activeTab === "analytics" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          Analytics
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("reports")}
-          className={`ml-1 px-4 py-1.5 text-sm font-semibold rounded-md ${
-            activeTab === "reports" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          Reports
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "analytics", label: "Analytics" },
+          { key: "reports", label: "Reports" },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        sticky={false}
+        className="mt-5"
+      />
 
       {activeTab === "analytics" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">

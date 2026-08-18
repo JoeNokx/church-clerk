@@ -13,6 +13,7 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 function WelfarePageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -126,26 +127,16 @@ function WelfarePageInner() {
         </div>
       </div>
 
-      <div className="cck-tab-bar mt-4 flex flex-wrap w-full rounded-lg border border-gray-200 bg-white p-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab("contributions")}
-          className={`px-4 py-1.5 text-sm font-semibold rounded-md inline-flex items-center gap-2 ${
-            activeTab === "contributions" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          Contributions
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("disbursements")}
-          className={`ml-1 px-4 py-1.5 text-sm font-semibold rounded-md inline-flex items-center gap-2 ${
-            activeTab === "disbursements" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          Disbursements
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "contributions", label: "Contributions" },
+          { key: "disbursements", label: "Disbursements" },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        sticky={false}
+        className="mt-4"
+      />
 
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
         <KpiCard

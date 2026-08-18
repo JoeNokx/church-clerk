@@ -13,6 +13,7 @@ import {
 import { getCells, createCell, updateCell, deleteCell } from "../../cell/services/cell.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -628,16 +629,6 @@ function MinistriesPage() {
     loadLists(activeTab);
   }, [activeTab, loadLists]);
 
-  const tabClass = useCallback(
-    (value) => {
-      const isActive = activeTab === value;
-      return `px-4 py-1.5 text-sm font-semibold rounded-md inline-flex items-center gap-2 ${
-        isActive ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"
-      }`;
-    },
-    [activeTab]
-  );
-
   const openCreate = () => {
     const type = activeTab === "groups" ? "group" : activeTab === "cells" ? "cell" : "department";
     setFormType(type);
@@ -711,26 +702,17 @@ function MinistriesPage() {
         </div>
       </div>
 
-      <div className="cck-tab-bar mt-4 flex flex-wrap w-full rounded-lg border border-gray-200 bg-white p-1">
-        <button type="button" onClick={() => setActiveTab("groups")} className={tabClass("groups")}>
-          Groups
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 font-semibold text-white text-xs">
-            {badges.groups}
-          </span>
-        </button>
-        <button type="button" onClick={() => setActiveTab("departments")} className={`ml-1 ${tabClass("departments")}`}>
-          Departments
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 font-semibold text-white text-xs">
-            {badges.departments}
-          </span>
-        </button>
-        <button type="button" onClick={() => setActiveTab("cells")} className={`ml-1 ${tabClass("cells")}`}>
-          Cells
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-600 px-1.5 font-semibold text-white text-xs">
-            {badges.cells}
-          </span>
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "groups", label: "Groups", badge: badges.groups, badgeColor: "bg-blue-600 text-white" },
+          { key: "departments", label: "Departments", badge: badges.departments, badgeColor: "bg-orange-500 text-white" },
+          { key: "cells", label: "Cells", badge: badges.cells, badgeColor: "bg-gray-600 text-white" },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        sticky={false}
+        className="mt-4"
+      />
 
       <KpiGrid className="mt-6 gap-3 lg:grid-cols-4">
           {kpiLoading ? (

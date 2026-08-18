@@ -26,6 +26,7 @@ import { getMembers } from "../../member/services/member.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
 
@@ -444,32 +445,17 @@ function AttendancePageInner() {
         </div>
         <p className="mt-2 text-gray-600 text-sm">Track and manage service attendance</p>
 
-        <div className="cck-tab-bar mt-4 flex w-full overflow-x-auto rounded-lg border border-gray-200 bg-white p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <button
-            type="button"
-            onClick={() => { setActiveTab("individual"); setIndivPage("list"); }}
-            className={`shrink-0 whitespace-nowrap px-4 py-1.5 font-semibold rounded-md ${activeTab === "individual" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"} text-sm`}
-          >
-            Individual Attendance
-          </button>
-          <button
-            type="button"
-            onClick={() => { setActiveTab("total"); setIndivPage("list"); }}
-            className={`ml-1 shrink-0 whitespace-nowrap px-4 py-1.5 font-semibold rounded-md ${activeTab === "total" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"} text-sm`}
-          >
-            Total Attendance
-          </button>
-          <button
-            type="button"
-            onClick={() => { setActiveTab("visitors"); setIndivPage("list"); }}
-            className={`ml-1 shrink-0 whitespace-nowrap px-4 py-1.5 font-semibold rounded-md inline-flex items-center gap-2 ${activeTab === "visitors" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"} text-sm`}
-          >
-            Visitors
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 font-semibold text-white text-xs">
-              {visitorBadge}
-            </span>
-          </button>
-        </div>
+        <PageTabs
+          tabs={[
+            { key: "individual", label: "Individual Attendance" },
+            { key: "total", label: "Total Attendance" },
+            { key: "visitors", label: "Visitors", badge: visitorBadge, badgeColor: "bg-orange-500 text-white" },
+          ]}
+          activeTab={activeTab}
+          onChange={(key) => { setActiveTab(key); setIndivPage("list"); }}
+          sticky={false}
+          className="mt-4"
+        />
       </div>
 
       {/* ─── INDIVIDUAL ATTENDANCE TAB ─── */}

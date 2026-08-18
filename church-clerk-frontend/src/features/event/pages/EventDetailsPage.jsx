@@ -25,6 +25,7 @@ import EventOfferingPage from "../offerings/pages/EventOfferingPage.jsx";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -772,20 +773,6 @@ function EventDetailsPage() {
     return name;
   };
 
-  const tabClass = (key) => {
-    const isActive = activeTab === key;
-    return `flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-      isActive ? "bg-blue-100 text-blue-900" : "text-gray-600 hover:bg-gray-100"
-    }`;
-  };
-
-  const mainTabClass = (key) => {
-    const isActive = activeMainTab === key;
-    return `flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-      isActive ? "bg-blue-100 text-blue-900" : "text-gray-600 hover:bg-gray-100"
-    }`;
-  };
-
   const badge = formatShortMonthDay(event?.dateFrom);
   const organizerText =
     typeof event?.organizers === "string"
@@ -953,14 +940,16 @@ function EventDetailsPage() {
       ) : null}
 
       {!loading && !error && event ? (
-        <div className="mt-6 rounded-full bg-gray-100 p-1 flex items-center gap-2 max-w-md">
-          <button type="button" onClick={() => setActiveMainTab("offering")} className={mainTabClass("offering")}>
-            Offering
-          </button>
-          <button type="button" onClick={() => setActiveMainTab("attendance")} className={mainTabClass("attendance")}>
-            Record Attendance
-          </button>
-        </div>
+        <PageTabs
+          tabs={[
+            { key: "offering", label: "Offering" },
+            { key: "attendance", label: "Record Attendance" },
+          ]}
+          activeTab={activeMainTab}
+          onChange={setActiveMainTab}
+          sticky={false}
+          className="mt-6"
+        />
       ) : null}
 
       {!loading && !error && event && activeMainTab === "offering" ? (
@@ -977,17 +966,16 @@ function EventDetailsPage() {
           </div>
 
           <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
-            <div className="cck-tab-bar rounded-full bg-gray-100 p-1 flex items-center gap-1 overflow-x-auto">
-              <button type="button" onClick={() => setActiveTab("registration")} className={tabClass("registration")}>
-                By Registration
-              </button>
-              <button type="button" onClick={() => setActiveTab("total")} className={tabClass("total")}>
-                Total Number
-              </button>
-              <button type="button" onClick={() => setActiveTab("files")} className={tabClass("files")}>
-                File Upload
-              </button>
-            </div>
+            <PageTabs
+              tabs={[
+                { key: "registration", label: "By Registration" },
+                { key: "total", label: "Total Number" },
+                { key: "files", label: "File Upload" },
+              ]}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              sticky={false}
+            />
 
             {activeTab === "registration" ? (
               <div className="mt-6">

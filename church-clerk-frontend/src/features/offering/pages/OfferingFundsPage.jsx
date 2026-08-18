@@ -1,4 +1,5 @@
 import { useContext, useMemo, useRef, useState } from "react";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import { OfferingProvider } from "../offering.store.js";
 import { OfferingPageInner } from "./OfferingPage.jsx";
@@ -48,22 +49,16 @@ function OfferingFundsPage() {
           </div>
         </div>
 
-        <div className="cck-tab-bar mt-4 flex w-full overflow-x-auto rounded-lg border border-gray-200 bg-white p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <button
-            type="button"
-            onClick={() => setActiveTab("offerings")}
-            className={`shrink-0 whitespace-nowrap px-4 py-1.5 font-semibold rounded-md text-sm ${activeTab === "offerings" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"}`}
-          >
-            Offerings
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("funds")}
-            className={`ml-1 shrink-0 whitespace-nowrap px-4 py-1.5 font-semibold rounded-md text-sm ${activeTab === "funds" ? "bg-blue-50 text-blue-900" : "text-gray-700 hover:bg-gray-50"}`}
-          >
-            Special Funds
-          </button>
-        </div>
+        <PageTabs
+          tabs={[
+            { key: "offerings", label: "Offerings" },
+            { key: "funds", label: "Special Funds" },
+          ]}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          sticky={false}
+          className="mt-4"
+        />
       </div>
 
       {activeTab === "offerings" ? (

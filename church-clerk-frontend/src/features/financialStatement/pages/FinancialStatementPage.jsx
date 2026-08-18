@@ -11,6 +11,7 @@ import {
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -302,33 +303,20 @@ function FinancialStatementPage() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="cck-tab-bar flex items-center gap-2 rounded-lg bg-gray-50 p-1">
-            <button
-              type="button"
-              onClick={() => setTab("monthly")}
-              className={`rounded-md px-4 py-2 font-semibold text-sm ${tab === "monthly" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("quarterly")}
-              className={`rounded-md px-4 py-2 font-semibold text-sm ${tab === "quarterly" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
-            >
-              Quarterly
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("annual")}
-              className={`rounded-md px-4 py-2 font-semibold text-sm ${tab === "annual" ? "bg-white shadow-sm text-blue-900" : "text-gray-600 hover:text-gray-900"}`}
-            >
-              Yearly
-            </button>
-          </div>
+      <PageTabs
+        tabs={[
+          { key: "monthly", label: "Monthly" },
+          { key: "quarterly", label: "Quarterly" },
+          { key: "annual", label: "Yearly" },
+        ]}
+        activeTab={tab}
+        onChange={setTab}
+        sticky={false}
+        className="mt-6"
+      />
 
-          <div className="flex flex-row flex-wrap gap-2 items-center">
+      <div className="mt-2 rounded-xl border border-gray-200 bg-white p-4">
+        <div className="flex flex-row flex-wrap gap-2 items-center justify-end">
             {tab === "monthly" ? (
               <>
                 <div className="flex items-center gap-2">
@@ -381,7 +369,6 @@ function FinancialStatementPage() {
               </div>
             ) : null}
           </div>
-        </div>
 
         <div className="mt-4 text-gray-700 text-sm">
           <span className="font-semibold">Period:</span> {statement?.period?.label || "—"}

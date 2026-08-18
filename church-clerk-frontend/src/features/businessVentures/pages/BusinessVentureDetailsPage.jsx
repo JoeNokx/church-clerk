@@ -7,6 +7,7 @@ import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import {
   getBusinessIncomeExpensesKPI,
   getBusinessVenture
@@ -799,25 +800,20 @@ function BusinessVentureDetailsPage() {
           <Skeleton height={14} count={4} />
         </div>
       ) : (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="cck-tab-bar flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => changeTab("incomes")}
-                className={`rounded-lg px-4 py-2 font-semibold text-sm ${activeTab === "incomes" ? "bg-blue-50 text-blue-900 ring-1 ring-blue-100" : "text-gray-700 hover:bg-gray-50"}`}
-              >
-                Income
-              </button>
-              <button
-                type="button"
-                onClick={() => changeTab("expenses")}
-                className={`rounded-lg px-4 py-2 font-semibold text-sm ${activeTab === "expenses" ? "bg-blue-50 text-blue-900 ring-1 ring-blue-100" : "text-gray-700 hover:bg-gray-50"}`}
-              >
-                Expenses
-              </button>
-            </div>
+        <>
+          <PageTabs
+            tabs={[
+              { key: "incomes", label: "Income" },
+              { key: "expenses", label: "Expenses" },
+            ]}
+            activeTab={activeTab}
+            onChange={changeTab}
+            sticky={false}
+            className="mt-6"
+          />
 
+          <div className="mt-2 rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
             <div className="flex flex-col gap-2">
               {canEdit ? (
                 activeTab === "incomes" ? (
@@ -1013,6 +1009,7 @@ function BusinessVentureDetailsPage() {
             </div>
           )}
         </div>
+        </>
       )}
 
       <IncomeFormModal
