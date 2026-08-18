@@ -7,12 +7,9 @@ import {
   getDepartments,
   createDepartment,
   updateDepartment,
-  deleteDepartment,
-  getDepartmentKPI
+  deleteDepartment
 } from "../../department/services/department.api.js";
 import { getCells, createCell, updateCell, deleteCell } from "../../cell/services/cell.api.js";
-import KpiCard from "../../../shared/components/KpiCard/index.jsx";
-import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 
 function safeText(value) {
@@ -502,8 +499,6 @@ function MinistriesPage() {
   const canView = useMemo(() => (typeof can === "function" ? can("ministry", "view") : false), [can]);
 
   const [activeTab, setActiveTab] = useState("groups");
-  const [kpiLoading, setKpiLoading] = useState(false);
-  const [kpi, setKpi] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -545,20 +540,6 @@ function MinistriesPage() {
     }),
     [groups, departments, cells]
   );
-
-  const loadKpi = useCallback(async () => {
-    setKpiLoading(true);
-    try {
-      const res = await getDepartmentKPI();
-      const payload = res?.data?.data ?? res?.data;
-      const summary = payload?.summary || payload;
-      setKpi(summary || null);
-    } catch {
-      setKpi(null);
-    } finally {
-      setKpiLoading(false);
-    }
-  }, []);
 
   const loadLists = useCallback(async (tab) => {
     setLoading(true);
@@ -618,10 +599,6 @@ function MinistriesPage() {
   }, []);
 
   useEffect(() => {
-    loadKpi();
-  }, [loadKpi]);
-
-  useEffect(() => {
     loadAll();
   }, [loadAll]);
 
@@ -674,7 +651,6 @@ function MinistriesPage() {
         await loadLists("cells");
       }
 
-      await loadKpi();
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Delete failed");
     }
@@ -714,75 +690,6 @@ function MinistriesPage() {
         className="mt-4"
       />
 
-      <KpiGrid className="mt-6 gap-3 lg:grid-cols-4">
-          {kpiLoading ? (
-            <div className="text-gray-600 col-span-2 lg:col-span-4 text-sm">Loading KPI...</div>
-          ) : (
-            <>
-              <KpiCard
-                title="Total Groups"
-                value={Number(kpi?.totalGroups || 0)}
-                change={kpi?.change?.totalGroups}
-                diff={kpi?.diff?.totalGroups}
-                compareLabel="last month"
-                iconBg="bg-blue-50"
-                iconColor="text-blue-500"
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                    <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
-                    <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M19 8a3 3 0 010 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M22 20c0-3-1.5-5-3-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                }
-              />
-              <KpiCard
-                title="Total Departments"
-                value={Number(kpi?.totalDepartments || 0)}
-                change={kpi?.change?.totalDepartments}
-                diff={kpi?.diff?.totalDepartments}
-                compareLabel="last month"
-                iconBg="bg-violet-50"
-                iconColor="text-violet-500"
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                    <path d="M4 20V8l8-4 8 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    <path d="M9 20v-6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                  </svg>
-                }
-              />
-              <KpiCard
-                title="Total Cells"
-                value={Number(kpi?.totalCells || 0)}
-                change={kpi?.change?.totalCells}
-                diff={kpi?.diff?.totalCells}
-                compareLabel="last month"
-                iconBg="bg-orange-50"
-                iconColor="text-orange-500"
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                    <path d="M12 21s7-4.5 7-10a7 7 0 10-14 0c0 5.5 7 10 7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    <path d="M12 11a2 2 0 100-4 2 2 0 000 4Z" stroke="currentColor" strokeWidth="1.8" />
-                  </svg>
-                }
-              />
-              <KpiCard
-                title="Total Ministries"
-                value={Number(kpi?.totalMinistry || 0)}
-                change={kpi?.change?.totalMinistry}
-                diff={kpi?.diff?.totalMinistry}
-                compareLabel="last month"
-                iconBg="bg-teal-50"
-                iconColor="text-teal-500"
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                    <path d="M4 6h7M4 12h7M4 18h7M16 6h4M16 12h4M16 18h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                }
-              />
-            </>
-          )}
-      </KpiGrid>
 
       {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
@@ -848,7 +755,6 @@ function MinistriesPage() {
           setFormOpen(false);
           setEditingRow(null);
           await loadLists(activeTab);
-          await loadKpi();
         }}
       />
 

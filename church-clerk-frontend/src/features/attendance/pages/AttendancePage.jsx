@@ -395,8 +395,6 @@ function AttendancePageInner() {
   const closeAttendanceForm = () => { setIsAttendanceFormOpen(false); setEditingAttendance(null); };
   const closeVisitorForm = () => { setIsVisitorFormOpen(false); setEditingVisitor(null); };
 
-  const visitorBadge = Number(store?.visitorStats?.totalVisitors || 0);
-
   const truncateName = (name) => {
     if (!name) return "-";
     const words = String(name).trim().split(/\s+/).filter(Boolean);
@@ -449,7 +447,7 @@ function AttendancePageInner() {
           tabs={[
             { key: "individual", label: "Individual Attendance" },
             { key: "total", label: "Total Attendance" },
-            { key: "visitors", label: "Visitors", badge: visitorBadge, badgeColor: "bg-orange-500 text-white" },
+            { key: "visitors", label: "Visitors" },
           ]}
           activeTab={activeTab}
           onChange={(key) => { setActiveTab(key); setIndivPage("list"); }}

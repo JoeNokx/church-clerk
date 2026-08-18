@@ -7,6 +7,7 @@ import ChurchContext from "../church/church.store.js";
 const MemberContext = createContext(null);
 
 const emptyPagination = {
+  totalResult: 0,
   totalPages: 0,
   currentPage: 1,
   nextPage: null,
