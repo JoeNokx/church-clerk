@@ -5,7 +5,7 @@ import CellMember from "../../models/ministryModel/cellMembersModel.js";
 const createCellIndividualAttendance = async (req, res) => {
   try {
     const { cellId } = req.params;
-    const { date, presentMembers } = req.body;
+    const { date, presentMembers, mainSpeaker } = req.body;
 
     if (!date) {
       return res.status(400).json({ message: "date is required" });
@@ -27,6 +27,7 @@ const createCellIndividualAttendance = async (req, res) => {
       church: churchId,
       createdBy: req.user._id,
       date,
+      mainSpeaker: typeof mainSpeaker === "string" ? mainSpeaker.trim() : "",
       presentMembers: ids,
       totalMembersSnapshot
     });
@@ -39,7 +40,7 @@ const createCellIndividualAttendance = async (req, res) => {
 
 const getAllCellIndividualAttendances = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -50,8 +51,12 @@ const getAllCellIndividualAttendances = async (req, res) => {
 
     const query = { cell: cellId, church: churchId };
 
+    if (search) {
+      query.mainSpeaker = { $regex: search, $options: "i" };
+    }
+
     const attendances = await IndividualAttendance.find(query)
-      .select("date presentMembers totalMembersSnapshot")
+      .select("date mainSpeaker presentMembers totalMembersSnapshot")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
@@ -100,7 +105,7 @@ const getSingleCellIndividualAttendance = async (req, res) => {
     }
 
     const attendance = await IndividualAttendance.findOne({ _id: attendanceId, cell: cellId, church: churchId })
-      .select("date presentMembers totalMembersSnapshot")
+      .select("date mainSpeaker presentMembers totalMembersSnapshot")
       .populate("presentMembers", "firstName lastName phoneNumber email")
       .lean();
 
@@ -124,7 +129,7 @@ const getSingleCellIndividualAttendance = async (req, res) => {
 const updateCellIndividualAttendance = async (req, res) => {
   try {
     const { cellId, attendanceId } = req.params;
-    const { date, presentMembers } = req.body;
+    const { date, presentMembers, mainSpeaker } = req.body;
 
     const churchId = req.activeChurch?._id || req.user?.church;
 
@@ -139,7 +144,7 @@ const updateCellIndividualAttendance = async (req, res) => {
 
     const attendance = await IndividualAttendance.findOneAndUpdate(
       { _id: attendanceId, cell: cellId, church: churchId },
-      { date, presentMembers: ids, totalMembersSnapshot },
+      { date, mainSpeaker: typeof mainSpeaker === "string" ? mainSpeaker.trim() : "", presentMembers: ids, totalMembersSnapshot },
       { new: true, runValidators: true }
     );
 

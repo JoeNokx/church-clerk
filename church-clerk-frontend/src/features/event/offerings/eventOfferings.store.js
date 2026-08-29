@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useMemo, useRef, useState } from "react";
 
 import {
   createEventOffering as apiCreateEventOffering,
@@ -20,6 +20,7 @@ const emptyFilters = {
   page: 1,
   limit: 10,
   offeringType: "",
+  search: "",
   dateFrom: "",
   dateTo: ""
 };
@@ -27,9 +28,11 @@ const emptyFilters = {
 export function EventOfferingProvider({ eventId, children }) {
   const [offerings, setOfferings] = useState([]);
   const [pagination, setPagination] = useState(emptyPagination);
-  const [filters, setFiltersState] = useState(emptyFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const filtersRef = useRef(emptyFilters);
+  const [filters, setFiltersState] = useState(emptyFilters);
 
   const setFilters = useCallback((partial) => {
     setFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
@@ -37,7 +40,8 @@ export function EventOfferingProvider({ eventId, children }) {
 
   const fetchOfferings = useCallback(
     async (partial) => {
-      const nextFilters = { ...filters, ...(partial || {}) };
+      const nextFilters = { ...filtersRef.current, ...(partial || {}) };
+      filtersRef.current = nextFilters;
 
       const params = {
         page: nextFilters.page,
@@ -45,6 +49,7 @@ export function EventOfferingProvider({ eventId, children }) {
       };
 
       if (nextFilters.offeringType) params.offeringType = nextFilters.offeringType;
+      if (nextFilters.search) params.search = nextFilters.search;
       if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
       if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
 
@@ -67,7 +72,7 @@ export function EventOfferingProvider({ eventId, children }) {
         setLoading(false);
       }
     },
-    [eventId, filters]
+    [eventId]
   );
 
   const createOffering = useCallback(

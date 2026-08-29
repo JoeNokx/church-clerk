@@ -61,7 +61,7 @@ const getEventOfferings = async (req, res) => {
 
     const churchId = event?.church?._id || event?.church;
 
-    const { page = 1, limit = 10, offeringType, dateFrom, dateTo } = req.query;
+    const { page = 1, limit = 10, offeringType, search, dateFrom, dateTo } = req.query;
 
     if (dateFrom && isNaN(Date.parse(dateFrom))) {
       return res.status(400).json({ message: "Invalid dateFrom" });
@@ -78,6 +78,16 @@ const getEventOfferings = async (req, res) => {
     const query = { church: churchId, event: event._id };
 
     if (offeringType) query.offeringType = offeringType;
+
+    if (search) {
+      const User = (await import("../../models/userModel.js")).default;
+      const matchingUsers = await User.find({ fullName: { $regex: search, $options: "i" } }, "_id").lean();
+      if (matchingUsers.length) {
+        query.createdBy = { $in: matchingUsers.map(u => u._id) };
+      } else {
+        query.createdBy = { $in: [] };
+      }
+    }
 
     if (dateFrom || dateTo) {
       query.offeringDate = {};
@@ -96,6 +106,7 @@ const getEventOfferings = async (req, res) => {
     }
 
     const offerings = await EventOffering.find(query)
+      .populate("createdBy", "fullName")
       .sort({ offeringDate: -1, createdAt: -1 })
       .skip(skip)
       .limit(limitNum)

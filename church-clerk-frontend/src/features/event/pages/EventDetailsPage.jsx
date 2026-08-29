@@ -1020,12 +1020,6 @@ function EventDetailsPage() {
                         placeholder="Search name, email, phone"
                         className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
                       />
-                      <DateRangeFilter
-                        appliedFrom={regDateFrom}
-                        appliedTo={regDateTo}
-                        onApply={(from, to) => { setRegDateFrom(from || ""); setRegDateTo(to || ""); }}
-                        onClear={() => { setRegDateFrom(""); setRegDateTo(""); }}
-                      />
                     </div>
                   </div>
                 </div>
@@ -1119,12 +1113,6 @@ function EventDetailsPage() {
                         placeholder="Search speaker or date"
                         className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
                       />
-                      <DateRangeFilter
-                        appliedFrom={totalDateFrom}
-                        appliedTo={totalDateTo}
-                        onApply={(from, to) => { setTotalDateFrom(from || ""); setTotalDateTo(to || ""); }}
-                        onClear={() => { setTotalDateFrom(""); setTotalDateTo(""); }}
-                      />
                     </div>
                   </div>
                 </div>
@@ -1215,12 +1203,6 @@ function EventDetailsPage() {
                         onChange={(e) => setFilesSearch(e.target.value)}
                         placeholder="Search file name"
                         className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
-                      />
-                      <DateRangeFilter
-                        appliedFrom={filesDateFrom}
-                        appliedTo={filesDateTo}
-                        onApply={(from, to) => { setFilesDateFrom(from || ""); setFilesDateTo(to || ""); }}
-                        onClear={() => { setFilesDateFrom(""); setFilesDateTo(""); }}
                       />
                     </div>
                   </div>

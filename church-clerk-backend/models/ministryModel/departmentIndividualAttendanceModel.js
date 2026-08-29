@@ -6,6 +6,7 @@ const departmentIndividualAttendanceSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     department: { type: mongoose.Schema.Types.ObjectId, ref: "Department", required: true },
     date: { type: Date, required: true },
+    mainSpeaker: { type: String, default: "" },
     presentMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }],
     totalMembersSnapshot: { type: Number, default: 0 }
   },

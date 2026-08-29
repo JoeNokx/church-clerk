@@ -35,7 +35,7 @@ const createDepartmentAttendance = async (req, res) => {
 
 const getAllDepartmentAttendances = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -45,6 +45,10 @@ const getAllDepartmentAttendances = async (req, res) => {
     const churchId = req.activeChurch?._id || req.user?.church;
 
     const query = { department: departmentId, church: churchId };
+
+    if (search) {
+      query.mainSpeaker = { $regex: search, $options: "i" };
+    }
 
     const attendances = await Attendance.find(query)
       .select("date numberOfAttendees mainSpeaker activity")

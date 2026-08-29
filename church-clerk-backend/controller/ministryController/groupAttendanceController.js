@@ -45,7 +45,7 @@ const createGroupAttendance = async (req, res) => {
 //get all group attendance
 const getAllGroupAttendances = async(req, res) => {
   try {
-       const { page = 1, limit = 10 } = req.query;
+       const { page = 1, limit = 10, search } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -56,6 +56,10 @@ const getAllGroupAttendances = async(req, res) => {
   
     if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
         query.church = req.activeChurch._id
+    }
+
+    if (search) {
+      query.mainSpeaker = { $regex: search, $options: "i" };
     }
 
     const attendances = await Attendance.find(query)

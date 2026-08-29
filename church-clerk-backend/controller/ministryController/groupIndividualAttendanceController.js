@@ -5,7 +5,7 @@ import GroupMember from "../../models/ministryModel/groupMembersModel.js";
 const createGroupIndividualAttendance = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const { date, presentMembers } = req.body;
+    const { date, presentMembers, mainSpeaker } = req.body;
 
     if (!date) {
       return res.status(400).json({ message: "date is required" });
@@ -30,6 +30,7 @@ const createGroupIndividualAttendance = async (req, res) => {
       church: group.church,
       createdBy: req.user._id,
       date,
+      mainSpeaker: typeof mainSpeaker === "string" ? mainSpeaker.trim() : "",
       presentMembers: ids,
       totalMembersSnapshot
     });
@@ -42,7 +43,7 @@ const createGroupIndividualAttendance = async (req, res) => {
 
 const getAllGroupIndividualAttendances = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -55,8 +56,12 @@ const getAllGroupIndividualAttendances = async (req, res) => {
       query.church = req.activeChurch._id;
     }
 
+    if (search) {
+      query.mainSpeaker = { $regex: search, $options: "i" };
+    }
+
     const attendances = await IndividualAttendance.find(query)
-      .select("date presentMembers totalMembersSnapshot")
+      .select("date mainSpeaker presentMembers totalMembersSnapshot")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
@@ -104,7 +109,7 @@ const getSingleGroupIndividualAttendance = async (req, res) => {
     }
 
     const attendance = await IndividualAttendance.findOne(query)
-      .select("date presentMembers totalMembersSnapshot")
+      .select("date mainSpeaker presentMembers totalMembersSnapshot")
       .populate("presentMembers", "firstName lastName phoneNumber email")
       .lean();
 
@@ -128,7 +133,7 @@ const getSingleGroupIndividualAttendance = async (req, res) => {
 const updateGroupIndividualAttendance = async (req, res) => {
   try {
     const { groupId, attendanceId } = req.params;
-    const { date, presentMembers } = req.body;
+    const { date, presentMembers, mainSpeaker } = req.body;
 
     const groupQuery = { _id: groupId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
@@ -151,7 +156,7 @@ const updateGroupIndividualAttendance = async (req, res) => {
 
     const attendance = await IndividualAttendance.findOneAndUpdate(
       query,
-      { date, presentMembers: ids, totalMembersSnapshot },
+      { date, mainSpeaker: typeof mainSpeaker === "string" ? mainSpeaker.trim() : "", presentMembers: ids, totalMembersSnapshot },
       { new: true, runValidators: true }
     );
 

@@ -1,9 +1,9 @@
 import { useContext, useMemo, useState } from "react";
+import { formatMoney as _fm } from "../../../../shared/utils/formatMoney.js";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../../permissions/permission.store.js";
 import EventOfferingContext from "../eventOfferings.store.js";
 import ChurchContext from "../../../church/church.store.js";
-import { formatMoney } from "../../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
 
 function formatDate(value) {
@@ -21,6 +21,12 @@ function EventOfferingTable({ onEdit }) {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
+
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewRow, setViewRow] = useState(null);
+
+  const openView = (row) => { setViewRow(row); setViewOpen(true); };
+  const closeView = () => { setViewOpen(false); setViewRow(null); };
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("events", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("events", "delete") : false), [can]);
@@ -108,7 +114,7 @@ function EventOfferingTable({ onEdit }) {
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Offering Type</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Note</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
@@ -117,9 +123,9 @@ function EventOfferingTable({ onEdit }) {
             {rows.map((offering, index) => (
               <tr key={offering?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
                 <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{offering?.offeringType || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(offering?.amount || 0, currency)}</td>
+                <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{_fm(offering?.amount || 0, currency)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(offering?.offeringDate)}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 px-4 md:px-6">{offering?.note || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{offering?.createdBy?.fullName || "—"}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   {offering?.referenceId ? (
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{offering.referenceId}</span>
@@ -127,6 +133,7 @@ function EventOfferingTable({ onEdit }) {
                 </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
+                    { label: "View", onClick: () => openView(offering) },
                     canEdit && { label: "Edit", onClick: () => { if (!offering?._id) return; onEdit?.(offering); } },
                     canDelete && { label: "Delete", onClick: () => { if (!offering?._id) return; openConfirmDelete(offering._id); }, danger: true }
                   ]} />
@@ -156,6 +163,50 @@ function EventOfferingTable({ onEdit }) {
           Next
         </button>
       </div>
+
+      {viewOpen && viewRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Offering Details</div>
+              <button type="button" onClick={closeView} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 px-4 md:px-5 lg:px-6 py-4">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Offering Type</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.offeringType || "—"}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                <div className="mt-1 font-semibold text-blue-700 text-sm">{_fm(viewRow?.amount || 0, currency)}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.offeringDate)}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.createdBy?.fullName || "—"}</div>
+              </div>
+              {viewRow?.referenceId ? (
+                <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
+                  <div className="mt-1 font-mono text-gray-700 text-xs">{viewRow.referenceId}</div>
+                </div>
+              ) : null}
+              <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Note</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{viewRow?.note || "—"}</div>
+              </div>
+            </div>
+            <div className="flex justify-end px-4 md:px-5 lg:px-6 py-4 border-t border-gray-200">
+              <button type="button" onClick={closeView} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">

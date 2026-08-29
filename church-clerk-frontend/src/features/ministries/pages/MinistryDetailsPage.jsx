@@ -328,6 +328,13 @@ function MinistryDetailsPage() {
   const [offeringNote, setOfferingNote] = useState("");
   const [offeringSaving, setOfferingSaving] = useState(false);
   const [offeringFormError, setOfferingFormError] = useState("");
+  const [offeringSearch, setOfferingSearch] = useState("");
+  const [offeringViewOpen, setOfferingViewOpen] = useState(false);
+  const [offeringViewRow, setOfferingViewRow] = useState(null);
+
+  const [attendanceSearch, setAttendanceSearch] = useState("");
+  const [individualAttendanceSearch, setIndividualAttendanceSearch] = useState("");
+  const [individualAttendanceSpeaker, setIndividualAttendanceSpeaker] = useState("");
 
   const [memberDateFrom, setMemberDateFrom] = useState("");
   const [memberDateTo, setMemberDateTo] = useState("");
@@ -398,22 +405,22 @@ function MinistryDetailsPage() {
     }
   }, [id, type, debouncedMemberSearch]);
 
-  const loadAttendances = useCallback(async () => {
+  const loadAttendances = useCallback(async (params) => {
     if (!id) return;
     setAttendanceLoading(true);
     setAttendanceError("");
 
     try {
       if (type === "department") {
-        const res = await getDepartmentAttendances(id);
+        const res = await getDepartmentAttendances(id, params);
         const payload = res?.data?.data ?? res?.data;
         setAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
       } else if (type === "cell") {
-        const res = await getCellAttendances(id);
+        const res = await getCellAttendances(id, params);
         const payload = res?.data?.data ?? res?.data;
         setAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
       } else {
-        const res = await getGroupAttendances(id);
+        const res = await getGroupAttendances(id, params);
         const payload = res?.data?.data ?? res?.data;
         setAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
       }
@@ -425,22 +432,22 @@ function MinistryDetailsPage() {
     }
   }, [id, type]);
 
-  const loadIndividualAttendances = useCallback(async () => {
+  const loadIndividualAttendances = useCallback(async (params) => {
     if (!id) return;
     setIndividualAttendanceLoading(true);
     setIndividualAttendanceError("");
 
     try {
       if (type === "department") {
-        const res = await getDepartmentIndividualAttendances(id);
+        const res = await getDepartmentIndividualAttendances(id, params);
         const payload = res?.data?.data ?? res?.data;
         setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
       } else if (type === "cell") {
-        const res = await getCellIndividualAttendances(id);
+        const res = await getCellIndividualAttendances(id, params);
         const payload = res?.data?.data ?? res?.data;
         setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
       } else {
-        const res = await getGroupIndividualAttendances(id);
+        const res = await getGroupIndividualAttendances(id, params);
         const payload = res?.data?.data ?? res?.data;
         setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
       }
@@ -452,22 +459,22 @@ function MinistryDetailsPage() {
     }
   }, [id, type]);
 
-  const loadOfferings = useCallback(async () => {
+  const loadOfferings = useCallback(async (params) => {
     if (!id) return;
     setOfferingLoading(true);
     setOfferingError("");
 
     try {
       if (type === "department") {
-        const res = await getDepartmentOfferings(id);
+        const res = await getDepartmentOfferings(id, params);
         const payload = res?.data?.data ?? res?.data;
         setOfferings(Array.isArray(payload?.offerings) ? payload.offerings : []);
       } else if (type === "cell") {
-        const res = await getCellOfferings(id);
+        const res = await getCellOfferings(id, params);
         const payload = res?.data?.data ?? res?.data;
         setOfferings(Array.isArray(payload?.offerings) ? payload.offerings : []);
       } else {
-        const res = await getGroupOfferings(id);
+        const res = await getGroupOfferings(id, params);
         const payload = res?.data?.data ?? res?.data;
         setOfferings(Array.isArray(payload?.offerings) ? payload.offerings : []);
       }
@@ -491,6 +498,28 @@ function MinistryDetailsPage() {
     }
     if (activeTab === "offerings") loadOfferings();
   }, [activeTab, loadMembers, loadAttendances, loadIndividualAttendances, loadOfferings, attendanceView]);
+
+  const debouncedOfferingSearch = useDebouncedValue(offeringSearch, 350);
+  const debouncedAttendanceSearch = useDebouncedValue(attendanceSearch, 350);
+  const debouncedIndividualAttendanceSearch = useDebouncedValue(individualAttendanceSearch, 350);
+
+  useEffect(() => {
+    if (activeTab !== "offerings") return;
+    const params = debouncedOfferingSearch ? { search: debouncedOfferingSearch } : undefined;
+    loadOfferings(params);
+  }, [activeTab, debouncedOfferingSearch, loadOfferings]);
+
+  useEffect(() => {
+    if (activeTab !== "attendance" || attendanceView !== "total") return;
+    const params = debouncedAttendanceSearch ? { search: debouncedAttendanceSearch } : undefined;
+    loadAttendances(params);
+  }, [activeTab, attendanceView, debouncedAttendanceSearch, loadAttendances]);
+
+  useEffect(() => {
+    if (activeTab !== "attendance" || attendanceView !== "individual") return;
+    const params = debouncedIndividualAttendanceSearch ? { search: debouncedIndividualAttendanceSearch } : undefined;
+    loadIndividualAttendances(params);
+  }, [activeTab, attendanceView, debouncedIndividualAttendanceSearch, loadIndividualAttendances]);
 
   useEffect(() => {
     if (activeTab !== "members") return;
@@ -623,6 +652,7 @@ function MinistryDetailsPage() {
     setIndividualAttendanceMode(mode);
     setIndividualAttendanceEditing(row || null);
     setIndividualAttendanceDate((row?.date || "").slice(0, 10));
+    setIndividualAttendanceSpeaker(safeText(row?.mainSpeaker));
     const preSelected = Array.isArray(row?.presentMembers) ? row.presentMembers.map((x) => String(x || "")).filter(Boolean) : [];
     setIndividualAttendanceSelectedIds(preSelected);
     setIndividualMemberSearch("");
@@ -641,6 +671,7 @@ function MinistryDetailsPage() {
 
     const payload = {
       date: individualAttendanceDate,
+      mainSpeaker: individualAttendanceSpeaker,
       presentMembers: Array.isArray(individualAttendanceSelectedIds) ? individualAttendanceSelectedIds : []
     };
 
@@ -1548,6 +1579,21 @@ function MinistryDetailsPage() {
 
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {attendanceView === "individual" ? (
+                <input
+                  value={individualAttendanceSearch}
+                  onChange={(e) => setIndividualAttendanceSearch(e.target.value)}
+                  placeholder="Search speaker..."
+                  className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
+                />
+              ) : (
+                <input
+                  value={attendanceSearch}
+                  onChange={(e) => setAttendanceSearch(e.target.value)}
+                  placeholder="Search speaker..."
+                  className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
+                />
+              )}
+              {attendanceView === "individual" ? (
                 <DateRangeFilter
                   appliedFrom={indivDateFrom}
                   appliedTo={indivDateTo}
@@ -1619,6 +1665,7 @@ function MinistryDetailsPage() {
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Day</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Speaker</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Present</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Absent</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -1629,6 +1676,7 @@ function MinistryDetailsPage() {
                         <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDay(r?.date) || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.presentCount ?? 0)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
@@ -1657,14 +1705,25 @@ function MinistryDetailsPage() {
                     ) : null}
 
                     <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <label className="block font-semibold text-gray-500 text-xs">Date</label>
-                        <input
-                          value={individualAttendanceDate}
-                          onChange={(e) => setIndividualAttendanceDate(e.target.value)}
-                          type="date"
-                          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                        />
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                          <input
+                            value={individualAttendanceDate}
+                            onChange={(e) => setIndividualAttendanceDate(e.target.value)}
+                            type="date"
+                            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-gray-500 text-xs">Main Speaker</label>
+                          <input
+                            value={individualAttendanceSpeaker}
+                            onChange={(e) => setIndividualAttendanceSpeaker(e.target.value)}
+                            placeholder="Speaker name"
+                            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                          />
+                        </div>
                       </div>
 
                       <div>
@@ -2019,6 +2078,12 @@ function MinistryDetailsPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap justify-end">
+              <input
+                value={offeringSearch}
+                onChange={(e) => setOfferingSearch(e.target.value)}
+                placeholder="Search recorded by"
+                className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
+              />
               <DateRangeFilter
                 appliedFrom={offeringDateFrom}
                 appliedTo={offeringDateTo}
@@ -2055,7 +2120,7 @@ function MinistryDetailsPage() {
                   <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                     <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Note</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                     <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                   </tr>
@@ -2065,7 +2130,7 @@ function MinistryDetailsPage() {
                     <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                       <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(r?.amount || 0, currency)}</td>
-                      <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[420px] break-words px-4 md:px-6">{r?.note || "-"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.createdBy?.fullName || "—"}</td>
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         {r?.referenceId ? (
                           <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{r.referenceId}</span>
@@ -2073,6 +2138,7 @@ function MinistryDetailsPage() {
                       </td>
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu items={[
+                          { label: "View", onClick: () => { setOfferingViewRow(r); setOfferingViewOpen(true); } },
                           { label: "Edit", onClick: () => openOfferingForm("edit", r) },
                           { label: "Delete", onClick: () => openConfirm("delete-offering", r?._id), danger: true }
                         ]} />
@@ -2081,6 +2147,46 @@ function MinistryDetailsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {offeringViewOpen && offeringViewRow && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+              <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+                  <div className="font-semibold text-gray-900 text-sm">Offering Details</div>
+                  <button type="button" onClick={() => { setOfferingViewOpen(false); setOfferingViewRow(null); }} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 px-4 md:px-5 lg:px-6 py-4">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Date</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(offeringViewRow?.date)}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                    <div className="mt-1 font-semibold text-blue-700 text-sm">{formatMoney(offeringViewRow?.amount || 0, currency)}</div>
+                  </div>
+                  <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{offeringViewRow?.createdBy?.fullName || "—"}</div>
+                  </div>
+                  {offeringViewRow?.referenceId ? (
+                    <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                      <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
+                      <div className="mt-1 font-mono text-gray-700 text-xs">{offeringViewRow.referenceId}</div>
+                    </div>
+                  ) : null}
+                  <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Note</div>
+                    <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{offeringViewRow?.note || "—"}</div>
+                  </div>
+                </div>
+                <div className="flex justify-end px-4 md:px-5 lg:px-6 py-4 border-t border-gray-200">
+                  <button type="button" onClick={() => { setOfferingViewOpen(false); setOfferingViewRow(null); }} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Close</button>
+                </div>
+              </div>
             </div>
           )}
 

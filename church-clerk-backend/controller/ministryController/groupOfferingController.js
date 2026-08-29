@@ -44,7 +44,7 @@ const createGroupOffering = async (req, res) => {
 //get all group Offering
 const getAllGroupOfferings = async(req, res) => {
   try {
-       const { page = 1, limit = 10 } = req.query;
+       const { page = 1, limit = 10, search } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -57,9 +57,16 @@ const getAllGroupOfferings = async(req, res) => {
         query.church = req.activeChurch._id
     }
 
+    if (search) {
+      const User = (await import("../../models/userModel.js")).default;
+      const matchingUsers = await User.find({ fullName: { $regex: search, $options: "i" } }, "_id").lean();
+      query.createdBy = { $in: matchingUsers.length ? matchingUsers.map(u => u._id) : [] };
+    }
+
     const offerings = await Offering.find(query)
       .select("date amount note group createdBy referenceId")
           .populate("group", "name")
+          .populate("createdBy", "fullName")
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limitNum)
