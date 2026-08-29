@@ -27,7 +27,7 @@ const createGeneralExpenses = async (req, res) => {
 const getAllGeneralExpenses = async (req, res) => {
     try {
 
-        const { page = 1, limit = 10, category, dateFrom, dateTo } = req.query;
+        const { page = 1, limit = 10, category, dateFrom, dateTo, recordedBy } = req.query;
                                 
                 const pageNum = Math.max(1, parseInt(page, 10) || 1);
                 const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -43,6 +43,16 @@ const getAllGeneralExpenses = async (req, res) => {
                 // Filter by serviceType
                 if (category) {
                     query.category = category;
+                }
+
+                // Filter by recordedBy (via createdBy user fullName)
+                if (recordedBy) {
+                    const User = (await import("../models/userModel.js")).default;
+                    const matchingUsers = await User.find({
+                        fullName: { $regex: recordedBy, $options: "i" }
+                    }).select("_id");
+                    const recordedByUserIds = matchingUsers.map(u => u._id);
+                    query.createdBy = { $in: recordedByUserIds.length ? recordedByUserIds : [null] };
                 }
             
                 // Filter by date range
@@ -67,6 +77,7 @@ const getAllGeneralExpenses = async (req, res) => {
                 // FETCH GENERAL EXPENSES
                 const generalExpenses = await GeneralExpenses.find(query)
                 .select("category amount description date paymentMethod status createdBy referenceId")
+                .populate("createdBy", "fullName")
                     .sort({ createdAt: -1 })
                     .skip(skip)
                     .limit(limitNum)

@@ -35,7 +35,7 @@ const createSpecialFund = async (req, res) => {
 const getAllSpecialFunds = async (req, res) => {
     
     try {
-         const { page = 1, limit = 10, search = "", category, dateFrom, dateTo } = req.query;
+         const { page = 1, limit = 10, search = "", category, dateFrom, dateTo, recordedBy } = req.query;
                         
            
           // ---- Validate date query params ----
@@ -58,9 +58,24 @@ const getAllSpecialFunds = async (req, res) => {
       };
 
       if (search) {
-        query.$or = [
-          { giverName: { $regex: search, $options: "i" } }
-        ];
+          const User = (await import("../../models/userModel.js")).default;
+          const matchingUsers = await User.find({
+              fullName: { $regex: search, $options: "i" }
+          }).select("_id");
+          const createdByIds = matchingUsers.map(u => u._id);
+          const orClauses = [{ giverName: { $regex: search, $options: "i" } }];
+          if (createdByIds.length) orClauses.push({ createdBy: { $in: createdByIds } });
+          query.$or = orClauses;
+      }
+
+      // Filter by recordedBy (via createdBy user fullName)
+      if (recordedBy) {
+          const User = (await import("../../models/userModel.js")).default;
+          const matchingUsers = await User.find({
+              fullName: { $regex: recordedBy, $options: "i" }
+          }).select("_id");
+          const recordedByUserIds = matchingUsers.map(u => u._id);
+          query.createdBy = { $in: recordedByUserIds.length ? recordedByUserIds : [null] };
       }
   
       // Filter by category
@@ -89,6 +104,7 @@ const getAllSpecialFunds = async (req, res) => {
   
       // FETCH special funds
       const specialFund = await SpecialFund.find(query)
+        .populate("createdBy", "fullName")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)

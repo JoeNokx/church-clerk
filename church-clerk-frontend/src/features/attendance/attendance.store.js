@@ -28,13 +28,18 @@ const emptyAttendanceFilters = {
   limit: 10,
   serviceType: "",
   dateFrom: "",
-  dateTo: ""
+  dateTo: "",
+  mainSpeaker: ""
 };
 
 const emptyVisitorFilters = {
   page: 1,
   limit: 10,
-  search: ""
+  search: "",
+  serviceType: "",
+  source: "",
+  dateFrom: "",
+  dateTo: ""
 };
 
 export function AttendanceProvider({ children }) {

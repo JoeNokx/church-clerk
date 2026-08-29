@@ -77,11 +77,14 @@ const getAllProjectContributions = async (req, res) => {
                     return res.status(404).json({ message: "churchProject not found" });
                 }
                
-                //search by contributorName
-                if(search) {
-                    query.$or = [
-                        { contributorName: { $regex: search, $options: "i" } }
-                    ];
+                //search by contributorName or recordedBy (createdBy.fullName)
+               if(search) {
+                    const User = (await import("../../../models/userModel.js")).default;
+                    const matchingUsers = await User.find({ fullName: { $regex: search, $options: "i" } }, "_id").lean();
+                    const userIds = matchingUsers.map(u => u._id);
+                    const orClauses = [{ contributorName: { $regex: search, $options: "i" } }];
+                    if (userIds.length) orClauses.push({ createdBy: { $in: userIds } });
+                    query.$or = orClauses;
                 }
                 
                 // Filter by date range

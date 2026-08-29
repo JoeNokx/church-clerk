@@ -58,7 +58,7 @@ const createBusinessExpenses = async (req, res) => {
 const getAllBusinessExpenses = async (req, res) => {
     
     try {
-           const { page = 1, limit = 10, search = "", category, dateFrom, dateTo } = req.query;
+           const { page = 1, limit = 10, search = "", recordedBy, category, dateFrom, dateTo } = req.query;
                                                 
                 const pageNum = Math.max(1, parseInt(page, 10) || 1);
                 const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -79,13 +79,24 @@ const getAllBusinessExpenses = async (req, res) => {
                 }
                
                 
-                  //search by recievedFrom name
+                  //search by spentBy or recordedBy (createdBy.fullName)
                         if (search) {
-                            query.spentBy = { $regex: search, $options: "i" };
+                            const users = await (await import("../../../models/userModel.js")).default
+                                .find({ fullName: { $regex: search, $options: "i" } }, "_id").lean();
+                            const userIds = users.map(u => u._id);
+                            const orClauses = [{ spentBy: { $regex: search, $options: "i" } }];
+                            if (userIds.length) orClauses.push({ createdBy: { $in: userIds } });
+                            query.$or = orClauses;
                         }
 
                         if(category) {
                             query.category = category
+                        }
+
+                        if (recordedBy) {
+                            const users = await (await import("../../../models/userModel.js")).default
+                                .find({ fullName: { $regex: recordedBy, $options: "i" } }, "_id").lean();
+                            query.createdBy = { $in: users.map(u => u._id) };
                         }
 
                 // Filter by date range

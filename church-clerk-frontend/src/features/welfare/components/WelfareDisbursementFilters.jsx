@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 
@@ -15,11 +15,14 @@ function WelfareDisbursementFilters() {
 
   const [searchValue, setSearchValue] = useState(store?.disbursementFilters?.search || "");
 
+  const fetchRef = useRef(store?.fetchDisbursements);
+  useEffect(() => { fetchRef.current = store?.fetchDisbursements; });
+
   const debouncedSearch = useMemo(() => {
     return debounce((next) => {
-      store?.fetchDisbursements?.({ search: next, page: 1 });
+      fetchRef.current?.({ search: next, page: 1 });
     }, 400);
-  }, [store]);
+  }, []);
 
   const appliedDateFrom = store?.disbursementFilters?.dateFrom || "";
   const appliedDateTo = store?.disbursementFilters?.dateTo || "";
@@ -29,9 +32,7 @@ function WelfareDisbursementFilters() {
   }, [store?.disbursementFilters?.search]);
 
   useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
+    return () => { debouncedSearch.cancel(); };
   }, [debouncedSearch]);
 
   const onCategoryChange = async (e) => {
@@ -57,10 +58,9 @@ function WelfareDisbursementFilters() {
       <input
         value={searchValue}
         onChange={onSearchChange}
-        className="h-11 w-full md:w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search member name"
+        className="h-11 w-full md:w-[280px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        placeholder="Search name or recorded by"
       />
-
       <select
         value={store?.disbursementFilters?.category || ""}
         onChange={onCategoryChange}
@@ -73,7 +73,6 @@ function WelfareDisbursementFilters() {
           </option>
         ))}
       </select>
-
       <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
     </div>
   );

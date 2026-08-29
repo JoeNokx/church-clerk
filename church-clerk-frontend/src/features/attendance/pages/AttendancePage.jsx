@@ -113,8 +113,10 @@ function AttendancePageInner() {
   const [indivFormEditing, setIndivFormEditing] = useState(null);
   const [indivFormDate, setIndivFormDate] = useState("");
   const [indivFormServiceType, setIndivFormServiceType] = useState("");
+  const [indivFormMainSpeaker, setIndivFormMainSpeaker] = useState("");
   const [indivFormSaving, setIndivFormSaving] = useState(false);
   const [indivFormError, setIndivFormError] = useState("");
+  const [indivSpeakerSearch, setIndivSpeakerSearch] = useState("");
 
   const [indivMembersLoading, setIndivMembersLoading] = useState(false);
   const [indivMembersError, setIndivMembersError] = useState("");
@@ -167,9 +169,13 @@ function AttendancePageInner() {
       if (indivDateFrom && d < indivDateFrom) return false;
       if (indivDateTo && d > indivDateTo) return false;
       if (indivServiceTypeFilter && r?.serviceType !== indivServiceTypeFilter) return false;
+      if (indivSpeakerSearch) {
+        const q = indivSpeakerSearch.trim().toLowerCase();
+        if (!String(r?.mainSpeaker || "").toLowerCase().includes(q)) return false;
+      }
       return true;
     });
-  }, [indivRecords, indivDateFrom, indivDateTo, indivServiceTypeFilter]);
+  }, [indivRecords, indivDateFrom, indivDateTo, indivServiceTypeFilter, indivSpeakerSearch]);
 
   const loadIndivRecords = useCallback(async (page = 1) => {
     if (!activeChurchId) return;
@@ -235,6 +241,7 @@ function AttendancePageInner() {
     setIndivFormEditing(row || null);
     setIndivFormDate((row?.date || "").slice(0, 10));
     setIndivFormServiceType(row?.serviceType || "");
+    setIndivFormMainSpeaker(row?.mainSpeaker || "");
     setIndivFormModalOpen(true);
   };
 
@@ -247,6 +254,7 @@ function AttendancePageInner() {
     const payload = {
       date: indivFormDate,
       serviceType: indivFormServiceType.trim(),
+      mainSpeaker: indivFormMainSpeaker.trim(),
       presentMembers: indivFormMode === "edit"
         ? (Array.isArray(indivFormEditing?.presentMembers)
             ? indivFormEditing.presentMembers.map((x) => String(x?._id || x || "")).filter(Boolean)
@@ -467,6 +475,12 @@ function AttendancePageInner() {
                   <div className="text-gray-500 text-xs">Record and track member presence per service</div>
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto md:flex-wrap md:justify-end">
+                  <input
+                    value={indivSpeakerSearch}
+                    onChange={(e) => setIndivSpeakerSearch(e.target.value)}
+                    placeholder="Search speaker..."
+                    className="h-11 flex-1 md:flex-none md:w-[180px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
                   <select
                     value={indivServiceTypeFilter}
                     onChange={(e) => setIndivServiceTypeFilter(e.target.value)}
@@ -509,6 +523,7 @@ function AttendancePageInner() {
                         <th className="sticky left-0 z-20 bg-slate-100 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                         <th className="py-2 whitespace-nowrap px-4 md:px-6">Day</th>
                         <th className="py-2 whitespace-nowrap px-4 md:px-6">Service Type</th>
+                        <th className="py-2 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
                         <th className="py-2 whitespace-nowrap px-4 md:px-6">Present</th>
                         <th className="py-2 whitespace-nowrap px-4 md:px-6">Absent</th>
                         <th className="py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -520,6 +535,7 @@ function AttendancePageInner() {
                           <td className="sticky left-0 z-10 bg-white py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                           <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{formatDay(r?.date) || "-"}</td>
                           <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{r?.serviceType || "-"}</td>
+                          <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
                           <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.presentCount ?? 0)}</td>
                           <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
                           <td className="py-1.5 whitespace-nowrap px-4 md:px-6">
@@ -863,6 +879,15 @@ function AttendancePageInner() {
                   />
                 </div>
                 <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Main Speaker</label>
+                  <input
+                    value={indivFormMainSpeaker}
+                    onChange={(e) => setIndivFormMainSpeaker(e.target.value)}
+                    placeholder="e.g. Pastor John"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
+                </div>
+                <div className="col-span-2">
                   <div className="flex items-center justify-between">
                     <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
                     {(canCreateAttendance || canUpdateAttendance) ? (

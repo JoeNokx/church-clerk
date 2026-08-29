@@ -55,6 +55,11 @@ const visitorSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    source: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     status: {
       type: String,
       enum: ["visitor", "converted"],

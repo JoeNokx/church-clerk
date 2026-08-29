@@ -98,7 +98,7 @@ const searchMembersForWelfare = async (req, res) => {
 const getAllWelfareContribution = async (req, res) => {
     
     try {
-           const { page = 1, limit = 10, search="", dateFrom, dateTo } = req.query;
+           const { page = 1, limit = 10, search="", dateFrom, dateTo, recordedBy } = req.query;
                                                 
                 const pageNum = Math.max(1, parseInt(page, 10) || 1);
                 const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -109,20 +109,37 @@ const getAllWelfareContribution = async (req, res) => {
             
                 query.church = req.activeChurch._id;
             
-                // Search by member name
+                // Search by member name or recordedBy
                 if (search) {
-                  const members = await Member.find({
-                    church: req.activeChurch._id,
-                    $or: [
-                      { firstName: { $regex: search, $options: "i" } },
-                      { lastName: { $regex: search, $options: "i" } }
-                    ]
-                  }).select("_id");
-            
+                  const [members, matchingUsers] = await Promise.all([
+                    Member.find({
+                      church: req.activeChurch._id,
+                      $or: [
+                        { firstName: { $regex: search, $options: "i" } },
+                        { lastName: { $regex: search, $options: "i" } }
+                      ]
+                    }).select("_id"),
+                    (await import("../../../models/userModel.js")).default.find({
+                      fullName: { $regex: search, $options: "i" }
+                    }).select("_id")
+                  ]);
                   const memberIds = members.map(m => m._id);
-            
-                  // Filter TitheIndividual by matching members
-                  query.member = { $in: memberIds.length ? memberIds : [null] }; // [null] ensures no match if no members found
+                  const createdByIds = matchingUsers.map(u => u._id);
+                  const orClauses = [];
+                  if (memberIds.length) orClauses.push({ member: { $in: memberIds } });
+                  if (createdByIds.length) orClauses.push({ createdBy: { $in: createdByIds } });
+                  if (orClauses.length) query.$or = orClauses;
+                  else query.member = { $in: [null] };
+                }
+
+                // Filter by recordedBy (via createdBy user fullName)
+                if (recordedBy) {
+                    const User = (await import("../../../models/userModel.js")).default;
+                    const matchingUsers = await User.find({
+                        fullName: { $regex: recordedBy, $options: "i" }
+                    }).select("_id");
+                    const recordedByUserIds = matchingUsers.map(u => u._id);
+                    query.createdBy = { $in: recordedByUserIds.length ? recordedByUserIds : [null] };
                 }
             
 
@@ -149,6 +166,7 @@ const getAllWelfareContribution = async (req, res) => {
                 const welfareContribution = await WelfareContributions.find(query)
                 .select("member amount date paymentMethod createdBy referenceId")
                 .populate("member", "firstName lastName email phoneNumber")
+                .populate("createdBy", "fullName")
                     .sort({ createdAt: -1 })
                     .skip(skip)
                     .limit(limitNum)

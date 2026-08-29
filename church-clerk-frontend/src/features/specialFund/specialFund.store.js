@@ -23,18 +23,21 @@ const emptyFilters = {
   search: "",
   category: "",
   dateFrom: "",
-  dateTo: ""
+  dateTo: "",
+  recordedBy: ""
 };
 
 export function SpecialFundProvider({ children }) {
   const [specialFunds, setSpecialFunds] = useState([]);
   const [pagination, setPagination] = useState(emptyPagination);
   const [filters, setFiltersState] = useState(emptyFilters);
+  const filtersRef = useRef(emptyFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const store = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
+  const activeChurchRef = useRef(null);
 
   const fetchRequestIdRef = useRef(0);
   const fetchAbortRef = useRef(null);
@@ -42,15 +45,21 @@ export function SpecialFundProvider({ children }) {
   useEffect(() => {
     const churchId = store?.activeChurch?._id || null;
     setActiveChurch(churchId);
+    activeChurchRef.current = churchId;
   }, [store?.activeChurch]);
 
   const setFilters = useCallback((partial) => {
-    setFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
+    setFiltersState((prev) => {
+      const next = { ...prev, ...(partial || {}) };
+      filtersRef.current = next;
+      return next;
+    });
   }, []);
 
   const fetchSpecialFunds = useCallback(async (partial) => {
     const requestId = (fetchRequestIdRef.current += 1);
-    const nextFilters = { ...filters, ...(partial || {}) };
+    const nextFilters = { ...filtersRef.current, ...(partial || {}) };
+    filtersRef.current = nextFilters;
 
     const params = {
       page: nextFilters.page,
@@ -61,6 +70,7 @@ export function SpecialFundProvider({ children }) {
     if (nextFilters.category) params.category = nextFilters.category;
     if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
     if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
+    if (nextFilters.recordedBy) params.recordedBy = nextFilters.recordedBy;
 
     setFiltersState(nextFilters);
     setLoading(true);
@@ -73,7 +83,7 @@ export function SpecialFundProvider({ children }) {
       const controller = new AbortController();
       fetchAbortRef.current = controller;
 
-      const res = await getSpecialFunds(params, activeChurch, { signal: controller.signal });
+      const res = await getSpecialFunds(params, activeChurchRef.current, { signal: controller.signal });
       const payload = res?.data?.data ?? res?.data;
 
       if (requestId !== fetchRequestIdRef.current) return;
@@ -90,7 +100,7 @@ export function SpecialFundProvider({ children }) {
       if (requestId !== fetchRequestIdRef.current) return;
       setLoading(false);
     }
-  }, [filters, activeChurch]);
+  }, []);
 
   const createSpecialFund = useCallback(async (payload) => {
     setLoading(true);

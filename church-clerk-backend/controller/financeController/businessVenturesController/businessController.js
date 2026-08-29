@@ -75,7 +75,8 @@ const getAllBusinessVentures = async (req, res) => {
     
         // FETCH ALL  BUSINESS VENTURES
         const businessVentures = await BusinessVentures.find(query)
-        .select("businessName description manager phoneNumber createdBy")
+        .select("businessName description manager phoneNumber createdBy referenceId startDate")
+        .populate("createdBy", "fullName")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)

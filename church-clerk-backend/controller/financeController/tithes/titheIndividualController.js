@@ -146,20 +146,28 @@ const getAllTitheIndividual = async (req, res) => {
           query.church = req.activeChurch._id;
       
       
-    // Search by member name
+    // Search by member name or recordedBy (createdBy.fullName)
     if (search) {
-      const members = await Member.find({
-        church: req.activeChurch._id,
-        $or: [
-          { firstName: { $regex: search, $options: "i" } },
-          { lastName: { $regex: search, $options: "i" } }
-        ]
-      }).select("_id");
+      const User = (await import('../../../models/userModel.js')).default;
+      const [members, users] = await Promise.all([
+        Member.find({
+          church: req.activeChurch._id,
+          $or: [
+            { firstName: { $regex: search, $options: "i" } },
+            { lastName: { $regex: search, $options: "i" } }
+          ]
+        }).select("_id"),
+        User.find({ fullName: { $regex: search, $options: "i" } }, "_id").lean()
+      ]);
 
       const memberIds = members.map(m => m._id);
+      const userIds = users.map(u => u._id);
 
-      // Filter TitheIndividual by matching members
-      query.member = { $in: memberIds.length ? memberIds : [null] }; // [null] ensures no match if no members found
+      const orClauses = [
+        { member: { $in: memberIds.length ? memberIds : [null] } }
+      ];
+      if (userIds.length) orClauses.push({ createdBy: { $in: userIds } });
+      query.$or = orClauses;
     }
 
         // Filter by date range
@@ -184,6 +192,7 @@ const getAllTitheIndividual = async (req, res) => {
           // FETCH ATTENDANCES
           const titheIndividuals = await TitheIndividual.find(query)
           .populate("member", "firstName lastName")
+          .populate("createdBy", "fullName")
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limitNum)

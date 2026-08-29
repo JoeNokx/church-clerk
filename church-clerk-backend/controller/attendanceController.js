@@ -39,12 +39,16 @@ const createAttendance = async (req, res) => {
 const getAllAttendances = async (req, res) => {
   try {
     const { page, limit, skip } = buildPaginationParams(req.query);
-    const { serviceType, dateFrom, dateTo } = req.query;
+    const { serviceType, dateFrom, dateTo, mainSpeaker } = req.query;
 
     const query = { church: req.activeChurch._id };
 
     if (serviceType) {
       query.serviceType = serviceType;
+    }
+
+    if (mainSpeaker) {
+      query.mainSpeaker = { $regex: mainSpeaker, $options: "i" };
     }
 
     if (dateFrom || dateTo) {
@@ -155,6 +159,7 @@ const createVisitor = async (req, res) => {
       serviceType,
       serviceDate,
       invitedBy,
+      source,
       status,
       note
     } = req.body;
@@ -180,6 +185,7 @@ const createVisitor = async (req, res) => {
       serviceType,
       serviceDate,
       invitedBy,
+      source,
       note,
       church: req.activeChurch._id,
       createdBy: req.user._id
@@ -232,7 +238,7 @@ import Member from "../models/memberModel.js";
 
 const getAllVisitors = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "" } = req.query;
+    const { page = 1, limit = 10, search = "", serviceType = "", source: sourceFilter = "", dateFrom = "", dateTo = "" } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -246,6 +252,24 @@ const getAllVisitors = async (req, res) => {
         { fullName: { $regex: search, $options: "i" } },
         { invitedBy: { $regex: search, $options: "i" } },
       ];
+    }
+
+    if (serviceType) {
+      query.serviceType = serviceType;
+    }
+
+    if (sourceFilter) {
+      query.source = sourceFilter;
+    }
+
+    if (dateFrom || dateTo) {
+      query.serviceDate = {};
+      if (dateFrom) query.serviceDate.$gte = new Date(dateFrom);
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        query.serviceDate.$lte = end;
+      }
     }
 
     const now = new Date();
@@ -280,7 +304,7 @@ const getAllVisitors = async (req, res) => {
       convertedVisitorsPrev
     ] = await Promise.all([
       Visitor.find(query)
-        .select("fullName phoneNumber email location serviceType serviceDate invitedBy status")
+        .select("fullName phoneNumber email location serviceType serviceDate invitedBy source status")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)

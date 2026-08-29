@@ -58,7 +58,7 @@ const createPledge = async (req, res) => {
 const getAllPledge = async (req, res) => {
     
     try {
-          const { page = 1, limit = 10, search = "", serviceType, status, dateFrom, dateTo } = req.query;
+          const { page = 1, limit = 10, search = "", serviceType, status, dateFrom, dateTo, recordedBy } = req.query;
                 
                     const pageNum = Math.max(1, parseInt(page, 10) || 1);
                     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -79,12 +79,28 @@ const getAllPledge = async (req, res) => {
                       query.status = status;
                     }
 
-                    // search by name
+                    // search by name, phone, or recordedBy
                     if (search) {
-                      query.$or = [
-                        { name: { $regex: search, $options: "i" } },
-                        { phoneNumber: { $regex: search, $options: "i" } },
-                      ];
+                        const User = (await import("../../../models/userModel.js")).default;
+                        const matchingUsers = await User.find({
+                            fullName: { $regex: search, $options: "i" }
+                        }).select("_id");
+                        const recordedByIds = matchingUsers.map(u => u._id);
+                        query.$or = [
+                            { name: { $regex: search, $options: "i" } },
+                            { phoneNumber: { $regex: search, $options: "i" } },
+                            ...(recordedByIds.length ? [{ createdBy: { $in: recordedByIds } }] : [])
+                        ];
+                    }
+
+                    // Filter by recordedBy (via createdBy user fullName)
+                    if (recordedBy) {
+                        const User = (await import("../../../models/userModel.js")).default;
+                        const matchingUsers = await User.find({
+                            fullName: { $regex: recordedBy, $options: "i" }
+                        }).select("_id");
+                        const recordedByUserIds = matchingUsers.map(u => u._id);
+                        query.createdBy = { $in: recordedByUserIds.length ? recordedByUserIds : [null] };
                     }
                 
                  // Filter by date range
@@ -108,7 +124,8 @@ const getAllPledge = async (req, res) => {
                 
                     // FETCH ATTENDANCES
                     const pledges = await Pledge.find(query)
-                    .select("name phoneNumber serviceType amount pledgeDate deadline status")
+                    .select("name phoneNumber serviceType amount pledgeDate deadline status createdBy")
+                    .populate("createdBy", "fullName")
                       .sort({ createdAt: -1 })
                       .skip(skip)
                       .limit(limitNum)

@@ -1,4 +1,5 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
@@ -579,6 +580,50 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
   );
 }
 
+function SearchInput({ activeTab, incomeSearch, expenseSearch, incomeSearchRef, expenseSearchRef, setIncomeSearch, setExpenseSearch, setIncomePage, setExpensePage, loadIncomes, loadExpenses }) {
+  const loadIncomesRef = useRef(loadIncomes);
+  const loadExpensesRef = useRef(loadExpenses);
+  useEffect(() => { loadIncomesRef.current = loadIncomes; }, [loadIncomes]);
+  useEffect(() => { loadExpensesRef.current = loadExpenses; }, [loadExpenses]);
+
+  const debouncedIncome = useMemo(() => debounce((val) => {
+    loadIncomesRef.current?.(1, val);
+  }, 400), []);
+
+  const debouncedExpense = useMemo(() => debounce((val) => {
+    loadExpensesRef.current?.(1, val);
+  }, 400), []);
+
+  useEffect(() => () => { debouncedIncome.cancel(); debouncedExpense.cancel(); }, [debouncedIncome, debouncedExpense]);
+
+  const value = activeTab === "incomes" ? incomeSearch : expenseSearch;
+  const placeholder = activeTab === "incomes" ? "Search received from or recorded by" : "Search spent on or recorded by";
+
+  const onChange = (e) => {
+    const val = e.target.value;
+    if (activeTab === "incomes") {
+      incomeSearchRef.current = val;
+      setIncomeSearch(val);
+      setIncomePage(1);
+      debouncedIncome(val);
+    } else {
+      expenseSearchRef.current = val;
+      setExpenseSearch(val);
+      setExpensePage(1);
+      debouncedExpense(val);
+    }
+  };
+
+  return (
+    <input
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-64 text-sm"
+    />
+  );
+}
+
 function BusinessVentureDetailsPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -614,6 +659,11 @@ function BusinessVentureDetailsPage() {
   const [expenseDateFrom, setExpenseDateFrom] = useState("");
   const [expenseDateTo, setExpenseDateTo] = useState("");
 
+  const [viewIncomeOpen, setViewIncomeOpen] = useState(false);
+  const [viewIncomeRow, setViewIncomeRow] = useState(null);
+  const [viewExpenseOpen, setViewExpenseOpen] = useState(false);
+  const [viewExpenseRow, setViewExpenseRow] = useState(null);
+
   const [addIncomeOpen, setAddIncomeOpen] = useState(false);
   const [editIncomeOpen, setEditIncomeOpen] = useState(false);
   const [editIncomeRow, setEditIncomeRow] = useState(null);
@@ -647,31 +697,36 @@ function BusinessVentureDetailsPage() {
     }
   };
 
-  const loadIncomes = async (page) => {
+  const incomeSearchRef = useRef("");
+  const expenseSearchRef = useRef("");
+
+  const loadIncomes = useCallback(async (page, searchOverride) => {
     if (!businessId) return;
+    const search = searchOverride !== undefined ? searchOverride : incomeSearchRef.current;
     const res = await getBusinessIncomes(businessId, {
       page,
       limit: 10,
-      search: incomeSearch,
+      search,
       dateFrom: incomeDateFrom,
       dateTo: incomeDateTo
     });
     setIncomeRows(safeList(res, "businessIncome"));
     setIncomePagination(safePagination(res));
-  };
+  }, [businessId, incomeDateFrom, incomeDateTo]);
 
-  const loadExpenses = async (page) => {
+  const loadExpenses = useCallback(async (page, searchOverride) => {
     if (!businessId) return;
+    const search = searchOverride !== undefined ? searchOverride : expenseSearchRef.current;
     const res = await getBusinessExpenses(businessId, {
       page,
       limit: 10,
-      search: expenseSearch,
+      search,
       dateFrom: expenseDateFrom,
       dateTo: expenseDateTo
     });
     setExpenseRows(safeList(res, "businessExpenses"));
     setExpensePagination(safePagination(res));
-  };
+  }, [businessId, expenseDateFrom, expenseDateTo]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -693,12 +748,12 @@ function BusinessVentureDetailsPage() {
   useEffect(() => {
     if (!businessId) return;
     loadIncomes(incomePage).catch(() => null);
-  }, [incomePage, incomeSearch, incomeDateFrom, incomeDateTo]);
+  }, [incomePage, incomeDateFrom, incomeDateTo, loadIncomes]);
 
   useEffect(() => {
     if (!businessId) return;
     loadExpenses(expensePage).catch(() => null);
-  }, [expensePage, expenseSearch, expenseDateFrom, expenseDateTo]);
+  }, [expensePage, expenseDateFrom, expenseDateTo, loadExpenses]);
 
   useEffect(() => {
     if (tabParam === "incomes" || tabParam === "expenses") {
@@ -837,19 +892,18 @@ function BusinessVentureDetailsPage() {
                 )
               ) : null}
               <div className="flex flex-row flex-wrap items-center gap-2">
-                <input
-                  value={activeTab === "incomes" ? incomeSearch : expenseSearch}
-                  onChange={(e) => {
-                    if (activeTab === "incomes") {
-                      setIncomeSearch(e.target.value);
-                      setIncomePage(1);
-                      return;
-                    }
-                    setExpenseSearch(e.target.value);
-                    setExpensePage(1);
-                  }}
-                  placeholder="Search..."
-                  className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-52 text-sm"
+                <SearchInput
+                  activeTab={activeTab}
+                  incomeSearch={incomeSearch}
+                  expenseSearch={expenseSearch}
+                  incomeSearchRef={incomeSearchRef}
+                  expenseSearchRef={expenseSearchRef}
+                  setIncomeSearch={setIncomeSearch}
+                  setExpenseSearch={setExpenseSearch}
+                  setIncomePage={setIncomePage}
+                  setExpensePage={setExpensePage}
+                  loadIncomes={loadIncomes}
+                  loadExpenses={loadExpenses}
                 />
                 <DateRangeFilter
                   appliedFrom={activeTab === "incomes" ? incomeDateFrom : expenseDateFrom}
@@ -889,9 +943,9 @@ function BusinessVentureDetailsPage() {
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Received From</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Note</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
@@ -900,9 +954,9 @@ function BusinessVentureDetailsPage() {
                       {incomeRows.map((row, idx) => (
                         <tr key={row?._id ?? `i-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.recievedFrom || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 px-4 md:px-6">{row?.note || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount, currency)}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
                               <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -910,6 +964,7 @@ function BusinessVentureDetailsPage() {
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
+                              { label: "View", onClick: () => { setViewIncomeRow(row); setViewIncomeOpen(true); } },
                               canEdit && { label: "Edit", onClick: () => { setEditIncomeRow(row); setEditIncomeOpen(true); } },
                               canEdit && { label: "Delete", onClick: () => { setDeleteIncomeRow(row); setDeleteIncomeOpen(true); }, danger: true }
                             ]} />
@@ -952,9 +1007,9 @@ function BusinessVentureDetailsPage() {
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Spent By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Description</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
@@ -964,9 +1019,9 @@ function BusinessVentureDetailsPage() {
                         <tr key={row?._id ?? `e-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.spentBy || "—"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.category || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 px-4 md:px-6">{row?.description || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount, currency)}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
                               <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -974,6 +1029,7 @@ function BusinessVentureDetailsPage() {
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
+                              { label: "View", onClick: () => { setViewExpenseRow(row); setViewExpenseOpen(true); } },
                               canEdit && { label: "Edit", onClick: () => { setEditExpenseRow(row); setEditExpenseOpen(true); } },
                               canEdit && { label: "Delete", onClick: () => { setDeleteExpenseRow(row); setDeleteExpenseOpen(true); }, danger: true }
                             ]} />
@@ -1010,6 +1066,53 @@ function BusinessVentureDetailsPage() {
           )}
         </div>
         </>
+      )}
+
+      {viewIncomeOpen && viewIncomeRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Income Details</div>
+              <button type="button" onClick={() => setViewIncomeOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="p-4 md:p-6 space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><div className="font-semibold text-gray-500 text-xs">Received From</div><div className="mt-1 text-gray-900">{viewIncomeRow?.recievedFrom || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date</div><div className="mt-1 text-gray-900">{formatDate(viewIncomeRow?.date)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-green-700 font-semibold">{formatCurrency(viewIncomeRow?.amount, currency)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewIncomeRow?.createdBy?.fullName || "—"}</div></div>
+                <div className="col-span-2"><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewIncomeRow?.referenceId || "—"}</div></div>
+              </div>
+              <div><div className="font-semibold text-gray-500 text-xs">Note</div><div className="mt-1 text-gray-700">{viewIncomeRow?.note || "—"}</div></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewExpenseOpen && viewExpenseRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Expense Details</div>
+              <button type="button" onClick={() => setViewExpenseOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="p-4 md:p-6 space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><div className="font-semibold text-gray-500 text-xs">Spent By</div><div className="mt-1 text-gray-900">{viewExpenseRow?.spentBy || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Category</div><div className="mt-1 text-gray-900">{viewExpenseRow?.category || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date</div><div className="mt-1 text-gray-900">{formatDate(viewExpenseRow?.date)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-orange-600 font-semibold">{formatCurrency(viewExpenseRow?.amount, currency)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewExpenseRow?.createdBy?.fullName || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewExpenseRow?.referenceId || "—"}</div></div>
+              </div>
+              <div><div className="font-semibold text-gray-500 text-xs">Description</div><div className="mt-1 text-gray-700">{viewExpenseRow?.description || "—"}</div></div>
+            </div>
+          </div>
+        </div>
       )}
 
       <IncomeFormModal

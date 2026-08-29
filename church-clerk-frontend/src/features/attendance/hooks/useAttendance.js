@@ -21,7 +21,8 @@ export const attendanceQueryKeys = {
     Number(filters?.limit || 10),
     String(filters?.serviceType || ""),
     String(filters?.dateFrom || ""),
-    String(filters?.dateTo || "")
+    String(filters?.dateTo || ""),
+    String(filters?.mainSpeaker || "")
   ],
   visitorsPrefix: (churchId) => ["attendance", String(churchId || ""), "visitors"],
   visitors: (churchId, filters) => [
@@ -31,7 +32,10 @@ export const attendanceQueryKeys = {
     "list",
     Number(filters?.page || 1),
     Number(filters?.limit || 10),
-    String(filters?.search || "")
+    String(filters?.search || ""),
+    String(filters?.serviceType || ""),
+    String(filters?.dateFrom || ""),
+    String(filters?.dateTo || "")
   ],
   visitorStats: (churchId) => [
     "attendance",
@@ -52,6 +56,7 @@ function buildAttendanceParams(filters) {
   if (next.serviceType) params.serviceType = next.serviceType;
   if (next.dateFrom) params.dateFrom = next.dateFrom;
   if (next.dateTo) params.dateTo = next.dateTo;
+  if (next.mainSpeaker) params.mainSpeaker = next.mainSpeaker;
 
   return params;
 }
@@ -65,6 +70,9 @@ function buildVisitorParams(filters) {
   };
 
   if (next.search) params.search = next.search;
+  if (next.serviceType) params.serviceType = next.serviceType;
+  if (next.dateFrom) params.dateFrom = next.dateFrom;
+  if (next.dateTo) params.dateTo = next.dateTo;
 
   return params;
 }

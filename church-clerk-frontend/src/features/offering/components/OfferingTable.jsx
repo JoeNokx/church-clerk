@@ -21,6 +21,8 @@ function OfferingTable({ onEdit, onDeleted }) {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewRow, setViewRow] = useState(null);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("offerings", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("offerings", "delete") : false), [can]);
@@ -114,6 +116,7 @@ function OfferingTable({ onEdit, onDeleted }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Offering Type</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
@@ -125,6 +128,7 @@ function OfferingTable({ onEdit, onDeleted }) {
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{offering?.offeringType || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(offering?.amount || 0, currency)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(offering?.serviceDate)}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{offering?.createdBy?.fullName || "-"}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   {offering?.referenceId ? (
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{offering.referenceId}</span>
@@ -132,6 +136,7 @@ function OfferingTable({ onEdit, onDeleted }) {
                 </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
+                    { label: "View", onClick: () => { setViewRow(offering); setViewOpen(true); } },
                     canEdit && { label: "Edit", onClick: () => { if (!offering?._id) return; onEdit?.(offering); } },
                     canDelete && { label: "Delete", onClick: () => { if (!offering?._id) return; openConfirmDelete(offering._id); }, danger: true }
                   ]} />
@@ -161,6 +166,27 @@ function OfferingTable({ onEdit, onDeleted }) {
           Next
         </button>
       </div>
+
+      {viewOpen && viewRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Offering Details</div>
+              <button type="button" onClick={() => setViewOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="p-4 md:p-6 grid grid-cols-2 gap-3 text-sm">
+              <div><div className="font-semibold text-gray-500 text-xs">Service Type</div><div className="mt-1 text-gray-900">{viewRow?.serviceType || "-"}</div></div>
+              <div><div className="font-semibold text-gray-500 text-xs">Offering Type</div><div className="mt-1 text-gray-900">{viewRow?.offeringType || "-"}</div></div>
+              <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-blue-700 font-semibold">{formatMoney(viewRow?.amount || 0, currency)}</div></div>
+              <div><div className="font-semibold text-gray-500 text-xs">Date</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.serviceDate)}</div></div>
+              <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewRow?.createdBy?.fullName || "-"}</div></div>
+              <div><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewRow?.referenceId || "-"}</div></div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">

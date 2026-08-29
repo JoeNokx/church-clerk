@@ -30,7 +30,7 @@ const getAllOfferings = async (req, res) => {
     
     try {
         
-         const { page = 1, limit = 10, serviceType, dateFrom, dateTo } = req.query;
+         const { page = 1, limit = 10, serviceType, dateFrom, dateTo, recordedBy } = req.query;
         
           // ---- Validate date query params ----
     if (dateFrom && isNaN(Date.parse(dateFrom))) {
@@ -55,6 +55,16 @@ const getAllOfferings = async (req, res) => {
             if (serviceType) {
               query.serviceType = serviceType;
             }
+
+            // Filter by recordedBy (via createdBy user fullName)
+            if (recordedBy) {
+                const User = (await import("../../models/userModel.js")).default;
+                const matchingUsers = await User.find({
+                    fullName: { $regex: recordedBy, $options: "i" }
+                }).select("_id");
+                const recordedByUserIds = matchingUsers.map(u => u._id);
+                query.createdBy = { $in: recordedByUserIds.length ? recordedByUserIds : [null] };
+            }
         
          // Filter by date range
         if (dateFrom || dateTo) {
@@ -77,6 +87,7 @@ const getAllOfferings = async (req, res) => {
         
             // FETCH offerings
             const offerings = await Offering.find(query)
+              .populate("createdBy", "fullName")
               .sort({ createdAt: -1 })
               .skip(skip)
               .limit(limitNum)

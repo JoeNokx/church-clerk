@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createOffering as apiCreateOffering,
@@ -23,30 +23,39 @@ const emptyFilters = {
   limit: 10,
   serviceType: "",
   dateFrom: "",
-  dateTo: ""
+  dateTo: "",
+  recordedBy: ""
 };
 
 export function OfferingProvider({ children }) {
   const [offerings, setOfferings] = useState([]);
   const [pagination, setPagination] = useState(emptyPagination);
   const [filters, setFiltersState] = useState(emptyFilters);
+  const filtersRef = useRef(emptyFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const store = useContext(ChurchContext);
   const [activeChurch, setActiveChurch] = useState(null);
+  const activeChurchRef = useRef(null);
 
   useEffect(() => {
     const churchId = store?.activeChurch?._id || null;
     setActiveChurch(churchId);
+    activeChurchRef.current = churchId;
   }, [store?.activeChurch]);
 
   const setFilters = useCallback((partial) => {
-    setFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
+    setFiltersState((prev) => {
+      const next = { ...prev, ...(partial || {}) };
+      filtersRef.current = next;
+      return next;
+    });
   }, []);
 
   const fetchOfferings = useCallback(async (partial) => {
-    const nextFilters = { ...filters, ...(partial || {}) };
+    const nextFilters = { ...filtersRef.current, ...(partial || {}) };
+    filtersRef.current = nextFilters;
 
     const params = {
       page: nextFilters.page,
@@ -56,13 +65,14 @@ export function OfferingProvider({ children }) {
     if (nextFilters.serviceType) params.serviceType = nextFilters.serviceType;
     if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
     if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
+    if (nextFilters.recordedBy) params.recordedBy = nextFilters.recordedBy;
 
     setFiltersState(nextFilters);
     setLoading(true);
     setError(null);
 
     try {
-      const res = await getOfferings(params, activeChurch);
+      const res = await getOfferings(params, activeChurchRef.current);
       const payload = res?.data?.data ?? res?.data;
 
       setOfferings(payload?.offerings || []);
@@ -74,7 +84,7 @@ export function OfferingProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [filters, activeChurch]);
+  }, []);
 
   const createOffering = useCallback(async (payload) => {
     setLoading(true);

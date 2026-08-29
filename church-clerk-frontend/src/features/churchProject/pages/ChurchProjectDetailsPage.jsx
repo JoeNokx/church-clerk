@@ -749,7 +749,7 @@ function ChurchProjectDetailsPage() {
                     setContribSearch(e.target.value);
                     setContribPage(1);
                   }}
-                  placeholder="Search contributor..."
+                  placeholder="Search contributor or recorded by"
                   className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
                 />
                 <DateRangePopover
@@ -777,7 +777,7 @@ function ChurchProjectDetailsPage() {
                     setExpenseSearch(e.target.value);
                     setExpensePage(1);
                   }}
-                  placeholder="Search spent on..."
+                  placeholder="Search spent on or recorded by"
                   className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
                 />
                 <DateRangePopover

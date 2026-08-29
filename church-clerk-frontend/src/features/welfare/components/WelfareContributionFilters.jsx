@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 
@@ -9,11 +9,14 @@ function WelfareContributionFilters() {
 
   const [searchValue, setSearchValue] = useState(store?.contributionFilters?.search || "");
 
+  const fetchRef = useRef(store?.fetchContributions);
+  useEffect(() => { fetchRef.current = store?.fetchContributions; });
+
   const debouncedSearch = useMemo(() => {
     return debounce((next) => {
-      store?.fetchContributions?.({ search: next, page: 1 });
+      fetchRef.current?.({ search: next, page: 1 });
     }, 400);
-  }, [store]);
+  }, []);
 
   const appliedDateFrom = store?.contributionFilters?.dateFrom || "";
   const appliedDateTo = store?.contributionFilters?.dateTo || "";
@@ -23,9 +26,7 @@ function WelfareContributionFilters() {
   }, [store?.contributionFilters?.search]);
 
   useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
+    return () => { debouncedSearch.cancel(); };
   }, [debouncedSearch]);
 
   const onSearchChange = (e) => {
@@ -45,10 +46,9 @@ function WelfareContributionFilters() {
       <input
         value={searchValue}
         onChange={onSearchChange}
-        className="h-11 w-full md:w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search member name"
+        className="h-11 w-full md:w-[280px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        placeholder="Search member name or recorded by"
       />
-
       <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
     </div>
   );

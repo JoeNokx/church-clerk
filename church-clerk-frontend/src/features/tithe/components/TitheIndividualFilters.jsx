@@ -9,11 +9,14 @@ function TitheIndividualFilters() {
 
   const [searchValue, setSearchValue] = useState(filters.search || "");
 
+  const fetchRef = useRef(store?.fetchIndividuals);
+  useEffect(() => { fetchRef.current = store?.fetchIndividuals; });
+
   const debouncedSearch = useMemo(() => {
     return debounce((next) => {
-      store?.fetchIndividuals?.({ search: next, page: 1 });
+      fetchRef.current?.({ search: next, page: 1 });
     }, 400);
-  }, [store]);
+  }, []);
 
   useEffect(() => {
     setSearchValue(filters.search || "");
@@ -34,7 +37,7 @@ function TitheIndividualFilters() {
           setSearchValue(next);
           debouncedSearch(next);
         }}
-        placeholder="Search member..."
+        placeholder="Search member or recorded by"
         className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
       />
 

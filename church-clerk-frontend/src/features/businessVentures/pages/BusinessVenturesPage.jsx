@@ -403,9 +403,10 @@ function BusinessVenturesPage() {
 
   const filteredVentures = useMemo(() => {
     if (!searchValue.trim()) return ventures;
-    const searchLower = searchValue.toLowerCase();
+    const lower = searchValue.toLowerCase();
     return ventures.filter((v) =>
-      String(v?.businessName || "").toLowerCase().includes(searchLower)
+      String(v?.businessName || "").toLowerCase().includes(lower) ||
+      String(v?.createdBy?.fullName || "").toLowerCase().includes(lower)
     );
   }, [ventures, searchValue]);
 
@@ -542,7 +543,7 @@ function BusinessVenturesPage() {
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
-          placeholder="Search business name"
+          placeholder="Search business name or recorded by"
         />
       </div>
 

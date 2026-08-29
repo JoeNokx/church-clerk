@@ -30,7 +30,8 @@ const emptyContributionFilters = {
   limit: 10,
   search: "",
   dateFrom: "",
-  dateTo: ""
+  dateTo: "",
+  recordedBy: ""
 };
 
 const emptyDisbursementFilters = {
@@ -39,7 +40,8 @@ const emptyDisbursementFilters = {
   category: "",
   search: "",
   dateFrom: "",
-  dateTo: ""
+  dateTo: "",
+  recordedBy: ""
 };
 
 export function WelfareProvider({ children }) {
@@ -54,6 +56,8 @@ export function WelfareProvider({ children }) {
 
   const [contributionFilters, setContributionFiltersState] = useState(emptyContributionFilters);
   const [disbursementFilters, setDisbursementFiltersState] = useState(emptyDisbursementFilters);
+  const contributionFiltersRef = useRef(emptyContributionFilters);
+  const disbursementFiltersRef = useRef(emptyDisbursementFilters);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -69,17 +73,26 @@ export function WelfareProvider({ children }) {
   }, [churchStore?.activeChurch]);
 
   const setContributionFilters = useCallback((partial) => {
-    setContributionFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
+    setContributionFiltersState((prev) => {
+      const next = { ...prev, ...(partial || {}) };
+      contributionFiltersRef.current = next;
+      return next;
+    });
   }, []);
 
   const setDisbursementFilters = useCallback((partial) => {
-    setDisbursementFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
+    setDisbursementFiltersState((prev) => {
+      const next = { ...prev, ...(partial || {}) };
+      disbursementFiltersRef.current = next;
+      return next;
+    });
   }, []);
 
   const fetchContributions = useCallback(
     async (partial) => {
       const requestId = (contributionRequestIdRef.current += 1);
-      const nextFilters = { ...contributionFilters, ...(partial || {}) };
+      const nextFilters = { ...contributionFiltersRef.current, ...(partial || {}) };
+      contributionFiltersRef.current = nextFilters;
       const params = {
         page: nextFilters.page,
         limit: nextFilters.limit
@@ -88,6 +101,7 @@ export function WelfareProvider({ children }) {
       if (nextFilters.search) params.search = nextFilters.search;
       if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
       if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
+      if (nextFilters.recordedBy) params.recordedBy = nextFilters.recordedBy;
 
       setContributionFiltersState(nextFilters);
       setLoading(true);
@@ -118,13 +132,14 @@ export function WelfareProvider({ children }) {
         setLoading(false);
       }
     },
-    [contributionFilters]
+    []
   );
 
   const fetchDisbursements = useCallback(
     async (partial) => {
       const requestId = (disbursementRequestIdRef.current += 1);
-      const nextFilters = { ...disbursementFilters, ...(partial || {}) };
+      const nextFilters = { ...disbursementFiltersRef.current, ...(partial || {}) };
+      disbursementFiltersRef.current = nextFilters;
       const params = {
         page: nextFilters.page,
         limit: nextFilters.limit
@@ -134,6 +149,7 @@ export function WelfareProvider({ children }) {
       if (nextFilters.search) params.search = nextFilters.search;
       if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
       if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
+      if (nextFilters.recordedBy) params.recordedBy = nextFilters.recordedBy;
 
       setDisbursementFiltersState(nextFilters);
       setLoading(true);
@@ -164,7 +180,7 @@ export function WelfareProvider({ children }) {
         setLoading(false);
       }
     },
-    [disbursementFilters]
+    []
   );
 
   const createContribution = useCallback(

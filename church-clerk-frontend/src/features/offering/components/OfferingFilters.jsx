@@ -1,4 +1,5 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import debounce from "../../../shared/utils/debounce.js";
 import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import OfferingContext from "../offering.store.js";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
@@ -25,6 +26,30 @@ function OfferingFilters() {
   const { values: lookupServiceTypes } = useLookupValues("serviceType");
   const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
 
+  const [recordedByValue, setRecordedByValue] = useState(store?.filters?.recordedBy || "");
+
+  const fetchRef = useRef(store?.fetchOfferings);
+  useEffect(() => { fetchRef.current = store?.fetchOfferings; });
+
+  const debouncedRecordedBy = useMemo(() => debounce((next) => {
+    fetchRef.current?.({ recordedBy: next, page: 1 });
+  }, 400), []);
+
+  useEffect(() => {
+    setRecordedByValue(store?.filters?.recordedBy || "");
+  }, [store?.filters?.recordedBy]);
+
+  useEffect(() => {
+    return () => { debouncedRecordedBy.cancel(); };
+  }, [debouncedRecordedBy]);
+
+  const onRecordedByChange = (e) => {
+    const next = e.target.value;
+    setRecordedByValue(next);
+    store?.setFilters?.({ recordedBy: next, page: 1 });
+    debouncedRecordedBy(next);
+  };
+
   const appliedDateFrom = store?.filters?.dateFrom || "";
   const appliedDateTo = store?.filters?.dateTo || "";
 
@@ -40,7 +65,13 @@ function OfferingFilters() {
   };
 
   return (
-    <div className="flex items-center gap-2 w-full">
+    <div className="flex items-center gap-2 w-full flex-wrap">
+      <input
+        value={recordedByValue}
+        onChange={onRecordedByChange}
+        className="h-11 flex-1 min-w-[150px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        placeholder="Search recorded by"
+      />
       <select
         value={store?.filters?.serviceType || ""}
         onChange={onServiceTypeChange}

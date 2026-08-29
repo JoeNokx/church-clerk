@@ -37,7 +37,7 @@ const createWelfareDisbursement = async (req, res) => {
 const getAllWelfareDisbursement = async (req, res) => {
     
     try {
-        const { page = 1, limit = 10, category, search = "", dateFrom, dateTo } = req.query;
+        const { page = 1, limit = 10, category, search = "", dateFrom, dateTo, recordedBy } = req.query;
                                         
                         const pageNum = Math.max(1, parseInt(page, 10) || 1);
                         const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -51,9 +51,26 @@ const getAllWelfareDisbursement = async (req, res) => {
                             query.church = req.activeChurch._id;
                         }
                     
-                        //search by beneficiary name
+                        //search by beneficiary name or recordedBy
                         if (search) {
-                            query.beneficiaryName = { $regex: search, $options: "i" };
+                            const User = (await import("../../../models/userModel.js")).default;
+                            const matchingUsers = await User.find({
+                                fullName: { $regex: search, $options: "i" }
+                            }).select("_id");
+                            const createdByIds = matchingUsers.map(u => u._id);
+                            const orClauses = [{ beneficiaryName: { $regex: search, $options: "i" } }];
+                            if (createdByIds.length) orClauses.push({ createdBy: { $in: createdByIds } });
+                            query.$or = orClauses;
+                        }
+
+                        // Filter by recordedBy (via createdBy user fullName)
+                        if (recordedBy) {
+                            const User = (await import("../../../models/userModel.js")).default;
+                            const matchingUsers = await User.find({
+                                fullName: { $regex: recordedBy, $options: "i" }
+                            }).select("_id");
+                            const recordedByUserIds = matchingUsers.map(u => u._id);
+                            query.createdBy = { $in: recordedByUserIds.length ? recordedByUserIds : [null] };
                         }
 
                         // Filter by category
@@ -83,6 +100,7 @@ const getAllWelfareDisbursement = async (req, res) => {
                         // FETCH welfare Disbursement 
                         const welfareDisbursement = await WelfareDisbursements.find(query)
                         .select("beneficiaryName category amount date description paymentMethod createdBy referenceId")
+                        .populate("createdBy", "fullName")
                             .sort({ createdAt: -1 })
                             .skip(skip)
                             .limit(limitNum)

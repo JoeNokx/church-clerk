@@ -4,7 +4,7 @@ import Member from "../models/memberModel.js";
 
 const createServiceIndividualAttendance = async (req, res) => {
   try {
-    const { date, serviceType, presentMembers } = req.body;
+    const { date, serviceType, mainSpeaker, presentMembers } = req.body;
 
     if (!date) return res.status(400).json({ message: "date is required" });
     if (!serviceType) return res.status(400).json({ message: "serviceType is required" });
@@ -20,6 +20,7 @@ const createServiceIndividualAttendance = async (req, res) => {
       createdBy: req.user._id,
       date,
       serviceType,
+      mainSpeaker: mainSpeaker || "",
       presentMembers: ids,
       totalMembersSnapshot
     });
@@ -32,7 +33,7 @@ const createServiceIndividualAttendance = async (req, res) => {
 
 const getAllServiceIndividualAttendances = async (req, res) => {
   try {
-    const { page = 1, limit = 10, dateFrom, dateTo, serviceType } = req.query;
+    const { page = 1, limit = 10, dateFrom, dateTo, serviceType, mainSpeaker } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -41,6 +42,7 @@ const getAllServiceIndividualAttendances = async (req, res) => {
     const query = { church: req.activeChurch._id };
 
     if (serviceType) query.serviceType = serviceType;
+    if (mainSpeaker) query.mainSpeaker = { $regex: mainSpeaker, $options: "i" };
 
     if (dateFrom || dateTo) {
       query.date = {};
@@ -53,7 +55,7 @@ const getAllServiceIndividualAttendances = async (req, res) => {
     }
 
     const attendances = await ServiceIndividualAttendance.find(query)
-      .select("date serviceType presentMembers totalMembersSnapshot")
+      .select("date serviceType mainSpeaker presentMembers totalMembersSnapshot")
       .sort({ date: -1, createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
@@ -65,7 +67,7 @@ const getAllServiceIndividualAttendances = async (req, res) => {
       const presentCount = Array.isArray(a?.presentMembers) ? a.presentMembers.length : 0;
       const totalSnap = Number(a?.totalMembersSnapshot || 0);
       const absentCount = Math.max(0, totalSnap - presentCount);
-      return { ...a, presentCount, absentCount };
+      return { ...a, presentCount, absentCount, mainSpeaker: a.mainSpeaker || "" };
     });
 
     const totalPages = Math.ceil(total / limitNum);
@@ -90,7 +92,7 @@ const getSingleServiceIndividualAttendance = async (req, res) => {
     const { id } = req.params;
 
     const attendance = await ServiceIndividualAttendance.findOne({ _id: id, church: req.activeChurch._id })
-      .select("date serviceType presentMembers totalMembersSnapshot")
+      .select("date serviceType mainSpeaker presentMembers totalMembersSnapshot")
       .populate("presentMembers", "firstName lastName phoneNumber email streetAddress")
       .lean();
 
@@ -109,7 +111,7 @@ const getSingleServiceIndividualAttendance = async (req, res) => {
 const updateServiceIndividualAttendance = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, serviceType, presentMembers } = req.body;
+    const { date, serviceType, mainSpeaker, presentMembers } = req.body;
 
     const churchId = req.activeChurch._id;
 
@@ -119,7 +121,7 @@ const updateServiceIndividualAttendance = async (req, res) => {
 
     const attendance = await ServiceIndividualAttendance.findOneAndUpdate(
       { _id: id, church: churchId },
-      { date, serviceType, presentMembers: ids, totalMembersSnapshot },
+      { date, serviceType, mainSpeaker: mainSpeaker || "", presentMembers: ids, totalMembersSnapshot },
       { new: true, runValidators: true }
     );
 

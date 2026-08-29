@@ -35,6 +35,7 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
   const [serviceType, setServiceType] = useState("");
   const [serviceDate, setServiceDate] = useState("");
   const [invitedBy, setInvitedBy] = useState("");
+  const [source, setSource] = useState("");
   const [note, setNote] = useState("");
   const [formError, setFormError] = useState(null);
 
@@ -51,6 +52,7 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
       setServiceType(initialData.serviceType || "");
       setServiceDate((initialData.serviceDate || "").slice(0, 10));
       setInvitedBy(initialData.invitedBy || "");
+      setSource(initialData.source || "");
       setNote(initialData.note || "");
       return;
     }
@@ -62,6 +64,7 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
     setServiceType("");
     setServiceDate("");
     setInvitedBy("");
+    setSource("");
     setNote("");
   }, [open, mode, initialData]);
 
@@ -107,6 +110,7 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
       serviceType,
       serviceDate,
       invitedBy,
+      source,
       note
     };
 
@@ -240,6 +244,28 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder=""
               />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-500 text-xs">How did you hear about the church?</label>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              >
+                <option value="">Select a source</option>
+                <option value="Church member">Church member</option>
+                <option value="Friend or family">Friend or family</option>
+                <option value="Church outreach">Church outreach</option>
+                <option value="Church program">Church program</option>
+                <option value="Social media">Social media</option>
+                <option value="Church website">Church website</option>
+                <option value="Online search">Online search</option>
+                <option value="Flyer">Flyer</option>
+                <option value="Radio or television">Radio or television</option>
+                <option value="Passed by">Passed by</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             <div className="md:col-span-2">

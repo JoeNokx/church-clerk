@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import ChurchContext from "../church/church.store.js";
 import {
@@ -23,13 +23,15 @@ const emptyFilters = {
   limit: 10,
   category: "",
   dateFrom: "",
-  dateTo: ""
+  dateTo: "",
+  recordedBy: ""
 };
 
 export function ExpensesProvider({ children }) {
   const [generalExpenses, setGeneralExpenses] = useState([]);
   const [pagination, setPagination] = useState(emptyPagination);
   const [filters, setFiltersState] = useState(emptyFilters);
+  const filtersRef = useRef(emptyFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -42,12 +44,17 @@ export function ExpensesProvider({ children }) {
   }, [churchStore?.activeChurch]);
 
   const setFilters = useCallback((partial) => {
-    setFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
+    setFiltersState((prev) => {
+      const next = { ...prev, ...(partial || {}) };
+      filtersRef.current = next;
+      return next;
+    });
   }, []);
 
   const fetchGeneralExpenses = useCallback(
     async (partial) => {
-      const nextFilters = { ...filters, ...(partial || {}) };
+      const nextFilters = { ...filtersRef.current, ...(partial || {}) };
+      filtersRef.current = nextFilters;
 
       const params = {
         page: nextFilters.page,
@@ -57,6 +64,7 @@ export function ExpensesProvider({ children }) {
       if (nextFilters.category) params.category = nextFilters.category;
       if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
       if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
+      if (nextFilters.recordedBy) params.recordedBy = nextFilters.recordedBy;
 
       setFiltersState(nextFilters);
       setLoading(true);
@@ -76,7 +84,7 @@ export function ExpensesProvider({ children }) {
         setLoading(false);
       }
     },
-    [filters]
+    []
   );
 
   const createGeneralExpenses = useCallback(

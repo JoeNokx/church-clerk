@@ -25,7 +25,8 @@ const emptyFilters = {
   serviceType: "",
   status: "",
   dateFrom: "",
-  dateTo: ""
+  dateTo: "",
+  recordedBy: ""
 };
 
 export function PledgeProvider({ children }) {
@@ -35,6 +36,7 @@ export function PledgeProvider({ children }) {
   const [pledges, setPledges] = useState([]);
   const [pagination, setPagination] = useState(emptyPagination);
   const [filters, setFiltersState] = useState(emptyFilters);
+  const filtersRef = useRef(emptyFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -47,13 +49,18 @@ export function PledgeProvider({ children }) {
   }, [churchStore?.activeChurch]);
 
   const setFilters = useCallback((partial) => {
-    setFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
+    setFiltersState((prev) => {
+      const next = { ...prev, ...(partial || {}) };
+      filtersRef.current = next;
+      return next;
+    });
   }, []);
 
   const fetchPledges = useCallback(
     async (partial) => {
       const requestId = (fetchRequestIdRef.current += 1);
-      const nextFilters = { ...filters, ...(partial || {}) };
+      const nextFilters = { ...filtersRef.current, ...(partial || {}) };
+      filtersRef.current = nextFilters;
 
       const params = {
         page: nextFilters.page,
@@ -65,6 +72,7 @@ export function PledgeProvider({ children }) {
       if (nextFilters.status) params.status = nextFilters.status;
       if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
       if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
+      if (nextFilters.recordedBy) params.recordedBy = nextFilters.recordedBy;
 
       setFiltersState(nextFilters);
       setLoading(true);
@@ -95,7 +103,7 @@ export function PledgeProvider({ children }) {
         setLoading(false);
       }
     },
-    [filters]
+    []
   );
 
   const createPledge = useCallback(

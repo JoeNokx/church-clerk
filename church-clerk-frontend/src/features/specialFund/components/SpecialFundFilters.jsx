@@ -65,10 +65,9 @@ function SpecialFundFilters() {
       <input
         value={searchValue}
         onChange={onSearchChange}
-        className="h-11 flex-1 min-w-[120px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search giver name"
+        className="h-11 flex-1 min-w-[200px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        placeholder="Search giver name or recorded by"
       />
-
       <select
         value={store?.filters?.category || ""}
         onChange={onCategoryChange}
@@ -81,7 +80,6 @@ function SpecialFundFilters() {
           </option>
         ))}
       </select>
-
       <div className="shrink-0">
         <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
       </div>

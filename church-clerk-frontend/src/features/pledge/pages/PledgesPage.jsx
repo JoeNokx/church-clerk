@@ -555,12 +555,22 @@ function PledgesPageInner() {
   const STATUS_OPTIONS = ["In Progress", "Completed"];
 
   const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
+  const [recordedByValue, setRecordedByValue] = useState(store?.filters?.recordedBy || "");
+
+  const fetchPledgesRef = useRef(store?.fetchPledges);
+  useEffect(() => { fetchPledgesRef.current = store?.fetchPledges; });
 
   const debouncedSearch = useMemo(() => {
     return debounce((value) => {
-      store?.fetchPledges?.({ search: value, page: 1 });
+      fetchPledgesRef.current?.({ search: value, page: 1 });
     }, 400);
-  }, [store]);
+  }, []);
+
+  const debouncedRecordedBy = useMemo(() => {
+    return debounce((value) => {
+      fetchPledgesRef.current?.({ recordedBy: value, page: 1 });
+    }, 400);
+  }, []);
 
   useEffect(() => {
     if (!store?.activeChurchId) return;
@@ -572,10 +582,15 @@ function PledgesPageInner() {
   }, [store?.filters?.search]);
 
   useEffect(() => {
+    setRecordedByValue(store?.filters?.recordedBy || "");
+  }, [store?.filters?.recordedBy]);
+
+  useEffect(() => {
     return () => {
       debouncedSearch.cancel();
+      debouncedRecordedBy.cancel();
     };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, debouncedRecordedBy]);
 
   useEffect(() => {
     if (!menuOpenId) return;
@@ -700,6 +715,13 @@ function PledgesPageInner() {
     setSearchValue(value);
     store?.setFilters?.({ search: value, page: 1 });
     debouncedSearch(value);
+  };
+
+  const onRecordedByChange = (e) => {
+    const value = e.target.value;
+    setRecordedByValue(value);
+    store?.setFilters?.({ recordedBy: value, page: 1 });
+    debouncedRecordedBy(value);
   };
 
   const onServiceTypeChange = async (e) => {
@@ -836,8 +858,8 @@ function PledgesPageInner() {
             <input
               value={searchValue}
               onChange={onSearchChange}
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
-              placeholder="Search name or phone"
+              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-72 text-sm"
+              placeholder="Search name, phone or recorded by"
             />
 
             <div className="flex flex-row flex-wrap gap-2 items-end justify-end">
@@ -924,6 +946,7 @@ function PledgesPageInner() {
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Balance</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Deadline</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                     <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                   </tr>
                 </thead>
@@ -939,6 +962,7 @@ function PledgesPageInner() {
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <StatusChip value={row?.status} />
                       </td>
+                      <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "-"}</td>
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu items={[
                           canView && { label: "View", onClick: () => viewDetails(row) },
