@@ -1,7 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import AttendanceContext from "../attendance.store.js";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const SERVICE_TYPES = [
@@ -69,44 +70,87 @@ function VisitorFilters() {
     store?.fetchVisitors({ dateFrom: from, dateTo: to, page: 1 });
   };
 
+  const serviceOptions = useMemo(
+    () => serviceTypeOptions.map((t) => ({ label: t, value: t })),
+    [serviceTypeOptions]
+  );
+
+  const SOURCE_OPTIONS = [
+    { label: "Church member", value: "Church member" },
+    { label: "Friend or family", value: "Friend or family" },
+    { label: "Church outreach", value: "Church outreach" },
+    { label: "Church program", value: "Church program" },
+    { label: "Social media", value: "Social media" },
+    { label: "Church website", value: "Church website" },
+    { label: "Online search", value: "Online search" },
+    { label: "Flyer", value: "Flyer" },
+    { label: "Radio or television", value: "Radio or television" },
+    { label: "Passed by", value: "Passed by" },
+    { label: "Other", value: "Other" },
+  ];
+
+  const selectConfigs = [
+    {
+      key: "serviceType",
+      value: store?.visitorFilters?.serviceType || "",
+      onChange: (v) => onServiceTypeChange({ target: { value: v } }),
+      options: serviceOptions,
+      placeholder: "All Services",
+    },
+    {
+      key: "source",
+      value: store?.visitorFilters?.source || "",
+      onChange: (v) => onSourceChange({ target: { value: v } }),
+      options: SOURCE_OPTIONS,
+      placeholder: "All Sources",
+    },
+  ];
+
+  const mobileFilters = [
+    {
+      key: "serviceType",
+      label: "Service Type",
+      value: store?.visitorFilters?.serviceType || "",
+      defaultValue: "",
+      options: [{ label: "All Services", value: "" }, ...serviceOptions],
+    },
+    {
+      key: "source",
+      label: "Source",
+      value: store?.visitorFilters?.source || "",
+      defaultValue: "",
+      options: [{ label: "All Sources", value: "" }, ...SOURCE_OPTIONS],
+    },
+  ];
+
+  const onMobileApply = (pending) => {
+    store?.setVisitorFilters({ serviceType: pending.serviceType, source: pending.source, page: 1 });
+    store?.fetchVisitors({ serviceType: pending.serviceType, source: pending.source, page: 1 });
+  };
+
   return (
-    <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-end md:justify-end">
-      <input
-        value={value}
-        onChange={onChange}
-        className="h-11 w-full md:w-[180px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Name or invited by"
+    <>
+      <FilterBar
+        searchValue={value}
+        onSearchChange={(v) => onChange({ target: { value: v } })}
+        searchPlaceholder="Name or invited by"
+        searchWidth="md:w-[320px]"
+        selects={selectConfigs}
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
       />
-      <select
-        value={store?.visitorFilters?.serviceType || ""}
-        onChange={onServiceTypeChange}
-        className="h-11 w-full md:flex-none rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-auto text-sm"
-      >
-        <option value="">All Services</option>
-        {serviceTypeOptions.map((c) => (
-          <option key={c} value={c}>{c}</option>
-        ))}
-      </select>
-      <select
-        value={store?.visitorFilters?.source || ""}
-        onChange={onSourceChange}
-        className="h-11 w-full md:flex-none rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-auto text-sm"
-      >
-        <option value="">All Sources</option>
-        <option value="Church member">Church member</option>
-        <option value="Friend or family">Friend or family</option>
-        <option value="Church outreach">Church outreach</option>
-        <option value="Church program">Church program</option>
-        <option value="Social media">Social media</option>
-        <option value="Church website">Church website</option>
-        <option value="Online search">Online search</option>
-        <option value="Flyer">Flyer</option>
-        <option value="Radio or television">Radio or television</option>
-        <option value="Passed by">Passed by</option>
-        <option value="Other">Other</option>
-      </select>
-      <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
-    </div>
+      <MobileFilterBar
+        searchValue={value}
+        onSearchChange={(v) => onChange({ target: { value: v } })}
+        searchPlaceholder="Name or invited by"
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+        filters={mobileFilters}
+        onApply={onMobileApply}
+      />
+    </>
   );
 }
 

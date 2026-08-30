@@ -101,7 +101,7 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply }) {
       <button
         type="button"
         onClick={togglePicker}
-        className="inline-flex h-[44px] items-center gap-2 rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-[16px] md:px-[18px] lg:px-3 text-[14px] font-semibold text-gray-700 hover:bg-gray-50 md:h-12 lg:h-11 lg:text-sm"
+        className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
           <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

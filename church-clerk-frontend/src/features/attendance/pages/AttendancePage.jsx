@@ -10,7 +10,7 @@ import VisitorFilters from "../components/VisitorFilters.jsx";
 import VisitorForm from "../components/VisitorForm.jsx";
 import VisitorTable from "../components/VisitorTable.jsx";
 import ChurchContext from "../../church/church.store.js";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import {
   getServiceIndividualAttendances,
@@ -474,31 +474,24 @@ function AttendancePageInner() {
                   <div className="font-semibold text-gray-900 text-sm">Individual Attendance</div>
                   <div className="text-gray-500 text-xs">Record and track member presence per service</div>
                 </div>
-                <div className="flex items-center gap-2 w-full md:w-auto md:flex-wrap md:justify-end">
-                  <input
-                    value={indivSpeakerSearch}
-                    onChange={(e) => setIndivSpeakerSearch(e.target.value)}
-                    placeholder="Search speaker..."
-                    className="h-11 flex-1 md:flex-none md:w-[180px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                <FilterBar
+                    searchValue={indivSpeakerSearch}
+                    onSearchChange={(v) => setIndivSpeakerSearch(v)}
+                    searchPlaceholder="Search speaker..."
+                    searchWidth="md:w-[320px]"
+                    selects={[
+                      {
+                        key: "serviceType",
+                        value: indivServiceTypeFilter,
+                        onChange: (v) => setIndivServiceTypeFilter(v),
+                        options: serviceTypeOptions.map((c) => ({ label: c, value: c })),
+                        placeholder: "All Services",
+                      },
+                    ]}
+                    dateFrom={indivDateFrom}
+                    dateTo={indivDateTo}
+                    onDateApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
                   />
-                  <select
-                    value={indivServiceTypeFilter}
-                    onChange={(e) => setIndivServiceTypeFilter(e.target.value)}
-                    className="h-11 flex-1 md:flex-none rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-auto text-sm"
-                  >
-                    <option value="">All Services</option>
-                    {serviceTypeOptions.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <div className="flex-1 md:flex-none">
-                    <DateRangeFilter
-                      appliedFrom={indivDateFrom}
-                      appliedTo={indivDateTo}
-                      onApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
-                    />
-                  </div>
-                </div>
               </div>
 
               {indivError ? (

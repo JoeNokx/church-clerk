@@ -1,7 +1,8 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import AttendanceContext from "../attendance.store.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const SERVICE_TYPES = [
@@ -58,31 +59,59 @@ function AttendanceFilters() {
     await store?.fetchAttendances({ dateFrom: from, dateTo: to, page: 1 });
   };
 
-  return (
-    <div className="flex items-center gap-2 w-full md:w-auto md:flex-wrap md:justify-end">
-      <input
-        value={speakerValue}
-        onChange={onSpeakerChange}
-        placeholder="Search speaker..."
-        className="h-11 flex-1 md:flex-none md:w-[180px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-      />
-      <select
-        value={store?.attendanceFilters?.serviceType || ""}
-        onChange={onServiceTypeChange}
-        className="h-11 flex-1 md:flex-none rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-auto text-sm"
-      >
-        <option value="">All Services</option>
-        {serviceTypeOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+  const serviceOptions = useMemo(
+    () => serviceTypeOptions.map((t) => ({ label: t, value: t })),
+    [serviceTypeOptions]
+  );
 
-      <div className="flex-1 md:flex-none">
-        <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
-      </div>
-    </div>
+  const selectConfigs = [
+    {
+      key: "serviceType",
+      value: store?.attendanceFilters?.serviceType || "",
+      onChange: (v) => onServiceTypeChange({ target: { value: v } }),
+      options: serviceOptions,
+      placeholder: "All Services",
+    },
+  ];
+
+  const mobileFilters = [
+    {
+      key: "serviceType",
+      label: "Service Type",
+      value: store?.attendanceFilters?.serviceType || "",
+      defaultValue: "",
+      options: [{ label: "All Services", value: "" }, ...serviceOptions],
+    },
+  ];
+
+  const onMobileApply = async (pending) => {
+    store?.setAttendanceFilters({ serviceType: pending.serviceType, page: 1 });
+    await store?.fetchAttendances({ serviceType: pending.serviceType, page: 1 });
+  };
+
+  return (
+    <>
+      <FilterBar
+        searchValue={speakerValue}
+        onSearchChange={(v) => onSpeakerChange({ target: { value: v } })}
+        searchPlaceholder="Search speaker..."
+        searchWidth="md:w-[320px]"
+        selects={selectConfigs}
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+      />
+      <MobileFilterBar
+        searchValue={speakerValue}
+        onSearchChange={(v) => onSpeakerChange({ target: { value: v } })}
+        searchPlaceholder="Search speaker..."
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+        filters={mobileFilters}
+        onApply={onMobileApply}
+      />
+    </>
   );
 }
 
