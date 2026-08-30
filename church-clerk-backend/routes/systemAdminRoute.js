@@ -40,6 +40,12 @@ import {
   getRoleById,
   deleteRole
 } from "../controller/roleController.js";
+import {
+  getAllSupportRequests,
+  getOpenTicketCount,
+  getSupportRequestById,
+  updateSupportRequestStatus
+} from "../controller/supportRequestController.js";
 import { protectAdmin } from "../middleware/authMiddleware.js";
 import authorizeRoles from "../middleware/roleMiddleware.js";
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
@@ -348,6 +354,35 @@ router.post(
   authorizeRoles("superadmin"),
   requirePermission("billing", "update"),
   devRunBillingCycleForChurch
+);
+
+router.get(
+  "/support-requests/open-count",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  getOpenTicketCount
+);
+router.get(
+  "/support-requests",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  getAllSupportRequests
+);
+router.get(
+  "/support-requests/:id",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  getSupportRequestById
+);
+router.patch(
+  "/support-requests/:id",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  updateSupportRequestStatus
 );
 
 // Mount additional admin subroutes

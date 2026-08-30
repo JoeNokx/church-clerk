@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getMyNotifications,
   markAllNotificationsRead,
@@ -12,7 +13,51 @@ function formatDateTime(value) {
   return d.toLocaleString();
 }
 
+function NotificationRow({ n, onMarkRead, onNavigate }) {
+  const isSupportTicket = n?.type === "support_ticket";
+  const ticketId = n?.meta?.ticketId || null;
+
+  const handleClick = async () => {
+    if (!isSupportTicket || !ticketId) return;
+    if (!n?.readStatus) await onMarkRead();
+    onNavigate(ticketId);
+  };
+
+  return (
+    <div
+      className={`px-5 py-4 ${!n?.readStatus ? "bg-blue-50/40" : ""} ${isSupportTicket && ticketId ? "cursor-pointer hover:bg-gray-50" : ""}`}
+      onClick={isSupportTicket && ticketId ? handleClick : undefined}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            {!n?.readStatus && (
+              <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+            )}
+            <div className="font-semibold text-gray-900 text-sm leading-snug">{n?.title || "Notification"}</div>
+          </div>
+          <div className="mt-1 text-gray-600 text-sm leading-relaxed">{n?.message || ""}</div>
+          {isSupportTicket && ticketId && (
+            <div className="mt-1 text-blue-600 text-xs font-medium">Tap to view ticket →</div>
+          )}
+          <div className="mt-1.5 text-gray-400 text-xs">{formatDateTime(n?.createdAt)}</div>
+        </div>
+        {!n?.readStatus && !isSupportTicket && (
+          <button
+            type="button"
+            onClick={async (e) => { e.stopPropagation(); await onMarkRead(); }}
+            className="shrink-0 rounded-lg border border-gray-200 bg-white px-1.5 py-0.5 md:px-2.5 md:py-1.5 font-semibold text-gray-600 hover:bg-gray-50 text-xs"
+          >
+            Mark read
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function NotificationsDrawer({ open, onClose }) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notifications, setNotifications] = useState([]);
@@ -204,38 +249,24 @@ function NotificationsDrawer({ open, onClose }) {
           ) : displayedNotifications.length ? (
             <div className="divide-y divide-gray-100">
               {displayedNotifications.map((n) => (
-                <div key={n?._id} className={`px-5 py-4 ${!n?.readStatus ? "bg-blue-50/40" : ""}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        {!n?.readStatus && (
-                          <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
-                        )}
-                        <div className="font-semibold text-gray-900 text-sm leading-snug">{n?.title || "Notification"}</div>
-                      </div>
-                      <div className="mt-1 text-gray-600 text-sm leading-relaxed">{n?.message || ""}</div>
-                      <div className="mt-1.5 text-gray-400 text-xs">{formatDateTime(n?.createdAt)}</div>
-                    </div>
-                    {!n?.readStatus && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!n?._id || n?.readStatus) return;
-                          try {
-                            await markNotificationRead(n._id);
-                            setNotifications((prev) =>
-                              prev.map((x) => (String(x?._id) === String(n._id) ? { ...x, readStatus: true } : x))
-                            );
-                            emitUnreadChanged();
-                          } catch { void 0; }
-                        }}
-                        className="shrink-0 rounded-lg border border-gray-200 bg-white px-1.5 py-0.5 md:px-2.5 md:py-1.5 font-semibold text-gray-600 hover:bg-gray-50 text-xs"
-                      >
-                        Mark read
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <NotificationRow
+                  key={n?._id}
+                  n={n}
+                  onMarkRead={async () => {
+                    if (!n?._id || n?.readStatus) return;
+                    try {
+                      await markNotificationRead(n._id);
+                      setNotifications((prev) =>
+                        prev.map((x) => (String(x?._id) === String(n._id) ? { ...x, readStatus: true } : x))
+                      );
+                      emitUnreadChanged();
+                    } catch { void 0; }
+                  }}
+                  onNavigate={(ticketId) => {
+                    onClose();
+                    navigate(`/dashboard?page=support-help&ticketId=${ticketId}`);
+                  }}
+                />
               ))}
             </div>
           ) : (

@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { getOpenSupportTicketCount } from "../Services/systemAdmin.api.js";
 
 function SystemAdminSidebar() {
   const linkBase = "flex items-center gap-3 px-3 py-2 rounded-lg text-sm";
@@ -6,6 +8,21 @@ function SystemAdminSidebar() {
   const linkActive = "bg-blue-50 text-blue-900 font-medium";
 
   const itemClass = ({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`;
+
+  const [openTicketCount, setOpenTicketCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await getOpenSupportTicketCount();
+        if (!cancelled) setOpenTicketCount(Number(res?.data?.count || 0));
+      } catch { void 0; }
+    };
+    void load();
+    const interval = setInterval(load, 60000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
 
   return (
     <aside className="hidden lg:flex w-72 bg-white border-r border-gray-200 h-screen flex-col">
@@ -36,8 +53,13 @@ function SystemAdminSidebar() {
           <NavLink to="/admin/billing/plans" className={itemClass}>
             Billing
           </NavLink>
-          <NavLink to="/admin/announcements" className={itemClass}>
-            Announcements
+          <NavLink to="/admin/announcements" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive} justify-between`}>
+            <span>Announcements</span>
+            {openTicketCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-red-500 text-white text-[10px] font-bold px-1.5">
+                {openTicketCount > 99 ? "99+" : openTicketCount}
+              </span>
+            )}
           </NavLink>
           <NavLink to="/admin/referrals" className={itemClass}>
             Referrals System

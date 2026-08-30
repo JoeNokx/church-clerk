@@ -132,3 +132,15 @@ export const updateSystemInAppAnnouncement = async (id, payload) => {
 export const deleteSystemInAppAnnouncement = async (id) => {
   return await http.delete(`/system-admin/announcements/in-app/${id}`);
 };
+
+export const getOpenSupportTicketCount = async () => {
+  return await http.get("/system-admin/support-requests/open-count", { toastError: false });
+};
+
+export const getSupportRequests = async (params) => {
+  return await http.get("/system-admin/support-requests", { params });
+};
+
+export const updateSupportRequestStatusApi = async (id, payload) => {
+  return await http.patch(`/system-admin/support-requests/${id}`, payload);
+};

@@ -531,6 +531,9 @@ function ChurchProjectDetailsPage() {
   const [confirmKind, setConfirmKind] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
 
+  const [expenseViewOpen, setExpenseViewOpen] = useState(false);
+  const [expenseViewRow, setExpenseViewRow] = useState(null);
+
   const debouncedContribSearch = useDebouncedValue(contribSearch, 300);
   const debouncedExpenseSearch = useDebouncedValue(expenseSearch, 300);
 
@@ -900,7 +903,6 @@ function ChurchProjectDetailsPage() {
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Spent On</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Description</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -912,7 +914,6 @@ function ChurchProjectDetailsPage() {
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.spentOn || "—"}</td>
                           <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[320px] break-words px-4 md:px-6">{row?.description || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
@@ -921,6 +922,7 @@ function ChurchProjectDetailsPage() {
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
+                              { label: "View", onClick: () => { setExpenseViewRow(row); setExpenseViewOpen(true); }, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
                               { label: "Edit", onClick: () => openEditExpense(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
                               { label: "Delete", onClick: () => openConfirmDelete("expense", row?._id), danger: true, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
@@ -957,6 +959,50 @@ function ChurchProjectDetailsPage() {
           </div>
         )}
       </div>
+
+      {expenseViewOpen && expenseViewRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Expense Details</div>
+              <button type="button" onClick={() => { setExpenseViewOpen(false); setExpenseViewRow(null); }} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 px-4 md:px-5 lg:px-6 py-4">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(expenseViewRow?.date)}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                <div className="mt-1 font-semibold text-orange-600 text-sm">{formatCurrency(expenseViewRow?.amount || 0, currency)}</div>
+              </div>
+              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Spent On</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.spentOn || "—"}</div>
+              </div>
+              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.createdBy?.fullName || "—"}</div>
+              </div>
+              {expenseViewRow?.referenceId ? (
+                <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
+                  <div className="mt-1 font-mono text-gray-700 text-xs">{expenseViewRow.referenceId}</div>
+                </div>
+              ) : null}
+              <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Description</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{expenseViewRow?.description || "—"}</div>
+              </div>
+            </div>
+            <div className="flex justify-end px-4 md:px-5 lg:px-6 py-4 border-t border-gray-200">
+              <button type="button" onClick={() => { setExpenseViewOpen(false); setExpenseViewRow(null); }} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ContributionFormModal
         open={contributionModalOpen}

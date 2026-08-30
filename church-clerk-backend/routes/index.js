@@ -58,6 +58,7 @@ import lookupRoute from "./lookupRoute.js";
 import inAppAnnouncementRoute from "./inAppAnnouncementRoute.js";
 import churchGovernanceRoute from "./financeRoute/churchGovernanceRoute.js";
 import publicRoute from "./publicRoute.js";
+import supportRequestRoute from "./supportRequestRoute.js";
 import globalSearchRoute from "./globalSearchRoute.js";
 import outreachRoute from "./outreachRoute.js";
 
@@ -99,5 +100,6 @@ export {
   churchGovernanceRoute,
   publicRoute,
   globalSearchRoute,
-  outreachRoute
+  outreachRoute,
+  supportRequestRoute
 };

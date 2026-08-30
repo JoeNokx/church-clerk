@@ -9,7 +9,9 @@ import {
   updateSystemInAppAnnouncement,
   deleteSystemInAppAnnouncement,
   getSystemSettings,
-  updateSystemSettings
+  updateSystemSettings,
+  getSupportRequests,
+  updateSupportRequestStatusApi
 } from "../Services/systemAdmin.api.js";
 
 function TabButton({ active, onClick, children }) {
@@ -27,7 +29,7 @@ function TabButton({ active, onClick, children }) {
 }
 
 function AnnouncementsPage() {
-  const [tab, setTab] = useState("system");
+  const [tab, setTab] = useState("support");
   const [commTab, setCommTab] = useState("compose");
 
   const [loading, setLoading] = useState(true);
@@ -81,6 +83,15 @@ function AnnouncementsPage() {
   const [deleteConfirmModal, setDeleteConfirmModal] = useState(null);
   const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
   const [archivingId, setArchivingId] = useState(null);
+
+  const [srLoading, setSrLoading] = useState(false);
+  const [srError, setSrError] = useState("");
+  const [srRows, setSrRows] = useState([]);
+  const [srPagination, setSrPagination] = useState(null);
+  const [srSearch, setSrSearch] = useState("");
+  const [srStatusFilter, setSrStatusFilter] = useState("");
+  const [srDetailRow, setSrDetailRow] = useState(null);
+  const [srUpdatingId, setSrUpdatingId] = useState(null);
 
   const balanceGhs = useMemo(() => {
     const per = Number(creditsPerGhs);
@@ -178,6 +189,40 @@ function AnnouncementsPage() {
     else if (commTab === "templates") void loadAnnouncements({ status: "draft", kind: "template" });
     else if (commTab === "history") void loadAnnouncements({ status: "sent", kind: "message" });
   }, [commTab, loadAnnouncements, tab]);
+
+  const loadSupportRequests = useCallback(async ({ page = 1, search = srSearch, status = srStatusFilter } = {}) => {
+    setSrLoading(true);
+    setSrError("");
+    try {
+      const res = await getSupportRequests({ page, limit: 20, search, status });
+      const payload = res?.data;
+      setSrRows(Array.isArray(payload?.supportRequests) ? payload.supportRequests : []);
+      setSrPagination(payload?.pagination || null);
+    } catch (e) {
+      setSrError(e?.response?.data?.message || e?.message || "Failed to load support requests");
+      setSrRows([]);
+    } finally {
+      setSrLoading(false);
+    }
+  }, [srSearch, srStatusFilter]);
+
+  useEffect(() => {
+    if (tab !== "support") return;
+    void loadSupportRequests({ page: 1 });
+  }, [tab, loadSupportRequests]);
+
+  const handleSrStatusUpdate = async (id, newStatus) => {
+    setSrUpdatingId(id);
+    try {
+      await updateSupportRequestStatusApi(id, { status: newStatus });
+      setSrRows((prev) => prev.map((r) => r._id === id ? { ...r, status: newStatus } : r));
+      if (srDetailRow?._id === id) setSrDetailRow((prev) => ({ ...prev, status: newStatus }));
+    } catch (e) {
+      setSrError(e?.response?.data?.message || e?.message || "Failed to update status");
+    } finally {
+      setSrUpdatingId(null);
+    }
+  };
 
   useEffect(() => {
     const handler = (event) => {
@@ -451,6 +496,9 @@ function AnnouncementsPage() {
       </div>
 
       <div className="flex items-center gap-2">
+        <TabButton active={tab === "support"} onClick={() => setTab("support")}>
+          Support Requests
+        </TabButton>
         <TabButton active={tab === "system"} onClick={() => setTab("system")}>
           System Controls &amp; KPIs
         </TabButton>
@@ -575,7 +623,7 @@ function AnnouncementsPage() {
             </div>
           </div>
         </div>
-      ) : (
+      ) : tab === "communications" ? (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <TabButton active={commTab === "compose"} onClick={() => setCommTab("compose")}>
@@ -1172,7 +1220,226 @@ function AnnouncementsPage() {
             )}
           </div>
         </div>
-      )}
+      ) : null}
+      {tab === "support" ? (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="text"
+              value={srSearch}
+              onChange={(e) => setSrSearch(e.target.value)}
+              placeholder="Search subject, name, church…"
+              className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100 w-56"
+            />
+            <select
+              value={srStatusFilter}
+              onChange={(e) => setSrStatusFilter(e.target.value)}
+              className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => loadSupportRequests({ page: 1, search: srSearch, status: srStatusFilter })}
+              className="h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800"
+            >
+              Search
+            </button>
+          </div>
+
+          {srError ? <div className="text-sm text-red-600">{srError}</div> : null}
+
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-50">
+                  <tr className="border-b text-xs font-semibold uppercase text-gray-400">
+                    <th className="py-3 px-4 text-left">Ticket #</th>
+                    <th className="py-3 px-4 text-left">Subject</th>
+                    <th className="py-3 px-4 text-left">Category</th>
+                    <th className="py-3 px-4 text-left">Name</th>
+                    <th className="py-3 px-4 text-left">Church</th>
+                    <th className="py-3 px-4 text-left">Submitted</th>
+                    <th className="py-3 px-4 text-left">Status</th>
+                    <th className="py-3 px-4 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {srLoading ? (
+                    <tr><td colSpan={8} className="py-8 text-center text-gray-500">Loading…</td></tr>
+                  ) : srRows.length ? (
+                    srRows.map((r) => {
+                      const statusColors = {
+                        open: "bg-blue-50 text-blue-700 border-blue-200",
+                        in_progress: "bg-yellow-50 text-yellow-700 border-yellow-200",
+                        resolved: "bg-green-50 text-green-700 border-green-200",
+                        closed: "bg-gray-100 text-gray-500 border-gray-200"
+                      };
+                      return (
+                        <tr key={r?._id} className="hover:bg-gray-50">
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span className="font-mono text-xs bg-gray-100 rounded px-1.5 py-0.5 text-gray-600">{r?.ticketNumber || "—"}</span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-900 max-w-[200px] truncate">{r?.subject || "—"}</td>
+                          <td className="py-3 px-4 text-gray-600 whitespace-nowrap">{r?.category || "—"}</td>
+                          <td className="py-3 px-4 text-gray-700 whitespace-nowrap">{r?.name || r?.submittedBy?.fullName || "—"}</td>
+                          <td className="py-3 px-4 text-gray-700 whitespace-nowrap">{r?.churchName || r?.church?.name || "—"}</td>
+                          <td className="py-3 px-4 text-gray-500 whitespace-nowrap text-xs">{r?.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusColors[r?.status] || "bg-gray-100 text-gray-500 border-gray-200"}`}>
+                              {r?.status === "in_progress" ? "In Progress" : r?.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : "—"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setSrDetailRow(r)}
+                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                              >
+                                View
+                              </button>
+                              {r?.status !== "resolved" && r?.status !== "closed" ? (
+                                <button
+                                  type="button"
+                                  disabled={srUpdatingId === r?._id}
+                                  onClick={() => handleSrStatusUpdate(r._id, "resolved")}
+                                  className="rounded-lg border border-green-200 bg-white px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
+                                >
+                                  Resolve
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr><td colSpan={8} className="py-8 text-center text-gray-500">No support requests found.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {srPagination ? (
+              <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-3">
+                <button
+                  type="button"
+                  disabled={!srPagination?.hasPrev}
+                  onClick={() => loadSupportRequests({ page: srPagination.prevPage })}
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-50"
+                >
+                  Prev
+                </button>
+                <span className="text-xs text-gray-500">Page {srPagination.currentPage} of {srPagination.totalPages || 1}</span>
+                <button
+                  type="button"
+                  disabled={!srPagination?.hasNext}
+                  onClick={() => loadSupportRequests({ page: srPagination.nextPage })}
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {srDetailRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900">Support Request Details</div>
+              <button type="button" onClick={() => setSrDetailRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 p-5">
+              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold text-gray-500">Subject</div>
+                  {srDetailRow?.ticketNumber && (
+                    <span className="font-mono text-xs bg-blue-50 border border-blue-200 rounded px-2 py-0.5 text-blue-700">{srDetailRow.ticketNumber}</span>
+                  )}
+                </div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{srDetailRow?.subject || "—"}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">Category</div>
+                <div className="mt-1 text-gray-900 text-sm">{srDetailRow?.category || "—"}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">Status</div>
+                <div className="mt-1 text-gray-900 text-sm capitalize">{srDetailRow?.status === "in_progress" ? "In Progress" : srDetailRow?.status || "—"}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">Name</div>
+                <div className="mt-1 text-gray-900 text-sm">{srDetailRow?.name || srDetailRow?.submittedBy?.fullName || "—"}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">Church</div>
+                <div className="mt-1 text-gray-900 text-sm">{srDetailRow?.churchName || srDetailRow?.church?.name || "—"}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">Email</div>
+                <div className="mt-1 text-gray-900 text-sm">{srDetailRow?.submittedBy?.email || "—"}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">Submitted</div>
+                <div className="mt-1 text-gray-900 text-sm">{srDetailRow?.createdAt ? new Date(srDetailRow.createdAt).toLocaleString() : "—"}</div>
+              </div>
+              <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <div className="text-xs font-semibold text-gray-500">Description</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{srDetailRow?.description || "—"}</div>
+              </div>
+              {(srDetailRow?.rating || srDetailRow?.ratingFeedback) && (
+                <div className="col-span-2 rounded-lg border border-purple-100 bg-purple-50 px-4 py-3">
+                  <div className="text-xs font-semibold text-purple-700 mb-1">User Rating &amp; Feedback</div>
+                  {srDetailRow?.rating && (
+                    <div className="flex items-center gap-1 text-amber-400 text-lg">
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <span key={i}>{i < srDetailRow.rating ? "★" : "☆"}</span>
+                      ))}
+                      <span className="ml-2 text-xs text-purple-700 font-semibold">{srDetailRow.rating}/5</span>
+                    </div>
+                  )}
+                  {srDetailRow?.ratingFeedback && (
+                    <div className="mt-1 text-sm text-purple-800 italic">&ldquo;{srDetailRow.ratingFeedback}&rdquo;</div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-between border-t border-gray-200 px-5 py-4">
+              <div className="flex items-center gap-2">
+                {["open", "in_progress", "resolved", "closed"].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={srUpdatingId === srDetailRow?._id || srDetailRow?.status === s}
+                    onClick={() => handleSrStatusUpdate(srDetailRow._id, s)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+                      srDetailRow?.status === s
+                        ? "bg-blue-700 text-white border-blue-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {s === "in_progress" ? "In Progress" : s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={() => setSrDetailRow(null)} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {deleteConfirmModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">

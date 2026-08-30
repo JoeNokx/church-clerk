@@ -10,10 +10,12 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["payment", "subscription", "trial", "welcome", "impersonation", "system_announcement"],
+      enum: ["payment", "subscription", "trial", "welcome", "impersonation", "system_announcement", "support_ticket"],
       required: true,
       index: true
     },
+    actionUrl: { type: String, default: null },
+    meta: { type: mongoose.Schema.Types.Mixed, default: null },
     title: {
       type: String,
       required: true,
