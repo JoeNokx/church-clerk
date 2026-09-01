@@ -15,6 +15,8 @@ import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
@@ -539,11 +541,17 @@ function BusinessVenturesPage() {
           <div className="font-semibold text-gray-900 text-sm">Business Ventures</div>
           <div className="text-gray-500 text-xs">All ventures and financials</div>
         </div>
-        <input
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
-          placeholder="Search business name or recorded by"
+        <FilterBar
+          searchValue={searchValue}
+          onSearchChange={(v) => setSearchValue(v)}
+          searchPlaceholder="Search business name or recorded by"
+          searchWidth="md:w-[320px]"
+          selects={[]}
+        />
+        <MobileFilterBar
+          searchValue={searchValue}
+          onSearchChange={(v) => setSearchValue(v)}
+          searchPlaceholder="Search business name or recorded by"
         />
       </div>
 

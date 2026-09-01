@@ -12,6 +12,8 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -84,7 +86,7 @@ function YearInput({ value, onChange }) {
       }}
       maxLength={4}
       placeholder="YYYY"
-      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm w-24"
+      className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-gray-900 text-sm w-24"
     />
   );
 }
@@ -316,59 +318,69 @@ function FinancialStatementPage() {
       />
 
       <div className="mt-2 rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex flex-row flex-wrap gap-2 items-center justify-end">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
             {tab === "monthly" ? (
               <>
-                <div className="flex items-center gap-2">
-                  <div className="hidden md:block font-semibold text-gray-500 text-xs">Month</div>
-                  <select
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-                    value={month}
-                    onChange={(e) => setMonth(Number(e.target.value))}
-                  >
-                    {MONTH_OPTIONS.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
-                  <YearInput value={monthYear} onChange={setMonthYear} />
-                </div>
+                <div className="font-semibold text-gray-900 text-sm">Monthly Statement</div>
+                <div className="mt-1 text-gray-500 text-xs">Select a month and year to view the statement.</div>
               </>
-            ) : null}
-
-            {tab === "quarterly" ? (
+            ) : tab === "quarterly" ? (
               <>
-                <div className="flex items-center gap-2">
-                  <div className="hidden md:block font-semibold text-gray-500 text-xs">Quarter</div>
-                  <select
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-                    value={quarter}
-                    onChange={(e) => setQuarter(Number(e.target.value))}
-                  >
-                    <option value={1}>Q1 (Jan - Mar)</option>
-                    <option value={2}>Q2 (Apr - Jun)</option>
-                    <option value={3}>Q3 (Jul - Sep)</option>
-                    <option value={4}>Q4 (Oct - Dec)</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
-                  <YearInput value={quarterYear} onChange={setQuarterYear} />
-                </div>
+                <div className="font-semibold text-gray-900 text-sm">Quarterly Statement</div>
+                <div className="mt-1 text-gray-500 text-xs">Select a quarter and year to view the statement.</div>
               </>
-            ) : null}
+            ) : (
+              <>
+                <div className="font-semibold text-gray-900 text-sm">Yearly Statement</div>
+                <div className="mt-1 text-gray-500 text-xs">Select a year to view the annual statement.</div>
+              </>
+            )}
+          </div>
 
-            {tab === "annual" ? (
+          <div className="flex flex-wrap gap-2 items-center">
+            {tab === "monthly" ? (
+              <FilterBar
+                searchWidth="md:w-[320px]"
+                selects={[
+                  {
+                    key: "month",
+                    value: String(month),
+                    onChange: (v) => setMonth(Number(v)),
+                    options: MONTH_OPTIONS.map((m) => ({ label: m.label, value: String(m.value) })),
+                    placeholder: "Month",
+                  },
+                ]}
+              >
+                <YearInput value={monthYear} onChange={setMonthYear} />
+              </FilterBar>
+            ) : tab === "quarterly" ? (
+              <FilterBar
+                searchWidth="md:w-[320px]"
+                selects={[
+                  {
+                    key: "quarter",
+                    value: String(quarter),
+                    onChange: (v) => setQuarter(Number(v)),
+                    options: [
+                      { label: "Q1 (Jan - Mar)", value: "1" },
+                      { label: "Q2 (Apr - Jun)", value: "2" },
+                      { label: "Q3 (Jul - Sep)", value: "3" },
+                      { label: "Q4 (Oct - Dec)", value: "4" },
+                    ],
+                    placeholder: "Quarter",
+                  },
+                ]}
+              >
+                <YearInput value={quarterYear} onChange={setQuarterYear} />
+              </FilterBar>
+            ) : (
               <div className="flex items-center gap-2">
-                <div className="hidden md:block font-semibold text-gray-500 text-xs">Year</div>
                 <YearInput value={annualYear} onChange={setAnnualYear} />
               </div>
-            ) : null}
+            )}
           </div>
+        </div>
 
         <div className="mt-4 text-gray-700 text-sm">
           <span className="font-semibold">Period:</span> {statement?.period?.label || "—"}
@@ -540,7 +552,7 @@ function FinancialStatementPage() {
               </div>
             </div>
           </div>
-       canExport &&  </>
+        </>
       ) : null}
 
       {exportOpen ? (

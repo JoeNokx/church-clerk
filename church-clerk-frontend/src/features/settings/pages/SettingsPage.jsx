@@ -16,6 +16,8 @@ import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -2064,37 +2066,62 @@ function SettingsPage() {
           {usersError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{usersError}</div> : null}
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-col md:flex-row gap-3 w-full">
-                <input
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  placeholder="Search user name, email or phone…"
-                  className="w-full md:max-w-sm rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
-                />
-
-                <select
-                  value={userRoleFilter}
-                  onChange={(e) => setUserRoleFilter(e.target.value)}
-                  className="w-full md:max-w-xs rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
-                >
-                  <option value="">All roles</option>
-                  {churchRoles.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Users &amp; Roles</div>
+                <div className="mt-1 text-gray-500 text-xs">Manage user accounts and their assigned roles.</div>
               </div>
-
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={handleOpenAdd}
-                  disabled={!canWrite}
-                  className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
-                >
-                  Add User
-                </button>
-              </div>
+              <FilterBar
+                searchValue={userSearch}
+                onSearchChange={(v) => setUserSearch(v)}
+                searchPlaceholder="Search user name, email or phone…"
+                searchWidth="md:w-[320px]"
+                selects={[
+                  {
+                    key: "role",
+                    value: userRoleFilter,
+                    onChange: (v) => setUserRoleFilter(v),
+                    options: churchRoles.map((r) => ({ label: r, value: r })),
+                    placeholder: "All roles",
+                  },
+                ]}
+              >
+                {canWrite ? (
+                  <button
+                    type="button"
+                    onClick={handleOpenAdd}
+                    className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
+                  >
+                    Add User
+                  </button>
+                ) : null}
+              </FilterBar>
+              <MobileFilterBar
+                searchValue={userSearch}
+                onSearchChange={(v) => setUserSearch(v)}
+                searchPlaceholder="Search user name, email or phone…"
+                filters={[
+                  {
+                    key: "role",
+                    label: "Role",
+                    value: userRoleFilter,
+                    defaultValue: "",
+                    options: [{ label: "All roles", value: "" }, ...churchRoles.map((r) => ({ label: r, value: r }))],
+                  },
+                ]}
+                onApply={(pending) => setUserRoleFilter(pending.role)}
+              />
+              {canWrite ? (
+                <div className="md:hidden">
+                  <button
+                    type="button"
+                    onClick={handleOpenAdd}
+                    className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
+                  >
+                    Add User
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             {usersLoading ? (
@@ -2238,178 +2265,79 @@ function SettingsPage() {
       {tab === "audit" ? (
         <div className="mt-6">
           <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">Audit Log</div>
                 <div className="mt-1 text-gray-500 text-xs">Search and filter user activity within your current church context.</div>
               </div>
+              <FilterBar
+                searchValue={auditSearch}
+                onSearchChange={(v) => setAuditSearch(v)}
+                searchPlaceholder="Search user name"
+                searchWidth="md:w-[320px]"
+                selects={[
+                  {
+                    key: "module",
+                    value: auditModule,
+                    onChange: (v) => setAuditModule(v),
+                    options: auditModuleOptions.map((m) => ({ label: m, value: m })),
+                    placeholder: "All Modules",
+                  },
+                  {
+                    key: "action",
+                    value: auditAction,
+                    onChange: (v) => setAuditAction(v),
+                    options: ["Create","Update","Delete","Activate","Deactivate","Convert","Login","Register","Logout","ChangePassword"].map((a) => ({ label: a, value: a })),
+                    placeholder: "All Actions",
+                  },
+                  {
+                    key: "role",
+                    value: auditRole,
+                    onChange: (v) => setAuditRole(v),
+                    options: ["churchadmin","associateadmin","secretary","financialofficer","leader"].map((r) => ({ label: r, value: r })),
+                    placeholder: "All Roles",
+                  },
+                ]}
+                dateFrom={auditDateFrom}
+                dateTo={auditDateTo}
+                onDateApply={(from, to) => { setAuditDateFrom(from); setAuditDateTo(to); }}
+              />
+              <MobileFilterBar
+                searchValue={auditSearch}
+                onSearchChange={(v) => setAuditSearch(v)}
+                searchPlaceholder="Search user name"
+                dateFrom={auditDateFrom}
+                dateTo={auditDateTo}
+                onDateApply={(from, to) => { setAuditDateFrom(from); setAuditDateTo(to); }}
+                filters={[
+                  {
+                    key: "module",
+                    label: "Module",
+                    value: auditModule,
+                    defaultValue: "",
+                    options: [{ label: "All Modules", value: "" }, ...auditModuleOptions.map((m) => ({ label: m, value: m }))],
+                  },
+                  {
+                    key: "action",
+                    label: "Action",
+                    value: auditAction,
+                    defaultValue: "",
+                    options: [{ label: "All Actions", value: "" }, ...["Create","Update","Delete","Activate","Deactivate","Convert","Login","Register","Logout","ChangePassword"].map((a) => ({ label: a, value: a }))],
+                  },
+                  {
+                    key: "role",
+                    label: "Role",
+                    value: auditRole,
+                    defaultValue: "",
+                    options: [{ label: "All Roles", value: "" }, ...["churchadmin","associateadmin","secretary","financialofficer","leader"].map((r) => ({ label: r, value: r }))],
+                  },
+                ]}
+                onApply={(pending) => { setAuditModule(pending.module); setAuditAction(pending.action); setAuditRole(pending.role); }}
+              />
             </div>
-
             {auditError ? (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{auditError}</div>
             ) : null}
-
-            <div className="mt-4 flex flex-nowrap items-end gap-3 overflow-x-auto">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">Search:</span>
-                <input
-                  value={auditSearch}
-                  onChange={(e) => setAuditSearch(e.target.value)}
-                  className="h-11 w-[240px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  placeholder="User name"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">Module:</span>
-                <select
-                  value={auditModule}
-                  onChange={(e) => setAuditModule(e.target.value)}
-                  className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                >
-                  <option value="">All Modules</option>
-                  {auditModuleOptions.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">Action:</span>
-                <select
-                  value={auditAction}
-                  onChange={(e) => setAuditAction(e.target.value)}
-                  className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                >
-                  <option value="">All Actions</option>
-                  <option value="Create">Create</option>
-                  <option value="Update">Update</option>
-                  <option value="Delete">Delete</option>
-                  <option value="Activate">Activate</option>
-                  <option value="Deactivate">Deactivate</option>
-                  <option value="Convert">Convert</option>
-                  <option value="Login">Login</option>
-                  <option value="Register">Register</option>
-                  <option value="Logout">Logout</option>
-                  <option value="ChangePassword">ChangePassword</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">Role:</span>
-                <select
-                  value={auditRole}
-                  onChange={(e) => setAuditRole(e.target.value)}
-                  className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                >
-                  <option value="">All Roles</option>
-                  <option value="churchadmin">churchadmin</option>
-                  <option value="associateadmin">associateadmin</option>
-                  <option value="secretary">secretary</option>
-                  <option value="financialofficer">financialofficer</option>
-                  <option value="leader">leader</option>
-                </select>
-              </div>
-
-              <div className="relative" ref={auditDatePickerRef}>
-                <button
-                  type="button"
-                  onClick={() => setAuditDatePickerOpen((v) => !v)}
-                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 md:h-12 text-sm"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gray-500">
-                    <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
-                  </svg>
-                  <span className="text-gray-700">Date</span>
-                  <span className="text-gray-500 text-xs">{auditDateFrom || auditDateTo ? "Filtered" : "All"}</span>
-                </button>
-
-                {auditDatePickerOpen ? (
-                  <div className="cck-date-dropdown absolute right-0 z-20 mt-2 w-[320px] rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
-                    <div className="flex items-center justify-between gap-3 pb-3">
-                      <div className="font-semibold text-gray-500 text-xs">Filter by date</div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuditDraftFrom("");
-                          setAuditDraftTo("");
-                          setAuditDateFrom("");
-                          setAuditDateTo("");
-                          setAuditDatePickerOpen(false);
-                        }}
-                        className="font-semibold text-gray-600 hover:text-gray-900 text-xs"
-                      >
-                        Clear
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <div className="font-semibold text-gray-500 text-xs">From</div>
-                        <input
-                          type="date"
-                          value={auditDraftFrom}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setAuditDraftFrom(value);
-                            if (auditDraftTo && value && auditDraftTo < value) {
-                              setAuditDraftTo("");
-                            }
-                          }}
-                          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-500 text-xs">To</div>
-                        <input
-                          type="date"
-                          value={auditDraftTo}
-                          min={auditDraftFrom || undefined}
-                          onChange={(e) => setAuditDraftTo(e.target.value)}
-                          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-3 flex items-center justify-end">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const from = auditDraftFrom || "";
-                          const to = auditDraftTo || "";
-
-                          if (!from && !to) {
-                            setAuditDateFrom("");
-                            setAuditDateTo("");
-                            setAuditDatePickerOpen(false);
-                            return;
-                          }
-
-                          if ((from && !to) || (!from && to)) {
-                            const single = from || to;
-                            setAuditDateFrom(single);
-                            setAuditDateTo(single);
-                            setAuditDatePickerOpen(false);
-                            return;
-                          }
-
-                          setAuditDateFrom(from);
-                          setAuditDateTo(to);
-                          setAuditDatePickerOpen(false);
-                        }}
-                        className="h-11 rounded-lg bg-blue-600 px-4 font-semibold text-white shadow-sm hover:bg-blue-700 md:h-12 text-sm"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
           </div>
 
           <div className="mt-4 rounded-xl border border-gray-200 overflow-hidden">

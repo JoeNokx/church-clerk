@@ -10,6 +10,8 @@ import TitheAggregateForm from "../components/TitheAggregateForm.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -690,23 +692,30 @@ function TithePageInner() {
             </KpiGrid>
           ) : null}
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8 overflow-visible">
-            <div className="font-semibold text-gray-900 text-sm">Filter by Date</div>
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 overflow-visible">
-              <input
-                value={searchValue}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={mode === "aggregate" ? "Search recorded by..." : "Search by name..."}
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
-              />
-              <DateRangePopover valueFrom={dateFrom} valueTo={dateTo} onApply={applyDateRange} onClear={clearDateRange} />
-            </div>
-          </div>
-
           <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-            <div className="border-b border-gray-200 p-4 md:p-6 lg:p-8">
-              <div className="font-semibold text-gray-900 text-sm">Tithe Records</div>
-              <div className="text-gray-500 text-xs">{mode === "aggregate" ? "All aggregate tithe collections" : "All individual tithe payments"}</div>
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Tithe Records</div>
+                <div className="text-gray-500 text-xs">{mode === "aggregate" ? "All aggregate tithe collections" : "All individual tithe payments"}</div>
+              </div>
+              <FilterBar
+                searchValue={searchValue}
+                onSearchChange={onSearchChange}
+                searchPlaceholder={mode === "aggregate" ? "Search recorded by..." : "Search by name..."}
+                searchWidth="md:w-[320px]"
+                selects={[]}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateApply={(from, to) => applyDateRange({ dateFrom: from, dateTo: to })}
+              />
+              <MobileFilterBar
+                searchValue={searchValue}
+                onSearchChange={onSearchChange}
+                searchPlaceholder={mode === "aggregate" ? "Search recorded by..." : "Search by name..."}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateApply={(from, to) => applyDateRange({ dateFrom: from, dateTo: to })}
+              />
             </div>
 
             {mode === "aggregate" ? (

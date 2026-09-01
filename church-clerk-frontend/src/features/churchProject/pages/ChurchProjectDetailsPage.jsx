@@ -20,6 +20,8 @@ import {
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -742,66 +744,112 @@ function ChurchProjectDetailsPage() {
       />
 
       <div className="mt-2 rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-wrap items-start justify-between gap-3">
+          {/* Left: title + subtitle */}
+          <div>
             {tab === "contributions" ? (
               <>
-                <input
-                  value={contribSearch}
-                  onChange={(e) => {
-                    setContribSearch(e.target.value);
-                    setContribPage(1);
-                  }}
-                  placeholder="Search contributor or recorded by"
-                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
-                />
-                <DateRangePopover
-                  dateFrom={contribDateFrom}
-                  dateTo={contribDateTo}
-                  onChangeFrom={(v) => { setContribDateFrom(v); setContribPage(1); }}
-                  onChangeTo={(v) => { setContribDateTo(v); setContribPage(1); }}
-                  onClear={() => { setContribDateFrom(""); setContribDateTo(""); setContribPage(1); }}
-                />
-                <button
-                  type="button"
-                  onClick={openCreateContribution}
-                  disabled={!canWrite}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
-                >
-                  <span className="leading-none text-lg">+</span>
-                  Add Contribution
-                </button>
+                <div className="font-semibold text-gray-900 text-sm">Contributions</div>
+                <div className="text-gray-500 text-xs">All project contributions</div>
               </>
             ) : (
               <>
-                <input
-                  value={expenseSearch}
-                  onChange={(e) => {
-                    setExpenseSearch(e.target.value);
-                    setExpensePage(1);
-                  }}
-                  placeholder="Search spent on or recorded by"
-                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
-                />
-                <DateRangePopover
-                  dateFrom={expenseDateFrom}
-                  dateTo={expenseDateTo}
-                  onChangeFrom={(v) => { setExpenseDateFrom(v); setExpensePage(1); }}
-                  onChangeTo={(v) => { setExpenseDateTo(v); setExpensePage(1); }}
-                  onClear={() => { setExpenseDateFrom(""); setExpenseDateTo(""); setExpensePage(1); }}
-                />
-                <button
-                  type="button"
-                  onClick={openCreateExpense}
-                  disabled={!canWrite}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
-                >
-                  <span className="leading-none text-lg">+</span>
-                  Record Expense
-                </button>
+                <div className="font-semibold text-gray-900 text-sm">Expenses</div>
+                <div className="text-gray-500 text-xs">All project expenses</div>
               </>
             )}
           </div>
+
+          {/* Right: FilterBar + action button (desktop) */}
+          {tab === "contributions" ? (
+            <>
+              <FilterBar
+                searchValue={contribSearch}
+                onSearchChange={(v) => { setContribSearch(v); setContribPage(1); }}
+                searchPlaceholder="Search contributor or recorded by"
+                searchWidth="md:w-[320px]"
+                selects={[]}
+                dateFrom={contribDateFrom}
+                dateTo={contribDateTo}
+                onDateApply={(from, to) => { setContribDateFrom(from); setContribDateTo(to); setContribPage(1); }}
+              >
+                {canWrite ? (
+                  <button
+                    type="button"
+                    onClick={openCreateContribution}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Add Contribution
+                  </button>
+                ) : null}
+              </FilterBar>
+              <MobileFilterBar
+                searchValue={contribSearch}
+                onSearchChange={(v) => { setContribSearch(v); setContribPage(1); }}
+                searchPlaceholder="Search contributor or recorded by"
+                dateFrom={contribDateFrom}
+                dateTo={contribDateTo}
+                onDateApply={(from, to) => { setContribDateFrom(from); setContribDateTo(to); setContribPage(1); }}
+              />
+              {canWrite ? (
+                <div className="w-full md:hidden">
+                  <button
+                    type="button"
+                    onClick={openCreateContribution}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Add Contribution
+                  </button>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <FilterBar
+                searchValue={expenseSearch}
+                onSearchChange={(v) => { setExpenseSearch(v); setExpensePage(1); }}
+                searchPlaceholder="Search spent on or recorded by"
+                searchWidth="md:w-[320px]"
+                selects={[]}
+                dateFrom={expenseDateFrom}
+                dateTo={expenseDateTo}
+                onDateApply={(from, to) => { setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1); }}
+              >
+                {canWrite ? (
+                  <button
+                    type="button"
+                    onClick={openCreateExpense}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Record Expense
+                  </button>
+                ) : null}
+              </FilterBar>
+              <MobileFilterBar
+                searchValue={expenseSearch}
+                onSearchChange={(v) => { setExpenseSearch(v); setExpensePage(1); }}
+                searchPlaceholder="Search spent on or recorded by"
+                dateFrom={expenseDateFrom}
+                dateTo={expenseDateTo}
+                onDateApply={(from, to) => { setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1); }}
+              />
+              {canWrite ? (
+                <div className="w-full md:hidden">
+                  <button
+                    type="button"
+                    onClick={openCreateExpense}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Record Expense
+                  </button>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
 
         {tab === "contributions" ? (

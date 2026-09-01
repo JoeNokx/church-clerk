@@ -15,6 +15,8 @@ import { createProjectContribution } from "../contributions/services/projectCont
 import { createProjectExpense } from "../expenses/services/projectExpenses.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -691,12 +693,22 @@ function ChurchProjectsPageInner() {
         />
       </KpiGrid>
 
-      <div className="mt-5 flex items-center gap-3">
-        <input
-          value={searchValue}
-          onChange={(e) => { setSearchValue(e.target.value); setCurrentPage(1); }}
-          className="h-11 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          placeholder="Search project name..."
+      <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="font-semibold text-gray-900 text-sm">Church Projects</div>
+          <div className="text-gray-500 text-xs">All building funds and special projects</div>
+        </div>
+        <FilterBar
+          searchValue={searchValue}
+          onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
+          searchPlaceholder="Search project name..."
+          searchWidth="md:w-[320px]"
+          selects={[]}
+        />
+        <MobileFilterBar
+          searchValue={searchValue}
+          onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
+          searchPlaceholder="Search project name..."
         />
       </div>
 

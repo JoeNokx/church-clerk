@@ -2,6 +2,8 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import EventContext from "../event.store.js";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 const CATEGORY_OPTIONS = [
   "Conference",
@@ -46,42 +48,58 @@ function ProgramsEventsFilters({ activeStatus }) {
     };
   }, [debouncedSearch]);
 
-  const onCategoryChange = async (e) => {
-    const value = e.target.value;
+  const onCategoryChange = async (value) => {
     store?.setFilters({ category: value, page: 1 });
     await refreshAll({ category: value, page: 1 });
   };
 
-  const onSearchChange = (e) => {
-    const next = e.target.value;
+  const onSearchChange = (next) => {
     setSearchValue(next);
     store?.setFilters({ search: next, page: 1 });
-
     debouncedSearch(next);
   };
 
-  return (
-    <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-end md:justify-end">
-      <input
-        value={searchValue}
-        onChange={onSearchChange}
-        className="h-11 w-full md:w-[220px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search event title..."
-      />
+  const categorySelectOptions = useMemo(
+    () => categoryOptions.map((c) => ({ label: c, value: c })),
+    [categoryOptions]
+  );
 
-      <select
-        value={store?.filters?.category || ""}
-        onChange={onCategoryChange}
-        className="h-11 w-full md:w-auto rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm truncate"
-      >
-        <option value="">All Categories</option>
-        {categoryOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-    </div>
+  return (
+    <>
+      <FilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search event title..."
+        searchWidth="md:w-[320px]"
+        selects={[
+          {
+            key: "category",
+            value: store?.filters?.category || "",
+            onChange: onCategoryChange,
+            options: categorySelectOptions,
+            placeholder: "All Categories",
+          },
+        ]}
+      />
+      <MobileFilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search event title..."
+        filters={[
+          {
+            key: "category",
+            label: "Category",
+            value: store?.filters?.category || "",
+            defaultValue: "",
+            options: [{ label: "All Categories", value: "" }, ...categorySelectOptions],
+          },
+        ]}
+        onApply={async (pending) => {
+          store?.setFilters({ category: pending.category, page: 1 });
+          await refreshAll({ category: pending.category, page: 1 });
+        }}
+      />
+    </>
   );
 }
 

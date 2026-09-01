@@ -9,6 +9,8 @@ import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import {
   getBusinessIncomeExpensesKPI,
   getBusinessVenture
@@ -868,14 +870,57 @@ function BusinessVentureDetailsPage() {
           />
 
           <div className="mt-2 rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
-            <div className="flex flex-col gap-2">
+          <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-wrap items-start justify-between gap-3">
+            {/* Left: title + subtitle */}
+            <div>
+              {activeTab === "incomes" ? (
+                <>
+                  <div className="font-semibold text-gray-900 text-sm">Income</div>
+                  <div className="text-gray-500 text-xs">All income records</div>
+                </>
+              ) : (
+                <>
+                  <div className="font-semibold text-gray-900 text-sm">Expenses</div>
+                  <div className="text-gray-500 text-xs">All expense records</div>
+                </>
+              )}
+            </div>
+
+            {/* Right: FilterBar + action button (desktop) */}
+            <FilterBar
+              searchValue={activeTab === "incomes" ? incomeSearch : expenseSearch}
+              onSearchChange={(v) => {
+                if (activeTab === "incomes") {
+                  incomeSearchRef.current = v;
+                  setIncomeSearch(v);
+                  setIncomePage(1);
+                  loadIncomes(1, v);
+                } else {
+                  expenseSearchRef.current = v;
+                  setExpenseSearch(v);
+                  setExpensePage(1);
+                  loadExpenses(1, v);
+                }
+              }}
+              searchPlaceholder={activeTab === "incomes" ? "Search received from or recorded by" : "Search spent on or recorded by"}
+              searchWidth="md:w-[320px]"
+              selects={[]}
+              dateFrom={activeTab === "incomes" ? incomeDateFrom : expenseDateFrom}
+              dateTo={activeTab === "incomes" ? incomeDateTo : expenseDateTo}
+              onDateApply={(from, to) => {
+                if (activeTab === "incomes") {
+                  setIncomeDateFrom(from); setIncomeDateTo(to); setIncomePage(1);
+                } else {
+                  setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1);
+                }
+              }}
+            >
               {canEdit ? (
                 activeTab === "incomes" ? (
                   <button
                     type="button"
                     onClick={() => setAddIncomeOpen(true)}
-                    className="self-start inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
                     Add Income
@@ -884,55 +929,59 @@ function BusinessVentureDetailsPage() {
                   <button
                     type="button"
                     onClick={() => setAddExpenseOpen(true)}
-                    className="self-start inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
                     Add Expense
                   </button>
                 )
               ) : null}
-              <div className="flex flex-row flex-wrap items-center gap-2">
-                <SearchInput
-                  activeTab={activeTab}
-                  incomeSearch={incomeSearch}
-                  expenseSearch={expenseSearch}
-                  incomeSearchRef={incomeSearchRef}
-                  expenseSearchRef={expenseSearchRef}
-                  setIncomeSearch={setIncomeSearch}
-                  setExpenseSearch={setExpenseSearch}
-                  setIncomePage={setIncomePage}
-                  setExpensePage={setExpensePage}
-                  loadIncomes={loadIncomes}
-                  loadExpenses={loadExpenses}
-                />
-                <DateRangeFilter
-                  appliedFrom={activeTab === "incomes" ? incomeDateFrom : expenseDateFrom}
-                  appliedTo={activeTab === "incomes" ? incomeDateTo : expenseDateTo}
-                  onApply={async (from, to) => {
-                    if (activeTab === "incomes") {
-                      setIncomeDateFrom(from);
-                      setIncomeDateTo(to);
-                      setIncomePage(1);
-                      return;
-                    }
-                    setExpenseDateFrom(from);
-                    setExpenseDateTo(to);
-                    setExpensePage(1);
-                  }}
-                  onClear={async () => {
-                    if (activeTab === "incomes") {
-                      setIncomeDateFrom("");
-                      setIncomeDateTo("");
-                      setIncomePage(1);
-                      return;
-                    }
-                    setExpenseDateFrom("");
-                    setExpenseDateTo("");
-                    setExpensePage(1);
-                  }}
-                />
+            </FilterBar>
+
+            {/* Mobile */}
+            <MobileFilterBar
+              searchValue={activeTab === "incomes" ? incomeSearch : expenseSearch}
+              onSearchChange={(v) => {
+                if (activeTab === "incomes") {
+                  incomeSearchRef.current = v; setIncomeSearch(v); setIncomePage(1); loadIncomes(1, v);
+                } else {
+                  expenseSearchRef.current = v; setExpenseSearch(v); setExpensePage(1); loadExpenses(1, v);
+                }
+              }}
+              searchPlaceholder={activeTab === "incomes" ? "Search received from or recorded by" : "Search spent on or recorded by"}
+              dateFrom={activeTab === "incomes" ? incomeDateFrom : expenseDateFrom}
+              dateTo={activeTab === "incomes" ? incomeDateTo : expenseDateTo}
+              onDateApply={(from, to) => {
+                if (activeTab === "incomes") {
+                  setIncomeDateFrom(from); setIncomeDateTo(to); setIncomePage(1);
+                } else {
+                  setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1);
+                }
+              }}
+            />
+            {canEdit ? (
+              <div className="w-full md:hidden">
+                {activeTab === "incomes" ? (
+                  <button
+                    type="button"
+                    onClick={() => setAddIncomeOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Add Income
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAddExpenseOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Add Expense
+                  </button>
+                )}
               </div>
-            </div>
+            ) : null}
           </div>
 
           {activeTab === "incomes" ? (

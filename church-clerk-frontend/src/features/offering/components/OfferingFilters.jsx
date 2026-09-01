@@ -1,7 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import OfferingContext from "../offering.store.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const SERVICE_TYPES = [
@@ -43,8 +44,7 @@ function OfferingFilters() {
     return () => { debouncedRecordedBy.cancel(); };
   }, [debouncedRecordedBy]);
 
-  const onRecordedByChange = (e) => {
-    const next = e.target.value;
+  const onRecordedByChange = (next) => {
     setRecordedByValue(next);
     store?.setFilters?.({ recordedBy: next, page: 1 });
     debouncedRecordedBy(next);
@@ -53,10 +53,9 @@ function OfferingFilters() {
   const appliedDateFrom = store?.filters?.dateFrom || "";
   const appliedDateTo = store?.filters?.dateTo || "";
 
-  const onServiceTypeChange = async (e) => {
-    const value = e.target.value;
-    store?.setFilters({ serviceType: value, page: 1 });
-    await store?.fetchOfferings({ serviceType: value, page: 1 });
+  const onServiceTypeChange = async (v) => {
+    store?.setFilters({ serviceType: v, page: 1 });
+    await store?.fetchOfferings({ serviceType: v, page: 1 });
   };
 
   const applyDates = async (from, to) => {
@@ -64,31 +63,57 @@ function OfferingFilters() {
     await store?.fetchOfferings({ dateFrom: from, dateTo: to, page: 1 });
   };
 
-  return (
-    <div className="flex items-center gap-2 w-full flex-wrap">
-      <input
-        value={recordedByValue}
-        onChange={onRecordedByChange}
-        className="h-11 flex-1 min-w-[150px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search recorded by"
-      />
-      <select
-        value={store?.filters?.serviceType || ""}
-        onChange={onServiceTypeChange}
-        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-      >
-        <option value="">All Services</option>
-        {serviceTypeOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+  const serviceOptions = useMemo(
+    () => serviceTypeOptions.map((c) => ({ label: c, value: c })),
+    [serviceTypeOptions]
+  );
 
-      <div className="flex-1 min-w-0">
-        <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
-      </div>
-    </div>
+  const mobileFilters = [
+    {
+      key: "serviceType",
+      label: "Service Type",
+      value: store?.filters?.serviceType || "",
+      defaultValue: "",
+      options: [{ label: "All Services", value: "" }, ...serviceOptions],
+    },
+  ];
+
+  const onMobileApply = async (pending) => {
+    store?.setFilters({ serviceType: pending.serviceType, page: 1 });
+    await store?.fetchOfferings({ serviceType: pending.serviceType, page: 1 });
+  };
+
+  return (
+    <>
+      <FilterBar
+        searchValue={recordedByValue}
+        onSearchChange={onRecordedByChange}
+        searchPlaceholder="Search recorded by"
+        searchWidth="md:w-[320px]"
+        selects={[
+          {
+            key: "serviceType",
+            value: store?.filters?.serviceType || "",
+            onChange: onServiceTypeChange,
+            options: serviceOptions,
+            placeholder: "All Services",
+          },
+        ]}
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+      />
+      <MobileFilterBar
+        searchValue={recordedByValue}
+        onSearchChange={onRecordedByChange}
+        searchPlaceholder="Search recorded by"
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+        filters={mobileFilters}
+        onApply={onMobileApply}
+      />
+    </>
   );
 }
 

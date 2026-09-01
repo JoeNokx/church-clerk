@@ -15,6 +15,8 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -710,28 +712,24 @@ function PledgesPageInner() {
     await computeKpi();
   };
 
-  const onSearchChange = (e) => {
-    const value = e.target.value;
+  const onSearchChange = (value) => {
     setSearchValue(value);
     store?.setFilters?.({ search: value, page: 1 });
     debouncedSearch(value);
   };
 
-  const onRecordedByChange = (e) => {
-    const value = e.target.value;
+  const onRecordedByChange = (value) => {
     setRecordedByValue(value);
     store?.setFilters?.({ recordedBy: value, page: 1 });
     debouncedRecordedBy(value);
   };
 
-  const onServiceTypeChange = async (e) => {
-    const value = e.target.value;
+  const onServiceTypeChange = async (value) => {
     store?.setFilters?.({ serviceType: value, page: 1 });
     await store?.fetchPledges?.({ serviceType: value, page: 1 });
   };
 
-  const onStatusChange = async (e) => {
-    const value = e.target.value;
+  const onStatusChange = async (value) => {
     store?.setFilters?.({ status: value, page: 1 });
     await store?.fetchPledges?.({ status: value, page: 1 });
   };
@@ -739,11 +737,6 @@ function PledgesPageInner() {
   const onApplyDates = async (from, to) => {
     store?.setFilters?.({ dateFrom: from || "", dateTo: to || "", page: 1 });
     await store?.fetchPledges?.({ dateFrom: from || "", dateTo: to || "", page: 1 });
-  };
-
-  const onClearDates = async () => {
-    store?.setFilters?.({ dateFrom: "", dateTo: "", page: 1 });
-    await store?.fetchPledges?.({ dateFrom: "", dateTo: "", page: 1 });
   };
 
   const onPrev = async () => {
@@ -854,49 +847,59 @@ function PledgesPageInner() {
             <div className="text-gray-500 text-xs">All pledges and balances</div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <input
-              value={searchValue}
-              onChange={onSearchChange}
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-72 text-sm"
-              placeholder="Search name, phone or recorded by"
+          <FilterBar
+              searchValue={searchValue}
+              onSearchChange={onSearchChange}
+              searchPlaceholder="Search name, phone or recorded by"
+              searchWidth="md:w-[320px]"
+              selects={[
+                {
+                  key: "serviceType",
+                  value: store?.filters?.serviceType || "",
+                  onChange: onServiceTypeChange,
+                  options: serviceTypeOptions.map((t) => ({ label: t, value: t })),
+                  placeholder: "All Service Types",
+                },
+                {
+                  key: "status",
+                  value: store?.filters?.status || "",
+                  onChange: onStatusChange,
+                  options: STATUS_OPTIONS.map((s) => ({ label: s, value: s })),
+                  placeholder: "All Status",
+                },
+              ]}
+              dateFrom={store?.filters?.dateFrom || ""}
+              dateTo={store?.filters?.dateTo || ""}
+              onDateApply={onApplyDates}
             />
-
-            <div className="flex flex-row flex-wrap gap-2 items-end justify-end">
-              <select
-                value={store?.filters?.serviceType || ""}
-                onChange={onServiceTypeChange}
-                className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-44 text-sm"
-              >
-                <option value="">All Service Types</option>
-                {serviceTypeOptions.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={store?.filters?.status || ""}
-                onChange={onStatusChange}
-                className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-36 text-sm"
-              >
-                <option value="">All Status</option>
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-
-              <DateRangeFilter
-                appliedFrom={store?.filters?.dateFrom || ""}
-                appliedTo={store?.filters?.dateTo || ""}
-                onApply={onApplyDates}
-                onClear={onClearDates}
-              />
-            </div>
-          </div>
+            <MobileFilterBar
+              searchValue={searchValue}
+              onSearchChange={onSearchChange}
+              searchPlaceholder="Search name, phone or recorded by"
+              dateFrom={store?.filters?.dateFrom || ""}
+              dateTo={store?.filters?.dateTo || ""}
+              onDateApply={onApplyDates}
+              filters={[
+                {
+                  key: "serviceType",
+                  label: "Service Type",
+                  value: store?.filters?.serviceType || "",
+                  defaultValue: "",
+                  options: [{ label: "All Service Types", value: "" }, ...serviceTypeOptions.map((t) => ({ label: t, value: t }))],
+                },
+                {
+                  key: "status",
+                  label: "Status",
+                  value: store?.filters?.status || "",
+                  defaultValue: "",
+                  options: [{ label: "All Status", value: "" }, ...STATUS_OPTIONS.map((s) => ({ label: s, value: s }))],
+                },
+              ]}
+              onApply={async (pending) => {
+                store?.setFilters?.({ serviceType: pending.serviceType, status: pending.status, page: 1 });
+                await store?.fetchPledges?.({ serviceType: pending.serviceType, status: pending.status, page: 1 });
+              }}
+            />
         </div>
 
         {store?.loading ? (

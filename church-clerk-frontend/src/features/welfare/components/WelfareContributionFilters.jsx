@@ -1,8 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
-
 import WelfareContext from "../welfare.store.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function WelfareContributionFilters() {
   const store = useContext(WelfareContext);
@@ -29,8 +29,7 @@ function WelfareContributionFilters() {
     return () => { debouncedSearch.cancel(); };
   }, [debouncedSearch]);
 
-  const onSearchChange = (e) => {
-    const next = e.target.value;
+  const onSearchChange = (next) => {
     setSearchValue(next);
     store?.setContributionFilters?.({ search: next, page: 1 });
     debouncedSearch(next);
@@ -42,15 +41,26 @@ function WelfareContributionFilters() {
   };
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-end">
-      <input
-        value={searchValue}
-        onChange={onSearchChange}
-        className="h-11 w-full md:w-[280px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search member name or recorded by"
+    <>
+      <FilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search member name or recorded by"
+        searchWidth="md:w-[320px]"
+        selects={[]}
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
       />
-      <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
-    </div>
+      <MobileFilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search member name or recorded by"
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+      />
+    </>
   );
 }
 

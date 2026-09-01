@@ -11,6 +11,8 @@ import {
 } from "../../department/services/department.api.js";
 import { getCells, createCell, updateCell, deleteCell } from "../../cell/services/cell.api.js";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -700,12 +702,17 @@ function MinistriesPage() {
             <div className="text-gray-500 text-xs">All {title.toLowerCase()} and their details</div>
           </div>
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={activeTab === "groups" ? "Search group name..." : activeTab === "departments" ? "Search department name..." : "Search cell name..."}
-              className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 text-sm"
+          <div className="flex flex-col gap-3">
+            <FilterBar
+              searchValue={search}
+              onSearchChange={(v) => setSearch(v)}
+              searchPlaceholder={activeTab === "groups" ? "Search group name..." : activeTab === "departments" ? "Search department name..." : "Search cell name..."}
+              searchWidth="md:w-[320px]"
+            />
+            <MobileFilterBar
+              searchValue={search}
+              onSearchChange={(v) => setSearch(v)}
+              searchPlaceholder={activeTab === "groups" ? "Search group name..." : activeTab === "departments" ? "Search department name..." : "Search cell name..."}
             />
           </div>
         </div>

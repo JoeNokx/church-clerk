@@ -22,8 +22,9 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function safeNumber(n) {
   const v = Number(n || 0);
@@ -265,7 +266,7 @@ function ReportsAnalyticsPage() {
                 }}
                 maxLength={4}
                 placeholder="YYYY"
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-40 text-sm"
+                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:w-40 text-sm"
               />
             </div>
           </div>
@@ -448,52 +449,75 @@ function ReportsAnalyticsPage() {
       ) : (
         <>
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex flex-col gap-3">
-              <div className="w-full lg:w-64">
-                <select
-                  value={reportModule}
-                  onChange={(e) => setReportModule(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                >
-                  <option value="">Select module</option>
-                  {MODULE_OPTIONS.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Generate Report</div>
+                <div className="mt-1 text-gray-500 text-xs">Select a module and date range, then generate.</div>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <DateRangeFilter
-                  appliedFrom={reportFrom}
-                  appliedTo={reportTo}
-                  onApply={async (from, to) => {
-                    setReportFrom(from || "");
-                    setReportTo(to || "");
-                  }}
-                  onClear={async () => {
-                    setReportFrom("");
-                    setReportTo("");
-                  }}
-                />
+              <FilterBar
+                searchWidth="md:w-[320px]"
+                selects={[
+                  {
+                    key: "module",
+                    value: reportModule,
+                    onChange: (v) => setReportModule(v),
+                    options: MODULE_OPTIONS,
+                    placeholder: "Select module",
+                  },
+                ]}
+                dateFrom={reportFrom}
+                dateTo={reportTo}
+                onDateApply={(from, to) => { setReportFrom(from || ""); setReportTo(to || ""); }}
+              >
                 <button
                   type="button"
                   disabled={!reportModule || reportLoading}
                   onClick={generateReport}
-                  className="h-11 rounded-lg bg-blue-700 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 md:h-12 text-sm"
+                  className="h-10 rounded-lg bg-blue-700 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
                   {reportLoading ? "Generating…" : "Generate"}
                 </button>
-
                 {canExport ? (
                   <button
                     type="button"
                     disabled={!lastGenerated?.module || reportExportLoading}
-                    onClick={() => {
-                      openExportModal();
-                    }}
-                    className="h-11 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:h-12 text-sm"
+                    onClick={openExportModal}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                  >
+                    Export
+                  </button>
+                ) : null}
+              </FilterBar>
+              <MobileFilterBar
+                dateFrom={reportFrom}
+                dateTo={reportTo}
+                onDateApply={(from, to) => { setReportFrom(from || ""); setReportTo(to || ""); }}
+                filters={[
+                  {
+                    key: "module",
+                    label: "Module",
+                    value: reportModule,
+                    defaultValue: "",
+                    options: [{ label: "Select module", value: "" }, ...MODULE_OPTIONS],
+                  },
+                ]}
+                onApply={(pending) => setReportModule(pending.module)}
+              />
+              <div className="md:hidden flex gap-2">
+                <button
+                  type="button"
+                  disabled={!reportModule || reportLoading}
+                  onClick={generateReport}
+                  className="h-10 rounded-lg bg-blue-700 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
+                >
+                  {reportLoading ? "Generating…" : "Generate"}
+                </button>
+                {canExport ? (
+                  <button
+                    type="button"
+                    disabled={!lastGenerated?.module || reportExportLoading}
+                    onClick={openExportModal}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                   >
                     Export
                   </button>

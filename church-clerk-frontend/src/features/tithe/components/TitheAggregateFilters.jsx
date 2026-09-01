@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import TitheContext from "../tithe.store.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function TitheAggregateFilters() {
   const store = useContext(TitheContext);
@@ -24,37 +26,37 @@ function TitheAggregateFilters() {
     };
   }, [debouncedSearch]);
 
+  const onSearchChange = (next) => {
+    setSearchValue(next);
+    debouncedSearch(next);
+  };
+
+  const applyDates = async (from, to) => {
+    store?.setAggregateFilters?.({ dateFrom: from, dateTo: to, page: 1 });
+    await store?.fetchAggregates?.({ dateFrom: from, dateTo: to, page: 1 });
+  };
+
   return (
-    <div className="flex flex-col gap-2 md:flex-row md:items-center">
-      <input
-        value={searchValue}
-        onChange={(e) => {
-          const next = e.target.value;
-          setSearchValue(next);
-          debouncedSearch(next);
-        }}
-        placeholder="Search recorded by..."
-        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
+    <>
+      <FilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search recorded by..."
+        searchWidth="md:w-[320px]"
+        selects={[]}
+        dateFrom={filters.dateFrom || ""}
+        dateTo={filters.dateTo || ""}
+        onDateApply={applyDates}
       />
-
-      <input
-        value={filters.dateFrom || ""}
-        onChange={async (e) => {
-          await store?.fetchAggregates?.({ dateFrom: e.target.value, page: 1 });
-        }}
-        type="date"
-        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-40 text-sm"
+      <MobileFilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search recorded by..."
+        dateFrom={filters.dateFrom || ""}
+        dateTo={filters.dateTo || ""}
+        onDateApply={applyDates}
       />
-
-      <input
-        value={filters.dateTo || ""}
-        onChange={async (e) => {
-          await store?.fetchAggregates?.({ dateTo: e.target.value, page: 1 });
-        }}
-        type="date"
-        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-40 text-sm"
-      />
-    </div>
+    </>
   );
 }
 

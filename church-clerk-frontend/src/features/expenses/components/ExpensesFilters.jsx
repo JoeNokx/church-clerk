@@ -1,7 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import ExpensesContext from "../expenses.store.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const CATEGORY_OPTIONS = [
@@ -39,8 +40,7 @@ function ExpensesFilters() {
     return () => { debouncedRecordedBy.cancel(); };
   }, [debouncedRecordedBy]);
 
-  const onRecordedByChange = (e) => {
-    const next = e.target.value;
+  const onRecordedByChange = (next) => {
     setRecordedByValue(next);
     store?.setFilters?.({ recordedBy: next, page: 1 });
     debouncedRecordedBy(next);
@@ -52,10 +52,9 @@ function ExpensesFilters() {
   const appliedDateFrom = store?.filters?.dateFrom || "";
   const appliedDateTo = store?.filters?.dateTo || "";
 
-  const onCategoryChange = async (e) => {
-    const value = e.target.value;
-    store?.setFilters?.({ category: value, page: 1 });
-    await store?.fetchGeneralExpenses?.({ category: value, page: 1 });
+  const onCategoryChange = async (v) => {
+    store?.setFilters?.({ category: v, page: 1 });
+    await store?.fetchGeneralExpenses?.({ category: v, page: 1 });
   };
 
   const applyDates = async (from, to) => {
@@ -63,29 +62,57 @@ function ExpensesFilters() {
     await store?.fetchGeneralExpenses?.({ dateFrom: from, dateTo: to, page: 1 });
   };
 
-  return (
-    <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-end">
-      <input
-        value={recordedByValue}
-        onChange={onRecordedByChange}
-        className="h-11 w-full md:w-[200px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search recorded by"
-      />
-      <select
-        value={store?.filters?.category || ""}
-        onChange={onCategoryChange}
-        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none text-sm"
-      >
-        <option value="">All Categories</option>
-        {categoryOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+  const categorySelectOptions = useMemo(
+    () => categoryOptions.map((c) => ({ label: c, value: c })),
+    [categoryOptions]
+  );
 
-      <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
-    </div>
+  const mobileFilters = [
+    {
+      key: "category",
+      label: "Category",
+      value: store?.filters?.category || "",
+      defaultValue: "",
+      options: [{ label: "All Categories", value: "" }, ...categorySelectOptions],
+    },
+  ];
+
+  const onMobileApply = async (pending) => {
+    store?.setFilters?.({ category: pending.category, page: 1 });
+    await store?.fetchGeneralExpenses?.({ category: pending.category, page: 1 });
+  };
+
+  return (
+    <>
+      <FilterBar
+        searchValue={recordedByValue}
+        onSearchChange={onRecordedByChange}
+        searchPlaceholder="Search recorded by"
+        searchWidth="md:w-[320px]"
+        selects={[
+          {
+            key: "category",
+            value: store?.filters?.category || "",
+            onChange: onCategoryChange,
+            options: categorySelectOptions,
+            placeholder: "All Categories",
+          },
+        ]}
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+      />
+      <MobileFilterBar
+        searchValue={recordedByValue}
+        onSearchChange={onRecordedByChange}
+        searchPlaceholder="Search recorded by"
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+        filters={mobileFilters}
+        onApply={onMobileApply}
+      />
+    </>
   );
 }
 

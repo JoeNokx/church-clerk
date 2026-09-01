@@ -1,7 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import SpecialFundContext from "../specialFund.store.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 const CATEGORY_OPTIONS = [
@@ -48,8 +49,7 @@ function SpecialFundFilters() {
     await store?.fetchSpecialFunds({ category: value, page: 1 });
   };
 
-  const onSearchChange = (e) => {
-    const next = e.target.value;
+  const onSearchChange = (next) => {
     setSearchValue(next);
     store?.setFilters({ search: next, page: 1 });
     debouncedSearch(next);
@@ -60,30 +60,57 @@ function SpecialFundFilters() {
     await store?.fetchSpecialFunds({ dateFrom: from, dateTo: to, page: 1 });
   };
 
+  const categorySelectOptions = useMemo(
+    () => categoryOptions.map((c) => ({ label: c, value: c })),
+    [categoryOptions]
+  );
+
+  const mobileFilters = [
+    {
+      key: "category",
+      label: "Category",
+      value: store?.filters?.category || "",
+      defaultValue: "",
+      options: [{ label: "All Categories", value: "" }, ...categorySelectOptions],
+    },
+  ];
+
+  const onMobileApply = async (pending) => {
+    store?.setFilters({ category: pending.category, page: 1 });
+    await store?.fetchSpecialFunds({ category: pending.category, page: 1 });
+  };
+
   return (
-    <div className="flex items-center gap-2 w-full flex-wrap">
-      <input
-        value={searchValue}
-        onChange={onSearchChange}
-        className="h-11 flex-1 min-w-[200px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search giver name or recorded by"
+    <>
+      <FilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search giver name or recorded by"
+        searchWidth="md:w-[320px]"
+        selects={[
+          {
+            key: "category",
+            value: store?.filters?.category || "",
+            onChange: (v) => onCategoryChange({ target: { value: v } }),
+            options: categorySelectOptions,
+            placeholder: "All Categories",
+          },
+        ]}
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
       />
-      <select
-        value={store?.filters?.category || ""}
-        onChange={onCategoryChange}
-        className="h-11 flex-1 min-w-[120px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-      >
-        <option value="">All Categories</option>
-        {categoryOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-      <div className="shrink-0">
-        <DateRangeFilter appliedFrom={appliedDateFrom} appliedTo={appliedDateTo} onApply={applyDates} />
-      </div>
-    </div>
+      <MobileFilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search giver name or recorded by"
+        dateFrom={appliedDateFrom}
+        dateTo={appliedDateTo}
+        onDateApply={applyDates}
+        filters={mobileFilters}
+        onApply={onMobileApply}
+      />
+    </>
   );
 }
 

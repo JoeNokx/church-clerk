@@ -1,7 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Skeleton from "react-loading-skeleton";
 
 import ChurchContext from "../../church/church.store.js";
@@ -1197,17 +1198,22 @@ function MinistryDetailsPage() {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
-                placeholder="Search members..."
-                className="h-11 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-64 md:flex-none text-sm"
-              />
-              <DateRangeFilter
-                appliedFrom={memberDateFrom}
-                appliedTo={memberDateTo}
-                onApply={(from, to) => { setMemberDateFrom(from); setMemberDateTo(to); }}
+            <FilterBar
+              searchValue={memberSearch}
+              onSearchChange={(v) => setMemberSearch(v)}
+              searchPlaceholder="Search members..."
+              searchWidth="md:w-[320px]"
+              dateFrom={memberDateFrom}
+              dateTo={memberDateTo}
+              onDateApply={(from, to) => { setMemberDateFrom(from); setMemberDateTo(to); }}
+            >
+              <MobileFilterBar
+                searchValue={memberSearch}
+                onSearchChange={(v) => setMemberSearch(v)}
+                searchPlaceholder="Search members..."
+                dateFrom={memberDateFrom}
+                dateTo={memberDateTo}
+                onDateApply={(from, to) => { setMemberDateFrom(from); setMemberDateTo(to); }}
               />
               <button
                 type="button"
@@ -1220,12 +1226,12 @@ function MinistryDetailsPage() {
                   setAddMemberSelectedIds([]);
                   setAddMemberOpen(true);
                 }}
-                className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+                className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
               >
                 <span className="leading-none text-lg">+</span>
                 Add Member
               </button>
-            </div>
+            </FilterBar>
           </div>
 
           {memberError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{memberError}</div> : null}
@@ -1577,54 +1583,54 @@ function MinistryDetailsPage() {
               <div className="text-gray-500 text-xs">Record attendance</div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            <div className="flex flex-col gap-2 items-end">
               {attendanceView === "individual" ? (
-                <input
-                  value={individualAttendanceSearch}
-                  onChange={(e) => setIndividualAttendanceSearch(e.target.value)}
-                  placeholder="Search speaker..."
-                  className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
-                />
-              ) : (
-                <input
-                  value={attendanceSearch}
-                  onChange={(e) => setAttendanceSearch(e.target.value)}
-                  placeholder="Search speaker..."
-                  className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
-                />
-              )}
-              {attendanceView === "individual" ? (
-                <DateRangeFilter
-                  appliedFrom={indivDateFrom}
-                  appliedTo={indivDateTo}
-                  onApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
-                />
-              ) : (
-                <DateRangeFilter
-                  appliedFrom={attendanceDateFrom}
-                  appliedTo={attendanceDateTo}
-                  onApply={(from, to) => { setAttendanceDateFrom(from); setAttendanceDateTo(to); }}
-                />
-              )}
-              {attendanceView === "individual" ? (
-                <button
-                  type="button"
-                  onClick={() => void openIndividualAttendanceForm("create", null)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+                <FilterBar
+                  searchValue={individualAttendanceSearch}
+                  onSearchChange={(v) => setIndividualAttendanceSearch(v)}
+                  searchPlaceholder="Search speaker..."
+                  searchWidth="md:w-[320px]"
+                  dateFrom={indivDateFrom}
+                  dateTo={indivDateTo}
+                  onDateApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
                 >
-                  <span className="leading-none text-lg">+</span>
-                  Record Attendance
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => void openIndividualAttendanceForm("create", null)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Record Attendance
+                  </button>
+                </FilterBar>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => openAttendanceForm("create", null)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+                <FilterBar
+                  searchValue={attendanceSearch}
+                  onSearchChange={(v) => setAttendanceSearch(v)}
+                  searchPlaceholder="Search speaker..."
+                  searchWidth="md:w-[320px]"
+                  dateFrom={attendanceDateFrom}
+                  dateTo={attendanceDateTo}
+                  onDateApply={(from, to) => { setAttendanceDateFrom(from); setAttendanceDateTo(to); }}
                 >
-                  <span className="leading-none text-lg">+</span>
-                  Add Attendance
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => openAttendanceForm("create", null)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Add Attendance
+                  </button>
+                </FilterBar>
               )}
+              <MobileFilterBar
+                searchValue={attendanceView === "individual" ? individualAttendanceSearch : attendanceSearch}
+                onSearchChange={(v) => attendanceView === "individual" ? setIndividualAttendanceSearch(v) : setAttendanceSearch(v)}
+                searchPlaceholder="Search speaker..."
+                dateFrom={attendanceView === "individual" ? indivDateFrom : attendanceDateFrom}
+                dateTo={attendanceView === "individual" ? indivDateTo : attendanceDateTo}
+                onDateApply={(from, to) => attendanceView === "individual" ? (setIndivDateFrom(from), setIndivDateTo(to)) : (setAttendanceDateFrom(from), setAttendanceDateTo(to))}
+              />
             </div>
           </div>
 
@@ -2077,26 +2083,33 @@ function MinistryDetailsPage() {
               <div className="text-gray-500 text-xs">Record ministry offerings</div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <input
-                value={offeringSearch}
-                onChange={(e) => setOfferingSearch(e.target.value)}
-                placeholder="Search recorded by"
-                className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
-              />
-              <DateRangeFilter
-                appliedFrom={offeringDateFrom}
-                appliedTo={offeringDateTo}
-                onApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); }}
-              />
-              <button
-                type="button"
-                onClick={() => openOfferingForm("create", null)}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+            <div className="flex flex-col gap-2 items-end">
+              <FilterBar
+                searchValue={offeringSearch}
+                onSearchChange={(v) => setOfferingSearch(v)}
+                searchPlaceholder="Search recorded by"
+                searchWidth="md:w-[320px]"
+                dateFrom={offeringDateFrom}
+                dateTo={offeringDateTo}
+                onDateApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); }}
               >
-                <span className="leading-none text-lg">+</span>
-                Add Offering
-              </button>
+                <button
+                  type="button"
+                  onClick={() => openOfferingForm("create", null)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Add Offering
+                </button>
+              </FilterBar>
+              <MobileFilterBar
+                searchValue={offeringSearch}
+                onSearchChange={(v) => setOfferingSearch(v)}
+                searchPlaceholder="Search recorded by"
+                dateFrom={offeringDateFrom}
+                dateTo={offeringDateTo}
+                onDateApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); }}
+              />
             </div>
           </div>
 

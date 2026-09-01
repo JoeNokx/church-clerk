@@ -1,8 +1,9 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import EventOfferingContext from "../eventOfferings.store.js";
-import DateRangeFilter from "../../../../shared/components/DateRangeFilter/index.jsx";
 import { useLookupValues } from "../../../lookups/hooks/useLookupValues.js";
 import debounce from "../../../../shared/utils/debounce.js";
+import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
 const DEFAULT_OFFERING_TYPES = [
   "first offering",
@@ -32,40 +33,61 @@ function EventOfferingFilters() {
 
   useEffect(() => () => debouncedSearch.cancel(), [debouncedSearch]);
 
-  const onSearchChange = (e) => {
-    const next = e.target.value;
+  const onSearchChange = (next) => {
     setSearchValue(next);
     debouncedSearch(next);
   };
 
-  return (
-    <div className="flex flex-row flex-wrap items-center gap-2">
-      <input
-        value={searchValue}
-        onChange={onSearchChange}
-        placeholder="Search recorded by"
-        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
-      />
-      <select
-        value={filters.offeringType || ""}
-        onChange={(e) => store?.fetchOfferings?.({ offeringType: e.target.value, page: 1 })}
-        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-44 text-sm"
-      >
-        <option value="">All types</option>
-        {offeringTypeOptions.map((t) => (
-          <option key={t} value={t}>
-            {t}
-          </option>
-        ))}
-      </select>
+  const onOfferingTypeChange = (v) => {
+    store?.fetchOfferings?.({ offeringType: v, page: 1 });
+  };
 
-      <DateRangeFilter
-        appliedFrom={filters.dateFrom || ""}
-        appliedTo={filters.dateTo || ""}
-        onApply={(from, to) => store?.fetchOfferings?.({ dateFrom: from || "", dateTo: to || "", page: 1 })}
-        onClear={() => store?.fetchOfferings?.({ dateFrom: "", dateTo: "", page: 1 })}
+  const offeringTypeSelectOptions = useMemo(
+    () => offeringTypeOptions.map((t) => ({ label: t, value: t })),
+    [offeringTypeOptions]
+  );
+
+  const mobileFilters = [
+    {
+      key: "offeringType",
+      label: "Offering Type",
+      value: filters.offeringType || "",
+      defaultValue: "",
+      options: [{ label: "All types", value: "" }, ...offeringTypeSelectOptions],
+    },
+  ];
+
+  return (
+    <>
+      <FilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search recorded by"
+        searchWidth="md:w-[320px]"
+        selects={[
+          {
+            key: "offeringType",
+            value: filters.offeringType || "",
+            onChange: onOfferingTypeChange,
+            options: offeringTypeSelectOptions,
+            placeholder: "All types",
+          },
+        ]}
+        dateFrom={filters.dateFrom || ""}
+        dateTo={filters.dateTo || ""}
+        onDateApply={(from, to) => store?.fetchOfferings?.({ dateFrom: from || "", dateTo: to || "", page: 1 })}
       />
-    </div>
+      <MobileFilterBar
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search recorded by"
+        dateFrom={filters.dateFrom || ""}
+        dateTo={filters.dateTo || ""}
+        onDateApply={(from, to) => store?.fetchOfferings?.({ dateFrom: from || "", dateTo: to || "", page: 1 })}
+        filters={mobileFilters}
+        onApply={(pending) => store?.fetchOfferings?.({ offeringType: pending.offeringType, page: 1 })}
+      />
+    </>
   );
 }
 

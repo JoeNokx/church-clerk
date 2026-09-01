@@ -19,7 +19,8 @@ import {
   uploadEventAttendanceFile
 } from "../attendanceFiles/services/eventAttendanceFiles.api.js";
 import FileUploadButton from "../../../shared/components/FileUploadButton.jsx";
-import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EventCreatePage from "./EventCreatePage.jsx";
 import EventOfferingPage from "../offerings/pages/EventOfferingPage.jsx";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -984,43 +985,57 @@ function EventDetailsPage() {
                     <div className="font-semibold text-gray-900 text-sm">By Registration</div>
                     <div className="text-gray-500 text-xs mt-0.5">Record and manage attendance collected for this event.</div>
                   </div>
-                  <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRegisterError(null);
-                          setRegisterOpen(true);
-                        }}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                          <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                        Register
-                      </button>
-                      <button
-                        type="button"
-                        onClick={onExportAttendees}
-                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                          <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M8 9l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                        Export
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      <input
-                        value={regSearch}
-                        onChange={(e) => setRegSearch(e.target.value)}
-                        placeholder="Search name, email, phone"
-                        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
-                      />
-                    </div>
+                  <FilterBar
+                    searchValue={regSearch}
+                    onSearchChange={(v) => setRegSearch(v)}
+                    searchPlaceholder="Search name, email, phone"
+                    searchWidth="md:w-[320px]"
+                    selects={[]}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => { setRegisterError(null); setRegisterOpen(true); }}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                        <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                      Register
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onExportAttendees}
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                        <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M8 9l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                      Export
+                    </button>
+                  </FilterBar>
+                  <MobileFilterBar
+                    searchValue={regSearch}
+                    onSearchChange={(v) => setRegSearch(v)}
+                    searchPlaceholder="Search name, email, phone"
+                  />
+                  <div className="md:hidden flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setRegisterError(null); setRegisterOpen(true); }}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
+                    >
+                      Register
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onExportAttendees}
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
+                    >
+                      Export
+                    </button>
                   </div>
                 </div>
 
@@ -1092,28 +1107,36 @@ function EventDetailsPage() {
                     <div className="font-semibold text-gray-900 text-sm">Total Number</div>
                     <div className="text-gray-500 text-xs mt-0.5">Record the total number of attendees without listing individual names.</div>
                   </div>
-                  <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRecordError(null);
-                          setRecordOpen(true);
-                        }}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
-                      >
-                        <span className="leading-none text-lg">+</span>
-                        Record Attendance
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      <input
-                        value={totalSearch}
-                        onChange={(e) => setTotalSearch(e.target.value)}
-                        placeholder="Search speaker or date"
-                        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
-                      />
-                    </div>
+                  <FilterBar
+                    searchValue={totalSearch}
+                    onSearchChange={(v) => setTotalSearch(v)}
+                    searchPlaceholder="Search speaker or date"
+                    searchWidth="md:w-[320px]"
+                    selects={[]}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => { setRecordError(null); setRecordOpen(true); }}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
+                    >
+                      <span className="leading-none text-lg">+</span>
+                      Record Attendance
+                    </button>
+                  </FilterBar>
+                  <MobileFilterBar
+                    searchValue={totalSearch}
+                    onSearchChange={(v) => setTotalSearch(v)}
+                    searchPlaceholder="Search speaker or date"
+                  />
+                  <div className="md:hidden">
+                    <button
+                      type="button"
+                      onClick={() => { setRecordError(null); setRecordOpen(true); }}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
+                    >
+                      <span className="leading-none text-lg">+</span>
+                      Record Attendance
+                    </button>
                   </div>
                 </div>
 
@@ -1181,30 +1204,41 @@ function EventDetailsPage() {
                     <div className="font-semibold text-gray-900 text-sm">File Upload</div>
                     <div className="text-gray-500 text-xs mt-0.5">Upload attendance files from Excel, Word, PDF, or image formats.</div>
                   </div>
-                  <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-                    <div className="flex items-center gap-2">
-                      <FileUploadButton
-                        accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
-                        disabled={fileUploading}
-                        onFile={onUploadFile}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                          <path d="M12 3v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M8 7l4-4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                        {fileUploading ? "Uploading..." : "Upload File"}
-                      </FileUploadButton>
-                    </div>
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      <input
-                        value={filesSearch}
-                        onChange={(e) => setFilesSearch(e.target.value)}
-                        placeholder="Search file name"
-                        className="h-11 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:flex-none md:w-48 text-sm"
-                      />
-                    </div>
+                  <FilterBar
+                    searchValue={filesSearch}
+                    onSearchChange={(v) => setFilesSearch(v)}
+                    searchPlaceholder="Search file name"
+                    searchWidth="md:w-[320px]"
+                    selects={[]}
+                  >
+                    <FileUploadButton
+                      accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
+                      disabled={fileUploading}
+                      onFile={onUploadFile}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm h-10"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                        <path d="M12 3v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M8 7l4-4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M4 17v3h16v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                      {fileUploading ? "Uploading..." : "Upload File"}
+                    </FileUploadButton>
+                  </FilterBar>
+                  <MobileFilterBar
+                    searchValue={filesSearch}
+                    onSearchChange={(v) => setFilesSearch(v)}
+                    searchPlaceholder="Search file name"
+                  />
+                  <div className="md:hidden">
+                    <FileUploadButton
+                      accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
+                      disabled={fileUploading}
+                      onFile={onUploadFile}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm h-10"
+                    >
+                      {fileUploading ? "Uploading..." : "Upload File"}
+                    </FileUploadButton>
                   </div>
                 </div>
 
