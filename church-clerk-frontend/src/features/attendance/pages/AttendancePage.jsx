@@ -11,6 +11,7 @@ import VisitorForm from "../components/VisitorForm.jsx";
 import VisitorTable from "../components/VisitorTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import {
   getServiceIndividualAttendances,
@@ -176,6 +177,35 @@ function AttendancePageInner() {
       return true;
     });
   }, [indivRecords, indivDateFrom, indivDateTo, indivServiceTypeFilter, indivSpeakerSearch]);
+
+  const getIndivLiveCount = useCallback(async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
+    const count = indivRecords.filter((r) => {
+      const d = (r?.date || "").slice(0, 10);
+      if (dFrom && d < dFrom) return false;
+      if (dTo && d > dTo) return false;
+      if (f?.serviceType && r?.serviceType !== f.serviceType) return false;
+      if (indivSpeakerSearch) {
+        const q = indivSpeakerSearch.trim().toLowerCase();
+        if (!String(r?.mainSpeaker || "").toLowerCase().includes(q)) return false;
+      }
+      return true;
+    }).length;
+    return count;
+  }, [indivRecords, indivSpeakerSearch]);
+
+  const indivMobileFilters = [
+    {
+      key: "serviceType",
+      label: "Service Type",
+      value: indivServiceTypeFilter,
+      defaultValue: "",
+      options: [{ label: "All Services", value: "" }, ...serviceTypeOptions.map((c) => ({ label: c, value: c }))],
+    },
+  ];
+
+  const onIndivMobileApply = (pending) => {
+    setIndivServiceTypeFilter(pending.serviceType || "");
+  };
 
   const loadIndivRecords = useCallback(async (page = 1) => {
     if (!activeChurchId) return;
@@ -469,7 +499,7 @@ function AttendancePageInner() {
         <>
           {indivPage === "list" ? (
             <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+              <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-4 md:p-6 lg:p-8">
                 <div>
                   <div className="font-semibold text-gray-900 text-sm">Individual Attendance</div>
                   <div className="text-gray-500 text-xs">Record and track member presence per service</div>
@@ -492,6 +522,19 @@ function AttendancePageInner() {
                     dateTo={indivDateTo}
                     onDateApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
                   />
+                <MobileFilterBar
+                  searchValue={indivSpeakerSearch}
+                  onSearchChange={(v) => setIndivSpeakerSearch(v)}
+                  searchPlaceholder="Search speaker..."
+                  dateFrom={indivDateFrom}
+                  dateTo={indivDateTo}
+                  onDateApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
+                  filters={indivMobileFilters}
+                  onApply={onIndivMobileApply}
+                  resultCount={filteredIndivRecords.length}
+                  getLiveCount={getIndivLiveCount}
+                  className="mt-3"
+                />
               </div>
 
               {indivError ? (

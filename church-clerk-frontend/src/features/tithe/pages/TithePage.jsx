@@ -693,7 +693,7 @@ function TithePageInner() {
           ) : null}
 
           <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+            <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-4 md:p-6 lg:p-8">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">Tithe Records</div>
                 <div className="text-gray-500 text-xs">{mode === "aggregate" ? "All aggregate tithe collections" : "All individual tithe payments"}</div>

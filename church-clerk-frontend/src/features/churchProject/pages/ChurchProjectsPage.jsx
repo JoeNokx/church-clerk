@@ -709,6 +709,14 @@ function ChurchProjectsPageInner() {
           searchValue={searchValue}
           onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
           searchPlaceholder="Search project name..."
+          resultCount={filteredProjects.length}
+          getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
+            const q = searchValue.trim().toLowerCase();
+            return projects.filter((p) => {
+              if (q && !String(p?.name || "").toLowerCase().includes(q)) return false;
+              return true;
+            }).length;
+          }}
         />
       </div>
 

@@ -1,7 +1,10 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import BudgetingContext from "../budgeting.store.js";
 import debounce from "../../../shared/utils/debounce.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import { getBudgets } from "../services/budgeting.api.js";
 
 function BudgetingFilters() {
   const store = useContext(BudgetingContext);
@@ -29,54 +32,105 @@ function BudgetingFilters() {
     return () => { debouncedFetch.cancel?.(); };
   }, [debouncedFetch]);
 
-  const onChange = (e) => {
-    const value = e.target.value;
+  const onChange = (value) => {
     setSearch(value);
     debouncedFetch(value);
   };
 
-  return (
-    <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row md:flex-wrap md:items-end md:justify-end">
-      <input
-        value={search}
-        onChange={onChange}
-        className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 md:w-56 text-sm"
-        placeholder="Search budget name..."
-      />
-      <div className="grid grid-cols-2 gap-2">
-        <select
-          value={store?.filters?.fiscalYear || ""}
-          onChange={(e) => {
-            const value = e.target.value;
-            store?.setFilters?.({ fiscalYear: value, page: 1 });
-            void store?.fetchBudgets?.({ fiscalYear: value, page: 1 });
-          }}
-          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        >
-          <option value="">All Years</option>
-          {years.map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
+  const onFiscalYearChange = async (value) => {
+    store?.setFilters?.({ fiscalYear: value, page: 1 });
+    void store?.fetchBudgets?.({ fiscalYear: value, page: 1 });
+  };
 
-        <select
-          value={store?.filters?.status || ""}
-          onChange={(e) => {
-            const value = e.target.value;
-            store?.setFilters?.({ status: value, page: 1 });
-            void store?.fetchBudgets?.({ status: value, page: 1 });
-          }}
-          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        >
-          <option value="">All Statuses</option>
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-    </div>
+  const onStatusChange = async (value) => {
+    store?.setFilters?.({ status: value, page: 1 });
+    void store?.fetchBudgets?.({ status: value, page: 1 });
+  };
+
+  const yearOptions = useMemo(
+    () => years.map((y) => ({ label: String(y), value: String(y) })),
+    [years]
+  );
+
+  const STATUS_OPTIONS = [
+    { label: "All Statuses", value: "" },
+    { label: "Draft", value: "draft" },
+    { label: "Active", value: "active" },
+    { label: "Archived", value: "archived" },
+  ];
+
+  const selectConfigs = [
+    {
+      key: "fiscalYear",
+      value: store?.filters?.fiscalYear || "",
+      onChange: (v) => onFiscalYearChange(v),
+      options: yearOptions,
+      placeholder: "All Years",
+    },
+    {
+      key: "status",
+      value: store?.filters?.status || "",
+      onChange: (v) => onStatusChange(v),
+      options: STATUS_OPTIONS.filter((o) => o.value !== ""),
+      placeholder: "All Statuses",
+    },
+  ];
+
+  const mobileFilters = [
+    {
+      key: "fiscalYear",
+      label: "Fiscal Year",
+      value: store?.filters?.fiscalYear || "",
+      defaultValue: "",
+      options: [{ label: "All Years", value: "" }, ...yearOptions],
+    },
+    {
+      key: "status",
+      label: "Status",
+      value: store?.filters?.status || "",
+      defaultValue: "",
+      options: STATUS_OPTIONS,
+    },
+  ];
+
+  const getLiveCount = useCallback(async ({ filters: f }) => {
+    try {
+      const params = { page: 1, limit: 1 };
+      if (f?.fiscalYear && f.fiscalYear !== "") params.fiscalYear = f.fiscalYear;
+      if (f?.status && f.status !== "") params.status = f.status;
+      if (search) params.search = search;
+      const res = await getBudgets(params);
+      const payload = res?.data?.data ?? res?.data;
+      return payload?.pagination?.totalResult ?? payload?.pagination?.totalItems ?? null;
+    } catch {
+      return null;
+    }
+  }, [search]);
+
+  const onMobileApply = (pending) => {
+    store?.setFilters?.({ fiscalYear: pending.fiscalYear, status: pending.status, page: 1 });
+    void store?.fetchBudgets?.({ fiscalYear: pending.fiscalYear, status: pending.status, page: 1 });
+  };
+
+  return (
+    <>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={onChange}
+        searchPlaceholder="Search budget name..."
+        searchWidth="md:w-[320px]"
+        selects={selectConfigs}
+      />
+      <MobileFilterBar
+        searchValue={search}
+        onSearchChange={onChange}
+        searchPlaceholder="Search budget name..."
+        filters={mobileFilters}
+        onApply={onMobileApply}
+        resultCount={store?.pagination?.totalResult ?? store?.pagination?.totalItems ?? null}
+        getLiveCount={getLiveCount}
+      />
+    </>
   );
 }
 

@@ -1,9 +1,10 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import AttendanceContext from "../attendance.store.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import { getVisitors } from "../services/attendance.api.js";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -123,6 +124,22 @@ function VisitorFilters() {
     },
   ];
 
+  const getLiveCount = useCallback(async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
+    try {
+      const params = { page: 1, limit: 1 };
+      if (f?.serviceType && f.serviceType !== "") params.serviceType = f.serviceType;
+      if (f?.source && f.source !== "") params.source = f.source;
+      if (value) params.search = value;
+      if (dFrom) params.dateFrom = dFrom;
+      if (dTo) params.dateTo = dTo;
+      const res = await getVisitors(params);
+      const payload = res?.data?.data ?? res?.data;
+      return payload?.pagination?.totalResult ?? null;
+    } catch {
+      return null;
+    }
+  }, [value]);
+
   const onMobileApply = (pending) => {
     store?.setVisitorFilters({ serviceType: pending.serviceType, source: pending.source, page: 1 });
     store?.fetchVisitors({ serviceType: pending.serviceType, source: pending.source, page: 1 });
@@ -149,6 +166,8 @@ function VisitorFilters() {
         onDateApply={applyDates}
         filters={mobileFilters}
         onApply={onMobileApply}
+        resultCount={store?.visitorPagination?.totalResult ?? null}
+        getLiveCount={getLiveCount}
       />
     </>
   );
