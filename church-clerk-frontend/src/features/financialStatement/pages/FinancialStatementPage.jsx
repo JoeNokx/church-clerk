@@ -13,6 +13,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 function formatCurrency(value, currency) {
@@ -426,7 +427,7 @@ function FinancialStatementPage() {
       ) : null}
 
       {loading ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 text-gray-600 md:p-6 lg:p-8 text-sm">Loading statement…</div>
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 text-gray-600 md:p-6 lg:p-8 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading statement…</div>
       ) : null}
 
       {!loading && !error ? (

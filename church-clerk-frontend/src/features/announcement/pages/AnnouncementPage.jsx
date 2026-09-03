@@ -2100,7 +2100,7 @@ function AnnouncementPage() {
           isGhana={isGhana}
           usdToGhs={usdToGhs}
         />
-        {walletLoading ? <div className="mt-2 text-gray-500 text-xs">Loading wallet...</div> : null}
+        {walletLoading ? <div className="mt-2 text-gray-500 text-xs flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading wallet...</div> : null}
       </div>
 
       <PageTabs

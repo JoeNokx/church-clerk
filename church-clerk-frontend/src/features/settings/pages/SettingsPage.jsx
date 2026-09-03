@@ -19,6 +19,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -2175,7 +2176,7 @@ function SettingsPage() {
             </div>
 
             {usersLoading ? (
-              <div className="mt-4 text-gray-600 text-sm">Loading users…</div>
+              <div className="mt-4 text-gray-600 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading users…</div>
             ) : (
               <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
                 <table className="min-w-full text-sm">
@@ -2236,7 +2237,7 @@ function SettingsPage() {
             </div>
 
             {rolesLoading ? (
-              <div className="mt-4 text-gray-600 text-sm">Loading roles…</div>
+              <div className="mt-4 text-gray-600 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading roles…</div>
             ) : churchRoles.length ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {churchRoles.map((r) => {

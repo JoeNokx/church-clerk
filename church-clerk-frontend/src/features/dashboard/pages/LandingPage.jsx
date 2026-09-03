@@ -10,6 +10,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
 import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
 import PlanComparisonTable from "../../subscription/components/PlanComparisonTable.jsx";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
 
 function formatCurrency(amount, currency) {
@@ -429,7 +430,7 @@ function LandingPage() {
             </div>
 
             <div className="mt-10">
-              {loadingPlans && <div className="py-16 text-center text-sm text-slate-500">Loading plans…</div>}
+              {loadingPlans && <div className="py-16 text-center text-sm text-slate-500 flex items-center justify-center gap-2"><Spinner size="sm" className="text-slate-400" /> Loading plans…</div>}
               {!loadingPlans && plansSorted.length === 0 && <div className="py-16 text-center text-sm text-slate-500">No plans available right now.</div>}
               {!loadingPlans && plansSorted.length > 0 && (
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">

@@ -10,6 +10,7 @@ import {
   revokeRegistrationToken
 } from "../../church/services/church.api.js";
 import MemberFilters from "../components/MemberFilters.jsx";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import MemberTable from "../components/MemberTable.jsx";
 import {
   downloadMembersImportTemplate,
@@ -289,7 +290,7 @@ function MembersPageInner() {
 
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
           {kpiLoading ? (
-            <div className="text-gray-600 col-span-2 lg:col-span-4 text-sm">Loading KPI...</div>
+            <div className="text-gray-600 col-span-2 lg:col-span-4 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading KPI...</div>
           ) : (
             <>
               <KpiCard

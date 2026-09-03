@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import { getMyProfile } from "../../auth/services/auth.api.js";
 
 function Profile() {
@@ -27,7 +28,7 @@ function Profile() {
     loadUser();
   }, []);
 
-  if (loading) return <p>Loading profile...</p>;
+  if (loading) return <div className="flex items-center gap-2 text-gray-600 text-sm"><Spinner size="sm" className="text-gray-400" /> Loading profile...</div>;
   if (error) return <p className="text-red-500">{error}</p>;
   if (!user) return <p>User not found.</p>;
 

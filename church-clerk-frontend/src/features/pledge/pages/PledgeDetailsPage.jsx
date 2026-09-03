@@ -16,6 +16,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -545,7 +546,7 @@ function PledgeDetailsPageInner() {
           </div>
         </div>
 
-          {paymentsLoading ? <div className="mt-4 text-gray-600 text-sm">Loading payments...</div> : null}
+          {paymentsLoading ? <div className="mt-4 text-gray-600 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading payments...</div> : null}
           {!paymentsLoading && paymentsError ? (
             <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{paymentsError}</div>
           ) : null}

@@ -9,6 +9,7 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function BudgetingPageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -126,7 +127,7 @@ function BudgetingPageInner() {
 
             <div className="p-4 md:p-6 lg:p-8">
               {viewLoading ? (
-                <div className="text-gray-600 text-sm">Loading…</div>
+                <div className="text-gray-600 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading…</div>
               ) : (
                 <div className="space-y-5">
                   <KpiGrid className="gap-4 lg:grid-cols-4">
