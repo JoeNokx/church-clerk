@@ -734,6 +734,22 @@ function PledgesPageInner() {
     await store?.fetchPledges?.({ status: value, page: 1 });
   };
 
+  const getLiveCount = useCallback(async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
+    try {
+      const params = { page: 1, limit: 1 };
+      if (f?.serviceType && f.serviceType !== "") params.serviceType = f.serviceType;
+      if (f?.status && f.status !== "") params.status = f.status;
+      if (searchValue) params.search = searchValue;
+      if (dFrom) params.dateFrom = dFrom;
+      if (dTo) params.dateTo = dTo;
+      const res = await apiGetPledges(params);
+      const payload = res?.data?.data ?? res?.data;
+      return payload?.pagination?.totalResult ?? null;
+    } catch {
+      return null;
+    }
+  }, [searchValue]);
+
   const onApplyDates = async (from, to) => {
     store?.setFilters?.({ dateFrom: from || "", dateTo: to || "", page: 1 });
     await store?.fetchPledges?.({ dateFrom: from || "", dateTo: to || "", page: 1 });
@@ -899,6 +915,8 @@ function PledgesPageInner() {
                 store?.setFilters?.({ serviceType: pending.serviceType, status: pending.status, page: 1 });
                 await store?.fetchPledges?.({ serviceType: pending.serviceType, status: pending.status, page: 1 });
               }}
+              resultCount={store?.pagination?.totalResult ?? null}
+              getLiveCount={getLiveCount}
             />
         </div>
 

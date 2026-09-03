@@ -375,9 +375,43 @@ function FinancialStatementPage() {
                 <YearInput value={quarterYear} onChange={setQuarterYear} />
               </FilterBar>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 <YearInput value={annualYear} onChange={setAnnualYear} />
               </div>
+            )}
+          </div>
+
+          {/* Mobile filters */}
+          <div className="md:hidden flex items-center gap-2">
+            {tab === "monthly" ? (
+              <>
+                <select
+                  value={String(month)}
+                  onChange={(e) => setMonth(Number(e.target.value))}
+                  className="h-10 flex-1 appearance-none rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  {MONTH_OPTIONS.map((m) => (
+                    <option key={m.value} value={String(m.value)}>{m.label}</option>
+                  ))}
+                </select>
+                <YearInput value={monthYear} onChange={setMonthYear} />
+              </>
+            ) : tab === "quarterly" ? (
+              <>
+                <select
+                  value={String(quarter)}
+                  onChange={(e) => setQuarter(Number(e.target.value))}
+                  className="h-10 flex-1 appearance-none rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="1">Q1 (Jan - Mar)</option>
+                  <option value="2">Q2 (Apr - Jun)</option>
+                  <option value="3">Q3 (Jul - Sep)</option>
+                  <option value="4">Q4 (Oct - Dec)</option>
+                </select>
+                <YearInput value={quarterYear} onChange={setQuarterYear} />
+              </>
+            ) : (
+              <YearInput value={annualYear} onChange={setAnnualYear} />
             )}
           </div>
         </div>

@@ -449,10 +449,32 @@ function ReportsAnalyticsPage() {
       ) : (
         <>
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="font-semibold text-gray-900 text-sm">Generate Report</div>
-                <div className="mt-1 text-gray-500 text-xs">Select a module and date range, then generate.</div>
+            <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-3">
+              <div className="flex items-center justify-between md:block">
+                <div>
+                  <div className="font-semibold text-gray-900 text-sm">Generate Report</div>
+                  <div className="mt-1 text-gray-500 text-xs">Select a module and date range, then generate.</div>
+                </div>
+                <div className="flex gap-2 md:hidden">
+                  <button
+                    type="button"
+                    disabled={!reportModule || reportLoading}
+                    onClick={generateReport}
+                    className="h-10 rounded-lg bg-blue-700 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
+                  >
+                    {reportLoading ? "Generating…" : "Generate"}
+                  </button>
+                  {canExport ? (
+                    <button
+                      type="button"
+                      disabled={!lastGenerated?.module || reportExportLoading}
+                      onClick={openExportModal}
+                      className="h-10 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                    >
+                      Export
+                    </button>
+                  ) : null}
+                </div>
               </div>
               <FilterBar
                 searchWidth="md:w-[320px]"
@@ -502,27 +524,21 @@ function ReportsAnalyticsPage() {
                   },
                 ]}
                 onApply={(pending) => setReportModule(pending.module)}
+                resultCount={report?.rows?.length ?? null}
+                getLiveCount={async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
+                  try {
+                    const params = {};
+                    if (f?.module && f.module !== "") params.module = f.module;
+                    if (dFrom) params.from = dFrom;
+                    if (dTo) params.to = dTo;
+                    const res = await getReportsAnalyticsReport(params);
+                    const rows = res?.data?.report?.rows;
+                    return Array.isArray(rows) ? rows.length : null;
+                  } catch {
+                    return null;
+                  }
+                }}
               />
-              <div className="md:hidden flex gap-2">
-                <button
-                  type="button"
-                  disabled={!reportModule || reportLoading}
-                  onClick={generateReport}
-                  className="h-10 rounded-lg bg-blue-700 px-4 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
-                >
-                  {reportLoading ? "Generating…" : "Generate"}
-                </button>
-                {canExport ? (
-                  <button
-                    type="button"
-                    disabled={!lastGenerated?.module || reportExportLoading}
-                    onClick={openExportModal}
-                    className="h-10 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
-                  >
-                    Export
-                  </button>
-                ) : null}
-              </div>
             </div>
           </div>
 

@@ -824,6 +824,7 @@ function PledgesPageInner() {
                 <tr className="text-left text-xs font-semibold text-gray-500">
                   <th className="px-4 py-2"><div className="h-3 w-16 rounded bg-gray-200" /></th>
                   <th className="px-4 py-2"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                  <th className="px-4 py-2"><div className="h-3 w-12 rounded bg-gray-200" /></th>
                   <th className="px-4 py-2"><div className="h-3 w-10 rounded bg-gray-200" /></th>
                   <th className="px-4 py-2"><div className="h-3 w-12 rounded bg-gray-200" /></th>
                 </tr>
@@ -834,6 +835,7 @@ function PledgesPageInner() {
                     <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
                     <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
                     <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
                     <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                   </tr>
                 ))}
@@ -857,6 +859,7 @@ function PledgesPageInner() {
                   <tr className="text-left text-xs font-semibold text-gray-500">
                     <th className="px-6 py-2">Name</th>
                     <th className="px-6 py-2">Phone</th>
+                    <th className="px-6 py-2">Service Type</th>
                     <th className="px-6 py-2">Pledged</th>
                     <th className="px-6 py-2">Paid</th>
                     <th className="px-6 py-2">Balance</th>
@@ -870,6 +873,7 @@ function PledgesPageInner() {
                     <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
                       <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{row?.name || "—"}</td>
                       <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap">{row?.phoneNumber || "—"}</td>
+                      <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap">{row?.serviceType || "—"}</td>
                       <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">
                         {formatCurrency(row?.amount || 0, currency)}
                       </td>

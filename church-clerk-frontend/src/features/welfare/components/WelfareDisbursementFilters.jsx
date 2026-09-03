@@ -1,9 +1,10 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import WelfareContext from "../welfare.store.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import { getWelfareDisbursements } from "../disbursements/services/welfareDisbursements.api.js";
 
 const CATEGORY_OPTIONS = ["Birthday", "Wedding", "Funeral", "Hospital", "Emergency", "School", "Other"];
 
@@ -71,6 +72,21 @@ function WelfareDisbursementFilters() {
     await store?.fetchDisbursements?.({ category: pending.category, page: 1 });
   };
 
+  const getLiveCount = useCallback(async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
+    try {
+      const params = { page: 1, limit: 1 };
+      if (f?.category && f.category !== "") params.category = f.category;
+      if (searchValue) params.search = searchValue;
+      if (dFrom) params.dateFrom = dFrom;
+      if (dTo) params.dateTo = dTo;
+      const res = await getWelfareDisbursements(params);
+      const payload = res?.data?.data ?? res?.data;
+      return payload?.pagination?.totalResult ?? null;
+    } catch {
+      return null;
+    }
+  }, [searchValue]);
+
   return (
     <>
       <FilterBar
@@ -100,6 +116,8 @@ function WelfareDisbursementFilters() {
         onDateApply={applyDates}
         filters={mobileFilters}
         onApply={onMobileApply}
+        resultCount={store?.disbursementPagination?.totalResult ?? null}
+        getLiveCount={getLiveCount}
       />
     </>
   );

@@ -870,20 +870,43 @@ function BusinessVentureDetailsPage() {
           />
 
           <div className="mt-2 rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-wrap items-start justify-between gap-3">
-            {/* Left: title + subtitle */}
-            <div>
-              {activeTab === "incomes" ? (
-                <>
-                  <div className="font-semibold text-gray-900 text-sm">Income</div>
-                  <div className="text-gray-500 text-xs">All income records</div>
-                </>
-              ) : (
-                <>
-                  <div className="font-semibold text-gray-900 text-sm">Expenses</div>
-                  <div className="text-gray-500 text-xs">All expense records</div>
-                </>
-              )}
+          <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-3">
+            {/* Left: title + subtitle / Right: mobile action button */}
+            <div className="flex items-center justify-between md:block">
+              <div>
+                {activeTab === "incomes" ? (
+                  <>
+                    <div className="font-semibold text-gray-900 text-sm">Income</div>
+                    <div className="text-gray-500 text-xs">All income records</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="font-semibold text-gray-900 text-sm">Expenses</div>
+                    <div className="text-gray-500 text-xs">All expense records</div>
+                  </>
+                )}
+              </div>
+              {canEdit ? (
+                activeTab === "incomes" ? (
+                  <button
+                    type="button"
+                    onClick={() => setAddIncomeOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Add
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAddExpenseOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Add
+                  </button>
+                )
+              ) : null}
             </div>
 
             {/* Right: FilterBar + action button (desktop) */}
@@ -958,30 +981,31 @@ function BusinessVentureDetailsPage() {
                   setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1);
                 }
               }}
+              resultCount={activeTab === "incomes" ? (incomePagination?.totalResult ?? null) : (expensePagination?.totalResult ?? null)}
+              getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
+                try {
+                  if (activeTab === "incomes") {
+                    const params = { page: 1, limit: 1 };
+                    if (incomeSearch) params.search = incomeSearch;
+                    if (dFrom) params.dateFrom = dFrom;
+                    if (dTo) params.dateTo = dTo;
+                    const res = await getBusinessIncomes(businessId, params);
+                    const payload = res?.data?.data ?? res?.data;
+                    return payload?.pagination?.totalResult ?? null;
+                  } else {
+                    const params = { page: 1, limit: 1 };
+                    if (expenseSearch) params.search = expenseSearch;
+                    if (dFrom) params.dateFrom = dFrom;
+                    if (dTo) params.dateTo = dTo;
+                    const res = await getBusinessExpenses(businessId, params);
+                    const payload = res?.data?.data ?? res?.data;
+                    return payload?.pagination?.totalResult ?? null;
+                  }
+                } catch {
+                  return null;
+                }
+              }}
             />
-            {canEdit ? (
-              <div className="w-full md:hidden">
-                {activeTab === "incomes" ? (
-                  <button
-                    type="button"
-                    onClick={() => setAddIncomeOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Add Income
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setAddExpenseOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
-                  >
-                    <span className="leading-none text-lg">+</span>
-                    Add Expense
-                  </button>
-                )}
-              </div>
-            ) : null}
           </div>
 
           {activeTab === "incomes" ? (

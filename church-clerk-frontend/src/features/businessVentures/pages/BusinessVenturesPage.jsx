@@ -468,7 +468,7 @@ function BusinessVenturesPage() {
             <button
               type="button"
               onClick={() => setAddOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
+              className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
             >
               <span className="leading-none text-lg">+</span>
               Add Venture
@@ -537,9 +537,21 @@ function BusinessVenturesPage() {
       </KpiGrid>
 
       <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="font-semibold text-gray-900 text-sm">Business Ventures</div>
-          <div className="text-gray-500 text-xs">All ventures and financials</div>
+        <div className="flex items-center justify-between md:block">
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">Business Ventures</div>
+            <div className="text-gray-500 text-xs">All ventures and financials</div>
+          </div>
+          {canEdit ? (
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
+            >
+              <span className="leading-none text-lg">+</span>
+              Add
+            </button>
+          ) : null}
         </div>
         <FilterBar
           searchValue={searchValue}
@@ -552,6 +564,18 @@ function BusinessVenturesPage() {
           searchValue={searchValue}
           onSearchChange={(v) => setSearchValue(v)}
           searchPlaceholder="Search business name or recorded by"
+          resultCount={filteredVentures.length}
+          getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
+            let rows = ventures;
+            const lower = searchValue.toLowerCase().trim();
+            if (lower) {
+              rows = rows.filter((v) =>
+                String(v?.businessName || "").toLowerCase().includes(lower) ||
+                String(v?.createdBy?.fullName || "").toLowerCase().includes(lower)
+              );
+            }
+            return rows.length;
+          }}
         />
       </div>
 

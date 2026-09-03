@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import PermissionContext from "../../permissions/permission.store.js";
@@ -2066,7 +2066,7 @@ function SettingsPage() {
           {usersError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{usersError}</div> : null}
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-3">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">Users &amp; Roles</div>
                 <div className="mt-1 text-gray-500 text-xs">Manage user accounts and their assigned roles.</div>
@@ -2110,6 +2110,19 @@ function SettingsPage() {
                   },
                 ]}
                 onApply={(pending) => setUserRoleFilter(pending.role)}
+                resultCount={users.length}
+                getLiveCount={async ({ filters: f }) => {
+                  try {
+                    const params = {};
+                    if (f?.role && f.role !== "") params.role = f.role;
+                    if (userSearch) params.search = userSearch;
+                    const res = await getChurchUsers(params);
+                    const rows = Array.isArray(res?.data?.users) ? res.data.users : [];
+                    return rows.length;
+                  } catch {
+                    return null;
+                  }
+                }}
               />
               {canWrite ? (
                 <div className="md:hidden">
@@ -2265,7 +2278,7 @@ function SettingsPage() {
       {tab === "audit" ? (
         <div className="mt-6">
           <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-3">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">Audit Log</div>
                 <div className="mt-1 text-gray-500 text-xs">Search and filter user activity within your current church context.</div>
@@ -2333,6 +2346,22 @@ function SettingsPage() {
                   },
                 ]}
                 onApply={(pending) => { setAuditModule(pending.module); setAuditAction(pending.action); setAuditRole(pending.role); }}
+                resultCount={auditPagination?.total ?? null}
+                getLiveCount={async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
+                  try {
+                    const params = { page: 1, limit: 1 };
+                    if (f?.module && f.module !== "") params.module = f.module;
+                    if (f?.action && f.action !== "") params.action = f.action;
+                    if (f?.role && f.role !== "") params.role = f.role;
+                    if (auditSearch) params.search = auditSearch;
+                    if (dFrom) params.dateFrom = dFrom;
+                    if (dTo) params.dateTo = dTo;
+                    const res = await getActivityLogs(params);
+                    return res?.data?.pagination?.total ?? null;
+                  } catch {
+                    return null;
+                  }
+                }}
               />
             </div>
             {auditError ? (

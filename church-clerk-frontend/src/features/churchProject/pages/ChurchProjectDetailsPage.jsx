@@ -744,45 +744,23 @@ function ChurchProjectDetailsPage() {
       />
 
       <div className="mt-2 rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-3">
-          {/* Left: title + subtitle / Right: mobile action button */}
-          <div className="flex items-center justify-between md:block">
-            <div>
-              {tab === "contributions" ? (
-                <>
-                  <div className="font-semibold text-gray-900 text-sm">Contributions</div>
-                  <div className="text-gray-500 text-xs">All project contributions</div>
-                </>
-              ) : (
-                <>
-                  <div className="font-semibold text-gray-900 text-sm">Expenses</div>
-                  <div className="text-gray-500 text-xs">All project expenses</div>
-                </>
-              )}
-            </div>
-            {tab === "contributions" && canWrite ? (
-              <button
-                type="button"
-                onClick={openCreateContribution}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
-              >
-                <span className="leading-none text-lg">+</span>
-                Add
-              </button>
-            ) : null}
-            {tab === "expenses" && canWrite ? (
-              <button
-                type="button"
-                onClick={openCreateExpense}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
-              >
-                <span className="leading-none text-lg">+</span>
-                Add
-              </button>
-            ) : null}
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          {/* Left: title + subtitle */}
+          <div>
+            {tab === "contributions" ? (
+              <>
+                <div className="font-semibold text-gray-900 text-sm">Contributions</div>
+                <div className="text-gray-500 text-xs">All project contributions</div>
+              </>
+            ) : (
+              <>
+                <div className="font-semibold text-gray-900 text-sm">Expenses</div>
+                <div className="text-gray-500 text-xs">All project expenses</div>
+              </>
+            )}
           </div>
 
-          {/* Right: FilterBar + action button (desktop) */}
+          {/* Right: FilterBar + action button */}
           {tab === "contributions" ? (
             <>
               <FilterBar

@@ -1,9 +1,10 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import ExpensesContext from "../expenses.store.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import { getGeneralExpenses } from "../services/expenses.api.js";
 
 const CATEGORY_OPTIONS = [
   "Maintenance",
@@ -82,6 +83,21 @@ function ExpensesFilters() {
     await store?.fetchGeneralExpenses?.({ category: pending.category, page: 1 });
   };
 
+  const getLiveCount = useCallback(async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
+    try {
+      const params = { page: 1, limit: 1 };
+      if (f?.category && f.category !== "") params.category = f.category;
+      if (recordedByValue) params.recordedBy = recordedByValue;
+      if (dFrom) params.dateFrom = dFrom;
+      if (dTo) params.dateTo = dTo;
+      const res = await getGeneralExpenses(params);
+      const payload = res?.data?.data ?? res?.data;
+      return payload?.pagination?.totalResult ?? null;
+    } catch {
+      return null;
+    }
+  }, [recordedByValue]);
+
   return (
     <>
       <FilterBar
@@ -111,6 +127,8 @@ function ExpensesFilters() {
         onDateApply={applyDates}
         filters={mobileFilters}
         onApply={onMobileApply}
+        resultCount={store?.pagination?.totalResult ?? null}
+        getLiveCount={getLiveCount}
       />
     </>
   );

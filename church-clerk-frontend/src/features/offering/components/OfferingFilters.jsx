@@ -1,9 +1,10 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import OfferingContext from "../offering.store.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import { getOfferings } from "../services/offering.api.js";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -83,6 +84,21 @@ function OfferingFilters() {
     await store?.fetchOfferings({ serviceType: pending.serviceType, page: 1 });
   };
 
+  const getLiveCount = useCallback(async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
+    try {
+      const params = { page: 1, limit: 1 };
+      if (f?.serviceType && f.serviceType !== "") params.serviceType = f.serviceType;
+      if (recordedByValue) params.recordedBy = recordedByValue;
+      if (dFrom) params.dateFrom = dFrom;
+      if (dTo) params.dateTo = dTo;
+      const res = await getOfferings(params, store?.activeChurch);
+      const payload = res?.data?.data ?? res?.data;
+      return payload?.pagination?.totalResult ?? null;
+    } catch {
+      return null;
+    }
+  }, [recordedByValue, store?.activeChurch]);
+
   return (
     <>
       <FilterBar
@@ -112,6 +128,8 @@ function OfferingFilters() {
         onDateApply={applyDates}
         filters={mobileFilters}
         onApply={onMobileApply}
+        resultCount={store?.pagination?.totalResult ?? null}
+        getLiveCount={getLiveCount}
       />
     </>
   );
