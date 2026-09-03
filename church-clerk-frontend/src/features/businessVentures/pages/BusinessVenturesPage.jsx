@@ -17,6 +17,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
@@ -83,6 +84,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
   const [startDate, setStartDate] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -93,24 +95,30 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
     setStartDate("");
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
   }, [open]);
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     if (!String(businessName || "").trim()) {
       setError("Business name is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!String(description || "").trim()) {
       setError("Description is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (String(phoneNumber || "").trim() && !isValidPhoneNumber(phoneNumber)) {
       setError("Invalid phone number");
+      setIsSubmitting(false);
       return;
     }
 
@@ -128,6 +136,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -194,13 +203,15 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText="Adding..."
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Add
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>
@@ -214,6 +225,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -223,22 +235,30 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
     setPhoneNumber(String(initialData?.phoneNumber || ""));
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
   }, [open, initialData]);
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     const id = initialData?._id;
-    if (!id) return;
+    if (!id) {
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!String(businessName || "").trim()) {
       setError("Business name is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!String(description || "").trim()) {
       setError("Description is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -255,6 +275,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -306,13 +327,15 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText="Saving..."
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Save
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>

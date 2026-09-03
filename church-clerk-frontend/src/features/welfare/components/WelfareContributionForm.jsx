@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 
 import PermissionContext from "../../permissions/permission.store.js";
 import WelfareContext from "../welfare.store.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque"];
 
@@ -16,6 +17,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
   const [date, setDate] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [query, setQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
@@ -41,6 +43,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setAmount(initialData.amount ?? "");
@@ -86,21 +89,26 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!amount || Number(amount) <= 0) {
       setFormError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!date) {
       setFormError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (mode !== "edit") {
       if (!selectedMemberId) {
         setFormError("Please select a member.");
+        setIsSubmitting(false);
         return;
       }
     }
@@ -123,6 +131,8 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
       onSuccess?.();
     } catch (e2) {
       setFormError(e2?.response?.data?.message || e2?.message || "Request failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -247,13 +257,15 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.loading}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

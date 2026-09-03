@@ -13,6 +13,7 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import Select from "react-select";
 import { Country, State } from "country-state-city";
 import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
@@ -182,6 +183,7 @@ function MemberFormPageInner() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [cells, setCells] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -407,15 +409,19 @@ function MemberFormPageInner() {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError(null);
 
     if (!firstName?.trim() || !lastName?.trim() || !phoneNumber?.trim()) {
       setError("First name, last name and phone number are required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!isValidPhoneNumber(phoneNumber)) {
       setError("Invalid phone number");
+      setIsSubmitting(false);
       return;
     }
 
@@ -450,13 +456,13 @@ function MemberFormPageInner() {
 
     try {
       if (pageMode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) { setIsSubmitting(false); return; }
         await store?.updateMember(memberId, payload);
         if (photoFile) {
           try { await uploadMemberPhoto(memberId, photoFile); } catch (_) {}
         }
       } else {
-        if (!canCreate) return;
+        if (!canCreate) { setIsSubmitting(false); return; }
         const res = await apiCreateMember(payload);
         const newId = res?.data?.data?._id || res?.data?.member?._id || res?.data?._id;
         if (photoFile && newId) {
@@ -469,6 +475,8 @@ function MemberFormPageInner() {
     } catch (e2) {
       const message = e2?.response?.data?.error || e2?.response?.data?.message || e2?.message || "Request failed";
       setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -903,13 +911,15 @@ function MemberFormPageInner() {
             </Section>
 
             <div className="flex items-center justify-end gap-3">
-              <button
+              <Button
                 type="submit"
-                disabled={store?.loading}
-                className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+                variant="primary"
+                loading={isSubmitting}
+                loadingText={pageMode === "edit" ? "Updating..." : "Saving..."}
+                className="rounded-lg px-4 py-2 shadow-sm text-sm"
               >
-                {store?.loading ? (pageMode === "edit" ? "Updating..." : "Saving...") : pageMode === "edit" ? "Update" : "Save"}
-              </button>
+                {pageMode === "edit" ? "Update" : "Save"}
+              </Button>
             </div>
           </form>
         )}

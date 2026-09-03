@@ -4,6 +4,7 @@ import { useAuth } from "../useAuth.js";
 import AuthCard from "../components/AuthCard.jsx";
 import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
 import { loginSchema } from "../auth.schemas.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function Login() {
   const { login } = useAuth();
@@ -16,14 +17,18 @@ function Login() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     const errs = validateForm(loginSchema, { email, password });
     if (hasErrors(errs)) {
       setFieldErrors(errs);
+      setIsSubmitting(false);
       return;
     }
     setFieldErrors({});
@@ -48,6 +53,7 @@ function Login() {
       setError(err?.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -159,13 +165,15 @@ function Login() {
           </Link>
         </div>
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
+          variant="primary"
+          loading={isSubmitting}
+          loadingText="Signing in..."
           className="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
         >
-          {loading ? "Signing in..." : "Sign In"}
-        </button>
+          Sign In
+        </Button>
       </form>
     </AuthCard>
   );

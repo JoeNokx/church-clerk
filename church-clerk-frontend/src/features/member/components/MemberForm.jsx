@@ -3,6 +3,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext from "../member.store.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
@@ -43,11 +44,13 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
   const [note, setNote] = useState("");
   const [visitorId, setVisitorId] = useState(null);
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setFirstName(initialData.firstName || "");
@@ -77,30 +80,37 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!firstName?.trim() || !lastName?.trim() || !phoneNumber?.trim()) {
       setFormError("First name, last name and phone number are required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!isValidPhoneNumber(phoneNumber)) {
       setFormError("Invalid phone number");
+      setIsSubmitting(false);
       return;
     }
 
     if (!gender) {
       setFormError("Please select a gender.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!ageGroup) {
       setFormError("Please select an age group.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!city?.trim()) {
       setFormError("Location / Residential address is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -119,10 +129,10 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) { setIsSubmitting(false); return; }
         await store?.updateMember(initialData?._id, payload);
       } else {
-        if (!canCreate) return;
+        if (!canCreate) { setIsSubmitting(false); return; }
         await store?.createMember(payload);
       }
 
@@ -130,6 +140,8 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
     } catch (e2) {
       const message = e2?.response?.data?.error || e2?.response?.data?.message || e2?.message || "Request failed";
       setFormError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -271,13 +283,15 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
+              className="rounded-lg px-4 py-2 shadow-sm text-sm"
             >
-              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

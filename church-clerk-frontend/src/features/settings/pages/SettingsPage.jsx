@@ -18,6 +18,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -111,6 +112,7 @@ function SettingsPage() {
   const [tab, setTab] = useState("my-profile");
 
   const [myProfileLoading, setMyProfileLoading] = useState(false);
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
   const [myProfileError, setMyProfileError] = useState("");
   const [myProfileSuccess, setMyProfileSuccess] = useState("");
 
@@ -133,6 +135,7 @@ function SettingsPage() {
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState("");
   const passwordSectionRef = useRef(null);
@@ -207,6 +210,7 @@ function SettingsPage() {
   }, [location.search, tab]);
 
   const [profileLoading, setProfileLoading] = useState(false);
+  const [isSubmittingChurchProfile, setIsSubmittingChurchProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
 
@@ -339,10 +343,13 @@ function SettingsPage() {
 
   const handleSaveMyProfile = async (e) => {
     e.preventDefault();
+    if (isSubmittingProfile) return;
+    setIsSubmittingProfile(true);
     setMyProfileError("");
     setMyProfileSuccess("");
 
     if (!isValidPhoneNumber(myPhone)) {
+      setIsSubmittingProfile(false);
       setMyProfileError("Invalid phone number");
       return;
     }
@@ -368,11 +375,14 @@ function SettingsPage() {
       setMyProfileError(err?.response?.data?.message || err?.message || "Failed to update profile");
     } finally {
       setMyProfileLoading(false);
+      setIsSubmittingProfile(false);
     }
   };
 
   const handleUpdateMyPassword = async (e) => {
     e.preventDefault();
+    if (isSubmittingPassword) return;
+    setIsSubmittingPassword(true);
     setPwError("");
     setPwSuccess("");
 
@@ -387,6 +397,7 @@ function SettingsPage() {
       setPwError(err?.response?.data?.message || err?.message || "Failed to update password");
     } finally {
       setPwLoading(false);
+      setIsSubmittingPassword(false);
     }
   };
 
@@ -682,7 +693,9 @@ function SettingsPage() {
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
-    if (!activeChurch?._id) return;
+    if (isSubmittingChurchProfile) return;
+    setIsSubmittingChurchProfile(true);
+    if (!activeChurch?._id) { setIsSubmittingChurchProfile(false); return; }
 
     setProfileLoading(true);
     setProfileError("");
@@ -690,6 +703,7 @@ function SettingsPage() {
 
     if (!isValidPhoneNumber(phoneNumber)) {
       setProfileLoading(false);
+      setIsSubmittingChurchProfile(false);
       setProfileError("Invalid phone number");
       return;
     }
@@ -699,18 +713,21 @@ function SettingsPage() {
 
     if (hasCountry && !selectedCountryOption?.value) {
       setProfileLoading(false);
+      setIsSubmittingChurchProfile(false);
       setProfileError("Please select a country from the dropdown list.");
       return;
     }
 
     if (hasRegion && !hasCountry) {
       setProfileLoading(false);
+      setIsSubmittingChurchProfile(false);
       setProfileError("Please select a country first.");
       return;
     }
 
     if (hasRegion && !selectedRegionOption?.value) {
       setProfileLoading(false);
+      setIsSubmittingChurchProfile(false);
       setProfileError("Please select a region from the dropdown list.");
       return;
     }
@@ -760,6 +777,7 @@ function SettingsPage() {
       setProfileError(e?.response?.data?.message || e?.message || "Failed to update church profile");
     } finally {
       setProfileLoading(false);
+      setIsSubmittingChurchProfile(false);
     }
   };
 
@@ -807,6 +825,7 @@ function SettingsPage() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
+  const [isSubmittingUser, setIsSubmittingUser] = useState(false);
   const [addError, setAddError] = useState("");
   const [newFullName, setNewFullName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -819,6 +838,7 @@ function SettingsPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [isSubmittingEditUser, setIsSubmittingEditUser] = useState(false);
   const [editError, setEditError] = useState("");
   const [editUser, setEditUser] = useState(null);
   const [editFullName, setEditFullName] = useState("");
@@ -1131,12 +1151,15 @@ function SettingsPage() {
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
+    if (isSubmittingUser) return;
+    setIsSubmittingUser(true);
 
     setAddLoading(true);
     setAddError("");
 
     if (!isValidPhoneNumber(newPhone)) {
       setAddLoading(false);
+      setIsSubmittingUser(false);
       setAddError("Invalid phone number");
       return;
     }
@@ -1162,6 +1185,7 @@ function SettingsPage() {
       setAddError(e?.response?.data?.message || e?.message || "Failed to create user");
     } finally {
       setAddLoading(false);
+      setIsSubmittingUser(false);
     }
   };
 
@@ -1177,13 +1201,16 @@ function SettingsPage() {
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
-    if (!editUser?._id) return;
+    if (isSubmittingEditUser) return;
+    setIsSubmittingEditUser(true);
+    if (!editUser?._id) { setIsSubmittingEditUser(false); return; }
 
     setEditLoading(true);
     setEditError("");
 
     if (!isValidPhoneNumber(editPhone)) {
       setEditLoading(false);
+      setIsSubmittingEditUser(false);
       setEditError("Invalid phone number");
       return;
     }
@@ -1204,6 +1231,7 @@ function SettingsPage() {
       setEditError(e?.response?.data?.message || e?.message || "Failed to update user");
     } finally {
       setEditLoading(false);
+      setIsSubmittingEditUser(false);
     }
   };
 
@@ -1417,13 +1445,16 @@ function SettingsPage() {
                   />
                 </div>
 
-                <button
+                <Button
                   type="submit"
-                  disabled={myProfileLoading || !isUserActive}
+                  variant="primary"
+                  loading={isSubmittingProfile}
+                  loadingText="Saving..."
+                  disabled={!isUserActive}
                   className="w-full bg-blue-900 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
-                  {myProfileLoading ? "Saving..." : "Save Profile"}
-                </button>
+                  Save Profile
+                </Button>
               </form>
             </div>
           </div>
@@ -1488,13 +1519,16 @@ function SettingsPage() {
                 </div>
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={pwLoading || !isUserActive}
+                variant="primary"
+                loading={isSubmittingPassword}
+                loadingText="Updating..."
+                disabled={!isUserActive}
                 className="w-full bg-blue-700 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
               >
-                {pwLoading ? "Updating..." : "Update Password"}
-              </button>
+                Update Password
+              </Button>
             </form>
           </div>
         </div>
@@ -2048,13 +2082,16 @@ function SettingsPage() {
                 </div>
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={profileLoading || !canWrite || (type === "Branch" && !parentChurchId)}
+                variant="primary"
+                loading={isSubmittingChurchProfile}
+                loadingText="Saving..."
+                disabled={!canWrite || (type === "Branch" && !parentChurchId)}
                 className="w-full bg-blue-900 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
               >
-                {profileLoading ? "Saving..." : "Update Church Profile"}
-              </button>
+                Update Church Profile
+              </Button>
             </form>
           </div>
         </div>
@@ -2067,9 +2104,20 @@ function SettingsPage() {
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-3">
-              <div>
-                <div className="font-semibold text-gray-900 text-sm">Users &amp; Roles</div>
-                <div className="mt-1 text-gray-500 text-xs">Manage user accounts and their assigned roles.</div>
+              <div className="flex items-center justify-between md:block">
+                <div>
+                  <div className="font-semibold text-gray-900 text-sm">Users &amp; Roles</div>
+                  <div className="mt-1 text-gray-500 text-xs">Manage user accounts and their assigned roles.</div>
+                </div>
+                {canWrite ? (
+                  <button
+                    type="button"
+                    onClick={handleOpenAdd}
+                    className="md:hidden inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
+                  >
+                    Add User
+                  </button>
+                ) : null}
               </div>
               <FilterBar
                 searchValue={userSearch}
@@ -2124,17 +2172,6 @@ function SettingsPage() {
                   }
                 }}
               />
-              {canWrite ? (
-                <div className="md:hidden">
-                  <button
-                    type="button"
-                    onClick={handleOpenAdd}
-                    className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
-                  >
-                    Add User
-                  </button>
-                </div>
-              ) : null}
             </div>
 
             {usersLoading ? (
@@ -2606,13 +2643,15 @@ function SettingsPage() {
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   type="submit"
-                  disabled={addLoading}
+                  variant="primary"
+                  loading={isSubmittingUser}
+                  loadingText="Saving..."
                   className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
-                  {addLoading ? "Saving..." : "Add User"}
-                </button>
+                  Add User
+                </Button>
               </div>
             </form>
           </div>
@@ -2695,13 +2734,15 @@ function SettingsPage() {
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   type="submit"
-                  disabled={editLoading}
+                  variant="primary"
+                  loading={isSubmittingEditUser}
+                  loadingText="Saving..."
                   className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
-                  {editLoading ? "Saving..." : "Save Changes"}
-                </button>
+                  Save Changes
+                </Button>
               </div>
             </form>
           </div>

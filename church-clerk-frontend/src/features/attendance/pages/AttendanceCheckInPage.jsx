@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getAttendanceInfoByToken, submitAttendanceCheckIn } from "../services/publicAttendance.api.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function formatDate(val) {
   if (!val) return "-";
@@ -17,7 +18,7 @@ export default function AttendanceCheckInPage() {
   const [sessionError, setSessionError] = useState("");
 
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState(null);
 
@@ -33,16 +34,21 @@ export default function AttendanceCheckInPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError("");
-    if (!phoneNumber.trim()) return setFormError("Phone number is required.");
-    setSubmitting(true);
+    if (!phoneNumber.trim()) {
+      setFormError("Phone number is required.");
+      setIsSubmitting(false);
+      return;
+    }
     try {
       const res = await submitAttendanceCheckIn(token, { phoneNumber: phoneNumber.trim() });
       setSuccess({ message: res?.data?.message || "Check-in successful!", memberName: res?.data?.memberName || null });
     } catch (e) {
       setFormError(e?.response?.data?.message || "Check-in failed. Please try again.");
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -135,13 +141,15 @@ export default function AttendanceCheckInPage() {
             <p className="mt-1.5 text-gray-400 text-xs">Enter the phone number you registered with (e.g. +233XXXXXXXXX)</p>
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={submitting}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText="Checking in..."
             className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 text-sm transition-colors"
           >
-            {submitting ? "Checking in..." : "Mark Present"}
-          </button>
+            Mark Present
+          </Button>
         </form>
 
         <p className="mt-5 text-center text-gray-400 text-xs">

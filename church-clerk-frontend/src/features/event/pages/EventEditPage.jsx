@@ -4,6 +4,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../permissions/permission.store.js";
 import { getEvent as apiGetEvent, updateEvent as apiUpdateEvent } from "../services/event.api.js";
 import Skeleton from "react-loading-skeleton";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const CATEGORY_OPTIONS = [
   "Conference",
@@ -41,6 +42,7 @@ function EventEditPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -106,19 +108,24 @@ function EventEditPage() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     if (!canEdit) {
       setError("You do not have permission to edit events.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!eventId) {
       setError("Event id is missing");
+      setIsSubmitting(false);
       return;
     }
 
     if (!title || !dateFrom || !venue) {
       setError("Title, Date and Venue are required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -148,6 +155,7 @@ function EventEditPage() {
       setError(err?.response?.data?.message || err?.message || "Failed to update event");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -293,13 +301,16 @@ function EventEditPage() {
             >
               Cancel
             </button>
-            <button
+            <Button
               type="submit"
-              disabled={!canEdit || loading || saving}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText="Saving..."
+              disabled={!canEdit || loading}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
+              Save Changes
+            </Button>
           </div>
         </form>
       </div>

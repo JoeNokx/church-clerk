@@ -17,6 +17,7 @@ import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -255,11 +256,13 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setName(String(initialData?.name || ""));
@@ -301,30 +304,37 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     if (!String(name || "").trim()) {
       setError("Name is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!String(phoneNumber || "").trim()) {
       setError("Phone number is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!isValidPhoneNumber(phoneNumber)) {
       setError("Invalid phone number");
+      setIsSubmitting(false);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
       setError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!pledgeDate) {
       setError("Pledge date is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -350,6 +360,7 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -459,13 +470,15 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText={mode === "edit" ? "Saving..." : "Creating..."}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
-            {saving ? (mode === "edit" ? "Saving..." : "Creating...") : mode === "edit" ? "Save" : "Create"}
-          </button>
+            {mode === "edit" ? "Save" : "Create"}
+          </Button>
         </div>
       </form>
     </BaseModal>

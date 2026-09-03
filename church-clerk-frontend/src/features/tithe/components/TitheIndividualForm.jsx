@@ -3,6 +3,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque", "Card"];
 
@@ -46,6 +47,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [date, setDate] = useState("");
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 250);
@@ -61,6 +63,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
     setQuery("");
     setOptions([]);
     setSelectedMemberId("");
@@ -154,23 +157,31 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (mode === "edit") {
-      if (!canEdit) return;
+      if (!canEdit) {
+        setIsSubmitting(false);
+        return;
+      }
 
       if (!date) {
         setFormError("Date is required.");
+        setIsSubmitting(false);
         return;
       }
 
       if (!amount || Number(amount) <= 0) {
         setFormError("Amount is required.");
+        setIsSubmitting(false);
         return;
       }
 
       if (!paymentMethod) {
         setFormError("Payment method is required.");
+        setIsSubmitting(false);
         return;
       }
 
@@ -186,17 +197,25 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
       } catch (e2) {
         const message = e2?.response?.data?.message || e2?.message || "Request failed";
         setFormError(message);
+      } finally {
+        setIsSubmitting(false);
       }
 
       return;
     }
 
-    if (!canCreate) return;
+    if (!canCreate) {
+      setIsSubmitting(false);
+      return;
+    }
 
     if (pendingEntries.length) {
       const hasAnyCurrentInput = Boolean(selectedMemberId || String(amount || "").trim() || date);
       const currentEntry = hasAnyCurrentInput ? buildEntryPayload() : null;
-      if (hasAnyCurrentInput && !currentEntry) return;
+      if (hasAnyCurrentInput && !currentEntry) {
+        setIsSubmitting(false);
+        return;
+      }
 
       const payloads = [
         ...pendingEntries.map((p) => p?.payload).filter(Boolean),
@@ -209,13 +228,18 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
       } catch (e2) {
         const message = e2?.response?.data?.message || e2?.message || "Request failed";
         setFormError(message);
+      } finally {
+        setIsSubmitting(false);
       }
 
       return;
     }
 
     const entry = buildEntryPayload();
-    if (!entry) return;
+    if (!entry) {
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       await store?.createTitheIndividuals?.(entry);
@@ -223,6 +247,8 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     } catch (e2) {
       const message = e2?.response?.data?.message || e2?.message || "Request failed";
       setFormError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -374,13 +400,15 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
               </button>
             ) : null}
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.loading}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : pendingEntries.length ? "Save All" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : pendingEntries.length ? "Save All" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

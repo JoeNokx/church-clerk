@@ -5,6 +5,7 @@ import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -38,11 +39,13 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
   const [source, setSource] = useState("");
   const [note, setNote] = useState("");
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setFullName(initialData.fullName || "");
@@ -70,35 +73,43 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!fullName?.trim()) {
       setFormError("Full name is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!phoneNumber?.trim()) {
       setFormError("Phone number is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!isValidPhoneNumber(phoneNumber)) {
       setFormError("Invalid phone number");
+      setIsSubmitting(false);
       return;
     }
 
     if (!location?.trim()) {
       setFormError("Location is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!serviceType) {
       setFormError("Please select a service type.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!serviceDate) {
       setFormError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -116,10 +127,16 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) {
+          setIsSubmitting(false);
+          return;
+        }
         await store?.updateVisitor(initialData?._id, payload);
       } else {
-        if (!canCreate) return;
+        if (!canCreate) {
+          setIsSubmitting(false);
+          return;
+        }
         await store?.createVisitor(payload);
       }
 
@@ -127,6 +144,8 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
     } catch (e2) {
       const message = e2?.response?.data?.error || e2?.response?.data?.message || e2?.message || "Request failed";
       setFormError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -288,13 +307,15 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.visitorLoading}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {store?.visitorLoading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

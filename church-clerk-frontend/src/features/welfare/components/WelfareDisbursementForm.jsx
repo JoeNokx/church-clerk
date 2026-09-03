@@ -4,6 +4,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import WelfareContext from "../welfare.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const CATEGORY_OPTIONS = ["Birthday", "Wedding", "Funeral", "Hospital", "Emergency", "School", "Other"];
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque"];
@@ -25,11 +26,13 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setBeneficiaryName(String(initialData.beneficiaryName || ""));
@@ -51,25 +54,31 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!String(beneficiaryName || "").trim()) {
       setFormError("Beneficiary name is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!String(category || "").trim()) {
       setFormError("Category is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
       setFormError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!date) {
       setFormError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -94,6 +103,8 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
       onSuccess?.();
     } catch (e2) {
       setFormError(e2?.response?.data?.message || e2?.message || "Request failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -217,13 +228,15 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.loading}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

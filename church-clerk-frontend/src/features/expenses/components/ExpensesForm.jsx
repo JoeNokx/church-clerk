@@ -4,6 +4,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import ExpensesContext from "../expenses.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const CATEGORY_OPTIONS = [
   "Maintenance",
@@ -36,11 +37,13 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setCategory(String(initialData.category || ""));
@@ -60,20 +63,25 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!category) {
       setFormError("Please select a category.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
       setFormError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!date) {
       setFormError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -87,16 +95,24 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) {
+          setIsSubmitting(false);
+          return;
+        }
         await store?.updateGeneralExpenses?.(initialData?._id, payload);
       } else {
-        if (!canCreate) return;
+        if (!canCreate) {
+          setIsSubmitting(false);
+          return;
+        }
         await store?.createGeneralExpenses?.(payload);
       }
 
       onSuccess?.();
     } catch (e2) {
       setFormError(e2?.response?.data?.message || e2?.message || "Request failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -215,13 +231,15 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.loading}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

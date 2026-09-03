@@ -22,6 +22,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -223,11 +224,13 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setContributorName(initialData?.contributorName || "");
@@ -245,19 +248,24 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     if (!String(contributorName || "").trim()) {
+      setIsSubmitting(false);
       setError("Contributor is required.");
       return;
     }
 
     if (!date) {
+      setIsSubmitting(false);
       setError("Date is required.");
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
+      setIsSubmitting(false);
       setError("Amount is required.");
       return;
     }
@@ -274,6 +282,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -338,13 +347,16 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={disabled || saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText={mode === "edit" ? "Saving..." : "Adding..."}
+            disabled={disabled}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Add Contribution"}
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>
@@ -358,11 +370,13 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setSpentOn(initialData?.spentOn || "");
@@ -380,19 +394,24 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     if (!String(spentOn || "").trim()) {
+      setIsSubmitting(false);
       setError("Spent on is required.");
       return;
     }
 
     if (!date) {
+      setIsSubmitting(false);
       setError("Date is required.");
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
+      setIsSubmitting(false);
       setError("Amount is required.");
       return;
     }
@@ -409,6 +428,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -473,13 +493,16 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={disabled || saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText={mode === "edit" ? "Saving..." : "Recording..."}
+            disabled={disabled}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Record Expense"}
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>

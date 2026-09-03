@@ -10,6 +10,7 @@ import currencyCodes from "currency-codes";
 import { Country, State } from "country-state-city";
 import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
 import { AFRICAN_CURRENCY_CODES } from "../../../shared/utils/africanCurrencies.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function RegisterChurch() {
   const navigate = useNavigate();
@@ -137,6 +138,7 @@ function RegisterChurch() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isBranch = type === "Branch";
 
@@ -265,29 +267,35 @@ function RegisterChurch() {
 
   const handleRegisterChurch = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setLoading(true);
     setError("");
 
     if (!isValidPhoneNumber(phoneNumber)) {
       setLoading(false);
+      setIsSubmitting(false);
       setError("Invalid phone number");
       return;
     }
 
     if (!String(country || "").trim()) {
       setLoading(false);
+      setIsSubmitting(false);
       setError("Country is required");
       return;
     }
 
     if (!String(region || "").trim()) {
       setLoading(false);
+      setIsSubmitting(false);
       setError("Region is required");
       return;
     }
 
     if (!String(city || "").trim()) {
       setLoading(false);
+      setIsSubmitting(false);
       setError("City is required");
       return;
     }
@@ -322,6 +330,7 @@ function RegisterChurch() {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -640,13 +649,15 @@ function RegisterChurch() {
           />
         </div>
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
+          variant="primary"
+          loading={isSubmitting}
+          loadingText="Registering..."
           className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
         >
-          {loading ? "Saving..." : "Register Church"}
-        </button>
+          Register Church
+        </Button>
       </form>
     </AuthCard>
   );

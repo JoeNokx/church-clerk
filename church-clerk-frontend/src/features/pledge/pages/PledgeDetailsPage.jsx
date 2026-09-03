@@ -15,6 +15,7 @@ import {
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -71,11 +72,13 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setPaymentDate(String(initialData?.paymentDate || "").slice(0, 10));
@@ -95,20 +98,25 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     if (!paymentDate) {
       setError("Payment date is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
       setError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!paymentMethod) {
       setError("Payment method is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -125,6 +133,7 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -194,13 +203,15 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText={mode === "edit" ? "Saving..." : "Adding..."}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
-            {saving ? (mode === "edit" ? "Saving..." : "Adding...") : mode === "edit" ? "Save" : "Add"}
-          </button>
+            {mode === "edit" ? "Save" : "Add"}
+          </Button>
         </div>
       </form>
     </BaseModal>

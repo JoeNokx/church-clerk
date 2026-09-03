@@ -7,6 +7,7 @@ import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
 import { registerSchema } from "../auth.schemas.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function Register() {
   const navigate = useNavigate();
@@ -19,9 +20,12 @@ function Register() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     const errs = validateForm(registerSchema, { fullName, email, phoneNumber, password });
@@ -30,6 +34,7 @@ function Register() {
     }
     if (hasErrors(errs)) {
       setFieldErrors(errs);
+      setIsSubmitting(false);
       return;
     }
     setFieldErrors({});
@@ -69,6 +74,7 @@ function Register() {
       setError(err?.response?.data?.message || err?.message || "Something went wrong");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -180,13 +186,15 @@ function Register() {
           {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
         </div>
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
+          variant="primary"
+          loading={isSubmitting}
+          loadingText="Creating account..."
           className="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
         >
-          {loading ? "Creating account..." : "Create Account"}
-        </button>
+          Create Account
+        </Button>
       </form>
     </AuthCard>
   );

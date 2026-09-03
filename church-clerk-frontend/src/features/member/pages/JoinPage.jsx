@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { getChurchInfoByToken, submitSelfRegistration } from "../services/publicRegistration.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const GENDER_OPTIONS = [
   { label: "Male", value: "male" },
@@ -104,6 +105,7 @@ export default function JoinPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     setFormError("");
 
     if (!firstName.trim()) return setFormError("First name is required.");
@@ -359,10 +361,10 @@ export default function JoinPage() {
             </div>
           </div>
 
-          <button type="submit" disabled={submitting}
-            className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm transition-colors mt-2">
-            {submitting ? "Submitting..." : "Register as Member"}
-          </button>
+          <Button type="submit" variant="primary" loading={submitting} loadingText="Registering..."
+            className="w-full rounded-xl py-3 text-sm transition-colors mt-2">
+            Register as Member
+          </Button>
 
           <p className="text-center text-gray-400 text-xs">
             Powered by <span className="font-semibold text-gray-500">ChurchClerk</span>

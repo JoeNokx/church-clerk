@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import http from "../../../shared/services/http.js";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../../church/church.store.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function formatDate(v) {
   if (!v) return "—";
@@ -455,6 +456,7 @@ function SupportHelpPage() {
   }, [autoName, autoChurchName]);
 
   const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [submittedTicketNumber, setSubmittedTicketNumber] = useState("");
   const [openFaq, setOpenFaq] = useState(null);
@@ -578,11 +580,14 @@ function SupportHelpPage() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setSubmitMessage("");
     setSubmittedTicketNumber("");
 
     if (!form.subject.trim() || !form.description.trim()) {
       setSubmitMessage("Please provide a subject and description.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -609,6 +614,7 @@ function SupportHelpPage() {
       setSubmitMessage(err?.response?.data?.message || err?.message || "Failed to submit request.");
     } finally {
       setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -785,13 +791,15 @@ function SupportHelpPage() {
               ) : null}
 
               <div className="flex items-center justify-end gap-3">
-                <button
+                <Button
                   type="submit"
-                  disabled={submitting}
+                  variant="primary"
+                  loading={isSubmitting}
+                  loadingText="Submitting…"
                   className="rounded-lg bg-blue-900 px-4 py-2 font-semibold text-white disabled:opacity-60 text-sm"
                 >
-                  {submitting ? "Submitting…" : "Submit"}
-                </button>
+                  Submit
+                </Button>
               </div>
             </form>
           </div>

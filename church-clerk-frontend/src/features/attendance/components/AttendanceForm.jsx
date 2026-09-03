@@ -3,6 +3,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -34,11 +35,13 @@ function AttendanceForm({ open, mode, initialData, onClose, onSuccess }) {
   const [mainSpeaker, setMainSpeaker] = useState("");
   const [totalNumber, setTotalNumber] = useState("");
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setServiceType(initialData.serviceType || "");
@@ -56,20 +59,25 @@ function AttendanceForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!serviceType) {
       setFormError("Please select a service type.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!serviceDate) {
       setFormError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!totalNumber || Number(totalNumber) <= 0) {
       setFormError("Total attendance is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -93,6 +101,8 @@ function AttendanceForm({ open, mode, initialData, onClose, onSuccess }) {
     } catch (e2) {
       const message = e2?.response?.data?.message || e2?.message || "Request failed";
       setFormError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -194,13 +204,15 @@ function AttendanceForm({ open, mode, initialData, onClose, onSuccess }) {
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.attendanceLoading}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
+              className="px-4 py-2 text-sm"
             >
-              {store?.attendanceLoading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

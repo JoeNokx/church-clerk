@@ -6,6 +6,7 @@ import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { createEvent as apiCreateEvent, getEvent as apiGetEvent, updateEvent as apiUpdateEvent } from "../services/event.api.js";
 import Skeleton from "react-loading-skeleton";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const CATEGORY_OPTIONS = [
   "Conference",
@@ -57,6 +58,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
   const [initialLoading, setInitialLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isModal) return;
@@ -169,26 +171,32 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     if (isEdit) {
       if (!canEdit) {
         setError("You do not have permission to edit events.");
+        setIsSubmitting(false);
         return;
       }
     } else {
       if (!canCreate) {
         setError("You do not have permission to create events.");
+        setIsSubmitting(false);
         return;
       }
     }
 
     if (isEdit && !eventId) {
       setError("Event id is missing");
+      setIsSubmitting(false);
       return;
     }
 
     if (!title || !dateFrom || !venue) {
       setError("Title, Date and Venue are required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -236,6 +244,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
       setError(err?.response?.data?.message || err?.message || "Failed to create event");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -435,13 +444,16 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId })
               >
                 Cancel
               </button>
-              <button
+              <Button
                 type="submit"
-                disabled={(isEdit ? !canEdit : !canCreate) || initialLoading || loading}
+                variant="primary"
+                loading={isSubmitting}
+                loadingText={isEdit ? "Saving..." : "Creating..."}
+                disabled={(isEdit ? !canEdit : !canCreate) || initialLoading}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
               >
-                {loading ? (isEdit ? "Saving..." : "Creating...") : isEdit ? "Save Changes" : "Create Event"}
-              </button>
+                {isEdit ? "Save Changes" : "Create Event"}
+              </Button>
             </div>
           </div>
         </form>

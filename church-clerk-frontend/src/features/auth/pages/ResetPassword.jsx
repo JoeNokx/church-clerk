@@ -4,6 +4,7 @@ import AuthCard from "../components/AuthCard.jsx";
 import { resetPassword } from "../services/auth.api.js";
 import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
 import { resetPasswordSchema } from "../auth.schemas.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -17,20 +18,25 @@ function ResetPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
     setSuccess("");
 
     if (!token) {
       setError("Reset token is missing. Please use the link from your email.");
+      setIsSubmitting(false);
       return;
     }
 
     const errs = validateForm(resetPasswordSchema, { newPassword, confirmPassword });
     if (hasErrors(errs)) {
       setFieldErrors(errs);
+      setIsSubmitting(false);
       return;
     }
     setFieldErrors({});
@@ -43,6 +49,7 @@ function ResetPassword() {
       setError(err?.response?.data?.message || "Failed to reset password");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -103,13 +110,15 @@ function ResetPassword() {
           {fieldErrors.confirmPassword && <p className="mt-1 text-xs text-red-600">{fieldErrors.confirmPassword}</p>}
         </div>
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
+          variant="primary"
+          loading={isSubmitting}
+          loadingText="Resetting..."
           className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
         >
-          {loading ? "Resetting..." : "Reset password"}
-        </button>
+          Reset password
+        </Button>
       </form>
     </AuthCard>
   );

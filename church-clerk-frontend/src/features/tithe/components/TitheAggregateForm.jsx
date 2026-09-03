@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const MAX_DESCRIPTION_LENGTH = 15;
 
@@ -15,11 +16,13 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setAmount(initialData.amount ?? "");
@@ -35,15 +38,19 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!date) {
       setFormError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
       setFormError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -66,6 +73,8 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
     } catch (e2) {
       const message = e2?.response?.data?.message || e2?.message || "Request failed";
       setFormError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -137,13 +146,15 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.loading}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

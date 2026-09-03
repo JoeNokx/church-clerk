@@ -10,6 +10,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 import {
   getGroup,
@@ -246,6 +247,7 @@ function MinistryDetailsPage() {
   const [addMemberValue, setAddMemberValue] = useState("");
   const [addMemberRole, setAddMemberRole] = useState("member");
   const [addMemberSaving, setAddMemberSaving] = useState(false);
+  const [isSubmittingAddMember, setIsSubmittingAddMember] = useState(false);
   const [addMemberError, setAddMemberError] = useState("");
 
   const [addMemberCandidatesLoading, setAddMemberCandidatesLoading] = useState(false);
@@ -259,10 +261,12 @@ function MinistryDetailsPage() {
   const [roleModalMemberId, setRoleModalMemberId] = useState("");
   const [roleModalValue, setRoleModalValue] = useState("");
   const [roleModalError, setRoleModalError] = useState("");
+  const [isSubmittingRole, setIsSubmittingRole] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editError, setEditError] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editMeetingSchedule, setEditMeetingSchedule] = useState([{ meetingDay: "", meetingTime: "", meetingVenue: "" }]);
@@ -293,6 +297,7 @@ function MinistryDetailsPage() {
   const [individualAttendanceDate, setIndividualAttendanceDate] = useState("");
   const [individualAttendanceSelectedIds, setIndividualAttendanceSelectedIds] = useState([]);
   const [individualAttendanceSaving, setIndividualAttendanceSaving] = useState(false);
+  const [isSubmittingIndividualAttendance, setIsSubmittingIndividualAttendance] = useState(false);
   const [individualAttendanceFormError, setIndividualAttendanceFormError] = useState("");
 
   const [individualMembersLoading, setIndividualMembersLoading] = useState(false);
@@ -314,6 +319,7 @@ function MinistryDetailsPage() {
   const [attendanceSpeaker, setAttendanceSpeaker] = useState("");
   const [attendanceActivity, setAttendanceActivity] = useState("");
   const [attendanceSaving, setAttendanceSaving] = useState(false);
+  const [isSubmittingAttendance, setIsSubmittingAttendance] = useState(false);
   const [attendanceFormError, setAttendanceFormError] = useState("");
 
   // offerings
@@ -328,6 +334,7 @@ function MinistryDetailsPage() {
   const [offeringAmount, setOfferingAmount] = useState("");
   const [offeringNote, setOfferingNote] = useState("");
   const [offeringSaving, setOfferingSaving] = useState(false);
+  const [isSubmittingOffering, setIsSubmittingOffering] = useState(false);
   const [offeringFormError, setOfferingFormError] = useState("");
   const [offeringSearch, setOfferingSearch] = useState("");
   const [offeringViewOpen, setOfferingViewOpen] = useState(false);
@@ -580,9 +587,12 @@ function MinistryDetailsPage() {
 
   const addMemberSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmittingAddMember) return;
+    setIsSubmittingAddMember(true);
     setAddMemberError("");
 
     if (!addMemberSelectedIds.length) {
+      setIsSubmittingAddMember(false);
       setAddMemberError("Please select at least one member to add.");
       return;
     }
@@ -610,6 +620,7 @@ function MinistryDetailsPage() {
       setAddMemberError(e2?.response?.data?.message || e2?.message || "Failed to add member");
     } finally {
       setAddMemberSaving(false);
+      setIsSubmittingAddMember(false);
     }
   };
 
@@ -663,9 +674,12 @@ function MinistryDetailsPage() {
 
   const submitIndividualAttendance = async (e) => {
     e.preventDefault();
+    if (isSubmittingIndividualAttendance) return;
+    setIsSubmittingIndividualAttendance(true);
     setIndividualAttendanceFormError("");
 
     if (!individualAttendanceDate) {
+      setIsSubmittingIndividualAttendance(false);
       setIndividualAttendanceFormError("date is required");
       return;
     }
@@ -697,6 +711,7 @@ function MinistryDetailsPage() {
       setIndividualAttendanceFormError(e2?.response?.data?.message || e2?.message || "Failed to save attendance");
     } finally {
       setIndividualAttendanceSaving(false);
+      setIsSubmittingIndividualAttendance(false);
     }
   };
 
@@ -849,9 +864,12 @@ function MinistryDetailsPage() {
 
   const submitEdit = async (e) => {
     e.preventDefault();
+    if (isSubmittingEdit) return;
+    setIsSubmittingEdit(true);
     setEditError("");
 
     if (!editName.trim()) {
+      setIsSubmittingEdit(false);
       setEditError("Name is required.");
       return;
     }
@@ -860,6 +878,7 @@ function MinistryDetailsPage() {
       (m) => !String(m?.meetingDay || "").trim() || !String(m?.meetingTime || "").trim() || !String(m?.meetingVenue || "").trim()
     );
     if (invalidMeeting) {
+      setIsSubmittingEdit(false);
       setEditError("Meeting day, time, and venue are required.");
       return;
     }
@@ -894,6 +913,7 @@ function MinistryDetailsPage() {
       setEditError(e2?.response?.data?.message || e2?.message || "Failed to update");
     } finally {
       setEditSaving(false);
+      setIsSubmittingEdit(false);
     }
   };
 
@@ -906,11 +926,14 @@ function MinistryDetailsPage() {
 
   const submitRoleModal = async (e) => {
     e.preventDefault();
+    if (isSubmittingRole) return;
+    setIsSubmittingRole(true);
     setRoleModalError("");
     const memberId = roleModalMemberId;
     const role = String(roleModalValue || "").trim();
-    if (!memberId) return;
+    if (!memberId) { setIsSubmittingRole(false); return; }
     if (!role) {
+      setIsSubmittingRole(false);
       setRoleModalError("Role is required.");
       return;
     }
@@ -924,6 +947,8 @@ function MinistryDetailsPage() {
       setRoleModalOpen(false);
     } catch (e2) {
       setRoleModalError(e2?.response?.data?.message || e2?.message || "Failed to update role");
+    } finally {
+      setIsSubmittingRole(false);
     }
   };
 
@@ -940,14 +965,18 @@ function MinistryDetailsPage() {
 
   const submitAttendance = async (e) => {
     e.preventDefault();
+    if (isSubmittingAttendance) return;
+    setIsSubmittingAttendance(true);
     setAttendanceFormError("");
 
     if (!attendanceDate) {
+      setIsSubmittingAttendance(false);
       setAttendanceFormError("date is required");
       return;
     }
 
     if (!attendanceNumber || Number(attendanceNumber) <= 0) {
+      setIsSubmittingAttendance(false);
       setAttendanceFormError("number of attendees is required");
       return;
     }
@@ -980,6 +1009,7 @@ function MinistryDetailsPage() {
       setAttendanceFormError(e2?.response?.data?.message || e2?.message || "Failed to save attendance");
     } finally {
       setAttendanceSaving(false);
+      setIsSubmittingAttendance(false);
     }
   };
 
@@ -995,14 +1025,18 @@ function MinistryDetailsPage() {
 
   const submitOffering = async (e) => {
     e.preventDefault();
+    if (isSubmittingOffering) return;
+    setIsSubmittingOffering(true);
     setOfferingFormError("");
 
     if (!offeringDate) {
+      setIsSubmittingOffering(false);
       setOfferingFormError("date is required");
       return;
     }
 
     if (!offeringAmount || Number(offeringAmount) <= 0) {
+      setIsSubmittingOffering(false);
       setOfferingFormError("amount is required");
       return;
     }
@@ -1034,6 +1068,7 @@ function MinistryDetailsPage() {
       setOfferingFormError(e2?.response?.data?.message || e2?.message || "Failed to save offering");
     } finally {
       setOfferingSaving(false);
+      setIsSubmittingOffering(false);
     }
   };
 
@@ -1393,13 +1428,16 @@ function MinistryDetailsPage() {
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   type="submit"
-                  disabled={addMemberSaving || addMemberSelectedIds.length === 0}
+                  variant="primary"
+                  loading={isSubmittingAddMember}
+                  loadingText="Adding..."
+                  disabled={addMemberSelectedIds.length === 0}
                   className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                 >
                   Add
-                </button>
+                </Button>
               </div>
             </form>
           </SimpleModal>
@@ -1430,12 +1468,15 @@ function MinistryDetailsPage() {
             >
               Cancel
             </button>
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              loading={isSubmittingRole}
+              loadingText="Saving..."
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               Save
-            </button>
+            </Button>
           </div>
         </form>
       </SimpleModal>
@@ -1564,13 +1605,15 @@ function MinistryDetailsPage() {
             >
               Cancel
             </button>
-            <button
+            <Button
               type="submit"
-              disabled={editSaving}
+              variant="primary"
+              loading={isSubmittingEdit}
+              loadingText="Saving..."
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
               Save
-            </button>
+            </Button>
           </div>
         </form>
       </SimpleModal>
@@ -1802,13 +1845,15 @@ function MinistryDetailsPage() {
                     >
                       Cancel
                     </button>
-                    <button
+                    <Button
                       type="submit"
-                      disabled={individualAttendanceSaving}
+                      variant="primary"
+                      loading={isSubmittingIndividualAttendance}
+                      loadingText={individualAttendanceMode === "edit" ? "Updating..." : "Saving..."}
                       className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                     >
-                      {individualAttendanceSaving ? (individualAttendanceMode === "edit" ? "Updating..." : "Saving...") : individualAttendanceMode === "edit" ? "Update" : "Save"}
-                    </button>
+                      {individualAttendanceMode === "edit" ? "Update" : "Save"}
+                    </Button>
                   </div>
                 </form>
               </SimpleModal>
@@ -2060,13 +2105,15 @@ function MinistryDetailsPage() {
                     >
                       Cancel
                     </button>
-                    <button
+                    <Button
                       type="submit"
-                      disabled={attendanceSaving}
+                      variant="primary"
+                      loading={isSubmittingAttendance}
+                      loadingText={attendanceMode === "edit" ? "Updating..." : "Saving..."}
                       className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                     >
-                      {attendanceSaving ? (attendanceMode === "edit" ? "Updating..." : "Saving...") : attendanceMode === "edit" ? "Update" : "Save"}
-                    </button>
+                      {attendanceMode === "edit" ? "Update" : "Save"}
+                    </Button>
                   </div>
                 </form>
               </SimpleModal>
@@ -2260,13 +2307,15 @@ function MinistryDetailsPage() {
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   type="submit"
-                  disabled={offeringSaving}
+                  variant="primary"
+                  loading={isSubmittingOffering}
+                  loadingText={offeringMode === "edit" ? "Updating..." : "Saving..."}
                   className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
                 >
-                  {offeringSaving ? (offeringMode === "edit" ? "Updating..." : "Saving...") : offeringMode === "edit" ? "Update" : "Save"}
-                </button>
+                  {offeringMode === "edit" ? "Update" : "Save"}
+                </Button>
               </div>
             </form>
           </SimpleModal>

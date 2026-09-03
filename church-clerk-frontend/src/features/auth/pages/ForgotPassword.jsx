@@ -4,6 +4,7 @@ import AuthCard from "../components/AuthCard.jsx";
 import { forgotPassword } from "../services/auth.api.js";
 import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
 import { forgotPasswordSchema } from "../auth.schemas.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -11,15 +12,19 @@ function ForgotPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
     setSuccess("");
 
     const errs = validateForm(forgotPasswordSchema, { email });
     if (hasErrors(errs)) {
       setFieldErrors(errs);
+      setIsSubmitting(false);
       return;
     }
     setFieldErrors({});
@@ -32,6 +37,7 @@ function ForgotPassword() {
       setError(err?.response?.data?.message || "Failed to request password reset");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -76,13 +82,15 @@ function ForgotPassword() {
           {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
         </div>
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
+          variant="primary"
+          loading={isSubmitting}
+          loadingText="Sending..."
           className="w-full bg-blue-900 text-white py-3 md:py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 active:bg-blue-950 disabled:opacity-50 text-sm"
         >
-          {loading ? "Sending link..." : "Send reset link"}
-        </button>
+          Send reset link
+        </Button>
       </form>
     </AuthCard>
   );

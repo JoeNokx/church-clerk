@@ -13,6 +13,7 @@ import { getCells, createCell, updateCell, deleteCell } from "../../cell/service
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -193,6 +194,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
   const [meetingSchedule, setMeetingSchedule] = useState([{ meetingDay: "", meetingTime: "", meetingVenue: "" }]);
   const [status, setStatus] = useState("active");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const meetingDays = useMemo(
     () => ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
@@ -231,9 +233,12 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!name.trim()) {
+      setIsSubmitting(false);
       setFormError("Name is required.");
       return;
     }
@@ -242,6 +247,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
       (m) => !String(m?.meetingDay || "").trim() || !String(m?.meetingTime || "").trim() || !String(m?.meetingVenue || "").trim()
     );
     if (invalidMeeting) {
+      setIsSubmitting(false);
       setFormError("Meeting day, time, and venue are required.");
       return;
     }
@@ -296,6 +302,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
       setFormError(err?.response?.data?.message || err?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -450,13 +457,15 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={saving}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {saving ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

@@ -8,6 +8,7 @@ import AttendanceForm from "../components/AttendanceForm.jsx";
 import AttendanceTable from "../components/AttendanceTable.jsx";
 import VisitorFilters from "../components/VisitorFilters.jsx";
 import VisitorForm from "../components/VisitorForm.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 import VisitorTable from "../components/VisitorTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -277,6 +278,7 @@ function AttendancePageInner() {
 
   const submitIndivForm = async (e) => {
     e.preventDefault();
+    if (indivFormSaving) return;
     setIndivFormError("");
     if (!indivFormDate) { setIndivFormError("Date is required"); return; }
     if (!indivFormServiceType.trim()) { setIndivFormError("Service type is required"); return; }
@@ -944,9 +946,9 @@ function AttendancePageInner() {
               </div>
               <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
                 <button type="button" onClick={() => { setIndivFormModalOpen(false); setIndivFormError(""); }} disabled={indivFormSaving} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Cancel</button>
-                <button type="submit" disabled={indivFormSaving} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm">
-                  {indivFormSaving ? (indivFormMode === "edit" ? "Updating..." : "Starting...") : (indivFormMode === "edit" ? "Update" : "Start Session")}
-                </button>
+                <Button type="submit" variant="primary" loading={indivFormSaving} loadingText={indivFormMode === "edit" ? "Updating..." : "Starting..."} className="rounded-lg px-4 py-2 text-sm">
+                  {indivFormMode === "edit" ? "Update" : "Start Session"}
+                </Button>
               </div>
             </form>
           </SimpleModal>

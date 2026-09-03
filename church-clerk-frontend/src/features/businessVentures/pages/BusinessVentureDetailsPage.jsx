@@ -11,6 +11,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 import {
   getBusinessIncomeExpensesKPI,
   getBusinessVenture
@@ -283,11 +284,13 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setRecievedFrom(String(initialData?.recievedFrom || ""));
@@ -305,20 +308,25 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     if (!String(recievedFrom || "").trim()) {
       setError("Received from is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!date) {
       setError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
       setError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -334,6 +342,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -391,13 +400,15 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText={mode === "edit" ? "Saving..." : "Adding..."}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Add"}
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>
@@ -412,11 +423,13 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setSpentBy(String(initialData?.spentBy || ""));
@@ -436,25 +449,31 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     if (!String(spentBy || "").trim()) {
       setError("Spent by is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!date) {
       setError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
       setError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!String(category || "").trim()) {
       setError("Category is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -471,6 +490,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -569,13 +589,15 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText={mode === "edit" ? "Saving..." : "Adding..."}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             {mode === "edit" ? "Save" : "Add"}
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>

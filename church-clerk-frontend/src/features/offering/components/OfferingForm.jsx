@@ -3,6 +3,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import OfferingContext from "../offering.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const SERVICE_TYPES = [
   "Sunday Service",
@@ -46,11 +47,13 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
   const [serviceDate, setServiceDate] = useState("");
   const [amount, setAmount] = useState("");
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setServiceType(initialData.serviceType || "");
@@ -68,25 +71,31 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     if (!serviceType) {
       setFormError("Please select a service type.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!offeringType) {
       setFormError("Please select an offering type.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!serviceDate) {
       setFormError("Date is required.");
+      setIsSubmitting(false);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
       setFormError("Amount is required.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -99,10 +108,10 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
     try {
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) { setIsSubmitting(false); return; }
         await store?.updateOffering(initialData?._id, payload);
       } else {
-        if (!canCreate) return;
+        if (!canCreate) { setIsSubmitting(false); return; }
         await store?.createOffering(payload);
       }
 
@@ -110,6 +119,8 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
     } catch (e2) {
       const message = e2?.response?.data?.message || e2?.message || "Request failed";
       setFormError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -226,13 +237,15 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
+              className="rounded-lg px-4 py-2 shadow-sm text-sm"
             >
-              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Button from "../../../shared/components/Button/index.jsx";
 import {
   getOutreachEventById,
   updateOutreachEvent,
@@ -90,6 +91,7 @@ function ProspectFormModal({ open, mode, initialData, eventId, onClose, onSaved 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     if (!form.firstName.trim()) { setError("First name is required."); return; }
     setSaving(true); setError("");
     try {
@@ -181,9 +183,9 @@ function ProspectFormModal({ open, mode, initialData, eventId, onClose, onSaved 
         </form>
         <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4 shrink-0">
           <button type="button" onClick={onClose} className="h-11 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-          <button type="submit" onClick={handleSubmit} disabled={saving} className="h-11 rounded-lg bg-blue-700 px-6 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
-            {saving ? "Saving…" : mode === "edit" ? "Save Changes" : "Add Prospect"}
-          </button>
+          <Button type="submit" variant="primary" onClick={handleSubmit} loading={saving} loadingText="Saving…" className="h-11 rounded-lg px-6 text-sm">
+            {mode === "edit" ? "Save Changes" : "Add Prospect"}
+          </Button>
         </div>
       </div>
     </div>
@@ -209,6 +211,7 @@ function FollowUpFormModal({ open, mode, initialData, prospectId, eventId, onClo
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     if (!form.followUpDate) { setError("Follow-up date is required."); return; }
     setSaving(true); setError("");
     try {
@@ -260,9 +263,9 @@ function FollowUpFormModal({ open, mode, initialData, prospectId, eventId, onClo
         </form>
         <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4 shrink-0">
           <button type="button" onClick={onClose} className="h-11 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-          <button type="submit" onClick={handleSubmit} disabled={saving} className="h-11 rounded-lg bg-blue-700 px-6 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
-            {saving ? "Saving…" : mode === "edit" ? "Save Changes" : "Record"}
-          </button>
+          <Button type="submit" variant="primary" onClick={handleSubmit} loading={saving} loadingText="Saving…" className="h-11 rounded-lg px-6 text-sm">
+            {mode === "edit" ? "Save Changes" : "Record"}
+          </Button>
         </div>
       </div>
     </div>

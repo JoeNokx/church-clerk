@@ -4,6 +4,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import BudgetingContext from "../budgeting.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const STATUS_OPTIONS = ["draft", "active", "archived"];
 
@@ -49,11 +50,13 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
   const [status, setStatus] = useState("draft");
   const [items, setItems] = useState([emptyItem()]);
   const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
+    setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
       setName(String(initialData?.name || ""));
@@ -109,6 +112,8 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setFormError(null);
 
     try {
@@ -129,16 +134,24 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
       };
 
       if (mode === "edit") {
-        if (!canEdit) return;
+        if (!canEdit) {
+          setIsSubmitting(false);
+          return;
+        }
         await store?.updateBudget?.(initialData?._id, payload);
       } else {
-        if (!canCreate) return;
+        if (!canCreate) {
+          setIsSubmitting(false);
+          return;
+        }
         await store?.createBudget?.(payload);
       }
 
       onSuccess?.();
     } catch (e2) {
       setFormError(e2?.response?.data?.message || e2?.message || "Request failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -371,13 +384,15 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
               Cancel
             </button>
 
-            <button
+            <Button
               type="submit"
-              disabled={store?.loading}
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {store?.loading ? (mode === "edit" ? "Updating..." : "Saving...") : mode === "edit" ? "Update" : "Save"}
-            </button>
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
           </div>
         </form>
       </div>

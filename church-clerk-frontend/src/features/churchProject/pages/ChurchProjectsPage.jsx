@@ -17,6 +17,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -82,6 +83,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
   const [startDate, setStartDate] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -91,23 +93,29 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
     setStartDate("");
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
   }, [open]);
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     if (!String(name || "").trim()) {
+      setIsSubmitting(false);
       setError("Project name is required.");
       return;
     }
 
     if (!targetAmount || Number(targetAmount) <= 0) {
+      setIsSubmitting(false);
       setError("Target amount is required.");
       return;
     }
 
     if (!String(description || "").trim()) {
+      setIsSubmitting(false);
       setError("Description is required.");
       return;
     }
@@ -128,6 +136,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -192,13 +201,16 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={disabled || saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText="Adding..."
+            disabled={disabled}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Add Project
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>
@@ -212,6 +224,7 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -221,25 +234,31 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
     setNotes("");
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
   }, [open]);
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
-    if (!project?._id) return;
+    if (!project?._id) { setIsSubmitting(false); return; }
 
     if (!String(contributorName || "").trim()) {
+      setIsSubmitting(false);
       setError("Contributor is required.");
       return;
     }
 
     if (!date) {
+      setIsSubmitting(false);
       setError("Date is required.");
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
+      setIsSubmitting(false);
       setError("Amount is required.");
       return;
     }
@@ -257,6 +276,7 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -321,13 +341,16 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={disabled || saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText="Adding..."
+            disabled={disabled}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Add Contribution
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>
@@ -341,6 +364,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -350,25 +374,31 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
     setDescription("");
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
   }, [open]);
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
-    if (!project?._id) return;
+    if (!project?._id) { setIsSubmitting(false); return; }
 
     if (!String(spentOn || "").trim()) {
+      setIsSubmitting(false);
       setError("Spent on is required.");
       return;
     }
 
     if (!date) {
+      setIsSubmitting(false);
       setError("Date is required.");
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
+      setIsSubmitting(false);
       setError("Amount is required.");
       return;
     }
@@ -386,6 +416,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -450,13 +481,16 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={disabled || saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText="Recording..."
+            disabled={disabled}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Record Expense
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>
@@ -935,6 +969,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
   const [status, setStatus] = useState("Active");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -944,26 +979,32 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
     setStatus(String(initialData?.status || "Active"));
     setError("");
     setSaving(false);
+    setIsSubmitting(false);
   }, [open, initialData]);
 
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError("");
 
     const id = initialData?._id;
-    if (!id) return;
+    if (!id) { setIsSubmitting(false); return; }
 
     if (!String(name || "").trim()) {
+      setIsSubmitting(false);
       setError("Project name is required.");
       return;
     }
 
     if (!targetAmount || Number(targetAmount) <= 0) {
+      setIsSubmitting(false);
       setError("Target amount is required.");
       return;
     }
 
     if (!String(description || "").trim()) {
+      setIsSubmitting(false);
       setError("Description is required.");
       return;
     }
@@ -983,6 +1024,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
       setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -1044,13 +1086,15 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
           >
             Cancel
           </button>
-          <button
+          <Button
             type="submit"
-            disabled={saving}
+            variant="primary"
+            loading={isSubmitting}
+            loadingText="Saving..."
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
             Save
-          </button>
+          </Button>
         </div>
       </form>
     </BaseModal>

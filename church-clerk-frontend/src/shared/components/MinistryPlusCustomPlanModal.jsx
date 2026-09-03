@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PhoneNumberInput from "../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import Button from "./Button/index.jsx";
 
 function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = "max-w-2xl" }) {
   if (!open) return null;
@@ -136,13 +137,15 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
         ) : null}
 
         <div className="flex items-center justify-end">
-          <button
+          <Button
             type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
+            variant="primary"
+            loading={submitting}
+            loadingText="Submitting…"
+            className="rounded-lg px-4 md:px-5 lg:px-6 py-2 text-sm"
           >
-            {submitting ? "Submitting…" : "Submit"}
-          </button>
+            Submit
+          </Button>
         </div>
 
         <div className="mt-2 rounded-xl border border-gray-200 bg-white p-4">
