@@ -94,6 +94,9 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
   const totalMvvPages = Math.max(1, Math.ceil(allMvvData.length / MONTH_SIZE));
   const mvvPageData = allMvvData.slice(mvvPage * MONTH_SIZE, (mvvPage + 1) * MONTH_SIZE);
 
+  const hasAttData = Array.isArray(attData) && attData.some((d) => Number(d?.totalAttendance) > 0);
+  const hasMvvData = Array.isArray(allMvvData) && allMvvData.some((d) => Number(d?.newMembers) > 0 || Number(d?.visitors) > 0);
+
   function AgeLabelRenderer(props) {
     const { cx, cy, midAngle, outerRadius, percent, name } = props;
     if (!percent) return null;
@@ -133,6 +136,8 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
             </div>
           </div>
           <div className="mt-2 flex-1 min-h-0 relative">
+            {hasAttData ? (
+            <>
             {/* Mobile: left chevron — vertically centred */}
             <button
               type="button"
@@ -172,6 +177,10 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
                 <Area type="monotone" dataKey="totalAttendance" name="Attendance" stroke="#6366f1" strokeWidth={1.4} fill="url(#attGrad)" dot={false} activeDot={{ r: 5, fill: "#6366f1" }} />
               </AreaChart>
             </ResponsiveContainer>
+            </>
+            ) : (
+              <EmptyState compact illustration="attendance" title="No attendance data yet" description="Sunday attendance trends will appear here once services are recorded." />
+            )}
           </div>
         </div>
 
@@ -216,6 +225,8 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
             <div className="mt-0.5 text-gray-400 text-xs">Monthly comparison · {year}</div>
           </div>
           <div className="mt-3 flex-1 min-h-0 relative">
+            {hasMvvData ? (
+            <>
             {/* Mobile: left chevron */}
             <button
               type="button"
@@ -247,6 +258,10 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
                 <Bar dataKey="visitors" name="Visitors" fill="#a78bfa" radius={[4, 4, 0, 0]} maxBarSize={44} />
               </BarChart>
             </ResponsiveContainer>
+            </>
+            ) : (
+              <EmptyState compact illustration="chart" title="No data yet" description="New members and visitors will appear here as they're added." />
+            )}
           </div>
         </div>
 

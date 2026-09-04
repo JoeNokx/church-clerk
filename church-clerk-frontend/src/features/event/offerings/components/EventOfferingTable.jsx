@@ -5,6 +5,8 @@ import PermissionContext from "../../../permissions/permission.store.js";
 import EventOfferingContext from "../eventOfferings.store.js";
 import ChurchContext from "../../../church/church.store.js";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -13,7 +15,7 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function EventOfferingTable({ onEdit }) {
+function EventOfferingTable({ onEdit, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(EventOfferingContext);
   const churchStore = useContext(ChurchContext);
@@ -30,6 +32,20 @@ function EventOfferingTable({ onEdit }) {
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("events", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("events", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("events", "create") : false), [can]);
+
+  const clearSearch = () => {
+    store?.setFilters?.({ search: "", page: 1 });
+    store?.fetchOfferings?.({ search: "", page: 1 });
+  };
+  const clearFilters = () => {
+    store?.setFilters?.({ offeringType: "", page: 1 });
+    store?.fetchOfferings?.({ offeringType: "", page: 1 });
+  };
+  const clearDate = () => {
+    store?.setFilters?.({ dateFrom: "", dateTo: "", page: 1 });
+    store?.fetchOfferings?.({ dateFrom: "", dateTo: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.pagination?.prevPage;
@@ -102,7 +118,34 @@ function EventOfferingTable({ onEdit }) {
   const rows = Array.isArray(store?.offerings) ? store.offerings : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No offering record found.</div>;
+    const filters = store?.filters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      filters,
+      filterDefaults: { offeringType: "" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: clearSearch,
+      onClearFilters: clearFilters,
+      onClearDate: clearDate,
+    });
+    const isZero = reason === "zero";
+    const showAdd = isZero && canCreate && onCreate;
+    return (
+      <EmptyState
+        illustration={isZero ? "offering" : "search"}
+        title={isZero ? "No offerings yet" : "No offerings found"}
+        description={isZero
+          ? "Record the first offering collected for this event."
+          : "We couldn't find any offerings matching your search or filters."}
+        actionLabel={showAdd ? "Add Offering" : recovery?.actionLabel}
+        onAction={showAdd ? onCreate : recovery?.onAction}
+        secondaryLabel={showAdd ? null : recovery?.secondaryLabel}
+        onSecondary={showAdd ? null : recovery?.onSecondary}
+      />
+    );
   }
 
   return (

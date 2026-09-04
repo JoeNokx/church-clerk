@@ -429,6 +429,21 @@ function Wallet({ size = "md" }) {
   );
 }
 
+/* ── Billing ── */
+function Billing({ size = "md" }) {
+  const s = size === "sm" ? "h-8 w-8" : size === "lg" ? "h-14 w-14" : "h-11 w-11";
+  const ic = size === "sm" ? "h-4 w-4" : size === "lg" ? "h-7 w-7" : "h-6 w-6";
+  return (
+    <Wrap className={s}>
+      <svg viewBox="0 0 24 24" fill="none" className={`${ic} ${baseIcon}`}>
+        <path d="M5 3h10l4 4v14a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M15 3v4h4" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M8 12h8M8 16h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    </Wrap>
+  );
+}
+
 /* ── Templates ── */
 function Templates({ size = "md" }) {
   const s = size === "sm" ? "h-8 w-8" : size === "lg" ? "h-14 w-14" : "h-11 w-11";
@@ -619,6 +634,7 @@ export const illustrations = {
   birthdays: Birthdays,
   approvals: Approvals,
   wallet: Wallet,
+  billing: Billing,
   templates: Templates,
   messages: Messages,
   teams: Teams,

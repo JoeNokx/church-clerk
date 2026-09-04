@@ -377,7 +377,7 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
               ) : !transactions.length ? (
                 <tr>
                   <td colSpan={5} className="px-4">
-                    <EmptyState compact illustration="billing" title="No wallet transactions yet" description="Top up your wallet to start sending announcements." />
+                    <EmptyState compact illustration="wallet" title="No wallet transactions yet" description="Top up your wallet to start sending announcements." />
                   </td>
                 </tr>
               ) : (

@@ -1302,7 +1302,7 @@ function BillingPage() {
               );
             })
           ) : (
-            <EmptyState compact illustration="billing" title="No saved payment methods yet" description="Add a payment method to subscribe to a plan." />
+            <EmptyState compact illustration="paymentMethods" title="No saved payment methods yet" description="Add a payment method to subscribe to a plan." />
           )}
         </div>
 
@@ -1650,6 +1650,14 @@ function BillingPage() {
         </div>
 
         <div className="mt-4 overflow-x-auto">
+          {(Array.isArray(history) ? history : []).length === 0 ? (
+            <EmptyState
+              compact
+              illustration="billing"
+              title="No billing history yet"
+              description="Your subscription payments and free day usage will appear here."
+            />
+          ) : (
           <table className="min-w-full">
             <thead className="bg-slate-100">
               <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
@@ -1693,6 +1701,7 @@ function BillingPage() {
               ))}
             </tbody>
           </table>
+          )}
         </div>
 
         <div className="mt-4 flex items-center justify-end gap-3">
@@ -2138,7 +2147,7 @@ function BillingPage() {
                 );
               })
             ) : (
-              <EmptyState compact illustration="billing" title="No saved payment methods yet" description="Add a payment method to subscribe to a plan." />
+              <EmptyState compact illustration="paymentMethods" title="No saved payment methods yet" description="Add a payment method to subscribe to a plan." />
             )}
           </div>
 

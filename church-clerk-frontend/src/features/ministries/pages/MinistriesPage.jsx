@@ -509,6 +509,7 @@ function MinistriesPage() {
 
   const { can } = useContext(PermissionContext) || {};
   const canView = useMemo(() => (typeof can === "function" ? can("ministry", "view") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("ministry", "create") : false), [can]);
 
   const [activeTab, setActiveTab] = useState("groups");
 
@@ -596,15 +597,23 @@ function MinistriesPage() {
     setLoading(true);
     setError("");
     try {
-      const [grpRes, deptRes, cellRes] = await Promise.all([getGroups(), getDepartments(), getCells()]);
-      const grpPayload = grpRes?.data?.data ?? grpRes?.data;
-      const deptPayload = deptRes?.data?.data ?? deptRes?.data;
-      const cellPayload = cellRes?.data?.data ?? cellRes?.data;
+      const [grpRes, deptRes, cellRes] = await Promise.allSettled([getGroups(), getDepartments(), getCells()]);
+
+      const grpPayload = grpRes.status === "fulfilled" ? (grpRes.value?.data?.data ?? grpRes.value?.data) : null;
+      const deptPayload = deptRes.status === "fulfilled" ? (deptRes.value?.data?.data ?? deptRes.value?.data) : null;
+      const cellPayload = cellRes.status === "fulfilled" ? (cellRes.value?.data?.data ?? cellRes.value?.data) : null;
+
       setGroups(Array.isArray(grpPayload?.groups) ? grpPayload.groups : Array.isArray(grpPayload?.data?.groups) ? grpPayload.data.groups : []);
       setDepartments(Array.isArray(deptPayload?.departments) ? deptPayload.departments : Array.isArray(deptPayload?.data?.departments) ? deptPayload.data.departments : []);
       setCells(Array.isArray(cellPayload?.cells) ? cellPayload.cells : Array.isArray(cellPayload?.data?.cells) ? cellPayload.data.cells : []);
-    } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Failed to load ministries");
+
+      const realErrors = [grpRes, deptRes, cellRes]
+        .filter((r) => r.status === "rejected")
+        .map((r) => r.reason)
+        .filter((e) => e?.response?.status !== 404);
+      if (realErrors.length) {
+        setError(realErrors[0]?.response?.data?.message || realErrors[0]?.message || "Failed to load ministries");
+      }
     } finally {
       setLoading(false);
     }

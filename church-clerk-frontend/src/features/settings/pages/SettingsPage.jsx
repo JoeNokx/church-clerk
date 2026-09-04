@@ -2491,7 +2491,7 @@ function SettingsPage() {
                       <td colSpan={8} className="px-4">
                         <EmptyState
                           compact
-                          illustration={auditSearch || auditModule || auditAction || auditDateFrom || auditDateTo ? "search" : "auditLog"}
+                          illustration={auditSearch || auditModule || auditAction || auditDateFrom || auditDateTo ? "search" : "auditLogs"}
                           title="No audit logs found"
                           description="Activity logs will appear here as users perform actions in the system."
                         />

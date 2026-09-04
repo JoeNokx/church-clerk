@@ -28,6 +28,7 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -1041,43 +1042,67 @@ function EventDetailsPage() {
                 </div>
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-white">
-                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                        <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Name</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
-                        <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {attendeesLoading ? (
-                        <>
-                          {[0, 1, 2, 3].map((i) => (
-                            <tr key={i} className="animate-pulse">
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                            </tr>
-                          ))}
-                        </>
-                      ) : attendeesError ? (
-                        <tr>
-                          <td colSpan={5} className="py-4 text-red-700 text-sm px-4 md:px-6">
-                            {attendeesError}
-                          </td>
+                  {attendeesLoading ? (
+                    <table className="min-w-full">
+                      <thead className="bg-white">
+                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Name</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
+                          <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                         </tr>
-                      ) : !attendees.length ? (
-                        <tr>
-                          <td colSpan={5} className="px-4 md:px-6">
-                            <EmptyState compact illustration="attendees" title="No attendees yet" description="People who register for this event will appear here." />
-                          </td>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {[0, 1, 2, 3].map((i) => (
+                          <tr key={i} className="animate-pulse">
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : attendeesError ? (
+                    <div className="py-4 text-red-700 text-sm px-4 md:px-6">{attendeesError}</div>
+                  ) : !filteredAttendees.length ? (
+                    (() => {
+                      const reason = resolveEmptyReason({ search: regSearch, dateFrom: regDateFrom, dateTo: regDateTo });
+                      const isZero = reason === "zero";
+                      const recovery = buildRecoveryActions(reason, {
+                        onClearSearch: () => setRegSearch(""),
+                        onClearDate: () => { setRegDateFrom(""); setRegDateTo(""); },
+                      });
+                      return (
+                        <EmptyState
+                          compact
+                          illustration={isZero ? "attendees" : "search"}
+                          title={isZero ? "No attendees yet" : "No attendees found"}
+                          description={isZero
+                            ? "People who register for this event will appear here."
+                            : "We couldn't find any attendees matching your search or date range."}
+                          actionLabel={recovery?.actionLabel}
+                          onAction={recovery?.onAction}
+                          secondaryLabel={recovery?.secondaryLabel}
+                          onSecondary={recovery?.onSecondary}
+                        />
+                      );
+                    })()
+                  ) : (
+                    <table className="min-w-full">
+                      <thead className="bg-white">
+                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Name</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
+                          <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                         </tr>
-                      ) : (
-                        filteredAttendees.map((r, idx) => (
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {filteredAttendees.map((r, idx) => (
                           <tr key={r?._id || `att-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                             <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <button type="button" className="text-blue-700 hover:underline" title={r?.fullName || "—"}>
@@ -1095,10 +1120,10 @@ function EventDetailsPage() {
                               ]} />
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             ) : activeTab === "total" ? (
@@ -1142,41 +1167,64 @@ function EventDetailsPage() {
                 </div>
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-white">
-                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                        <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Date</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
-                        <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {totalLoading ? (
-                        <>
-                          {[0, 1, 2, 3].map((i) => (
-                            <tr key={i} className="animate-pulse">
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                            </tr>
-                          ))}
-                        </>
-                      ) : totalError ? (
-                        <tr>
-                          <td colSpan={4} className="py-4 text-red-700 text-sm px-4 md:px-6">
-                            {totalError}
-                          </td>
+                  {totalLoading ? (
+                    <table className="min-w-full">
+                      <thead className="bg-white">
+                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Date</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
+                          <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                         </tr>
-                      ) : !totals.length ? (
-                        <tr>
-                          <td colSpan={4} className="px-4 md:px-6">
-                            <EmptyState compact illustration="attendance" title="No attendance found" description="Attendance totals for this event will appear here." />
-                          </td>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {[0, 1, 2, 3].map((i) => (
+                          <tr key={i} className="animate-pulse">
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : totalError ? (
+                    <div className="py-4 text-red-700 text-sm px-4 md:px-6">{totalError}</div>
+                  ) : !filteredTotals.length ? (
+                    (() => {
+                      const reason = resolveEmptyReason({ search: totalSearch, dateFrom: totalDateFrom, dateTo: totalDateTo });
+                      const isZero = reason === "zero";
+                      const recovery = buildRecoveryActions(reason, {
+                        onClearSearch: () => setTotalSearch(""),
+                        onClearDate: () => { setTotalDateFrom(""); setTotalDateTo(""); },
+                      });
+                      return (
+                        <EmptyState
+                          compact
+                          illustration={isZero ? "attendance" : "search"}
+                          title={isZero ? "No attendance records yet" : "No attendance found"}
+                          description={isZero
+                            ? "Attendance totals for this event will appear here."
+                            : "We couldn't find any attendance matching your search or date range."}
+                          actionLabel={recovery?.actionLabel}
+                          onAction={recovery?.onAction}
+                          secondaryLabel={recovery?.secondaryLabel}
+                          onSecondary={recovery?.onSecondary}
+                        />
+                      );
+                    })()
+                  ) : (
+                    <table className="min-w-full">
+                      <thead className="bg-white">
+                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Date</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
+                          <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                         </tr>
-                      ) : (
-                        filteredTotals.map((r, idx) => (
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {filteredTotals.map((r, idx) => (
                           <tr key={r?._id || `tot-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                             <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <button type="button" className="text-blue-700 hover:underline">
@@ -1192,10 +1240,10 @@ function EventDetailsPage() {
                               ]} />
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1248,37 +1296,65 @@ function EventDetailsPage() {
                 ) : null}
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto pb-24">
-                  <table className="min-w-full">
-                    <thead className="bg-white">
-                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                        <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Name</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Type</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Size</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Uploaded On</th>
-                        <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {filesLoading ? (
-                        <>
-                          {[0, 1, 2, 3].map((i) => (
-                            <tr key={i} className="animate-pulse">
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                              <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                            </tr>
-                          ))}
-                        </>
-                      ) : !files.length ? (
-                        <tr>
-                          <td colSpan={5} className="px-4 md:px-6">
-                            <EmptyState compact illustration="files" title="No uploaded files yet" description="Files uploaded for this event will appear here." />
-                          </td>
+                  {filesLoading ? (
+                    <table className="min-w-full">
+                      <thead className="bg-white">
+                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Name</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Type</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Size</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Uploaded On</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Actions</th>
                         </tr>
-                      ) : (
-                        filteredFiles.map((f, idx) => (
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {[0, 1, 2, 3].map((i) => (
+                          <tr key={i} className="animate-pulse">
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : !filteredFiles.length ? (
+                    (() => {
+                      const reason = resolveEmptyReason({ search: filesSearch, dateFrom: filesDateFrom, dateTo: filesDateTo });
+                      const isZero = reason === "zero";
+                      const recovery = buildRecoveryActions(reason, {
+                        onClearSearch: () => setFilesSearch(""),
+                        onClearDate: () => { setFilesDateFrom(""); setFilesDateTo(""); },
+                      });
+                      return (
+                        <EmptyState
+                          compact
+                          illustration={isZero ? "files" : "search"}
+                          title={isZero ? "No uploaded files yet" : "No files found"}
+                          description={isZero
+                            ? "Files uploaded for this event will appear here."
+                            : "We couldn't find any files matching your search or date range."}
+                          actionLabel={recovery?.actionLabel}
+                          onAction={recovery?.onAction}
+                          secondaryLabel={recovery?.secondaryLabel}
+                          onSecondary={recovery?.onSecondary}
+                        />
+                      );
+                    })()
+                  ) : (
+                    <table className="min-w-full">
+                      <thead className="bg-white">
+                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Name</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Type</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">File Size</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Uploaded On</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {filteredFiles.map((f, idx) => (
                           <tr key={f?._id || `f-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                             <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{f?.originalName || "—"}</td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{guessFileType(f?.mimeType, f?.originalName)}</td>
@@ -1293,10 +1369,10 @@ function EventDetailsPage() {
                               ]} />
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             )}

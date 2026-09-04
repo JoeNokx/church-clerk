@@ -66,7 +66,7 @@ export function EventOfferingPageInner() {
           <EventOfferingFilters />
         </div>
 
-        <EventOfferingTable onEdit={openEdit} />
+        <EventOfferingTable onEdit={openEdit} onCreate={openCreate} />
       </div>
 
       <EventOfferingForm
