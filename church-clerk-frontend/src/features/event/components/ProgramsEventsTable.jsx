@@ -5,6 +5,8 @@ import EventContext from "../event.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { deleteEvent as apiDeleteEvent } from "../services/event.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -40,7 +42,7 @@ function truncateTitle(title) {
   return title;
 }
 
-function ProgramsEventsTable({ status, onEdit }) {
+function ProgramsEventsTable({ status, onEdit, onCreate }) {
   const store = useContext(EventContext);
   const { can } = useContext(PermissionContext) || {};
   const { toPage } = useDashboardNavigator();
@@ -52,6 +54,16 @@ function ProgramsEventsTable({ status, onEdit }) {
   const canView = useMemo(() => (typeof can === "function" ? can("events", "view") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("events", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("events", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("events", "create") : false), [can]);
+
+  const clearSearch = () => {
+    store?.setFilters?.({ search: "", page: 1 });
+    store?.fetchEvents?.({ status, search: "", page: 1 });
+  };
+  const clearFilters = () => {
+    store?.setFilters?.({ category: "", page: 1 });
+    store?.fetchEvents?.({ status, category: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.pagination?.prevPage;
@@ -135,7 +147,42 @@ function ProgramsEventsTable({ status, onEdit }) {
   }
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No event record found.</div>;
+    const filters = store?.filters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      filters,
+      filterDefaults: { category: "" },
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: clearSearch,
+      onClearFilters: clearFilters,
+    });
+
+    const isZero = reason === "zero";
+    const statusLabel = status === "past" ? "past events" : status === "ongoing" ? "ongoing events" : "upcoming events";
+    const title = isZero ? `No ${statusLabel} yet` : `No ${statusLabel} found`;
+    const description = isZero
+      ? "Create your first event to start building your church calendar."
+      : "We couldn't find any events matching your current search or filters.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Create Event" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "events" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

@@ -4,6 +4,8 @@ import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -193,7 +195,33 @@ function VisitorTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.visitors) ? store.visitors : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No visitor record found.</div>;
+    const filters = store?.visitorFilters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      filters,
+      filterDefaults: { serviceType: "", source: "" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: () => { store?.setVisitorFilters?.({ search: "", page: 1 }); store?.fetchVisitors?.({ search: "", page: 1 }); },
+      onClearFilters: () => { store?.setVisitorFilters?.({ serviceType: "", source: "", page: 1 }); store?.fetchVisitors?.({ serviceType: "", source: "", page: 1 }); },
+      onClearDate: () => { store?.setVisitorFilters?.({ dateFrom: "", dateTo: "", page: 1 }); store?.fetchVisitors?.({ dateFrom: "", dateTo: "", page: 1 }); },
+    });
+    const isZero = reason === "zero";
+    return (
+      <EmptyState
+        illustration={isZero ? "visitors" : "search"}
+        title={isZero ? "No visitors yet" : "No visitors found"}
+        description={isZero
+          ? "Record your first visitor to start tracking attendance."
+          : "We couldn't find any visitors matching your search or filters."}
+        actionLabel={recovery?.actionLabel}
+        onAction={recovery?.onAction}
+        secondaryLabel={recovery?.secondaryLabel}
+        onSecondary={recovery?.onSecondary}
+      />
+    );
   }
 
   return (

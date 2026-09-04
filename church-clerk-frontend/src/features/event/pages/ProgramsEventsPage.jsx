@@ -82,6 +82,7 @@ function ProgramsEventsPageInner() {
 
         <ProgramsEventsTable
           status={activeTab}
+          onCreate={() => setCreateOpen(true)}
           onEdit={(row) => {
             if (!row?._id) return;
             setEditingEventId(row._id);

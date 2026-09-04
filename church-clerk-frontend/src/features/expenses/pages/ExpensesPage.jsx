@@ -159,7 +159,7 @@ function ExpensesPageInner() {
           <ExpensesFilters />
         </div>
 
-        <ExpensesTable onEdit={openEdit} onDeleted={refreshKpi} />
+        <ExpensesTable onEdit={openEdit} onDeleted={refreshKpi} onCreate={openCreate} />
       </div>
 
       <ExpensesForm

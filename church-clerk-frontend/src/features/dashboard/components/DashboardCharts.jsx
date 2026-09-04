@@ -6,6 +6,7 @@ import {
   PieChart, Pie, Cell,
   BarChart, Bar
 } from "recharts";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 const TS = { borderRadius: 12, borderColor: "#e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" };
 const LS = { fontWeight: 600, color: "#111827" };
@@ -202,10 +203,7 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
               </div>
             </>
           ) : (
-            <div className="mt-4 flex flex-col items-center justify-center py-8 text-center">
-              <div className="text-gray-300 text-3xl mb-1">◑</div>
-              <div className="text-gray-400 text-xs">No age group data yet</div>
-            </div>
+            <EmptyState compact illustration="chart" title="No age group data yet" description="Age group breakdown will appear once you have members." />
           )}
         </div>
       </div>
@@ -291,10 +289,7 @@ function DashboardCharts({ last10SundaysGraph, attendanceGraph, genderData, ageG
               })()}
             </div>
           ) : (
-            <div className="mt-4 flex flex-col items-center justify-center py-8 text-center">
-              <div className="text-gray-300 text-3xl mb-1">◔</div>
-              <div className="text-gray-400 text-xs">No gender data yet</div>
-            </div>
+            <EmptyState compact illustration="chart" title="No gender data yet" description="Gender breakdown will appear once you have members." />
           )}
         </div>
       </div>

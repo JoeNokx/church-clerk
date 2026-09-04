@@ -10,6 +10,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function BudgetingPageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -164,8 +165,13 @@ function BudgetingPageInner() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={4} className="text-gray-600 text-sm px-4 md:px-6 py-4 md:py-6">
-                                No items.
+                              <td colSpan={4} className="p-0">
+                                <EmptyState
+                                  compact
+                                  illustration="budgeting"
+                                  title="No budget items"
+                                  description="This budget doesn't have any income or expense line items yet."
+                                />
                               </td>
                             </tr>
                           )}
@@ -190,7 +196,7 @@ function BudgetingPageInner() {
           <BudgetingFilters />
         </div>
 
-        <BudgetingTable onView={openView} onEdit={openEdit} />
+        <BudgetingTable onView={openView} onEdit={openEdit} onCreate={openCreate} />
       </div>
 
       <BudgetingForm

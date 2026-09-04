@@ -18,6 +18,8 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -965,7 +967,38 @@ function PledgesPageInner() {
           </div>
         ) : null}
 
-        {!store?.loading && !store?.error && !rows.length ? <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No pledge record found.</div> : null}
+        {!store?.loading && !store?.error && !rows.length ? (
+          (() => {
+            const filters = store?.filters || {};
+            const reason = resolveEmptyReason({
+              search: filters.search,
+              filters,
+              filterDefaults: { serviceType: "", status: "", recordedBy: "" },
+              dateFrom: filters.dateFrom,
+              dateTo: filters.dateTo,
+            });
+            const recovery = buildRecoveryActions(reason, {
+              onClearSearch: () => { store?.setFilters?.({ search: "", page: 1 }); store?.fetchPledges?.({ search: "", page: 1 }); },
+              onClearFilters: () => { store?.setFilters?.({ serviceType: "", status: "", recordedBy: "", page: 1 }); store?.fetchPledges?.({ serviceType: "", status: "", recordedBy: "", page: 1 }); },
+              onClearDate: () => { store?.setFilters?.({ dateFrom: "", dateTo: "", page: 1 }); store?.fetchPledges?.({ dateFrom: "", dateTo: "", page: 1 }); },
+            });
+            const isZero = reason === "zero";
+            const showAdd = isZero && canCreate;
+            return (
+              <EmptyState
+                illustration={isZero ? "pledge" : "search"}
+                title={isZero ? "No pledges yet" : "No pledges found"}
+                description={isZero
+                  ? "Create your first pledge to start tracking commitments and payments."
+                  : "We couldn't find any pledges matching your current search or filters."}
+                actionLabel={showAdd ? "Add Pledge" : recovery?.actionLabel}
+                onAction={showAdd ? openCreate : recovery?.onAction}
+                secondaryLabel={showAdd ? null : recovery?.secondaryLabel}
+                onSecondary={showAdd ? null : recovery?.onSecondary}
+              />
+            );
+          })()
+        ) : null}
 
         {!store?.loading && !store?.error && rows.length ? (
           <div>

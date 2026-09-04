@@ -6,6 +6,7 @@ import {
 import PermissionContext from "../../../permissions/permission.store.js";
 import { getOutreachKPI, getOutreachAnalytics, getFollowUpsStats, getOutreachEvents } from "../../services/outreach.api.js";
 import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
+import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 
 function fmtDate(v) {
   if (!v) return "—";
@@ -134,7 +135,7 @@ export default function OverviewTab() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-48 flex items-center justify-center text-sm text-gray-400">No data yet</div>
+            <EmptyState compact illustration="chart" title="No data yet" description="Outreach activity will appear here once events are recorded." />
           )}
         </SectionCard>
 
@@ -158,7 +159,7 @@ export default function OverviewTab() {
               })}
             </div>
           ) : (
-            <div className="h-48 flex items-center justify-center text-sm text-gray-400">No pipeline data yet</div>
+            <EmptyState compact illustration="pipeline" title="No pipeline data yet" description="People will move through your outreach pipeline as they're reached." />
           )}
         </SectionCard>
       </div>
@@ -168,7 +169,7 @@ export default function OverviewTab() {
         {/* Overdue Follow-Ups */}
         <SectionCard title={`Overdue Follow-Ups (${fuStats?.overdue ?? 0})`}>
           {(fuStats?.overdueList || []).length === 0 ? (
-            <div className="py-6 text-center text-sm text-gray-400">No overdue follow-ups</div>
+            <EmptyState compact illustration="followUps" title="No overdue follow-ups" description="You're all caught up." />
           ) : (
             <div className="space-y-2">
               {(fuStats?.overdueList || []).slice(0, 5).map((fu) => (
@@ -191,7 +192,7 @@ export default function OverviewTab() {
         {/* Upcoming Events */}
         <SectionCard title="Upcoming Outreaches">
           {upcoming.length === 0 ? (
-            <div className="py-6 text-center text-sm text-gray-400">No upcoming events</div>
+            <EmptyState compact illustration="events" title="No upcoming events" description="Scheduled outreach events will appear here." />
           ) : (
             <div className="space-y-2">
               {upcoming.map((ev) => (

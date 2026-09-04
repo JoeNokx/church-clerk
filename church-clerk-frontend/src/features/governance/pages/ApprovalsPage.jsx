@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApprovals, approveRequest, rejectRequest } from "../services/governance.api.js";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 const STATUS_LABELS = {
   PENDING_APPROVAL: { label: "Pending", className: "bg-amber-100 text-amber-700" },
@@ -223,12 +224,14 @@ export default function ApprovalsPage() {
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center">
-          <svg viewBox="0 0 24 24" fill="none" className="mb-3 h-12 w-12 text-gray-300">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            <path d="M12 3v6M9 9l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <div className="font-semibold text-gray-500 text-sm">No {statusFilter === "PENDING_APPROVAL" ? "pending" : ""} approval requests</div>
+        <div className="rounded-2xl border border-gray-200 bg-white">
+          <EmptyState
+            illustration="approvals"
+            title={statusFilter === "PENDING_APPROVAL" ? "No pending approval requests" : "No approval requests"}
+            description={statusFilter === "PENDING_APPROVAL"
+              ? "When team members submit backdated entries or record corrections, they'll appear here for your review."
+              : "Approval requests will appear here once they're submitted."}
+          />
         </div>
       ) : (
         <div className="space-y-3">

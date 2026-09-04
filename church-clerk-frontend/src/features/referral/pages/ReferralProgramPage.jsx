@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 
 import { getMyReferralCode, getMyReferralHistory, getMyReferrer } from "../services/referral.api.js";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function ReferralProgramPage() {
   const [loading, setLoading] = useState(true);
@@ -282,7 +283,12 @@ function ReferralProgramPage() {
                   );
                 })
               ) : (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No referrals yet.</div>
+                <EmptyState
+                  compact
+                  illustration="referrals"
+                  title="No referrals yet"
+                  description="Share your referral code to start inviting people and earn rewards."
+                />
               )}
             </div>
           </div>

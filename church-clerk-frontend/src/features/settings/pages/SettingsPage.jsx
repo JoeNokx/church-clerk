@@ -20,6 +20,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -2216,7 +2217,18 @@ function SettingsPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="px-4 text-center text-gray-600 py-4 md:py-6">No users found.</td>
+                        <td colSpan={6} className="px-4">
+                          <EmptyState
+                            compact
+                            illustration={userSearch || userRoleFilter ? "search" : "users"}
+                            title={userSearch || userRoleFilter ? "No users found" : "No users yet"}
+                            description={userSearch || userRoleFilter
+                              ? "We couldn't find any users matching your filters."
+                              : "Users invited to your church will appear here."}
+                            actionLabel={userSearch || userRoleFilter ? "Clear Filters" : null}
+                            onAction={userSearch || userRoleFilter ? () => { setUserSearch(""); setUserRoleFilter(""); } : undefined}
+                          />
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -2476,7 +2488,14 @@ function SettingsPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={8} className="px-4 text-center text-gray-600 py-4 md:py-6">No audit logs found.</td>
+                      <td colSpan={8} className="px-4">
+                        <EmptyState
+                          compact
+                          illustration={auditSearch || auditModule || auditAction || auditDateFrom || auditDateTo ? "search" : "auditLog"}
+                          title="No audit logs found"
+                          description="Activity logs will appear here as users perform actions in the system."
+                        />
+                      </td>
                     </tr>
                   )}
                 </tbody>

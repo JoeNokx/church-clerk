@@ -6,6 +6,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead
 } from "../services/notifications.api.js";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function formatDateTime(value) {
   if (!value) return "";
@@ -188,10 +189,11 @@ function NotificationsPage() {
             ))}
           </div>
         ) : (
-          <div className="px-4 md:px-5 lg:px-6 py-10 text-center">
-            <div className="font-semibold text-gray-900 text-sm">No notifications yet</div>
-            <div className="mt-1 text-gray-600 text-sm">Notifications will appear here when events happen in your account.</div>
-          </div>
+          <EmptyState
+            illustration="notifications"
+            title="No notifications yet"
+            description="Notifications will appear here when events happen in your account."
+          />
         )}
       </div>
 

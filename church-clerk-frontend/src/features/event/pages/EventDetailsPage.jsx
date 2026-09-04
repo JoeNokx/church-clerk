@@ -27,6 +27,7 @@ import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -1071,8 +1072,8 @@ function EventDetailsPage() {
                         </tr>
                       ) : !attendees.length ? (
                         <tr>
-                          <td colSpan={5} className="py-4 text-gray-600 text-sm px-4 md:px-6">
-                            No attendee found.
+                          <td colSpan={5} className="px-4 md:px-6">
+                            <EmptyState compact illustration="attendees" title="No attendees yet" description="People who register for this event will appear here." />
                           </td>
                         </tr>
                       ) : (
@@ -1170,8 +1171,8 @@ function EventDetailsPage() {
                         </tr>
                       ) : !totals.length ? (
                         <tr>
-                          <td colSpan={4} className="py-4 text-gray-600 text-sm px-4 md:px-6">
-                            No attendance found.
+                          <td colSpan={4} className="px-4 md:px-6">
+                            <EmptyState compact illustration="attendance" title="No attendance found" description="Attendance totals for this event will appear here." />
                           </td>
                         </tr>
                       ) : (
@@ -1272,8 +1273,8 @@ function EventDetailsPage() {
                         </>
                       ) : !files.length ? (
                         <tr>
-                          <td colSpan={5} className="py-4 text-gray-600 text-sm px-4 md:px-6">
-                            No uploaded file found.
+                          <td colSpan={5} className="px-4 md:px-6">
+                            <EmptyState compact illustration="files" title="No uploaded files yet" description="Files uploaded for this event will appear here." />
                           </td>
                         </tr>
                       ) : (

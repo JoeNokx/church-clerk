@@ -5,6 +5,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead
 } from "../services/notifications.api.js";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function formatDateTime(value) {
   if (!value) return "";
@@ -270,16 +271,12 @@ function NotificationsDrawer({ open, onClose }) {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center px-5 py-16 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 mb-3">
-                <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-gray-400">
-                  <path d="M15 17H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M18 9a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <div className="font-semibold text-gray-900 text-sm">No notifications yet</div>
-              <div className="mt-1 text-gray-500 text-xs">Notifications will appear here when events happen.</div>
-            </div>
+            <EmptyState
+              compact
+              illustration="notifications"
+              title="No notifications yet"
+              description="Notifications will appear here when events happen."
+            />
           )}
         </div>
 

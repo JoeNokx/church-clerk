@@ -6,6 +6,8 @@ import WelfareContext from "../welfare.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -14,7 +16,7 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function WelfareDisbursementTable({ onEdit, onDeleted }) {
+function WelfareDisbursementTable({ onEdit, onDeleted, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(WelfareContext);
   const churchStore = useContext(ChurchContext);
@@ -27,6 +29,20 @@ function WelfareDisbursementTable({ onEdit, onDeleted }) {
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("welfare", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("welfare", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
+
+  const clearSearch = () => {
+    store?.setDisbursementFilters?.({ search: "", page: 1 });
+    store?.fetchDisbursements?.({ search: "", page: 1 });
+  };
+  const clearFilters = () => {
+    store?.setDisbursementFilters?.({ category: "", recordedBy: "", page: 1 });
+    store?.fetchDisbursements?.({ category: "", recordedBy: "", page: 1 });
+  };
+  const clearDate = () => {
+    store?.setDisbursementFilters?.({ dateFrom: "", dateTo: "", page: 1 });
+    store?.fetchDisbursements?.({ dateFrom: "", dateTo: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.disbursementPagination?.prevPage;
@@ -104,7 +120,44 @@ function WelfareDisbursementTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.disbursements) ? store.disbursements : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No welfare disbursement record found.</div>;
+    const filters = store?.disbursementFilters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      filters,
+      filterDefaults: { category: "", recordedBy: "" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: clearSearch,
+      onClearFilters: clearFilters,
+      onClearDate: clearDate,
+    });
+
+    const isZero = reason === "zero";
+    const title = isZero ? "No welfare disbursements yet" : "No welfare disbursements found";
+    const description = isZero
+      ? "Record your first disbursement to start tracking welfare support to members."
+      : "We couldn't find any welfare disbursements matching your current search or filters.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Add Disbursement" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "welfare" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

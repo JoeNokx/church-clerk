@@ -5,6 +5,8 @@ import OfferingContext from "../offering.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -13,7 +15,7 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function OfferingTable({ onEdit, onDeleted }) {
+function OfferingTable({ onEdit, onDeleted, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(OfferingContext);
   const churchStore = useContext(ChurchContext);
@@ -26,6 +28,16 @@ function OfferingTable({ onEdit, onDeleted }) {
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("offerings", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("offerings", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("offerings", "create") : false), [can]);
+
+  const clearFilters = () => {
+    store?.setFilters?.({ serviceType: "", recordedBy: "", page: 1 });
+    store?.fetchOfferings?.({ serviceType: "", recordedBy: "", page: 1 });
+  };
+  const clearDate = () => {
+    store?.setFilters?.({ dateFrom: "", dateTo: "", page: 1 });
+    store?.fetchOfferings?.({ dateFrom: "", dateTo: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.pagination?.prevPage;
@@ -103,7 +115,42 @@ function OfferingTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.offerings) ? store.offerings : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No offering record found.</div>;
+    const filters = store?.filters || {};
+    const reason = resolveEmptyReason({
+      filters,
+      filterDefaults: { serviceType: "", recordedBy: "" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearFilters: clearFilters,
+      onClearDate: clearDate,
+    });
+
+    const isZero = reason === "zero";
+    const title = isZero ? "No offerings yet" : "No offerings found";
+    const description = isZero
+      ? "Record your first offering to start tracking church contributions."
+      : "We couldn't find any offerings matching your current filters or date range.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Add Offering" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "offering" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

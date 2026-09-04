@@ -23,6 +23,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -920,7 +921,7 @@ function ChurchProjectDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No contribution record found.</div>
+                <EmptyState compact illustration="contributions" title="No contributions yet" description="Contributions to this project will appear here." />
               )
             ) : null}
 
@@ -996,7 +997,7 @@ function ChurchProjectDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No expense record found.</div>
+                <EmptyState compact illustration="expenses" title="No expenses yet" description="Expenses for this project will appear here." />
               )
             ) : null}
 

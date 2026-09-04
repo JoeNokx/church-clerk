@@ -5,6 +5,7 @@ import {
   getAllProspects, getOutreachEvents,
 } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
+import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 
 const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500";
 const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500 bg-white";
@@ -328,10 +329,12 @@ export default function FollowUpsTab() {
             </div>)}
           </div>
         ) : overdueItems.length === 0 ? (
-          <div className="py-14 text-center">
-            <div className="text-3xl mb-2">{view === "overdue" ? "✅" : view === "today" ? "📅" : "🕐"}</div>
-            <div className="font-semibold text-gray-700 text-sm">{view === "overdue" ? "No overdue follow-ups" : view === "today" ? "No follow-ups today" : "No upcoming follow-ups"}</div>
-          </div>
+          <EmptyState
+            compact
+            illustration="followUps"
+            title={view === "overdue" ? "No overdue follow-ups" : view === "today" ? "No follow-ups today" : "No upcoming follow-ups"}
+            description={view === "overdue" ? "You're all caught up." : "Schedule follow-ups to stay connected with prospects."}
+          />
         ) : (
           <div className="divide-y divide-gray-100">
             {overdueItems.map((fu) => (

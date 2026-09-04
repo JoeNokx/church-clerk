@@ -719,9 +719,9 @@ function TithePageInner() {
             </div>
 
             {mode === "aggregate" ? (
-              <TitheAggregateTable onEdit={openEditAggregate} onDeleted={refreshKpi} />
+              <TitheAggregateTable onEdit={openEditAggregate} onDeleted={refreshKpi} onCreate={openCreateAggregate} />
             ) : (
-              <TitheIndividualTable onEdit={openEditIndividual} onDeleted={refreshKpi} />
+              <TitheIndividualTable onEdit={openEditIndividual} onDeleted={refreshKpi} onCreate={openCreateIndividual} />
             )}
           </div>
         </>

@@ -18,6 +18,7 @@ import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
@@ -607,8 +608,16 @@ function BusinessVenturesPage() {
           <Skeleton height={14} count={4} />
         </div>
       ) : filteredVentures.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500 text-sm">
-          {searchValue ? "No business ventures matching your search." : "No business ventures found. Click Add Venture to get started."}
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+          <EmptyState
+            illustration={searchValue ? "search" : "businessVentures"}
+            title={searchValue ? "No business ventures found" : "No business ventures yet"}
+            description={searchValue
+              ? "We couldn't find any ventures matching your search."
+              : "Add your first venture to start tracking income and expenses."}
+            actionLabel={searchValue ? "Clear Search" : (canEdit ? "Add Venture" : null)}
+            onAction={searchValue ? () => setSearchValue("") : (canEdit ? () => setAddOpen(true) : undefined)}
+          />
         </div>
       ) : (
         <>

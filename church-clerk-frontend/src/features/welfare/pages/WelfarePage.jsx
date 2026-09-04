@@ -211,9 +211,9 @@ function WelfarePageInner() {
         </div>
 
         {activeTab === "contributions" ? (
-          <WelfareContributionTable onEdit={openEditContribution} onDeleted={refreshKpi} />
+          <WelfareContributionTable onEdit={openEditContribution} onDeleted={refreshKpi} onCreate={openCreate} />
         ) : (
-          <WelfareDisbursementTable onEdit={openEditDisbursement} onDeleted={refreshKpi} />
+          <WelfareDisbursementTable onEdit={openEditDisbursement} onDeleted={refreshKpi} onCreate={openCreate} />
         )}
       </div>
 

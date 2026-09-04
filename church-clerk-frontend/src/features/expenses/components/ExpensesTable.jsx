@@ -6,6 +6,8 @@ import ExpensesContext from "../expenses.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -14,7 +16,7 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function ExpensesTable({ onEdit, onDeleted }) {
+function ExpensesTable({ onEdit, onDeleted, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(ExpensesContext);
   const churchStore = useContext(ChurchContext);
@@ -27,6 +29,16 @@ function ExpensesTable({ onEdit, onDeleted }) {
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("expenses", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("expenses", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("expenses", "create") : false), [can]);
+
+  const clearFilters = () => {
+    store?.setFilters?.({ category: "", recordedBy: "", page: 1 });
+    store?.fetchGeneralExpenses?.({ category: "", recordedBy: "", page: 1 });
+  };
+  const clearDate = () => {
+    store?.setFilters?.({ dateFrom: "", dateTo: "", page: 1 });
+    store?.fetchGeneralExpenses?.({ dateFrom: "", dateTo: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.pagination?.prevPage;
@@ -102,7 +114,42 @@ function ExpensesTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.generalExpenses) ? store.generalExpenses : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No general expense record found.</div>;
+    const filters = store?.filters || {};
+    const reason = resolveEmptyReason({
+      filters,
+      filterDefaults: { category: "", recordedBy: "" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearFilters: clearFilters,
+      onClearDate: clearDate,
+    });
+
+    const isZero = reason === "zero";
+    const title = isZero ? "No expenses yet" : "No expenses found";
+    const description = isZero
+      ? "Record your first expense to start tracking church spending."
+      : "We couldn't find any expenses matching your current filters or date range.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Add Expense" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "expenses" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

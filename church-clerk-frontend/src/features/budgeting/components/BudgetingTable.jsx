@@ -4,6 +4,8 @@ import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import BudgetingContext from "../budgeting.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -35,7 +37,7 @@ function statusBadge(status) {
   return map[s] || map.draft;
 }
 
-function BudgetingTable({ onView, onEdit }) {
+function BudgetingTable({ onView, onEdit, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(BudgetingContext);
 
@@ -44,6 +46,16 @@ function BudgetingTable({ onView, onEdit }) {
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("budgeting", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("budgeting", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("budgeting", "create") : false), [can]);
+
+  const clearSearch = () => {
+    store?.setFilters?.({ search: "", page: 1 });
+    store?.fetchBudgets?.({ search: "", page: 1 });
+  };
+  const clearFilters = () => {
+    store?.setFilters?.({ fiscalYear: "", status: "", page: 1 });
+    store?.fetchBudgets?.({ fiscalYear: "", status: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.pagination?.prevPage;
@@ -115,7 +127,41 @@ function BudgetingTable({ onView, onEdit }) {
   const rows = Array.isArray(store?.budgets) ? store.budgets : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No budgets found.</div>;
+    const filters = store?.filters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      filters,
+      filterDefaults: { fiscalYear: "", status: "" },
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: clearSearch,
+      onClearFilters: clearFilters,
+    });
+
+    const isZero = reason === "zero";
+    const title = isZero ? "No budgets yet" : "No budgets found";
+    const description = isZero
+      ? "Create your first budget to start planning your church finances."
+      : "We couldn't find any budgets matching your current search or filters.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Create Budget" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "budgeting" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

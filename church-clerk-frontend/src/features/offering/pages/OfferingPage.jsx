@@ -153,7 +153,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false, noHeader 
           <OfferingFilters />
         </div>
 
-        <OfferingTable onEdit={openEdit} onDeleted={hideKpi ? undefined : refreshKpi} />
+        <OfferingTable onEdit={openEdit} onDeleted={hideKpi ? undefined : refreshKpi} onCreate={openCreate} />
       </div>
 
       <OfferingForm

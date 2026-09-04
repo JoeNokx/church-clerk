@@ -5,6 +5,8 @@ import TitheContext from "../tithe.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -30,7 +32,7 @@ function truncateMobileName(name) {
   return name;
 }
 
-function TitheIndividualTable({ onEdit, onDeleted }) {
+function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(TitheContext);
   const churchStore = useContext(ChurchContext);
@@ -41,8 +43,12 @@ function TitheIndividualTable({ onEdit, onDeleted }) {
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("tithe", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("tithe", "create") : false), [can]);
 
   const rows = Array.isArray(store?.individuals) ? store.individuals : [];
+
+  const clearSearch = () => store?.fetchIndividuals?.({ search: "", page: 1 });
+  const clearDate = () => store?.fetchIndividuals?.({ dateFrom: "", dateTo: "", page: 1 });
 
   const onPrev = async () => {
     const prevPage = store?.individualPagination?.prevPage;
@@ -119,7 +125,41 @@ function TitheIndividualTable({ onEdit, onDeleted }) {
   }
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No tithe record found.</div>;
+    const filters = store?.individualFilters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: clearSearch,
+      onClearDate: clearDate,
+    });
+
+    const isZero = reason === "zero";
+    const title = isZero ? "No tithe records yet" : "No tithe records found";
+    const description = isZero
+      ? "Record your first tithe to start tracking individual contributions."
+      : "We couldn't find any tithe records matching your current search or date range.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Record Tithe" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "tithe" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

@@ -11,6 +11,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 import {
   getGroup,
@@ -1282,7 +1283,16 @@ function MinistryDetailsPage() {
               ))}
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No member record found.</div>
+            <EmptyState
+              compact
+              illustration={memberSearch ? "search" : "members"}
+              title={memberSearch ? "No members found" : "No members yet"}
+              description={memberSearch
+                ? "We couldn't find any members matching your search."
+                : "Add members to this ministry to see them here."}
+              actionLabel={memberSearch ? "Clear Search" : null}
+              onAction={memberSearch ? () => setMemberSearch("") : undefined}
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">
@@ -1363,7 +1373,7 @@ function MinistryDetailsPage() {
                       ))}
                     </div>
                   ) : addMemberCandidates.length === 0 ? (
-                    <div className="px-4 py-3 text-gray-600 text-sm">No matching members found.</div>
+                    <div className="px-4 py-3"><EmptyState compact illustration="search" title="No matching members found" description="Try a different name or phone number." /></div>
                   ) : (
                     <div className="divide-y divide-gray-200">
                       {addMemberCandidates.map((m, idx) => {
@@ -1706,7 +1716,7 @@ function MinistryDetailsPage() {
                   ))}
                 </div>
               ) : filteredIndividualAttendances.length === 0 ? (
-                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No attendance record found.</div>
+                <EmptyState compact illustration="attendance" title="No attendance records yet" description="Attendance for this ministry will appear here." />
               ) : (
                 <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-6">
                   <table className="min-w-full">
@@ -1797,7 +1807,7 @@ function MinistryDetailsPage() {
                               ))}
                             </div>
                           ) : individualMembers.length === 0 ? (
-                            <div className="px-4 py-3 text-gray-600 text-sm">No members found.</div>
+                            <div className="px-4 py-3"><EmptyState compact illustration="members" title="No members found" description="Add members to this ministry first." /></div>
                           ) : (
                             <div className="divide-y divide-gray-200">
                               {individualMembers
@@ -2017,7 +2027,7 @@ function MinistryDetailsPage() {
                   ))}
                 </div>
               ) : filteredAttendances.length === 0 ? (
-                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No attendance record found.</div>
+                <EmptyState compact illustration="attendance" title="No attendance records yet" description="Aggregate attendance for this ministry will appear here." />
               ) : (
                 <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-6">
                   <table className="min-w-full">
@@ -2172,7 +2182,7 @@ function MinistryDetailsPage() {
               ))}
             </div>
           ) : offerings.length === 0 ? (
-            <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No offering record found.</div>
+            <EmptyState compact illustration="offering" title="No offerings yet" description="Offerings recorded for this ministry will appear here." />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">

@@ -3,6 +3,8 @@ import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -109,7 +111,33 @@ function AttendanceTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.attendances) ? store.attendances : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No attendance record found.</div>;
+  if (!rows.length) {
+    const filters = store?.attendanceFilters || {};
+    const reason = resolveEmptyReason({
+      filters,
+      filterDefaults: { serviceType: "", mainSpeaker: "" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+    const recovery = buildRecoveryActions(reason, {
+      onClearFilters: () => { store?.setAttendanceFilters?.({ serviceType: "", mainSpeaker: "", page: 1 }); store?.fetchAttendances?.({ serviceType: "", mainSpeaker: "", page: 1 }); },
+      onClearDate: () => { store?.setAttendanceFilters?.({ dateFrom: "", dateTo: "", page: 1 }); store?.fetchAttendances?.({ dateFrom: "", dateTo: "", page: 1 }); },
+    });
+    const isZero = reason === "zero";
+    return (
+      <EmptyState
+        illustration={isZero ? "attendance" : "search"}
+        title={isZero ? "No attendance records yet" : "No attendance found"}
+        description={isZero
+          ? "Record your first service attendance to start tracking."
+          : "We couldn't find any attendance matching your filters."}
+        actionLabel={recovery?.actionLabel}
+        onAction={recovery?.onAction}
+        secondaryLabel={recovery?.secondaryLabel}
+        onSecondary={recovery?.onSecondary}
+      />
+    );
+  }
   }
 
   return (

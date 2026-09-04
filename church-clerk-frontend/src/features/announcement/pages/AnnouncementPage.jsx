@@ -11,6 +11,7 @@ import { getDepartments } from "../../department/services/department.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import {
   createCommunicationMessage,
   fundWalletInitiate,
@@ -375,7 +376,9 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
                 </tr>
               ) : !transactions.length ? (
                 <tr>
-                  <td colSpan={5} className="py-4 text-gray-600 text-sm">No wallet transactions yet.</td>
+                  <td colSpan={5} className="px-4">
+                    <EmptyState compact illustration="billing" title="No wallet transactions yet" description="Top up your wallet to start sending announcements." />
+                  </td>
                 </tr>
               ) : (
                 transactions.map((t, idx) => (
@@ -578,7 +581,9 @@ function TemplatesTab({ open, onUseTemplate }) {
                 </tr>
               ) : !rows.length ? (
                 <tr>
-                  <td colSpan={4} className="py-4 text-gray-600 text-sm">No templates found.</td>
+                  <td colSpan={4} className="px-4">
+                    <EmptyState compact illustration="templates" title="No templates found" description="Save reusable message templates to speed up announcements." />
+                  </td>
                 </tr>
               ) : (
                 rows.map((t, idx) => (
@@ -746,7 +751,9 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
               </tr>
             ) : !rows.length ? (
               <tr>
-                <td colSpan={7} className="py-4 text-gray-600 text-sm">No messages found.</td>
+                <td colSpan={7} className="px-4">
+                  <EmptyState compact illustration="announcements" title="No messages found" description="Sent announcements will appear here." />
+                </td>
               </tr>
             ) : (
               rows.map((m, idx) => (
@@ -1053,7 +1060,9 @@ function DeliveryReportModal({ open, onClose, message }) {
                   </tr>
                 ) : !rows.length ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-gray-600 text-sm">No delivery records.</td>
+                    <td colSpan={4} className="px-4">
+                      <EmptyState compact illustration="announcements" title="No delivery records" description="Delivery reports for this message will appear here." />
+                    </td>
                   </tr>
                 ) : (
                   rows.map((d, idx) => (

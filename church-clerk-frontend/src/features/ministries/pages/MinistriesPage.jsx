@@ -14,6 +14,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -731,7 +732,21 @@ function MinistriesPage() {
             <Skeleton height={14} count={6} />
           </div>
         ) : filteredRows.length === 0 ? (
-          <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No record found.</div>
+          (() => {
+            const isZero = !String(search || "").trim();
+            const tabLabel = activeTab === "groups" ? "groups" : activeTab === "cells" ? "cells" : "departments";
+            return (
+              <EmptyState
+                illustration={isZero ? "ministries" : "search"}
+                title={isZero ? `No ${tabLabel} yet` : `No ${tabLabel} found`}
+                description={isZero
+                  ? `Create your first ${String(tabLabel).slice(0, -1)} to start organizing your church.`
+                  : "We couldn't find any matching your search."}
+                actionLabel={isZero && canCreate ? "Add" : (isZero ? null : "Clear Search")}
+                onAction={isZero && canCreate ? openCreate : (isZero ? undefined : () => setSearch(""))}
+              />
+            );
+          })()
         ) : (
           <div className="p-2 md:p-6 lg:p-8">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
+import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import {
   getAllProspects, createProspect, createProspectDirect, updateProspectDirect, deleteProspectDirect,
   checkDuplicate, convertToMember, markAsVisitor, getOutreachEvents,
@@ -549,13 +550,20 @@ export default function PeopleReachedTab() {
             </div>)}
           </div>
         ) : prospects.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="mx-auto mb-3 h-12 w-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-            </div>
-            <div className="font-semibold text-gray-800 text-sm">No people recorded yet</div>
-            <div className="text-xs text-gray-400 mt-1">Record the first person reached</div>
-          </div>
+          (() => {
+            const hasFilters = !!(filters.search || filters.stage || filters.eventId);
+            return (
+              <EmptyState
+                illustration={hasFilters ? "search" : "peopleReached"}
+                title={hasFilters ? "No people found" : "No people recorded yet"}
+                description={hasFilters
+                  ? "We couldn't find anyone matching your filters."
+                  : "Record the first person reached during an outreach."}
+                actionLabel={hasFilters ? "Clear Filters" : (canWrite ? "Add Person" : null)}
+                onAction={hasFilters ? () => setFilters({ search: "", stage: "", eventId: "" }) : (canWrite ? () => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); } : undefined)}
+              />
+            );
+          })()
         ) : (
           <div className="divide-y divide-gray-100">
             {prospects.map((p) => (

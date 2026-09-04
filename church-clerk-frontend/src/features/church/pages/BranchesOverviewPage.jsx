@@ -5,6 +5,7 @@ import ChurchContext from "../church.store.js";
 import { getMyBranches } from "../services/church.api.js";
 import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
 import Skeleton from "react-loading-skeleton";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function BranchesOverviewPage() {
   const navigate = useNavigate();
@@ -246,7 +247,15 @@ function BranchesOverviewPage() {
       ) : canViewBranches ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
           {!branches.length ? (
-            <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No branches found.</div>
+            <EmptyState
+              illustration={String(search || "").trim() ? "search" : "ministries"}
+              title={String(search || "").trim() ? "No branches found" : "No branches yet"}
+              description={String(search || "").trim()
+                ? "We couldn't find any branches matching your search."
+                : "Branches of your church will appear here once they're added."}
+              actionLabel={String(search || "").trim() ? "Clear Search" : null}
+              onAction={String(search || "").trim() ? () => setSearch("") : undefined}
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">

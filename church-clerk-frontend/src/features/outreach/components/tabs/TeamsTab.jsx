@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import { getOutreachTeams, createOutreachTeam, updateOutreachTeam, deleteOutreachTeam } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
+import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 
 const ROLE_OPTIONS = [
   { value: "team-leader", label: "Team Leader" },
@@ -254,19 +255,15 @@ export default function TeamsTab() {
           {[0,1,2].map(i => <div key={i} className="h-28 rounded-2xl bg-gray-100 animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white py-20 text-center">
-          <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-          </div>
-          <div className="font-semibold text-gray-900 text-sm">No outreach teams yet</div>
-          <div className="text-xs text-gray-400 mt-1">Create a team and add members to it</div>
-          {canCreate ? (
-            <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-              Create Team
-            </button>
-          ) : null}
-        </div>
+        <EmptyState
+          illustration={search ? "search" : "teams"}
+          title={search ? "No teams found" : "No outreach teams yet"}
+          description={search
+            ? "We couldn't find any teams matching your search."
+            : "Create a team and add members to it."}
+          actionLabel={search ? "Clear Search" : (canCreate ? "Create Team" : null)}
+          onAction={search ? () => setSearch("") : (canCreate ? () => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); } : undefined)}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((team) => (

@@ -5,6 +5,8 @@ import SpecialFundContext from "../specialFund.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function truncateMobileName(name) {
   if (!name) return "-";
@@ -22,7 +24,7 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function SpecialFundTable({ onEdit, onDeleted }) {
+function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(SpecialFundContext);
   const churchStore = useContext(ChurchContext);
@@ -35,6 +37,20 @@ function SpecialFundTable({ onEdit, onDeleted }) {
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("specialFunds", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("specialFunds", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("specialFunds", "create") : false), [can]);
+
+  const clearSearch = () => {
+    store?.setFilters?.({ search: "", page: 1 });
+    store?.fetchSpecialFunds?.({ search: "", page: 1 });
+  };
+  const clearFilters = () => {
+    store?.setFilters?.({ category: "", recordedBy: "", page: 1 });
+    store?.fetchSpecialFunds?.({ category: "", recordedBy: "", page: 1 });
+  };
+  const clearDate = () => {
+    store?.setFilters?.({ dateFrom: "", dateTo: "", page: 1 });
+    store?.fetchSpecialFunds?.({ dateFrom: "", dateTo: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.pagination?.prevPage;
@@ -112,7 +128,44 @@ function SpecialFundTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.specialFunds) ? store.specialFunds : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No specialFund record found.</div>;
+    const filters = store?.filters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      filters,
+      filterDefaults: { category: "", recordedBy: "" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: clearSearch,
+      onClearFilters: clearFilters,
+      onClearDate: clearDate,
+    });
+
+    const isZero = reason === "zero";
+    const title = isZero ? "No special funds yet" : "No special funds found";
+    const description = isZero
+      ? "Record your first special fund to start tracking designated giving."
+      : "We couldn't find any special funds matching your current search or filters.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Add Special Fund" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "specialFund" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

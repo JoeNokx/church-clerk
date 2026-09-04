@@ -15,6 +15,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -486,7 +487,7 @@ function FinancialStatementPage() {
               </div>
               <div className="p-4 md:p-6 lg:p-8">
                 {sortedIncome.length === 0 ? (
-                  <div className="text-gray-600 text-sm">No income records found for this period.</div>
+                  <EmptyState compact illustration="income" title="No income records found for this period" description="Try selecting a different date range." />
                 ) : (
                   <div className="space-y-4">
                     {sortedIncome.map((row) => {
@@ -531,7 +532,7 @@ function FinancialStatementPage() {
               </div>
               <div className="p-4 md:p-6 lg:p-8">
                 {sortedExpenses.length === 0 ? (
-                  <div className="text-gray-600 text-sm">No expense records found for this period.</div>
+                  <EmptyState compact illustration="expenses" title="No expense records found for this period" description="Try selecting a different date range." />
                 ) : (
                   <div className="space-y-4">
                     {sortedExpenses.map((row) => {

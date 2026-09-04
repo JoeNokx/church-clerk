@@ -8,6 +8,8 @@ import MemberContext from "../member.store.js";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import { updateMember as apiUpdateMember } from "../services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
@@ -121,7 +123,7 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function MemberTable({ onEdit, onDeleted }) {
+function MemberTable({ onEdit, onDeleted, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(MemberContext);
   const { toPage } = useDashboardNavigator();
@@ -135,6 +137,20 @@ function MemberTable({ onEdit, onDeleted }) {
   const canView = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("members", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("members", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
+
+  const clearSearch = () => {
+    store?.setFilters?.({ search: "", page: 1 });
+    store?.fetchMembers?.({ search: "", page: 1 });
+  };
+  const clearFilters = () => {
+    store?.setFilters?.({ status: "all", ageGroup: "all", page: 1 });
+    store?.fetchMembers?.({ status: "all", ageGroup: "all", page: 1 });
+  };
+  const clearDate = () => {
+    store?.setFilters?.({ dateFrom: "", dateTo: "", page: 1 });
+    store?.fetchMembers?.({ dateFrom: "", dateTo: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.pagination?.prevPage;
@@ -229,7 +245,44 @@ function MemberTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.members) ? store.members : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No member record found.</div>;
+    const filters = store?.filters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      filters,
+      filterDefaults: { status: "all", ageGroup: "all" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: clearSearch,
+      onClearFilters: clearFilters,
+      onClearDate: clearDate,
+    });
+
+    const isZero = reason === "zero";
+    const title = isZero ? "No members yet" : "No members found";
+    const description = isZero
+      ? "Add your first member to start building your church directory."
+      : "We couldn't find any members matching your current search or filters.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Add Member" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "members" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

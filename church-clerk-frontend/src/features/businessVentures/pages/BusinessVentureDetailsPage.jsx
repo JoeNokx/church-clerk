@@ -12,6 +12,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import {
   getBusinessIncomeExpensesKPI,
   getBusinessVenture
@@ -1070,7 +1071,7 @@ function BusinessVentureDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-600 text-sm">No income records found.</div>
+                <EmptyState compact illustration="income" title="No income records found" description="Income from this venture will appear here." />
               )}
 
               <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
@@ -1135,7 +1136,7 @@ function BusinessVentureDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-600 text-sm">No expense records found.</div>
+                <EmptyState compact illustration="expenses" title="No expense records found" description="Expenses for this venture will appear here." />
               )}
 
               <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">

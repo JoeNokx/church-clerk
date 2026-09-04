@@ -377,7 +377,7 @@ function MembersPageInner() {
           <MemberFilters />
         </div>
 
-        <MemberTable onDeleted={refreshMembers} />
+        <MemberTable onDeleted={refreshMembers} onCreate={openCreate} />
       </div>
 
       {canImport && importOpen ? (

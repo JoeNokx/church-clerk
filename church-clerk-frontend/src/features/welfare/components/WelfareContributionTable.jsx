@@ -6,6 +6,8 @@ import WelfareContext from "../welfare.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -14,7 +16,7 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function WelfareContributionTable({ onEdit, onDeleted }) {
+function WelfareContributionTable({ onEdit, onDeleted, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(WelfareContext);
   const churchStore = useContext(ChurchContext);
@@ -27,6 +29,20 @@ function WelfareContributionTable({ onEdit, onDeleted }) {
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("welfare", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("welfare", "delete") : false), [can]);
+  const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
+
+  const clearSearch = () => {
+    store?.setContributionFilters?.({ search: "", page: 1 });
+    store?.fetchContributions?.({ search: "", page: 1 });
+  };
+  const clearFilters = () => {
+    store?.setContributionFilters?.({ recordedBy: "", page: 1 });
+    store?.fetchContributions?.({ recordedBy: "", page: 1 });
+  };
+  const clearDate = () => {
+    store?.setContributionFilters?.({ dateFrom: "", dateTo: "", page: 1 });
+    store?.fetchContributions?.({ dateFrom: "", dateTo: "", page: 1 });
+  };
 
   const onPrev = async () => {
     const prevPage = store?.contributionPagination?.prevPage;
@@ -102,7 +118,44 @@ function WelfareContributionTable({ onEdit, onDeleted }) {
   const rows = Array.isArray(store?.contributions) ? store.contributions : [];
 
   if (!rows.length) {
-    return <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No welfare contribution record found.</div>;
+    const filters = store?.contributionFilters || {};
+    const reason = resolveEmptyReason({
+      search: filters.search,
+      filters,
+      filterDefaults: { recordedBy: "" },
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    });
+
+    const recovery = buildRecoveryActions(reason, {
+      onClearSearch: clearSearch,
+      onClearFilters: clearFilters,
+      onClearDate: clearDate,
+    });
+
+    const isZero = reason === "zero";
+    const title = isZero ? "No welfare contributions yet" : "No welfare contributions found";
+    const description = isZero
+      ? "Record your first welfare contribution to start building the welfare fund."
+      : "We couldn't find any welfare contributions matching your current search or filters.";
+
+    const showAdd = isZero && canCreate && onCreate;
+    const actionLabel = showAdd ? "Add Contribution" : recovery?.actionLabel;
+    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
+    const onSecondary = showAdd ? null : recovery?.onSecondary;
+
+    return (
+      <EmptyState
+        illustration={isZero ? "welfare" : "search"}
+        title={title}
+        description={description}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        secondaryLabel={secondaryLabel}
+        onSecondary={onSecondary}
+      />
+    );
   }
 
   return (

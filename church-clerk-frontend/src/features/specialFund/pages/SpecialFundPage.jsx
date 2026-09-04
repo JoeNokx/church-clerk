@@ -151,7 +151,7 @@ export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, e
           <SpecialFundFilters />
         </div>
 
-        <SpecialFundTable onEdit={openEdit} onDeleted={refreshKpi} />
+        <SpecialFundTable onEdit={openEdit} onDeleted={refreshKpi} onCreate={openCreate} />
       </div>
 
       <SpecialFundForm

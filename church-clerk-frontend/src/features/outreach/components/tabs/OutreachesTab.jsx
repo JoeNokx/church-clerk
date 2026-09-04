@@ -6,6 +6,7 @@ import {
   getOutreachTeams,
 } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
+import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 
 function fmtDate(v) {
   if (!v) return "—";
@@ -407,19 +408,13 @@ export default function OutreachesTab() {
           {[0,1,2,3,4,5].map(i => <div key={i} className="h-52 rounded-2xl border border-gray-200 bg-gray-100 animate-pulse" />)}
         </div>
       ) : events.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white py-20 text-center">
-          <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-          </div>
-          <div className="font-semibold text-gray-900 text-sm">No outreach events</div>
-          <div className="mt-1 text-xs text-gray-400">Plan your first outreach event</div>
-          {canCreate ? (
-            <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-              New Event
-            </button>
-          ) : null}
-        </div>
+        <EmptyState
+          illustration="outreach"
+          title="No outreach events"
+          description="Plan your first outreach event to start reaching your community."
+          actionLabel={canCreate ? "New Event" : null}
+          onAction={canCreate ? () => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); } : undefined}
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

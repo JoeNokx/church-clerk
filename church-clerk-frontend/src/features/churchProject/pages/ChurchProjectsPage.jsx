@@ -18,6 +18,7 @@ import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -757,6 +758,18 @@ function ChurchProjectsPageInner() {
       {loading ? (
         <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
           <Skeleton height={14} count={4} />
+        </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+          <EmptyState
+            illustration={String(searchValue || "").trim() ? "search" : "projects"}
+            title={String(searchValue || "").trim() ? "No projects found" : "No projects yet"}
+            description={String(searchValue || "").trim()
+              ? "We couldn't find any projects matching your search."
+              : "Church projects will appear here once they're created."}
+            actionLabel={String(searchValue || "").trim() ? "Clear Search" : null}
+            onAction={String(searchValue || "").trim() ? () => { setSearchValue(""); setCurrentPage(1); } : undefined}
+          />
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">

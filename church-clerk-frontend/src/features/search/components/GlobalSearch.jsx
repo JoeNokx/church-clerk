@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { globalSearch as globalSearchApi } from "../services/globalSearch.api.js";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 // ─── Module config ────────────────────────────────────────────────────────────
 const MODULE_META = {
@@ -398,15 +399,12 @@ export default function GlobalSearch() {
           {/* Results */}
           <div className="overflow-y-auto flex-1 [scrollbar-width:thin]">
             {!loading && !hasResults && query.length >= 2 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center px-4">
-                <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10 text-gray-300 mb-3">
-                  <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M8 11h6M11 8v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-                <div className="text-gray-500 text-sm font-medium">No results found</div>
-                <div className="text-gray-400 text-xs mt-1">Try a different search term</div>
-              </div>
+              <EmptyState
+                compact
+                illustration="search"
+                title="No results found"
+                description="Try a different search term."
+              />
             ) : null}
 
             {orderedModules.map((moduleKey) => {

@@ -19,6 +19,7 @@ import ChurchContext from "../../church/church.store.js";
 import AuthContext from "../../auth/auth.store.jsx";
 
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 
 const DashboardCharts = React.lazy(() => import("../components/DashboardCharts.jsx"));
@@ -1025,7 +1026,7 @@ function DashboardOverview({ onNavigate }) {
 
             ) : (
 
-              <div className="px-3 pt-3 rounded-lg border border-gray-200 bg-gray-50 py-3 text-gray-600 text-sm mx-3 mt-2">No recent members yet.</div>
+              <EmptyState compact illustration="members" title="No recent members yet" description="New members will show up here as they're added." />
 
             )}
 
@@ -1087,7 +1088,7 @@ function DashboardOverview({ onNavigate }) {
                   )
                 )
               ) : (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No upcoming birthdays.</div>
+                <EmptyState compact illustration="birthdays" title="No upcoming birthdays" description="Birthdays in the coming weeks will appear here." />
               )}
             </div>
           </div>
@@ -1160,7 +1161,7 @@ function DashboardOverview({ onNavigate }) {
                   })}
                 </div>
               ) : (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No upcoming events.</div>
+                <EmptyState compact illustration="events" title="No upcoming events" description="Scheduled events will appear here." />
               )}
             </div>
           </div>
@@ -1369,7 +1370,7 @@ function DashboardOverview({ onNavigate }) {
 
                 ) : (
 
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No birthdays found.</div>
+                  <EmptyState compact illustration="birthdays" title="No birthdays found" description="Try selecting a different month." />
 
                 )}
 

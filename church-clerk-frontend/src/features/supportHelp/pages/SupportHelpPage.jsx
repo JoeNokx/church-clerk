@@ -4,6 +4,7 @@ import http from "../../../shared/services/http.js";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../../church/church.store.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function formatDate(v) {
   if (!v) return "—";
@@ -340,7 +341,16 @@ function MyTicketsTab({ onViewTicket, focusTicketId }) {
       {error && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>}
 
       {!tickets.length ? (
-        <div className="py-8 text-center text-gray-500 text-sm">No tickets found.</div>
+        <EmptyState
+          compact
+          illustration={statusFilter ? "filters" : "support"}
+          title={statusFilter ? "No tickets found" : "No support tickets yet"}
+          description={statusFilter
+            ? "We couldn't find any tickets matching the selected status."
+            : "Submit a support request and your tickets will appear here."}
+          actionLabel={statusFilter ? "Clear Filter" : null}
+          onAction={statusFilter ? () => { setStatusFilter(""); load({ status: "" }); } : undefined}
+        />
       ) : (
         <div className="space-y-2">
           {tickets.map((t) => (

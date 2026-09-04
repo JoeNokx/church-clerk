@@ -29,6 +29,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
 
@@ -552,7 +553,7 @@ function AttendancePageInner() {
                   ))}
                 </div>
               ) : filteredIndivRecords.length === 0 ? (
-                <div className="p-4 text-gray-600 md:p-6 lg:p-8 text-sm">No individual attendance records found.</div>
+                <EmptyState compact illustration="attendance" title="No individual attendance records found" description="Individual attendance entries will appear here." />
               ) : (
                 <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-4">
                   <table className="min-w-full">
@@ -835,7 +836,7 @@ function AttendancePageInner() {
                       ))}
                     </div>
                   ) : indivMembers.length === 0 ? (
-                    <div className="px-4 py-4 text-gray-600 text-sm">No members found.</div>
+                    <div className="px-4 py-4"><EmptyState compact illustration="members" title="No members found" description="Add members to your church to record their attendance." /></div>
                   ) : (
                     <>
                       <div className="overflow-x-auto">

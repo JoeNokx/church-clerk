@@ -31,6 +31,7 @@ import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
 import { getSystemSettingsAdmin, updateSystemSettingsAdmin, toggleGovernanceFlags } from "../../settings/services/settings.api.js";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 function formatCurrency(amount, currency) {
   return formatMoney(amount, currency);
@@ -1301,7 +1302,7 @@ function BillingPage() {
               );
             })
           ) : (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No saved payment methods yet.</div>
+            <EmptyState compact illustration="billing" title="No saved payment methods yet" description="Add a payment method to subscribe to a plan." />
           )}
         </div>
 
@@ -2137,7 +2138,7 @@ function BillingPage() {
                 );
               })
             ) : (
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-sm">No saved payment methods yet.</div>
+              <EmptyState compact illustration="billing" title="No saved payment methods yet" description="Add a payment method to subscribe to a plan." />
             )}
           </div>
 
