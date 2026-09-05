@@ -24,6 +24,8 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -727,24 +729,65 @@ function ChurchProjectDetailsPage() {
       </div>
 
       {kpiError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{kpiError}</div> : null}
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Target Amount</div>
-          <div className="mt-2 font-semibold text-gray-900 text-lg">{formatCurrency(kpi?.targetAmount || 0, currency)}</div>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Total Raised</div>
-          <div className="mt-2 font-semibold text-gray-900 text-lg">{formatCurrency(kpi?.totalContributions || 0, currency)}</div>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Total Spent</div>
-          <div className="mt-2 font-semibold text-gray-900 text-lg">{formatCurrency(kpi?.totalExpenses || 0, currency)}</div>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Balance</div>
-          <div className="mt-2 font-semibold text-gray-900 text-lg">{formatCurrency(kpi?.balance || 0, currency)}</div>
-        </div>
-      </div>
+      <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
+        <KpiCard
+          title="Target Amount"
+          value={formatCurrency(kpi?.targetAmount || 0, currency)}
+          change={kpi?.change?.targetAmount}
+          compareLabel="funded"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="6" />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
+          }
+          iconBg="bg-blue-100"
+          iconColor="text-blue-700"
+        />
+        <KpiCard
+          title="Total Raised"
+          value={formatCurrency(kpi?.totalContributions || 0, currency)}
+          change={kpi?.change?.totalContributions}
+          diff={kpi?.diff?.totalContributions}
+          compareLabel="last month"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+            </svg>
+          }
+          iconBg="bg-green-100"
+          iconColor="text-green-700"
+        />
+        <KpiCard
+          title="Total Spent"
+          value={formatCurrency(kpi?.totalExpenses || 0, currency)}
+          change={kpi?.change?.totalExpenses}
+          diff={kpi?.diff?.totalExpenses}
+          compareLabel="last month"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+            </svg>
+          }
+          iconBg="bg-orange-100"
+          iconColor="text-orange-700"
+        />
+        <KpiCard
+          title="Balance"
+          value={formatCurrency(kpi?.balance || 0, currency)}
+          change={kpi?.change?.balance}
+          diff={kpi?.diff?.balance}
+          compareLabel="last month"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>
+          }
+          iconBg="bg-purple-100"
+          iconColor="text-purple-700"
+        />
+      </KpiGrid>
 
       <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         <div className="flex items-center justify-between text-gray-500 text-xs">

@@ -28,8 +28,11 @@ const getIncomeExpensesKPI = async (req, res) => {
 
     
     // DATE RANGE: CURRENT MONTH
-    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
     // FETCH INCOME & EXPENSES FOR THIS BUSINESS
     const [incomes, expenses] = await Promise.all([
@@ -55,6 +58,22 @@ const getIncomeExpensesKPI = async (req, res) => {
       .filter(e => new Date(e.date) >= startOfMonth && new Date(e.date) <= endOfMonth)
       .reduce((sum, e) => sum + e.amount, 0);
 
+    // TOTALS (LAST MONTH) for change/diff
+    const incomeLastMonth = incomes
+      .filter(i => { const d = new Date(i.date); return d >= startOfLastMonth && d <= endOfLastMonth; })
+      .reduce((sum, i) => sum + i.amount, 0);
+
+    const expensesLastMonth = expenses
+      .filter(e => { const d = new Date(e.date); return d >= startOfLastMonth && d <= endOfLastMonth; })
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
 
     return res.status(200).json({
       message: "Business KPI fetched successfully",
@@ -66,7 +85,17 @@ const getIncomeExpensesKPI = async (req, res) => {
          incomeThisMonth,
         expensesThisMonth,
          incomeCount,
-         expensesCount
+         expensesCount,
+         change: {
+           totalIncome: pctChange(incomeThisMonth, incomeLastMonth),
+           totalExpenses: pctChange(expensesThisMonth, expensesLastMonth),
+           totalNet: pctChange(incomeThisMonth - expensesThisMonth, incomeLastMonth - expensesLastMonth),
+         },
+         diff: {
+           totalIncome: incomeThisMonth - incomeLastMonth,
+           totalExpenses: expensesThisMonth - expensesLastMonth,
+           totalNet: (incomeThisMonth - expensesThisMonth) - (incomeLastMonth - expensesLastMonth),
+         },
       }
     });
 

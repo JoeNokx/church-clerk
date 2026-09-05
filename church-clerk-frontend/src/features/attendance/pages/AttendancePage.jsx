@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
@@ -161,6 +162,19 @@ function AttendancePageInner() {
 
   const activeChurchId = churchStore?.activeChurch?._id || null;
   const { toPage } = useDashboardNavigator();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Handle prefillVisitor from outreach Connect flow
+  useEffect(() => {
+    const prefill = location?.state?.prefillVisitor;
+    if (!prefill) return;
+    setActiveTab("visitors");
+    setEditingVisitor(prefill);
+    setIsVisitorFormOpen(true);
+    // Clear state so it doesn't re-trigger
+    navigate(location.pathname + location.search, { replace: true, state: null });
+  }, [location?.state]);
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
   const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : FALLBACK_SERVICE_TYPES;
@@ -1125,7 +1139,7 @@ function AttendancePageInner() {
 
           <VisitorForm
             open={isVisitorFormOpen}
-            mode={editingVisitor ? "edit" : "create"}
+            mode={editingVisitor?._id ? "edit" : "create"}
             initialData={editingVisitor}
             onClose={closeVisitorForm}
             onSuccess={() => { closeVisitorForm(); refreshVisitors(); }}

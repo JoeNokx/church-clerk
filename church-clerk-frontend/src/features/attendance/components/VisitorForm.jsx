@@ -60,6 +60,20 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
       return;
     }
 
+    // Prefill mode (from outreach Connect flow) — initialData without _id
+    if (mode === "create" && initialData) {
+      setFullName(initialData.fullName || "");
+      setPhoneNumber(initialData.phoneNumber || "");
+      setEmail(initialData.email || "");
+      setLocation(initialData.location || "");
+      setServiceType(initialData.serviceType || "");
+      setServiceDate((initialData.serviceDate || "").slice(0, 10));
+      setInvitedBy(initialData.invitedBy || "");
+      setSource(initialData.source || "");
+      setNote(initialData.note || "");
+      return;
+    }
+
     setFullName("");
     setPhoneNumber("");
     setEmail("");

@@ -2,19 +2,19 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
-import Button from "../../../shared/components/Button/index.jsx";
+
 import {
   getOutreachEventById,
   updateOutreachEvent,
   getProspectsByEvent,
-  createProspect,
-  updateProspect,
   deleteProspect,
   getFollowUpsByEvent,
-  createFollowUp,
   updateFollowUp,
   deleteFollowUp,
 } from "../services/outreach.api.js";
+import { getMembers } from "../../member/services/member.api.js";
+import { PersonFormModal } from "../components/tabs/PeopleReachedTab.jsx";
+import { FollowUpFormModal } from "../components/tabs/FollowUpsTab.jsx";
 
 // ─── Constants & Helpers ─────────────────────────────────────────
 const DECISION_LABELS = {
@@ -53,12 +53,7 @@ function fmtDate(v) {
   if (!v) return "—";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
-function fmtDateInput(v) {
-  if (!v) return "";
-  const d = new Date(v);
-  if (isNaN(d)) return "";
-  return d.toISOString().slice(0, 10);
-}
+
 
 function Badge({ label, className }) {
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${className}`}>{label}</span>;
@@ -72,208 +67,10 @@ function Avatar({ name, photo, size = "sm" }) {
     : <div className={`${s} rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center`}>{initials}</div>;
 }
 
-// ─── Prospect Form Modal ──────────────────────────────────────────
-function ProspectFormModal({ open, mode, initialData, eventId, onClose, onSaved }) {
-  const empty = { firstName: "", lastName: "", phone: "", email: "", address: "", gender: "", ageGroup: "", decision: "none", interestLevel: "medium", notes: "" };
-  const [form, setForm] = useState(empty);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!open) return;
-    setForm(mode === "edit" && initialData
-      ? { firstName: initialData.firstName || "", lastName: initialData.lastName || "", phone: initialData.phone || "", email: initialData.email || "", address: initialData.address || "", gender: initialData.gender || "", ageGroup: initialData.ageGroup || "", decision: initialData.decision || "none", interestLevel: initialData.interestLevel || "medium", notes: initialData.notes || "" }
-      : empty);
-    setError("");
-  }, [open, mode, initialData]);
-
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (saving) return;
-    if (!form.firstName.trim()) { setError("First name is required."); return; }
-    setSaving(true); setError("");
-    try {
-      if (mode === "edit") await updateProspect(eventId, initialData._id, form);
-      else await createProspect(eventId, form);
-      onSaved?.();
-    } catch (err) { setError(err?.response?.data?.message || "Something went wrong."); }
-    finally { setSaving(false); }
-  };
-
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4">
-      <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh]">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
-          <h2 className="font-semibold text-gray-900 text-base">{mode === "edit" ? "Edit Prospect" : "Add Prospect"}</h2>
-          <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">First Name <span className="text-red-500">*</span></label>
-              <input value={form.firstName} onChange={(e) => set("firstName", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Last Name</label>
-              <input value={form.lastName} onChange={(e) => set("lastName", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Phone</label>
-              <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Email</label>
-              <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Address</label>
-            <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Area / Neighborhood" className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Gender</label>
-              <select value={form.gender} onChange={(e) => set("gender", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500">
-                <option value="">Select</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Age Group</label>
-              <select value={form.ageGroup} onChange={(e) => set("ageGroup", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500">
-                <option value="">Select</option>
-                <option value="child">Child</option>
-                <option value="teenager">Teenager</option>
-                <option value="youth">Youth</option>
-                <option value="adult">Adult</option>
-                <option value="elderly">Elderly</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Decision</label>
-              <select value={form.decision} onChange={(e) => set("decision", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500">
-                {Object.entries(DECISION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Interest Level</label>
-              <select value={form.interestLevel} onChange={(e) => set("interestLevel", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500">
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Notes</label>
-            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} placeholder="Any additional info about this person…" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
-          </div>
-          {error ? <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{error}</div> : null}
-        </form>
-        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4 shrink-0">
-          <button type="button" onClick={onClose} className="h-11 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-          <Button type="submit" variant="primary" onClick={handleSubmit} loading={saving} loadingText="Saving…" className="h-11 rounded-lg px-6 text-sm">
-            {mode === "edit" ? "Save Changes" : "Add Prospect"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Follow-up Form Modal ─────────────────────────────────────────
-function FollowUpFormModal({ open, mode, initialData, prospectId, eventId, onClose, onSaved }) {
-  const empty = { followUpDate: "", type: "call", notes: "", outcome: "not-reached", nextFollowUpDate: "" };
-  const [form, setForm] = useState(empty);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!open) return;
-    setForm(mode === "edit" && initialData
-      ? { followUpDate: fmtDateInput(initialData.followUpDate), type: initialData.type || "call", notes: initialData.notes || "", outcome: initialData.outcome || "not-reached", nextFollowUpDate: fmtDateInput(initialData.nextFollowUpDate) }
-      : empty);
-    setError("");
-  }, [open, mode, initialData]);
-
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (saving) return;
-    if (!form.followUpDate) { setError("Follow-up date is required."); return; }
-    setSaving(true); setError("");
-    try {
-      if (mode === "edit") await updateFollowUp(initialData._id, form);
-      else await createFollowUp(prospectId, { ...form, outreachEvent: eventId });
-      onSaved?.();
-    } catch (err) { setError(err?.response?.data?.message || "Something went wrong."); }
-    finally { setSaving(false); }
-  };
-
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4">
-      <div className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
-          <h2 className="font-semibold text-gray-900 text-base">{mode === "edit" ? "Edit Follow-up" : "Record Follow-up"}</h2>
-          <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Follow-up Date <span className="text-red-500">*</span></label>
-              <input type="date" value={form.followUpDate} onChange={(e) => set("followUpDate", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Method</label>
-              <select value={form.type} onChange={(e) => set("type", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500">
-                {Object.entries(FOLLOWUP_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Outcome</label>
-            <select value={form.outcome} onChange={(e) => set("outcome", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500">
-              {Object.entries(OUTCOME_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Next Follow-up Date</label>
-            <input type="date" value={form.nextFollowUpDate} onChange={(e) => set("nextFollowUpDate", e.target.value)} className="w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Notes</label>
-            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} placeholder="What was discussed?" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
-          </div>
-          {error ? <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{error}</div> : null}
-        </form>
-        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4 shrink-0">
-          <button type="button" onClick={onClose} className="h-11 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-          <Button type="submit" variant="primary" onClick={handleSubmit} loading={saving} loadingText="Saving…" className="h-11 rounded-lg px-6 text-sm">
-            {mode === "edit" ? "Save Changes" : "Record"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Prospect Row ─────────────────────────────────────────────────
-function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, canWrite, canDelete }) {
+function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWrite, canDelete }) {
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50">
       <td className="px-4 py-3">
@@ -300,9 +97,10 @@ function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, canWrite, canD
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-1 justify-end">
+          <button onClick={() => onView(prospect)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">View</button>
           {canWrite ? (
             <button onClick={() => onAddFollowUp(prospect)} className="h-8 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 whitespace-nowrap">
-              + Follow-up
+              + Schedule Follow-Up
             </button>
           ) : null}
           {canWrite ? (
@@ -321,8 +119,25 @@ function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, canWrite, canD
   );
 }
 
+// Combined status/outcome labels for display
+const STATUS_OUTCOME_LABELS = {
+  ...OUTCOME_LABELS,
+  pending: "Pending", contacted: "Contacted", "no-response": "No Response",
+  rescheduled: "Rescheduled", completed: "Completed", "not-interested": "Not Interested",
+  "connected-to-church": "Connected to Church",
+};
+const STATUS_OUTCOME_STYLES = {
+  ...OUTCOME_STYLES,
+  pending: "bg-amber-100 text-amber-700", contacted: "bg-blue-100 text-blue-700",
+  "no-response": "bg-gray-100 text-gray-600", rescheduled: "bg-purple-100 text-purple-700",
+  completed: "bg-green-100 text-green-700", "not-interested": "bg-red-100 text-red-600",
+  "connected-to-church": "bg-emerald-100 text-emerald-700",
+};
+
 // ─── Follow-up Row ────────────────────────────────────────────────
 function FollowUpRow({ followUp, onEdit, onDelete, canWrite, canDelete }) {
+  const statusKey = followUp.status || followUp.outcome || "";
+  const dateVal = followUp.scheduledDate || followUp.followUpDate;
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50">
       <td className="px-4 py-3">
@@ -331,12 +146,12 @@ function FollowUpRow({ followUp, onEdit, onDelete, canWrite, canDelete }) {
         </div>
         {followUp.prospect?.phone ? <div className="text-xs text-gray-400">{followUp.prospect.phone}</div> : null}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-600">{fmtDate(followUp.followUpDate)}</td>
+      <td className="px-4 py-3 text-xs text-gray-600">{fmtDate(dateVal)}</td>
       <td className="px-4 py-3 hidden md:table-cell">
         <span className="text-xs text-gray-600 capitalize">{FOLLOWUP_TYPE_LABELS[followUp.type] || followUp.type}</span>
       </td>
       <td className="px-4 py-3">
-        <Badge label={OUTCOME_LABELS[followUp.outcome] || followUp.outcome} className={OUTCOME_STYLES[followUp.outcome] || "bg-gray-100 text-gray-500"} />
+        <Badge label={STATUS_OUTCOME_LABELS[statusKey] || statusKey?.replace(/-/g, " ") || "—"} className={STATUS_OUTCOME_STYLES[statusKey] || "bg-gray-100 text-gray-500"} />
       </td>
       <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-500">
         {followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "—"}
@@ -357,74 +172,6 @@ function FollowUpRow({ followUp, onEdit, onDelete, canWrite, canDelete }) {
         </div>
       </td>
     </tr>
-  );
-}
-
-// ─── Team Role Labels ────────────────────────────────────────────
-const TEAM_ROLE_LABELS = {
-  "team-leader": "Team Leader", evangelist: "Evangelist", counselor: "Counselor",
-  "prayer-team": "Prayer Team", "follow-up-team": "Follow-Up Team",
-  transport: "Transport", registration: "Registration", media: "Media", volunteer: "Volunteer",
-};
-
-// ─── Team Detail Card ─────────────────────────────────────────────
-function TeamDetailCard({ team }) {
-  const members = team.members || [];
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5">
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-3">
-        <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-gray-900 text-sm leading-snug">{team.name}</div>
-          {team.description ? <div className="text-xs text-gray-400 mt-0.5 line-clamp-2">{team.description}</div> : null}
-        </div>
-      </div>
-
-      {/* Member count badge */}
-      <div className="flex items-center gap-2 mb-3 pt-2 border-t border-gray-100">
-        <span className="inline-flex rounded-full bg-indigo-50 text-indigo-700 px-2.5 py-0.5 text-[11px] font-semibold">{members.length} {members.length === 1 ? "member" : "members"}</span>
-      </div>
-
-      {/* Members */}
-      {members.length > 0 ? (
-        <div className="space-y-2">
-          {members.map((m, i) => {
-            const mem = typeof m.member === "object" ? m.member : null;
-            if (!mem) return null;
-            const location = mem.community || mem.address || null;
-            return (
-              <div key={i} className="flex items-center gap-2 rounded-xl bg-gray-50 border border-gray-100 px-3 py-2">
-                <div className="h-8 w-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
-                  {(mem.firstName?.[0] || "?").toUpperCase()}{(mem.lastName?.[0] || "").toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-gray-900 truncate">{mem.firstName} {mem.lastName || ""}</div>
-                  <div className="flex flex-wrap gap-x-2 mt-0.5">
-                    {mem.phoneNumber ? <span className="text-xs text-gray-500">{mem.phoneNumber}</span> : null}
-                    {location ? (
-                      <span className="flex items-center gap-0.5 text-xs text-gray-400">
-                        <svg viewBox="0 0 24 24" fill="none" className="h-2.5 w-2.5 shrink-0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2" /></svg>
-                        {location}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-                {m.role ? (
-                  <span className="shrink-0 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap">
-                    {TEAM_ROLE_LABELS[m.role] || m.role}
-                  </span>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-xs text-gray-400 italic text-center py-3">No members in this team</div>
-      )}
-    </div>
   );
 }
 
@@ -462,6 +209,17 @@ export default function OutreachEventDetailPage() {
   const { toPage } = useDashboardNavigator();
   const location = useLocation();
   const eventId = useMemo(() => new URLSearchParams(location.search).get("id"), [location.search]);
+  const fromTab = useMemo(() => new URLSearchParams(location.search).get("from") || "outreaches", [location.search]);
+
+  const backParams = useMemo(() => {
+    const params = {};
+    if (fromTab === "overview") params.defaultTab = "overview";
+    else if (fromTab === "people") params.defaultTab = "people";
+    else params.defaultTab = "outreaches";
+    return params;
+  }, [fromTab]);
+
+  const backLabel = fromTab === "overview" ? "Back to Overview" : fromTab === "people" ? "Back to People Reached" : "Back to Outreach";
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -473,6 +231,7 @@ export default function OutreachEventDetailPage() {
   const [prospectsLoading, setProspectsLoading] = useState(false);
   const [followUps, setFollowUps] = useState([]);
   const [followUpsLoading, setFollowUpsLoading] = useState(false);
+  const [members, setMembers] = useState([]);
 
   const [prospectForm, setProspectForm] = useState({ open: false, mode: "create", data: null });
   const [followUpForm, setFollowUpForm] = useState({ open: false, mode: "create", data: null, prospectId: null });
@@ -503,7 +262,10 @@ export default function OutreachEventDetailPage() {
     catch { setFollowUps([]); } finally { setFollowUpsLoading(false); }
   }, [eventId]);
 
-  useEffect(() => { fetchEvent(); fetchProspects(); fetchFollowUps(); }, [eventId]);
+  useEffect(() => {
+    fetchEvent(); fetchProspects(); fetchFollowUps();
+    getMembers({ limit: 200, status: "active" }).then((r) => setMembers(r.data?.members || [])).catch(() => {});
+  }, [eventId]);
 
   const handleStatusChange = async (newStatus) => {
     if (!event || statusUpdating) return;
@@ -530,7 +292,7 @@ export default function OutreachEventDetailPage() {
   if (!eventId) return (
     <div className="text-center py-20 text-gray-500">
       <p>No event selected.</p>
-      <button onClick={() => toPage("outreach")} className="mt-4 text-blue-700 font-semibold hover:underline text-sm">← Back to Outreach</button>
+      <button onClick={() => toPage("outreach", backParams)} className="mt-4 text-blue-700 font-semibold hover:underline text-sm">← {backLabel}</button>
     </div>
   );
 
@@ -545,7 +307,7 @@ export default function OutreachEventDetailPage() {
   if (!event) return (
     <div className="text-center py-20 text-gray-500">
       <p>Event not found.</p>
-      <button onClick={() => toPage("outreach")} className="mt-4 text-blue-700 font-semibold hover:underline text-sm">← Back to Outreach</button>
+      <button onClick={() => toPage("outreach", backParams)} className="mt-4 text-blue-700 font-semibold hover:underline text-sm">← {backLabel}</button>
     </div>
   );
 
@@ -557,9 +319,9 @@ export default function OutreachEventDetailPage() {
   return (
     <div className="max-w-5xl">
       {/* Back + Header */}
-      <button onClick={() => toPage("outreach")} className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-semibold">
+      <button onClick={() => toPage("outreach", backParams)} className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-semibold">
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-        Back to Outreach
+        {backLabel}
       </button>
 
       {/* Event Header Card */}
@@ -616,10 +378,10 @@ export default function OutreachEventDetailPage() {
           </div>
         </div>
 
-        {/* Team */}
+        {/* Team Members */}
         {teamAll.length > 0 ? (
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="text-xs font-semibold text-gray-500 mb-2">TEAM</div>
+            <div className="text-xs font-semibold text-gray-500 mb-2">TEAM MEMBERS</div>
             <div className="flex flex-wrap gap-2">
               {teamAll.map((m) => (
                 <div key={m._id} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5">
@@ -627,6 +389,26 @@ export default function OutreachEventDetailPage() {
                   <span className="text-xs font-semibold text-gray-700">{m.firstName} {m.lastName || ""}</span>
                   {String(m._id) === String(event.teamLeader?._id) ? <span className="text-[10px] bg-blue-100 text-blue-700 rounded-full px-1.5 font-semibold">Leader</span> : null}
                 </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Outreach Teams (clickable chips → navigate to Teams tab) */}
+        {eventTeams.length > 0 ? (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="text-xs font-semibold text-gray-500 mb-2">OUTREACH TEAMS</div>
+            <div className="flex flex-wrap gap-2">
+              {eventTeams.map((team) => (
+                <button
+                  key={team._id}
+                  type="button"
+                  onClick={() => toPage("team-details", { id: team._id, from: fromTab })}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /></svg>
+                  {team.name}
+                </button>
               ))}
             </div>
           </div>
@@ -639,7 +421,6 @@ export default function OutreachEventDetailPage() {
           {[
           { key: "prospects", label: `Prospects (${prospects.length})` },
           { key: "followups", label: `Follow-ups (${followUps.length})` },
-          { key: "teams", label: `Teams (${eventTeams.length})` },
         ].map((tab) => (
             <button
               key={tab.key}
@@ -661,7 +442,7 @@ export default function OutreachEventDetailPage() {
               </div>
               {canCreate ? (
                 <button onClick={() => setProspectForm({ open: true, mode: "create", data: null })} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
-                  <span className="text-base leading-none">+</span> Add Prospect
+                  <span className="text-base leading-none">+</span> Record Person
                 </button>
               ) : null}
             </div>
@@ -674,7 +455,7 @@ export default function OutreachEventDetailPage() {
                   <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                 </div>
                 No prospects recorded yet.
-                {canCreate ? <div className="mt-1 text-xs">Click <strong>Add Prospect</strong> to start recording.</div> : null}
+                {canCreate ? <div className="mt-1 text-xs">Click <strong>Record Person</strong> to start recording.</div> : null}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -694,6 +475,7 @@ export default function OutreachEventDetailPage() {
                       <ProspectRow
                         key={p._id}
                         prospect={p}
+                        onView={(prospect) => toPage("prospect-details", { id: prospect._id, from: fromTab })}
                         onEdit={(prospect) => setProspectForm({ open: true, mode: "edit", data: prospect })}
                         onDelete={(prospect) => setDeleteModal({ open: true, type: "prospect", id: prospect._id, name: `${prospect.firstName} ${prospect.lastName || ""}` })}
                         onAddFollowUp={(prospect) => setFollowUpForm({ open: true, mode: "create", data: null, prospectId: prospect._id })}
@@ -703,25 +485,6 @@ export default function OutreachEventDetailPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
-          </div>
-        ) : null}
-
-        {/* Teams Tab */}
-        {activeTab === "teams" ? (
-          <div className="mt-4">
-            {eventTeams.length === 0 ? (
-              <div className="rounded-2xl border border-gray-200 bg-white py-16 text-center">
-                <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-                </div>
-                <div className="font-semibold text-gray-900 text-sm">No teams linked</div>
-                <div className="text-xs text-gray-400 mt-1">Edit this event and add outreach teams to it</div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {eventTeams.map((team) => <TeamDetailCard key={team._id} team={team} />)}
               </div>
             )}
           </div>
@@ -745,7 +508,7 @@ export default function OutreachEventDetailPage() {
                   <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                 </div>
                 No follow-ups recorded yet.
-                <div className="mt-1 text-xs">Go to the <strong>Prospects</strong> tab and click <strong>+ Follow-up</strong> on any person.</div>
+                <div className="mt-1 text-xs">Go to the <strong>Prospects</strong> tab and click <strong>Schedule Follow-Up</strong> on any person.</div>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -767,7 +530,7 @@ export default function OutreachEventDetailPage() {
                         key={f._id}
                         followUp={f}
                         onEdit={(fu) => setFollowUpForm({ open: true, mode: "edit", data: fu, prospectId: fu.prospect?._id })}
-                        onDelete={(fu) => setDeleteModal({ open: true, type: "followup", id: fu._id, name: `follow-up on ${fmtDate(fu.followUpDate)}` })}
+                        onDelete={(fu) => setDeleteModal({ open: true, type: "followup", id: fu._id, name: `follow-up on ${fmtDate(fu.scheduledDate || fu.followUpDate)}` })}
                         canWrite={canWrite}
                         canDelete={canDelete}
                       />
@@ -781,11 +544,12 @@ export default function OutreachEventDetailPage() {
       </div>
 
       {/* Modals */}
-      <ProspectFormModal
+      <PersonFormModal
         open={prospectForm.open}
         mode={prospectForm.mode}
         initialData={prospectForm.data}
-        eventId={eventId}
+        events={event ? [event] : []}
+        defaultOutreachEventId={eventId}
         onClose={() => setProspectForm({ open: false, mode: "create", data: null })}
         onSaved={() => { setProspectForm({ open: false, mode: "create", data: null }); fetchProspects(); fetchEvent(); }}
       />
@@ -794,8 +558,10 @@ export default function OutreachEventDetailPage() {
         open={followUpForm.open}
         mode={followUpForm.mode}
         initialData={followUpForm.data}
-        prospectId={followUpForm.prospectId}
-        eventId={eventId}
+        prospects={prospects}
+        events={event ? [event] : []}
+        members={members}
+        defaultValues={{ prospect: followUpForm.prospectId || "", outreachEvent: eventId || "" }}
         onClose={() => setFollowUpForm({ open: false, mode: "create", data: null, prospectId: null })}
         onSaved={() => { setFollowUpForm({ open: false, mode: "create", data: null, prospectId: null }); fetchFollowUps(); fetchProspects(); fetchEvent(); }}
       />

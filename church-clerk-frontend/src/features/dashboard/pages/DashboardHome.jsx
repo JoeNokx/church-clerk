@@ -87,6 +87,10 @@ const OutreachPage = React.lazy(() => import("../../outreach/pages/OutreachPage.
 
 const OutreachEventDetailPage = React.lazy(() => import("../../outreach/pages/OutreachEventDetailPage.jsx"));
 
+const ProspectDetailsPage = React.lazy(() => import("../../outreach/pages/ProspectDetailsPage.jsx"));
+
+const TeamDetailsPage = React.lazy(() => import("../../outreach/pages/TeamDetailsPage.jsx"));
+
 
 function formatPercent(value) {
 
@@ -1540,6 +1544,10 @@ function DashboardHome() {
   if (page === "outreach") PageComponent = OutreachPage;
 
   if (page === "outreach-event-details") PageComponent = OutreachEventDetailPage;
+
+  if (page === "prospect-details") PageComponent = ProspectDetailsPage;
+
+  if (page === "team-details") PageComponent = TeamDetailsPage;
 
 
 

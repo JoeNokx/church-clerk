@@ -190,6 +190,16 @@ function MemberDetailsPageInner() {
                 toPage("members");
                 return;
               }
+              if (from === "team") {
+                const teamId = location?.state?.teamId;
+                const fromTab = location?.state?.fromTab || "teams";
+                if (teamId) {
+                  toPage("team-details", { id: teamId, from: fromTab });
+                } else {
+                  toPage("outreach", { defaultTab: "teams" });
+                }
+                return;
+              }
               navigate(-1);
             }}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"

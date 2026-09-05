@@ -1,9 +1,10 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import {
   getAllProspects, createProspect, createProspectDirect, updateProspectDirect, deleteProspectDirect,
-  checkDuplicate, convertToMember, markAsVisitor, getOutreachEvents,
+  checkDuplicate, getOutreachEvents,
 } from "../../services/outreach.api.js";
 
 const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500";
@@ -452,81 +453,90 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
 }
 
 // ── Convert Modal ─────────────────────────────────────────────────
-function ConvertModal({ open, prospect, onClose, onDone }) {
+export function ConvertModal({ open, prospect, onClose, onDone }) {
+  const { toPage } = useDashboardNavigator();
   const [mode, setMode] = useState(""); // "member" | "visitor"
-  const [dateJoined, setDateJoined] = useState("");
-  const [serviceDate, setServiceDate] = useState("");
-  const [serviceType, setServiceType] = useState("Sunday Service");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
-  useEffect(() => { if (open) { setMode(""); setDateJoined(""); setServiceDate(""); setError(""); } }, [open]);
+  useEffect(() => { if (open) { setMode(""); } }, [open]);
 
   if (!open || !prospect) return null;
 
-  const handleConvert = async () => {
-    setSaving(true); setError("");
-    try {
-      if (mode === "member") {
-        await convertToMember(prospect._id, { dateJoined: dateJoined || undefined });
-      } else {
-        await markAsVisitor(prospect._id, { serviceDate: serviceDate || undefined, serviceType });
-      }
-      onDone?.();
-    } catch (err) {
-      setError(err?.response?.data?.message || "Failed.");
-    } finally { setSaving(false); }
+  const fullName = `${prospect.firstName || ""} ${prospect.lastName || ""}`.trim();
+  const prospectId = prospect._id;
+
+  const handleChoose = (chosenMode) => {
+    if (chosenMode === "member") {
+      toPage(
+        "member-form",
+        undefined,
+        {
+          state: {
+            prefillMember: {
+              firstName: prospect.firstName || "",
+              lastName: prospect.lastName || "",
+              phoneNumber: prospect.phone || "",
+              email: prospect.email || "",
+              gender: prospect.gender || "",
+              occupation: prospect.occupation || "",
+              ageGroup: prospect.ageGroup || "",
+              streetAddress: prospect.address || "",
+              city: prospect.community || "",
+              status: "active",
+              note: prospect.notes || "",
+            },
+            fromProspectId: prospectId,
+          },
+        }
+      );
+    } else if (chosenMode === "visitor") {
+      toPage(
+        "attendance",
+        undefined,
+        {
+          state: {
+            prefillVisitor: {
+              fullName,
+              phoneNumber: prospect.phone || "",
+              email: prospect.email || "",
+              location: prospect.community || prospect.address || "",
+              note: prospect.notes || "",
+              fromProspectId: prospectId,
+            },
+          },
+        }
+      );
+    }
+    onClose?.();
   };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
         <div className="font-semibold text-gray-900 text-sm mb-4">
-          Connect {prospect.firstName} {prospect.lastName}
+          Connect {fullName}
         </div>
         <div className="space-y-2 mb-4">
-          <button onClick={() => setMode("member")} className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${mode === "member" ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
+          <button onClick={() => handleChoose("member")} className="w-full flex items-center gap-3 rounded-xl border border-gray-200 p-3 text-left transition-colors hover:bg-gray-50">
             <div className="h-9 w-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="1.8" /><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
             </div>
             <div>
               <div className="font-semibold text-gray-900 text-sm">Convert to Member</div>
-              <div className="text-xs text-gray-500">Create a new member record</div>
+              <div className="text-xs text-gray-500">Go to member registration form</div>
             </div>
           </button>
-          <button onClick={() => setMode("visitor")} className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${mode === "visitor" ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
+          <button onClick={() => handleChoose("visitor")} className="w-full flex items-center gap-3 rounded-xl border border-gray-200 p-3 text-left transition-colors hover:bg-gray-50">
             <div className="h-9 w-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
             </div>
             <div>
               <div className="font-semibold text-gray-900 text-sm">Mark as Visitor</div>
-              <div className="text-xs text-gray-500">Record as a church visitor</div>
+              <div className="text-xs text-gray-500">Go to visitor registration form</div>
             </div>
           </button>
         </div>
-        {mode === "member" ? (
-          <div className="mb-4">
-            <label className={LBL}>Date Joined (optional)</label>
-            <input type="date" value={dateJoined} onChange={(e) => setDateJoined(e.target.value)} className={INP} />
-          </div>
-        ) : mode === "visitor" ? (
-          <div className="space-y-3 mb-4">
-            <div>
-              <label className={LBL}>Service Type</label>
-              <input value={serviceType} onChange={(e) => setServiceType(e.target.value)} placeholder="e.g. Sunday Service" className={INP} />
-            </div>
-            <div>
-              <label className={LBL}>Service Date</label>
-              <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className={INP} />
-            </div>
-          </div>
-        ) : null}
-        {error ? <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 mb-3">{error}</div> : null}
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 h-10 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-          <button onClick={handleConvert} disabled={!mode || saving} className="flex-1 h-10 rounded-lg bg-blue-700 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
-            {saving ? "Processing…" : "Confirm"}
-          </button>
         </div>
       </div>
     </div>
@@ -534,47 +544,45 @@ function ConvertModal({ open, prospect, onClose, onDone }) {
 }
 
 // ── Person Row ────────────────────────────────────────────────────
-function PersonRow({ person, onEdit, onConvert, onDelete, canWrite, canDelete }) {
+function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canDelete }) {
   return (
-    <div className="flex items-center gap-3 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-      <div className="h-9 w-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 text-xs font-bold">
-        {(person.firstName?.[0] || "?").toUpperCase()}{(person.lastName?.[0] || "").toUpperCase()}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-gray-900 text-sm">{person.firstName} {person.lastName}</span>
-          <StageBadge stage={person.stage} />
-          {person.convertedToMember ? <span className="rounded-full bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5">Member</span> : null}
-          {person.markedAsVisitor ? <span className="rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5">Visitor</span> : null}
-        </div>
-        {(person.community || person.address) ? (
-          <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 text-gray-400 shrink-0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.8" /></svg>
-            <span>{person.community || person.address}</span>
+    <tr className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 text-[10px] font-bold select-none">
+            {(person.firstName?.[0] || "?").toUpperCase()}{(person.lastName?.[0] || "").toUpperCase()}
           </div>
-        ) : null}
-        <div className="text-xs text-gray-400 mt-0.5 flex flex-wrap gap-x-3">
-          {person.phone ? <span>{person.phone}</span> : null}
-          {person.outreachEvent?.title ? <span>{person.outreachEvent.title}</span> : null}
-          <span>{fmtDate(person.createdAt)}</span>
+          <div className="min-w-0">
+            <div className="font-semibold text-gray-900 text-sm truncate">{person.firstName} {person.lastName}</div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <StageBadge stage={person.stage} />
+              {person.convertedToMember ? <span className="rounded-full bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5">Member</span> : null}
+              {person.markedAsVisitor ? <span className="rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5">Visitor</span> : null}
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {canWrite && !person.convertedToMember && !person.markedAsVisitor ? (
-          <button onClick={() => onConvert(person)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50">Connect</button>
-        ) : null}
-        {canWrite ? (
-          <button onClick={() => onEdit(person)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-          </button>
-        ) : null}
-        {canDelete ? (
-          <button onClick={() => onDelete(person)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
-        ) : null}
-      </div>
-    </div>
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell whitespace-nowrap">{person.phone || "—"}</td>
+      <td className="px-4 py-3 text-xs text-gray-500 hidden md:table-cell truncate max-w-[12rem]">{person.community || person.address || "—"}</td>
+      <td className="px-4 py-3 text-xs text-gray-500 hidden lg:table-cell truncate max-w-[14rem]">{person.outreachEvent?.title || "—"}</td>
+      <td className="px-4 py-3 text-xs text-gray-400 hidden md:table-cell whitespace-nowrap">{fmtDate(person.createdAt)}</td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-1 justify-end">
+          <button onClick={() => onView(person)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">View</button>
+          <button onClick={() => onConvert(person)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 whitespace-nowrap">Connect</button>
+          {canWrite ? (
+            <button onClick={() => onEdit(person)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+          ) : null}
+          {canDelete ? (
+            <button onClick={() => onDelete(person)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          ) : null}
+        </div>
+      </td>
+    </tr>
   );
 }
 
@@ -584,6 +592,7 @@ export default function PeopleReachedTab() {
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
+  const { toPage } = useDashboardNavigator();
 
   const [prospects, setProspects] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
@@ -656,11 +665,8 @@ export default function PeopleReachedTab() {
           <span className="text-xs text-gray-400">{pagination.total} total</span>
         </div>
         {loading ? (
-          <div className="divide-y divide-gray-100">
-            {[0,1,2,3,4].map(i => <div key={i} className="h-16 px-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-gray-100 animate-pulse" />
-              <div className="flex-1 space-y-1.5"><div className="h-3 bg-gray-100 rounded animate-pulse w-48" /><div className="h-2.5 bg-gray-100 rounded animate-pulse w-32" /></div>
-            </div>)}
+          <div className="p-4 space-y-3">
+            {[0,1,2,3,4].map(i => <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />)}
           </div>
         ) : prospects.length === 0 ? (
           (() => {
@@ -678,16 +684,31 @@ export default function PeopleReachedTab() {
             );
           })()
         ) : (
-          <div className="divide-y divide-gray-100">
-            {prospects.map((p) => (
-              <PersonRow
-                key={p._id} person={p}
-                onEdit={(x) => { setEditingPerson(x); setFormMode("edit"); setFormOpen(true); }}
-                onConvert={(x) => setConvertTarget(x)}
-                onDelete={(x) => setDeleteTarget(x)}
-                canWrite={canWrite} canDelete={canDelete}
-              />
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Person</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Phone</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Area</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Outreach</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Recorded</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {prospects.map((p) => (
+                  <PersonRow
+                    key={p._id} person={p}
+                    onView={(x) => toPage("prospect-details", { id: x._id, from: "people" })}
+                    onEdit={(x) => { setEditingPerson(x); setFormMode("edit"); setFormOpen(true); }}
+                    onConvert={(x) => setConvertTarget(x)}
+                    onDelete={(x) => setDeleteTarget(x)}
+                    canWrite={canWrite} canDelete={canDelete}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
         {pagination.pages > 1 ? (

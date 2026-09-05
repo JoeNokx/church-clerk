@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
+import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import {
   getFollowUpsStats, getAllFollowUps, createFollowUp, updateFollowUp, deleteFollowUp,
   getAllProspects, getOutreachEvents,
@@ -33,7 +34,7 @@ function StatusBadge({ status }) {
 }
 
 // ── Follow-Up Form Modal ──────────────────────────────────────────
-function FollowUpFormModal({ open, mode, initialData, prospects, events, members, onClose, onSaved }) {
+export function FollowUpFormModal({ open, mode, initialData, prospects, events, members, defaultValues, onClose, onSaved }) {
   const empty = {
     prospect: "", outreachEvent: "", scheduledDate: "", type: "call",
     status: "pending", assignedTo: "", notes: "", nextFollowUpDate: "",
@@ -55,7 +56,7 @@ function FollowUpFormModal({ open, mode, initialData, prospects, events, members
         notes: initialData.notes || "",
         nextFollowUpDate: initialData.nextFollowUpDate ? initialData.nextFollowUpDate.slice(0, 10) : "",
       });
-    } else { setForm(empty); }
+    } else { setForm({ ...empty, ...defaultValues }); }
     setError("");
   }, [open, mode, initialData]);
 
@@ -171,40 +172,52 @@ function FollowUpFormModal({ open, mode, initialData, prospects, events, members
 }
 
 // ── Follow-Up Row ─────────────────────────────────────────────────
-function FollowUpRow({ fu, isOverdue, onEdit, onDelete, canWrite, canDelete }) {
+const TYPE_LABELS = {
+  call: "Call", whatsapp: "WhatsApp", visit: "Visit", email: "Email", "in-person": "In-Person", text: "SMS", other: "Other",
+};
+
+function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDelete }) {
   return (
-    <div className={`flex items-start gap-3 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors ${isOverdue ? "bg-red-50/50 hover:bg-red-50" : ""}`}>
-      <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold ${isOverdue ? "bg-red-100 text-red-600" : "bg-indigo-100 text-indigo-700"}`}>
-        {fu.type === "call" ? "📞" : fu.type === "whatsapp" ? "💬" : fu.type === "visit" ? "🚶" : fu.type === "email" ? "✉" : "📋"}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-gray-900 text-sm">
-            {fu.prospect?.firstName} {fu.prospect?.lastName}
-          </span>
-          <StatusBadge status={fu.status} />
-          {isOverdue ? <span className="rounded-full bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5">Overdue</span> : null}
+    <tr className={`border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors ${isOverdue ? "bg-red-50/40 hover:bg-red-50" : ""}`}>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${isOverdue ? "bg-red-100 text-red-600" : "bg-indigo-100 text-indigo-700"}`}>
+            {fu.type === "call" ? "📞" : fu.type === "whatsapp" ? "💬" : fu.type === "visit" ? "🚶" : fu.type === "email" ? "✉" : "📋"}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-gray-900 text-sm truncate">
+                {fu.prospect?.firstName} {fu.prospect?.lastName}
+              </span>
+              {isOverdue ? <span className="rounded-full bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5">Overdue</span> : null}
+            </div>
+            <div className="text-[11px] text-gray-400 mt-0.5">{TYPE_LABELS[fu.type] || fu.type}</div>
+          </div>
         </div>
-        <div className="text-xs text-gray-400 mt-0.5 flex flex-wrap gap-x-3">
-          <span>Scheduled {fmtDate(fu.scheduledDate)}</span>
-          {fu.assignedTo ? <span>Assigned to {fu.assignedTo.firstName} {fu.assignedTo.lastName}</span> : null}
-          {fu.outreachEvent?.title ? <span>{fu.outreachEvent.title}</span> : null}
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell whitespace-nowrap">{fmtDate(fu.scheduledDate)}</td>
+      <td className="px-4 py-3"><StatusBadge status={fu.status} /></td>
+      <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell truncate max-w-[10rem]">
+        {fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "—"}
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-500 hidden lg:table-cell truncate max-w-[14rem]">{fu.outreachEvent?.title || "—"}</td>
+      <td className="px-4 py-3 text-xs text-gray-400 hidden xl:table-cell max-w-[16rem] truncate">{fu.notes || "—"}</td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-1 justify-end">
+          <button onClick={() => onView(fu)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">View</button>
+          {canWrite ? (
+            <button onClick={() => onEdit(fu)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+          ) : null}
+          {canDelete ? (
+            <button onClick={() => onDelete(fu)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          ) : null}
         </div>
-        {fu.notes ? <div className="text-xs text-gray-500 mt-1 line-clamp-1">{fu.notes}</div> : null}
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {canWrite ? (
-          <button onClick={() => onEdit(fu)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-          </button>
-        ) : null}
-        {canDelete ? (
-          <button onClick={() => onDelete(fu)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
-        ) : null}
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 
@@ -214,6 +227,7 @@ export default function FollowUpsTab() {
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
+  const { toPage } = useDashboardNavigator();
 
   const [stats, setStats] = useState(null);
   const [followUps, setFollowUps] = useState([]);
@@ -322,11 +336,8 @@ export default function FollowUpsTab() {
         </div>
 
         {loading && view === "all" ? (
-          <div className="divide-y divide-gray-100">
-            {[0,1,2,3].map(i => <div key={i} className="h-16 px-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-gray-100 animate-pulse" />
-              <div className="flex-1 space-y-1.5"><div className="h-3 bg-gray-100 rounded animate-pulse w-48" /><div className="h-2.5 bg-gray-100 rounded animate-pulse w-32" /></div>
-            </div>)}
+          <div className="p-4 space-y-3">
+            {[0,1,2,3].map(i => <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />)}
           </div>
         ) : overdueItems.length === 0 ? (
           <EmptyState
@@ -336,16 +347,32 @@ export default function FollowUpsTab() {
             description={view === "overdue" ? "You're all caught up." : "Schedule follow-ups to stay connected with prospects."}
           />
         ) : (
-          <div className="divide-y divide-gray-100">
-            {overdueItems.map((fu) => (
-              <FollowUpRow
-                key={fu._id} fu={fu}
-                isOverdue={view === "overdue" || isOverdue(fu)}
-                onEdit={(x) => { setEditingFU(x); setFormMode("edit"); setFormOpen(true); }}
-                onDelete={(x) => setDeleteTarget(x)}
-                canWrite={canWrite} canDelete={canDelete}
-              />
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prospect</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Scheduled</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Assigned To</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Outreach</th>
+                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden xl:table-cell">Notes</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {overdueItems.map((fu) => (
+                  <FollowUpRow
+                    key={fu._id} fu={fu}
+                    isOverdue={view === "overdue" || isOverdue(fu)}
+                    onView={(x) => toPage("prospect-details", { id: x.prospect?._id, from: "followups" })}
+                    onEdit={(x) => { setEditingFU(x); setFormMode("edit"); setFormOpen(true); }}
+                    onDelete={(x) => setDeleteTarget(x)}
+                    canWrite={canWrite} canDelete={canDelete}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 

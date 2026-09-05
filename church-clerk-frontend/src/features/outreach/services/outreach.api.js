@@ -52,6 +52,7 @@ export const getTeamStats = () => http.get(`${B}/teams/stats`);
 
 // ── Outreach Teams ────────────────────────────────────────────────
 export const getOutreachTeams = (params = {}) => http.get(`${B}/outreach-teams`, { params });
+export const getOutreachTeamById = (teamId) => http.get(`${B}/outreach-teams/${teamId}`);
 export const createOutreachTeam = (data) => http.post(`${B}/outreach-teams`, data);
 export const updateOutreachTeam = (teamId, data) => http.put(`${B}/outreach-teams/${teamId}`, data);
 export const deleteOutreachTeam = (teamId) => http.delete(`${B}/outreach-teams/${teamId}`);

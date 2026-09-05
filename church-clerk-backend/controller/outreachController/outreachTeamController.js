@@ -32,13 +32,15 @@ export const getTeamById = async (req, res) => {
 // ── Create team ───────────────────────────────────────────────────
 export const createTeam = async (req, res) => {
   try {
-    const { name, description, members } = req.body;
+    const { name, description, status, dateCreated, members } = req.body;
     if (!name?.trim()) return res.status(400).json({ message: "Team name is required" });
 
     const team = await OutreachTeam.create({
       church: req.activeChurch._id,
       name: name.trim(),
       description: description?.trim() || "",
+      status: status || "active",
+      dateCreated: dateCreated || undefined,
       members: Array.isArray(members) ? members.filter((m) => m.member) : [],
       createdBy: req.user._id,
     });
@@ -53,10 +55,12 @@ export const createTeam = async (req, res) => {
 // ── Update team ───────────────────────────────────────────────────
 export const updateTeam = async (req, res) => {
   try {
-    const { name, description, members } = req.body;
+    const { name, description, status, dateCreated, members } = req.body;
     const update = {};
     if (name !== undefined) update.name = name.trim();
     if (description !== undefined) update.description = description.trim();
+    if (status !== undefined) update.status = status;
+    if (dateCreated !== undefined) update.dateCreated = dateCreated || undefined;
     if (Array.isArray(members)) update.members = members.filter((m) => m.member);
 
     const team = await OutreachTeam.findOneAndUpdate(

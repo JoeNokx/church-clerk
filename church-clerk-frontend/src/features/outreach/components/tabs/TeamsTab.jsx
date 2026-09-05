@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
+import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import { getOutreachTeams, createOutreachTeam, updateOutreachTeam, deleteOutreachTeam, getOutreachEvents } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
@@ -18,13 +19,19 @@ const ROLE_OPTIONS = [
 
 const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map((r) => [r.value, r.label]));
 const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500";
+const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500 bg-white";
 const LBL = "block text-xs font-semibold text-gray-500 mb-1";
 
-const STATUS_STYLES = {
+const EVENT_STATUS_STYLES = {
   planned: "bg-blue-100 text-blue-700",
   ongoing: "bg-amber-100 text-amber-700",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-600",
+};
+
+const TEAM_STATUS_STYLES = {
+  active: "bg-emerald-100 text-emerald-700",
+  inactive: "bg-gray-100 text-gray-500",
 };
 
 function fmtDate(v) {
@@ -32,13 +39,20 @@ function fmtDate(v) {
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function fmtDateInput(v) {
+  if (!v) return "";
+  const d = new Date(v);
+  if (isNaN(d)) return "";
+  return d.toISOString().slice(0, 10);
+}
+
 // ── Initials Avatar ───────────────────────────────────────────────
 function Avatar({ name, size = "md" }) {
-  const parts = (name || "?").split(" ");
+  const parts = (name || "?").trim().split(/\s+/);
   const init = (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
   const sz = size === "sm" ? "h-7 w-7 text-[10px]" : "h-9 w-9 text-xs";
   return (
-    <div className={`${sz} rounded-lg bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center shrink-0`}>
+    <div className={`${sz} rounded-lg bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center shrink-0 select-none`}>
       {init.toUpperCase() || "?"}
     </div>
   );
@@ -51,7 +65,10 @@ function MemberSearchSelect({ allMembers, onSelect }) {
   const ref = useRef(null);
 
   const filtered = search
-    ? allMembers.filter((m) => `${m.firstName} ${m.lastName}`.toLowerCase().includes(search.toLowerCase()) || m.phoneNumber?.includes(search))
+    ? allMembers.filter((m) =>
+        `${m.firstName} ${m.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
+        m.phoneNumber?.includes(search)
+      )
     : allMembers;
 
   useEffect(() => {
@@ -60,14 +77,10 @@ function MemberSearchSelect({ allMembers, onSelect }) {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const select = (m) => {
-    onSelect(m._id);
-    setSearch("");
-    setOpen(false);
-  };
+  const select = (m) => { onSelect(m._id); setSearch(""); setOpen(false); };
 
   return (
-    <div ref={ref} className="relative flex-1">
+    <div ref={ref} className="relative">
       <input
         value={search}
         onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
@@ -107,7 +120,9 @@ function MemberSearchSelect({ allMembers, onSelect }) {
 function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [members, setMembers] = useState([]); // [{member: id, role}]
+  const [status, setStatus] = useState("active");
+  const [dateCreated, setDateCreated] = useState("");
+  const [members, setMembers] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -116,6 +131,8 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
     if (mode === "edit" && initialData) {
       setName(initialData.name || "");
       setDescription(initialData.description || "");
+      setStatus(initialData.status || "active");
+      setDateCreated(fmtDateInput(initialData.dateCreated || initialData.createdAt));
       setMembers(
         (initialData.members || []).map((m) => ({
           member: typeof m.member === "object" ? m.member._id : m.member,
@@ -123,7 +140,7 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
         }))
       );
     } else {
-      setName(""); setDescription(""); setMembers([]);
+      setName(""); setDescription(""); setStatus("active"); setDateCreated(""); setMembers([]);
     }
     setError("");
   }, [open, mode, initialData]);
@@ -140,7 +157,7 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
     if (!name.trim()) { setError("Team name is required."); return; }
     setSaving(true); setError("");
     try {
-      const payload = { name: name.trim(), description: description.trim(), members };
+      const payload = { name: name.trim(), description: description.trim(), status, dateCreated: dateCreated || undefined, members };
       if (mode === "edit") await updateOutreachTeam(initialData._id, payload);
       else await createOutreachTeam(payload);
       onSaved?.();
@@ -162,14 +179,35 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
           </button>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
+          {/* Name */}
           <div>
             <label className={LBL}>Team Name <span className="text-red-500">*</span></label>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Street Evangelism A-Team" className={INP} />
           </div>
+          {/* Status */}
+          <div>
+            <label className={LBL}>Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className={SEL}>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          {/* Description */}
           <div>
             <label className={LBL}>Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Brief description of this team" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Brief description of this team's focus or territory" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
+          {/* Date Created */}
+          <div>
+            <label className={LBL}>Date Created</label>
+            <input
+              type="date"
+              value={dateCreated}
+              onChange={(e) => setDateCreated(e.target.value)}
+              className={INP}
+            />
+          </div>
+          {/* Add Member */}
           <div>
             <label className={LBL}>Add Member</label>
             <MemberSearchSelect allMembers={available} onSelect={addMember} />
@@ -177,6 +215,7 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
               <p className="mt-1 text-[11px] text-gray-400">All active members have been added.</p>
             ) : null}
           </div>
+          {/* Added members list */}
           {members.length > 0 ? (
             <div className="space-y-2">
               <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Team Members ({members.length})</div>
@@ -220,14 +259,17 @@ function TeamCard({ team, onEdit, onDelete, onViewDetails, canWrite, canDelete }
   const memberCount = team.members?.length || 0;
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3">
+      {/* Header row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
           </div>
           <div className="min-w-0">
-            <div className="font-semibold text-gray-900 text-sm truncate">{team.name}</div>
-            {team.description ? <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{team.description}</div> : null}
+            <div className="font-semibold text-gray-900 text-sm">{team.name}</div>
+            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold mt-0.5 ${TEAM_STATUS_STYLES[team.status] || "bg-gray-100 text-gray-500"}`}>
+              {team.status === "inactive" ? "Inactive" : "Active"}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -244,11 +286,25 @@ function TeamCard({ team, onEdit, onDelete, onViewDetails, canWrite, canDelete }
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-        <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 px-2.5 py-0.5 text-[11px] font-semibold">
+      {/* Meta row */}
+      <div className="flex items-center gap-3 text-[11px] text-gray-400">
+        <span className="flex items-center gap-1">
           <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" /></svg>
           {memberCount} {memberCount === 1 ? "member" : "members"}
         </span>
+        {team.dateCreated ? (
+          <>
+            <span className="text-gray-200">·</span>
+            <span className="flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+              Created {fmtDate(team.dateCreated)}
+            </span>
+          </>
+        ) : null}
+      </div>
+
+      {/* Footer */}
+      <div className="pt-2 border-t border-gray-100 flex justify-end">
         <button
           onClick={() => onViewDetails(team)}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:underline"
@@ -265,19 +321,19 @@ function TeamCard({ team, onEdit, onDelete, onViewDetails, canWrite, canDelete }
 function TeamDetailModal({ team, open, onClose }) {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
-  const [historyTab, setHistoryTab] = useState("upcoming");
+  const [activeTab, setActiveTab] = useState("members");
 
   useEffect(() => {
     if (!open || !team) return;
-    setHistoryTab("upcoming");
+    setActiveTab("members");
     setEventsLoading(true);
     getOutreachEvents({ limit: 200 })
       .then((r) => {
         const all = r.data?.data || [];
-        // Filter events where this team is listed
-        const teamEvents = all.filter((ev) =>
-          (ev.teams || []).some((t) => String(t._id || t) === String(team._id))
-        );
+        // Filter events where this team is included, newest date first
+        const teamEvents = all
+          .filter((ev) => (ev.teams || []).some((t) => String(t._id || t) === String(team._id)))
+          .sort((a, b) => new Date(b.date) - new Date(a.date));
         setEvents(teamEvents);
       })
       .catch(() => setEvents([]))
@@ -287,48 +343,70 @@ function TeamDetailModal({ team, open, onClose }) {
   if (!open || !team) return null;
 
   const members = team.members || [];
-
-  const upcoming = events.filter((e) => e.status === "planned");
-  const ongoing = events.filter((e) => e.status === "ongoing");
-  const past = events.filter((e) => e.status === "completed" || e.status === "cancelled");
-
-  const historyGroups = { upcoming, ongoing, past };
-  const historyTabs = [
-    { key: "upcoming", label: "Upcoming", count: upcoming.length },
-    { key: "ongoing", label: "Ongoing", count: ongoing.length },
-    { key: "past", label: "Past", count: past.length },
+  const tabs = [
+    { key: "members", label: "Members", count: members.length },
+    { key: "outreach", label: "Outreach", count: events.length },
   ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
       <div className="w-full sm:max-w-3xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[93vh]">
+
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+        <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4 shrink-0 gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="h-11 w-11 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
             </div>
             <div className="min-w-0">
-              <div className="font-semibold text-gray-900 text-base truncate">{team.name}</div>
-              {team.description ? <div className="text-xs text-gray-400 mt-0.5 truncate">{team.description}</div> : null}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-gray-900 text-base">{team.name}</span>
+                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${TEAM_STATUS_STYLES[team.status] || "bg-gray-100 text-gray-500"}`}>
+                  {team.status === "inactive" ? "Inactive" : "Active"}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-3 mt-1 text-[11px] text-gray-400">
+                <span>{members.length} {members.length === 1 ? "member" : "members"}</span>
+                {team.dateCreated ? <span>Created {fmtDate(team.dateCreated)}</span> : null}
+              </div>
+              {team.description ? (
+                <>
+                  <hr className="my-2 border-gray-100" />
+                  <p className="text-sm text-gray-600 leading-relaxed">{team.description}</p>
+                </>
+              ) : null}
             </div>
           </div>
-          <button onClick={onClose} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 shrink-0 ml-3">
+          <button onClick={onClose} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          {/* Members Section */}
-          <div className="px-5 pt-5 pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-800">
-                Members
-                <span className="ml-2 rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-[11px] font-semibold">{members.length}</span>
-              </h3>
-            </div>
-            {members.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-200 py-6 text-center text-xs text-gray-400">No members in this team yet</div>
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-gray-200 px-5 shrink-0">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors -mb-px ${activeTab === t.key ? "border-blue-600 text-blue-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            >
+              {t.label}
+              <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === t.key ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                {eventsLoading && t.key === "outreach" ? "…" : t.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Tab body */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-5">
+
+          {/* ── Members tab ── */}
+          {activeTab === "members" ? (
+            members.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-200 py-10 text-center text-xs text-gray-400">
+                No members in this team yet
+              </div>
             ) : (
               <div className="rounded-xl border border-gray-200 overflow-hidden">
                 <table className="w-full text-left">
@@ -343,7 +421,7 @@ function TeamDetailModal({ team, open, onClose }) {
                   <tbody>
                     {members.map((m, i) => {
                       const mem = typeof m.member === "object" ? m.member : null;
-                      const name = mem ? `${mem.firstName} ${mem.lastName || ""}` : String(m.member);
+                      const name = mem ? `${mem.firstName} ${mem.lastName || ""}`.trim() : String(m.member);
                       return (
                         <tr key={i} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                           <td className="px-4 py-3">
@@ -357,12 +435,8 @@ function TeamDetailModal({ team, open, onClose }) {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell">
-                            {mem?.phoneNumber || "—"}
-                          </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell">
-                            {mem?.email || "—"}
-                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell">{mem?.phoneNumber || "—"}</td>
+                          <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell">{mem?.email || "—"}</td>
                           <td className="px-4 py-3">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${m.role === "team-leader" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                               {ROLE_LABELS[m.role] || m.role || "Volunteer"}
@@ -374,33 +448,16 @@ function TeamDetailModal({ team, open, onClose }) {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
+            )
+          ) : null}
 
-          {/* Outreach History Section */}
-          <div className="px-5 pb-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Outreach History</h3>
-            {/* History tabs */}
-            <div className="flex gap-1 border-b border-gray-200 mb-4">
-              {historyTabs.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setHistoryTab(t.key)}
-                  className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors -mb-px ${historyTab === t.key ? "border-blue-600 text-blue-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-                >
-                  {t.label}
-                  <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${historyTab === t.key ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
-                    {t.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {eventsLoading ? (
+          {/* ── Outreach tab ── */}
+          {activeTab === "outreach" ? (
+            eventsLoading ? (
               <div className="space-y-2">{[0,1,2].map(i => <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />)}</div>
-            ) : historyGroups[historyTab].length === 0 ? (
-              <div className="py-8 text-center text-xs text-gray-400">
-                No {historyTab} outreach events for this team.
+            ) : events.length === 0 ? (
+              <div className="py-10 text-center text-xs text-gray-400 rounded-xl border border-dashed border-gray-200">
+                This team has not been assigned to any outreach events yet.
               </div>
             ) : (
               <div className="rounded-xl border border-gray-200 overflow-hidden">
@@ -414,7 +471,7 @@ function TeamDetailModal({ team, open, onClose }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {historyGroups[historyTab].map((ev) => (
+                    {events.map((ev) => (
                       <tr key={ev._id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                         <td className="px-4 py-3">
                           <div className="text-sm font-semibold text-gray-900">{ev.title}</div>
@@ -425,7 +482,7 @@ function TeamDetailModal({ team, open, onClose }) {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell">{ev.location || "—"}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
+                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${EVENT_STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
                             {ev.status}
                           </span>
                         </td>
@@ -434,8 +491,8 @@ function TeamDetailModal({ team, open, onClose }) {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
+            )
+          ) : null}
         </div>
       </div>
     </div>
@@ -443,11 +500,12 @@ function TeamDetailModal({ team, open, onClose }) {
 }
 
 // ── Main Tab ──────────────────────────────────────────────────────
-export default function TeamsTab() {
+export default function TeamsTab({ focusTeamId }) {
   const { can } = useContext(PermissionContext) || {};
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
+  const { toPage } = useDashboardNavigator();
 
   const [teams, setTeams] = useState([]);
   const [members, setMembers] = useState([]);
@@ -459,7 +517,6 @@ export default function TeamsTab() {
   const [editingTeam, setEditingTeam] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [detailTeam, setDetailTeam] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -473,6 +530,13 @@ export default function TeamsTab() {
     load();
     getMembers({ limit: 200, status: "active" }).then((r) => setMembers(r.data?.members || [])).catch(() => {});
   }, [load]);
+
+  // Auto-navigate to team details page when navigated with a focusTeamId
+  useEffect(() => {
+    if (!focusTeamId || loading || teams.length === 0) return;
+    const target = teams.find((t) => String(t._id) === String(focusTeamId));
+    if (target) toPage("team-details", { id: target._id, from: "teams" });
+  }, [focusTeamId, loading, teams, toPage]);
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -508,9 +572,7 @@ export default function TeamsTab() {
         <EmptyState
           illustration={search ? "search" : "teams"}
           title={search ? "No teams found" : "No outreach teams yet"}
-          description={search
-            ? "We couldn't find any teams matching your search."
-            : "Create a team and add members to it."}
+          description={search ? "We couldn't find any teams matching your search." : "Create a team and add members to it."}
           actionLabel={search ? "Clear Search" : (canCreate ? "Create Team" : null)}
           onAction={search ? () => setSearch("") : (canCreate ? () => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); } : undefined)}
         />
@@ -522,7 +584,7 @@ export default function TeamsTab() {
               team={team}
               onEdit={(t) => { setEditingTeam(t); setFormMode("edit"); setFormOpen(true); }}
               onDelete={(t) => setDeleteTarget(t)}
-              onViewDetails={(t) => setDetailTeam(t)}
+              onViewDetails={(t) => toPage("team-details", { id: t._id, from: "teams" })}
               canWrite={canWrite}
               canDelete={canDelete}
             />
@@ -534,12 +596,6 @@ export default function TeamsTab() {
         open={formOpen} mode={formMode} initialData={editingTeam} allMembers={members}
         onClose={() => setFormOpen(false)}
         onSaved={() => { setFormOpen(false); load(); }}
-      />
-
-      <TeamDetailModal
-        team={detailTeam}
-        open={!!detailTeam}
-        onClose={() => setDetailTeam(null)}
       />
 
       {deleteTarget ? (

@@ -14,6 +14,8 @@ const outreachTeamSchema = new mongoose.Schema(
     church: { type: mongoose.Schema.Types.ObjectId, ref: "Church", required: true },
     name: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
+    status: { type: String, enum: ["active", "inactive"], default: "active" },
+    dateCreated: { type: Date },
     members: [teamMemberSchema],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },

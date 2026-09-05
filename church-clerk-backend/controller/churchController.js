@@ -434,6 +434,9 @@ const getMyBranches = async (req, res) => {
     const branchIds = await Church.find({ parentChurch: req.activeChurch._id }).select("_id").lean();
     const branchIdList = branchIds.map((b) => b._id);
 
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
     const activeBranches = branchIdList.length
       ? await Subscription.countDocuments({
           church: { $in: branchIdList },
@@ -441,13 +444,39 @@ const getMyBranches = async (req, res) => {
         })
       : 0;
 
+    // Active branches that existed before this month (for change/diff)
+    const branchIdsBeforeThisMonth = await Church.find({
+      parentChurch: req.activeChurch._id,
+      createdAt: { $lt: startOfMonth }
+    }).select("_id").lean();
+    const branchIdListBefore = branchIdsBeforeThisMonth.map((b) => b._id);
+
+    const activeBranchesPrev = branchIdListBefore.length
+      ? await Subscription.countDocuments({
+          church: { $in: branchIdListBefore },
+          status: { $in: ["free trial", "active", "past_due"] }
+        })
+      : 0;
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
+    const activeChange = pctChange(activeBranches, activeBranchesPrev);
+    const activeDiff = activeBranches - activeBranchesPrev;
+
     if (!branches || branches.length === 0) {
       return res.status(200).json({
         message: "No branches church found.",
         kpis: {
           totalBranches: kpi.totalBranches,
           totalMembers: kpi.totalMembers,
-          activeBranches
+          activeBranches,
+          change: { ...kpi.change, activeBranches: activeChange },
+          diff: { ...kpi.diff, activeBranches: activeDiff },
         },
         pagination: {
           totalResult: 0,
@@ -468,7 +497,9 @@ const getMyBranches = async (req, res) => {
       kpis: {
         totalBranches: kpi.totalBranches,
         totalMembers: kpi.totalMembers,
-        activeBranches
+        activeBranches,
+        change: { ...kpi.change, activeBranches: activeChange },
+        diff: { ...kpi.diff, activeBranches: activeDiff },
       },
       pagination: {
         ...pagination,

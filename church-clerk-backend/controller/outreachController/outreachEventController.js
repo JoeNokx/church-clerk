@@ -149,30 +149,68 @@ export const getOutreachKPI = async (req, res) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
 
     const [
       totalEvents,
       eventsThisMonth,
+      eventsLastMonth,
       totalProspects,
       prospectsThisMonth,
+      prospectsLastMonth,
       totalDecisions,
+      decisionsThisMonth,
+      decisionsLastMonth,
       followUpsDue,
+      followUpsDueLastMonth,
     ] = await Promise.all([
       OutreachEvent.countDocuments({ church: churchId }),
       OutreachEvent.countDocuments({ church: churchId, date: { $gte: startOfMonth, $lte: endOfMonth } }),
+      OutreachEvent.countDocuments({ church: churchId, date: { $gte: startOfLastMonth, $lte: endOfLastMonth } }),
       OutreachProspect.countDocuments({ church: churchId }),
       OutreachProspect.countDocuments({ church: churchId, createdAt: { $gte: startOfMonth, $lte: endOfMonth } }),
+      OutreachProspect.countDocuments({ church: churchId, createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } }),
       OutreachProspect.countDocuments({ church: churchId, decision: { $ne: "none" } }),
+      OutreachProspect.countDocuments({ church: churchId, decision: { $ne: "none" }, createdAt: { $gte: startOfMonth, $lte: endOfMonth } }),
+      OutreachProspect.countDocuments({ church: churchId, decision: { $ne: "none" }, createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } }),
       OutreachFollowUp.countDocuments({
         church: churchId,
         nextFollowUpDate: { $lte: now },
+        outcome: { $in: ["not-reached", "interested"] },
+      }),
+      OutreachFollowUp.countDocuments({
+        church: churchId,
+        nextFollowUpDate: { $lte: endOfLastMonth },
         outcome: { $in: ["not-reached", "interested"] },
       }),
     ]);
 
     return res.status(200).json({
       message: "KPI fetched",
-      data: { totalEvents, eventsThisMonth, totalProspects, prospectsThisMonth, totalDecisions, followUpsDue },
+      data: {
+        totalEvents, eventsThisMonth,
+        totalProspects, prospectsThisMonth,
+        totalDecisions,
+        followUpsDue,
+        change: {
+          totalEvents: pctChange(eventsThisMonth, eventsLastMonth),
+          totalProspects: pctChange(prospectsThisMonth, prospectsLastMonth),
+          totalDecisions: pctChange(decisionsThisMonth, decisionsLastMonth),
+        },
+        diff: {
+          totalEvents: eventsThisMonth - eventsLastMonth,
+          totalProspects: prospectsThisMonth - prospectsLastMonth,
+          totalDecisions: decisionsThisMonth - decisionsLastMonth,
+        },
+      },
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });

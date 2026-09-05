@@ -65,6 +65,22 @@ export const getOutreachAnalytics = async (req, res) => {
     const totalConverted = await OutreachProspect.countDocuments({ church: churchId, convertedToMember: true });
     const totalVisitors = await OutreachProspect.countDocuments({ church: churchId, markedAsVisitor: true });
 
+    // Previous-year comparison for change/diff
+    const prevYearStart = new Date(year - 1, 0, 1);
+    const prevYearEnd = new Date(year - 1, 11, 31, 23, 59, 59);
+    const prevConverted = await OutreachProspect.countDocuments({ church: churchId, convertedToMember: true, createdAt: { $gte: prevYearStart, $lte: prevYearEnd } });
+    const prevVisitors = await OutreachProspect.countDocuments({ church: churchId, markedAsVisitor: true, createdAt: { $gte: prevYearStart, $lte: prevYearEnd } });
+    const prevFuTotal = await OutreachFollowUp.countDocuments({ church: churchId, createdAt: { $gte: prevYearStart, $lte: prevYearEnd } });
+    const prevFuCompleted = await OutreachFollowUp.countDocuments({ church: churchId, status: "completed", createdAt: { $gte: prevYearStart, $lte: prevYearEnd } });
+    const prevFollowUpRate = prevFuTotal > 0 ? Math.round((prevFuCompleted / prevFuTotal) * 100) : 0;
+
+    const pctChange = (current, previous) => {
+      const c = Number(current || 0);
+      const p = Number(previous || 0);
+      if (!p) return c ? 100 : 0;
+      return ((c - p) / p) * 100;
+    };
+
     return res.status(200).json({
       message: "Analytics fetched",
       data: {
@@ -78,6 +94,16 @@ export const getOutreachAnalytics = async (req, res) => {
         totalConverted,
         totalVisitors,
         locationAgg,
+        change: {
+          totalConverted: pctChange(totalConverted, prevConverted),
+          totalVisitors: pctChange(totalVisitors, prevVisitors),
+          followUpRate: followUpRate - prevFollowUpRate,
+        },
+        diff: {
+          totalConverted: totalConverted - prevConverted,
+          totalVisitors: totalVisitors - prevVisitors,
+          followUpRate: followUpRate - prevFollowUpRate,
+        },
       },
     });
   } catch (error) {

@@ -1,4 +1,5 @@
-import { useContext, useState, lazy, Suspense, useEffect } from "react";
+import { useContext, useState, lazy, Suspense, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import { getFollowUpsStats } from "../services/outreach.api.js";
@@ -8,7 +9,6 @@ const OutreachesTab = lazy(() => import("../components/tabs/OutreachesTab.jsx"))
 const PeopleReachedTab = lazy(() => import("../components/tabs/PeopleReachedTab.jsx"));
 const FollowUpsTab = lazy(() => import("../components/tabs/FollowUpsTab.jsx"));
 const TeamsTab = lazy(() => import("../components/tabs/TeamsTab.jsx"));
-const ReportsTab = lazy(() => import("../components/tabs/ReportsTab.jsx"));
 
 function TabSkeleton() {
   return (
@@ -28,15 +28,20 @@ function buildTabs(overdueCount) {
     { key: "people", label: "People Reached" },
     { key: "followups", label: "Follow-Ups", badge: overdueCount > 0 ? overdueCount : null, badgeColor: "bg-red-500 text-white" },
     { key: "teams", label: "Teams" },
-    { key: "reports", label: "Reports" },
   ];
 }
 
 export default function OutreachPage() {
   const { can } = useContext(PermissionContext) || {};
   const canRead = typeof can === "function" ? can("outreach", "read") : true;
-  const [tab, setTab] = useState("overview");
+  const location = useLocation();
+  const [tab, setTab] = useState(() => {
+    const defaultTab = new URLSearchParams(location.search).get("defaultTab");
+    const validTabs = ["overview", "outreaches", "people", "followups", "teams"];
+    return validTabs.includes(defaultTab) ? defaultTab : "overview";
+  });
   const [overdueCount, setOverdueCount] = useState(0);
+  const focusTeamId = useMemo(() => new URLSearchParams(location.search).get("teamId") || null, [location.search]);
 
   useEffect(() => {
     getFollowUpsStats()
@@ -59,8 +64,7 @@ export default function OutreachPage() {
     tab === "outreaches" ? OutreachesTab :
     tab === "people" ? PeopleReachedTab :
     tab === "followups" ? FollowUpsTab :
-    tab === "teams" ? TeamsTab :
-    ReportsTab;
+    TeamsTab;
 
   return (
     <div className="max-w-7xl">
@@ -80,7 +84,7 @@ export default function OutreachPage() {
       />
 
       <Suspense fallback={<TabSkeleton />}>
-        <ActiveTab />
+        {tab === "teams" ? <TeamsTab focusTeamId={focusTeamId} /> : <ActiveTab />}
       </Suspense>
     </div>
   );

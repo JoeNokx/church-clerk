@@ -6,6 +6,8 @@ import { getMyBranches } from "../services/church.api.js";
 import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
 import Skeleton from "react-loading-skeleton";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function BranchesOverviewPage() {
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ function BranchesOverviewPage() {
   const [error, setError] = useState("");
   const [branches, setBranches] = useState([]);
   const [pagination, setPagination] = useState(null);
-  const [kpis, setKpis] = useState({ totalBranches: 0, totalMembers: 0, activeBranches: 0 });
+  const [kpis, setKpis] = useState({ totalBranches: 0, totalMembers: 0, activeBranches: 0, change: {}, diff: {} });
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -123,7 +125,9 @@ function BranchesOverviewPage() {
           setKpis({
             totalBranches: Number(nextKpis?.totalBranches || 0),
             totalMembers: Number(nextKpis?.totalMembers || 0),
-            activeBranches: Number(nextKpis?.activeBranches || 0)
+            activeBranches: Number(nextKpis?.activeBranches || 0),
+            change: nextKpis?.change || {},
+            diff: nextKpis?.diff || {},
           });
         }
       } catch (e) {
@@ -196,20 +200,53 @@ function BranchesOverviewPage() {
 
       {canViewBranches ? (
         <div className="mt-6">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-              <div className="font-semibold text-gray-500 text-xs">Total Branches</div>
-              <div className="mt-3 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{Number(kpis.totalBranches || 0).toLocaleString()}</div>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-              <div className="font-semibold text-gray-500 text-xs">Total Members (All Branches)</div>
-              <div className="mt-3 font-semibold text-blue-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{Number(kpis.totalMembers || 0).toLocaleString()}</div>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-              <div className="font-semibold text-gray-500 text-xs">Active Branches</div>
-              <div className="mt-3 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{Number(kpis.activeBranches || 0).toLocaleString()}</div>
-            </div>
-          </div>
+          <KpiGrid className="gap-3 lg:grid-cols-3">
+            <KpiCard
+              title="Total Branches"
+              value={Number(kpis.totalBranches || 0).toLocaleString()}
+              change={kpis?.change?.totalBranches}
+              diff={kpis?.diff?.totalBranches}
+              compareLabel="last month"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 21h18M3 7l9-4 9 4M5 21V7M19 21V7M9 21v-6h6v6" />
+                </svg>
+              }
+              iconBg="bg-blue-100"
+              iconColor="text-blue-700"
+            />
+            <KpiCard
+              title="Total Members (All Branches)"
+              value={Number(kpis.totalMembers || 0).toLocaleString()}
+              change={kpis?.change?.totalMembers}
+              diff={kpis?.diff?.totalMembers}
+              compareLabel="last month"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                </svg>
+              }
+              iconBg="bg-purple-100"
+              iconColor="text-purple-700"
+            />
+            <KpiCard
+              title="Active Branches"
+              value={Number(kpis.activeBranches || 0).toLocaleString()}
+              change={kpis?.change?.activeBranches}
+              diff={kpis?.diff?.activeBranches}
+              compareLabel="last month"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                </svg>
+              }
+              iconBg="bg-green-100"
+              iconColor="text-green-700"
+            />
+          </KpiGrid>
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
             <div className="font-semibold text-gray-900 text-sm">Search</div>

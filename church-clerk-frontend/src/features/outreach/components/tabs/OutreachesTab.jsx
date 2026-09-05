@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState, useRef } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import {
@@ -38,20 +38,56 @@ const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gra
 const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500 bg-white";
 const LBL = "block text-xs font-semibold text-gray-500 mb-1";
 
-// ── Chip Multi-Select ───────────────────────────────────────────────
-function ChipSelect({ label, placeholder, options, selected, onAdd, onRemove, getLabel }) {
+// ── Searchable Chip Select ──────────────────────────────────────────
+function SearchableChipSelect({ label, placeholder, options, selected, onAdd, onRemove, getLabel }) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
   const available = options.filter((o) => !selected.includes(o._id));
+  const filtered = search
+    ? available.filter((o) => getLabel(o).toLowerCase().includes(search.toLowerCase()))
+    : available;
+
+  useEffect(() => {
+    const handler = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   return (
     <div>
       <label className={LBL}>{label}</label>
-      <select
-        value=""
-        onChange={(e) => { if (e.target.value) onAdd(e.target.value); }}
-        className={SEL}
-      >
-        <option value="">{placeholder}</option>
-        {available.map((o) => <option key={o._id} value={o._id}>{getLabel(o)}</option>)}
-      </select>
+      <div ref={containerRef} className="relative">
+        <input
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder}
+          className={INP}
+          autoComplete="off"
+        />
+        {open && filtered.length > 0 ? (
+          <div className="absolute z-20 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg max-h-48 overflow-y-auto">
+            {filtered.map((o) => (
+              <button
+                key={o._id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { onAdd(o._id); setSearch(""); setOpen(false); }}
+                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                {getLabel(o)}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {open && search && filtered.length === 0 ? (
+          <div className="absolute z-20 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg px-3 py-2 text-sm text-gray-400">
+            No matches found
+          </div>
+        ) : null}
+      </div>
       {selected.length > 0 ? (
         <div className="flex flex-wrap gap-1.5 mt-1.5">
           {selected.map((id) => {
@@ -131,7 +167,7 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
       <div className="w-full sm:max-w-xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh]">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
-          <h2 className="font-semibold text-gray-900 text-base">{mode === "edit" ? "Edit Outreach Event" : "New Outreach Event"}</h2>
+          <h2 className="font-semibold text-gray-900 text-base">{mode === "edit" ? "Edit Outreach" : "New Outreach"}</h2>
           <button onClick={onClose} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           </button>
@@ -194,18 +230,18 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
               <input type="number" min="0" value={form.targetCount} onChange={(e) => set("targetCount", e.target.value)} placeholder="e.g. 100" className={INP} />
             </div>
           </div>
-          <ChipSelect
+          <SearchableChipSelect
             label="Coordinator(s)"
-            placeholder="Add coordinator…"
+            placeholder="Search coordinator…"
             options={members}
             selected={form.coordinator}
             getLabel={(m) => `${m.firstName} ${m.lastName}`}
             onAdd={(id) => set("coordinator", [...form.coordinator, id])}
             onRemove={(id) => set("coordinator", form.coordinator.filter((x) => x !== id))}
           />
-          <ChipSelect
+          <SearchableChipSelect
             label="Outreach Team(s)"
-            placeholder="Add team…"
+            placeholder="Search team…"
             options={teams}
             selected={form.teams}
             getLabel={(t) => t.name}
@@ -229,7 +265,7 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
         <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4 shrink-0">
           <button type="button" onClick={onClose} className="h-11 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
           <button onClick={handleSubmit} disabled={saving} className="h-11 rounded-lg bg-blue-700 px-6 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
-            {saving ? "Saving…" : mode === "edit" ? "Save Changes" : "Create Event"}
+            {saving ? "Saving…" : mode === "edit" ? "Save Changes" : "Create Outreach"}
           </button>
         </div>
       </div>
@@ -247,7 +283,7 @@ function DeleteModal({ open, eventTitle, onCancel, onConfirm, deleting }) {
           <div className="h-10 w-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
-          <div className="font-semibold text-gray-900 text-sm">Delete Outreach Event</div>
+          <div className="font-semibold text-gray-900 text-sm">Delete Outreach</div>
         </div>
         <p className="text-sm text-gray-600 mb-1">Delete <strong>"{eventTitle}"</strong>?</p>
         <p className="text-xs text-gray-400 mb-6">All prospects and follow-ups will also be deleted. This cannot be undone.</p>
@@ -382,7 +418,7 @@ export default function OutreachesTab() {
     <div className="mt-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex flex-wrap gap-2 flex-1">
-          <input value={filters.search} onChange={(e) => handleFilter("search", e.target.value)} placeholder="Search events…" className="h-9 flex-1 min-w-44 rounded-lg border border-gray-200 px-3 text-sm text-gray-700 focus:outline-none focus:border-blue-500" />
+          <input value={filters.search} onChange={(e) => handleFilter("search", e.target.value)} placeholder="Search outreaches…" className="h-9 flex-1 min-w-44 rounded-lg border border-gray-200 px-3 text-sm text-gray-700 focus:outline-none focus:border-blue-500" />
           <select value={filters.status} onChange={(e) => handleFilter("status", e.target.value)} className="h-9 rounded-lg border border-gray-200 px-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-white">
             <option value="">All Statuses</option>
             <option value="planned">Planned</option>
@@ -398,7 +434,7 @@ export default function OutreachesTab() {
         {canCreate ? (
           <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            New Event
+            New Outreach
           </button>
         ) : null}
       </div>
@@ -410,9 +446,9 @@ export default function OutreachesTab() {
       ) : events.length === 0 ? (
         <EmptyState
           illustration="outreach"
-          title="No outreach events"
-          description="Plan your first outreach event to start reaching your community."
-          actionLabel={canCreate ? "New Event" : null}
+          title="No outreaches"
+          description="Plan your first outreach to start reaching your community."
+          actionLabel={canCreate ? "New Outreach" : null}
           onAction={canCreate ? () => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); } : undefined}
         />
       ) : (

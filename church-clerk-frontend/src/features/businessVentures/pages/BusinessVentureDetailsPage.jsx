@@ -13,6 +13,8 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import {
   getBusinessIncomeExpensesKPI,
   getBusinessVenture
@@ -849,31 +851,68 @@ function BusinessVentureDetailsPage() {
 
       {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Total Income</div>
-          <div className="mt-3 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiCards.totalIncome, currency)}</div>
-          <div className="mt-2 text-gray-500 text-xs">{kpiCards.incomeCount} transactions</div>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Total Expenses</div>
-          <div className="mt-3 font-semibold text-orange-600 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiCards.totalExpenses, currency)}</div>
-          <div className="mt-2 text-gray-500 text-xs">{kpiCards.expensesCount} transactions</div>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Net</div>
-          <div className="mt-3 font-semibold text-blue-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(kpiCards.totalNet, currency)}</div>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">This Month</div>
-          <div className="mt-3 font-semibold text-gray-900 text-sm">
-            Income: {formatCurrency(kpiCards.incomeThisMonth, currency)}
-          </div>
-          <div className="mt-1 font-semibold text-gray-900 text-sm">
-            Expenses: {formatCurrency(kpiCards.expensesThisMonth, currency)}
-          </div>
-        </div>
-      </div>
+      <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
+        <KpiCard
+          title="Total Income"
+          value={formatCurrency(kpiCards.totalIncome, currency)}
+          subtitle={`${kpiCards.incomeCount} transactions`}
+          change={kpi?.change?.totalIncome}
+          diff={kpi?.diff?.totalIncome}
+          compareLabel="last month"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17l5-5 5 5M7 12l5-5 5 5" />
+            </svg>
+          }
+          iconBg="bg-green-100"
+          iconColor="text-green-700"
+        />
+        <KpiCard
+          title="Total Expenses"
+          value={formatCurrency(kpiCards.totalExpenses, currency)}
+          subtitle={`${kpiCards.expensesCount} transactions`}
+          change={kpi?.change?.totalExpenses}
+          diff={kpi?.diff?.totalExpenses}
+          compareLabel="last month"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 7l-5 5-5-5M17 12l-5 5-5-5" />
+            </svg>
+          }
+          iconBg="bg-orange-100"
+          iconColor="text-orange-700"
+        />
+        <KpiCard
+          title="Net"
+          value={formatCurrency(kpiCards.totalNet, currency)}
+          change={kpi?.change?.totalNet}
+          diff={kpi?.diff?.totalNet}
+          compareLabel="last month"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+            </svg>
+          }
+          iconBg="bg-blue-100"
+          iconColor="text-blue-700"
+        />
+        <KpiCard
+          title="This Month"
+          value={formatCurrency(kpiCards.incomeThisMonth, currency)}
+          subtitle={`Expenses: ${formatCurrency(kpiCards.expensesThisMonth, currency)}`}
+          change={kpi?.change?.totalIncome}
+          diff={kpi?.diff?.totalIncome}
+          compareLabel="last month"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+          }
+          iconBg="bg-purple-100"
+          iconColor="text-purple-700"
+        />
+      </KpiGrid>
 
       {loading ? (
         <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
