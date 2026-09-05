@@ -65,22 +65,79 @@ function DuplicateAlert({ duplicates, onProceed, onCancel }) {
   );
 }
 
+// ── Searchable event combobox (used inside PersonFormModal) ────────
+function EventSearchSelect({ events, value, onChange }) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = events.find((e) => e._id === value);
+  const filtered = search
+    ? events.filter((e) => e.title?.toLowerCase().includes(search.toLowerCase()))
+    : events;
+
+  useEffect(() => {
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <input
+        value={open ? search : (selected ? `${selected.title}${selected.date ? " — " + fmtDate(selected.date) : ""}` : "")}
+        onChange={(e) => { setSearch(e.target.value); onChange(""); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="Search outreach event…"
+        className={INP}
+        autoComplete="off"
+      />
+      {open ? (
+        <div className="absolute z-30 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg max-h-48 overflow-y-auto">
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { onChange(""); setSearch(""); setOpen(false); }}
+            className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50 border-b border-gray-100"
+          >
+            None — Walk-in / no event
+          </button>
+          {filtered.length > 0 ? filtered.map((ev) => (
+            <button
+              key={ev._id}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { onChange(ev._id); setSearch(""); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${ev._id === value ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-700"}`}
+            >
+              {ev.title}{ev.date ? ` — ${fmtDate(ev.date)}` : ""}
+            </button>
+          )) : (
+            <div className="px-3 py-2 text-sm text-gray-400">No events match</div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // ── Person Form Modal ─────────────────────────────────────────────
-function PersonFormModal({ open, mode, initialData, events, onClose, onSaved }) {
-  const empty = {
-    outreachEvent: "", firstName: "", lastName: "", phone: "", alternativePhone: "",
+export function PersonFormModal({ open, mode, initialData, events, defaultOutreachEventId, onClose, onSaved }) {
+  const getEmpty = (defaultEventId) => ({
+    outreachEvent: defaultEventId || "", firstName: "", lastName: "", phone: "", alternativePhone: "",
     email: "", gender: "", ageGroup: "", occupation: "", address: "", community: "",
     preferredContact: "call", howReached: "street", existingChurchStatus: "none",
     heardGospel: false, acceptedChrist: false, rededication: false,
     wantsPrayer: false, wantsToVisitChurch: false, alreadyChristian: false, notInterested: false,
     decision: "none", interestLevel: "medium", stage: "reached", notes: "",
-  };
-  const [form, setForm] = useState(empty);
+  });
+  const [form, setForm] = useState(getEmpty(defaultOutreachEventId));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [duplicates, setDuplicates] = useState(null);
   const [checkingDup, setCheckingDup] = useState(false);
   const [step, setStep] = useState("form"); // "form" | "duplicate"
+  // "outreach" = linked to an event, "personal" = personal soul-winning (no event)
+  const [sourceMode, setSourceMode] = useState("outreach");
   const dupTimer = useRef(null);
 
   useEffect(() => {
@@ -103,9 +160,10 @@ function PersonFormModal({ open, mode, initialData, events, onClose, onSaved }) 
         decision: initialData.decision || "none", interestLevel: initialData.interestLevel || "medium",
         stage: initialData.stage || "reached", notes: initialData.notes || "",
       });
-    } else { setForm(empty); }
+    } else { setForm(getEmpty(defaultOutreachEventId)); }
+    setSourceMode("outreach");
     setDuplicates(null); setStep("form"); setError("");
-  }, [open, mode, initialData]);
+  }, [open, mode, initialData, defaultOutreachEventId]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const toggle = (k) => setForm((f) => ({ ...f, [k]: !f[k] }));
@@ -156,24 +214,79 @@ function PersonFormModal({ open, mode, initialData, events, onClose, onSaved }) 
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
       <div className="w-full sm:max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[93vh]">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
-          <h2 className="font-semibold text-gray-900 text-base">{mode === "edit" ? "Edit Person" : "Record Person Reached"}</h2>
+          <h2 className="font-semibold text-gray-900 text-base">
+            {mode === "edit"
+              ? (defaultOutreachEventId ? "Edit Person Details" : "Edit Person")
+              : "Record Person Reached"}
+          </h2>
           <button onClick={onClose} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           </button>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
-          {step === "duplicate" && duplicates?.length > 0 ? (
+          {mode === "create" && step === "duplicate" && duplicates?.length > 0 ? (
             <DuplicateAlert duplicates={duplicates} onProceed={() => { setStep("form"); handleSubmit(); }} onCancel={() => setStep("form")} />
           ) : null}
 
-          {/* Outreach Event (optional) */}
-          {mode === "create" ? (
+          {/* Outreach Connection */}
+          {mode === "create" && defaultOutreachEventId ? (
+            /* ── Inside outreach detail page: locked to this event ── */
             <div>
-              <label className={LBL}>Outreach Event <span className="text-gray-400 font-normal">(optional)</span></label>
-              <select value={form.outreachEvent} onChange={(e) => set("outreachEvent", e.target.value)} className={SEL}>
-                <option value="">No event / Walk-in</option>
-                {events.map((ev) => <option key={ev._id} value={ev._id}>{ev.title} — {fmtDate(ev.date)}</option>)}
-              </select>
+              <label className={LBL}>Outreach Event</label>
+              <input
+                disabled
+                value={
+                  events[0]?.title
+                    ? `${events[0].title}${events[0].date ? " — " + fmtDate(events[0].date) : ""}`
+                    : "Current outreach"
+                }
+                className="w-full h-11 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 cursor-not-allowed select-none"
+              />
+              <p className="mt-1 text-[11px] text-gray-400">Automatically linked to this outreach — cannot be changed here</p>
+            </div>
+          ) : mode === "create" ? (
+            /* ── People Reached tab: choose source ── */
+            <div>
+              <label className={LBL}>Outreach Connection <span className="text-gray-400 font-normal">(optional)</span></label>
+              <div className="grid grid-cols-2 gap-2 mb-2.5">
+                {[
+                  { value: "outreach", label: "Outreach Event", desc: "Linked to a formal outreach" },
+                  { value: "personal", label: "Personal Soul-Winning", desc: "Won individually, outside an event" },
+                ].map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${sourceMode === opt.value ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}
+                  >
+                    <input
+                      type="radio"
+                      className="mt-0.5 accent-blue-600 shrink-0"
+                      checked={sourceMode === opt.value}
+                      onChange={() => {
+                        setSourceMode(opt.value);
+                        if (opt.value === "personal") set("outreachEvent", "");
+                      }}
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700">{opt.label}</div>
+                      <div className="text-[11px] text-gray-400 mt-0.5">{opt.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              {sourceMode === "outreach" ? (
+                <EventSearchSelect
+                  events={events}
+                  value={form.outreachEvent}
+                  onChange={(id) => set("outreachEvent", id)}
+                />
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+                  <p className="text-sm font-medium text-gray-600">Personal Soul-Winning</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    This person was reached by a church member personally — e.g. at work, in the community, through a conversation — and is not tied to any organised outreach event.
+                  </p>
+                </div>
+              )}
             </div>
           ) : null}
 
@@ -320,7 +433,7 @@ function PersonFormModal({ open, mode, initialData, events, onClose, onSaved }) 
             <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} placeholder="Additional notes about this person…" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
 
-          {duplicates && duplicates.length > 0 && step === "form" ? (
+          {mode === "create" && duplicates && duplicates.length > 0 && step === "form" ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
               ⚠ Possible duplicate found. Review before saving.
             </div>
