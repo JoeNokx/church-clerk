@@ -15,7 +15,7 @@ const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gra
 const LBL = "block text-xs font-semibold text-gray-500 mb-1";
 
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -31,7 +31,7 @@ const STATUS_STYLES = {
 
 function StatusBadge({ status }) {
   const cls = STATUS_STYLES[status] || "bg-gray-100 text-gray-600";
-  const label = status?.replace(/-/g, " ") || "—";
+  const label = status?.replace(/-/g, " ") || "Not Specified";
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${cls}`}>{label}</span>;
 }
 
@@ -179,17 +179,17 @@ export function FollowUpDetailsModal({ open, followUp, onClose }) {
 
   const statusKey = followUp.status || followUp.outcome || "";
   const dateVal = followUp.scheduledDate || followUp.followUpDate;
-  const prospectName = `${followUp.prospect?.firstName || ""} ${followUp.prospect?.lastName || ""}`.trim() || "—";
+  const prospectName = `${followUp.prospect?.firstName || ""} ${followUp.prospect?.lastName || ""}`.trim() || "Not Specified";
 
   const fields = [
     { label: "Prospect", value: prospectName },
-    { label: "Phone", value: followUp.prospect?.phone || "—" },
+    { label: "Phone", value: followUp.prospect?.phone || "Not Specified" },
     { label: "Scheduled Date", value: fmtDate(dateVal) },
-    { label: "Method", value: TYPE_LABELS[followUp.type] || followUp.type || "—" },
+    { label: "Method", value: TYPE_LABELS[followUp.type] || followUp.type || "Not Specified" },
     { label: "Status", value: null, badge: true },
-    { label: "Assigned To", value: followUp.assignedTo ? `${followUp.assignedTo.firstName} ${followUp.assignedTo.lastName}` : "—" },
-    { label: "Outreach Event", value: followUp.outreachEvent?.title || "—" },
-    { label: "Next Follow-Up", value: followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "—" },
+    { label: "Assigned To", value: followUp.assignedTo ? `${followUp.assignedTo.firstName} ${followUp.assignedTo.lastName}` : "Not Specified" },
+    { label: "Outreach Event", value: followUp.outreachEvent?.title || "Not Specified" },
+    { label: "Next Follow-Up", value: followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "Not Specified" },
   ];
 
   return (
@@ -250,27 +250,16 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
   return (
     <tr className={`max-md:text-xs text-gray-700 text-sm ${isOverdue ? "bg-red-50/40" : ""}`}>
       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
-        <div className="flex items-center gap-2.5">
-          <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${isOverdue ? "bg-red-100 text-red-600" : "bg-indigo-100 text-indigo-700"}`}>
-            {fu.type === "call" ? "📞" : fu.type === "whatsapp" ? "💬" : fu.type === "visit" ? "🚶" : fu.type === "email" ? "✉" : "📋"}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-gray-900 text-sm truncate">
-                {fu.prospect?.firstName} {fu.prospect?.lastName}
-              </span>
-              {isOverdue ? <span className="rounded-full bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5">Overdue</span> : null}
-            </div>
-            <div className="text-[11px] text-gray-400 mt-0.5">{TYPE_LABELS[fu.type] || fu.type}</div>
-          </div>
+        <div className="font-semibold text-gray-900 text-sm truncate">
+          {fu.prospect?.firstName} {fu.prospect?.lastName}
         </div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu.scheduledDate)}</td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6"><StatusBadge status={fu.status} /></td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[10rem]">
-        {fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "—"}
+        {fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "Not Specified"}
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[14rem]">{fu.outreachEvent?.title || "—"}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[14rem]">{fu.outreachEvent?.title || "Not Specified"}</td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(fu) },
@@ -298,6 +287,9 @@ export default function FollowUpsTab() {
   const [filterSearch, setFilterSearch] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [clientPage, setClientPage] = useState(1);
+
+  const PAGE_SIZE = 10;
 
   const [prospects, setProspects] = useState([]);
   const [events, setEvents] = useState([]);
@@ -366,6 +358,12 @@ export default function FollowUpsTab() {
   }, [view, rawItems, filterSearch, filterStatus, filterDateFrom, filterDateTo]);
   const overdueItems = filteredStatsItems;
 
+  // Client-side pagination for today/overdue/upcoming views
+  // (the "all" view is paginated server-side via fetchFollowUps)
+  const clientTotalPages = Math.ceil(overdueItems.length / PAGE_SIZE);
+  const paginatedItems = overdueItems.slice((clientPage - 1) * PAGE_SIZE, clientPage * PAGE_SIZE);
+  const itemsToRender = view === "all" ? overdueItems : paginatedItems;
+
   const isOverdue = (fu) => {
     if (!fu.scheduledDate) return false;
     const d = fu.scheduledDate.slice(0, 10);
@@ -391,7 +389,7 @@ export default function FollowUpsTab() {
       {/* Sub-view tabs — single row, no wrapping */}
       <div className="flex gap-1 mb-4 overflow-x-auto">
         {VIEW_TABS.map((t) => (
-          <button key={t.key} onClick={() => { setView(t.key); if (t.key === "all") fetchFollowUps(1); }} className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors shrink-0 ${view === t.key ? "bg-gray-900 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+          <button key={t.key} onClick={() => { setView(t.key); setClientPage(1); if (t.key === "all") fetchFollowUps(1); }} className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors shrink-0 ${view === t.key ? "bg-gray-900 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
             {t.label}
             <span className={`text-xs font-bold ${view === t.key ? "text-white/80" : t.color}`}>{t.count}</span>
           </button>
@@ -408,22 +406,22 @@ export default function FollowUpsTab() {
               <div className="text-gray-500 text-xs">Track and manage follow-up contacts</div>
             </div>
             {canCreate ? (
-              <button onClick={() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+              <button onClick={() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 md:hidden">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 Schedule
               </button>
             ) : null}
           </div>
-          <>
+          <div className="hidden md:flex md:items-center md:gap-3">
             <FilterBar
               searchValue={filterSearch}
-              onSearchChange={(v) => { setFilterSearch(v); fetchFollowUps(1, { search: v || undefined }); }}
+              onSearchChange={(v) => { setFilterSearch(v); setClientPage(1); fetchFollowUps(1, { search: v || undefined }); }}
               searchPlaceholder="Search prospect or assigned to…"
               selects={[
                 {
                   key: "status",
                   value: filterStatus,
-                  onChange: (v) => { setFilterStatus(v); fetchFollowUps(1, { status: v || undefined }); },
+                  onChange: (v) => { setFilterStatus(v); setClientPage(1); fetchFollowUps(1, { status: v || undefined }); },
                   placeholder: "All Statuses",
                   options: [
                     { label: "Pending", value: "pending" },
@@ -438,15 +436,22 @@ export default function FollowUpsTab() {
               ]}
               dateFrom={filterDateFrom}
               dateTo={filterDateTo}
-              onDateApply={(from, to) => { setFilterDateFrom(from); setFilterDateTo(to); fetchFollowUps(1, { dateFrom: from || undefined, dateTo: to || undefined }); }}
+              onDateApply={(from, to) => { setFilterDateFrom(from); setFilterDateTo(to); setClientPage(1); fetchFollowUps(1, { dateFrom: from || undefined, dateTo: to || undefined }); }}
             />
+            {canCreate ? (
+              <button onClick={() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 hidden md:inline-flex">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                Schedule
+              </button>
+            ) : null}
+          </div>
             <MobileFilterBar
               searchValue={filterSearch}
-              onSearchChange={(v) => { setFilterSearch(v); fetchFollowUps(1, { search: v || undefined }); }}
+              onSearchChange={(v) => { setFilterSearch(v); setClientPage(1); fetchFollowUps(1, { search: v || undefined }); }}
               searchPlaceholder="Search prospect or assigned to…"
               dateFrom={filterDateFrom}
               dateTo={filterDateTo}
-              onDateApply={(from, to) => { setFilterDateFrom(from); setFilterDateTo(to); fetchFollowUps(1, { dateFrom: from || undefined, dateTo: to || undefined }); }}
+              onDateApply={(from, to) => { setFilterDateFrom(from); setFilterDateTo(to); setClientPage(1); fetchFollowUps(1, { dateFrom: from || undefined, dateTo: to || undefined }); }}
               filters={[
                 {
                   key: "status",
@@ -468,10 +473,10 @@ export default function FollowUpsTab() {
               onApply={(pending) => {
                 const v = pending.status || "";
                 setFilterStatus(v);
+                setClientPage(1);
                 fetchFollowUps(1, { status: v || undefined });
               }}
             />
-          </>
         </div>
 
         {loading && view === "all" ? (
@@ -521,7 +526,7 @@ export default function FollowUpsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {overdueItems.map((fu) => (
+                {itemsToRender.map((fu) => (
                   <FollowUpRow
                     key={fu._id} fu={fu}
                     isOverdue={view === "overdue" || isOverdue(fu)}
@@ -536,11 +541,19 @@ export default function FollowUpsTab() {
           </div>
         )}
 
-        {view === "all" && pagination.pages > 1 ? (
+        {view === "all" ? (
           <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
             <button disabled={pagination.page <= 1} onClick={() => fetchFollowUps(pagination.page - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
             <div className="text-gray-600 text-sm">Page {pagination.page}</div>
             <button disabled={pagination.page >= pagination.pages} onClick={() => fetchFollowUps(pagination.page + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+          </div>
+        ) : null}
+
+        {view !== "all" ? (
+          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+            <button disabled={clientPage <= 1} onClick={() => setClientPage(p => p - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+            <div className="text-gray-600 text-sm">Page {clientPage}</div>
+            <button disabled={clientPage >= clientTotalPages} onClick={() => setClientPage(p => p + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
           </div>
         ) : null}
       </div>

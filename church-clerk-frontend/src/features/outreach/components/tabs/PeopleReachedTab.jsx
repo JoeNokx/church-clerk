@@ -31,7 +31,7 @@ const DECISIONS = [
 ];
 
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -551,23 +551,11 @@ function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canD
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
-        <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 text-[10px] font-bold select-none">
-            {(person.firstName?.[0] || "?").toUpperCase()}{(person.lastName?.[0] || "").toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <div className="font-semibold text-gray-900 text-sm truncate">{person.firstName} {person.lastName}</div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <StageBadge stage={person.stage} />
-              {person.convertedToMember ? <span className="rounded-full bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5">Member</span> : null}
-              {person.markedAsVisitor ? <span className="rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5">Visitor</span> : null}
-            </div>
-          </div>
-        </div>
+        <div className="font-semibold text-gray-900 text-sm truncate">{person.firstName} {person.lastName}</div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{person.phone || <span className="text-gray-400 italic">Not Specified</span>}</td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{person.community || person.address || <span className="text-gray-400 italic">Not Specified</span>}</td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[14rem]">{person.outreachEvent?.title || "—"}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[14rem]">{person.outreachEvent?.title || "Not Specified"}</td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(person.createdAt)}</td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
@@ -647,13 +635,14 @@ export default function PeopleReachedTab() {
               <div className="text-gray-500 text-xs">All people recorded during outreaches</div>
             </div>
             {canCreate ? (
-              <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+              <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 md:hidden">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 Record Person
               </button>
             ) : null}
           </div>
-          <FilterBar
+          <div className="hidden md:flex md:items-center md:gap-3">
+            <FilterBar
             searchValue={filters.search}
             onSearchChange={(v) => handleFilter("search", v)}
             searchPlaceholder="Search by name or phone…"
@@ -670,6 +659,13 @@ export default function PeopleReachedTab() {
             dateTo={filters.dateTo}
             onDateApply={(from, to) => handleFilter("dateRange", { from, to })}
           />
+            {canCreate ? (
+              <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 hidden md:inline-flex">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                Record Person
+              </button>
+            ) : null}
+          </div>
           <MobileFilterBar
             searchValue={filters.search}
             onSearchChange={(v) => handleFilter("search", v)}
@@ -755,13 +751,11 @@ export default function PeopleReachedTab() {
             </table>
           </div>
         )}
-        {pagination.pages > 1 ? (
-          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-            <button disabled={pagination.page <= 1} onClick={() => fetchProspects(pagination.page - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-            <div className="text-gray-600 text-sm">Page {pagination.page}</div>
-            <button disabled={pagination.page >= pagination.pages} onClick={() => fetchProspects(pagination.page + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
-          </div>
-        ) : null}
+        <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+          <button disabled={pagination.page <= 1} onClick={() => fetchProspects(pagination.page - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+          <div className="text-gray-600 text-sm">Page {pagination.page}</div>
+          <button disabled={pagination.page >= pagination.pages} onClick={() => fetchProspects(pagination.page + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+        </div>
       </div>
 
       <PersonFormModal open={formOpen} mode={formMode} initialData={editingPerson} events={events} onClose={() => setFormOpen(false)} onSaved={() => { setFormOpen(false); fetchProspects(pagination.page); }} />

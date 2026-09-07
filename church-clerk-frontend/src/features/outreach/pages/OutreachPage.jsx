@@ -79,7 +79,7 @@ export default function OutreachPage() {
     <div className="max-w-7xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-bold text-gray-900 text-xl md:text-3xl">Outreach & Evangelism</h1>
+          <h1 className="font-bold text-gray-900 text-xl md:text-3xl">Outreach and Follow-up</h1>
           <p className="mt-1 text-gray-500 text-sm">Plan outreaches, record people reached, and track follow-ups</p>
         </div>
       </div>

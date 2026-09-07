@@ -509,7 +509,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     </span>
 
-                    Outreach
+                    Outreach & Follow-up
 
                   </NavLink>
 

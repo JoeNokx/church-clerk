@@ -9,12 +9,12 @@ import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 
 // ── Helpers ───────────────────────────────────────────────────────
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
 function fmtDateTime(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
@@ -144,6 +144,13 @@ export default function ReportsTab() {
   const [teams, setTeams] = useState([]);
   const [teamStats, setTeamStats] = useState(null);
   const [members, setMembers] = useState([]);
+
+  const [eventsPage, setEventsPage] = useState(1);
+  const [peoplePage, setPeoplePage] = useState(1);
+  const [followUpsPage, setFollowUpsPage] = useState(1);
+  const [teamsPage, setTeamsPage] = useState(1);
+
+  const PAGE_SIZE = 10;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -312,6 +319,19 @@ export default function ReportsTab() {
     exportCSV(`team-participation-report-${Date.now()}.csv`, headers, rows);
   };
 
+  // ── Pagination ──
+  const eventsTotalPages = Math.ceil(filteredEvents.length / PAGE_SIZE);
+  const paginatedEvents = filteredEvents.slice((eventsPage - 1) * PAGE_SIZE, eventsPage * PAGE_SIZE);
+
+  const peopleTotalPages = Math.ceil(filteredProspects.length / PAGE_SIZE);
+  const paginatedPeople = filteredProspects.slice((peoplePage - 1) * PAGE_SIZE, peoplePage * PAGE_SIZE);
+
+  const followUpsTotalPages = Math.ceil(filteredFollowUps.length / PAGE_SIZE);
+  const paginatedFollowUps = filteredFollowUps.slice((followUpsPage - 1) * PAGE_SIZE, followUpsPage * PAGE_SIZE);
+
+  const teamsTotalPages = Math.ceil(teamParticipation.length / PAGE_SIZE);
+  const paginatedTeams = teamParticipation.slice((teamsPage - 1) * PAGE_SIZE, teamsPage * PAGE_SIZE);
+
   return (
     <div className="mt-6 space-y-5">
       {/* Report type selector */}
@@ -328,13 +348,13 @@ export default function ReportsTab() {
           <FilterBar
             dateFrom={dateFrom}
             dateTo={dateTo}
-            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); }}
+            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); setEventsPage(1); setPeoplePage(1); setFollowUpsPage(1); setTeamsPage(1); }}
           />
 
           <MobileFilterBar
             dateFrom={dateFrom}
             dateTo={dateTo}
-            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); }}
+            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); setEventsPage(1); setPeoplePage(1); setFollowUpsPage(1); setTeamsPage(1); }}
           />
         </div>
 
@@ -376,24 +396,43 @@ export default function ReportsTab() {
                         <tr><td colSpan={8} className="max-md:px-4 py-10 px-4 md:px-6">
                           <EmptyState compact illustration="events" title="No events in this range" description="Try adjusting your date filter." />
                         </td></tr>
-                      ) : filteredEvents.map((e) => (
+                      ) : paginatedEvents.map((e) => (
                         <tr key={e._id} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 truncate max-w-[16rem]">{e.title}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{TYPE_LABELS[e.type] || e.type?.replace(/-/g, " ") || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{TYPE_LABELS[e.type] || e.type?.replace(/-/g, " ") || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(e.date)}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{e.location || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{e.location || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${STATUS_STYLES[e.status] || "bg-gray-100 text-gray-600"}`}>{e.status}</span>
                           </td>
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums font-semibold">{e.prospectCount || 0}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums font-semibold text-green-700">{e.decisionCount || 0}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">
-                            {e.coordinator ? (Array.isArray(e.coordinator) ? e.coordinator.map((c) => `${c.firstName} ${c.lastName}`).join(", ") : `${e.coordinator.firstName} ${e.coordinator.lastName}`) : "—"}
+                            {e.coordinator ? (Array.isArray(e.coordinator) ? e.coordinator.map((c) => `${c.firstName} ${c.lastName}`).join(", ") : `${e.coordinator.firstName} ${e.coordinator.lastName}`) : "Not Specified"}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setEventsPage(p => p - 1)}
+                    disabled={eventsPage <= 1}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                  >
+                    Prev
+                  </button>
+                  <div className="text-gray-600 text-sm">Page {eventsPage}</div>
+                  <button
+                    type="button"
+                    onClick={() => setEventsPage(p => p + 1)}
+                    disabled={eventsPage >= eventsTotalPages}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                  >
+                    Next
+                  </button>
                 </div>
               </TableShell>
             </>
@@ -429,27 +468,46 @@ export default function ReportsTab() {
                         <tr><td colSpan={7} className="max-md:px-4 py-10 px-4 md:px-6">
                           <EmptyState compact illustration="peopleReached" title="No people in this range" description="Try adjusting your date filter." />
                         </td></tr>
-                      ) : filteredProspects.map((p) => (
+                      ) : paginatedPeople.map((p) => (
                         <tr key={p._id} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
                             <div className="text-sm font-semibold text-gray-900">{p.firstName} {p.lastName}</div>
                             {p.acceptedChrist ? <span className="text-[10px] font-bold text-green-600">✓ Saved</span> : null}
                             {p.convertedToMember ? <span className="ml-1 text-[10px] font-bold text-emerald-600">Member</span> : null}
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p.phone || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[10rem]">{p.community || p.address || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p.phone || "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[10rem]">{p.community || p.address || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className="inline-flex rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-[11px] font-semibold">
-                              {STAGE_LABELS[p.stage] || p.stage || "—"}
+                              {STAGE_LABELS[p.stage] || p.stage || "Not Specified"}
                             </span>
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{HOW_REACHED_LABELS[p.howReached] || p.howReached || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{HOW_REACHED_LABELS[p.howReached] || p.howReached || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{p.outreachEvent?.title || "Personal"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(p.createdAt)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setPeoplePage(p => p - 1)}
+                    disabled={peoplePage <= 1}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                  >
+                    Prev
+                  </button>
+                  <div className="text-gray-600 text-sm">Page {peoplePage}</div>
+                  <button
+                    type="button"
+                    onClick={() => setPeoplePage(p => p + 1)}
+                    disabled={peoplePage >= peopleTotalPages}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                  >
+                    Next
+                  </button>
                 </div>
               </TableShell>
             </>
@@ -485,7 +543,7 @@ export default function ReportsTab() {
                         <tr><td colSpan={7} className="max-md:px-4 py-10 px-4 md:px-6">
                           <EmptyState compact illustration="followUps" title="No follow-ups in this range" description="Try adjusting your date filter." />
                         </td></tr>
-                      ) : filteredFollowUps.map((f) => (
+                      ) : paginatedFollowUps.map((f) => (
                         <tr key={f._id} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
                             {f.prospect?.firstName} {f.prospect?.lastName || ""}
@@ -494,17 +552,36 @@ export default function ReportsTab() {
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(f.scheduledDate)}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${f.status === "completed" ? "bg-green-100 text-green-700" : f.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"}`}>
-                              {FU_STATUS_LABELS[f.status] || f.status || "—"}
+                              {FU_STATUS_LABELS[f.status] || f.status || "Not Specified"}
                             </span>
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{TYPE_LABELS[f.type] || f.type || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{f.assignedTo ? `${f.assignedTo.firstName} ${f.assignedTo.lastName}` : "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{f.outreachEvent?.title || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{f.nextFollowUpDate ? fmtDate(f.nextFollowUpDate) : "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{TYPE_LABELS[f.type] || f.type || "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{f.assignedTo ? `${f.assignedTo.firstName} ${f.assignedTo.lastName}` : "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{f.outreachEvent?.title || "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{f.nextFollowUpDate ? fmtDate(f.nextFollowUpDate) : "Not Specified"}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setFollowUpsPage(p => p - 1)}
+                    disabled={followUpsPage <= 1}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                  >
+                    Prev
+                  </button>
+                  <div className="text-gray-600 text-sm">Page {followUpsPage}</div>
+                  <button
+                    type="button"
+                    onClick={() => setFollowUpsPage(p => p + 1)}
+                    disabled={followUpsPage >= followUpsTotalPages}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                  >
+                    Next
+                  </button>
                 </div>
               </TableShell>
             </>
@@ -537,11 +614,11 @@ export default function ReportsTab() {
                         <tr><td colSpan={5} className="max-md:px-4 py-10 px-4 md:px-6">
                           <EmptyState compact illustration="teams" title="No participation data" description="Team participation will appear here once members are assigned to outreaches." />
                         </td></tr>
-                      ) : teamParticipation.map((p, i) => (
+                      ) : paginatedTeams.map((p, i) => (
                         <tr key={p.memberId} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 font-semibold text-gray-400">{i + 1}</td>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 font-semibold text-gray-400">{(teamsPage - 1) * PAGE_SIZE + i + 1}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 font-semibold">{p.name}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p.phone || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p.phone || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums font-bold text-blue-700">{p.participationCount}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <div className="space-y-0.5 max-w-[20rem]">
@@ -558,6 +635,25 @@ export default function ReportsTab() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setTeamsPage(p => p - 1)}
+                    disabled={teamsPage <= 1}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                  >
+                    Prev
+                  </button>
+                  <div className="text-gray-600 text-sm">Page {teamsPage}</div>
+                  <button
+                    type="button"
+                    onClick={() => setTeamsPage(p => p + 1)}
+                    disabled={teamsPage >= teamsTotalPages}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                  >
+                    Next
+                  </button>
                 </div>
               </TableShell>
             </>

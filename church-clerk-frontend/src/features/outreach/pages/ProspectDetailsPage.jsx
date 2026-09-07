@@ -49,6 +49,7 @@ const EXISTING_CHURCH_LABELS = {
 const PREFERRED_CONTACT_LABELS = {
   call: "Phone Call", whatsapp: "WhatsApp", sms: "SMS", visit: "Visit", email: "Email",
 };
+const PAGE_SIZE = 10;
 const FOLLOWUP_TYPE_LABELS = { call: "Phone Call", visit: "Home Visit", text: "Text/SMS", email: "Email", "in-person": "In-Person" };
 const FU_STATUS_LABELS = {
   pending: "Pending", contacted: "Contacted", "no-response": "No Response",
@@ -61,7 +62,7 @@ const FU_STATUS_STYLES = {
 };
 
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -69,7 +70,7 @@ function Field({ label, value }) {
   return (
     <div>
       <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</div>
-      <div className="mt-0.5 text-sm text-gray-800">{value || "—"}</div>
+      <div className="mt-0.5 text-sm text-gray-800">{value || "Not Specified"}</div>
     </div>
   );
 }
@@ -101,6 +102,7 @@ export default function ProspectDetailsPage() {
   const [fuEditTarget, setFuEditTarget] = useState(null);
   const [fuDeleteTarget, setFuDeleteTarget] = useState(null);
   const [fuDeleting, setFuDeleting] = useState(false);
+  const [followUpsPage, setFollowUpsPage] = useState(1);
 
   const backParams = useMemo(() => {
     const params = {};
@@ -179,6 +181,9 @@ export default function ProspectDetailsPage() {
 
   const fullName = `${prospect.firstName || ""} ${prospect.lastName || ""}`.trim();
 
+  const followUpsTotalPages = Math.ceil(followUps.length / PAGE_SIZE);
+  const paginatedFollowUps = followUps.slice((followUpsPage - 1) * PAGE_SIZE, followUpsPage * PAGE_SIZE);
+
   return (
     <div className="max-w-4xl">
       {/* Back */}
@@ -201,7 +206,7 @@ export default function ProspectDetailsPage() {
                 {prospect.convertedToMember ? <Badge label="Converted to Member" className="bg-green-100 text-green-700" /> : null}
                 {prospect.markedAsVisitor ? <Badge label="Marked as Visitor" className="bg-blue-100 text-blue-700" /> : null}
                 <Badge label={DECISION_LABELS[prospect.decision] || prospect.decision} className={DECISION_STYLES[prospect.decision] || "bg-gray-100 text-gray-500"} />
-                <Badge label={`Interest: ${prospect.interestLevel || "—"}`} className={INTEREST_STYLES[prospect.interestLevel] || "bg-gray-100 text-gray-500"} />
+                <Badge label={`Interest: ${prospect.interestLevel || "Not Specified"}`} className={INTEREST_STYLES[prospect.interestLevel] || "bg-gray-100 text-gray-500"} />
               </div>
             </div>
           </div>
@@ -302,7 +307,7 @@ export default function ProspectDetailsPage() {
                 <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px]">
                   {(w.member?.firstName?.[0] || "?").toUpperCase()}
                 </div>
-                <span className="font-semibold text-gray-700">{w.member ? `${w.member.firstName || ""} ${w.member.lastName || ""}`.trim() : "—"}</span>
+                <span className="font-semibold text-gray-700">{w.member ? `${w.member.firstName || ""} ${w.member.lastName || ""}`.trim() : "Not Specified"}</span>
                 {w.assignedAt ? <span className="text-gray-400">· {fmtDate(w.assignedAt)}</span> : null}
               </div>
             ))}
@@ -319,7 +324,7 @@ export default function ProspectDetailsPage() {
               <Field label="Linked Member" value={`${prospect.linkedMember.firstName || ""} ${prospect.linkedMember.lastName || ""}`.trim() + (prospect.linkedMember.memberId ? ` (${prospect.linkedMember.memberId})` : "")} />
             ) : null}
             {prospect.linkedVisitor ? (
-              <Field label="Linked Visitor" value={prospect.linkedVisitor.fullName || "—"} />
+              <Field label="Linked Visitor" value={prospect.linkedVisitor.fullName || "Not Specified"} />
             ) : null}
             {prospect.convertedAt ? <Field label="Converted At" value={fmtDate(prospect.convertedAt)} /> : null}
             {prospect.markedAsVisitorAt ? <Field label="Marked Visitor At" value={fmtDate(prospect.markedAsVisitorAt)} /> : null}
@@ -358,17 +363,17 @@ export default function ProspectDetailsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {followUps.map((fu) => (
+                {paginatedFollowUps.map((fu) => (
                   <tr key={fu._id} className="max-md:text-xs text-gray-700 text-sm">
                     <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu.scheduledDate)}</td>
-                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{FOLLOWUP_TYPE_LABELS[fu.type] || fu.type || "—"}</td>
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{FOLLOWUP_TYPE_LABELS[fu.type] || fu.type || "Not Specified"}</td>
                     <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-                      <Badge label={FU_STATUS_LABELS[fu.status] || fu.status || "—"} className={FU_STATUS_STYLES[fu.status] || "bg-gray-100 text-gray-500"} />
+                      <Badge label={FU_STATUS_LABELS[fu.status] || fu.status || "Not Specified"} className={FU_STATUS_STYLES[fu.status] || "bg-gray-100 text-gray-500"} />
                     </td>
                     <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-                      {fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "—"}
+                      {fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "Not Specified"}
                     </td>
-                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[16rem]">{fu.notes || "—"}</td>
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[16rem]">{fu.notes || "Not Specified"}</td>
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         canWrite && { label: "Edit", onClick: () => { setFuEditTarget(fu); setFuModalOpen(true); } },
@@ -381,6 +386,25 @@ export default function ProspectDetailsPage() {
             </table>
           </div>
         )}
+        <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+          <button
+            type="button"
+            onClick={() => setFollowUpsPage(p => p - 1)}
+            disabled={followUpsPage <= 1}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+          >
+            Prev
+          </button>
+          <div className="text-gray-600 text-sm">Page {followUpsPage}</div>
+          <button
+            type="button"
+            onClick={() => setFollowUpsPage(p => p + 1)}
+            disabled={followUpsPage >= followUpsTotalPages}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* Modals */}

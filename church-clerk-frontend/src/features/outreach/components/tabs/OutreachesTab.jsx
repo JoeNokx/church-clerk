@@ -11,7 +11,7 @@ import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -426,13 +426,13 @@ export default function OutreachesTab() {
               <p className="text-sm text-gray-500">All outreach events</p>
             </div>
             {canCreate ? (
-              <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+              <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 md:hidden">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 New Outreach
               </button>
             ) : null}
           </div>
-          <div className="hidden md:block">
+          <div className="hidden md:flex md:items-center md:gap-3">
             <FilterBar
               searchValue={filters.search}
               onSearchChange={(v) => handleFilter("search", v)}
@@ -459,6 +459,12 @@ export default function OutreachesTab() {
                 },
               ]}
             />
+            {canCreate ? (
+              <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 hidden md:inline-flex">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                New Outreach
+              </button>
+            ) : null}
           </div>
           <div className="md:hidden">
             <MobileFilterBar
@@ -526,13 +532,25 @@ export default function OutreachesTab() {
                 />
               ))}
             </div>
-            {pagination.pages > 1 ? (
-              <div className="p-4 md:p-6 lg:p-8 flex items-center justify-center gap-2">
-                <button disabled={pagination.page <= 1} onClick={() => fetchEvents(pagination.page - 1)} className="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 disabled:opacity-40 hover:bg-gray-50">Prev</button>
-                <span className="text-xs text-gray-500">Page {pagination.page} of {pagination.pages}</span>
-                <button disabled={pagination.page >= pagination.pages} onClick={() => fetchEvents(pagination.page + 1)} className="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 disabled:opacity-40 hover:bg-gray-50">Next</button>
-              </div>
-            ) : null}
+            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+              <button
+                type="button"
+                onClick={() => fetchEvents(pagination.page - 1)}
+                disabled={pagination.page <= 1}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Prev
+              </button>
+              <div className="text-gray-600 text-sm">Page {pagination.page}</div>
+              <button
+                type="button"
+                onClick={() => fetchEvents(pagination.page + 1)}
+                disabled={pagination.page >= pagination.pages}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Next
+              </button>
+            </div>
           </>
         )}
       </div>

@@ -10,22 +10,22 @@ import KpiCard from "../../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../../shared/components/KpiGrid/index.jsx";
 
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
 function formatLongDate(value) {
-  if (!value) return "—";
+  if (!value) return "Not Specified";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "Not Specified";
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
 function formatRange(from, to) {
   const f = from ? new Date(from) : null;
   const t = to ? new Date(to) : null;
-  if (f && Number.isNaN(f.getTime())) return "—";
-  if (t && Number.isNaN(t.getTime())) return "—";
+  if (f && Number.isNaN(f.getTime())) return "Not Specified";
+  if (t && Number.isNaN(t.getTime())) return "Not Specified";
   if (f && t) {
     const sameDay = f.toDateString() === t.toDateString();
     if (sameDay) return formatLongDate(f);
@@ -33,7 +33,7 @@ function formatRange(from, to) {
   }
   if (f) return formatLongDate(f);
   if (t) return formatLongDate(t);
-  return "—";
+  return "Not Specified";
 }
 
 function getDaysUntil(dateStr) {
@@ -331,7 +331,7 @@ export default function OverviewTab() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {(fuStats?.overdueList || []).slice(0, 5).map((fu, idx) => {
-                      const fullName = `${fu?.prospect?.firstName || ""} ${fu?.prospect?.lastName || ""}`.trim() || "—";
+                      const fullName = `${fu?.prospect?.firstName || ""} ${fu?.prospect?.lastName || ""}`.trim() || "Not Specified";
                       return (
                       <tr
                         key={`${fu?._id || "fu"}-${idx}`}
@@ -348,7 +348,7 @@ export default function OverviewTab() {
                             </span>
                           </div>
                         </td>
-                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 capitalize truncate">{fu?.type || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 capitalize truncate">{fu?.type || "Not Specified"}</td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu?.scheduledDate)}</td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                           <span className="rounded-full bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5">Overdue</span>
@@ -400,7 +400,7 @@ export default function OverviewTab() {
                           <CalendarAvatar dateStr={evDate} />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate text-xs">
-                              {ev?.title || ev?.name || "—"}
+                              {ev?.title || ev?.name || "Not Specified"}
                             </div>
                             <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
                             <div className="text-gray-400 text-xs truncate">{ev?.location || ev?.area || ""}</div>

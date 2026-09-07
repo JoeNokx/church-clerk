@@ -39,7 +39,7 @@ const TEAM_STATUS_STYLES = {
 };
 
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -75,6 +75,10 @@ export default function TeamDetailsPage() {
   const [eventDateTo, setEventDateTo] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [membersPage, setMembersPage] = useState(1);
+  const [outreachPage, setOutreachPage] = useState(1);
+
+  const PAGE_SIZE = 10;
 
   const backParams = useMemo(() => {
     const params = {};
@@ -141,6 +145,9 @@ export default function TeamDetailsPage() {
     });
   }, [members, memberSearch]);
 
+  const membersTotalPages = Math.ceil(filteredMembers.length / PAGE_SIZE);
+  const paginatedMembers = filteredMembers.slice((membersPage - 1) * PAGE_SIZE, membersPage * PAGE_SIZE);
+
   const filteredEvents = useMemo(() => {
     let list = events;
     if (eventSearch.trim()) {
@@ -158,6 +165,9 @@ export default function TeamDetailsPage() {
     }
     return list;
   }, [events, eventSearch, eventDateFrom, eventDateTo]);
+
+  const outreachTotalPages = Math.ceil(filteredEvents.length / PAGE_SIZE);
+  const paginatedEvents = filteredEvents.slice((outreachPage - 1) * PAGE_SIZE, outreachPage * PAGE_SIZE);
 
   if (!teamId) return (
     <div className="text-center py-20 text-gray-500">
@@ -261,12 +271,12 @@ export default function TeamDetailsPage() {
               </div>
               <FilterBar
                 searchValue={memberSearch}
-                onSearchChange={setMemberSearch}
+                onSearchChange={(v) => { setMemberSearch(v); setMembersPage(1); }}
                 searchPlaceholder="Search members…"
               />
               <MobileFilterBar
                 searchValue={memberSearch}
-                onSearchChange={setMemberSearch}
+                onSearchChange={(v) => { setMemberSearch(v); setMembersPage(1); }}
                 searchPlaceholder="Search members…"
               />
             </div>
@@ -278,7 +288,7 @@ export default function TeamDetailsPage() {
                   title={memberSearch ? "No members found" : "No members yet"}
                   description={memberSearch ? "We couldn't find any members matching your search." : "Add members to this team to get started."}
                   actionLabel={memberSearch ? "Clear Search" : null}
-                  onAction={memberSearch ? () => setMemberSearch("") : undefined}
+                  onAction={memberSearch ? () => { setMemberSearch(""); setMembersPage(1); } : undefined}
                 />
               </div>
             ) : (
@@ -294,7 +304,7 @@ export default function TeamDetailsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredMembers.map((m, i) => {
+                    {paginatedMembers.map((m, i) => {
                       const mem = typeof m.member === "object" ? m.member : null;
                       const name = mem ? `${mem.firstName} ${mem.lastName || ""}`.trim() : String(m.member);
                       const memberId = mem?._id || (typeof m.member === "string" ? m.member : null);
@@ -311,8 +321,8 @@ export default function TeamDetailsPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.phoneNumber || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.email || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.phoneNumber || "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.email || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${m.role === "team-leader" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                               {ROLE_LABELS[m.role] || m.role || "Volunteer"}
@@ -330,6 +340,25 @@ export default function TeamDetailsPage() {
                 </table>
               </div>
             )}
+            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+              <button
+                type="button"
+                onClick={() => setMembersPage(p => p - 1)}
+                disabled={membersPage <= 1}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Prev
+              </button>
+              <div className="text-gray-600 text-sm">Page {membersPage}</div>
+              <button
+                type="button"
+                onClick={() => setMembersPage(p => p + 1)}
+                disabled={membersPage >= membersTotalPages}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Next
+              </button>
+            </div>
           </div>
         ) : null}
 
@@ -343,19 +372,19 @@ export default function TeamDetailsPage() {
               </div>
               <FilterBar
                 searchValue={eventSearch}
-                onSearchChange={setEventSearch}
+                onSearchChange={(v) => { setEventSearch(v); setOutreachPage(1); }}
                 searchPlaceholder="Search outreaches…"
                 dateFrom={eventDateFrom}
                 dateTo={eventDateTo}
-                onDateApply={(from, to) => { setEventDateFrom(from); setEventDateTo(to); }}
+                onDateApply={(from, to) => { setEventDateFrom(from); setEventDateTo(to); setOutreachPage(1); }}
               />
               <MobileFilterBar
                 searchValue={eventSearch}
-                onSearchChange={setEventSearch}
+                onSearchChange={(v) => { setEventSearch(v); setOutreachPage(1); }}
                 searchPlaceholder="Search outreaches…"
                 dateFrom={eventDateFrom}
                 dateTo={eventDateTo}
-                onDateApply={(from, to) => { setEventDateFrom(from); setEventDateTo(to); }}
+                onDateApply={(from, to) => { setEventDateFrom(from); setEventDateTo(to); setOutreachPage(1); }}
               />
             </div>
             {eventsLoading ? (
@@ -368,7 +397,7 @@ export default function TeamDetailsPage() {
                   title={eventSearch || eventDateFrom || eventDateTo ? "No outreaches found" : "No outreaches assigned"}
                   description={eventSearch || eventDateFrom || eventDateTo ? "We couldn't find any outreaches matching your filters." : "This team has not been assigned to any outreach events yet."}
                   actionLabel={eventSearch || eventDateFrom || eventDateTo ? "Clear Filters" : null}
-                  onAction={eventSearch || eventDateFrom || eventDateTo ? () => { setEventSearch(""); setEventDateFrom(""); setEventDateTo(""); } : undefined}
+                  onAction={eventSearch || eventDateFrom || eventDateTo ? () => { setEventSearch(""); setEventDateFrom(""); setEventDateTo(""); setOutreachPage(1); } : undefined}
                 />
               </div>
             ) : (
@@ -383,7 +412,7 @@ export default function TeamDetailsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredEvents.map((ev) => (
+                    {paginatedEvents.map((ev) => (
                       <tr
                         key={ev._id}
                         className="max-md:text-xs text-gray-700 text-sm cursor-pointer"
@@ -396,7 +425,7 @@ export default function TeamDetailsPage() {
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                           {fmtDate(ev.date)}{ev.endDate ? ` – ${fmtDate(ev.endDate)}` : ""}
                         </td>
-                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{ev.location || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{ev.location || "Not Specified"}</td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${EVENT_STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
                             {ev.status}
@@ -408,6 +437,25 @@ export default function TeamDetailsPage() {
                 </table>
               </div>
             )}
+            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+              <button
+                type="button"
+                onClick={() => setOutreachPage(p => p - 1)}
+                disabled={outreachPage <= 1}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Prev
+              </button>
+              <div className="text-gray-600 text-sm">Page {outreachPage}</div>
+              <button
+                type="button"
+                onClick={() => setOutreachPage(p => p + 1)}
+                disabled={outreachPage >= outreachTotalPages}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Next
+              </button>
+            </div>
           </div>
         ) : null}
       </div>

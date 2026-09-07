@@ -8,6 +8,8 @@ import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.j
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
+const PAGE_SIZE = 9;
+
 const ROLE_OPTIONS = [
   { value: "team-leader", label: "Team Leader" },
   { value: "evangelist", label: "Evangelist" },
@@ -38,7 +40,7 @@ const TEAM_STATUS_STYLES = {
 };
 
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -440,8 +442,8 @@ function TeamDetailModal({ team, open, onClose }) {
                                 </div>
                               </div>
                             </td>
-                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.phoneNumber || "—"}</td>
-                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.email || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.phoneNumber || "Not Specified"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.email || "Not Specified"}</td>
                             <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                               <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${m.role === "team-leader" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                                 {ROLE_LABELS[m.role] || m.role || "Volunteer"}
@@ -491,7 +493,7 @@ function TeamDetailModal({ team, open, onClose }) {
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             {fmtDate(ev.date)}{ev.endDate ? ` – ${fmtDate(ev.endDate)}` : ""}
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{ev.location || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{ev.location || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${EVENT_STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
                               {ev.status}
@@ -528,6 +530,7 @@ export default function TeamsTab({ focusTeamId }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
@@ -564,6 +567,14 @@ export default function TeamsTab({ focusTeamId }) {
 
   const filtered = teams.filter((t) => !search || t.name?.toLowerCase().includes(search.toLowerCase()));
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedTeams = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="mt-6">
       <div className="rounded-xl border border-gray-200 bg-white">
@@ -574,23 +585,29 @@ export default function TeamsTab({ focusTeamId }) {
               <p className="text-sm text-gray-500">All outreach teams</p>
             </div>
             {canCreate ? (
-              <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+              <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 md:hidden">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 Create Team
               </button>
             ) : null}
           </div>
-          <div className="hidden md:block">
+          <div className="hidden md:flex md:items-center md:gap-3">
             <FilterBar
               searchValue={search}
-              onSearchChange={setSearch}
+              onSearchChange={handleSearchChange}
               searchPlaceholder="Search teams…"
             />
+            {canCreate ? (
+              <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 hidden md:inline-flex">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                Create Team
+              </button>
+            ) : null}
           </div>
           <div className="md:hidden">
             <MobileFilterBar
               searchValue={search}
-              onSearchChange={setSearch}
+              onSearchChange={handleSearchChange}
               searchPlaceholder="Search teams…"
             />
           </div>
@@ -607,12 +624,13 @@ export default function TeamsTab({ focusTeamId }) {
               title={search ? "No teams found" : "No outreach teams yet"}
               description={search ? "We couldn't find any teams matching your search." : "Create a team and add members to it."}
               actionLabel={search ? "Clear Search" : (canCreate ? "Create Team" : null)}
-              onAction={search ? () => setSearch("") : (canCreate ? () => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); } : undefined)}
+              onAction={search ? () => handleSearchChange("") : (canCreate ? () => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); } : undefined)}
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 md:p-6 lg:p-8">
-            {filtered.map((team) => (
+          <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 md:p-6 lg:p-8">
+            {paginatedTeams.map((team) => (
               <TeamCard
                 key={team._id}
                 team={team}
@@ -624,6 +642,26 @@ export default function TeamsTab({ focusTeamId }) {
               />
             ))}
           </div>
+          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+            <button
+              type="button"
+              onClick={() => setCurrentPage(p => p - 1)}
+              disabled={currentPage <= 1}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+            >
+              Prev
+            </button>
+            <div className="text-gray-600 text-sm">Page {currentPage}</div>
+            <button
+              type="button"
+              onClick={() => setCurrentPage(p => p + 1)}
+              disabled={currentPage >= totalPages}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+            >
+              Next
+            </button>
+          </div>
+          </>
         )}
       </div>
 

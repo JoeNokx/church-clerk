@@ -54,7 +54,7 @@ const STATUS_STYLES = { planned: "bg-blue-100 text-blue-700", ongoing: "bg-amber
 const FOLLOWUP_TYPE_LABELS = { call: "Phone Call", visit: "Home Visit", text: "Text/SMS", email: "Email", "in-person": "In-Person" };
 
 function fmtDate(v) {
-  if (!v) return "—";
+  if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -78,22 +78,16 @@ function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWri
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
-        <div className="flex items-center gap-3">
-          <Avatar name={`${prospect.firstName} ${prospect.lastName || ""}`} size="sm" />
-          <div>
-            <div className="font-semibold text-gray-900 text-sm">{prospect.firstName} {prospect.lastName || ""}</div>
-            {prospect.phone ? <div className="text-xs text-gray-500">{prospect.phone}</div> : null}
-          </div>
-        </div>
+        <div className="font-semibold text-gray-900 text-sm">{prospect.firstName} {prospect.lastName || ""}</div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <Badge label={DECISION_LABELS[prospect.decision] || prospect.decision} className={DECISION_STYLES[prospect.decision] || "bg-gray-100 text-gray-500"} />
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-        <Badge label={prospect.interestLevel || "—"} className={INTEREST_STYLES[prospect.interestLevel] || "bg-gray-100 text-gray-500"} />
+        <Badge label={prospect.interestLevel || "Not Specified"} className={INTEREST_STYLES[prospect.interestLevel] || "bg-gray-100 text-gray-500"} />
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-500">
-        {prospect.gender ? <span className="capitalize">{prospect.gender}</span> : "—"}
+        {prospect.gender ? <span className="capitalize">{prospect.gender}</span> : "Not Specified"}
         {prospect.ageGroup ? <span className="ml-1 capitalize text-gray-400">· {prospect.ageGroup}</span> : null}
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-500">
@@ -136,17 +130,16 @@ function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }
         <div className="font-semibold text-gray-900 text-sm">
           {followUp.prospect?.firstName} {followUp.prospect?.lastName || ""}
         </div>
-        {followUp.prospect?.phone ? <div className="text-xs text-gray-400">{followUp.prospect.phone}</div> : null}
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-600">{fmtDate(dateVal)}</td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <span className="text-xs text-gray-600 capitalize">{FOLLOWUP_TYPE_LABELS[followUp.type] || followUp.type}</span>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-        <Badge label={STATUS_OUTCOME_LABELS[statusKey] || statusKey?.replace(/-/g, " ") || "—"} className={STATUS_OUTCOME_STYLES[statusKey] || "bg-gray-100 text-gray-500"} />
+        <Badge label={STATUS_OUTCOME_LABELS[statusKey] || statusKey?.replace(/-/g, " ") || "Not Specified"} className={STATUS_OUTCOME_STYLES[statusKey] || "bg-gray-100 text-gray-500"} />
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-500">
-        {followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "—"}
+        {followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "Not Specified"}
       </td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
@@ -233,6 +226,10 @@ export default function OutreachEventDetailPage() {
   const [fuDateFrom, setFuDateFrom] = useState("");
   const [fuDateTo, setFuDateTo] = useState("");
 
+  const [prospectsPage, setProspectsPage] = useState(1);
+  const [followUpsPage, setFollowUpsPage] = useState(1);
+  const PAGE_SIZE = 10;
+
   const fetchEvent = useCallback(async () => {
     if (!eventId) return;
     setLoading(true);
@@ -303,6 +300,9 @@ export default function OutreachEventDetailPage() {
     return list;
   }, [prospects, prospectSearch, prospectDateFrom, prospectDateTo]);
 
+  const prospectsTotalPages = Math.ceil(filteredProspects.length / PAGE_SIZE);
+  const paginatedProspects = filteredProspects.slice((prospectsPage - 1) * PAGE_SIZE, prospectsPage * PAGE_SIZE);
+
   const filteredFollowUps = useMemo(() => {
     let list = followUps;
     if (fuSearch.trim()) {
@@ -324,6 +324,9 @@ export default function OutreachEventDetailPage() {
     }
     return list;
   }, [followUps, fuSearch, fuDateFrom, fuDateTo]);
+
+  const followUpsTotalPages = Math.ceil(filteredFollowUps.length / PAGE_SIZE);
+  const paginatedFollowUps = filteredFollowUps.slice((followUpsPage - 1) * PAGE_SIZE, followUpsPage * PAGE_SIZE);
 
   if (!eventId) return (
     <div className="text-center py-20 text-gray-500">
@@ -479,19 +482,19 @@ export default function OutreachEventDetailPage() {
               </div>
               <FilterBar
                 searchValue={prospectSearch}
-                onSearchChange={setProspectSearch}
+                onSearchChange={(v) => { setProspectSearch(v); setProspectsPage(1); }}
                 searchPlaceholder="Search by name or phone…"
                 dateFrom={prospectDateFrom}
                 dateTo={prospectDateTo}
-                onDateApply={(from, to) => { setProspectDateFrom(from); setProspectDateTo(to); }}
+                onDateApply={(from, to) => { setProspectDateFrom(from); setProspectDateTo(to); setProspectsPage(1); }}
               />
               <MobileFilterBar
                 searchValue={prospectSearch}
-                onSearchChange={setProspectSearch}
+                onSearchChange={(v) => { setProspectSearch(v); setProspectsPage(1); }}
                 searchPlaceholder="Search by name or phone…"
                 dateFrom={prospectDateFrom}
                 dateTo={prospectDateTo}
-                onDateApply={(from, to) => { setProspectDateFrom(from); setProspectDateTo(to); }}
+                onDateApply={(from, to) => { setProspectDateFrom(from); setProspectDateTo(to); setProspectsPage(1); }}
               />
               {canCreate ? (
                 <button onClick={() => setProspectForm({ open: true, mode: "create", data: null })} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
@@ -527,7 +530,7 @@ export default function OutreachEventDetailPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredProspects.map((p) => (
+                    {paginatedProspects.map((p) => (
                       <ProspectRow
                         key={p._id}
                         prospect={p}
@@ -543,6 +546,25 @@ export default function OutreachEventDetailPage() {
                 </table>
               </div>
             )}
+            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+              <button
+                type="button"
+                onClick={() => setProspectsPage(p => p - 1)}
+                disabled={prospectsPage <= 1}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Prev
+              </button>
+              <div className="text-gray-600 text-sm">Page {prospectsPage}</div>
+              <button
+                type="button"
+                onClick={() => setProspectsPage(p => p + 1)}
+                disabled={prospectsPage >= prospectsTotalPages}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Next
+              </button>
+            </div>
           </div>
         ) : null}
 
@@ -556,19 +578,19 @@ export default function OutreachEventDetailPage() {
               </div>
               <FilterBar
                 searchValue={fuSearch}
-                onSearchChange={setFuSearch}
+                onSearchChange={(v) => { setFuSearch(v); setFollowUpsPage(1); }}
                 searchPlaceholder="Search prospect or assigned to…"
                 dateFrom={fuDateFrom}
                 dateTo={fuDateTo}
-                onDateApply={(from, to) => { setFuDateFrom(from); setFuDateTo(to); }}
+                onDateApply={(from, to) => { setFuDateFrom(from); setFuDateTo(to); setFollowUpsPage(1); }}
               />
               <MobileFilterBar
                 searchValue={fuSearch}
-                onSearchChange={setFuSearch}
+                onSearchChange={(v) => { setFuSearch(v); setFollowUpsPage(1); }}
                 searchPlaceholder="Search prospect or assigned to…"
                 dateFrom={fuDateFrom}
                 dateTo={fuDateTo}
-                onDateApply={(from, to) => { setFuDateFrom(from); setFuDateTo(to); }}
+                onDateApply={(from, to) => { setFuDateFrom(from); setFuDateTo(to); setFollowUpsPage(1); }}
               />
             </div>
 
@@ -599,7 +621,7 @@ export default function OutreachEventDetailPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredFollowUps.map((f) => (
+                    {paginatedFollowUps.map((f) => (
                       <FollowUpRow
                         key={f._id}
                         followUp={f}
@@ -614,6 +636,25 @@ export default function OutreachEventDetailPage() {
                 </table>
               </div>
             )}
+            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+              <button
+                type="button"
+                onClick={() => setFollowUpsPage(p => p - 1)}
+                disabled={followUpsPage <= 1}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Prev
+              </button>
+              <div className="text-gray-600 text-sm">Page {followUpsPage}</div>
+              <button
+                type="button"
+                onClick={() => setFollowUpsPage(p => p + 1)}
+                disabled={followUpsPage >= followUpsTotalPages}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Next
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
