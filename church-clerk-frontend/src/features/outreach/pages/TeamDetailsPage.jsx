@@ -9,6 +9,7 @@ import {
   deleteOutreachTeam,
 } from "../services/outreach.api.js";
 import { getMembers } from "../../member/services/member.api.js";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
@@ -270,17 +271,24 @@ export default function TeamDetailsPage() {
               />
             </div>
             {filteredMembers.length === 0 ? (
-              <div className="py-10 text-center text-xs text-gray-400">
-                {memberSearch ? "No members match your search." : "No members in this team yet."}
+              <div className="p-4 md:p-6 lg:p-8">
+                <EmptyState
+                  compact
+                  illustration={memberSearch ? "search" : "members"}
+                  title={memberSearch ? "No members found" : "No members yet"}
+                  description={memberSearch ? "We couldn't find any members matching your search." : "Add members to this team to get started."}
+                  actionLabel={memberSearch ? "Clear Search" : null}
+                  onAction={memberSearch ? () => setMemberSearch("") : undefined}
+                />
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
                     <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Member</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Phone</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Email</th>
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Member</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
@@ -292,7 +300,7 @@ export default function TeamDetailsPage() {
                       const memberId = mem?._id || (typeof m.member === "string" ? m.member : null);
                       return (
                         <tr key={i} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center gap-2.5">
                               <Avatar name={name} size="sm" />
                               <div>
@@ -303,8 +311,8 @@ export default function TeamDetailsPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{mem?.phoneNumber || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{mem?.email || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.phoneNumber || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.email || "—"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${m.role === "team-leader" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                               {ROLE_LABELS[m.role] || m.role || "Volunteer"}
@@ -353,17 +361,24 @@ export default function TeamDetailsPage() {
             {eventsLoading ? (
               <div className="space-y-2 p-4 md:p-6 lg:p-8">{[0,1,2].map(i => <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />)}</div>
             ) : filteredEvents.length === 0 ? (
-              <div className="py-10 text-center text-xs text-gray-400">
-                {eventSearch ? "No outreaches match your search." : "This team has not been assigned to any outreach events yet."}
+              <div className="p-4 md:p-6 lg:p-8">
+                <EmptyState
+                  compact
+                  illustration={eventSearch || eventDateFrom || eventDateTo ? "search" : "events"}
+                  title={eventSearch || eventDateFrom || eventDateTo ? "No outreaches found" : "No outreaches assigned"}
+                  description={eventSearch || eventDateFrom || eventDateTo ? "We couldn't find any outreaches matching your filters." : "This team has not been assigned to any outreach events yet."}
+                  actionLabel={eventSearch || eventDateFrom || eventDateTo ? "Clear Filters" : null}
+                  onAction={eventSearch || eventDateFrom || eventDateTo ? () => { setEventSearch(""); setEventDateFrom(""); setEventDateTo(""); } : undefined}
+                />
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
                     <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Date</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Location</th>
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                     </tr>
                   </thead>
@@ -374,14 +389,14 @@ export default function TeamDetailsPage() {
                         className="max-md:text-xs text-gray-700 text-sm cursor-pointer"
                         onClick={() => toPage("outreach-event-details", { id: ev._id, from: "teams" })}
                       >
-                        <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+                        <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
                           <div className="text-sm font-semibold text-gray-900">{ev.title}</div>
                           {ev.type ? <div className="text-[11px] text-gray-400 capitalize mt-0.5">{ev.type.replace(/-/g, " ")}</div> : null}
                         </td>
-                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                           {fmtDate(ev.date)}{ev.endDate ? ` – ${fmtDate(ev.endDate)}` : ""}
                         </td>
-                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{ev.location || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{ev.location || "—"}</td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${EVENT_STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
                             {ev.status}

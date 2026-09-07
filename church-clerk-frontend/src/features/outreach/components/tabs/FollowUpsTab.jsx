@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import {
   getFollowUpsStats, getAllFollowUps, createFollowUp, updateFollowUp, deleteFollowUp,
@@ -249,7 +249,7 @@ const TYPE_LABELS = {
 function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDelete }) {
   return (
     <tr className={`max-md:text-xs text-gray-700 text-sm ${isOverdue ? "bg-red-50/40" : ""}`}>
-      <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
         <div className="flex items-center gap-2.5">
           <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${isOverdue ? "bg-red-100 text-red-600" : "bg-indigo-100 text-indigo-700"}`}>
             {fu.type === "call" ? "📞" : fu.type === "whatsapp" ? "💬" : fu.type === "visit" ? "🚶" : fu.type === "email" ? "✉" : "📋"}
@@ -265,12 +265,12 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
           </div>
         </div>
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{fmtDate(fu.scheduledDate)}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu.scheduledDate)}</td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6"><StatusBadge status={fu.status} /></td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell truncate max-w-[10rem]">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[10rem]">
         {fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "—"}
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell truncate max-w-[14rem]">{fu.outreachEvent?.title || "—"}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[14rem]">{fu.outreachEvent?.title || "—"}</td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(fu) },
@@ -335,7 +335,36 @@ export default function FollowUpsTab() {
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
-  const overdueItems = (view === "overdue" ? stats?.overdueList : view === "today" ? stats?.todayList : view === "upcoming" ? stats?.upcomingList : followUps) || [];
+  const rawItems = (view === "overdue" ? stats?.overdueList : view === "today" ? stats?.todayList : view === "upcoming" ? stats?.upcomingList : followUps) || [];
+
+  // Apply client-side search + date filtering for today/overdue/upcoming views
+  // (for "all" view, filtering is done server-side via fetchFollowUps)
+  const filteredStatsItems = useMemo(() => {
+    if (view === "all") return rawItems;
+    let list = rawItems;
+    if (filterSearch.trim()) {
+      const q = filterSearch.toLowerCase();
+      list = list.filter((fu) => {
+        const name = `${fu.prospect?.firstName || ""} ${fu.prospect?.lastName || ""}`.trim().toLowerCase();
+        const assignedTo = `${fu.assignedTo?.firstName || ""} ${fu.assignedTo?.lastName || ""}`.trim().toLowerCase();
+        return name.includes(q) || assignedTo.includes(q);
+      });
+    }
+    if (filterStatus) {
+      list = list.filter((fu) => fu.status === filterStatus);
+    }
+    if (filterDateFrom || filterDateTo) {
+      list = list.filter((fu) => {
+        const d = (fu.scheduledDate || fu.followUpDate || "").slice(0, 10);
+        if (!d) return false;
+        if (filterDateFrom && d < filterDateFrom) return false;
+        if (filterDateTo && d > filterDateTo) return false;
+        return true;
+      });
+    }
+    return list;
+  }, [view, rawItems, filterSearch, filterStatus, filterDateFrom, filterDateTo]);
+  const overdueItems = filteredStatsItems;
 
   const isOverdue = (fu) => {
     if (!fu.scheduledDate) return false;
@@ -359,29 +388,31 @@ export default function FollowUpsTab() {
 
   return (
     <div className="mt-6">
-      {/* Sub-view tabs */}
-      <div className="flex gap-1 mb-4 flex-wrap">
+      {/* Sub-view tabs — single row, no wrapping */}
+      <div className="flex gap-1 mb-4 overflow-x-auto">
         {VIEW_TABS.map((t) => (
-          <button key={t.key} onClick={() => { setView(t.key); if (t.key === "all") fetchFollowUps(1); }} className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${view === t.key ? "bg-gray-900 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+          <button key={t.key} onClick={() => { setView(t.key); if (t.key === "all") fetchFollowUps(1); }} className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors shrink-0 ${view === t.key ? "bg-gray-900 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
             {t.label}
             <span className={`text-xs font-bold ${view === t.key ? "text-white/80" : t.color}`}>{t.count}</span>
           </button>
         ))}
-        {canCreate ? (
-          <button onClick={() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }} className="ml-auto h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            Schedule
-          </button>
-        ) : null}
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
-          <div>
-            <div className="font-semibold text-gray-900 text-sm">
-              {view === "today" ? "Due Today" : view === "overdue" ? "Overdue Follow-Ups" : view === "upcoming" ? "Next 7 Days" : "All Follow-Ups"}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-semibold text-gray-900 text-sm">
+                {view === "today" ? "Due Today" : view === "overdue" ? "Overdue Follow-Ups" : view === "upcoming" ? "Next 7 Days" : "All Follow-Ups"}
+              </div>
+              <div className="text-gray-500 text-xs">Track and manage follow-up contacts</div>
             </div>
-            <div className="text-gray-500 text-xs">Track and manage follow-up contacts</div>
+            {canCreate ? (
+              <button onClick={() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                Schedule
+              </button>
+            ) : null}
           </div>
           <>
             <FilterBar
@@ -464,20 +495,28 @@ export default function FollowUpsTab() {
         ) : overdueItems.length === 0 ? (
           <EmptyState
             compact
-            illustration="followUps"
-            title={view === "today" ? "No follow-ups today" : view === "overdue" ? "No overdue follow-ups" : "No upcoming follow-ups"}
-            description={view === "overdue" ? "You're all caught up." : "Schedule follow-ups to stay connected with prospects."}
+            illustration={filterSearch || filterStatus || filterDateFrom || filterDateTo ? "search" : "followUps"}
+            title={filterSearch || filterStatus || filterDateFrom || filterDateTo
+              ? "No follow-ups found"
+              : view === "today" ? "No follow-ups today" : view === "overdue" ? "No overdue follow-ups" : view === "upcoming" ? "No upcoming follow-ups" : "No follow-ups yet"}
+            description={filterSearch || filterStatus || filterDateFrom || filterDateTo
+              ? "We couldn't find any follow-ups matching your filters."
+              : view === "overdue" ? "You're all caught up." : "Schedule follow-ups to stay connected with prospects."}
+            actionLabel={filterSearch || filterStatus || filterDateFrom || filterDateTo ? "Clear Filters" : null}
+            onAction={filterSearch || filterStatus || filterDateFrom || filterDateTo
+              ? () => { setFilterSearch(""); setFilterStatus(""); setFilterDateFrom(""); setFilterDateTo(""); }
+              : undefined}
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-slate-100">
                 <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Scheduled</th>
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Assigned To</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Outreach</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Assigned To</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                 </tr>
               </thead>

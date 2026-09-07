@@ -315,12 +315,12 @@ function EventCard({ event, onEdit, onDelete, onView, canWrite, canDelete }) {
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {canWrite ? (
-            <button onClick={() => onEdit(event)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+            <button onClick={() => onEdit(event)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             </button>
           ) : null}
           {canDelete ? (
-            <button onClick={() => onDelete(event)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+            <button onClick={() => onDelete(event)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           ) : null}
@@ -353,7 +353,7 @@ function EventCard({ event, onEdit, onDelete, onView, canWrite, canDelete }) {
           <span className="h-5 w-5 rounded-md bg-green-50 text-green-600 flex items-center justify-center text-[10px] font-bold">{event.decisionCount || 0}</span>
           <span className="text-gray-500">decisions</span>
         </div>
-        <button onClick={() => onView(event)} className="ml-auto text-xs font-semibold text-blue-700 hover:underline flex items-center gap-1">
+        <button onClick={() => onView(event)} className="cck-allow-icons ml-auto text-xs font-semibold text-blue-700 hover:underline flex items-center gap-1">
           Details
           <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         </button>
@@ -418,20 +418,19 @@ export default function OutreachesTab() {
 
   return (
     <div className="mt-6">
-      {canCreate ? (
-        <div className="mb-4 flex justify-end">
-          <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            New Outreach
-          </button>
-        </div>
-      ) : null}
-
       <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Outreaches</h2>
-            <p className="text-sm text-gray-500">All outreach events</p>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Outreaches</h2>
+              <p className="text-sm text-gray-500">All outreach events</p>
+            </div>
+            {canCreate ? (
+              <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                New Outreach
+              </button>
+            ) : null}
           </div>
           <div className="hidden md:block">
             <FilterBar
@@ -505,11 +504,11 @@ export default function OutreachesTab() {
         ) : events.length === 0 ? (
           <div className="p-4 md:p-6 lg:p-8">
             <EmptyState
-              illustration="outreach"
-              title="No outreaches"
-              description="Plan your first outreach to start reaching your community."
-              actionLabel={canCreate ? "New Outreach" : null}
-              onAction={canCreate ? () => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); } : undefined}
+              illustration={filters.search || filters.status || filters.type ? "search" : "outreach"}
+              title={filters.search || filters.status || filters.type ? "No outreaches found" : "No outreaches yet"}
+              description={filters.search || filters.status || filters.type ? "We couldn't find any outreaches matching your filters." : "Plan your first outreach to start reaching your community."}
+              actionLabel={filters.search || filters.status || filters.type ? "Clear Filters" : (canCreate ? "New Outreach" : null)}
+              onAction={filters.search || filters.status || filters.type ? () => { setFilters({ search: "", status: "", type: "" }); fetchEvents(1, { search: "", status: "", type: "" }); } : (canCreate ? () => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); } : undefined)}
             />
           </div>
         ) : (

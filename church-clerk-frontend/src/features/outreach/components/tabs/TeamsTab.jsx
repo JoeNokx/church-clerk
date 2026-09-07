@@ -277,12 +277,12 @@ function TeamCard({ team, onEdit, onDelete, onViewDetails, canWrite, canDelete }
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {canWrite ? (
-            <button onClick={() => onEdit(team)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+            <button onClick={() => onEdit(team)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             </button>
           ) : null}
           {canDelete ? (
-            <button onClick={() => onDelete(team)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+            <button onClick={() => onDelete(team)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           ) : null}
@@ -310,7 +310,7 @@ function TeamCard({ team, onEdit, onDelete, onViewDetails, canWrite, canDelete }
       <div className="pt-2 border-t border-gray-100 flex justify-end">
         <button
           onClick={() => onViewDetails(team)}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:underline"
+          className="cck-allow-icons inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:underline"
         >
           View Details
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
@@ -408,18 +408,16 @@ function TeamDetailModal({ team, open, onClose }) {
           {/* ── Members tab ── */}
           {activeTab === "members" ? (
             members.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-200 py-10 text-center text-xs text-gray-400">
-                No members in this team yet
-              </div>
+              <EmptyState compact illustration="members" title="No members yet" description="Add members to this team to get started." />
             ) : (
               <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Member</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Phone</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Email</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 sticky left-0 z-20 bg-slate-100">Member</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
@@ -431,7 +429,7 @@ function TeamDetailModal({ team, open, onClose }) {
                         const memberId = mem?._id || (typeof m.member === "string" ? m.member : null);
                         return (
                           <tr key={i} className="max-md:text-xs text-gray-700 text-sm">
-                            <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+                            <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 sticky left-0 z-10 bg-white">
                               <div className="flex items-center gap-2.5">
                                 <Avatar name={name} size="sm" />
                                 <div>
@@ -442,8 +440,8 @@ function TeamDetailModal({ team, open, onClose }) {
                                 </div>
                               </div>
                             </td>
-                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{mem?.phoneNumber || "—"}</td>
-                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{mem?.email || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.phoneNumber || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{mem?.email || "—"}</td>
                             <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                               <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${m.role === "team-leader" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                                 {ROLE_LABELS[m.role] || m.role || "Volunteer"}
@@ -469,18 +467,16 @@ function TeamDetailModal({ team, open, onClose }) {
             eventsLoading ? (
               <div className="space-y-2">{[0,1,2].map(i => <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />)}</div>
             ) : events.length === 0 ? (
-              <div className="py-10 text-center text-xs text-gray-400 rounded-xl border border-dashed border-gray-200">
-                This team has not been assigned to any outreach events yet.
-              </div>
+              <EmptyState compact illustration="events" title="No outreaches assigned" description="This team has not been assigned to any outreach events yet." />
             ) : (
               <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Date</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Location</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 sticky left-0 z-20 bg-slate-100">Outreach</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
@@ -488,14 +484,14 @@ function TeamDetailModal({ team, open, onClose }) {
                     <tbody className="divide-y divide-gray-200">
                       {events.map((ev) => (
                         <tr key={ev._id} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 sticky left-0 z-10 bg-white">
                             <div className="text-sm font-semibold text-gray-900">{ev.title}</div>
                             {ev.type ? <div className="text-[11px] text-gray-400 capitalize mt-0.5">{ev.type.replace(/-/g, " ")}</div> : null}
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             {fmtDate(ev.date)}{ev.endDate ? ` – ${fmtDate(ev.endDate)}` : ""}
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{ev.location || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{ev.location || "—"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${EVENT_STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
                               {ev.status}
@@ -570,20 +566,19 @@ export default function TeamsTab({ focusTeamId }) {
 
   return (
     <div className="mt-6">
-      {canCreate ? (
-        <div className="mb-4 flex justify-end">
-          <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            Create Team
-          </button>
-        </div>
-      ) : null}
-
       <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Teams</h2>
-            <p className="text-sm text-gray-500">All outreach teams</p>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Teams</h2>
+              <p className="text-sm text-gray-500">All outreach teams</p>
+            </div>
+            {canCreate ? (
+              <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                Create Team
+              </button>
+            ) : null}
           </div>
           <div className="hidden md:block">
             <FilterBar

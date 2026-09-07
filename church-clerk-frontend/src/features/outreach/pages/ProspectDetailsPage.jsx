@@ -11,6 +11,7 @@ import {
   getOutreachEvents,
 } from "../services/outreach.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 const DECISION_LABELS = {
   none: "No Decision",
@@ -335,32 +336,39 @@ export default function ProspectDetailsPage() {
           ) : null}
         </div>
         {followUps.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-gray-400">No follow-ups recorded yet.</div>
+          <div className="p-4 md:p-6 lg:p-8">
+            <EmptyState
+              compact
+              illustration="followUps"
+              title="No follow-ups yet"
+              description="Schedule a follow-up to start tracking contact with this prospect."
+            />
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-slate-100">
                 <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Assigned To</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Notes</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Assigned To</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Notes</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {followUps.map((fu) => (
                   <tr key={fu._id} className="max-md:text-xs text-gray-700 text-sm">
-                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu.scheduledDate)}</td>
+                    <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu.scheduledDate)}</td>
                     <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{FOLLOWUP_TYPE_LABELS[fu.type] || fu.type || "—"}</td>
                     <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                       <Badge label={FU_STATUS_LABELS[fu.status] || fu.status || "—"} className={FU_STATUS_STYLES[fu.status] || "bg-gray-100 text-gray-500"} />
                     </td>
-                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                       {fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "—"}
                     </td>
-                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell truncate max-w-[16rem]">{fu.notes || "—"}</td>
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[16rem]">{fu.notes || "—"}</td>
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         canWrite && { label: "Edit", onClick: () => { setFuEditTarget(fu); setFuModalOpen(true); } },

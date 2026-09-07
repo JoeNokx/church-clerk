@@ -18,6 +18,7 @@ import { FollowUpFormModal, FollowUpDetailsModal } from "../components/tabs/Foll
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 // ─── Constants & Helpers ─────────────────────────────────────────
 const DECISION_LABELS = {
@@ -76,7 +77,7 @@ function Avatar({ name, photo, size = "sm" }) {
 function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWrite, canDelete }) {
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
-      <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
         <div className="flex items-center gap-3">
           <Avatar name={`${prospect.firstName} ${prospect.lastName || ""}`} size="sm" />
           <div>
@@ -85,17 +86,17 @@ function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWri
           </div>
         </div>
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <Badge label={DECISION_LABELS[prospect.decision] || prospect.decision} className={DECISION_STYLES[prospect.decision] || "bg-gray-100 text-gray-500"} />
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <Badge label={prospect.interestLevel || "—"} className={INTEREST_STYLES[prospect.interestLevel] || "bg-gray-100 text-gray-500"} />
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell text-xs text-gray-500">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-500">
         {prospect.gender ? <span className="capitalize">{prospect.gender}</span> : "—"}
         {prospect.ageGroup ? <span className="ml-1 capitalize text-gray-400">· {prospect.ageGroup}</span> : null}
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-500 hidden md:table-cell">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-500">
         {prospect.followUpCount || 0}
       </td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
@@ -131,20 +132,20 @@ function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }
   const dateVal = followUp.scheduledDate || followUp.followUpDate;
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
-      <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
         <div className="font-semibold text-gray-900 text-sm">
           {followUp.prospect?.firstName} {followUp.prospect?.lastName || ""}
         </div>
         {followUp.prospect?.phone ? <div className="text-xs text-gray-400">{followUp.prospect.phone}</div> : null}
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-600">{fmtDate(dateVal)}</td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <span className="text-xs text-gray-600 capitalize">{FOLLOWUP_TYPE_LABELS[followUp.type] || followUp.type}</span>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <Badge label={STATUS_OUTCOME_LABELS[statusKey] || statusKey?.replace(/-/g, " ") || "—"} className={STATUS_OUTCOME_STYLES[statusKey] || "bg-gray-100 text-gray-500"} />
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell text-xs text-gray-500">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-500">
         {followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "—"}
       </td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
@@ -439,7 +440,7 @@ export default function OutreachEventDetailPage() {
                   key={team._id}
                   type="button"
                   onClick={() => toPage("team-details", { id: team._id, from: fromTab })}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                  className="cck-allow-icons inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
                 >
                   <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                   {team.name}
@@ -502,23 +503,26 @@ export default function OutreachEventDetailPage() {
             {prospectsLoading ? (
               <div className="p-6 space-y-3">{[0,1,2].map(i => <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />)}</div>
             ) : prospects.length === 0 ? (
-              <div className="py-16 text-center text-gray-500 text-sm">
-                <div className="mx-auto mb-3 h-12 w-12 rounded-xl bg-blue-50 text-blue-400 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-                </div>
-                No prospects recorded yet.
-                {canCreate ? <div className="mt-1 text-xs">Click <strong>Record Person</strong> to start recording.</div> : null}
+              <div className="p-4 md:p-6 lg:p-8">
+                <EmptyState
+                  compact
+                  illustration={prospectSearch || prospectDateFrom || prospectDateTo ? "search" : "peopleReached"}
+                  title={prospectSearch || prospectDateFrom || prospectDateTo ? "No people found" : "No people recorded yet"}
+                  description={prospectSearch || prospectDateFrom || prospectDateTo ? "We couldn't find anyone matching your filters." : "Record the first person reached during this outreach."}
+                  actionLabel={prospectSearch || prospectDateFrom || prospectDateTo ? "Clear Filters" : (canCreate ? "Record Person" : null)}
+                  onAction={prospectSearch || prospectDateFrom || prospectDateTo ? () => { setProspectSearch(""); setProspectDateFrom(""); setProspectDateTo(""); } : (canCreate ? () => setProspectForm({ open: true, mode: "create", data: null }) : undefined)}
+                />
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
                     <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Decision</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Interest</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Demographics</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Follow-ups</th>
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Decision</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Interest</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Demographics</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Follow-ups</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
                   </thead>
@@ -571,23 +575,26 @@ export default function OutreachEventDetailPage() {
             {followUpsLoading ? (
               <div className="p-6 space-y-3">{[0,1,2].map(i => <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />)}</div>
             ) : followUps.length === 0 ? (
-              <div className="py-16 text-center text-gray-500 text-sm">
-                <div className="mx-auto mb-3 h-12 w-12 rounded-xl bg-amber-50 text-amber-400 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-                </div>
-                No follow-ups recorded yet.
-                <div className="mt-1 text-xs">Go to the <strong>Prospects</strong> tab and click <strong>Schedule Follow-Up</strong> on any person.</div>
+              <div className="p-4 md:p-6 lg:p-8">
+                <EmptyState
+                  compact
+                  illustration={fuSearch || fuDateFrom || fuDateTo ? "search" : "followUps"}
+                  title={fuSearch || fuDateFrom || fuDateTo ? "No follow-ups found" : "No follow-ups recorded yet"}
+                  description={fuSearch || fuDateFrom || fuDateTo ? "We couldn't find any follow-ups matching your filters." : "Schedule follow-ups from the Prospects tab to stay connected with people."}
+                  actionLabel={fuSearch || fuDateFrom || fuDateTo ? "Clear Filters" : null}
+                  onAction={fuSearch || fuDateFrom || fuDateTo ? () => { setFuSearch(""); setFuDateFrom(""); setFuDateTo(""); } : undefined}
+                />
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
                     <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Method</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Method</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outcome</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Next Date</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Next Date</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
                   </thead>

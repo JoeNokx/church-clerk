@@ -550,7 +550,7 @@ export function ConvertModal({ open, prospect, onClose, onDone }) {
 function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canDelete }) {
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
-      <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 text-[10px] font-bold select-none">
             {(person.firstName?.[0] || "?").toUpperCase()}{(person.lastName?.[0] || "").toUpperCase()}
@@ -565,10 +565,10 @@ function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canD
           </div>
         </div>
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{person.phone || <span className="text-gray-400 italic">Not Specified</span>}</td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell truncate max-w-[12rem]">{person.community || person.address || <span className="text-gray-400 italic">Not Specified</span>}</td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell truncate max-w-[14rem]">{person.outreachEvent?.title || "—"}</td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{fmtDate(person.createdAt)}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{person.phone || <span className="text-gray-400 italic">Not Specified</span>}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{person.community || person.address || <span className="text-gray-400 italic">Not Specified</span>}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[14rem]">{person.outreachEvent?.title || "—"}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(person.createdAt)}</td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(person) },
@@ -639,20 +639,19 @@ export default function PeopleReachedTab() {
 
   return (
     <div className="mt-6">
-      {canCreate ? (
-        <div className="mb-4 flex justify-end">
-          <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            Record Person
-          </button>
-        </div>
-      ) : null}
-
       <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
-          <div>
-            <div className="font-semibold text-gray-900 text-sm">People Reached</div>
-            <div className="text-gray-500 text-xs">All people recorded during outreaches</div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-semibold text-gray-900 text-sm">People Reached</div>
+              <div className="text-gray-500 text-xs">All people recorded during outreaches</div>
+            </div>
+            {canCreate ? (
+              <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                Record Person
+              </button>
+            ) : null}
           </div>
           <FilterBar
             searchValue={filters.search}
@@ -733,11 +732,11 @@ export default function PeopleReachedTab() {
             <table className="min-w-full">
               <thead className="bg-slate-100">
                 <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Phone</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Area</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Outreach</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Recorded</th>
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Area</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                 </tr>
               </thead>
