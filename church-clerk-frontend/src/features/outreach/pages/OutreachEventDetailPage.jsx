@@ -16,6 +16,8 @@ import { getMembers } from "../../member/services/member.api.js";
 import { PersonFormModal } from "../components/tabs/PeopleReachedTab.jsx";
 import { FollowUpFormModal, FollowUpDetailsModal } from "../components/tabs/FollowUpsTab.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 // ─── Constants & Helpers ─────────────────────────────────────────
 const DECISION_LABELS = {
@@ -223,6 +225,13 @@ export default function OutreachEventDetailPage() {
 
   const [statusUpdating, setStatusUpdating] = useState(false);
 
+  const [prospectSearch, setProspectSearch] = useState("");
+  const [prospectDateFrom, setProspectDateFrom] = useState("");
+  const [prospectDateTo, setProspectDateTo] = useState("");
+  const [fuSearch, setFuSearch] = useState("");
+  const [fuDateFrom, setFuDateFrom] = useState("");
+  const [fuDateTo, setFuDateTo] = useState("");
+
   const fetchEvent = useCallback(async () => {
     if (!eventId) return;
     setLoading(true);
@@ -270,6 +279,50 @@ export default function OutreachEventDetailPage() {
       setDeleteModal({ open: false, type: "", id: null, name: "" });
     } catch { } finally { setDeleting(false); }
   };
+
+  const filteredProspects = useMemo(() => {
+    let list = prospects;
+    if (prospectSearch.trim()) {
+      const q = prospectSearch.toLowerCase();
+      list = list.filter((p) => {
+        const name = `${p.firstName || ""} ${p.lastName || ""}`.trim().toLowerCase();
+        const phone = (p.phoneNumber || "").toLowerCase();
+        return name.includes(q) || phone.includes(q);
+      });
+    }
+    if (prospectDateFrom || prospectDateTo) {
+      list = list.filter((p) => {
+        const d = (p.createdAt || "").slice(0, 10);
+        if (!d) return false;
+        if (prospectDateFrom && d < prospectDateFrom) return false;
+        if (prospectDateTo && d > prospectDateTo) return false;
+        return true;
+      });
+    }
+    return list;
+  }, [prospects, prospectSearch, prospectDateFrom, prospectDateTo]);
+
+  const filteredFollowUps = useMemo(() => {
+    let list = followUps;
+    if (fuSearch.trim()) {
+      const q = fuSearch.toLowerCase();
+      list = list.filter((f) => {
+        const name = `${f.prospect?.firstName || ""} ${f.prospect?.lastName || ""}`.trim().toLowerCase();
+        const assignedTo = `${f.assignedTo?.firstName || ""} ${f.assignedTo?.lastName || ""}`.trim().toLowerCase();
+        return name.includes(q) || assignedTo.includes(q);
+      });
+    }
+    if (fuDateFrom || fuDateTo) {
+      list = list.filter((f) => {
+        const d = (f.scheduledDate || f.followUpDate || "").slice(0, 10);
+        if (!d) return false;
+        if (fuDateFrom && d < fuDateFrom) return false;
+        if (fuDateTo && d > fuDateTo) return false;
+        return true;
+      });
+    }
+    return list;
+  }, [followUps, fuSearch, fuDateFrom, fuDateTo]);
 
   if (!eventId) return (
     <div className="text-center py-20 text-gray-500">
@@ -423,6 +476,22 @@ export default function OutreachEventDetailPage() {
                 <div className="font-semibold text-gray-900 text-sm">People Reached</div>
                 <div className="text-gray-500 text-xs">Everyone encountered during this outreach</div>
               </div>
+              <FilterBar
+                searchValue={prospectSearch}
+                onSearchChange={setProspectSearch}
+                searchPlaceholder="Search by name or phone…"
+                dateFrom={prospectDateFrom}
+                dateTo={prospectDateTo}
+                onDateApply={(from, to) => { setProspectDateFrom(from); setProspectDateTo(to); }}
+              />
+              <MobileFilterBar
+                searchValue={prospectSearch}
+                onSearchChange={setProspectSearch}
+                searchPlaceholder="Search by name or phone…"
+                dateFrom={prospectDateFrom}
+                dateTo={prospectDateTo}
+                onDateApply={(from, to) => { setProspectDateFrom(from); setProspectDateTo(to); }}
+              />
               {canCreate ? (
                 <button onClick={() => setProspectForm({ open: true, mode: "create", data: null })} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
                   <span className="text-base leading-none">+</span> Record Person
@@ -454,7 +523,7 @@ export default function OutreachEventDetailPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {prospects.map((p) => (
+                    {filteredProspects.map((p) => (
                       <ProspectRow
                         key={p._id}
                         prospect={p}
@@ -481,6 +550,22 @@ export default function OutreachEventDetailPage() {
                 <div className="font-semibold text-gray-900 text-sm">Follow-up Log</div>
                 <div className="text-gray-500 text-xs">All follow-up contacts made for this outreach event</div>
               </div>
+              <FilterBar
+                searchValue={fuSearch}
+                onSearchChange={setFuSearch}
+                searchPlaceholder="Search prospect or assigned to…"
+                dateFrom={fuDateFrom}
+                dateTo={fuDateTo}
+                onDateApply={(from, to) => { setFuDateFrom(from); setFuDateTo(to); }}
+              />
+              <MobileFilterBar
+                searchValue={fuSearch}
+                onSearchChange={setFuSearch}
+                searchPlaceholder="Search prospect or assigned to…"
+                dateFrom={fuDateFrom}
+                dateTo={fuDateTo}
+                onDateApply={(from, to) => { setFuDateFrom(from); setFuDateTo(to); }}
+              />
             </div>
 
             {followUpsLoading ? (
@@ -507,7 +592,7 @@ export default function OutreachEventDetailPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {followUps.map((f) => (
+                    {filteredFollowUps.map((f) => (
                       <FollowUpRow
                         key={f._id}
                         followUp={f}

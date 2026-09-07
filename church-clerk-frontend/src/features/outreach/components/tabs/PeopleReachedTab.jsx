@@ -2,6 +2,8 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
+import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import {
   getAllProspects, createProspect, createProspectDirect, updateProspectDirect, deleteProspectDirect,
@@ -591,7 +593,7 @@ export default function PeopleReachedTab() {
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
-  const [filters, setFilters] = useState({ search: "", stage: "", eventId: "" });
+  const [filters, setFilters] = useState({ search: "", stage: "", dateFrom: "", dateTo: "" });
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
@@ -617,7 +619,12 @@ export default function PeopleReachedTab() {
   }, []);
 
   const handleFilter = (key, value) => {
-    const next = { ...filters, [key]: value };
+    let next;
+    if (key === "dateRange") {
+      next = { ...filters, dateFrom: value.from, dateTo: value.to };
+    } else {
+      next = { ...filters, [key]: value };
+    }
     setFilters(next);
     const p = { ...next }; Object.keys(p).forEach((k) => { if (!p[k]) delete p[k]; });
     fetchProspects(1, p);
@@ -632,25 +639,14 @@ export default function PeopleReachedTab() {
 
   return (
     <div className="mt-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex flex-wrap gap-2 flex-1">
-          <input value={filters.search} onChange={(e) => handleFilter("search", e.target.value)} placeholder="Search by name or phone…" className="h-9 flex-1 min-w-44 rounded-lg border border-gray-200 px-3 text-sm text-gray-700 focus:outline-none focus:border-blue-500" />
-          <select value={filters.stage} onChange={(e) => handleFilter("stage", e.target.value)} className="h-9 rounded-lg border border-gray-200 px-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-white">
-            <option value="">All Stages</option>
-            {STAGES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
-          <select value={filters.eventId} onChange={(e) => handleFilter("eventId", e.target.value)} className="h-9 rounded-lg border border-gray-200 px-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-white">
-            <option value="">All Events</option>
-            {events.map((ev) => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-          </select>
-        </div>
-        {canCreate ? (
+      {canCreate ? (
+        <div className="mb-4 flex justify-end">
           <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             Record Person
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
@@ -658,7 +654,46 @@ export default function PeopleReachedTab() {
             <div className="font-semibold text-gray-900 text-sm">People Reached</div>
             <div className="text-gray-500 text-xs">All people recorded during outreaches</div>
           </div>
-          <span className="text-gray-500 text-xs">{pagination.total} total</span>
+          <FilterBar
+            searchValue={filters.search}
+            onSearchChange={(v) => handleFilter("search", v)}
+            searchPlaceholder="Search by name or phone…"
+            selects={[
+              {
+                key: "stage",
+                value: filters.stage,
+                onChange: (v) => handleFilter("stage", v),
+                placeholder: "All Stages",
+                options: STAGES.map((s) => ({ label: s.label, value: s.key })),
+              },
+            ]}
+            dateFrom={filters.dateFrom}
+            dateTo={filters.dateTo}
+            onDateApply={(from, to) => handleFilter("dateRange", { from, to })}
+          />
+          <MobileFilterBar
+            searchValue={filters.search}
+            onSearchChange={(v) => handleFilter("search", v)}
+            searchPlaceholder="Search by name or phone…"
+            dateFrom={filters.dateFrom}
+            dateTo={filters.dateTo}
+            onDateApply={(from, to) => handleFilter("dateRange", { from, to })}
+            filters={[
+              {
+                key: "stage",
+                label: "Stage",
+                value: filters.stage,
+                defaultValue: "",
+                options: [{ label: "All Stages", value: "" }, ...STAGES.map((s) => ({ label: s.label, value: s.key }))],
+              },
+            ]}
+            onApply={(pending) => {
+              const next = { ...filters, ...pending };
+              setFilters(next);
+              const p = { ...next }; Object.keys(p).forEach((k) => { if (!p[k]) delete p[k]; });
+              fetchProspects(1, p);
+            }}
+          />
         </div>
         {loading ? (
           <div className="overflow-x-auto animate-pulse">
@@ -680,7 +715,7 @@ export default function PeopleReachedTab() {
           </div>
         ) : prospects.length === 0 ? (
           (() => {
-            const hasFilters = !!(filters.search || filters.stage || filters.eventId);
+            const hasFilters = !!(filters.search || filters.stage || filters.dateFrom || filters.dateTo);
             return (
               <EmptyState
                 illustration={hasFilters ? "search" : "peopleReached"}
@@ -689,7 +724,7 @@ export default function PeopleReachedTab() {
                   ? "We couldn't find anyone matching your filters."
                   : "Record the first person reached during an outreach."}
                 actionLabel={hasFilters ? "Clear Filters" : (canWrite ? "Add Person" : null)}
-                onAction={hasFilters ? () => setFilters({ search: "", stage: "", eventId: "" }) : (canWrite ? () => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); } : undefined)}
+                onAction={hasFilters ? () => setFilters({ search: "", stage: "", dateFrom: "", dateTo: "" }) : (canWrite ? () => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); } : undefined)}
               />
             );
           })()

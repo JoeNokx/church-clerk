@@ -10,6 +10,8 @@ import {
 } from "../services/outreach.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 
 const ROLE_OPTIONS = [
   { value: "team-leader", label: "Team Leader" },
@@ -66,6 +68,10 @@ export default function TeamDetailsPage() {
   const [eventsLoading, setEventsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("members");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [eventSearch, setEventSearch] = useState("");
+  const [eventDateFrom, setEventDateFrom] = useState("");
+  const [eventDateTo, setEventDateTo] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -123,6 +129,35 @@ export default function TeamDetailsPage() {
     } catch { } finally { setDeleting(false); }
   };
 
+  const members = team?.members || [];
+  const filteredMembers = useMemo(() => {
+    if (!memberSearch.trim()) return members;
+    const q = memberSearch.toLowerCase();
+    return members.filter((m) => {
+      const mem = typeof m.member === "object" ? m.member : null;
+      const name = mem ? `${mem.firstName} ${mem.lastName || ""}`.trim() : String(m.member);
+      return name.toLowerCase().includes(q) || (mem?.phoneNumber || "").toLowerCase().includes(q) || (mem?.email || "").toLowerCase().includes(q);
+    });
+  }, [members, memberSearch]);
+
+  const filteredEvents = useMemo(() => {
+    let list = events;
+    if (eventSearch.trim()) {
+      const q = eventSearch.toLowerCase();
+      list = list.filter((ev) => (ev.title || "").toLowerCase().includes(q) || (ev.location || "").toLowerCase().includes(q) || (ev.type || "").toLowerCase().includes(q));
+    }
+    if (eventDateFrom || eventDateTo) {
+      list = list.filter((ev) => {
+        const d = (ev.date || "").slice(0, 10);
+        if (!d) return false;
+        if (eventDateFrom && d < eventDateFrom) return false;
+        if (eventDateTo && d > eventDateTo) return false;
+        return true;
+      });
+    }
+    return list;
+  }, [events, eventSearch, eventDateFrom, eventDateTo]);
+
   if (!teamId) return (
     <div className="text-center py-20 text-gray-500">
       <p>No team selected.</p>
@@ -145,7 +180,6 @@ export default function TeamDetailsPage() {
     </div>
   );
 
-  const members = team.members || [];
   const tabs = [
     { key: "members", label: "Members", count: members.length },
     { key: "outreach", label: "Outreach", count: events.length },
@@ -218,12 +252,28 @@ export default function TeamDetailsPage() {
       <div className="mt-4">
         {/* ── Members tab ── */}
         {activeTab === "members" ? (
-          members.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-200 py-10 text-center text-xs text-gray-400">
-              No members in this team yet
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Members</div>
+                <div className="text-gray-500 text-xs">All members in this team</div>
+              </div>
+              <FilterBar
+                searchValue={memberSearch}
+                onSearchChange={setMemberSearch}
+                searchPlaceholder="Search members…"
+              />
+              <MobileFilterBar
+                searchValue={memberSearch}
+                onSearchChange={setMemberSearch}
+                searchPlaceholder="Search members…"
+              />
             </div>
-          ) : (
-            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            {filteredMembers.length === 0 ? (
+              <div className="py-10 text-center text-xs text-gray-400">
+                {memberSearch ? "No members match your search." : "No members in this team yet."}
+              </div>
+            ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
@@ -236,7 +286,7 @@ export default function TeamDetailsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {members.map((m, i) => {
+                    {filteredMembers.map((m, i) => {
                       const mem = typeof m.member === "object" ? m.member : null;
                       const name = mem ? `${mem.firstName} ${mem.lastName || ""}`.trim() : String(m.member);
                       const memberId = mem?._id || (typeof m.member === "string" ? m.member : null);
@@ -271,20 +321,42 @@ export default function TeamDetailsPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          )
+            )}
+          </div>
         ) : null}
 
         {/* ── Outreach tab ── */}
         {activeTab === "outreach" ? (
-          eventsLoading ? (
-            <div className="space-y-2">{[0,1,2].map(i => <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />)}</div>
-          ) : events.length === 0 ? (
-            <div className="py-10 text-center text-xs text-gray-400 rounded-xl border border-dashed border-gray-200">
-              This team has not been assigned to any outreach events yet.
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Outreach Events</div>
+                <div className="text-gray-500 text-xs">All outreaches assigned to this team</div>
+              </div>
+              <FilterBar
+                searchValue={eventSearch}
+                onSearchChange={setEventSearch}
+                searchPlaceholder="Search outreaches…"
+                dateFrom={eventDateFrom}
+                dateTo={eventDateTo}
+                onDateApply={(from, to) => { setEventDateFrom(from); setEventDateTo(to); }}
+              />
+              <MobileFilterBar
+                searchValue={eventSearch}
+                onSearchChange={setEventSearch}
+                searchPlaceholder="Search outreaches…"
+                dateFrom={eventDateFrom}
+                dateTo={eventDateTo}
+                onDateApply={(from, to) => { setEventDateFrom(from); setEventDateTo(to); }}
+              />
             </div>
-          ) : (
-            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            {eventsLoading ? (
+              <div className="space-y-2 p-4 md:p-6 lg:p-8">{[0,1,2].map(i => <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />)}</div>
+            ) : filteredEvents.length === 0 ? (
+              <div className="py-10 text-center text-xs text-gray-400">
+                {eventSearch ? "No outreaches match your search." : "This team has not been assigned to any outreach events yet."}
+              </div>
+            ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
@@ -296,7 +368,7 @@ export default function TeamDetailsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {events.map((ev) => (
+                    {filteredEvents.map((ev) => (
                       <tr
                         key={ev._id}
                         className="max-md:text-xs text-gray-700 text-sm cursor-pointer"
@@ -320,8 +392,8 @@ export default function TeamDetailsPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          )
+            )}
+          </div>
         ) : null}
       </div>
 

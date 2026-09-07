@@ -5,6 +5,8 @@ import { getOutreachTeams, createOutreachTeam, updateOutreachTeam, deleteOutreac
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
+import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
 const ROLE_OPTIONS = [
   { value: "team-leader", label: "Team Leader" },
@@ -568,48 +570,67 @@ export default function TeamsTab({ focusTeamId }) {
 
   return (
     <div className="mt-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search teams…"
-          className="h-9 flex-1 min-w-44 rounded-lg border border-gray-200 px-3 text-sm text-gray-700 focus:outline-none focus:border-blue-500"
-        />
-        {canCreate ? (
+      {canCreate ? (
+        <div className="mb-4 flex justify-end">
           <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             Create Team
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
-      {loading ? (
-        <div className="space-y-3">
-          {[0,1,2].map(i => <div key={i} className="h-28 rounded-2xl bg-gray-100 animate-pulse" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          illustration={search ? "search" : "teams"}
-          title={search ? "No teams found" : "No outreach teams yet"}
-          description={search ? "We couldn't find any teams matching your search." : "Create a team and add members to it."}
-          actionLabel={search ? "Clear Search" : (canCreate ? "Create Team" : null)}
-          onAction={search ? () => setSearch("") : (canCreate ? () => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); } : undefined)}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((team) => (
-            <TeamCard
-              key={team._id}
-              team={team}
-              onEdit={(t) => { setEditingTeam(t); setFormMode("edit"); setFormOpen(true); }}
-              onDelete={(t) => setDeleteTarget(t)}
-              onViewDetails={(t) => toPage("team-details", { id: t._id, from: "teams" })}
-              canWrite={canWrite}
-              canDelete={canDelete}
+      <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Teams</h2>
+            <p className="text-sm text-gray-500">All outreach teams</p>
+          </div>
+          <div className="hidden md:block">
+            <FilterBar
+              searchValue={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Search teams…"
             />
-          ))}
+          </div>
+          <div className="md:hidden">
+            <MobileFilterBar
+              searchValue={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Search teams…"
+            />
+          </div>
         </div>
-      )}
+
+        {loading ? (
+          <div className="space-y-3 p-4 md:p-6 lg:p-8">
+            {[0,1,2].map(i => <div key={i} className="h-28 rounded-2xl bg-gray-100 animate-pulse" />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-4 md:p-6 lg:p-8">
+            <EmptyState
+              illustration={search ? "search" : "teams"}
+              title={search ? "No teams found" : "No outreach teams yet"}
+              description={search ? "We couldn't find any teams matching your search." : "Create a team and add members to it."}
+              actionLabel={search ? "Clear Search" : (canCreate ? "Create Team" : null)}
+              onAction={search ? () => setSearch("") : (canCreate ? () => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); } : undefined)}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 md:p-6 lg:p-8">
+            {filtered.map((team) => (
+              <TeamCard
+                key={team._id}
+                team={team}
+                onEdit={(t) => { setEditingTeam(t); setFormMode("edit"); setFormOpen(true); }}
+                onDelete={(t) => setDeleteTarget(t)}
+                onViewDetails={(t) => toPage("team-details", { id: t._id, from: "teams" })}
+                canWrite={canWrite}
+                canDelete={canDelete}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       <TeamFormModal
         open={formOpen} mode={formMode} initialData={editingTeam} allMembers={members}

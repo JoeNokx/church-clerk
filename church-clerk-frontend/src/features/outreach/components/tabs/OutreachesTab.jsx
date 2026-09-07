@@ -7,6 +7,8 @@ import {
 } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
 function fmtDate(v) {
   if (!v) return "—";
@@ -416,65 +418,125 @@ export default function OutreachesTab() {
 
   return (
     <div className="mt-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex flex-wrap gap-2 flex-1">
-          <input value={filters.search} onChange={(e) => handleFilter("search", e.target.value)} placeholder="Search outreaches…" className="h-9 flex-1 min-w-44 rounded-lg border border-gray-200 px-3 text-sm text-gray-700 focus:outline-none focus:border-blue-500" />
-          <select value={filters.status} onChange={(e) => handleFilter("status", e.target.value)} className="h-9 rounded-lg border border-gray-200 px-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-white">
-            <option value="">All Statuses</option>
-            <option value="planned">Planned</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <select value={filters.type} onChange={(e) => handleFilter("type", e.target.value)} className="h-9 rounded-lg border border-gray-200 px-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-white">
-            <option value="">All Types</option>
-            {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </div>
-        {canCreate ? (
+      {canCreate ? (
+        <div className="mb-4 flex justify-end">
           <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             New Outreach
           </button>
-        ) : null}
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[0,1,2,3,4,5].map(i => <div key={i} className="h-52 rounded-2xl border border-gray-200 bg-gray-100 animate-pulse" />)}
         </div>
-      ) : events.length === 0 ? (
-        <EmptyState
-          illustration="outreach"
-          title="No outreaches"
-          description="Plan your first outreach to start reaching your community."
-          actionLabel={canCreate ? "New Outreach" : null}
-          onAction={canCreate ? () => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); } : undefined}
-        />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {events.map((event) => (
-              <EventCard
-                key={event._id}
-                event={event}
-                onEdit={(e) => { setEditingEvent(e); setFormMode("edit"); setFormOpen(true); }}
-                onDelete={(e) => setDeleteTarget(e)}
-                onView={(e) => toPage("outreach-event-details", { id: e._id })}
-                canWrite={canUpdate}
-                canDelete={canDelete}
-              />
-            ))}
+      ) : null}
+
+      <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Outreaches</h2>
+            <p className="text-sm text-gray-500">All outreach events</p>
           </div>
-          {pagination.pages > 1 ? (
-            <div className="mt-6 flex items-center justify-center gap-2">
-              <button disabled={pagination.page <= 1} onClick={() => fetchEvents(pagination.page - 1)} className="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 disabled:opacity-40 hover:bg-gray-50">Prev</button>
-              <span className="text-xs text-gray-500">Page {pagination.page} of {pagination.pages}</span>
-              <button disabled={pagination.page >= pagination.pages} onClick={() => fetchEvents(pagination.page + 1)} className="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 disabled:opacity-40 hover:bg-gray-50">Next</button>
+          <div className="hidden md:block">
+            <FilterBar
+              searchValue={filters.search}
+              onSearchChange={(v) => handleFilter("search", v)}
+              searchPlaceholder="Search outreaches…"
+              selects={[
+                {
+                  key: "status",
+                  value: filters.status,
+                  onChange: (v) => handleFilter("status", v),
+                  placeholder: "All Status",
+                  options: [
+                    { label: "Planned", value: "planned" },
+                    { label: "Ongoing", value: "ongoing" },
+                    { label: "Completed", value: "completed" },
+                    { label: "Cancelled", value: "cancelled" },
+                  ],
+                },
+                {
+                  key: "type",
+                  value: filters.type,
+                  onChange: (v) => handleFilter("type", v),
+                  placeholder: "All Types",
+                  options: Object.entries(TYPE_LABELS).map(([k, v]) => ({ label: v, value: k })),
+                },
+              ]}
+            />
+          </div>
+          <div className="md:hidden">
+            <MobileFilterBar
+              searchValue={filters.search}
+              onSearchChange={(v) => handleFilter("search", v)}
+              searchPlaceholder="Search outreaches…"
+              filters={[
+                {
+                  key: "status",
+                  label: "Status",
+                  value: filters.status,
+                  defaultValue: "",
+                  options: [
+                    { label: "All Status", value: "" },
+                    { label: "Planned", value: "planned" },
+                    { label: "Ongoing", value: "ongoing" },
+                    { label: "Completed", value: "completed" },
+                    { label: "Cancelled", value: "cancelled" },
+                  ],
+                },
+                {
+                  key: "type",
+                  label: "Type",
+                  value: filters.type,
+                  defaultValue: "",
+                  options: [{ label: "All Types", value: "" }, ...Object.entries(TYPE_LABELS).map(([k, v]) => ({ label: v, value: k }))],
+                },
+              ]}
+              onApply={(pending) => {
+                const next = { ...filters, ...pending };
+                setFilters(next);
+                const p = { ...next }; Object.keys(p).forEach((k) => { if (!p[k]) delete p[k]; });
+                fetchEvents(1, p);
+              }}
+            />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 md:p-6 lg:p-8">
+            {[0,1,2,3,4,5].map(i => <div key={i} className="h-52 rounded-2xl border border-gray-200 bg-gray-100 animate-pulse" />)}
+          </div>
+        ) : events.length === 0 ? (
+          <div className="p-4 md:p-6 lg:p-8">
+            <EmptyState
+              illustration="outreach"
+              title="No outreaches"
+              description="Plan your first outreach to start reaching your community."
+              actionLabel={canCreate ? "New Outreach" : null}
+              onAction={canCreate ? () => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); } : undefined}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 md:p-6 lg:p-8">
+              {events.map((event) => (
+                <EventCard
+                  key={event._id}
+                  event={event}
+                  onEdit={(e) => { setEditingEvent(e); setFormMode("edit"); setFormOpen(true); }}
+                  onDelete={(e) => setDeleteTarget(e)}
+                  onView={(e) => toPage("outreach-event-details", { id: e._id })}
+                  canWrite={canUpdate}
+                  canDelete={canDelete}
+                />
+              ))}
             </div>
-          ) : null}
-        </>
-      )}
+            {pagination.pages > 1 ? (
+              <div className="p-4 md:p-6 lg:p-8 flex items-center justify-center gap-2">
+                <button disabled={pagination.page <= 1} onClick={() => fetchEvents(pagination.page - 1)} className="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 disabled:opacity-40 hover:bg-gray-50">Prev</button>
+                <span className="text-xs text-gray-500">Page {pagination.page} of {pagination.pages}</span>
+                <button disabled={pagination.page >= pagination.pages} onClick={() => fetchEvents(pagination.page + 1)} className="h-9 px-4 rounded-lg border border-gray-200 text-sm text-gray-700 disabled:opacity-40 hover:bg-gray-50">Next</button>
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
 
       <EventFormModal open={formOpen} mode={formMode} initialData={editingEvent} members={members} teams={teams} onClose={() => setFormOpen(false)} onSaved={handleSaved} />
       <DeleteModal open={!!deleteTarget} eventTitle={deleteTarget?.title || ""} onCancel={() => setDeleteTarget(null)} onConfirm={handleDeleteConfirm} deleting={deleting} />

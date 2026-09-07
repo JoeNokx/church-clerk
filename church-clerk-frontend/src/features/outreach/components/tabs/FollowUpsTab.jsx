@@ -7,6 +7,8 @@ import {
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
+import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
 const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500";
 const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500 bg-white";
@@ -293,6 +295,9 @@ export default function FollowUpsTab() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("today"); // "today" | "overdue" | "upcoming" | "all"
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
 
   const [prospects, setProspects] = useState([]);
   const [events, setEvents] = useState([]);
@@ -312,13 +317,13 @@ export default function FollowUpsTab() {
   const fetchFollowUps = useCallback(async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
-      const params = { page, limit: 25, status: filterStatus || undefined, ...overrides };
+      const params = { page, limit: 25, status: filterStatus || undefined, search: filterSearch || undefined, dateFrom: filterDateFrom || undefined, dateTo: filterDateTo || undefined, ...overrides };
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const res = await getAllFollowUps(params);
       setFollowUps(res.data?.data || []);
       setPagination(res.data?.pagination || { page: 1, total: 0, pages: 1 });
     } catch { setFollowUps([]); } finally { setLoading(false); }
-  }, [filterStatus]);
+  }, [filterStatus, filterSearch, filterDateFrom, filterDateTo]);
 
   useEffect(() => {
     loadStats();
@@ -370,22 +375,6 @@ export default function FollowUpsTab() {
         ) : null}
       </div>
 
-      {/* Filter bar — show for "all" view */}
-      {view === "all" ? (
-        <div className="flex gap-2 mb-3">
-          <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); fetchFollowUps(1, { status: e.target.value || undefined }); }} className="h-9 rounded-lg border border-gray-200 px-2 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-white">
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="contacted">Contacted</option>
-            <option value="no-response">No Response</option>
-            <option value="rescheduled">Rescheduled</option>
-            <option value="completed">Completed</option>
-            <option value="not-interested">Not Interested</option>
-            <option value="connected-to-church">Connected to Church</option>
-          </select>
-        </div>
-      ) : null}
-
       <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
@@ -394,7 +383,64 @@ export default function FollowUpsTab() {
             </div>
             <div className="text-gray-500 text-xs">Track and manage follow-up contacts</div>
           </div>
-          {view === "all" ? <span className="text-gray-500 text-xs">{pagination.total} total</span> : null}
+          <>
+            <FilterBar
+              searchValue={filterSearch}
+              onSearchChange={(v) => { setFilterSearch(v); fetchFollowUps(1, { search: v || undefined }); }}
+              searchPlaceholder="Search prospect or assigned to…"
+              selects={[
+                {
+                  key: "status",
+                  value: filterStatus,
+                  onChange: (v) => { setFilterStatus(v); fetchFollowUps(1, { status: v || undefined }); },
+                  placeholder: "All Statuses",
+                  options: [
+                    { label: "Pending", value: "pending" },
+                    { label: "Contacted", value: "contacted" },
+                    { label: "No Response", value: "no-response" },
+                    { label: "Rescheduled", value: "rescheduled" },
+                    { label: "Completed", value: "completed" },
+                    { label: "Not Interested", value: "not-interested" },
+                    { label: "Connected to Church", value: "connected-to-church" },
+                  ],
+                },
+              ]}
+              dateFrom={filterDateFrom}
+              dateTo={filterDateTo}
+              onDateApply={(from, to) => { setFilterDateFrom(from); setFilterDateTo(to); fetchFollowUps(1, { dateFrom: from || undefined, dateTo: to || undefined }); }}
+            />
+            <MobileFilterBar
+              searchValue={filterSearch}
+              onSearchChange={(v) => { setFilterSearch(v); fetchFollowUps(1, { search: v || undefined }); }}
+              searchPlaceholder="Search prospect or assigned to…"
+              dateFrom={filterDateFrom}
+              dateTo={filterDateTo}
+              onDateApply={(from, to) => { setFilterDateFrom(from); setFilterDateTo(to); fetchFollowUps(1, { dateFrom: from || undefined, dateTo: to || undefined }); }}
+              filters={[
+                {
+                  key: "status",
+                  label: "Status",
+                  value: filterStatus,
+                  defaultValue: "",
+                  options: [
+                    { label: "All Statuses", value: "" },
+                    { label: "Pending", value: "pending" },
+                    { label: "Contacted", value: "contacted" },
+                    { label: "No Response", value: "no-response" },
+                    { label: "Rescheduled", value: "rescheduled" },
+                    { label: "Completed", value: "completed" },
+                    { label: "Not Interested", value: "not-interested" },
+                    { label: "Connected to Church", value: "connected-to-church" },
+                  ],
+                },
+              ]}
+              onApply={(pending) => {
+                const v = pending.status || "";
+                setFilterStatus(v);
+                fetchFollowUps(1, { status: v || undefined });
+              }}
+            />
+          </>
         </div>
 
         {loading && view === "all" ? (

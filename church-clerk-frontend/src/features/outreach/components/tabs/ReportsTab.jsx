@@ -3,6 +3,8 @@ import {
   getOutreachEvents, getAllProspects, getAllFollowUps, getOutreachTeams, getTeamStats,
 } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
+import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
 // ── Helpers ───────────────────────────────────────────────────────
 function fmtDate(v) {
@@ -71,7 +73,6 @@ function exportCSV(filename, headers, rows) {
 }
 
 // ── UI atoms ──────────────────────────────────────────────────────
-const INP = "h-9 rounded-lg border border-gray-200 px-3 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-white";
 
 function ReportSelector({ active, onChange }) {
   const reports = [
@@ -315,31 +316,34 @@ export default function ReportsTab() {
       {/* Report type selector */}
       <ReportSelector active={reportType} onChange={setReportType} />
 
-      {/* Date range filter */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">From</label>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={INP} />
-        </div>
-        <div>
-          <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">To</label>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={INP} />
-        </div>
-        {(dateFrom || dateTo) ? (
-          <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50">Clear</button>
-        ) : null}
-        <div className="ml-auto text-xs text-gray-400">
-          {dateFrom || dateTo ? `Filtered: ${dateFrom || "…"} → ${dateTo || "…"}` : "All dates"}
-        </div>
-      </div>
+      {/* Reports container with header + date range filter */}
+      <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">Reports</div>
+            <div className="text-gray-500 text-xs">Filter outreach reports by date range</div>
+          </div>
 
-      {loading ? (
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[0,1,2,3].map(i => <div key={i} className="h-16 rounded-lg bg-gray-100 animate-pulse" />)}</div>
-          <div className="h-64 rounded-xl bg-gray-100 animate-pulse" />
+          <FilterBar
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); }}
+          />
+
+          <MobileFilterBar
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); }}
+          />
         </div>
-      ) : (
-        <>
+
+        {loading ? (
+          <div className="space-y-3 p-4 md:p-6 lg:p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[0,1,2,3].map(i => <div key={i} className="h-16 rounded-lg bg-gray-100 animate-pulse" />)}</div>
+            <div className="h-64 rounded-xl bg-gray-100 animate-pulse" />
+          </div>
+        ) : (
+          <div className="space-y-5 p-4 md:p-6 lg:p-8">
           {/* ── Events Report ── */}
           {reportType === "events" ? (
             <>
@@ -549,8 +553,9 @@ export default function ReportsTab() {
               </TableShell>
             </>
           ) : null}
-        </>
+        </div>
       )}
+      </div>
     </div>
   );
 }
