@@ -353,34 +353,34 @@ export default function ReportsTab() {
               ]} />
               <TableShell title="Outreach Events" count={filteredEvents.length} onExport={handleExportEvents}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Title</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Type</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Date</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Location</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide text-right">Reached</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide text-right hidden lg:table-cell">Decisions</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden xl:table-cell">Coordinator</th>
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Type</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Location</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 text-right">Reached</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 text-right hidden lg:table-cell">Decisions</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden xl:table-cell">Coordinator</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {filteredEvents.length === 0 ? (
-                        <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">No outreach events in this range</td></tr>
+                        <tr><td colSpan={8} className="max-md:px-4 py-10 text-center text-sm text-gray-400 px-4 md:px-6">No outreach events in this range</td></tr>
                       ) : filteredEvents.map((e) => (
-                        <tr key={e._id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-900 truncate max-w-[16rem]">{e.title}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell">{TYPE_LABELS[e.type] || e.type?.replace(/-/g, " ") || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmtDate(e.date)}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell truncate max-w-[12rem]">{e.location || "—"}</td>
-                          <td className="px-4 py-3">
+                        <tr key={e._id} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 truncate max-w-[16rem]">{e.title}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{TYPE_LABELS[e.type] || e.type?.replace(/-/g, " ") || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(e.date)}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell truncate max-w-[12rem]">{e.location || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${STATUS_STYLES[e.status] || "bg-gray-100 text-gray-600"}`}>{e.status}</span>
                           </td>
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-right tabular-nums">{e.prospectCount || 0}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-green-700 text-right tabular-nums hidden lg:table-cell">{e.decisionCount || 0}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden xl:table-cell truncate max-w-[12rem]">
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums font-semibold">{e.prospectCount || 0}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums hidden lg:table-cell font-semibold text-green-700">{e.decisionCount || 0}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden xl:table-cell truncate max-w-[12rem]">
                             {e.coordinator ? (Array.isArray(e.coordinator) ? e.coordinator.map((c) => `${c.firstName} ${c.lastName}`).join(", ") : `${e.coordinator.firstName} ${e.coordinator.lastName}`) : "—"}
                           </td>
                         </tr>
@@ -405,38 +405,38 @@ export default function ReportsTab() {
               ]} />
               <TableShell title="People Reached" count={filteredProspects.length} onExport={handleExportPeople}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Phone</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Community</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Stage</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">How Reached</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Outreach</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden xl:table-cell">Recorded</th>
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Phone</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Community</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Stage</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">How Reached</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Outreach</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden xl:table-cell">Recorded</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {filteredProspects.length === 0 ? (
-                        <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">No people recorded in this range</td></tr>
+                        <tr><td colSpan={7} className="max-md:px-4 py-10 text-center text-sm text-gray-400 px-4 md:px-6">No people recorded in this range</td></tr>
                       ) : filteredProspects.map((p) => (
-                        <tr key={p._id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                          <td className="px-4 py-3">
+                        <tr key={p._id} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
                             <div className="text-sm font-semibold text-gray-900">{p.firstName} {p.lastName}</div>
                             {p.acceptedChrist ? <span className="text-[10px] font-bold text-green-600">✓ Saved</span> : null}
                             {p.convertedToMember ? <span className="ml-1 text-[10px] font-bold text-emerald-600">Member</span> : null}
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell whitespace-nowrap">{p.phone || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell truncate max-w-[10rem]">{p.community || p.address || "—"}</td>
-                          <td className="px-4 py-3">
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{p.phone || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell truncate max-w-[10rem]">{p.community || p.address || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className="inline-flex rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-[11px] font-semibold">
                               {STAGE_LABELS[p.stage] || p.stage || "—"}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden lg:table-cell">{HOW_REACHED_LABELS[p.howReached] || p.howReached || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden lg:table-cell truncate max-w-[12rem]">{p.outreachEvent?.title || "Personal"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-400 hidden xl:table-cell whitespace-nowrap">{fmtDate(p.createdAt)}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">{HOW_REACHED_LABELS[p.howReached] || p.howReached || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell truncate max-w-[12rem]">{p.outreachEvent?.title || "Personal"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden xl:table-cell">{fmtDate(p.createdAt)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -459,37 +459,37 @@ export default function ReportsTab() {
               ]} />
               <TableShell title="Follow-Ups" count={filteredFollowUps.length} onExport={handleExportFollowUps}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prospect</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Scheduled</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Type</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Assigned To</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Outreach</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden xl:table-cell">Next Follow-Up</th>
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Scheduled</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Type</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Assigned To</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Outreach</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden xl:table-cell">Next Follow-Up</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {filteredFollowUps.length === 0 ? (
-                        <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">No follow-ups in this range</td></tr>
+                        <tr><td colSpan={7} className="max-md:px-4 py-10 text-center text-sm text-gray-400 px-4 md:px-6">No follow-ups in this range</td></tr>
                       ) : filteredFollowUps.map((f) => (
-                        <tr key={f._id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                        <tr key={f._id} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
                             {f.prospect?.firstName} {f.prospect?.lastName || ""}
                             {f.prospect?.phone ? <div className="text-[11px] text-gray-400 font-normal">{f.prospect.phone}</div> : null}
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell whitespace-nowrap">{fmtDate(f.scheduledDate)}</td>
-                          <td className="px-4 py-3">
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{fmtDate(f.scheduledDate)}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${f.status === "completed" ? "bg-green-100 text-green-700" : f.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"}`}>
                               {FU_STATUS_LABELS[f.status] || f.status || "—"}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell">{TYPE_LABELS[f.type] || f.type || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell">{f.assignedTo ? `${f.assignedTo.firstName} ${f.assignedTo.lastName}` : "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden lg:table-cell truncate max-w-[12rem]">{f.outreachEvent?.title || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-400 hidden xl:table-cell whitespace-nowrap">{f.nextFollowUpDate ? fmtDate(f.nextFollowUpDate) : "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{TYPE_LABELS[f.type] || f.type || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{f.assignedTo ? `${f.assignedTo.firstName} ${f.assignedTo.lastName}` : "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell truncate max-w-[12rem]">{f.outreachEvent?.title || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden xl:table-cell">{f.nextFollowUpDate ? fmtDate(f.nextFollowUpDate) : "—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -511,26 +511,26 @@ export default function ReportsTab() {
               ]} />
               <TableShell title="Top Participating Members" count={teamParticipation.length} onExport={handleExportTeams}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">#</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Member</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Phone</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide text-right">Participations</th>
-                        <th className="px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Outreaches Attended</th>
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">#</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Member</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Phone</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 text-right">Participations</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Outreaches Attended</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {teamParticipation.length === 0 ? (
-                        <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-gray-400">No team participation data yet</td></tr>
+                        <tr><td colSpan={5} className="max-md:px-4 py-10 text-center text-sm text-gray-400 px-4 md:px-6">No team participation data yet</td></tr>
                       ) : teamParticipation.map((p, i) => (
-                        <tr key={p.memberId} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                          <td className="px-4 py-3 text-xs font-semibold text-gray-400">{i + 1}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">{p.name}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell">{p.phone || "—"}</td>
-                          <td className="px-4 py-3 text-sm font-bold text-blue-700 text-right tabular-nums">{p.participationCount}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell">
+                        <tr key={p.memberId} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 font-semibold text-gray-400">{i + 1}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 font-semibold">{p.name}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{p.phone || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums font-bold text-blue-700">{p.participationCount}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">
                             <div className="space-y-0.5 max-w-[20rem]">
                               {p.events.slice(0, 3).map((e) => (
                                 <div key={e.id} className="truncate">

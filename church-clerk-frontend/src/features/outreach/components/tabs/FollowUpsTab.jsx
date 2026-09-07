@@ -1,12 +1,12 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
-import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import {
   getFollowUpsStats, getAllFollowUps, createFollowUp, updateFollowUp, deleteFollowUp,
   getAllProspects, getOutreachEvents,
 } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
 
 const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500";
 const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500 bg-white";
@@ -171,6 +171,74 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
   );
 }
 
+// ── Follow-Up Details Modal ───────────────────────────────────────
+export function FollowUpDetailsModal({ open, followUp, onClose }) {
+  if (!open || !followUp) return null;
+
+  const statusKey = followUp.status || followUp.outcome || "";
+  const dateVal = followUp.scheduledDate || followUp.followUpDate;
+  const prospectName = `${followUp.prospect?.firstName || ""} ${followUp.prospect?.lastName || ""}`.trim() || "—";
+
+  const fields = [
+    { label: "Prospect", value: prospectName },
+    { label: "Phone", value: followUp.prospect?.phone || "—" },
+    { label: "Scheduled Date", value: fmtDate(dateVal) },
+    { label: "Method", value: TYPE_LABELS[followUp.type] || followUp.type || "—" },
+    { label: "Status", value: null, badge: true },
+    { label: "Assigned To", value: followUp.assignedTo ? `${followUp.assignedTo.firstName} ${followUp.assignedTo.lastName}` : "—" },
+    { label: "Outreach Event", value: followUp.outreachEvent?.title || "—" },
+    { label: "Next Follow-Up", value: followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "—" },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+      <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
+          <h2 className="font-semibold text-gray-900 text-base">Follow-Up Details</h2>
+          <button onClick={onClose} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
+          {/* Prospect header */}
+          <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 font-bold text-sm">
+              {(prospectName[0] || "?").toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="font-semibold text-gray-900 text-sm truncate">{prospectName}</div>
+              {followUp.prospect?.phone ? <div className="text-xs text-gray-400">{followUp.prospect.phone}</div> : null}
+            </div>
+          </div>
+
+          {/* Fields grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {fields.map((f) => (
+              <div key={f.label}>
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{f.label}</div>
+                <div className="mt-0.5 text-sm text-gray-800">
+                  {f.badge ? <StatusBadge status={statusKey} /> : f.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Notes */}
+          {followUp.notes ? (
+            <div>
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Notes / Outcome</div>
+              <div className="text-sm text-gray-700 whitespace-pre-wrap rounded-lg bg-gray-50 border border-gray-100 p-3">{followUp.notes}</div>
+            </div>
+          ) : null}
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4 shrink-0">
+          <button onClick={onClose} className="h-11 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Follow-Up Row ─────────────────────────────────────────────────
 const TYPE_LABELS = {
   call: "Call", whatsapp: "WhatsApp", visit: "Visit", email: "Email", "in-person": "In-Person", text: "SMS", other: "Other",
@@ -178,8 +246,8 @@ const TYPE_LABELS = {
 
 function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDelete }) {
   return (
-    <tr className={`border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors ${isOverdue ? "bg-red-50/40 hover:bg-red-50" : ""}`}>
-      <td className="px-4 py-3">
+    <tr className={`max-md:text-xs text-gray-700 text-sm ${isOverdue ? "bg-red-50/40" : ""}`}>
+      <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
         <div className="flex items-center gap-2.5">
           <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${isOverdue ? "bg-red-100 text-red-600" : "bg-indigo-100 text-indigo-700"}`}>
             {fu.type === "call" ? "📞" : fu.type === "whatsapp" ? "💬" : fu.type === "visit" ? "🚶" : fu.type === "email" ? "✉" : "📋"}
@@ -195,27 +263,18 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
           </div>
         </div>
       </td>
-      <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell whitespace-nowrap">{fmtDate(fu.scheduledDate)}</td>
-      <td className="px-4 py-3"><StatusBadge status={fu.status} /></td>
-      <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell truncate max-w-[10rem]">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{fmtDate(fu.scheduledDate)}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6"><StatusBadge status={fu.status} /></td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell truncate max-w-[10rem]">
         {fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "—"}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-500 hidden lg:table-cell truncate max-w-[14rem]">{fu.outreachEvent?.title || "—"}</td>
-      <td className="px-4 py-3 text-xs text-gray-400 hidden xl:table-cell max-w-[16rem] truncate">{fu.notes || "—"}</td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1 justify-end">
-          <button onClick={() => onView(fu)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">View</button>
-          {canWrite ? (
-            <button onClick={() => onEdit(fu)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            </button>
-          ) : null}
-          {canDelete ? (
-            <button onClick={() => onDelete(fu)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-          ) : null}
-        </div>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell truncate max-w-[14rem]">{fu.outreachEvent?.title || "—"}</td>
+      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+        <TableKebabMenu items={[
+          { label: "View", onClick: () => onView(fu) },
+          canWrite && { label: "Edit", onClick: () => onEdit(fu) },
+          canDelete && { label: "Delete", onClick: () => onDelete(fu), danger: true },
+        ]} />
       </td>
     </tr>
   );
@@ -227,13 +286,12 @@ export default function FollowUpsTab() {
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
-  const { toPage } = useDashboardNavigator();
 
   const [stats, setStats] = useState(null);
   const [followUps, setFollowUps] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("overdue"); // "overdue" | "today" | "upcoming" | "all"
+  const [view, setView] = useState("today"); // "today" | "overdue" | "upcoming" | "all"
   const [filterStatus, setFilterStatus] = useState("");
 
   const [prospects, setProspects] = useState([]);
@@ -243,6 +301,7 @@ export default function FollowUpsTab() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
   const [editingFU, setEditingFU] = useState(null);
+  const [detailsFU, setDetailsFU] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -287,8 +346,8 @@ export default function FollowUpsTab() {
   };
 
   const VIEW_TABS = [
-    { key: "overdue", label: "Overdue", count: stats?.overdue || 0, color: "text-red-600" },
     { key: "today", label: "Today", count: stats?.dueToday || 0, color: "text-amber-600" },
+    { key: "overdue", label: "Overdue", count: stats?.overdue || 0, color: "text-red-600" },
     { key: "upcoming", label: "Next 7 Days", count: stats?.upcoming || 0, color: "text-blue-600" },
     { key: "all", label: "All", count: pagination.total, color: "text-gray-600" },
   ];
@@ -327,45 +386,61 @@ export default function FollowUpsTab() {
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-700">
-            {view === "overdue" ? "Overdue Follow-Ups" : view === "today" ? "Due Today" : view === "upcoming" ? "Next 7 Days" : "All Follow-Ups"}
-          </span>
-          {view === "all" ? <span className="text-xs text-gray-400">{pagination.total} total</span> : null}
+      <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">
+              {view === "today" ? "Due Today" : view === "overdue" ? "Overdue Follow-Ups" : view === "upcoming" ? "Next 7 Days" : "All Follow-Ups"}
+            </div>
+            <div className="text-gray-500 text-xs">Track and manage follow-up contacts</div>
+          </div>
+          {view === "all" ? <span className="text-gray-500 text-xs">{pagination.total} total</span> : null}
         </div>
 
         {loading && view === "all" ? (
-          <div className="p-4 space-y-3">
-            {[0,1,2,3].map(i => <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />)}
+          <div className="overflow-x-auto animate-pulse">
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left font-semibold text-gray-500 text-xs">
+                  {[0,1,2,3,4,5].map(i => <th key={i} className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {[0,1,2,3].map(i => (
+                  <tr key={i} className="text-sm">
+                    <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="flex items-center gap-3"><div className="h-8 w-8 rounded-lg bg-gray-200" /><div className="h-4 w-24 rounded bg-gray-200" /></div></td>
+                    {[0,1,2,3,4].map(j => <td key={j} className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : overdueItems.length === 0 ? (
           <EmptyState
             compact
             illustration="followUps"
-            title={view === "overdue" ? "No overdue follow-ups" : view === "today" ? "No follow-ups today" : "No upcoming follow-ups"}
+            title={view === "today" ? "No follow-ups today" : view === "overdue" ? "No overdue follow-ups" : "No upcoming follow-ups"}
             description={view === "overdue" ? "You're all caught up." : "Schedule follow-ups to stay connected with prospects."}
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prospect</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Scheduled</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Assigned To</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Outreach</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden xl:table-cell">Notes</th>
-                  <th className="px-4 py-3" />
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Scheduled</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Assigned To</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Outreach</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {overdueItems.map((fu) => (
                   <FollowUpRow
                     key={fu._id} fu={fu}
                     isOverdue={view === "overdue" || isOverdue(fu)}
-                    onView={(x) => toPage("prospect-details", { id: x.prospect?._id, from: "followups" })}
+                    onView={(x) => setDetailsFU(x)}
                     onEdit={(x) => { setEditingFU(x); setFormMode("edit"); setFormOpen(true); }}
                     onDelete={(x) => setDeleteTarget(x)}
                     canWrite={canWrite} canDelete={canDelete}
@@ -377,10 +452,10 @@ export default function FollowUpsTab() {
         )}
 
         {view === "all" && pagination.pages > 1 ? (
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-center gap-2">
-            <button disabled={pagination.page <= 1} onClick={() => fetchFollowUps(pagination.page - 1)} className="h-8 px-3 rounded-lg border border-gray-200 text-xs text-gray-700 disabled:opacity-40 hover:bg-gray-50">Prev</button>
-            <span className="text-xs text-gray-400">Page {pagination.page} of {pagination.pages}</span>
-            <button disabled={pagination.page >= pagination.pages} onClick={() => fetchFollowUps(pagination.page + 1)} className="h-8 px-3 rounded-lg border border-gray-200 text-xs text-gray-700 disabled:opacity-40 hover:bg-gray-50">Next</button>
+          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+            <button disabled={pagination.page <= 1} onClick={() => fetchFollowUps(pagination.page - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+            <div className="text-gray-600 text-sm">Page {pagination.page}</div>
+            <button disabled={pagination.page >= pagination.pages} onClick={() => fetchFollowUps(pagination.page + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
           </div>
         ) : null}
       </div>
@@ -390,6 +465,12 @@ export default function FollowUpsTab() {
         prospects={prospects} events={events} members={members}
         onClose={() => setFormOpen(false)}
         onSaved={() => { setFormOpen(false); loadStats(); fetchFollowUps(pagination.page); }}
+      />
+
+      <FollowUpDetailsModal
+        open={!!detailsFU}
+        followUp={detailsFU}
+        onClose={() => setDetailsFU(null)}
       />
 
       {deleteTarget ? (

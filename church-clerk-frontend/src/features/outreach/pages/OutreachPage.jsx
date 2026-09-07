@@ -43,6 +43,15 @@ export default function OutreachPage() {
   const [overdueCount, setOverdueCount] = useState(0);
   const focusTeamId = useMemo(() => new URLSearchParams(location.search).get("teamId") || null, [location.search]);
 
+  // Sync tab when URL defaultTab changes (e.g. navigating back from a details page)
+  useEffect(() => {
+    const defaultTab = new URLSearchParams(location.search).get("defaultTab");
+    const validTabs = ["overview", "outreaches", "people", "followups", "teams"];
+    if (validTabs.includes(defaultTab) && defaultTab !== tab) {
+      setTab(defaultTab);
+    }
+  }, [location.search]);
+
   useEffect(() => {
     getFollowUpsStats()
       .then((r) => setOverdueCount(r?.data?.data?.overdue || 0))
@@ -79,7 +88,7 @@ export default function OutreachPage() {
         tabs={buildTabs(overdueCount)}
         activeTab={tab}
         onChange={setTab}
-        stickyBg="bg-slate-50"
+        sticky={false}
         className="mt-5"
       />
 

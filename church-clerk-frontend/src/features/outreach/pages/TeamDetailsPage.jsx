@@ -9,6 +9,7 @@ import {
   deleteOutreachTeam,
 } from "../services/outreach.api.js";
 import { getMembers } from "../../member/services/member.api.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 const ROLE_OPTIONS = [
   { value: "team-leader", label: "Team Leader" },
@@ -160,15 +161,16 @@ export default function TeamDetailsPage() {
 
       {/* Header Card */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-4 min-w-0">
+        {/* Name + actions row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="h-12 w-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
             </div>
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-bold text-gray-900 text-xl md:text-2xl">{team.name}</h1>
-                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${TEAM_STATUS_STYLES[team.status] || "bg-gray-100 text-gray-500"}`}>
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-gray-900 text-xl md:text-2xl truncate">{team.name}</h1>
+                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0 ${TEAM_STATUS_STYLES[team.status] || "bg-gray-100 text-gray-500"}`}>
                   {team.status === "inactive" ? "Inactive" : "Active"}
                 </span>
               </div>
@@ -176,25 +178,24 @@ export default function TeamDetailsPage() {
                 <span>{members.length} {members.length === 1 ? "member" : "members"}</span>
                 {team.dateCreated ? <span>Created {fmtDate(team.dateCreated)}</span> : null}
               </div>
-              {team.description ? (
-                <>
-                  <hr className="my-2 border-gray-100" />
-                  <p className="text-sm text-gray-600 leading-relaxed">{team.description}</p>
-                </>
-              ) : null}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {canWrite ? (
               <button onClick={() => toPage("outreach", { ...backParams, editTeamId: team._id })} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">Edit</button>
             ) : null}
             {canDelete ? (
-              <button onClick={() => setDeleteOpen(true)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </button>
+              <button onClick={() => setDeleteOpen(true)} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-red-600 hover:bg-red-50 whitespace-nowrap">Delete</button>
             ) : null}
           </div>
         </div>
+        {/* Description below */}
+        {team.description ? (
+          <>
+            <hr className="my-3 border-gray-100" />
+            <p className="text-sm text-gray-600 leading-relaxed">{team.description}</p>
+          </>
+        ) : null}
       </div>
 
       {/* Tabs */}
@@ -222,26 +223,26 @@ export default function TeamDetailsPage() {
               No members in this team yet
             </div>
           ) : (
-            <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Member</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Phone</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Email</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Role</th>
-                      <th className="px-4 py-3" />
+                <table className="min-w-full">
+                  <thead className="bg-slate-100">
+                    <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Member</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Phone</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Email</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     {members.map((m, i) => {
                       const mem = typeof m.member === "object" ? m.member : null;
                       const name = mem ? `${mem.firstName} ${mem.lastName || ""}`.trim() : String(m.member);
                       const memberId = mem?._id || (typeof m.member === "string" ? m.member : null);
                       return (
-                        <tr key={i} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                          <td className="px-4 py-3">
+                        <tr key={i} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center gap-2.5">
                               <Avatar name={name} size="sm" />
                               <div>
@@ -252,24 +253,17 @@ export default function TeamDetailsPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell">{mem?.phoneNumber || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell">{mem?.email || "—"}</td>
-                          <td className="px-4 py-3">
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{mem?.phoneNumber || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{mem?.email || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${m.role === "team-leader" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                               {ROLE_LABELS[m.role] || m.role || "Volunteer"}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1 justify-end">
-                              {memberId ? (
-                                <button
-                                  onClick={() => toPage("member-details", { id: memberId, from: "team" }, { state: { from: "team", teamId, fromTab } })}
-                                  className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap"
-                                >
-                                  View
-                                </button>
-                              ) : null}
-                            </div>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            <TableKebabMenu items={[
+                              memberId && { label: "View", onClick: () => toPage("member-details", { id: memberId, from: "team" }, { state: { from: "team", teamId, fromTab } }) }
+                            ]} />
                           </td>
                         </tr>
                       );
@@ -290,33 +284,33 @@ export default function TeamDetailsPage() {
               This team has not been assigned to any outreach events yet.
             </div>
           ) : (
-            <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Outreach</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Date</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Location</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                <table className="min-w-full">
+                  <thead className="bg-slate-100">
+                    <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Date</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Location</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     {events.map((ev) => (
                       <tr
                         key={ev._id}
-                        className="border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer"
+                        className="max-md:text-xs text-gray-700 text-sm cursor-pointer"
                         onClick={() => toPage("outreach-event-details", { id: ev._id, from: "teams" })}
                       >
-                        <td className="px-4 py-3">
+                        <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
                           <div className="text-sm font-semibold text-gray-900">{ev.title}</div>
                           {ev.type ? <div className="text-[11px] text-gray-400 capitalize mt-0.5">{ev.type.replace(/-/g, " ")}</div> : null}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell whitespace-nowrap">
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">
                           {fmtDate(ev.date)}{ev.endDate ? ` – ${fmtDate(ev.endDate)}` : ""}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 hidden md:table-cell">{ev.location || "—"}</td>
-                        <td className="px-4 py-3">
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{ev.location || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${EVENT_STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
                             {ev.status}
                           </span>

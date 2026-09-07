@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
 import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import {
   getAllProspects, createProspect, createProspectDirect, updateProspectDirect, deleteProspectDirect,
@@ -546,8 +547,8 @@ export function ConvertModal({ open, prospect, onClose, onDone }) {
 // ── Person Row ────────────────────────────────────────────────────
 function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canDelete }) {
   return (
-    <tr className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-      <td className="px-4 py-3">
+    <tr className="max-md:text-xs text-gray-700 text-sm">
+      <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 text-[10px] font-bold select-none">
             {(person.firstName?.[0] || "?").toUpperCase()}{(person.lastName?.[0] || "").toUpperCase()}
@@ -562,25 +563,17 @@ function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canD
           </div>
         </div>
       </td>
-      <td className="px-4 py-3 text-xs text-gray-600 hidden sm:table-cell whitespace-nowrap">{person.phone || "—"}</td>
-      <td className="px-4 py-3 text-xs text-gray-500 hidden md:table-cell truncate max-w-[12rem]">{person.community || person.address || "—"}</td>
-      <td className="px-4 py-3 text-xs text-gray-500 hidden lg:table-cell truncate max-w-[14rem]">{person.outreachEvent?.title || "—"}</td>
-      <td className="px-4 py-3 text-xs text-gray-400 hidden md:table-cell whitespace-nowrap">{fmtDate(person.createdAt)}</td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1 justify-end">
-          <button onClick={() => onView(person)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">View</button>
-          <button onClick={() => onConvert(person)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 whitespace-nowrap">Connect</button>
-          {canWrite ? (
-            <button onClick={() => onEdit(person)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            </button>
-          ) : null}
-          {canDelete ? (
-            <button onClick={() => onDelete(person)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-          ) : null}
-        </div>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">{person.phone || <span className="text-gray-400 italic">Not Specified</span>}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell truncate max-w-[12rem]">{person.community || person.address || <span className="text-gray-400 italic">Not Specified</span>}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell truncate max-w-[14rem]">{person.outreachEvent?.title || "—"}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">{fmtDate(person.createdAt)}</td>
+      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+        <TableKebabMenu items={[
+          { label: "View", onClick: () => onView(person) },
+          { label: "Connect", onClick: () => onConvert(person) },
+          canWrite && { label: "Edit", onClick: () => onEdit(person) },
+          canDelete && { label: "Delete", onClick: () => onDelete(person), danger: true },
+        ]} />
       </td>
     </tr>
   );
@@ -659,14 +652,31 @@ export default function PeopleReachedTab() {
         ) : null}
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-700">People Reached</span>
-          <span className="text-xs text-gray-400">{pagination.total} total</span>
+      <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">People Reached</div>
+            <div className="text-gray-500 text-xs">All people recorded during outreaches</div>
+          </div>
+          <span className="text-gray-500 text-xs">{pagination.total} total</span>
         </div>
         {loading ? (
-          <div className="p-4 space-y-3">
-            {[0,1,2,3,4].map(i => <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />)}
+          <div className="overflow-x-auto animate-pulse">
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left font-semibold text-gray-500 text-xs">
+                  {[0,1,2,3,4,5].map(i => <th key={i} className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {[0,1,2,3,4].map(i => (
+                  <tr key={i} className="text-sm">
+                    <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="flex items-center gap-3"><div className="h-11 rounded-full bg-gray-200 w-11 md:w-12" /><div className="h-4 w-24 rounded bg-gray-200" /></div></td>
+                    {[0,1,2,3,4].map(j => <td key={j} className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : prospects.length === 0 ? (
           (() => {
@@ -685,18 +695,18 @@ export default function PeopleReachedTab() {
           })()
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Person</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Phone</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Area</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Outreach</th>
-                  <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Recorded</th>
-                  <th className="px-4 py-3" />
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden sm:table-cell">Phone</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Area</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Outreach</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Recorded</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {prospects.map((p) => (
                   <PersonRow
                     key={p._id} person={p}
@@ -712,10 +722,10 @@ export default function PeopleReachedTab() {
           </div>
         )}
         {pagination.pages > 1 ? (
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-center gap-2">
-            <button disabled={pagination.page <= 1} onClick={() => fetchProspects(pagination.page - 1)} className="h-8 px-3 rounded-lg border border-gray-200 text-xs text-gray-700 disabled:opacity-40 hover:bg-gray-50">Prev</button>
-            <span className="text-xs text-gray-400">Page {pagination.page} of {pagination.pages}</span>
-            <button disabled={pagination.page >= pagination.pages} onClick={() => fetchProspects(pagination.page + 1)} className="h-8 px-3 rounded-lg border border-gray-200 text-xs text-gray-700 disabled:opacity-40 hover:bg-gray-50">Next</button>
+          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+            <button disabled={pagination.page <= 1} onClick={() => fetchProspects(pagination.page - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+            <div className="text-gray-600 text-sm">Page {pagination.page}</div>
+            <button disabled={pagination.page >= pagination.pages} onClick={() => fetchProspects(pagination.page + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
           </div>
         ) : null}
       </div>

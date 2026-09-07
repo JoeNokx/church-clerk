@@ -319,52 +319,46 @@ export default function OverviewTab() {
 
           <div className="pb-2">
             {(fuStats?.overdueList || []).length ? (
-              <table className="w-full text-xs border-collapse table-fixed">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left py-2 pr-2 pl-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap" style={{ width: "40%" }}>Name</th>
-                    <th className="text-left py-2 px-2 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap" style={{ width: "18%" }}>Type</th>
-                    <th className="text-left py-2 px-2 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap" style={{ width: "20%" }}>Scheduled</th>
-                    <th className="text-left py-2 px-2 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap" style={{ width: "12%" }}>Status</th>
-                    <th className="py-2 pl-2 pr-3" style={{ width: "10%" }} />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {(fuStats?.overdueList || []).slice(0, 5).map((fu, idx) => {
-                    const fullName = `${fu?.prospect?.firstName || ""} ${fu?.prospect?.lastName || ""}`.trim() || "—";
-                    return (
-                    <tr
-                      key={`${fu?._id || "fu"}-${idx}`}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="py-2.5 pr-2 pl-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="h-7 w-7 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-semibold text-[10px] shrink-0">
-                            {(fu?.prospect?.firstName || "?").slice(0, 1).toUpperCase()}
-                          </div>
-                          <span className="font-semibold text-xs text-gray-900 truncate">
-                            {fullName}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-2 text-gray-500 capitalize truncate">{fu?.type || "—"}</td>
-                      <td className="py-2.5 px-2 text-gray-500 whitespace-nowrap">{fmtDate(fu?.scheduledDate)}</td>
-                      <td className="py-2.5 px-2 whitespace-nowrap">
-                        <span className="rounded-full bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5">Overdue</span>
-                      </td>
-                      <td className="py-2.5 pl-2 pr-3 text-right">
-                        <button
-                          onClick={() => toPage("prospect-details", { id: fu?.prospect?._id, from: "overview" })}
-                          className="h-7 px-2 rounded-lg border border-gray-200 text-[10px] font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap"
-                        >
-                          View
-                        </button>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-slate-100">
+                    <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                     </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {(fuStats?.overdueList || []).slice(0, 5).map((fu, idx) => {
+                      const fullName = `${fu?.prospect?.firstName || ""} ${fu?.prospect?.lastName || ""}`.trim() || "—";
+                      return (
+                      <tr
+                        key={`${fu?._id || "fu"}-${idx}`}
+                        className="max-md:text-xs text-gray-700 text-sm cursor-pointer"
+                        onClick={() => toPage("prospect-details", { id: fu?.prospect?._id, from: "overview" })}
+                      >
+                        <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="h-7 w-7 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-semibold text-[10px] shrink-0">
+                              {(fu?.prospect?.firstName || "?").slice(0, 1).toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-xs text-gray-900 truncate">
+                              {fullName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 capitalize truncate">{fu?.type || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu?.scheduledDate)}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
+                          <span className="rounded-full bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5">Overdue</span>
+                        </td>
+                      </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <EmptyState compact illustration="followUps" title="No overdue follow-ups" description="You're all caught up." />
             )}

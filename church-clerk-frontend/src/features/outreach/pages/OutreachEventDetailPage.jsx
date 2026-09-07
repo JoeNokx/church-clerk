@@ -14,7 +14,8 @@ import {
 } from "../services/outreach.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import { PersonFormModal } from "../components/tabs/PeopleReachedTab.jsx";
-import { FollowUpFormModal } from "../components/tabs/FollowUpsTab.jsx";
+import { FollowUpFormModal, FollowUpDetailsModal } from "../components/tabs/FollowUpsTab.jsx";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 // ─── Constants & Helpers ─────────────────────────────────────────
 const DECISION_LABELS = {
@@ -72,8 +73,8 @@ function Avatar({ name, photo, size = "sm" }) {
 // ─── Prospect Row ─────────────────────────────────────────────────
 function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWrite, canDelete }) {
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50">
-      <td className="px-4 py-3">
+    <tr className="max-md:text-xs text-gray-700 text-sm">
+      <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
         <div className="flex items-center gap-3">
           <Avatar name={`${prospect.firstName} ${prospect.lastName || ""}`} size="sm" />
           <div>
@@ -82,38 +83,26 @@ function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWri
           </div>
         </div>
       </td>
-      <td className="px-4 py-3 hidden md:table-cell">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">
         <Badge label={DECISION_LABELS[prospect.decision] || prospect.decision} className={DECISION_STYLES[prospect.decision] || "bg-gray-100 text-gray-500"} />
       </td>
-      <td className="px-4 py-3 hidden lg:table-cell">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">
         <Badge label={prospect.interestLevel || "—"} className={INTEREST_STYLES[prospect.interestLevel] || "bg-gray-100 text-gray-500"} />
       </td>
-      <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-500">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell text-xs text-gray-500">
         {prospect.gender ? <span className="capitalize">{prospect.gender}</span> : "—"}
         {prospect.ageGroup ? <span className="ml-1 capitalize text-gray-400">· {prospect.ageGroup}</span> : null}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-500 hidden md:table-cell">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-500 hidden md:table-cell">
         {prospect.followUpCount || 0}
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1 justify-end">
-          <button onClick={() => onView(prospect)} className="h-8 px-2.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">View</button>
-          {canWrite ? (
-            <button onClick={() => onAddFollowUp(prospect)} className="h-8 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 whitespace-nowrap">
-              + Schedule Follow-Up
-            </button>
-          ) : null}
-          {canWrite ? (
-            <button onClick={() => onEdit(prospect)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-            </button>
-          ) : null}
-          {canDelete ? (
-            <button onClick={() => onDelete(prospect)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-          ) : null}
-        </div>
+      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+        <TableKebabMenu items={[
+          { label: "View", onClick: () => onView(prospect) },
+          canWrite && { label: "Schedule Follow-Up", onClick: () => onAddFollowUp(prospect) },
+          canWrite && { label: "Edit", onClick: () => onEdit(prospect) },
+          canDelete && { label: "Delete", onClick: () => onDelete(prospect), danger: true },
+        ]} />
       </td>
     </tr>
   );
@@ -135,41 +124,33 @@ const STATUS_OUTCOME_STYLES = {
 };
 
 // ─── Follow-up Row ────────────────────────────────────────────────
-function FollowUpRow({ followUp, onEdit, onDelete, canWrite, canDelete }) {
+function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }) {
   const statusKey = followUp.status || followUp.outcome || "";
   const dateVal = followUp.scheduledDate || followUp.followUpDate;
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50">
-      <td className="px-4 py-3">
+    <tr className="max-md:text-xs text-gray-700 text-sm">
+      <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
         <div className="font-semibold text-gray-900 text-sm">
           {followUp.prospect?.firstName} {followUp.prospect?.lastName || ""}
         </div>
         {followUp.prospect?.phone ? <div className="text-xs text-gray-400">{followUp.prospect.phone}</div> : null}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-600">{fmtDate(dateVal)}</td>
-      <td className="px-4 py-3 hidden md:table-cell">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-600">{fmtDate(dateVal)}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">
         <span className="text-xs text-gray-600 capitalize">{FOLLOWUP_TYPE_LABELS[followUp.type] || followUp.type}</span>
       </td>
-      <td className="px-4 py-3">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <Badge label={STATUS_OUTCOME_LABELS[statusKey] || statusKey?.replace(/-/g, " ") || "—"} className={STATUS_OUTCOME_STYLES[statusKey] || "bg-gray-100 text-gray-500"} />
       </td>
-      <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-500">
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell text-xs text-gray-500">
         {followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "—"}
       </td>
-      <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-500 max-w-xs truncate">{followUp.notes || "—"}</td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1 justify-end">
-          {canWrite ? (
-            <button onClick={() => onEdit(followUp)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-            </button>
-          ) : null}
-          {canDelete ? (
-            <button onClick={() => onDelete(followUp)} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-          ) : null}
-        </div>
+      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+        <TableKebabMenu items={[
+          { label: "View", onClick: () => onView(followUp) },
+          canWrite && { label: "Edit", onClick: () => onEdit(followUp) },
+          canDelete && { label: "Delete", onClick: () => onDelete(followUp), danger: true },
+        ]} />
       </td>
     </tr>
   );
@@ -235,6 +216,7 @@ export default function OutreachEventDetailPage() {
 
   const [prospectForm, setProspectForm] = useState({ open: false, mode: "create", data: null });
   const [followUpForm, setFollowUpForm] = useState({ open: false, mode: "create", data: null, prospectId: null });
+  const [detailsFU, setDetailsFU] = useState(null);
 
   const [deleteModal, setDeleteModal] = useState({ open: false, type: "", id: null, name: "" });
   const [deleting, setDeleting] = useState(false);
@@ -406,8 +388,9 @@ export default function OutreachEventDetailPage() {
                   onClick={() => toPage("team-details", { id: team._id, from: fromTab })}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /></svg>
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                   {team.name}
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </button>
               ))}
             </div>
@@ -435,10 +418,10 @@ export default function OutreachEventDetailPage() {
         {/* Prospects Tab */}
         {activeTab === "prospects" ? (
           <div className="mt-4 rounded-xl border border-gray-200 bg-white">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">People Reached</div>
-                <div className="text-xs text-gray-500 mt-0.5">Everyone encountered during this outreach</div>
+                <div className="text-gray-500 text-xs">Everyone encountered during this outreach</div>
               </div>
               {canCreate ? (
                 <button onClick={() => setProspectForm({ open: true, mode: "create", data: null })} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
@@ -459,18 +442,18 @@ export default function OutreachEventDetailPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500">Person</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Decision</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Interest</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Demographics</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Follow-ups</th>
-                      <th className="px-4 py-3" />
+                <table className="min-w-full">
+                  <thead className="bg-slate-100">
+                    <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Decision</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Interest</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Demographics</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Follow-ups</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     {prospects.map((p) => (
                       <ProspectRow
                         key={p._id}
@@ -493,10 +476,10 @@ export default function OutreachEventDetailPage() {
         {/* Follow-ups Tab */}
         {activeTab === "followups" ? (
           <div className="mt-4 rounded-xl border border-gray-200 bg-white">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">Follow-up Log</div>
-                <div className="text-xs text-gray-500 mt-0.5">All follow-up contacts made for this outreach event</div>
+                <div className="text-gray-500 text-xs">All follow-up contacts made for this outreach event</div>
               </div>
             </div>
 
@@ -512,23 +495,23 @@ export default function OutreachEventDetailPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500">Prospect</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500">Date</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Method</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500">Outcome</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Next Date</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Notes</th>
-                      <th className="px-4 py-3" />
+                <table className="min-w-full">
+                  <thead className="bg-slate-100">
+                    <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden md:table-cell">Method</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outcome</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 hidden lg:table-cell">Next Date</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     {followUps.map((f) => (
                       <FollowUpRow
                         key={f._id}
                         followUp={f}
+                        onView={(fu) => setDetailsFU(fu)}
                         onEdit={(fu) => setFollowUpForm({ open: true, mode: "edit", data: fu, prospectId: fu.prospect?._id })}
                         onDelete={(fu) => setDeleteModal({ open: true, type: "followup", id: fu._id, name: `follow-up on ${fmtDate(fu.scheduledDate || fu.followUpDate)}` })}
                         canWrite={canWrite}
@@ -564,6 +547,12 @@ export default function OutreachEventDetailPage() {
         defaultValues={{ prospect: followUpForm.prospectId || "", outreachEvent: eventId || "" }}
         onClose={() => setFollowUpForm({ open: false, mode: "create", data: null, prospectId: null })}
         onSaved={() => { setFollowUpForm({ open: false, mode: "create", data: null, prospectId: null }); fetchFollowUps(); fetchProspects(); fetchEvent(); }}
+      />
+
+      <FollowUpDetailsModal
+        open={!!detailsFU}
+        followUp={detailsFU}
+        onClose={() => setDetailsFU(null)}
       />
 
       <ConfirmDelete
