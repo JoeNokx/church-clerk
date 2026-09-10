@@ -729,39 +729,39 @@ function ChurchProjectsPageInner() {
         />
       </KpiGrid>
 
-      <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="font-semibold text-gray-900 text-sm">Church Projects</div>
-          <div className="text-gray-500 text-xs">All building funds and special projects</div>
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">Church Projects</div>
+            <div className="text-gray-500 text-xs">All building funds and special projects</div>
+          </div>
+          <FilterBar
+            searchValue={searchValue}
+            onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
+            searchPlaceholder="Search project name..."
+            searchWidth="md:w-[320px]"
+            selects={[]}
+          />
+          <MobileFilterBar
+            searchValue={searchValue}
+            onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
+            searchPlaceholder="Search project name..."
+            resultCount={filteredProjects.length}
+            getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
+              const q = searchValue.trim().toLowerCase();
+              return projects.filter((p) => {
+                if (q && !String(p?.name || "").toLowerCase().includes(q)) return false;
+                return true;
+              }).length;
+            }}
+          />
         </div>
-        <FilterBar
-          searchValue={searchValue}
-          onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
-          searchPlaceholder="Search project name..."
-          searchWidth="md:w-[320px]"
-          selects={[]}
-        />
-        <MobileFilterBar
-          searchValue={searchValue}
-          onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
-          searchPlaceholder="Search project name..."
-          resultCount={filteredProjects.length}
-          getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
-            const q = searchValue.trim().toLowerCase();
-            return projects.filter((p) => {
-              if (q && !String(p?.name || "").toLowerCase().includes(q)) return false;
-              return true;
-            }).length;
-          }}
-        />
-      </div>
 
-      {loading ? (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <Skeleton height={14} count={4} />
-        </div>
-      ) : filteredProjects.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+        {loading ? (
+          <div className="p-4 md:p-6 lg:p-8">
+            <Skeleton height={14} count={6} />
+          </div>
+        ) : filteredProjects.length === 0 ? (
           <EmptyState
             illustration={String(searchValue || "").trim() ? "search" : "projects"}
             title={String(searchValue || "").trim() ? "No projects found" : "No projects yet"}
@@ -771,9 +771,9 @@ function ChurchProjectsPageInner() {
             actionLabel={String(searchValue || "").trim() ? "Clear Search" : null}
             onAction={String(searchValue || "").trim() ? () => { setSearchValue(""); setCurrentPage(1); } : undefined}
           />
-        </div>
-      ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        ) : (
+          <div className="p-4 md:p-6 lg:p-8">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {paginatedProjects.map((p, idx) => {
             const raised = Number(p?.totalContributions || 0);
             const spent = Number(p?.totalExpenses || 0);
@@ -842,30 +842,30 @@ function ChurchProjectsPageInner() {
               </Card>
             );
           })}
-        </div>
-      )}
+            </div>
 
-      {!loading && filteredProjects.length > 0 ? (
-        <div className="mt-5 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage <= 1}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Prev
-          </button>
-          <div className="text-gray-600 text-sm">Page {currentPage} of {totalPages}</div>
-          <button
-            type="button"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage >= totalPages}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
-        </div>
-      ) : null}
+            <div className="mt-4 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Prev
+              </button>
+              <div className="text-gray-600 text-sm">Page {currentPage} of {totalPages}</div>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <AddProjectModal
         open={addProjectOpen}

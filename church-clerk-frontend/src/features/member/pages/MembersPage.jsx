@@ -251,10 +251,10 @@ function MembersPageInner() {
 
   return (
     <div className="max-w-6xl">
-      <div className="flex flex-row items-start justify-between gap-3 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-row items-center justify-between gap-3 md:items-start md:justify-between">
         <div>
           <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Members</h2>
-          <p className="mt-1 text-gray-500 text-sm">Track and manage church members</p>
+          <p className="mt-1 text-gray-500 text-sm hidden md:block">Track and manage church members</p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 md:gap-3">

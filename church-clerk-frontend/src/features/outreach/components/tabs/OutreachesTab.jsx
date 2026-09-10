@@ -367,7 +367,7 @@ function EventCard({ event, onEdit, onDelete, onView, canWrite, canDelete }) {
 }
 
 // ── Main Tab ──────────────────────────────────────────────────────
-export default function OutreachesTab() {
+export default function OutreachesTab({ setHeaderAction }) {
   const { can } = useContext(PermissionContext) || {};
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canUpdate = typeof can === "function" ? can("outreach", "update") : false;
@@ -404,6 +404,18 @@ export default function OutreachesTab() {
     getOutreachTeams().then((r) => setTeams(r.data?.data || [])).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!setHeaderAction) return;
+    if (!canCreate) { setHeaderAction(null); return; }
+    setHeaderAction(
+      <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        New Outreach
+      </button>
+    );
+    return () => setHeaderAction(null);
+  }, [canCreate, setHeaderAction]);
+
   const handleFilter = (key, value) => {
     const next = { ...filters, [key]: value };
     setFilters(next);
@@ -429,12 +441,6 @@ export default function OutreachesTab() {
               <h2 className="text-lg font-semibold text-gray-900">Outreaches</h2>
               <p className="text-sm text-gray-500">All outreach events</p>
             </div>
-            {canCreate ? (
-              <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 md:hidden">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                New Outreach
-              </button>
-            ) : null}
           </div>
           <div className="hidden md:flex md:items-center md:gap-3">
             <FilterBar
@@ -463,12 +469,6 @@ export default function OutreachesTab() {
                 },
               ]}
             />
-            {canCreate ? (
-              <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 hidden md:inline-flex">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                New Outreach
-              </button>
-            ) : null}
           </div>
           <div className="md:hidden">
             <MobileFilterBar

@@ -166,7 +166,7 @@ function ProgramsEventsTable({ status, onEdit, onCreate }) {
       : "We couldn't find any events matching your current search or filters.";
 
     const showAdd = isZero && canCreate && onCreate;
-    const actionLabel = showAdd ? "Create Event" : recovery?.actionLabel;
+    const actionLabel = showAdd ? "Create Program" : recovery?.actionLabel;
     const onAction = showAdd ? onCreate : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;

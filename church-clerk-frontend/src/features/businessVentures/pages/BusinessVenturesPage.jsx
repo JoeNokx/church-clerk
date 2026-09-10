@@ -561,55 +561,55 @@ function BusinessVenturesPage() {
         />
       </KpiGrid>
 
-      <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center justify-between md:block">
-          <div>
-            <div className="font-semibold text-gray-900 text-sm">Business Ventures</div>
-            <div className="text-gray-500 text-xs">All ventures and financials</div>
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+          <div className="flex items-center justify-between md:block">
+            <div>
+              <div className="font-semibold text-gray-900 text-sm">Business Ventures</div>
+              <div className="text-gray-500 text-xs">All ventures and financials</div>
+            </div>
+            {canEdit ? (
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
+              >
+                <span className="leading-none text-lg">+</span>
+                Add
+              </button>
+            ) : null}
           </div>
-          {canEdit ? (
-            <button
-              type="button"
-              onClick={() => setAddOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
-            >
-              <span className="leading-none text-lg">+</span>
-              Add
-            </button>
-          ) : null}
+          <FilterBar
+            searchValue={searchValue}
+            onSearchChange={(v) => setSearchValue(v)}
+            searchPlaceholder="Search business name or recorded by"
+            searchWidth="md:w-[320px]"
+            selects={[]}
+          />
+          <MobileFilterBar
+            searchValue={searchValue}
+            onSearchChange={(v) => setSearchValue(v)}
+            searchPlaceholder="Search business name or recorded by"
+            resultCount={filteredVentures.length}
+            getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
+              let rows = ventures;
+              const lower = searchValue.toLowerCase().trim();
+              if (lower) {
+                rows = rows.filter((v) =>
+                  String(v?.businessName || "").toLowerCase().includes(lower) ||
+                  String(v?.createdBy?.fullName || "").toLowerCase().includes(lower)
+                );
+              }
+              return rows.length;
+            }}
+          />
         </div>
-        <FilterBar
-          searchValue={searchValue}
-          onSearchChange={(v) => setSearchValue(v)}
-          searchPlaceholder="Search business name or recorded by"
-          searchWidth="md:w-[320px]"
-          selects={[]}
-        />
-        <MobileFilterBar
-          searchValue={searchValue}
-          onSearchChange={(v) => setSearchValue(v)}
-          searchPlaceholder="Search business name or recorded by"
-          resultCount={filteredVentures.length}
-          getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
-            let rows = ventures;
-            const lower = searchValue.toLowerCase().trim();
-            if (lower) {
-              rows = rows.filter((v) =>
-                String(v?.businessName || "").toLowerCase().includes(lower) ||
-                String(v?.createdBy?.fullName || "").toLowerCase().includes(lower)
-              );
-            }
-            return rows.length;
-          }}
-        />
-      </div>
 
-      {loading ? (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <Skeleton height={14} count={4} />
-        </div>
-      ) : filteredVentures.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+        {loading ? (
+          <div className="p-4 md:p-6 lg:p-8">
+            <Skeleton height={14} count={6} />
+          </div>
+        ) : filteredVentures.length === 0 ? (
           <EmptyState
             illustration={searchValue ? "search" : "businessVentures"}
             title={searchValue ? "No business ventures found" : "No business ventures yet"}
@@ -619,10 +619,9 @@ function BusinessVenturesPage() {
             actionLabel={searchValue ? "Clear Search" : (canEdit ? "Add Business" : null)}
             onAction={searchValue ? () => setSearchValue("") : (canEdit ? () => setAddOpen(true) : undefined)}
           />
-        </div>
-      ) : (
-        <>
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        ) : (
+          <div className="p-4 md:p-6 lg:p-8">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {pagedVentures.map((v, idx) => {
             const metaItems = [];
             if (v?.manager) {
@@ -688,31 +687,32 @@ function BusinessVenturesPage() {
               </Card>
             );
           })}
-        </div>
+            </div>
 
-        {totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-            >
-              Prev
-            </button>
-            <span className="text-gray-600 text-sm">Page {page} of {totalPages}</span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-            >
-              Next
-            </button>
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                >
+                  Prev
+                </button>
+                <span className="text-gray-600 text-sm">Page {page} of {totalPages}</span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
-        </>
-      )}
+      </div>
 
       <AddBusinessModal
         open={addOpen}

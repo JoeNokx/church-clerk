@@ -41,6 +41,7 @@ export default function OutreachPage() {
     return validTabs.includes(defaultTab) ? defaultTab : "overview";
   });
   const [overdueCount, setOverdueCount] = useState(0);
+  const [headerAction, setHeaderAction] = useState(null);
   const focusTeamId = useMemo(() => new URLSearchParams(location.search).get("teamId") || null, [location.search]);
 
   // Sync tab when URL defaultTab changes (e.g. navigating back from a details page)
@@ -82,6 +83,7 @@ export default function OutreachPage() {
           <h1 className="font-bold text-gray-900 text-xl md:text-3xl">Outreach and Follow-up</h1>
           <p className="mt-1 text-gray-500 text-sm">Plan outreaches, record people reached, and track follow-ups</p>
         </div>
+        {headerAction}
       </div>
 
       <PageTabs
@@ -93,7 +95,7 @@ export default function OutreachPage() {
       />
 
       <Suspense fallback={<TabSkeleton />}>
-        {tab === "teams" ? <TeamsTab focusTeamId={focusTeamId} /> : <ActiveTab />}
+        {tab === "teams" ? <TeamsTab focusTeamId={focusTeamId} setHeaderAction={setHeaderAction} /> : <ActiveTab setHeaderAction={setHeaderAction} />}
       </Suspense>
     </div>
   );

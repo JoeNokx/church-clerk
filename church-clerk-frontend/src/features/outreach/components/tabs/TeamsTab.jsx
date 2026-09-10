@@ -261,20 +261,19 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
 }
 
 // ── Team Card ─────────────────────────────────────────────────────
-function TeamCard({ team, onEdit, onDelete, onViewDetails, canWrite, canDelete }) {
+function TeamCard({ team, outreachCount, onEdit, onDelete, onViewDetails, canWrite, canDelete }) {
   const memberCount = team.members?.length || 0;
+  const oCount = typeof outreachCount === "number" ? outreachCount : 0;
 
   const metaItems = [];
   metaItems.push({
     icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
     label: `${memberCount} ${memberCount === 1 ? "member" : "members"}`,
   });
-  if (team.dateCreated) {
-    metaItems.push({
-      icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
-      label: `Created ${fmtDate(team.dateCreated)}`,
-    });
-  }
+  metaItems.push({
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M3 11l11-5v12L3 13v-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M3 11v2a2 2 0 002 2h2v-6H5a2 2 0 00-2 2zM14 8l5-2v12l-5-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+    label: `${oCount} ${oCount === 1 ? "outreach" : "outreaches"}`,
+  });
 
   return (
     <Card>
@@ -502,7 +501,7 @@ function TeamDetailModal({ team, open, onClose }) {
 }
 
 // ── Main Tab ──────────────────────────────────────────────────────
-export default function TeamsTab({ focusTeamId }) {
+export default function TeamsTab({ focusTeamId, setHeaderAction }) {
   const { can } = useContext(PermissionContext) || {};
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
@@ -511,6 +510,7 @@ export default function TeamsTab({ focusTeamId }) {
 
   const [teams, setTeams] = useState([]);
   const [members, setMembers] = useState([]);
+  const [teamOutreachCounts, setTeamOutreachCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -525,7 +525,20 @@ export default function TeamsTab({ focusTeamId }) {
     setLoading(true);
     try {
       const res = await getOutreachTeams();
-      setTeams(res.data?.data || []);
+      const teamList = res.data?.data || [];
+      setTeams(teamList);
+      // Fetch outreach events and compute per-team counts
+      try {
+        const evRes = await getOutreachEvents({ limit: 500 });
+        const allEvents = evRes.data?.data || [];
+        const counts = {};
+        for (const team of teamList) {
+          counts[team._id] = allEvents.filter((ev) =>
+            (ev.teams || []).some((t) => String(t._id || t) === String(team._id))
+          ).length;
+        }
+        setTeamOutreachCounts(counts);
+      } catch { setTeamOutreachCounts({}); }
     } catch { setTeams([]); } finally { setLoading(false); }
   }, []);
 
@@ -540,6 +553,18 @@ export default function TeamsTab({ focusTeamId }) {
     const target = teams.find((t) => String(t._id) === String(focusTeamId));
     if (target) toPage("team-details", { id: target._id, from: "teams" });
   }, [focusTeamId, loading, teams, toPage]);
+
+  useEffect(() => {
+    if (!setHeaderAction) return;
+    if (!canCreate) { setHeaderAction(null); return; }
+    setHeaderAction(
+      <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        Create Team
+      </button>
+    );
+    return () => setHeaderAction(null);
+  }, [canCreate, setHeaderAction]);
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -567,12 +592,6 @@ export default function TeamsTab({ focusTeamId }) {
               <h2 className="text-lg font-semibold text-gray-900">Teams</h2>
               <p className="text-sm text-gray-500">All outreach teams</p>
             </div>
-            {canCreate ? (
-              <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 md:hidden">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                Create Team
-              </button>
-            ) : null}
           </div>
           <div className="hidden md:flex md:items-center md:gap-3">
             <FilterBar
@@ -580,12 +599,6 @@ export default function TeamsTab({ focusTeamId }) {
               onSearchChange={handleSearchChange}
               searchPlaceholder="Search teams…"
             />
-            {canCreate ? (
-              <button onClick={() => { setEditingTeam(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 hidden md:inline-flex">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                Create Team
-              </button>
-            ) : null}
           </div>
           <div className="md:hidden">
             <MobileFilterBar
@@ -617,6 +630,7 @@ export default function TeamsTab({ focusTeamId }) {
               <TeamCard
                 key={team._id}
                 team={team}
+                outreachCount={teamOutreachCounts[team._id] || 0}
                 onEdit={(t) => { setEditingTeam(t); setFormMode("edit"); setFormOpen(true); }}
                 onDelete={(t) => setDeleteTarget(t)}
                 onViewDetails={(t) => toPage("team-details", { id: t._id, from: "teams" })}

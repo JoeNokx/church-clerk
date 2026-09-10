@@ -460,7 +460,7 @@ function AttendancePageInner() {
   return (
     <div className="w-full max-w-6xl overflow-x-hidden lg:overflow-x-visible">
       <div>
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 md:items-start">
           <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Attendance Records</h2>
           <div className="shrink-0">
             {activeTab === "individual" && indivPage === "list" && canCreateAttendance ? (
@@ -496,7 +496,7 @@ function AttendancePageInner() {
             ) : null}
           </div>
         </div>
-        <p className="mt-2 text-gray-600 text-sm">Track and manage service attendance</p>
+        <p className="mt-2 text-gray-600 text-sm hidden md:block">Track and manage service attendance</p>
 
         <PageTabs
           tabs={[
@@ -519,7 +519,7 @@ function AttendancePageInner() {
               <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-4 md:p-6 lg:p-8">
                 <div>
                   <div className="font-semibold text-gray-900 text-sm">Individual Attendance</div>
-                  <div className="text-gray-500 text-xs">Record and track member presence per service</div>
+                  <div className="text-gray-500 text-xs hidden md:block">Record and track member presence per service</div>
                 </div>
                 <FilterBar
                     searchValue={indivSpeakerSearch}
@@ -1036,7 +1036,7 @@ function AttendancePageInner() {
             <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">Total Attendance Records</div>
-                <div className="text-gray-500 text-xs">All services and their details</div>
+                <div className="text-gray-500 text-xs hidden md:block">All services and their details</div>
               </div>
               <AttendanceFilters />
             </div>
@@ -1130,7 +1130,7 @@ function AttendancePageInner() {
             <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
               <div>
                 <div className="font-semibold text-gray-900 text-sm">Visitors Records</div>
-                <div className="text-gray-500 text-xs">All visitors and their details</div>
+                <div className="text-gray-500 text-xs hidden md:block">All visitors and their details</div>
               </div>
               <VisitorFilters />
             </div>

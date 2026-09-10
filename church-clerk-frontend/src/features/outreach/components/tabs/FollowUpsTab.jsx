@@ -272,7 +272,7 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
 }
 
 // ── Main Tab ──────────────────────────────────────────────────────
-export default function FollowUpsTab() {
+export default function FollowUpsTab({ setHeaderAction }) {
   const { can } = useContext(PermissionContext) || {};
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
@@ -324,6 +324,18 @@ export default function FollowUpsTab() {
     getOutreachEvents({ limit: 100 }).then((r) => setEvents(r.data?.data || [])).catch(() => {});
     getMembers({ limit: 200, status: "active" }).then((r) => setMembers(r.data?.members || [])).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!setHeaderAction) return;
+    if (!canCreate) { setHeaderAction(null); return; }
+    setHeaderAction(
+      <button onClick={() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        Schedule
+      </button>
+    );
+    return () => setHeaderAction(null);
+  }, [canCreate, setHeaderAction]);
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
@@ -405,12 +417,6 @@ export default function FollowUpsTab() {
               </div>
               <div className="text-gray-500 text-xs">Track and manage follow-up contacts</div>
             </div>
-            {canCreate ? (
-              <button onClick={() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 md:hidden">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                Schedule
-              </button>
-            ) : null}
           </div>
           <div className="hidden md:flex md:items-center md:gap-3">
             <FilterBar
@@ -438,12 +444,6 @@ export default function FollowUpsTab() {
               dateTo={filterDateTo}
               onDateApply={(from, to) => { setFilterDateFrom(from); setFilterDateTo(to); setClientPage(1); fetchFollowUps(1, { dateFrom: from || undefined, dateTo: to || undefined }); }}
             />
-            {canCreate ? (
-              <button onClick={() => { setEditingFU(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 hidden md:inline-flex">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                Schedule
-              </button>
-            ) : null}
           </div>
             <MobileFilterBar
               searchValue={filterSearch}

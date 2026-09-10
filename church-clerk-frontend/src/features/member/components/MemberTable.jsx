@@ -198,7 +198,8 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
 
   if (store?.loading) {
     return (
-      <div className="overflow-x-auto animate-pulse">
+      <div className="animate-pulse">
+        <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left font-semibold text-gray-500 text-xs">
@@ -230,6 +231,25 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
             ))}
           </tbody>
         </table>
+        </div>
+        <div className="md:hidden divide-y divide-gray-200">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="h-4 w-28 rounded bg-gray-200" />
+                  <div className="mt-1.5 h-3 w-20 rounded bg-gray-200" />
+                </div>
+                <div className="h-5 w-16 rounded-full bg-gray-200" />
+              </div>
+              <div className="mt-2 flex gap-4">
+                <div className="h-3 w-12 rounded bg-gray-200" />
+                <div className="h-3 w-16 rounded bg-gray-200" />
+                <div className="h-3 w-14 rounded bg-gray-200" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -287,7 +307,8 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
 
   return (
     <div>
-      <div className="overflow-x-auto">
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
@@ -331,6 +352,47 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden divide-y divide-gray-200">
+        {rows.map((row, index) => {
+          const name = row?.fullName || [row?.firstName, row?.lastName].filter(Boolean).join(" ") || "-";
+          const displayName = truncateName(name);
+          return (
+            <div key={row?._id ?? `m-row-${index}`} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-gray-900 text-sm truncate">{displayName}</div>
+                  <div className="mt-0.5 text-gray-500 text-xs">{row?.phoneNumber || "Not Specified"}</div>
+                </div>
+                <div className="shrink-0">
+                  {canEdit ? (
+                    <InlineStatusPicker row={row} onUpdate={updateStatus} updating={statusUpdating} />
+                  ) : (
+                    <StatusChip value={row?.status} />
+                  )}
+                </div>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-500 text-xs">
+                {row?.ageGroup ? <span className="capitalize">{row.ageGroup}</span> : null}
+                {row?.city ? <span>{row.city}</span> : null}
+                {row?.createdAt || row?.dateJoined ? <span>{formatDate(row?.createdAt || row?.dateJoined)}</span> : null}
+              </div>
+              <div className="mt-2 flex items-center gap-3">
+                {canView ? (
+                  <button type="button" onClick={() => { if (!row?._id) return; toPage("member-details", { id: row._id }, { state: { from: "members" } }); }} className="text-blue-700 font-semibold text-xs">View</button>
+                ) : null}
+                {canEdit ? (
+                  <button type="button" onClick={() => { if (!row?._id) return; toPage("member-form", { id: row._id }); }} className="text-gray-700 font-semibold text-xs">Edit</button>
+                ) : null}
+                {canDelete ? (
+                  <button type="button" onClick={() => { if (!row?._id) return; openConfirmDelete(row._id); }} className="text-red-600 font-semibold text-xs">Delete</button>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">

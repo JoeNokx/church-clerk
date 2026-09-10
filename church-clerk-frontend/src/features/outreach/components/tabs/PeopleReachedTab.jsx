@@ -570,7 +570,7 @@ function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canD
 }
 
 // ── Main Tab ──────────────────────────────────────────────────────
-export default function PeopleReachedTab() {
+export default function PeopleReachedTab({ setHeaderAction }) {
   const { can } = useContext(PermissionContext) || {};
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
@@ -606,6 +606,18 @@ export default function PeopleReachedTab() {
     getOutreachEvents({ limit: 100 }).then((r) => setEvents(r.data?.data || [])).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!setHeaderAction) return;
+    if (!canCreate) { setHeaderAction(null); return; }
+    setHeaderAction(
+      <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        Record Person
+      </button>
+    );
+    return () => setHeaderAction(null);
+  }, [canCreate, setHeaderAction]);
+
   const handleFilter = (key, value) => {
     let next;
     if (key === "dateRange") {
@@ -634,12 +646,6 @@ export default function PeopleReachedTab() {
               <div className="font-semibold text-gray-900 text-sm">People Reached</div>
               <div className="text-gray-500 text-xs">All people recorded during outreaches</div>
             </div>
-            {canCreate ? (
-              <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 md:hidden">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                Record Person
-              </button>
-            ) : null}
           </div>
           <div className="hidden md:flex md:items-center md:gap-3">
             <FilterBar
@@ -659,12 +665,6 @@ export default function PeopleReachedTab() {
             dateTo={filters.dateTo}
             onDateApply={(from, to) => handleFilter("dateRange", { from, to })}
           />
-            {canCreate ? (
-              <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0 hidden md:inline-flex">
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                Record Person
-              </button>
-            ) : null}
           </div>
           <MobileFilterBar
             searchValue={filters.search}
