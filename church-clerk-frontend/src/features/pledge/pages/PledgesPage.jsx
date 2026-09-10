@@ -224,8 +224,8 @@ function StatusChip({ value }) {
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
@@ -490,8 +490,8 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
 function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>

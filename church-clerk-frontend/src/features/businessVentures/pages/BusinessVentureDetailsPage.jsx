@@ -15,6 +15,7 @@ import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import BackButton from "../../../shared/components/BackButton/index.jsx";
 import {
   getBusinessIncomeExpensesKPI,
   getBusinessVenture
@@ -46,8 +47,8 @@ function formatDate(value) {
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
@@ -73,8 +74,8 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
 function ConfirmModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
@@ -820,13 +821,7 @@ function BusinessVentureDetailsPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
           <div className="font-semibold text-gray-900 text-sm">Business Venture</div>
           <div className="mt-2 text-gray-600 text-sm">Missing business id.</div>
-          <button
-            type="button"
-            onClick={() => toPage("business-ventures")}
-            className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
-          >
-            Back
-          </button>
+          <BackButton onClick={() => toPage("business-ventures")} className="mt-4 mb-0" />
         </div>
       </div>
     );
@@ -836,13 +831,7 @@ function BusinessVentureDetailsPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <button
-            type="button"
-            onClick={() => toPage("business-ventures")}
-            className="font-semibold text-gray-600 hover:text-gray-900 text-sm"
-          >
-            ← Back
-          </button>
+          <BackButton onClick={() => toPage("business-ventures")} />
           <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{business?.businessName || "Business Venture"}</div>
           <div className="mt-2 text-gray-600 text-sm">{business?.description || "—"}</div>
           <div className="mt-2 text-gray-500 text-xs">Manager: {business?.manager || "—"} | Phone: {business?.phoneNumber || "—"}</div>
@@ -1204,8 +1193,8 @@ function BusinessVentureDetailsPage() {
       )}
 
       {viewIncomeOpen && viewIncomeRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
               <div className="font-semibold text-gray-900 text-sm">Income Details</div>
               <button type="button" onClick={() => setViewIncomeOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
@@ -1227,8 +1216,8 @@ function BusinessVentureDetailsPage() {
       )}
 
       {viewExpenseOpen && viewExpenseRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
               <div className="font-semibold text-gray-900 text-sm">Expense Details</div>
               <button type="button" onClick={() => setViewExpenseOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">

@@ -215,7 +215,7 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto">
       <div className="w-full sm:max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[93vh]">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
           <h2 className="font-semibold text-gray-900 text-base">

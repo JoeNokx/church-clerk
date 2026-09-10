@@ -1382,8 +1382,8 @@ function SettingsPage() {
                   ) : null}
 
                   {removeAvatarConfirmOpen ? (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-                      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+                      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
                         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                           <div className="font-semibold text-gray-900 text-sm">Remove Profile Photo</div>
                           <button type="button" onClick={() => setRemoveAvatarConfirmOpen(false)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
@@ -1589,7 +1589,7 @@ function SettingsPage() {
 
 
       {auditDetailOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-black/40" onClick={() => setAuditDetailOpen(false)} />
           <div className="relative w-full max-w-4xl rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
             <div className="border-b border-gray-200 py-4 flex items-start justify-between gap-4 px-4 md:px-6">
@@ -2656,7 +2656,7 @@ function SettingsPage() {
       ) : null}
 
       {confirmOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmOpen(false)} />
           <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="font-semibold text-gray-900 text-lg">Confirm Action</div>
@@ -2689,7 +2689,7 @@ function SettingsPage() {
       ) : null}
 
       {addOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-black/40" onClick={() => setAddOpen(false)} />
           <div className="relative w-full max-w-lg rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4">
@@ -2794,7 +2794,7 @@ function SettingsPage() {
       ) : null}
 
       {editOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-black/40" onClick={() => setEditOpen(false)} />
           <div className="relative w-full max-w-lg rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="flex items-start justify-between gap-4">
@@ -2887,7 +2887,7 @@ function SettingsPage() {
       {/* Tithe mode switch confirmation */}
       {titheModeConfirm ? (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
               <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center md:h-12 md:w-12">
@@ -2914,7 +2914,7 @@ function SettingsPage() {
 
       {/* User limit modal */}
       {userLimitModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-black/40" onClick={() => setUserLimitModalOpen(false)} />
           <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="font-semibold text-gray-900 text-lg">Limit Reached</div>

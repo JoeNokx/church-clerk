@@ -7,7 +7,7 @@ function ModalShell({ open, title, subtitle, onClose, children, maxWidthClass = 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto px-4 py-8">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className={`relative w-full ${maxWidthClass} rounded-2xl bg-white shadow-xl`}>
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 px-4 md:px-6">

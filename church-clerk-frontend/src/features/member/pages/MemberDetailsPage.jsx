@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import BackButton from "../../../shared/components/BackButton/index.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
@@ -172,6 +173,29 @@ function MemberDetailsPageInner() {
 
   return (
     <div className="max-w-6xl">
+      <BackButton
+        onClick={() => {
+          if (from === "dashboard") {
+            toPage("dashboard");
+            return;
+          }
+          if (from === "members") {
+            toPage("members");
+            return;
+          }
+          if (from === "team") {
+            const teamId = location?.state?.teamId;
+            const fromTab = location?.state?.fromTab || "teams";
+            if (teamId) {
+              toPage("team-details", { id: teamId, from: fromTab });
+            } else {
+              toPage("outreach", { defaultTab: "teams" });
+            }
+            return;
+          }
+          navigate(-1);
+        }}
+      />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Member Details</h2>
@@ -179,34 +203,6 @@ function MemberDetailsPageInner() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              if (from === "dashboard") {
-                toPage("dashboard");
-                return;
-              }
-              if (from === "members") {
-                toPage("members");
-                return;
-              }
-              if (from === "team") {
-                const teamId = location?.state?.teamId;
-                const fromTab = location?.state?.fromTab || "teams";
-                if (teamId) {
-                  toPage("team-details", { id: teamId, from: fromTab });
-                } else {
-                  toPage("outreach", { defaultTab: "teams" });
-                }
-                return;
-              }
-              navigate(-1);
-            }}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-          >
-            Back
-          </button>
-
           {canEdit && memberId && (
             <button
               type="button"

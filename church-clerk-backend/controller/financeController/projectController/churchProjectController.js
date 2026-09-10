@@ -57,6 +57,18 @@ const getAllChurchProjects = async (req, res) => {
                 if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
                     query.church = req.activeChurch._id;
                 }
+
+                // Date range filter
+                if (dateFrom || dateTo) {
+                    const dateFilter = {};
+                    if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+                    if (dateTo) {
+                        const end = new Date(dateTo);
+                        end.setHours(23, 59, 59, 999);
+                        dateFilter.$lte = end;
+                    }
+                    query.startDate = dateFilter;
+                }
             
             
                 // FETCH CHURCH PROJECTS

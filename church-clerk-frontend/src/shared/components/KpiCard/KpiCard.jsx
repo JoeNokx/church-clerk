@@ -1,5 +1,13 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 
+function splitCurrency(value) {
+  if (value === null || value === undefined) return { prefix: "", rest: value };
+  const str = String(value);
+  const match = str.match(/^([^\d.-]*)([\d.,-].*)$/);
+  if (match) return { prefix: match[1], rest: match[2] };
+  return { prefix: "", rest: str };
+}
+
 function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, icon, accent, iconBg, iconColor, tooltip }) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const [tooltipSide, setTooltipSide] = useState("left");
@@ -90,7 +98,9 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
         </div>
         <div className="mt-4">
           <div className="text-gray-500 text-sm leading-snug">{title}</div>
-          <div className="mt-1 font-bold text-gray-900 tabular-nums leading-tight text-lg md:text-xl">{value ?? "—"}</div>
+          <div className="mt-1 font-bold text-gray-900 tabular-nums leading-tight text-lg md:text-xl">
+            {(() => { const { prefix, rest } = splitCurrency(value); return prefix ? <><span className="text-[10px] md:text-xs font-semibold">{prefix}</span>{rest ?? "—"}</> : (value ?? "—"); })()}
+          </div>
           {subtitle ? (
             <div className="mt-1.5 text-gray-400 text-xs leading-snug">{subtitle}</div>
           ) : compareLabel ? (
@@ -135,7 +145,9 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
               ) : null}
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-gray-900 tabular-nums leading-tight text-base md:text-lg">{value ?? "—"}</span>
+              <span className="font-bold text-gray-900 tabular-nums leading-tight text-base md:text-lg">
+                {(() => { const { prefix, rest } = splitCurrency(value); return prefix ? <><span className="text-[10px] md:text-xs font-semibold">{prefix}</span>{rest ?? "—"}</> : (value ?? "—"); })()}
+              </span>
               {change !== undefined && change !== null ? (
                 <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-semibold text-xs ${deltaClass}`}>
                   {arrow}

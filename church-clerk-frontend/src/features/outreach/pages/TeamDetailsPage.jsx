@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import BackButton from "../../../shared/components/BackButton/index.jsx";
 import {
   getOutreachTeamById,
   getOutreachEvents,
@@ -88,8 +89,6 @@ export default function TeamDetailsPage() {
     return params;
   }, [fromTab]);
 
-  const backLabel = fromTab === "overview" ? "Back to Overview" : fromTab === "outreaches" ? "Back to Outreaches" : "Back to Teams";
-
   const fetchTeam = useCallback(async () => {
     if (!teamId) return;
     setLoading(true);
@@ -172,7 +171,7 @@ export default function TeamDetailsPage() {
   if (!teamId) return (
     <div className="text-center py-20 text-gray-500">
       <p>No team selected.</p>
-      <button onClick={() => toPage("outreach", backParams)} className="mt-4 text-blue-700 font-semibold hover:underline text-sm">← {backLabel}</button>
+      <BackButton onClick={() => toPage("outreach", backParams)} className="mt-4 mb-0" />
     </div>
   );
 
@@ -187,7 +186,7 @@ export default function TeamDetailsPage() {
   if (!team) return (
     <div className="text-center py-20 text-gray-500">
       <p>Team not found.</p>
-      <button onClick={() => toPage("outreach", backParams)} className="mt-4 text-blue-700 font-semibold hover:underline text-sm">← {backLabel}</button>
+      <BackButton onClick={() => toPage("outreach", backParams)} className="mt-4 mb-0" />
     </div>
   );
 
@@ -199,10 +198,7 @@ export default function TeamDetailsPage() {
   return (
     <div className="max-w-4xl">
       {/* Back */}
-      <button onClick={() => toPage("outreach", backParams)} className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-semibold">
-        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-        {backLabel}
-      </button>
+      <BackButton onClick={() => toPage("outreach", backParams)} />
 
       {/* Header Card */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">

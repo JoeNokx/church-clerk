@@ -207,7 +207,7 @@ function ConfirmModal({ open, onCancel, onConfirm }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center md:h-12 md:w-12">

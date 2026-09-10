@@ -24,8 +24,8 @@ import Card from "../../../shared/components/Card/index.jsx";
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
@@ -51,8 +51,8 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
 function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
@@ -373,6 +373,8 @@ function BusinessVenturesPage() {
   const [ventures, setVentures] = useState([]);
   const [kpi, setKpi] = useState(null);
   const [searchValue, setSearchValue] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -383,12 +385,16 @@ function BusinessVenturesPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmDeleteRow, setConfirmDeleteRow] = useState(null);
 
-  const load = async () => {
+  const load = async (dateParams) => {
     setLoading(true);
     setError("");
 
+    const params = { page: 1, limit: 50 };
+    if (dateParams?.dateFrom) params.dateFrom = dateParams.dateFrom;
+    if (dateParams?.dateTo) params.dateTo = dateParams.dateTo;
+
     const [venturesRes, kpiRes] = await Promise.allSettled([
-      getBusinessVentures({ page: 1, limit: 50 }),
+      getBusinessVentures(params),
       getBusinessKPI()
     ]);
 
@@ -415,6 +421,10 @@ function BusinessVenturesPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    load({ dateFrom, dateTo });
+  }, [dateFrom, dateTo]);
+
   const totals = useMemo(() => {
     const rows = Array.isArray(ventures) ? ventures : [];
     const totalVentures = Number(kpi?.totalVentures ?? rows.length);
@@ -426,11 +436,11 @@ function BusinessVenturesPage() {
     return { totalVentures, totalIncome, totalExpenses, net };
   }, [ventures, kpi]);
 
-  useEffect(() => { setPage(1); }, [searchValue]);
+  useEffect(() => { setPage(1); }, [searchValue, dateFrom, dateTo]);
 
   const filteredVentures = useMemo(() => {
-    if (!searchValue.trim()) return ventures;
-    const lower = searchValue.toLowerCase();
+    const lower = searchValue.toLowerCase().trim();
+    if (!lower) return ventures;
     return ventures.filter((v) =>
       String(v?.businessName || "").toLowerCase().includes(lower) ||
       String(v?.createdBy?.fullName || "").toLowerCase().includes(lower)
@@ -585,11 +595,17 @@ function BusinessVenturesPage() {
             searchPlaceholder="Search business name or recorded by"
             searchWidth="md:w-[320px]"
             selects={[]}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); }}
           />
           <MobileFilterBar
             searchValue={searchValue}
             onSearchChange={(v) => setSearchValue(v)}
             searchPlaceholder="Search business name or recorded by"
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); }}
             resultCount={filteredVentures.length}
             getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
               let rows = ventures;
@@ -602,6 +618,7 @@ function BusinessVenturesPage() {
               }
               return rows.length;
             }}
+            className="w-full"
           />
         </div>
 

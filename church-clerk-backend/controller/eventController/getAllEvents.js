@@ -16,7 +16,9 @@ const buildEventQuery = ({
   group,
   cell,
   month,
-  year
+  year,
+  dateFrom,
+  dateTo
 }) => {
   const now = new Date();
   const todayStart = new Date(now);
@@ -82,6 +84,17 @@ const buildEventQuery = ({
   if (group) query.group = group;
   if (cell) query.cell = cell;
 
+  if (dateFrom || dateTo) {
+    const dateFilter = {};
+    if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+    if (dateTo) {
+      const end = new Date(dateTo);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.$lte = end;
+    }
+    query.$and.push({ dateFrom: dateFilter });
+  }
+
   if (month && year) {
     const monthNum = parseInt(month, 10);
     const yearNum = parseInt(year, 10);
@@ -131,7 +144,9 @@ const getEvents = async (req, res) => {
       group,
       cell,
       month,
-      year
+      year,
+      dateFrom,
+      dateTo
     } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -149,7 +164,9 @@ const getEvents = async (req, res) => {
       group,
       cell,
       month,
-      year
+      year,
+      dateFrom,
+      dateTo
     });
 
     const sort = status === "past" ? { dateTo: -1, dateFrom: -1 } : { dateFrom: 1 };
@@ -214,15 +231,17 @@ const getEventStats = async (req, res) => {
       group,
       cell,
       month,
-      year
+      year,
+      dateFrom,
+      dateTo
     } = req.query;
 
     const churchId = getScopedChurchId(req);
 
     const [upcomingEvents, ongoingEvents, pastEvents] = await Promise.all([
-      Event.countDocuments(buildEventQuery({ status: "upcoming", churchId, search, category, department, group, cell, month, year })),
-      Event.countDocuments(buildEventQuery({ status: "ongoing", churchId, search, category, department, group, cell, month, year })),
-      Event.countDocuments(buildEventQuery({ status: "past", churchId, search, category, department, group, cell, month, year }))
+      Event.countDocuments(buildEventQuery({ status: "upcoming", churchId, search, category, department, group, cell, month, year, dateFrom, dateTo })),
+      Event.countDocuments(buildEventQuery({ status: "ongoing", churchId, search, category, department, group, cell, month, year, dateFrom, dateTo })),
+      Event.countDocuments(buildEventQuery({ status: "past", churchId, search, category, department, group, cell, month, year, dateFrom, dateTo }))
     ]);
 
     return res.status(200).json({

@@ -85,7 +85,7 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto">
       <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
           <h2 className="font-semibold text-gray-900 text-base">{mode === "edit" ? "Update Follow-Up" : "Schedule Follow-Up"}</h2>
@@ -193,7 +193,7 @@ export function FollowUpDetailsModal({ open, followUp, onClose }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto">
       <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 shrink-0">
           <h2 className="font-semibold text-gray-900 text-base">Follow-Up Details</h2>

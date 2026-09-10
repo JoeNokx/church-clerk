@@ -28,6 +28,7 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import BackButton from "../../../shared/components/BackButton/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
@@ -786,18 +787,7 @@ function EventDetailsPage() {
 
   return (
     <div className="max-w-6xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <button
-            type="button"
-            onClick={goBack}
-            className="inline-flex items-center gap-2 font-semibold text-gray-700 hover:underline text-sm"
-          >
-            <span className="leading-none text-base">←</span>
-            Back to Programs &amp; Events
-          </button>
-        </div>
-      </div>
+      <BackButton onClick={goBack} />
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         {loading ? (
@@ -963,11 +953,6 @@ function EventDetailsPage() {
 
       {!loading && !error && event && activeMainTab === "attendance" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
-            <div className="font-semibold text-gray-900 text-base">Record Attendance</div>
-            <div className="mt-1 text-gray-600 text-sm">Choose a method to record event attendance</div>
-          </div>
-
           <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
             <PageTabs
               tabs={[
@@ -983,9 +968,18 @@ function EventDetailsPage() {
             {activeTab === "registration" ? (
               <div className="mt-6">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <div className="font-semibold text-gray-900 text-sm">By Registration</div>
-                    <div className="text-gray-500 text-xs mt-0.5">Record and manage attendance collected for this event.</div>
+                  <div className="flex items-center justify-between gap-3 w-full md:w-auto md:block">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">By Registration</div>
+                      <div className="text-gray-500 text-xs mt-0.5">Record and manage attendance collected for this event.</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setRegisterError(null); setRegisterOpen(true); }}
+                      className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
+                    >
+                      Register
+                    </button>
                   </div>
                   <FilterBar
                     searchValue={regSearch}
@@ -993,6 +987,9 @@ function EventDetailsPage() {
                     searchPlaceholder="Search name, email, phone"
                     searchWidth="md:w-[320px]"
                     selects={[]}
+                    dateFrom={regDateFrom}
+                    dateTo={regDateTo}
+                    onDateApply={(from, to) => { setRegDateFrom(from); setRegDateTo(to); }}
                   >
                     <button
                       type="button"
@@ -1008,7 +1005,7 @@ function EventDetailsPage() {
                     <button
                       type="button"
                       onClick={onExportAttendees}
-                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
+                      className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                         <path d="M12 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -1022,23 +1019,11 @@ function EventDetailsPage() {
                     searchValue={regSearch}
                     onSearchChange={(v) => setRegSearch(v)}
                     searchPlaceholder="Search name, email, phone"
+                    dateFrom={regDateFrom}
+                    dateTo={regDateTo}
+                    onDateApply={(from, to) => { setRegDateFrom(from); setRegDateTo(to); }}
+                    className="w-full"
                   />
-                  <div className="md:hidden flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => { setRegisterError(null); setRegisterOpen(true); }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
-                    >
-                      Register
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onExportAttendees}
-                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
-                    >
-                      Export
-                    </button>
-                  </div>
                 </div>
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
@@ -1129,9 +1114,19 @@ function EventDetailsPage() {
             ) : activeTab === "total" ? (
               <div className="mt-6">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <div className="font-semibold text-gray-900 text-sm">Total Number</div>
-                    <div className="text-gray-500 text-xs mt-0.5">Record the total number of attendees without listing individual names.</div>
+                  <div className="flex items-center justify-between gap-3 w-full md:w-auto md:block">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">Total Number</div>
+                      <div className="text-gray-500 text-xs mt-0.5">Record the total number of attendees without listing individual names.</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setRecordError(null); setRecordOpen(true); }}
+                      className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
+                    >
+                      <span className="leading-none text-lg">+</span>
+                      Record Attendance
+                    </button>
                   </div>
                   <FilterBar
                     searchValue={totalSearch}
@@ -1139,6 +1134,9 @@ function EventDetailsPage() {
                     searchPlaceholder="Search speaker or date"
                     searchWidth="md:w-[320px]"
                     selects={[]}
+                    dateFrom={totalDateFrom}
+                    dateTo={totalDateTo}
+                    onDateApply={(from, to) => { setTotalDateFrom(from); setTotalDateTo(to); }}
                   >
                     <button
                       type="button"
@@ -1153,17 +1151,11 @@ function EventDetailsPage() {
                     searchValue={totalSearch}
                     onSearchChange={(v) => setTotalSearch(v)}
                     searchPlaceholder="Search speaker or date"
+                    dateFrom={totalDateFrom}
+                    dateTo={totalDateTo}
+                    onDateApply={(from, to) => { setTotalDateFrom(from); setTotalDateTo(to); }}
+                    className="w-full"
                   />
-                  <div className="md:hidden">
-                    <button
-                      type="button"
-                      onClick={() => { setRecordError(null); setRecordOpen(true); }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
-                    >
-                      <span className="leading-none text-lg">+</span>
-                      Record Attendance
-                    </button>
-                  </div>
                 </div>
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
@@ -1249,9 +1241,19 @@ function EventDetailsPage() {
             ) : (
               <div className="mt-6">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <div className="font-semibold text-gray-900 text-sm">File Upload</div>
-                    <div className="text-gray-500 text-xs mt-0.5">Upload attendance files from Excel, Word, PDF, or image formats.</div>
+                  <div className="flex items-center justify-between gap-3 w-full md:w-auto md:block">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">File Upload</div>
+                      <div className="text-gray-500 text-xs mt-0.5">Upload attendance files from Excel, Word, PDF, or image formats.</div>
+                    </div>
+                    <FileUploadButton
+                      accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
+                      disabled={fileUploading}
+                      onFile={onUploadFile}
+                      className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm h-10"
+                    >
+                      {fileUploading ? "Uploading..." : "Upload File"}
+                    </FileUploadButton>
                   </div>
                   <FilterBar
                     searchValue={filesSearch}
@@ -1259,6 +1261,9 @@ function EventDetailsPage() {
                     searchPlaceholder="Search file name"
                     searchWidth="md:w-[320px]"
                     selects={[]}
+                    dateFrom={filesDateFrom}
+                    dateTo={filesDateTo}
+                    onDateApply={(from, to) => { setFilesDateFrom(from); setFilesDateTo(to); }}
                   >
                     <FileUploadButton
                       accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
@@ -1278,17 +1283,11 @@ function EventDetailsPage() {
                     searchValue={filesSearch}
                     onSearchChange={(v) => setFilesSearch(v)}
                     searchPlaceholder="Search file name"
+                    dateFrom={filesDateFrom}
+                    dateTo={filesDateTo}
+                    onDateApply={(from, to) => { setFilesDateFrom(from); setFilesDateTo(to); }}
+                    className="w-full"
                   />
-                  <div className="md:hidden">
-                    <FileUploadButton
-                      accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
-                      disabled={fileUploading}
-                      onFile={onUploadFile}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm h-10"
-                    >
-                      {fileUploading ? "Uploading..." : "Upload File"}
-                    </FileUploadButton>
-                  </div>
                 </div>
 
                 {filesError ? (

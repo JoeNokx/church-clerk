@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import BackButton from "../../../shared/components/BackButton/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Skeleton from "react-loading-skeleton";
@@ -165,8 +166,8 @@ function formatDay(value) {
 function ConfirmDialog({ open, title, message, confirmLabel = "Delete", onCancel, onConfirm }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
@@ -196,8 +197,8 @@ function SimpleModal({ open, title, children, onClose }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-xl rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div className="font-semibold text-gray-900 text-sm">{title}</div>
           <button
@@ -1088,14 +1089,7 @@ function MinistryDetailsPage() {
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <button
-            type="button"
-            onClick={goBack}
-            className="inline-flex items-center gap-2 font-semibold text-gray-700 hover:underline text-sm"
-          >
-            <span className="leading-none text-base">←</span>
-            Back to Ministries
-          </button>
+          <BackButton onClick={goBack} />
         </div>
       </div>
 
@@ -1630,13 +1624,38 @@ function MinistryDetailsPage() {
 
       {activeTab === "attendance" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+          <PageTabs
+            tabs={[
+              { key: "total", label: "Total Attendance" },
+              { key: "individual", label: "Individual Attendance" },
+            ]}
+            activeTab={attendanceView}
+            onChange={(key) => {
+              setAttendanceView(key);
+              setAttendanceError("");
+              setIndividualAttendanceError("");
+            }}
+            sticky={false}
+            className="px-4 md:px-5 lg:px-6 pt-4"
+          />
+
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
-            <div>
-              <div className="font-semibold text-gray-900 text-sm">Attendance</div>
-              <div className="text-gray-500 text-xs">Record attendance</div>
+            <div className="flex items-center gap-3 justify-between w-full md:w-auto md:block">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Attendance</div>
+                <div className="text-gray-500 text-xs">Record attendance</div>
+              </div>
+              <button
+                type="button"
+                onClick={attendanceView === "individual" ? () => void openIndividualAttendanceForm("create", null) : () => openAttendanceForm("create", null)}
+                className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+              >
+                <span className="leading-none text-lg">+</span>
+                {attendanceView === "individual" ? "Record Attendance" : "Add Attendance"}
+              </button>
             </div>
 
-            <div className="flex flex-col gap-2 items-end">
+            <div className="flex flex-col gap-2 items-end w-full md:w-auto">
               {attendanceView === "individual" ? (
                 <FilterBar
                   searchValue={individualAttendanceSearch}
@@ -1683,24 +1702,10 @@ function MinistryDetailsPage() {
                 dateFrom={attendanceView === "individual" ? indivDateFrom : attendanceDateFrom}
                 dateTo={attendanceView === "individual" ? indivDateTo : attendanceDateTo}
                 onDateApply={(from, to) => attendanceView === "individual" ? (setIndivDateFrom(from), setIndivDateTo(to)) : (setAttendanceDateFrom(from), setAttendanceDateTo(to))}
+                className="w-full"
               />
             </div>
           </div>
-
-          <PageTabs
-            tabs={[
-              { key: "total", label: "Total Attendance" },
-              { key: "individual", label: "Individual Attendance" },
-            ]}
-            activeTab={attendanceView}
-            onChange={(key) => {
-              setAttendanceView(key);
-              setAttendanceError("");
-              setIndividualAttendanceError("");
-            }}
-            sticky={false}
-            className="px-4 md:px-5 lg:px-6 pt-2"
-          />
 
           {attendanceView === "individual" ? (
             <>
@@ -2135,12 +2140,22 @@ function MinistryDetailsPage() {
       {activeTab === "offerings" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
-            <div>
-              <div className="font-semibold text-gray-900 text-sm">Offerings</div>
-              <div className="text-gray-500 text-xs">Record ministry offerings</div>
+            <div className="flex items-center gap-3 justify-between w-full md:w-auto md:block">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Offerings</div>
+                <div className="text-gray-500 text-xs">Record ministry offerings</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => openOfferingForm("create", null)}
+                className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+              >
+                <span className="leading-none text-lg">+</span>
+                Add Offering
+              </button>
             </div>
 
-            <div className="flex flex-col gap-2 items-end">
+            <div className="flex flex-col gap-2 items-end w-full md:w-auto">
               <FilterBar
                 searchValue={offeringSearch}
                 onSearchChange={(v) => setOfferingSearch(v)}
@@ -2166,6 +2181,7 @@ function MinistryDetailsPage() {
                 dateFrom={offeringDateFrom}
                 dateTo={offeringDateTo}
                 onDateApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); }}
+                className="w-full"
               />
             </div>
           </div>
@@ -2221,8 +2237,8 @@ function MinistryDetailsPage() {
           )}
 
           {offeringViewOpen && offeringViewRow && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-              <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+              <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
                 <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
                   <div className="font-semibold text-gray-900 text-sm">Offering Details</div>
                   <button type="button" onClick={() => { setOfferingViewOpen(false); setOfferingViewRow(null); }} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">

@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import BackButton from "../../../shared/components/BackButton/index.jsx";
 
 import {
   getOutreachEventById,
@@ -196,8 +197,6 @@ export default function OutreachEventDetailPage() {
     return params;
   }, [fromTab]);
 
-  const backLabel = fromTab === "overview" ? "Back to Overview" : fromTab === "people" ? "Back to People Reached" : "Back to Outreach";
-
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("prospects");
@@ -331,7 +330,7 @@ export default function OutreachEventDetailPage() {
   if (!eventId) return (
     <div className="text-center py-20 text-gray-500">
       <p>No event selected.</p>
-      <button onClick={() => toPage("outreach", backParams)} className="mt-4 text-blue-700 font-semibold hover:underline text-sm">← {backLabel}</button>
+      <BackButton onClick={() => toPage("outreach", backParams)} className="mt-4 mb-0" />
     </div>
   );
 
@@ -346,7 +345,7 @@ export default function OutreachEventDetailPage() {
   if (!event) return (
     <div className="text-center py-20 text-gray-500">
       <p>Event not found.</p>
-      <button onClick={() => toPage("outreach", backParams)} className="mt-4 text-blue-700 font-semibold hover:underline text-sm">← {backLabel}</button>
+      <BackButton onClick={() => toPage("outreach", backParams)} className="mt-4 mb-0" />
     </div>
   );
 
@@ -358,10 +357,7 @@ export default function OutreachEventDetailPage() {
   return (
     <div className="max-w-5xl">
       {/* Back + Header */}
-      <button onClick={() => toPage("outreach", backParams)} className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-semibold">
-        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-        {backLabel}
-      </button>
+      <BackButton onClick={() => toPage("outreach", backParams)} />
 
       {/* Event Header Card */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">

@@ -59,6 +59,11 @@ function ProgramsEventsFilters({ activeStatus }) {
     debouncedSearch(next);
   };
 
+  const applyDates = async (from, to) => {
+    store?.setFilters({ dateFrom: from, dateTo: to, page: 1 });
+    await refreshAll({ dateFrom: from, dateTo: to, page: 1 });
+  };
+
   const categorySelectOptions = useMemo(
     () => categoryOptions.map((c) => ({ label: c, value: c })),
     [categoryOptions]
@@ -80,11 +85,17 @@ function ProgramsEventsFilters({ activeStatus }) {
             placeholder: "All Categories",
           },
         ]}
+        dateFrom={store?.filters?.dateFrom || ""}
+        dateTo={store?.filters?.dateTo || ""}
+        onDateApply={applyDates}
       />
       <MobileFilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
         searchPlaceholder="Search event title..."
+        dateFrom={store?.filters?.dateFrom || ""}
+        dateTo={store?.filters?.dateTo || ""}
+        onDateApply={applyDates}
         filters={[
           {
             key: "category",

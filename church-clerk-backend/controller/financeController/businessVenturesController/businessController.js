@@ -59,7 +59,7 @@ const createBusinessVentures = async (req, res) => {
 const getAllBusinessVentures = async (req, res) => {
     
     try {
-        const { page = 1, limit = 10 } = req.query;
+        const { page = 1, limit = 10, dateFrom, dateTo } = req.query;
                                                 
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
         const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -71,6 +71,18 @@ const getAllBusinessVentures = async (req, res) => {
         // Restrict by church for non-admins
         if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
             query.church = req.activeChurch._id;
+        }
+
+        // Date range filter
+        if (dateFrom || dateTo) {
+            const dateFilter = {};
+            if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+            if (dateTo) {
+                const end = new Date(dateTo);
+                end.setHours(23, 59, 59, 999);
+                dateFilter.$lte = end;
+            }
+            query.startDate = dateFilter;
         }
     
         // FETCH ALL  BUSINESS VENTURES

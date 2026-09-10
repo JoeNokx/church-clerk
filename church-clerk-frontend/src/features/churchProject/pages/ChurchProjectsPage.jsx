@@ -54,8 +54,8 @@ function safeProjectsPayload(res) {
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
@@ -516,6 +516,8 @@ function ChurchProjectsPageInner() {
   const [projectsKpi, setProjectsKpi] = useState(null);
 
   const [searchValue, setSearchValue] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -530,11 +532,14 @@ function ChurchProjectsPageInner() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmDeleteRow, setConfirmDeleteRow] = useState(null);
 
-  const load = async () => {
+  const load = async (dateParams) => {
     setLoading(true);
     setError("");
     try {
-      const res = await getChurchProjects({ page: 1, limit: 50 });
+      const params = { page: 1, limit: 50 };
+      if (dateParams?.dateFrom) params.dateFrom = dateParams.dateFrom;
+      if (dateParams?.dateTo) params.dateTo = dateParams.dateTo;
+      const res = await getChurchProjects(params);
       const rows = safeProjectsPayload(res);
       setProjects(
         rows.map((p) => {
@@ -578,6 +583,10 @@ function ChurchProjectsPageInner() {
     load();
     loadKpi();
   }, []);
+
+  useEffect(() => {
+    load({ dateFrom, dateTo });
+  }, [dateFrom, dateTo]);
 
   const filteredProjects = useMemo(() => {
     const q = searchValue.trim().toLowerCase();
@@ -741,11 +750,17 @@ function ChurchProjectsPageInner() {
             searchPlaceholder="Search project name..."
             searchWidth="md:w-[320px]"
             selects={[]}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); setCurrentPage(1); }}
           />
           <MobileFilterBar
             searchValue={searchValue}
             onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
             searchPlaceholder="Search project name..."
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); setCurrentPage(1); }}
             resultCount={filteredProjects.length}
             getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
               const q = searchValue.trim().toLowerCase();
@@ -754,6 +769,7 @@ function ChurchProjectsPageInner() {
                 return true;
               }).length;
             }}
+            className="w-full"
           />
         </div>
 
@@ -1082,8 +1098,8 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
 function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>

@@ -196,7 +196,7 @@ function DashboardLayout() {
           {/* Branch view-only modal */}
           {showBranchBlock && (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/30"
               onClick={() => setShowBranchBlock(false)}
             >
               <div

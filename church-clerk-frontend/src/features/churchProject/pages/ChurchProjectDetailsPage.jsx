@@ -26,6 +26,7 @@ import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import BackButton from "../../../shared/components/BackButton/index.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -83,8 +84,8 @@ function safePagination(res) {
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
@@ -110,8 +111,8 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
 function ConfirmModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div className="font-semibold text-gray-900 text-sm">{title}</div>
         </div>
@@ -704,19 +705,9 @@ function ChurchProjectDetailsPage() {
 
   return (
     <div className="max-w-6xl">
+      <BackButton onClick={() => toPage("church-projects")} />
       <div className="flex items-start justify-between gap-4">
         <div>
-          <button
-            type="button"
-            onClick={() => toPage("church-projects")}
-            className="inline-flex items-center gap-2 font-semibold text-blue-700 hover:underline text-sm"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Back to Projects
-          </button>
-
           <div className="mt-3 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">
             {kpiLoading ? <Skeleton height={26} width={220} /> : projectName || "Project"}
           </div>
@@ -1068,8 +1059,8 @@ function ChurchProjectDetailsPage() {
       </div>
 
       {expenseViewOpen && expenseViewRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
               <div className="font-semibold text-gray-900 text-sm">Expense Details</div>
               <button type="button" onClick={() => { setExpenseViewOpen(false); setExpenseViewRow(null); }} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">

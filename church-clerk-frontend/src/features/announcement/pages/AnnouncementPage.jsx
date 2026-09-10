@@ -59,7 +59,7 @@ function SenderIdWarningModal({
   const requested = String(senderIdCurrent || "").trim();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
       <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-start justify-between gap-3">
           <div>
@@ -259,8 +259,8 @@ function FundWalletModal({ open, onClose, onFund, loading, error, isGhana, usdTo
   const amountOk = Number.isFinite(amountNum) && amountNum >= minAmount;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
           <div>
             <div className="font-semibold text-gray-900 text-sm">Fund Wallet</div>
@@ -838,8 +838,8 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
           <div>
             <div className="font-semibold text-gray-900 text-sm">{isScheduled ? "Edit Scheduled Message" : "Edit Draft Message"}</div>
@@ -973,7 +973,7 @@ function DeliveryReportModal({ open, onClose, message }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
       <div className="w-full max-w-5xl max-h-[90vh] rounded-xl bg-white shadow-xl flex flex-col overflow-hidden">
         <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
           <div>

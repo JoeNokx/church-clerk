@@ -250,7 +250,7 @@ function MembersPageInner() {
   };
 
   return (
-    <div className="max-w-6xl">
+    <div className="w-full max-w-6xl overflow-x-hidden lg:overflow-x-visible">
       <div className="flex flex-row items-center justify-between gap-3 md:items-start md:justify-between">
         <div>
           <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Members</h2>
@@ -444,7 +444,7 @@ function MembersPageInner() {
       </div>
 
       {canImport && importOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-3xl rounded-xl bg-white shadow-xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
               <div>
@@ -659,7 +659,7 @@ function MembersPageInner() {
 
       {/* Registration Link modal */}
       {regLinkOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
               <div>
@@ -751,7 +751,7 @@ function MembersPageInner() {
 
       {/* Member limit modal */}
       {limitModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-black/40" onClick={() => setLimitModalOpen(false)} />
           <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 lg:p-8">
             <div className="font-semibold text-gray-900 text-lg">Limit Reached</div>

@@ -214,8 +214,8 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
       </div>
 
       {viewOpen && viewRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
               <div className="font-semibold text-gray-900 text-sm">Expense Details</div>
               <button type="button" onClick={() => setViewOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
@@ -238,8 +238,8 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
       )}
 
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+          <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
               <div className="font-semibold text-gray-900 text-sm">Delete Expense</div>
             </div>

@@ -66,8 +66,8 @@ function SimpleModal({ open, title, children, onClose, size }) {
   if (!open) return null;
   const maxW = size === "lg" ? "max-w-3xl" : "max-w-xl";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className={`w-full ${maxW} rounded-xl bg-white shadow-xl`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className={`w-full ${maxW} max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl`}>
         <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
           <div className="font-semibold text-gray-900 text-sm">{title}</div>
           <button
@@ -469,7 +469,7 @@ function AttendancePageInner() {
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
-                Start Attendance
+                Create Session
               </button>
             ) : activeTab === "total" && canCreateAttendance ? (
               <button
@@ -524,7 +524,7 @@ function AttendancePageInner() {
             const allIds = indivMembers.map((m) => String(m.id));
             const allChecked = allIds.length > 0 && allIds.every((id) => indivMarkingSelected.includes(id));
             return (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
                 <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl bg-white shadow-xl overflow-hidden">
                   {/* Modal header */}
                   <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 py-4 shrink-0">
@@ -960,7 +960,7 @@ function AttendancePageInner() {
           {/* Start / Edit Attendance modal */}
           <SimpleModal
             open={indivFormModalOpen}
-            title={indivFormMode === "edit" ? "Edit Attendance" : "Start Attendance"}
+            title={indivFormMode === "edit" ? "Edit Attendance" : "Create Session"}
             onClose={() => { if (!indivFormSaving) { setIndivFormModalOpen(false); setIndivFormError(""); } }}
           >
             <form onSubmit={submitIndivForm}>
@@ -1010,8 +1010,8 @@ function AttendancePageInner() {
               </div>
               <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
                 <button type="button" onClick={() => { setIndivFormModalOpen(false); setIndivFormError(""); }} disabled={indivFormSaving} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Cancel</button>
-                <Button type="submit" variant="primary" loading={indivFormSaving} loadingText={indivFormMode === "edit" ? "Updating..." : "Starting..."} className="rounded-lg px-4 py-2 text-sm">
-                  {indivFormMode === "edit" ? "Update" : "Start Session"}
+                <Button type="submit" variant="primary" loading={indivFormSaving} loadingText={indivFormMode === "edit" ? "Updating..." : "Creating..."} className="rounded-lg px-4 py-2 text-sm">
+                  {indivFormMode === "edit" ? "Update" : "Create Session"}
                 </Button>
               </div>
             </form>
@@ -1019,7 +1019,7 @@ function AttendancePageInner() {
 
           {/* Generate Link modal */}
           {indivLinkModalOpen ? (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
               <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
                 <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                   <div>
