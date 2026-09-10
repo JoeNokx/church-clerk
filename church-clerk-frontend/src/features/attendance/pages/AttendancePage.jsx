@@ -12,7 +12,7 @@ import VisitorForm from "../components/VisitorForm.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import VisitorTable from "../components/VisitorTable.jsx";
 import ChurchContext from "../../church/church.store.js";
-import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import {
@@ -28,7 +28,6 @@ import {
 import { getMembers } from "../../member/services/member.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
-import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
@@ -112,7 +111,6 @@ function AttendancePageInner() {
   const [indivDateTo, setIndivDateTo] = useState("");
   const [indivServiceTypeFilter, setIndivServiceTypeFilter] = useState("");
 
-  const [indivPage, setIndivPage] = useState("list");
   const [indivFormMode, setIndivFormMode] = useState("create");
   const [indivFormEditing, setIndivFormEditing] = useState(null);
   const [indivFormDate, setIndivFormDate] = useState("");
@@ -154,6 +152,7 @@ function AttendancePageInner() {
   const [indivMarkingSaving, setIndivMarkingSaving] = useState(false);
   const [indivMarkingError, setIndivMarkingError] = useState("");
   const [indivMarkingSuccess, setIndivMarkingSuccess] = useState("");
+  const [indivMarkingOpen, setIndivMarkingOpen] = useState(false);
 
   const canCreateAttendance = useMemo(() => (typeof can === "function" ? can("attendance", "create") : false), [can]);
   const canUpdateAttendance = useMemo(() => (typeof can === "function" ? can("attendance", "update") : false), [can]);
@@ -215,7 +214,7 @@ function AttendancePageInner() {
       label: "Service Type",
       value: indivServiceTypeFilter,
       defaultValue: "",
-      options: [{ label: "All Services", value: "" }, ...serviceTypeOptions.map((c) => ({ label: c, value: c }))],
+      options: [{ label: "Services", value: "" }, ...serviceTypeOptions.map((c) => ({ label: c, value: c }))],
     },
   ];
 
@@ -350,7 +349,6 @@ function AttendancePageInner() {
     setIndivLinkError("");
     setIndivLinkCopied(false);
     setIndivLinkRecordId(row?._id || null);
-    setIndivPage("view");
     setIndivViewLoading(true);
     try {
       const [res] = await Promise.all([
@@ -463,7 +461,7 @@ function AttendancePageInner() {
         <div className="flex items-center justify-between gap-3 md:items-start">
           <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Attendance Records</h2>
           <div className="shrink-0">
-            {activeTab === "individual" && indivPage === "list" && canCreateAttendance ? (
+            {activeTab === "individual" && canCreateAttendance ? (
               <button
                 type="button"
                 data-hq-action="true"
@@ -505,7 +503,7 @@ function AttendancePageInner() {
             { key: "visitors", label: "Visitors" },
           ]}
           activeTab={activeTab}
-          onChange={(key) => { setActiveTab(key); setIndivPage("list"); }}
+          onChange={(key) => { setActiveTab(key); setIndivViewing(null); }}
           sticky={false}
           className="mt-4"
         />
@@ -514,273 +512,8 @@ function AttendancePageInner() {
       {/* ─── INDIVIDUAL ATTENDANCE TAB ─── */}
       {activeTab === "individual" ? (
         <>
-          {indivPage === "list" ? (
-            <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-              <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-4 md:p-6 lg:p-8">
-                <div>
-                  <div className="font-semibold text-gray-900 text-sm">Individual Attendance</div>
-                  <div className="text-gray-500 text-xs hidden md:block">Record and track member presence per service</div>
-                </div>
-                <FilterBar
-                    searchValue={indivSpeakerSearch}
-                    onSearchChange={(v) => setIndivSpeakerSearch(v)}
-                    searchPlaceholder="Search speaker..."
-                    searchWidth="md:w-[320px]"
-                    selects={[
-                      {
-                        key: "serviceType",
-                        value: indivServiceTypeFilter,
-                        onChange: (v) => setIndivServiceTypeFilter(v),
-                        options: serviceTypeOptions.map((c) => ({ label: c, value: c })),
-                        placeholder: "All Services",
-                      },
-                    ]}
-                    dateFrom={indivDateFrom}
-                    dateTo={indivDateTo}
-                    onDateApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
-                  />
-                <MobileFilterBar
-                  searchValue={indivSpeakerSearch}
-                  onSearchChange={(v) => setIndivSpeakerSearch(v)}
-                  searchPlaceholder="Search speaker..."
-                  dateFrom={indivDateFrom}
-                  dateTo={indivDateTo}
-                  onDateApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
-                  filters={indivMobileFilters}
-                  onApply={onIndivMobileApply}
-                  resultCount={filteredIndivRecords.length}
-                  getLiveCount={getIndivLiveCount}
-                  className="mt-3"
-                />
-              </div>
-
-              {indivError ? (
-                <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{indivError}</div>
-              ) : indivLoading ? (
-                <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <div key={i} className="flex items-center justify-between gap-3 py-1.5">
-                      <div className="h-4 w-24 rounded bg-gray-200" />
-                      <div className="h-4 w-16 rounded bg-gray-200" />
-                      <div className="h-4 w-16 rounded bg-gray-200" />
-                    </div>
-                  ))}
-                </div>
-              ) : filteredIndivRecords.length === 0 ? (
-                <EmptyState compact illustration="attendance" title="No individual attendance records found" description="Individual attendance entries will appear here." />
-              ) : (
-                <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-4">
-                  <table className="min-w-full">
-                    <thead className="bg-slate-100">
-                      <tr className="text-left font-semibold text-gray-500 text-xs">
-                        <th className="sticky left-0 z-20 bg-slate-100 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
-                        <th className="py-2 whitespace-nowrap px-4 md:px-6">Day</th>
-                        <th className="py-2 whitespace-nowrap px-4 md:px-6">Service Type</th>
-                        <th className="py-2 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
-                        <th className="py-2 whitespace-nowrap px-4 md:px-6">Present</th>
-                        <th className="py-2 whitespace-nowrap px-4 md:px-6">Absent</th>
-                        <th className="py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {filteredIndivRecords.map((r, idx) => (
-                        <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
-                          <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{formatDay(r?.date) || "-"}</td>
-                          <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{r?.serviceType || "-"}</td>
-                          <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
-                          <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.presentCount ?? 0)}</td>
-                          <td className="py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
-                          <td className="py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <TableKebabMenu items={[
-                              canUpdateAttendance && { label: "Edit", onClick: () => void openIndivForm("edit", r) },
-                              { label: "View", onClick: () => void openIndivView(r) },
-                              canDeleteAttendance && { label: "Delete", onClick: () => confirmDelete(r?._id), danger: true }
-                            ]} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-3 px-4 pb-4 md:px-6 lg:px-8">
-                <button type="button" onClick={() => loadIndivRecords(indivPagination?.prevPage)} disabled={!indivPagination?.prevPage} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm">Prev</button>
-                <div className="text-gray-600 text-sm">Page {indivPagination?.currentPage || 1}</div>
-                <button type="button" onClick={() => loadIndivRecords(indivPagination?.nextPage)} disabled={!indivPagination?.nextPage} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm">Next</button>
-              </div>
-            </div>
-
-          ) : indivPage === "view" ? (() => {
-            const VIEW_PAGE_SIZE = 15;
-            const allPresent = Array.isArray(indivViewing?.presentMembers) ? indivViewing.presentMembers : [];
-            const presentTotalPages = Math.max(1, Math.ceil(allPresent.length / VIEW_PAGE_SIZE));
-            const presentPaged = allPresent.slice((indivViewPresentPage - 1) * VIEW_PAGE_SIZE, indivViewPresentPage * VIEW_PAGE_SIZE);
-            const presentIds = new Set(allPresent.map((m) => String(m?._id || "")).filter(Boolean));
-            const absentList = indivMembers.filter((m) => !presentIds.has(String(m?.id || "")));
-            const absentTotalPages = Math.max(1, Math.ceil(absentList.length / VIEW_PAGE_SIZE));
-            const absentPaged = absentList.slice((indivViewAbsentPage - 1) * VIEW_PAGE_SIZE, indivViewAbsentPage * VIEW_PAGE_SIZE);
-            return (
-              <div className="mt-6">
-                <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setIndivPage("list")} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm">
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      Back
-                    </button>
-                    <h3 className="font-semibold text-gray-900">Attendance Details</h3>
-                  </div>
-                  {!indivViewLoading && indivViewing ? (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => { setIndivLinkError(""); setIndivLinkModalOpen(true); }}
-                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                        Generate Link
-                      </button>
-                      {canUpdateAttendance ? (
-                        <button
-                          type="button"
-                          onClick={() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivPage("manual-marking"); }}
-                          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white hover:bg-blue-700 text-sm"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                          Manual Marking
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-
-                {indivViewError ? (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{indivViewError}</div>
-                ) : indivViewLoading ? (
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-3 animate-pulse">
-                    {[0, 1, 2, 3, 4].map((i) => (<div key={i}><div className="h-3 w-16 rounded bg-gray-200" /><div className="mt-1 h-4 w-24 rounded bg-gray-200" /></div>))}
-                  </div>
-                ) : !indivViewing ? (
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 text-gray-600 text-sm">No record found.</div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-5 mb-4">
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-5">
-                        <div className="font-semibold text-gray-500 text-xs">Date</div>
-                        <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(indivViewing?.date)}</div>
-                      </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-5">
-                        <div className="font-semibold text-gray-500 text-xs">Day</div>
-                        <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDay(indivViewing?.date) || "-"}</div>
-                      </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-5">
-                        <div className="font-semibold text-gray-500 text-xs">Present</div>
-                        <div className="mt-1 font-bold text-green-700 text-lg">{Number(indivViewing?.presentCount ?? 0)}</div>
-                      </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-5">
-                        <div className="font-semibold text-gray-500 text-xs">Absent</div>
-                        <div className="mt-1 font-bold text-red-600 text-lg">{Number(indivViewing?.absentCount ?? 0)}</div>
-                      </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-5">
-                        <div className="font-semibold text-gray-500 text-xs">Service Type</div>
-                        <div className="mt-1 font-semibold text-gray-900 text-sm">{indivViewing?.serviceType || "-"}</div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-                      <div className="flex gap-1 bg-gray-50 border-b border-gray-200 p-3">
-                        {[
-                          { key: "present", label: `Present (${Number(indivViewing?.presentCount ?? 0)})` },
-                          { key: "absent", label: `Absent (${Number(indivViewing?.absentCount ?? 0)})` }
-                        ].map(({ key, label }) => (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => { setIndivViewTab(key); setIndivViewPresentPage(1); setIndivViewAbsentPage(1); }}
-                            className={`rounded-full px-4 py-1 text-xs font-semibold transition-colors ${indivViewTab === key ? "bg-white text-gray-900 shadow-sm border border-gray-200" : "text-gray-500 hover:text-gray-700"}`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-
-                      {indivViewTab === "present" ? (
-                        allPresent.length === 0 ? (
-                          <div className="px-4 py-6 text-gray-600 text-sm">No members marked present.</div>
-                        ) : (
-                          <>
-                            <div className="overflow-x-auto">
-                              <table className="min-w-full">
-                                <thead className="bg-slate-100">
-                                  <tr className="text-left font-semibold text-gray-500 text-xs">
-                                    <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
-                                    <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
-                                    <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {presentPaged.map((m, idx) => {
-                                    const fullN = `${String(m?.firstName || "")} ${String(m?.lastName || "")}`.trim() || "-";
-                                    return (
-                                      <tr key={m?._id || idx} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { setIndivPage("list"); toPage("member-details", { id: m?._id }, { state: { from: "attendance" } }); }}>
-                                        <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={fullN}>{truncateName(fullN)}</td>
-                                        <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
-                                        <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.streetAddress || "-"}</td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                            <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2.5">
-                              <button type="button" onClick={() => setIndivViewPresentPage((p) => Math.max(1, p - 1))} disabled={indivViewPresentPage <= 1} className="rounded border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-40">Prev</button>
-                              <span className="text-xs text-gray-500">Page {indivViewPresentPage} of {presentTotalPages}</span>
-                              <button type="button" onClick={() => setIndivViewPresentPage((p) => Math.min(presentTotalPages, p + 1))} disabled={indivViewPresentPage >= presentTotalPages} className="rounded border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-40">Next</button>
-                            </div>
-                          </>
-                        )
-                      ) : (
-                        absentList.length === 0 ? (
-                          <div className="px-4 py-6 text-gray-600 text-sm">No members marked absent.</div>
-                        ) : (
-                          <>
-                            <div className="overflow-x-auto">
-                              <table className="min-w-full">
-                                <thead className="bg-slate-100">
-                                  <tr className="text-left font-semibold text-gray-500 text-xs">
-                                    <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
-                                    <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
-                                    <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {absentPaged.map((m) => (
-                                    <tr key={m.id} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { setIndivPage("list"); toPage("member-details", { id: m.id }, { state: { from: "attendance" } }); }}>
-                                      <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={m.name}>{truncateName(m.name)}</td>
-                                      <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
-                                      <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.streetAddress || "-"}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                            <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2.5">
-                              <button type="button" onClick={() => setIndivViewAbsentPage((p) => Math.max(1, p - 1))} disabled={indivViewAbsentPage <= 1} className="rounded border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-40">Prev</button>
-                              <span className="text-xs text-gray-500">Page {indivViewAbsentPage} of {absentTotalPages}</span>
-                              <button type="button" onClick={() => setIndivViewAbsentPage((p) => Math.min(absentTotalPages, p + 1))} disabled={indivViewAbsentPage >= absentTotalPages} className="rounded border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-40">Next</button>
-                            </div>
-                          </>
-                        )
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })()
-
-          : indivPage === "manual-marking" ? (() => {
+          {/* Manual Marking Modal */}
+          {indivMarkingOpen && indivViewing ? (() => {
             const MARK_PAGE_SIZE = 15;
             const filteredMarkMembers = indivMembers.filter((m) => {
               const q = String(indivMarkingSearch || "").trim().toLowerCase();
@@ -791,32 +524,37 @@ function AttendancePageInner() {
             const allIds = indivMembers.map((m) => String(m.id));
             const allChecked = allIds.length > 0 && allIds.every((id) => indivMarkingSelected.includes(id));
             return (
-              <div className="mt-6">
-                <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setIndivPage("view")} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm">
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      Back
-                    </button>
-                    <h3 className="font-semibold text-gray-900">Manual Marking</h3>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+                <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl bg-white shadow-xl overflow-hidden">
+                  {/* Modal header */}
+                  <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 py-4 shrink-0">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">{formatDay(indivViewing?.date) || "-"}, {formatDate(indivViewing?.date)}</div>
+                      <div className="text-gray-500 text-xs mt-0.5">{indivViewing?.serviceType || "-"}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {canUpdateAttendance ? (
+                        <button type="button" onClick={saveManualMarking} disabled={indivMarkingSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
+                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          {indivMarkingSaving ? "Saving..." : "Mark Attendance"}
+                        </button>
+                      ) : null}
+                      <button type="button" onClick={() => { if (!indivMarkingSaving) setIndivMarkingOpen(false); }} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                      </button>
+                    </div>
                   </div>
-                  {canUpdateAttendance ? (
-                    <button type="button" onClick={saveManualMarking} disabled={indivMarkingSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm shrink-0">
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      {indivMarkingSaving ? "Saving..." : "Mark Attendance"}
-                    </button>
-                  ) : null}
-                </div>
 
-                {indivMarkingError && (
-                  <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{indivMarkingError}</div>
-                )}
-                {indivMarkingSuccess && (
-                  <div className="mb-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">{indivMarkingSuccess}</div>
-                )}
+                  {/* Error/Success */}
+                  {indivMarkingError && (
+                    <div className="mx-4 mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{indivMarkingError}</div>
+                  )}
+                  {indivMarkingSuccess && (
+                    <div className="mx-4 mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">{indivMarkingSuccess}</div>
+                  )}
 
-                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
+                  {/* Search + check all */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 shrink-0">
                     <input
                       value={indivMarkingSearch}
                       onChange={(e) => { setIndivMarkingSearch(e.target.value); setIndivMarkingPage(1); }}
@@ -840,26 +578,28 @@ function AttendancePageInner() {
                     <span className="text-xs text-gray-500 shrink-0">Present: {indivMarkingSelected.length} / {indivMembers.length}</span>
                   </div>
 
-                  {indivMembersLoading ? (
-                    <div className="px-4 py-4 space-y-2 animate-pulse">
-                      {[0,1,2,3,4].map((i) => (
-                        <div key={i} className="flex items-center gap-3 py-1">
-                          <div className="h-4 w-4 rounded bg-gray-200" />
-                          <div className="h-4 w-40 rounded bg-gray-200" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : indivMembers.length === 0 ? (
-                    <div className="px-4 py-4"><EmptyState compact illustration="members" title="No members found" description="Add members to your church to record their attendance." /></div>
-                  ) : (
-                    <>
+                  {/* Table body - scrollable */}
+                  <div className="flex-1 overflow-y-auto">
+                    {indivMembersLoading ? (
+                      <div className="px-4 py-4 space-y-2 animate-pulse">
+                        {[0,1,2,3,4].map((i) => (
+                          <div key={i} className="flex items-center gap-3 py-1">
+                            <div className="h-4 w-4 rounded bg-gray-200" />
+                            <div className="h-4 w-40 rounded bg-gray-200" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : indivMembers.length === 0 ? (
+                      <div className="px-4 py-4"><EmptyState compact illustration="members" title="No members found" description="Add members to your church to record their attendance." /></div>
+                    ) : (
                       <div className="overflow-x-auto">
                         <table className="min-w-full">
-                          <thead className="bg-slate-100">
+                          <thead className="bg-slate-100 sticky top-0">
                             <tr className="text-left font-semibold text-gray-500 text-xs">
                               <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
                               <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
                               <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
+                              <th className="px-4 py-2.5 whitespace-nowrap text-right">Action</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
@@ -878,35 +618,344 @@ function AttendancePageInner() {
                                   }}
                                 >
                                   <td className="sticky left-0 z-10 bg-white px-4 py-2.5 whitespace-nowrap">
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={isPresent}
-                                        onChange={() => {}}
-                                        onClick={(e) => e.stopPropagation()}
-                                      />
-                                      <span className={isPresent ? "text-green-700 font-semibold" : "text-gray-900"}>{truncateName(m.name)}</span>
-                                    </label>
+                                    <span className={isPresent ? "text-green-700 font-semibold" : "text-gray-900"}>{truncateName(m.name)}</span>
                                   </td>
                                   <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
                                   <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.streetAddress || "-"}</td>
+                                  <td className="px-4 py-2.5 whitespace-nowrap text-right">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const mid = String(m.id);
+                                        setIndivMarkingSelected((prev) => {
+                                          if (prev.includes(mid)) return prev.filter((x) => x !== mid);
+                                          return [...prev, mid];
+                                        });
+                                      }}
+                                      className={`cck-allow-icons h-7 w-7 inline-flex items-center justify-center rounded-lg border transition-colors ${isPresent ? "border-green-500 bg-green-500 text-white" : "border-gray-200 bg-white text-gray-300 hover:bg-gray-50"}`}
+                                    >
+                                      <svg viewBox="0 0 24 24" fill={isPresent ? "currentColor" : "none"} className="h-4 w-4"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                    </button>
+                                  </td>
                                 </tr>
                               );
                             })}
                           </tbody>
                         </table>
                       </div>
-                      <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2.5">
-                        <button type="button" onClick={() => setIndivMarkingPage((p) => Math.max(1, p - 1))} disabled={indivMarkingPage <= 1} className="rounded border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-40">Prev</button>
-                        <span className="text-xs text-gray-500">Page {indivMarkingPage} of {markTotalPages}</span>
-                        <button type="button" onClick={() => setIndivMarkingPage((p) => Math.min(markTotalPages, p + 1))} disabled={indivMarkingPage >= markTotalPages} className="rounded border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-40">Next</button>
-                      </div>
-                    </>
-                  )}
+                    )}
+                  </div>
+
+                  {/* Pagination footer */}
+                  {indivMembers.length > 0 ? (
+                    <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 border-t border-gray-200 shrink-0">
+                      <button type="button" onClick={() => setIndivMarkingPage((p) => Math.max(1, p - 1))} disabled={indivMarkingPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+                      <div className="text-gray-600 text-sm">Page {indivMarkingPage} of {markTotalPages}</div>
+                      <button type="button" onClick={() => setIndivMarkingPage((p) => Math.min(markTotalPages, p + 1))} disabled={indivMarkingPage >= markTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );
           })() : null}
+
+          {/* Master-detail layout: card list on left, details on right */}
+          <div className="mt-6 flex flex-col lg:flex-row gap-4">
+              {/* LEFT: card list sidebar */}
+              <div className="lg:w-[380px] lg:shrink-0">
+                <div className="rounded-xl border border-gray-200 bg-white">
+                  {/* Header with filters */}
+                  <div className="flex flex-col gap-2 border-b border-gray-200 p-3">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">Individual Attendance</div>
+                      <div className="text-gray-500 text-xs hidden md:block">Record and track member presence per service</div>
+                    </div>
+                    {/* Desktop: all filters on one row */}
+                    <div className="hidden md:flex items-center gap-2">
+                      <input
+                        value={indivSpeakerSearch}
+                        onChange={(e) => setIndivSpeakerSearch(e.target.value)}
+                        placeholder="Search speaker..."
+                        className="h-9 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-2.5 text-gray-700 text-xs outline-none focus:ring-2 focus:ring-blue-100"
+                      />
+                      <div className="relative shrink-0 w-[90px]">
+                        <select
+                          value={indivServiceTypeFilter}
+                          onChange={(e) => setIndivServiceTypeFilter(e.target.value)}
+                          className="h-9 w-full appearance-none rounded-lg border border-gray-200 bg-white pl-2.5 pr-6 text-gray-700 text-xs outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer truncate"
+                        >
+                          <option value="">Services</option>
+                          {serviceTypeOptions.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                        <span className="pointer-events-none absolute inset-y-0 right-[4px] flex items-center">
+                          <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 text-gray-400"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </span>
+                      </div>
+                      <DateRangeFilter appliedFrom={indivDateFrom} appliedTo={indivDateTo} onApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }} />
+                    </div>
+                    {/* Mobile: filter bar */}
+                    <MobileFilterBar
+                      searchValue={indivSpeakerSearch}
+                      onSearchChange={(v) => setIndivSpeakerSearch(v)}
+                      searchPlaceholder="Search speaker..."
+                      dateFrom={indivDateFrom}
+                      dateTo={indivDateTo}
+                      onDateApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
+                      filters={indivMobileFilters}
+                      onApply={onIndivMobileApply}
+                      resultCount={filteredIndivRecords.length}
+                      getLiveCount={getIndivLiveCount}
+                      className="md:hidden"
+                    />
+                  </div>
+
+                  {/* Card list */}
+                  {indivError ? (
+                    <div className="p-4 text-red-700 text-sm">{indivError}</div>
+                  ) : indivLoading ? (
+                    <div className="p-4 space-y-2 animate-pulse">
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <div key={i} className="h-14 rounded-lg bg-gray-100" />
+                      ))}
+                    </div>
+                  ) : filteredIndivRecords.length === 0 ? (
+                    <EmptyState compact illustration="attendance" title="No individual attendance records found" description="Individual attendance entries will appear here." />
+                  ) : (
+                    <div className="p-2 space-y-1.5 max-h-[600px] overflow-y-auto">
+                      {filteredIndivRecords.map((r, idx) => {
+                        const isSelected = indivViewing?._id === r?._id;
+                        return (
+                          <div
+                            key={r?._id || idx}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => void openIndivView(r)}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void openIndivView(r); } }}
+                            className={`cck-allow-icons w-full text-left rounded-lg border p-2.5 transition-colors flex items-center gap-2.5 cursor-pointer ${isSelected ? "border-blue-400 bg-blue-50" : "border-gray-100 bg-white hover:bg-gray-50 hover:border-gray-200"}`}
+                          >
+                            <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M8 3v3M16 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" /></svg>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="font-semibold text-gray-900 text-xs truncate">{formatDay(r?.date) || "-"}, {formatDate(r?.date)}</div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {canUpdateAttendance ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); void openIndivForm("edit", r); }}
+                                      className="cck-allow-icons h-6 w-6 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                                    >
+                                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                                    </button>
+                                  ) : null}
+                                  {canDeleteAttendance ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); confirmDelete(r?._id); }}
+                                      className="cck-allow-icons h-6 w-6 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50"
+                                    >
+                                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                    </button>
+                                  ) : null}
+                                </div>
+                              </div>
+                              <div className="text-gray-500 text-[11px] truncate">{r?.serviceType || "Service"} · {r?.mainSpeaker || "No speaker"}</div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="inline-flex items-center gap-0.5 text-green-600 text-[10px] font-semibold">
+                                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                  {Number(r?.presentCount ?? 0)}
+                                </span>
+                                <span className="inline-flex items-center gap-0.5 text-red-500 text-[10px] font-semibold">
+                                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                                  {Number(r?.absentCount ?? 0)}
+                                </span>
+                              </div>
+                            </div>
+                            <svg viewBox="0 0 24 24" fill="none" className={`h-4 w-4 shrink-0 transition-colors ${isSelected ? "text-blue-500" : "text-gray-300"}`}><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Pagination */}
+                  {!indivLoading && filteredIndivRecords.length > 0 ? (
+                    <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-gray-200">
+                      <button type="button" onClick={() => loadIndivRecords(indivPagination?.prevPage)} disabled={!indivPagination?.prevPage} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+                      <div className="text-gray-600 text-sm">Page {indivPagination?.currentPage || 1}</div>
+                      <button type="button" onClick={() => loadIndivRecords(indivPagination?.nextPage)} disabled={!indivPagination?.nextPage} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* RIGHT: details outlet */}
+              <div className="flex-1 min-w-0">
+                {!indivViewing || indivViewError ? (
+                  <div className="rounded-xl border border-gray-200 bg-white p-8 h-full flex flex-col items-center justify-center text-center min-h-[400px]">
+                    <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M8 3v3M16 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" /></svg>
+                    </div>
+                    <div className="mt-4 font-semibold text-gray-900 text-sm">Select an attendance record</div>
+                    <div className="mt-1 text-gray-500 text-xs max-w-xs">Click a card on the left to view its details, mark attendance, or generate a check-in link.</div>
+                    {indivViewError ? (
+                      <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{indivViewError}</div>
+                    ) : null}
+                  </div>
+                ) : indivViewLoading ? (
+                  <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-3 animate-pulse">
+                    {[0, 1, 2, 3, 4].map((i) => (<div key={i}><div className="h-3 w-16 rounded bg-gray-200" /><div className="mt-1 h-4 w-24 rounded bg-gray-200" /></div>))}
+                  </div>
+                ) : (
+                  (() => {
+                    const VIEW_PAGE_SIZE = 15;
+                    const allPresent = Array.isArray(indivViewing?.presentMembers) ? indivViewing.presentMembers : [];
+                    const presentTotalPages = Math.max(1, Math.ceil(allPresent.length / VIEW_PAGE_SIZE));
+                    const presentPaged = allPresent.slice((indivViewPresentPage - 1) * VIEW_PAGE_SIZE, indivViewPresentPage * VIEW_PAGE_SIZE);
+                    const presentIds = new Set(allPresent.map((m) => String(m?._id || "")).filter(Boolean));
+                    const absentList = indivMembers.filter((m) => !presentIds.has(String(m?.id || "")));
+                    const absentTotalPages = Math.max(1, Math.ceil(absentList.length / VIEW_PAGE_SIZE));
+                    const absentPaged = absentList.slice((indivViewAbsentPage - 1) * VIEW_PAGE_SIZE, indivViewAbsentPage * VIEW_PAGE_SIZE);
+                    return (
+                      <div className="rounded-xl border border-gray-200 bg-white">
+                        {/* Details header */}
+                        <div className="flex items-center justify-between gap-3 border-b border-gray-200 p-4 md:p-6">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 text-sm">{formatDay(indivViewing?.date) || "-"}, {formatDate(indivViewing?.date)}</h3>
+                            <div className="flex items-center gap-3 mt-1 text-gray-500 text-xs">
+                              <span>{indivViewing?.serviceType || "-"}</span>
+                              <span className="text-gray-300">·</span>
+                              <span className="inline-flex items-center gap-1 text-green-600 font-semibold">
+                                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                {Number(indivViewing?.presentCount ?? 0)} Present
+                              </span>
+                              <span className="text-gray-300">·</span>
+                              <span className="inline-flex items-center gap-1 text-red-500 font-semibold">
+                                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                                {Number(indivViewing?.absentCount ?? 0)} Absent
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => { setIndivLinkError(""); setIndivLinkModalOpen(true); }}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              Generate Link
+                            </button>
+                            {canUpdateAttendance ? (
+                              <button
+                                type="button"
+                                onClick={() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); }}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                Manual Marking
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {/* Present/Absent tabs */}
+                        <div>
+                          <div className="flex gap-1 bg-gray-50 border-b border-gray-200 p-3">
+                            {[
+                              { key: "present", label: `Present (${Number(indivViewing?.presentCount ?? 0)})` },
+                              { key: "absent", label: `Absent (${Number(indivViewing?.absentCount ?? 0)})` }
+                            ].map(({ key, label }) => (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() => { setIndivViewTab(key); setIndivViewPresentPage(1); setIndivViewAbsentPage(1); }}
+                                className={`rounded-full px-4 py-1 text-xs font-semibold transition-colors ${indivViewTab === key ? "bg-white text-gray-900 shadow-sm border border-gray-200" : "text-gray-500 hover:text-gray-700"}`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+
+                          {indivViewTab === "present" ? (
+                            allPresent.length === 0 ? (
+                              <div className="px-4 py-6 text-gray-600 text-sm">No members marked present.</div>
+                            ) : (
+                              <>
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full">
+                                    <thead className="bg-slate-100">
+                                      <tr className="text-left font-semibold text-gray-500 text-xs">
+                                        <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
+                                        <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
+                                        <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                      {presentPaged.map((m, idx) => {
+                                        const fullN = `${String(m?.firstName || "")} ${String(m?.lastName || "")}`.trim() || "-";
+                                        return (
+                                          <tr key={m?._id || idx} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m?._id }, { state: { from: "attendance" } }); }}>
+                                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={fullN}>{truncateName(fullN)}</td>
+                                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
+                                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.streetAddress || "-"}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 border-t border-gray-200">
+                                  <button type="button" onClick={() => setIndivViewPresentPage((p) => Math.max(1, p - 1))} disabled={indivViewPresentPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+                                  <div className="text-gray-600 text-sm">Page {indivViewPresentPage} of {presentTotalPages}</div>
+                                  <button type="button" onClick={() => setIndivViewPresentPage((p) => Math.min(presentTotalPages, p + 1))} disabled={indivViewPresentPage >= presentTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                                </div>
+                              </>
+                            )
+                          ) : (
+                            absentList.length === 0 ? (
+                              <div className="px-4 py-6 text-gray-600 text-sm">No members marked absent.</div>
+                            ) : (
+                              <>
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full">
+                                    <thead className="bg-slate-100">
+                                      <tr className="text-left font-semibold text-gray-500 text-xs">
+                                        <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
+                                        <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
+                                        <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                      {absentPaged.map((m) => (
+                                        <tr key={m.id} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m.id }, { state: { from: "attendance" } }); }}>
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={m.name}>{truncateName(m.name)}</td>
+                                          <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
+                                          <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.streetAddress || "-"}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 border-t border-gray-200">
+                                  <button type="button" onClick={() => setIndivViewAbsentPage((p) => Math.max(1, p - 1))} disabled={indivViewAbsentPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+                                  <div className="text-gray-600 text-sm">Page {indivViewAbsentPage} of {absentTotalPages}</div>
+                                  <button type="button" onClick={() => setIndivViewAbsentPage((p) => Math.min(absentTotalPages, p + 1))} disabled={indivViewAbsentPage >= absentTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                                </div>
+                              </>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Start / Edit Attendance modal */}
           <SimpleModal

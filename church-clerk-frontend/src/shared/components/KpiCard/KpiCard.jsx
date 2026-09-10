@@ -90,7 +90,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
         </div>
         <div className="mt-4">
           <div className="text-gray-500 text-sm leading-snug">{title}</div>
-          <div className="mt-1 font-bold text-gray-900 tabular-nums leading-tight text-3xl md:text-4xl">{value ?? "—"}</div>
+          <div className="mt-1 font-bold text-gray-900 tabular-nums leading-tight text-lg md:text-xl">{value ?? "—"}</div>
           {subtitle ? (
             <div className="mt-1.5 text-gray-400 text-xs leading-snug">{subtitle}</div>
           ) : compareLabel ? (
@@ -135,7 +135,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
               ) : null}
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-gray-900 tabular-nums leading-tight text-2xl md:text-3xl">{value ?? "—"}</span>
+              <span className="font-bold text-gray-900 tabular-nums leading-tight text-base md:text-lg">{value ?? "—"}</span>
               {change !== undefined && change !== null ? (
                 <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-semibold text-xs ${deltaClass}`}>
                   {arrow}

@@ -23,7 +23,7 @@ const FINANCE_ITEMS = [
   { key: "pledges",            label: "Pledges",             mod: "Pledges",           perm: "pledges" },
   { key: "church-projects",    label: "Church Projects",     mod: "ChurchProjects",    perm: "churchProjects" },
   { key: "business-ventures",  label: "Business Ventures",   mod: "BusinessVentures",  perm: "businessVentures" },
-  { key: "financial-statement",label: "Financial Statement", mod: "FinancialStatement",perm: "financialStatement" },
+  { key: "financial-statement",label: "Financial Overview", mod: "FinancialStatement",perm: "financialStatement" },
 ];
 
 const FINANCE_KEYS = new Set(FINANCE_ITEMS.map((i) => i.key));
@@ -34,7 +34,7 @@ const GROUPS = [
   { key: "overview",  label: "Branch Dashboard",   items: null },
   { key: "people",    label: "People & Ministries", items: PEOPLE_ITEMS },
   { key: "finance",   label: "Finance",             items: FINANCE_ITEMS },
-  { key: "reports",   label: "Reports",             items: [{ key: "reports-analytics", label: "Reports & Analytics", mod: "ReportsAnalytics", perm: "reportsAnalytics" }] },
+  { key: "reports",   label: "Reports",             items: [{ key: "reports-analytics", label: "Reports", mod: "ReportsAnalytics", perm: "reportsAnalytics" }] },
 ];
 
 // ─── Small icons ─────────────────────────────────────────────────────────────

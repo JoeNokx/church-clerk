@@ -773,7 +773,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     </span>
 
-                    Financial Statement
+                    Financial Overview
 
                     {isReadOnly("FinancialStatement") ? <LockBadge /> : null}
 
@@ -810,7 +810,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     </span>
 
-                    Reports &amp; Analytics
+                    Reports
 
                     {isReadOnly("ReportsAnalytics") ? <LockBadge /> : null}
 

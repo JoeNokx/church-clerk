@@ -84,7 +84,7 @@ function activityTextFromLog(row) {
     Church: "Church",
     Settings: "Settings",
     Authentication: "Authentication",
-    ReportsAnalytics: "Report",
+    ReportsAnalytics: "Reports",
     Dashboard: "Dashboard",
     System: "System"
   };
