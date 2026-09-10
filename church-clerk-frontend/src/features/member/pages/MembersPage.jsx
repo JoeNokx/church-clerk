@@ -100,6 +100,7 @@ function MembersPageInner() {
   };
 
   const [importOpen, setImportOpen] = useState(false);
+  const [mobileAddOpen, setMobileAddOpen] = useState(false);
   const [importStep, setImportStep] = useState("upload");
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState("");
@@ -250,18 +251,80 @@ function MembersPageInner() {
 
   return (
     <div className="max-w-6xl">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-row items-start justify-between gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Members</h2>
           <p className="mt-1 text-gray-500 text-sm">Track and manage church members</p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 md:gap-3">
+          {/* Mobile: single Add Member button with popup */}
+          <div className="relative md:hidden">
+            <div className="inline-flex rounded-lg bg-blue-600 shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => openCreate()}
+                className="cck-allow-icons inline-flex items-center gap-2 px-3 py-2.5 font-semibold text-white hover:bg-blue-700 active:bg-blue-800 text-sm"
+              >
+                <span className="leading-none text-lg">+</span>
+                Add Member
+              </button>
+              <div className="w-0.5 bg-white/40 my-1.5" />
+              <button
+                type="button"
+                onClick={() => setMobileAddOpen((v) => !v)}
+                className="cck-allow-icons inline-flex items-center px-2.5 py-2.5 font-semibold text-white hover:bg-blue-700 active:bg-blue-800 text-sm"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+            {mobileAddOpen ? (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMobileAddOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                  {canCreate ? (
+                    <button
+                      type="button"
+                      onClick={() => { setMobileAddOpen(false); openCreate(); }}
+                      style={{ textAlign: "left", padding: "0.5rem 1rem" }}
+                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                    >
+                      Register Member
+                    </button>
+                  ) : null}
+                  {isChurchAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => { setMobileAddOpen(false); openRegLink(); }}
+                      style={{ textAlign: "left", padding: "0.5rem 1rem" }}
+                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                    >
+                      Registration Link
+                    </button>
+                  ) : null}
+                  {canImport ? (
+                    <button
+                      type="button"
+                      onClick={() => { setMobileAddOpen(false); openImport(); }}
+                      style={{ textAlign: "left", padding: "0.5rem 1rem" }}
+                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                      Import Members
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {/* Desktop: individual buttons */}
           {isChurchAdmin && (
             <button
               type="button"
               onClick={openRegLink}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 md:px-4 py-2.5 md:py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
+              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
             >
               Registration Link
             </button>
@@ -270,7 +333,7 @@ function MembersPageInner() {
             <button
               type="button"
               onClick={openImport}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 md:px-4 py-2.5 md:py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
+              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
             >
               Import Members
             </button>
@@ -279,7 +342,7 @@ function MembersPageInner() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 md:px-4 py-2.5 md:py-2 font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 text-sm"
+              className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 text-sm"
             >
               <span className="leading-none text-lg">+</span>
               Add Member

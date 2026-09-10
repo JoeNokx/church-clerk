@@ -3,7 +3,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
-import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { formatMoney, formatCompactMoney } from "../../../shared/utils/formatMoney.js";
 import {
   createChurchProject,
   deleteChurchProject,
@@ -19,6 +19,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -772,7 +773,7 @@ function ChurchProjectsPageInner() {
           />
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {paginatedProjects.map((p, idx) => {
             const raised = Number(p?.totalContributions || 0);
             const spent = Number(p?.totalExpenses || 0);
@@ -782,99 +783,63 @@ function ChurchProjectsPageInner() {
             const badge = statusBadge(p?.status);
 
             return (
-              <div key={p?._id ?? `p-${idx}`} className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-900 truncate text-sm">{p?.name || "—"}</div>
-                    {p?.referenceId ? (
-                      <div className="mt-0.5">
-                        <span className="font-mono text-[10px] text-gray-400 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">{p.referenceId}</span>
-                      </div>
-                    ) : null}
-                    <div className="mt-1 text-gray-500 text-xs">
-                      Target: {formatCurrency(target, currency)} | Raised: {formatCurrency(raised, currency)} | Left: {formatCurrency(target - raised, currency)}
+              <Card key={p?._id ?? `p-${idx}`}>
+                <Card.Header
+                  title={p?.name || "Not Specified"}
+                  badge={badge.label}
+                  badgeClass={badge.cls}
+                  actions={
+                    <>
+                      {canEdit ? (
+                        <button onClick={() => openEdit(p)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                        </button>
+                      ) : null}
+                      {canEdit ? (
+                        <button onClick={() => openDelete(p)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </button>
+                      ) : null}
+                    </>
+                  }
+                />
+                <div>
+                  <div className="flex items-center justify-between text-gray-500 text-[11px]">
+                    <div>{percent >= 100 ? "Completed" : "Progress"}</div>
+                    <div className={`font-semibold ${percent >= 100 ? "text-green-700" : "text-blue-700"}`}>{formatPercent(percent)}</div>
+                  </div>
+                  <div className="mt-1.5 h-2 rounded-full bg-gray-200 overflow-hidden">
+                    <div className={`h-full ${percent >= 100 ? "bg-green-600" : "bg-blue-700"}`} style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-0 divide-x divide-gray-100">
+                  <div className="pr-3">
+                    <div className="font-semibold text-gray-500 text-[11px]">Target</div>
+                    <div className="mt-0.5 font-semibold text-blue-900 text-xs">{formatCompactMoney(target, currency)}</div>
+                  </div>
+                  <div className="px-3">
+                    <div className="font-semibold text-gray-500 text-[11px]">Raised</div>
+                    <div className="mt-0.5 font-semibold text-green-700 text-xs">{formatCompactMoney(raised, currency)}</div>
+                  </div>
+                  <div className="pl-3">
+                    <div className="font-semibold text-gray-500 text-[11px]">Spent</div>
+                    <div className="mt-0.5 font-semibold text-orange-600 text-xs">{formatCompactMoney(spent, currency)}</div>
+                  </div>
+                </div>
+                <Card.Footer>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {canEdit ? (
+                        <>
+                          <button type="button" onClick={() => openContribution(p)} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs">Contribution</button>
+                          <button type="button" onClick={() => openExpense(p)} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs">Expense</button>
+                        </>
+                      ) : null}
                     </div>
+                    {canView ? <Card.ViewDetailsLink onClick={() => viewDetails(p)} /> : null}
                   </div>
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${badge.cls} text-xs`}>{badge.label}</span>
-                </div>
-
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-gray-500 text-xs">
-                    <div>Progress</div>
-                    <div className="text-blue-700 font-semibold">{formatPercent(percent)}</div>
-                  </div>
-                  <div className="mt-2 h-2 rounded-full bg-gray-200 overflow-hidden">
-                    <div className="h-full bg-blue-700" style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} />
-                  </div>
-                </div>
-
-                <div className="mt-5 grid grid-cols-3 gap-3">
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">Amount Raised</div>
-                    <div className="mt-1 font-semibold text-green-700 text-sm">{formatCurrency(raised, currency)}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">Amount Spent</div>
-                    <div className="mt-1 font-semibold text-orange-600 text-sm">{formatCurrency(spent, currency)}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">Balance</div>
-                    <div className="mt-1 font-semibold text-blue-900 text-sm">{formatCurrency(balance, currency)}</div>
-                  </div>
-                </div>
-
-                <div className="mt-5 flex items-center gap-2 flex-wrap md:flex-nowrap">
-                  {canEdit ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => openContribution(p)}
-                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
-                      >
-                        Add Contribution
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => openExpense(p)}
-                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
-                      >
-                        Record Expense
-                      </button>
-                    </>
-                  ) : null}
-
-                  {canView && (
-                    <button
-                      type="button"
-                      onClick={() => viewDetails(p)}
-                      className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
-                    >
-                      View
-                    </button>
-                  )}
-
-                  {canEdit ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => openEdit(p)}
-                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => openDelete(p)}
-                        className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-red-50 text-xs"
-                      >
-                        Delete
-                      </button>
-                    </>
-                  ) : null}
-                </div>
-              </div>
+                </Card.Footer>
+              </Card>
             );
           })}
         </div>

@@ -4,6 +4,7 @@ import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavi
 import { getOutreachTeams, createOutreachTeam, updateOutreachTeam, deleteOutreachTeam, getOutreachEvents } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../../shared/components/Card/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
@@ -262,63 +263,45 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
 // ── Team Card ─────────────────────────────────────────────────────
 function TeamCard({ team, onEdit, onDelete, onViewDetails, canWrite, canDelete }) {
   const memberCount = team.members?.length || 0;
+
+  const metaItems = [];
+  metaItems.push({
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+    label: `${memberCount} ${memberCount === 1 ? "member" : "members"}`,
+  });
+  if (team.dateCreated) {
+    metaItems.push({
+      icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+      label: `Created ${fmtDate(team.dateCreated)}`,
+    });
+  }
+
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3">
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-          </div>
-          <div className="min-w-0">
-            <div className="font-semibold text-gray-900 text-sm">{team.name}</div>
-            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold mt-0.5 ${TEAM_STATUS_STYLES[team.status] || "bg-gray-100 text-gray-500"}`}>
-              {team.status === "inactive" ? "Inactive" : "Active"}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {canWrite ? (
-            <button onClick={() => onEdit(team)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            </button>
-          ) : null}
-          {canDelete ? (
-            <button onClick={() => onDelete(team)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Meta row */}
-      <div className="flex items-center gap-3 text-[11px] text-gray-400">
-        <span className="flex items-center gap-1">
-          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-          {memberCount} {memberCount === 1 ? "member" : "members"}
-        </span>
-        {team.dateCreated ? (
+    <Card>
+      <Card.Header
+        title={team.name}
+        badge={team.status === "inactive" ? "Inactive" : "Active"}
+        badgeClass={TEAM_STATUS_STYLES[team.status] || "bg-gray-100 text-gray-500"}
+        actions={
           <>
-            <span className="text-gray-200">·</span>
-            <span className="flex items-center gap-1">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-              Created {fmtDate(team.dateCreated)}
-            </span>
+            {canWrite ? (
+              <button onClick={() => onEdit(team)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button onClick={() => onDelete(team)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            ) : null}
           </>
-        ) : null}
-      </div>
-
-      {/* Footer */}
-      <div className="pt-2 border-t border-gray-100 flex justify-end">
-        <button
-          onClick={() => onViewDetails(team)}
-          className="cck-allow-icons inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:underline"
-        >
-          View Details
-          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-        </button>
-      </div>
-    </div>
+        }
+      />
+      <Card.Meta items={metaItems} />
+      <Card.Footer>
+        <Card.ViewDetailsLink onClick={() => onViewDetails(team)} />
+      </Card.Footer>
+    </Card>
   );
 }
 

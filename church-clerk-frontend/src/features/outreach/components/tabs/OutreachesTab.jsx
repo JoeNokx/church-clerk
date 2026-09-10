@@ -7,6 +7,7 @@ import {
 } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../../shared/components/Card/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 
@@ -302,49 +303,53 @@ function DeleteModal({ open, eventTitle, onCancel, onConfirm, deleting }) {
 
 // ── Event Card ────────────────────────────────────────────────────
 function EventCard({ event, onEdit, onDelete, onView, canWrite, canDelete }) {
+  const metaItems = [];
+  metaItems.push({
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+    label: `${fmtDate(event.date)}${event.startTime ? " · " + event.startTime : ""}`,
+  });
+  if (event.targetCount) {
+    metaItems.push({
+      icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" /></svg>,
+      label: `Target: ${event.targetCount} people`,
+    });
+  }
+  const venue = event.location || event.area;
+
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${STATUS_STYLES[event.status] || "bg-gray-100 text-gray-600"}`}>{event.status}</span>
-            <span className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-gray-100 text-gray-600 capitalize">{TYPE_LABELS[event.type] || event.type}</span>
-          </div>
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug">{event.title}</h3>
-          {event.referenceId ? <div className="text-[11px] text-gray-400 mt-0.5">{event.referenceId}</div> : null}
+    <Card>
+      <Card.Header
+        title={event.title}
+        badges={[
+          { label: event.status, className: `capitalize ${STATUS_STYLES[event.status] || "bg-gray-100 text-gray-600"}` },
+          { label: TYPE_LABELS[event.type] || event.type, className: "bg-gray-100 text-gray-600 capitalize" },
+        ]}
+        actions={
+          <>
+            {canWrite ? (
+              <button onClick={() => onEdit(event)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button onClick={() => onDelete(event)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            ) : null}
+          </>
+        }
+      />
+      {event.referenceId ? (
+        <div className="text-[11px] text-gray-400">{event.referenceId}</div>
+      ) : null}
+      <Card.Meta items={metaItems} />
+      {venue ? (
+        <div className="flex items-center gap-1 text-[11px] text-gray-400">
+          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2" /></svg>
+          <span className="truncate">{venue}</span>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {canWrite ? (
-            <button onClick={() => onEdit(event)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            </button>
-          ) : null}
-          {canDelete ? (
-            <button onClick={() => onDelete(event)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-          ) : null}
-        </div>
-      </div>
-      <div className="space-y-1 text-xs text-gray-500">
-        <div className="flex items-center gap-2">
-          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-gray-400"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-          <span>{fmtDate(event.date)}{event.startTime ? " · " + event.startTime : ""}</span>
-        </div>
-        {event.location || event.area ? (
-          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-gray-400"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.8" /></svg>
-            <span className="truncate">{event.location || event.area}</span>
-          </div>
-        ) : null}
-        {event.targetCount ? (
-          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-gray-400"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" /></svg>
-            <span>Target: {event.targetCount} people</span>
-          </div>
-        ) : null}
-      </div>
-      <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+      ) : null}
+      <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 text-xs">
           <span className="h-5 w-5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-bold">{event.prospectCount || 0}</span>
           <span className="text-gray-500">people</span>
@@ -353,12 +358,11 @@ function EventCard({ event, onEdit, onDelete, onView, canWrite, canDelete }) {
           <span className="h-5 w-5 rounded-md bg-green-50 text-green-600 flex items-center justify-center text-[10px] font-bold">{event.decisionCount || 0}</span>
           <span className="text-gray-500">decisions</span>
         </div>
-        <button onClick={() => onView(event)} className="cck-allow-icons ml-auto text-xs font-semibold text-blue-700 hover:underline flex items-center gap-1">
-          Details
-          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-        </button>
       </div>
-    </div>
+      <Card.Footer>
+        <Card.ViewDetailsLink onClick={() => onView(event)} label="Details" />
+      </Card.Footer>
+    </Card>
   );
 }
 

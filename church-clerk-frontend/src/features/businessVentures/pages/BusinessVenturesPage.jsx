@@ -3,7 +3,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
-import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { formatMoney, formatCompactMoney } from "../../../shared/utils/formatMoney.js";
 import {
   createBusinessVenture,
   deleteBusinessVenture,
@@ -19,6 +19,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
 
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
@@ -495,7 +496,7 @@ function BusinessVenturesPage() {
               className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
             >
               <span className="leading-none text-lg">+</span>
-              Add Venture
+              Add Business
             </button>
           ) : null}
         </div>
@@ -615,66 +616,78 @@ function BusinessVenturesPage() {
             description={searchValue
               ? "We couldn't find any ventures matching your search."
               : "Add your first venture to start tracking income and expenses."}
-            actionLabel={searchValue ? "Clear Search" : (canEdit ? "Add Venture" : null)}
+            actionLabel={searchValue ? "Clear Search" : (canEdit ? "Add Business" : null)}
             onAction={searchValue ? () => setSearchValue("") : (canEdit ? () => setAddOpen(true) : undefined)}
           />
         </div>
       ) : (
         <>
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {pagedVentures.map((v, idx) => (
-            <div key={v?._id ?? `v-${idx}`} className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="font-semibold text-gray-900 truncate text-sm">{v?.businessName || "—"}</div>
-                  {v?.referenceId ? (
-                    <div className="mt-0.5">
-                      <span className="font-mono text-[10px] text-gray-400 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">{v.referenceId}</span>
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {pagedVentures.map((v, idx) => {
+            const metaItems = [];
+            if (v?.manager) {
+              metaItems.push({
+                icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+                label: v.manager,
+              });
+            }
+            if (v?.phoneNumber) {
+              metaItems.push({
+                icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+                label: v.phoneNumber,
+              });
+            }
+
+            return (
+              <Card key={v?._id ?? `v-${idx}`}>
+                <Card.Header
+                  title={v?.businessName || "Not Specified"}
+                  actions={
+                    <>
+                      {canEdit ? (
+                        <button onClick={() => openEdit(v)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                        </button>
+                      ) : null}
+                      {canEdit ? (
+                        <button onClick={() => openDelete(v)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </button>
+                      ) : null}
+                    </>
+                  }
+                />
+                {metaItems.length ? <Card.Meta items={metaItems} /> : null}
+                <div className="grid grid-cols-3 gap-0 divide-x divide-gray-100">
+                  <div className="pr-3">
+                    <div className="font-semibold text-gray-500 text-[11px]">Income</div>
+                    <div className="mt-0.5 font-semibold text-green-700 text-xs">{formatCompactMoney(v?.totalIncome, currency)}</div>
+                  </div>
+                  <div className="px-3">
+                    <div className="font-semibold text-gray-500 text-[11px]">Expenses</div>
+                    <div className="mt-0.5 font-semibold text-orange-600 text-xs">{formatCompactMoney(v?.totalExpenses, currency)}</div>
+                  </div>
+                  <div className="pl-3">
+                    <div className="font-semibold text-gray-500 text-[11px]">Net</div>
+                    <div className="mt-0.5 font-semibold text-blue-900 text-xs">{formatCompactMoney(v?.net, currency)}</div>
+                  </div>
+                </div>
+                <Card.Footer>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {canView ? (
+                        <>
+                          <button type="button" onClick={() => viewIncome(v)} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-green-700 hover:bg-gray-50 text-xs">Income</button>
+                          <button type="button" onClick={() => viewExpenses(v)} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-orange-600 hover:bg-gray-50 text-xs">Expenses</button>
+                        </>
+                      ) : null}
                     </div>
-                  ) : null}
-                  {v?.description ? <div className="mt-0.5 text-gray-500 text-xs truncate">{v.description}</div> : null}
-                </div>
-              </div>
-
-              {(v?.manager || v?.phoneNumber) ? (
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-                  {v?.manager ? <span>Manager: <span className="font-medium text-gray-700">{v.manager}</span></span> : null}
-                  {v?.phoneNumber ? <span>{v.phoneNumber}</span> : null}
-                </div>
-              ) : null}
-
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Income</div>
-                  <div className="mt-1 font-semibold text-green-700 text-sm">{formatMoney(v?.totalIncome, currency)}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Expenses</div>
-                  <div className="mt-1 font-semibold text-orange-600 text-sm">{formatMoney(v?.totalExpenses, currency)}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Net</div>
-                  <div className="mt-1 font-semibold text-blue-900 text-sm">{formatMoney(v?.net, currency)}</div>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center gap-2 flex-wrap">
-                {canView ? (
-                  <>
-                    <button type="button" onClick={() => viewIncome(v)} className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-green-700 shadow-sm hover:bg-gray-50 text-xs">Income</button>
-                    <button type="button" onClick={() => viewExpenses(v)} className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-orange-600 shadow-sm hover:bg-gray-50 text-xs">Expenses</button>
-                    <button type="button" onClick={() => viewDetails(v)} className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">View</button>
-                  </>
-                ) : null}
-                {canEdit ? (
-                  <>
-                    <button type="button" onClick={() => openEdit(v)} className="whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs">Edit</button>
-                    <button type="button" onClick={() => openDelete(v)} className="whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-red-50 text-xs">Delete</button>
-                  </>
-                ) : null}
-              </div>
-            </div>
-          ))}
+                    {canView ? <Card.ViewDetailsLink onClick={() => viewDetails(v)} /> : null}
+                  </div>
+                </Card.Footer>
+              </Card>
+            );
+          })}
         </div>
 
         {totalPages > 1 && (

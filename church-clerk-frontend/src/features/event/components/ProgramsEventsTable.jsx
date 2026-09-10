@@ -4,8 +4,9 @@ import Skeleton from "react-loading-skeleton";
 import EventContext from "../event.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { deleteEvent as apiDeleteEvent } from "../services/event.api.js";
-import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 
 function formatDate(value) {
@@ -121,27 +122,25 @@ function ProgramsEventsTable({ status, onEdit, onCreate }) {
 
   if (store?.loading && !rows.length) {
     return (
-      <div className="overflow-x-auto animate-pulse">
-        <table className="min-w-full">
-          <thead className="bg-slate-100">
-            <tr className="text-left font-semibold text-gray-500 text-xs">
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <tr key={i} className="text-sm">
-                <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="p-4 md:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gray-200" />
+              <div className="flex-1">
+                <div className="h-4 w-3/4 rounded bg-gray-200 mb-2" />
+                <div className="h-3 w-1/3 rounded bg-gray-200" />
+              </div>
+            </div>
+            <div className="h-3 w-2/3 rounded bg-gray-200" />
+            <div className="h-3 w-1/2 rounded bg-gray-200" />
+            <div className="mt-auto pt-2 border-t border-gray-100">
+              <div className="flex justify-end">
+                <div className="h-7 w-24 rounded-lg bg-gray-200" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -192,37 +191,61 @@ function ProgramsEventsTable({ status, onEdit, onCreate }) {
           <Skeleton height={12} width={120} />
         </div>
       ) : null}
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="bg-slate-100">
-            <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Time</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Venue</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
-              <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {rows.map((row, index) => (
-              <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{truncateTitle(row?.title || "-")}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{formatRange(row?.dateFrom, row?.dateTo)}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{formatTimeRange(row?.timeFrom, row?.timeTo, row?.time)}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.venue || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.category || "-"}</td>
-                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                  <TableKebabMenu items={[
-                    canView && { label: "View", onClick: () => { if (!row?._id) return; toPage("event-details", { id: row._id }, { state: { from: "programs-events" } }); } },
-                    canEdit && { label: "Edit", onClick: () => { if (!row?._id) return; onEdit?.(row); } },
-                    canDelete && { label: deletingId === row?._id ? "Deleting..." : "Delete", onClick: () => openConfirmDelete(row), danger: true, disabled: deletingId === row?._id, desktopClassName: "rounded-md border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 text-xs" }
-                  ]} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="p-4 md:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {rows.map((row, index) => {
+          const dateStr = formatRange(row?.dateFrom, row?.dateTo);
+          const timeStr = formatTimeRange(row?.timeFrom, row?.timeTo, row?.time);
+          const venueStr = row?.venue || "Not Specified";
+          const catStr = row?.category || "";
+
+          const metaItems = [];
+          metaItems.push({
+            icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+            label: `${dateStr || "Not Specified"}${timeStr && timeStr !== "Not Specified" ? ` · ${timeStr}` : ""}`,
+          });
+          metaItems.push({
+            icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M12 21s-7-5.5-7-11a7 7 0 0114 0c0 5.5-7 11-7 11z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="2" /></svg>,
+            label: venueStr,
+          });
+
+          return (
+            <Card key={row?._id ?? `card-${index}`}>
+              <Card.Header
+                title={row?.title || "Not Specified"}
+                badge={catStr ? catStr : null}
+                badgeClass="bg-blue-50 text-blue-700 capitalize"
+                actions={
+                  <>
+                    {canEdit ? (
+                      <button onClick={() => { if (row?._id) onEdit?.(row); }} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                      </button>
+                    ) : null}
+                    {canDelete ? (
+                      <button onClick={() => openConfirmDelete(row)} disabled={deletingId === row?._id} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50 disabled:opacity-50">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </button>
+                    ) : null}
+                  </>
+                }
+              />
+              <Card.Meta items={[metaItems[0]]} />
+              {metaItems[1] ? (
+                <div className="flex items-center gap-1 text-[11px] text-gray-400">
+                  {metaItems[1].icon}
+                  {metaItems[1].label}
+                </div>
+              ) : null}
+              <Card.Footer>
+                {canView ? (
+                  <Card.ViewDetailsLink
+                    onClick={() => { if (row?._id) toPage("event-details", { id: row._id }, { state: { from: "programs-events" } }); }}
+                  />
+                ) : null}
+              </Card.Footer>
+            </Card>
+          );
+        })}
       </div>
 
       {confirmOpen ? (

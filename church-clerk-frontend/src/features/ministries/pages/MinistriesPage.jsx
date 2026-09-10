@@ -15,6 +15,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -89,102 +90,75 @@ function MeetingRow({ mtg, rightAlign = false }) {
   );
 }
 
+function formatTimeWithAmPm(timeStr) {
+  if (!timeStr) return "Not Specified";
+  const t = String(timeStr).trim();
+  // Already has AM/PM
+  if (/am|pm/i.test(t)) return t.toUpperCase();
+  // Format: HH:MM or HH:MM:SS
+  const parts = t.split(":");
+  if (parts.length < 2) return t;
+  let h = parseInt(parts[0], 10);
+  const m = parts[1];
+  if (Number.isNaN(h)) return t;
+  const period = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return `${h}:${m} ${period}`;
+}
+
 function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
   const meetings = normalizeMeetingSchedule(row);
-  const firstMeeting = meetings?.[0] || null;
-  const extraCount = meetings.length > 1 ? meetings.length - 1 : 0;
+  const totalMembers = row?.totalMembers ?? 0;
 
-  const typeColor = type === "group" ? "blue" : type === "cell" ? "orange" : "purple";
   const typeLabel = type === "group" ? "Group" : type === "cell" ? "Cell" : "Department";
+  const badgeClass = type === "group" ? "bg-blue-50 text-blue-700" : type === "cell" ? "bg-orange-50 text-orange-700" : "bg-purple-50 text-purple-700";
+
+  const metaItems = [];
+  metaItems.push({
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+    label: `${totalMembers} ${totalMembers === 1 ? "member" : "members"}`,
+  });
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 hover:border-blue-200 hover:bg-blue-50/30 transition md:p-6 lg:p-8">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Chip color={typeColor}>{typeLabel}</Chip>
-            {row?.status ? <Chip>{row.status}</Chip> : null}
-          </div>
-          <div className="mt-3 font-semibold text-gray-900 truncate text-base">{row?.name || "—"}</div>
-        </div>
-
-        <div className={`h-11 md:h-12 w-11 md:w-12 rounded-xl flex items-center justify-center ${
-          type === "group" ? "bg-blue-50" : type === "cell" ? "bg-orange-50" : "bg-purple-50"
-        }`}>
-          <MinistryTypeIcon type={type} />
-        </div>
-      </div>
-
-      <div className="mt-3 text-gray-600 line-clamp-3 whitespace-pre-wrap text-sm">{row?.description || "—"}</div>
-
+    <Card>
+      <Card.Header
+        title={row?.name || "Not Specified"}
+        badge={row?.status ? row.status : typeLabel}
+        badgeClass={badgeClass}
+        actions={
+          <>
+            <button onClick={onEdit} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+            <button onClick={onDelete} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          </>
+        }
+      />
+      <Card.Meta items={metaItems} />
       {meetings.length > 0 ? (
-        <div className="mt-4">
-          {/* Desktop: show all meetings */}
-          <div className="hidden lg:block space-y-2">
-            {meetings.map((mtg, i) => (
-              <div key={i} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 md:px-4 md:py-3">
-                <MeetingRow mtg={mtg} rightAlign />
-              </div>
-            ))}
-          </div>
-
-          {/* Mobile / Tablet: first meeting only + "N more" badge */}
-          <div className="lg:hidden">
-            <div className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2.5 md:px-4 md:py-3">
-              <div className="grid grid-cols-1 gap-1 md:grid-cols-3 md:gap-3 text-xs">
-                <div className="text-gray-600">
-                  <span className="font-semibold text-gray-700">Day:</span> {firstMeeting?.meetingDay || "—"}
-                </div>
-                <div className="text-gray-600">
-                  <span className="font-semibold text-gray-700">Time:</span> {firstMeeting?.meetingTime || "—"}
-                </div>
-                <div className="text-gray-600 md:text-right">
-                  <span className="font-semibold text-gray-700">Venue:</span> {firstMeeting?.meetingVenue || "—"}
-                </div>
-              </div>
+        <div className="space-y-2">
+          {meetings.map((mtg, i) => (
+            <div key={i} className="flex items-center gap-3 text-[11px] text-gray-400">
+              <span className="flex items-center gap-1">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                {mtg?.meetingDay || "Not Specified"} · {formatTimeWithAmPm(mtg?.meetingTime)}
+              </span>
+              <span className="text-gray-200">·</span>
+              <span className="flex items-center gap-1">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M12 21s-7-5.5-7-11a7 7 0 0114 0c0 5.5-7 11-7 11z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="2" /></svg>
+                {mtg?.meetingVenue || "Not Specified"}
+              </span>
             </div>
-            {extraCount > 0 ? (
-              <div className="mt-2">
-                <span className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3" aria-hidden="true">
-                    <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm.75 8.75h-1.5v-4h1.5v4zm0-5.5h-1.5V3.75h1.5v1.5z"/>
-                  </svg>
-                  +{extraCount} more meeting{extraCount > 1 ? "s" : ""}
-                </span>
-              </div>
-            ) : null}
-          </div>
+          ))}
         </div>
       ) : null}
-
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        {canView ? (
-          <button
-            type="button"
-            onClick={onView}
-            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-          >
-            View
-          </button>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={onEdit}
-          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-        >
-          Edit
-        </button>
-
-        <button
-          type="button"
-          onClick={onDelete}
-          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
+      <Card.Footer>
+        {canView ? <Card.ViewDetailsLink onClick={onView} /> : null}
+      </Card.Footer>
+    </Card>
   );
 }
 
