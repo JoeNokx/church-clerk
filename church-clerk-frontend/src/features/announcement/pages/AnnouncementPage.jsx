@@ -2095,7 +2095,7 @@ function AnnouncementPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Announcement</h2>
-          <p className="mt-1 text-gray-500 text-sm">Send announcements via SMS. Track delivery and manage wallet credits.</p>
+          <p className="mt-1 text-gray-500 text-sm hidden md:block">Send announcements via SMS. Track delivery and manage wallet credits.</p>
         </div>
       </div>
 

@@ -649,7 +649,7 @@ function SupportHelpPage() {
     <div className="p-4 md:p-8 w-full overflow-x-hidden">
       <div className="max-w-5xl">
         <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Help &amp; Support</div>
-        <div className="mt-1 text-gray-600 text-sm">
+        <div className="mt-1 text-gray-600 text-sm hidden md:block">
           Submit a request or reach out to us using the contact details below.
         </div>
 

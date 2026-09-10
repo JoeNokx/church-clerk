@@ -145,6 +145,11 @@ function SettingsPage() {
   const [pwNewShow, setPwNewShow] = useState(false);
   const [pwConfirmShow, setPwConfirmShow] = useState(false);
 
+  const [titheModeSwitching, setTitheModeSwitching] = useState(false);
+  const [titheModeError, setTitheModeError] = useState("");
+  const [titheModeSuccess, setTitheModeSuccess] = useState("");
+  const [titheModeConfirm, setTitheModeConfirm] = useState(null);
+
   const isUserActive = useMemo(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("userIsActive") !== "0";
@@ -163,8 +168,16 @@ function SettingsPage() {
       setTab("my-profile");
       return;
     }
+    if (requestedTab === "security") {
+      setTab("security");
+      return;
+    }
     if (requestedTab === "church-profile" || requestedTab === "profile") {
       setTab("profile");
+      return;
+    }
+    if (requestedTab === "configure") {
+      setTab("configure");
       return;
     }
     if (requestedTab === "users") {
@@ -202,7 +215,7 @@ function SettingsPage() {
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const section = String(sp.get("section") || "").trim().toLowerCase();
-    if (tab !== "my-profile") return;
+    if (tab !== "security") return;
     if (section !== "password") return;
 
     const t = setTimeout(() => {
@@ -400,6 +413,35 @@ function SettingsPage() {
     } finally {
       setPwLoading(false);
       setIsSubmittingPassword(false);
+    }
+  };
+
+  const handleSwitchTitheMode = async (nextMode) => {
+    if (!nextMode) return;
+    if (!activeChurch?._id) return;
+    const currentMode = activeChurch?.titheRecordingMode;
+    if (nextMode === currentMode) return;
+    setTitheModeConfirm(nextMode);
+  };
+
+  const confirmSwitchTitheMode = async () => {
+    const next = titheModeConfirm;
+    if (!next) return;
+    setTitheModeConfirm(null);
+    setTitheModeSwitching(true);
+    setTitheModeError("");
+    setTitheModeSuccess("");
+    try {
+      await updateChurchProfile(activeChurch._id, { titheRecordingMode: next });
+      if (typeof switchChurch === "function") {
+        await switchChurch(activeChurch._id);
+      }
+      localStorage.setItem("tithe_default_mode", next);
+      setTitheModeSuccess("Tithe recording mode updated. Your previous records remain safe.");
+    } catch (e) {
+      setTitheModeError(e?.response?.data?.message || e?.message || "Failed to update tithe recording mode");
+    } finally {
+      setTitheModeSwitching(false);
     }
   };
 
@@ -1263,13 +1305,15 @@ function SettingsPage() {
     <div className="max-w-6xl">
       <div>
         <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Settings</h2>
-        <p className="mt-1 text-gray-500 text-sm">Manage your church profile, users and roles</p>
+        <p className="mt-1 text-gray-500 text-sm hidden md:block">Manage your church profile, users and roles</p>
       </div>
 
       <PageTabs
         tabs={[
           { key: "my-profile", label: "My Profile" },
+          { key: "security", label: "Security" },
           { key: "profile", label: "Church Profile" },
+          { key: "configure", label: "Configure" },
           { key: "users", label: "Users & Roles" },
           { key: "audit", label: "Audit Log" },
         ]}
@@ -1460,8 +1504,15 @@ function SettingsPage() {
               </form>
             </div>
           </div>
+        </div>
+      ) : null}
 
-          <div ref={passwordSectionRef} className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+      {tab === "security" ? (
+        <div className="mt-6">
+          {myProfileError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{myProfileError}</div> : null}
+          {myProfileSuccess ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{myProfileSuccess}</div> : null}
+
+          <div ref={passwordSectionRef} className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
             <div className="font-semibold text-gray-900 text-sm">Change Password</div>
             <div className="mt-1 text-gray-500 text-xs">Update your password using your current password.</div>
 
@@ -2095,6 +2146,70 @@ function SettingsPage() {
                 Update Church Profile
               </Button>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {tab === "configure" ? (
+        <div className="mt-6">
+          {titheModeError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{titheModeError}</div> : null}
+          {titheModeSuccess ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{titheModeSuccess}</div> : null}
+
+          <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+            <div className="font-semibold text-gray-900 text-sm">Tithe Recording Mode</div>
+            <div className="mt-1 text-gray-500 text-xs">Choose how tithes are recorded. Your existing records will remain safe when switching.</div>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <button
+                type="button"
+                onClick={() => handleSwitchTitheMode("individual")}
+                disabled={titheModeSwitching || activeChurch?.titheRecordingMode === "individual"}
+                className={`cck-allow-icons rounded-2xl border p-4 md:p-6 text-left transition ${activeChurch?.titheRecordingMode === "individual" ? "border-blue-500 bg-blue-50 pointer-events-none" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="h-14 w-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  </div>
+                  <div className="mt-4 font-semibold text-blue-900 text-base">Individual Recording</div>
+                  <div className="mt-3 space-y-2 text-gray-600 text-sm">
+                    <div>Record by member name</div>
+                    <div>Track individual patterns</div>
+                    <div>Named tithe entries</div>
+                  </div>
+                  <div className={`mt-5 inline-flex h-11 items-center justify-center rounded-lg px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs ${activeChurch?.titheRecordingMode === "individual" ? "bg-blue-700" : "bg-blue-700"}`}>
+                    {activeChurch?.titheRecordingMode === "individual" ? "Current Mode" : "Switch to Individual"}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSwitchTitheMode("aggregate")}
+                disabled={titheModeSwitching || activeChurch?.titheRecordingMode === "aggregate"}
+                className={`cck-allow-icons rounded-2xl border p-4 md:p-6 text-left transition ${activeChurch?.titheRecordingMode === "aggregate" ? "border-green-500 bg-green-50 pointer-events-none" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="h-14 w-14 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" stroke="currentColor" strokeWidth="1.8" /></svg>
+                  </div>
+                  <div className="mt-4 font-semibold text-blue-900 text-base">Aggregate Recording</div>
+                  <div className="mt-3 space-y-2 text-gray-600 text-sm">
+                    <div>Record total collected</div>
+                    <div>No individual names</div>
+                    <div>Bulk collection</div>
+                  </div>
+                  <div className={`mt-5 inline-flex h-11 items-center justify-center rounded-lg px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs ${activeChurch?.titheRecordingMode === "aggregate" ? "bg-green-700" : "bg-green-700"}`}>
+                    {activeChurch?.titheRecordingMode === "aggregate" ? "Current Mode" : "Switch to Aggregate"}
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {!activeChurch?.titheRecordingMode ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
+                No tithe recording mode has been set yet. Choose a mode above to get started.
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -2765,6 +2880,34 @@ function SettingsPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Tithe mode switch confirmation */}
+      {titheModeConfirm ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center md:h-12 md:w-12">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 9v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M12 17h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M10.3 4.6 3.5 17.4A2 2 0 0 0 5.3 20h13.4a2 2 0 0 0 1.8-2.6L13.7 4.6a2 2 0 0 0-3.4 0Z" stroke="currentColor" strokeWidth="1.6" /></svg>
+                </div>
+                <div className="font-semibold text-gray-900 text-sm">Switch Tithe Recording Mode</div>
+              </div>
+              <button type="button" onClick={() => setTitheModeConfirm(null)} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="py-4 md:py-5 lg:py-6 text-gray-600 text-sm px-4 md:px-6">
+              <div>Changing your tithe recording mode will affect how new tithe records are entered.</div>
+              <div className="mt-3 font-semibold text-gray-700">Your previous records will remain safe.</div>
+              <div className="mt-2 text-gray-500">This will also become your new default mode when you open Tithes.</div>
+            </div>
+            <div className="flex items-center justify-end gap-3 pb-6 px-4 md:px-6">
+              <button type="button" onClick={() => setTitheModeConfirm(null)} className="h-11 rounded-lg border border-gray-200 bg-white font-semibold text-gray-700 shadow-sm hover:bg-gray-50 md:h-12 text-sm px-4 md:px-6">Cancel</button>
+              <button type="button" onClick={confirmSwitchTitheMode} className="h-11 rounded-lg bg-red-600 px-8 font-semibold text-white shadow-sm hover:bg-red-700 md:h-12 text-sm">Switch Mode</button>
+            </div>
           </div>
         </div>
       ) : null}

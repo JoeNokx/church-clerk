@@ -55,7 +55,7 @@ function ProgramsEventsPageInner() {
             ) : null}
           </div>
         </div>
-        <p className="mt-2 text-gray-600 text-sm">Search and manage church events</p>
+        <p className="mt-2 text-gray-600 text-sm hidden md:block">Search and manage church events</p>
 
         <PageTabs
           tabs={[

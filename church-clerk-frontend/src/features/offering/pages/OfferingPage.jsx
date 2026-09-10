@@ -73,7 +73,7 @@ export function OfferingPageInner({ hideKpi = false, embedded = false, noHeader 
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Offerings</h2>
-            <p className="mt-1 text-gray-500 text-sm">Record and manage church offerings</p>
+            <p className="mt-1 text-gray-500 text-sm hidden md:block">Record and manage church offerings</p>
           </div>
 
           <div className="flex items-center gap-3">

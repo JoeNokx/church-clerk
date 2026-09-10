@@ -104,7 +104,7 @@ function ReferralProgramPage() {
     <div className="max-w-6xl">
       <div>
         <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Referral Program</div>
-        <div className="mt-1 text-gray-500 text-sm">Earn free subscription days by inviting churches to join.</div>
+        <div className="mt-1 text-gray-500 text-sm hidden md:block">Earn free subscription days by inviting churches to join.</div>
       </div>
 
       {error ? (

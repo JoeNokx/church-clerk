@@ -7,6 +7,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -37,6 +38,7 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
   const store = useContext(TitheContext);
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const { toPage } = useDashboardNavigator();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -98,10 +100,7 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
             {[0, 1, 2, 3, 4].map((i) => (
               <tr key={i} className="text-sm">
                 <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl bg-gray-200 md:h-12 md:w-12" />
-                    <div className="h-4 w-24 rounded bg-gray-200" />
-                  </div>
+                  <div className="h-4 w-24 rounded bg-gray-200" />
                 </td>
                 <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
                 <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
@@ -179,19 +178,19 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
-              <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center md:h-12 md:w-12">
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
-                        <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      </svg>
-                    </div>
-                    <div className="font-semibold text-gray-900">
-                      <span className="sm:hidden">{truncateMobileName(memberName(row?.member))}</span>
-                      <span className="hidden sm:inline">{memberName(row?.member)}</span>
-                    </div>
+              <tr
+                key={row?._id ?? `row-${index}`}
+                onClick={() => {
+                  if (!row?._id) return;
+                  const memberId = row?.member?._id || row?.member;
+                  if (memberId) toPage("member-details", { id: memberId }, { state: { from: "tithe" } });
+                }}
+                className="max-md:text-xs text-gray-700 text-sm cursor-pointer hover:bg-blue-50/40 transition-colors"
+              >
+                <td className="sticky left-0 z-10 bg-inherit max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">
+                  <div className="font-semibold text-gray-900">
+                    <span className="sm:hidden">{truncateMobileName(memberName(row?.member))}</span>
+                    <span className="hidden sm:inline">{memberName(row?.member)}</span>
                   </div>
                 </td>
                 <td className="max-md:px-4 py-3 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(row?.amount || 0, currency)}</td>
@@ -207,33 +206,16 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
                   ) : <span className="text-gray-300 text-xs">—</span>}
                 </td>
-                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" onClick={(e) => e.stopPropagation()}>
                   <TableKebabMenu items={[
                     canEdit && {
                       label: "Edit",
-                      onClick: () => { if (!row?._id) return; onEdit?.(row); },
-                      desktopClassName: "h-11 inline-flex items-center justify-center rounded-lg bg-white text-blue-700 hover:bg-blue-50 md:h-12 md:w-11 w-11 md:w-12",
-                      desktopContent: (
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                          <path d="M4 20h4l10.5-10.5a2 2 0 0 0 0-3L16.5 4a2 2 0 0 0-3 0L3 14.5V20Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                          <path d="M13.5 6.5 17.5 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                      )
+                      onClick: () => { if (!row?._id) return; onEdit?.(row); }
                     },
                     canDelete && {
                       label: "Delete",
                       onClick: () => { if (!row?._id) return; openConfirmDelete(row._id); },
-                      danger: true,
-                      desktopClassName: "h-11 inline-flex items-center justify-center rounded-lg bg-white text-red-600 hover:bg-red-50 md:h-12 md:w-11 w-11 md:w-12",
-                      desktopContent: (
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                          <path d="M4 7h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M10 11v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M14 11v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M6 7l1 14h10l1-14" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                          <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" strokeWidth="1.8" />
-                        </svg>
-                      )
+                      danger: true
                     }
                   ]} />
                 </td>

@@ -110,7 +110,7 @@ function WelfarePageInner() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Welfare</h2>
-          <p className="mt-1 text-gray-500 text-sm">Track welfare contributions and disbursements</p>
+          <p className="mt-1 text-gray-500 text-sm hidden md:block">Track welfare contributions and disbursements</p>
         </div>
 
         <div className="flex items-center gap-3">

@@ -902,7 +902,7 @@ function BillingPage() {
     <div className="max-w-6xl">
       <div>
         <div className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Billing &amp; Subscription</div>
-        <div className="mt-1 text-gray-600 text-sm">Manage your subscription, payment methods, and view billing history</div>
+        <div className="mt-1 text-gray-600 text-sm hidden md:block">Manage your subscription, payment methods, and view billing history</div>
       </div>
 
       {isSystemAdmin && (

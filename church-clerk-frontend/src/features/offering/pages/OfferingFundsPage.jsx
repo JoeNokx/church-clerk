@@ -21,7 +21,7 @@ function OfferingFundsPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Offering &amp; Funds</h2>
-            <p className="mt-2 text-gray-600 text-sm">Record and manage offerings and special church funds</p>
+            <p className="mt-2 text-gray-600 text-sm hidden md:block">Record and manage offerings and special church funds</p>
           </div>
           <div className="shrink-0">
             {activeTab === "offerings" && canCreateOffering && (

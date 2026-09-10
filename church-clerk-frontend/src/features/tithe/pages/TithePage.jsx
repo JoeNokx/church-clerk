@@ -400,10 +400,6 @@ function TithePageInner() {
   const [editingIndividual, setEditingIndividual] = useState(null);
   const [editingAggregate, setEditingAggregate] = useState(null);
 
-  const [changeModeOpen, setChangeModeOpen] = useState(false);
-  const [confirmSwitchOpen, setConfirmSwitchOpen] = useState(false);
-  const [pendingMode, setPendingMode] = useState(null);
-
   const [searchValue, setSearchValue] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -516,35 +512,6 @@ function TithePageInner() {
     await applyFilters({ dateFrom: "", dateTo: "", page: 1 });
   };
 
-  const openChangeMode = () => {
-    if (!canUpdateMode) return;
-    setPendingMode(null);
-    setConfirmSwitchOpen(false);
-    setChangeModeOpen(true);
-  };
-
-  const closeChangeMode = () => {
-    setChangeModeOpen(false);
-    setPendingMode(null);
-    setConfirmSwitchOpen(false);
-  };
-
-  const pickModeToSwitch = (nextMode) => {
-    if (!nextMode) return;
-    if (nextMode === mode) return;
-    setPendingMode(nextMode);
-    setConfirmSwitchOpen(true);
-  };
-
-  const confirmSwitch = async () => {
-    const next = pendingMode;
-    if (!next) return;
-    localStorage.setItem("tithe_default_mode", next);
-    await store?.setRecordingMode?.(next);
-    setView(next);
-    closeChangeMode();
-  };
-
   const kpiThisMonth = kpi?.thisMonth || 0;
   const kpiThisYear = kpi?.thisYear || 0;
 
@@ -572,7 +539,7 @@ function TithePageInner() {
                 </svg>
               </div>
               <div className="mt-2 md:mt-5 font-semibold text-blue-900 text-lg md:text-2xl lg:text-3xl">Tithes</div>
-              <div className="mt-2 text-gray-600 text-sm">Choose how you want to record tithes. You can change this later.</div>
+              <div className="mt-2 text-gray-600 text-sm">Choose how you want to record tithes.</div>
             </div>
 
             <div className="mt-4 md:mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
@@ -595,20 +562,14 @@ function TithePageInner() {
                 }}
               />
             </div>
-
-            <div className="mt-4 md:mt-8 text-center text-gray-500 text-xs">
-              You can switch your tithe recording mode anytime from the settings.
-            </div>
           </div>
         </div>
       ) : (
         <>
-          <ModeBanner mode={mode} onChangeMode={openChangeMode} />
-
-          <div className="mt-8 flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Tithes</h2>
-              <p className="mt-1 text-gray-500 text-sm">
+              <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">{mode === "aggregate" ? "Aggregate Tithe" : "Individual Tithe"}</h2>
+              <p className="mt-1 text-gray-500 text-sm hidden md:block">
                 {mode === "aggregate" ? "Track and manage aggregate tithe collections" : "Track and manage individual member tithes"}
               </p>
             </div>
@@ -726,24 +687,6 @@ function TithePageInner() {
           </div>
         </>
       )}
-
-      <SimpleModal
-        open={changeModeOpen}
-        title="Change Tithe Recording Mode"
-        subtitle="Select how you want to record tithes going forward"
-        onClose={closeChangeMode}
-      >
-        <ModeSwitchCards currentMode={mode} onPick={pickModeToSwitch} />
-      </SimpleModal>
-
-      <ConfirmModal
-        open={confirmSwitchOpen}
-        onCancel={() => {
-          setConfirmSwitchOpen(false);
-          setPendingMode(null);
-        }}
-        onConfirm={confirmSwitch}
-      />
 
       <TitheIndividualForm
         open={isIndividualFormOpen}

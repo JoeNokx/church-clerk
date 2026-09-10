@@ -164,7 +164,7 @@ function BranchesOverviewPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Branches Overview</div>
-          <div className="mt-1 text-gray-600 text-sm">View branches and switch your active context.</div>
+          <div className="mt-1 text-gray-600 text-sm hidden md:block">View branches and switch your active context.</div>
         </div>
 
         {homeChurchId && String(activeChurch?._id || "") !== String(homeChurchId) ? (

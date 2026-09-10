@@ -215,6 +215,22 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   const rawPage = new URLSearchParams(location.search).get("page") || "dashboard";
 
+  // Map detail/sub pages back to their parent module so the sidebar stays highlighted
+  const detailToParent = {
+    "member-details": "members",
+    "member-form": "members",
+    "event-details": "programs-events",
+    "event-edit": "programs-events",
+    "event-create": "programs-events",
+    "ministry-details": "ministries",
+    "business-venture-details": "business-ventures",
+    "church-project-details": "church-projects",
+    "pledge-details": "pledges",
+    "outreach-event-details": "outreach",
+    "team-details": "outreach",
+    "prospect-details": "outreach",
+  };
+
   const page = isBillingPath
 
     ? "billing"
@@ -231,7 +247,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
           ? "offerings"
 
-          : rawPage;
+          : detailToParent[rawPage] || rawPage;
 
 
 

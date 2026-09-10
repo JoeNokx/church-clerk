@@ -73,7 +73,7 @@ export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, e
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-bold text-gray-900 md:text-3xl lg:text-4xl text-xl">Special Funds</h2>
-            <p className="mt-1 text-gray-500 text-sm">Track and manage special church funds</p>
+            <p className="mt-1 text-gray-500 text-sm hidden md:block">Track and manage special church funds</p>
           </div>
 
           <div className="flex items-center gap-3">

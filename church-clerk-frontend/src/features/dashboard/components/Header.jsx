@@ -1031,7 +1031,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
 
 
-      navigate("/dashboard?page=settings&tab=my-profile&section=password");
+      navigate("/dashboard?page=settings&tab=security&section=password");
 
 
 

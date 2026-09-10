@@ -651,7 +651,7 @@ function ChurchProjectsPageInner() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Church Projects</div>
-          <div className="mt-2 text-gray-600 text-sm">Track building funds and special projects</div>
+          <div className="mt-2 text-gray-600 text-sm hidden md:block">Track building funds and special projects</div>
         </div>
 
         <div className="flex items-center gap-3">

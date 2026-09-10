@@ -485,7 +485,7 @@ function BusinessVenturesPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Business Ventures</div>
-          <div className="mt-2 text-gray-600 text-sm">Track venture income and expenses</div>
+          <div className="mt-2 text-gray-600 text-sm hidden md:block">Track venture income and expenses</div>
         </div>
 
         <div className="flex items-center gap-3">

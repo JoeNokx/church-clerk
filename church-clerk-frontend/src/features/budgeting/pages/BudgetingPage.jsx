@@ -89,7 +89,7 @@ function BudgetingPageInner() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Budgeting</h2>
-          <p className="mt-2 text-gray-600 text-sm">Create budgets and compare planned vs actual spending.</p>
+          <p className="mt-2 text-gray-600 text-sm hidden md:block">Create budgets and compare planned vs actual spending.</p>
         </div>
 
         <div className="flex items-center gap-3">
