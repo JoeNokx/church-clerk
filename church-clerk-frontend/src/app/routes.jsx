@@ -21,6 +21,11 @@ import DashboardHome from "../features/dashboard/pages/DashboardHome.jsx";
 import Profile from "../features/dashboard/pages/Profile.jsx";
 import LandingPage from "../features/dashboard/pages/LandingPage.jsx";
 import ComingSoonPage from "../features/dashboard/pages/ComingSoonPage.jsx";
+import ProductPage from "../features/dashboard/pages/ProductPage.jsx";
+import FeaturesPage from "../features/dashboard/pages/FeaturesPage.jsx";
+import PricingPage from "../features/dashboard/pages/PricingPage.jsx";
+import AboutPage from "../features/dashboard/pages/AboutPage.jsx";
+import ContactPage from "../features/dashboard/pages/ContactPage.jsx";
 import TestGuidePage from "../features/dashboard/pages/TestGuidePage.jsx";
 
 const BillingPage = lazy(() => import("../features/subscription/pages/BillingPage.jsx"));
@@ -50,6 +55,11 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<ComingSoonPage />} />
+      <Route path="/product" element={<ProductPage />} />
+      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/test-guide" element={<TestGuidePage />} />
 
       <Route element={<AuthLayout />}>

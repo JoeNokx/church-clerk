@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 function LandingFooter() {
   return (
-    <footer className="bg-slate-950 text-white">
+    <footer className="bg-slate-950 text-white" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
       <div className="mx-auto w-full max-w-7xl px-4 py-14 md:px-6">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
           <div className="md:col-span-5">
