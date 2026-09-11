@@ -9,8 +9,7 @@ import {
   exportFinancialStatement
 } from "../services/financialStatement.api.js";
 import {
-  getReportsAnalytics,
-  getReportsAnalyticsKpi
+  getReportsAnalytics
 } from "../../reportsAnalytics/services/reportsAnalytics.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
@@ -26,8 +25,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  LineChart,
-  Line
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  Legend
 } from "recharts";
 
 function formatCurrency(value, currency) {
@@ -709,12 +711,10 @@ function FinancialAnalyticsContent() {
   );
 
   const [year, setYear] = useState(() => new Date().getFullYear());
-  const [yearDisplay, setYearDisplay] = useState(() => String(new Date().getFullYear()));
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [kpi, setKpi] = useState(null);
   const [series, setSeries] = useState([]);
 
   const analyticsParams = useMemo(() => ({ year }), [year]);
@@ -724,16 +724,10 @@ function FinancialAnalyticsContent() {
     setError("");
 
     try {
-      const [kpiRes, analyticsRes] = await Promise.all([
-        getReportsAnalyticsKpi(),
-        getReportsAnalytics(analyticsParams)
-      ]);
-
-      setKpi(kpiRes?.data || null);
+      const analyticsRes = await getReportsAnalytics(analyticsParams);
       setSeries(Array.isArray(analyticsRes?.data?.analytics?.series) ? analyticsRes.data.analytics.series : []);
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to load financial analytics");
-      setKpi(null);
       setSeries([]);
     } finally {
       setLoading(false);
@@ -759,6 +753,11 @@ function FinancialAnalyticsContent() {
       expenses: safeNumber(r?.expenses),
       offering: safeNumber(r?.offering),
       tithe: safeNumber(r?.tithe),
+      specialFunds: safeNumber(r?.specialFunds),
+      welfareContributions: safeNumber(r?.welfareContributions),
+      welfareDisbursements: safeNumber(r?.welfareDisbursements),
+      budget: safeNumber(r?.budget),
+      expenditure: safeNumber(r?.expenditure),
       totalMembers: safeNumber(r?.totalMembers),
       newMembers: safeNumber(r?.newMembers),
       attendance: safeNumber(r?.attendance),
@@ -779,21 +778,24 @@ function FinancialAnalyticsContent() {
             <div className="mt-1 text-gray-500 text-xs">Charts are filtered by year (Jan - Dec)</div>
           </div>
 
-          <div className="w-full md:w-auto">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={yearDisplay}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/\D/g, "").slice(0, 4);
-                setYearDisplay(raw);
-                const n = Number(raw);
-                if (n >= 1900 && n <= 2100) setYear(n);
-              }}
-              maxLength={4}
-              placeholder="YYYY"
-              className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:w-40 text-sm"
-            />
+          <div className="flex items-center gap-1 w-full md:w-auto">
+            <button
+              type="button"
+              onClick={() => setYear((y) => Math.max(1900, y - 1))}
+              className="h-10 w-10 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 shrink-0"
+              aria-label="Previous year"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" /></svg>
+            </button>
+            <YearInput value={year} onChange={setYear} />
+            <button
+              type="button"
+              onClick={() => setYear((y) => Math.min(2100, y + 1))}
+              className="h-10 w-10 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 shrink-0"
+              aria-label="Next year"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -814,80 +816,7 @@ function FinancialAnalyticsContent() {
         </div>
       ) : null}
 
-      {!loading ? (
-        <KpiGrid className="mt-6 gap-4 xl:grid-cols-5">
-          <KpiCard
-            title="Overall Revenue"
-            value={formatCurrency(kpi?.kpis?.totalIncome)}
-            change={kpi?.kpis?.change?.totalIncome}
-            compareLabel="last month"
-            iconBg="bg-emerald-50"
-            iconColor="text-emerald-500"
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-          />
-          <KpiCard
-            title="Overall Expenses"
-            value={formatCurrency(kpi?.kpis?.totalExpenses)}
-            change={kpi?.kpis?.change?.totalExpenses}
-            compareLabel="last month"
-            iconBg="bg-orange-50"
-            iconColor="text-orange-500"
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M3 8h18M3 8a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2v-8a2 2 0 00-2-2M3 8V6a2 2 0 012-2h14a2 2 0 012 2v2M12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-          />
-          <KpiCard
-            title="Overall Surplus / Deficit"
-            value={formatCurrency(kpi?.kpis?.surplus)}
-            change={kpi?.kpis?.change?.surplus}
-            compareLabel="last month"
-            iconBg={Number(kpi?.kpis?.surplus || 0) >= 0 ? "bg-blue-50" : "bg-red-50"}
-            iconColor={Number(kpi?.kpis?.surplus || 0) >= 0 ? "text-blue-500" : "text-red-500"}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M4 19h16M7 17V9M12 17V5M17 17v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-          />
-          <KpiCard
-            title="Overall New Members"
-            value={String(kpi?.kpis?.newMembers ?? 0)}
-            change={kpi?.kpis?.change?.newMembers}
-            diff={kpi?.kpis?.diff?.newMembers}
-            compareLabel="last month"
-            iconBg="bg-violet-50"
-            iconColor="text-violet-500"
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3M20 21c0-2.21-1.79-4-4-4M2 21v-1a7 7 0 0114 0v1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
-              </svg>
-            }
-          />
-          <KpiCard
-            title="Overall Visitors"
-            value={String(kpi?.kpis?.visitors ?? 0)}
-            change={kpi?.kpis?.change?.visitors}
-            diff={kpi?.kpis?.diff?.visitors}
-            compareLabel="last month"
-            iconBg="bg-gray-100"
-            iconColor="text-gray-500"
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                <path d="M18 21v-2a4 4 0 00-4-4H10a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-          />
-        </KpiGrid>
-      ) : null}
+
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -895,65 +824,94 @@ function FinancialAnalyticsContent() {
           <div className="mt-1 text-gray-500 text-xs">Jan - Dec ({year})</div>
           <div className="mt-3 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v, n) => (n === "income" || n === "expenses" ? formatCurrency(v) : v)} contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
-                <Line type="monotone" dataKey="income" stroke="#16a34a" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="expenses" stroke="#f97316" strokeWidth={2} dot={false} />
-              </LineChart>
+              <AreaChart data={chartData} margin={{ top: 6, right: 12, left: -14, bottom: -8 }}>
+                <defs>
+                  <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.42} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0.03} />
+                  </linearGradient>
+                  <linearGradient id="expensesGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.42} />
+                    <stop offset="95%" stopColor="#f97316" stopOpacity={0.03} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#f3f4f6" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v, n) => (n === "Income" || n === "Expenses" ? formatCurrency(v) : v)} contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }} labelStyle={{ fontWeight: 600, color: "#111827" }} cursor={{ stroke: "#16a34a", strokeWidth: 1, strokeDasharray: "4 2" }} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <Area type="monotone" dataKey="income" name="Income" stroke="#16a34a" strokeWidth={1.4} fill="url(#incomeGrad)" dot={false} activeDot={{ r: 5, fill: "#16a34a" }} />
+                <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#f97316" strokeWidth={1.4} fill="url(#expensesGrad)" dot={false} activeDot={{ r: 5, fill: "#f97316" }} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="font-semibold text-gray-900 text-sm">Offering vs Tithe</div>
+          <div className="font-semibold text-gray-900 text-sm">Offering vs Tithe vs Special Funds</div>
           <div className="mt-1 text-gray-500 text-xs">Jan - Dec ({year})</div>
           <div className="mt-3 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v, n) => (n === "offering" || n === "tithe" ? formatCurrency(v) : v)} contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
-                <Line type="monotone" dataKey="offering" stroke="#2563eb" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="tithe" stroke="#7c3aed" strokeWidth={2} dot={false} />
-              </LineChart>
+              <AreaChart data={chartData} margin={{ top: 6, right: 12, left: -14, bottom: -8 }}>
+                <defs>
+                  <linearGradient id="offeringGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.42} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0.03} />
+                  </linearGradient>
+                  <linearGradient id="titheGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.42} />
+                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.03} />
+                  </linearGradient>
+                  <linearGradient id="specialFundsGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.42} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.03} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#f3f4f6" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v, n) => (["Offering", "Tithe", "Special Funds"].includes(n) ? formatCurrency(v) : v)} contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }} labelStyle={{ fontWeight: 600, color: "#111827" }} cursor={{ stroke: "#2563eb", strokeWidth: 1, strokeDasharray: "4 2" }} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <Area type="monotone" dataKey="offering" name="Offering" stroke="#2563eb" strokeWidth={1.4} fill="url(#offeringGrad)" dot={false} activeDot={{ r: 5, fill: "#2563eb" }} />
+                <Area type="monotone" dataKey="tithe" name="Tithe" stroke="#7c3aed" strokeWidth={1.4} fill="url(#titheGrad)" dot={false} activeDot={{ r: 5, fill: "#7c3aed" }} />
+                <Area type="monotone" dataKey="specialFunds" name="Special Funds" stroke="#10b981" strokeWidth={1.4} fill="url(#specialFundsGrad)" dot={false} activeDot={{ r: 5, fill: "#10b981" }} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="font-semibold text-gray-900 text-sm">Total Members vs New Members</div>
+          <div className="font-semibold text-gray-900 text-sm">Welfare Contribution vs Disbursement</div>
           <div className="mt-1 text-gray-500 text-xs">Jan - Dec ({year})</div>
           <div className="mt-3 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
-                <Line type="monotone" dataKey="totalMembers" stroke="#0f172a" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="newMembers" stroke="#22c55e" strokeWidth={2} dot={false} />
-              </LineChart>
+              <BarChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="18%" barGap={3}>
+                <CartesianGrid stroke="#f3f4f6" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v, n) => (["Contributions", "Disbursements"].includes(n) ? formatCurrency(v) : v)} contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }} labelStyle={{ fontWeight: 600, color: "#111827" }} cursor={{ fill: "#f9fafb" }} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <Bar dataKey="welfareContributions" name="Contributions" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={44} />
+                <Bar dataKey="welfareDisbursements" name="Disbursements" fill="#a78bfa" radius={[4, 4, 0, 0]} maxBarSize={44} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="font-semibold text-gray-900 text-sm">Attendance vs Visitors</div>
-          <div className="mt-1 text-gray-500 text-xs">Jan - Dec ({year})</div>
+          <div className="font-semibold text-gray-900 text-sm">Budget vs Expenditure</div>
+          <div className="mt-1 text-gray-500 text-xs">Monthly budget target vs actual expenses · {year}</div>
           <div className="mt-3 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#e5e7eb" strokeDasharray="4 4" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }} />
-                <Line type="monotone" dataKey="attendance" stroke="#2563eb" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="visitors" stroke="#f59e0b" strokeWidth={2} dot={false} />
-              </LineChart>
+              <BarChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="18%" barGap={3}>
+                <CartesianGrid stroke="#f3f4f6" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v, n) => (["Budget", "Expenditure"].includes(n) ? formatCurrency(v) : v)} contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }} labelStyle={{ fontWeight: 600, color: "#111827" }} cursor={{ fill: "#f9fafb" }} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <Bar dataKey="budget" name="Budget" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={44} />
+                <Bar dataKey="expenditure" name="Expenditure" fill="#a78bfa" radius={[4, 4, 0, 0]} maxBarSize={44} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

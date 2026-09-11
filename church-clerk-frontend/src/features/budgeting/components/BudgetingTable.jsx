@@ -1,11 +1,13 @@
 import { useContext, useMemo, useState } from "react";
-import Skeleton from "react-loading-skeleton";
 
 import PermissionContext from "../../permissions/permission.store.js";
+import ChurchContext from "../../church/church.store.js";
 import BudgetingContext from "../budgeting.store.js";
-import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -19,7 +21,7 @@ function formatPeriod(from, to) {
   const t = to ? formatDate(to) : "—";
   if (f === "—" && t === "—") return "—";
   if (f === t) return f;
-  return `${f} - ${t}`;
+  return `${f} – ${t}`;
 }
 
 function sumPlanned(items, type) {
@@ -27,19 +29,36 @@ function sumPlanned(items, type) {
   return rows.filter((i) => i?.type === type).reduce((acc, i) => acc + Number(i?.amount || 0), 0);
 }
 
+const STATUS_LABEL_MAP = {
+  draft:            "Draft",
+  pending_approval: "Pending Approval",
+  approved:         "Approved",
+  active:           "Active",
+  closed:           "Closed"
+};
+
+function statusLabel(status) {
+  return STATUS_LABEL_MAP[String(status || "").toLowerCase()] || String(status || "Draft");
+}
+
 function statusBadge(status) {
   const s = String(status || "draft").toLowerCase();
   const map = {
-    draft: "bg-gray-100 text-gray-700",
-    active: "bg-green-100 text-green-700",
-    archived: "bg-amber-100 text-amber-700"
+    draft:            "bg-gray-100 text-gray-700",
+    pending_approval: "bg-yellow-100 text-yellow-700",
+    approved:         "bg-blue-100 text-blue-700",
+    active:           "bg-green-100 text-green-700",
+    closed:           "bg-slate-100 text-slate-700"
   };
   return map[s] || map.draft;
 }
 
-function BudgetingTable({ onView, onEdit, onCreate }) {
+function BudgetingTable({ onEdit, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(BudgetingContext);
+  const churchStore = useContext(ChurchContext);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const { toPage } = useDashboardNavigator();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -88,30 +107,43 @@ function BudgetingTable({ onView, onEdit, onCreate }) {
 
   if (store?.loading) {
     return (
-      <div className="overflow-x-auto animate-pulse">
-        <table className="min-w-full">
-          <thead className="bg-slate-100">
-            <tr className="text-left font-semibold text-gray-500 text-xs">
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-24 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <tr key={i} className="text-sm">
-                <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="p-4 md:p-6 lg:p-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 animate-pulse">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gray-200 shrink-0" />
+                  <div className="space-y-1.5">
+                    <div className="h-3.5 w-28 rounded bg-gray-200" />
+                    <div className="h-3 w-16 rounded-full bg-gray-200" />
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <div className="h-8 w-8 rounded-lg bg-gray-200" />
+                  <div className="h-8 w-8 rounded-lg bg-gray-200" />
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="h-3 w-16 rounded bg-gray-200" />
+                <div className="h-3 w-24 rounded bg-gray-200" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="h-2.5 w-20 rounded bg-gray-200" />
+                  <div className="h-4 w-24 rounded bg-gray-200" />
+                </div>
+                <div className="space-y-1">
+                  <div className="h-2.5 w-20 rounded bg-gray-200" />
+                  <div className="h-4 w-24 rounded bg-gray-200" />
+                </div>
+              </div>
+              <div className="mt-auto pt-2 border-t border-gray-100 flex justify-end">
+                <div className="h-7 w-24 rounded-lg bg-gray-200" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -166,59 +198,110 @@ function BudgetingTable({ onView, onEdit, onCreate }) {
 
   return (
     <div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="bg-slate-100">
-            <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Budget</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Year</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Period</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Planned Income</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Planned Expenses</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Created</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
-              <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {rows.map((row, index) => {
-              const plannedIncome = sumPlanned(row?.items, "income");
-              const plannedExpense = sumPlanned(row?.items, "expense");
+      <div className="p-4 md:p-6 lg:p-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {rows.map((row, index) => {
+            const plannedIncome = sumPlanned(row?.items, "income");
+            const plannedExpense = sumPlanned(row?.items, "expense");
 
-              return (
-                <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 text-gray-900 font-semibold whitespace-nowrap px-4 md:px-6">{row?.name || "-"}</td>
-                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{row?.fiscalYear || "-"}</td>
-                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                    <span className={`inline-flex rounded-full px-2.5 py-1 font-semibold ${statusBadge(row?.status)} text-xs`}>
-                      {String(row?.status || "draft").toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatPeriod(row?.periodFrom, row?.periodTo)}</td>
-                  <td className="max-md:px-4 py-2 text-green-700 font-semibold whitespace-nowrap px-4 md:px-6">{plannedIncome.toLocaleString()}</td>
-                  <td className="max-md:px-4 py-2 text-orange-700 font-semibold whitespace-nowrap px-4 md:px-6">{plannedExpense.toLocaleString()}</td>
-                  <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(row?.createdAt)}</td>
-                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                    {row?.referenceId ? (
-                      <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
-                    ) : <span className="text-gray-300 text-xs">—</span>}
-                  </td>
-                  <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                    <TableKebabMenu items={[
-                      { label: "View", onClick: () => row?._id && onView?.(row) },
-                      canEdit && { label: "Edit", onClick: () => row?._id && onEdit?.(row) },
-                      canDelete && { label: "Delete", onClick: () => row?._id && openConfirmDelete(row._id), danger: true }
-                    ]} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+            return (
+              <Card key={row?._id ?? `row-${index}`}>
+                <Card.Header
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                      <path d="M4 19h16M7 17V9M12 17V5M17 17v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  }
+                  iconBg="bg-indigo-50"
+                  iconColor="text-indigo-600"
+                  title={row?.name || "Untitled Budget"}
+                  badge={statusLabel(row?.status)}
+                  badgeClass={statusBadge(row?.status)}
+                  actions={
+                    <>
+                      {canEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => row?._id && onEdit?.(row)}
+                          className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                          aria-label="Edit"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      ) : null}
+                      {canDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => row?._id && openConfirmDelete(row._id)}
+                          className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50"
+                          aria-label="Delete"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
+                            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      ) : null}
+                    </>
+                  }
+                />
+
+                <Card.Meta
+                  items={[
+                    {
+                      icon: (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
+                          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                          <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      ),
+                      label: row?.fiscalYear ? `Financial Year ${row.fiscalYear}` : "—"
+                    },
+                    {
+                      icon: (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
+                          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                          <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      ),
+                      label: formatPeriod(row?.periodFrom, row?.periodTo)
+                    }
+                  ]}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-[11px] font-semibold text-gray-400">Planned Income</div>
+                    <div className="mt-0.5 font-semibold text-green-700 text-sm">{formatMoney(plannedIncome, currency)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold text-gray-400">Planned Expenses</div>
+                    <div className="mt-0.5 font-semibold text-orange-600 text-sm">{formatMoney(plannedExpense, currency)}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[11px] text-gray-400">{formatDate(row?.createdAt)}</div>
+                  {row?.referenceId ? (
+                    <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
+                  ) : null}
+                </div>
+
+                <Card.Footer>
+                  <Card.ViewDetailsLink
+                    onClick={() => row?._id && toPage("budget-detail", { id: row._id })}
+                    label="View Details"
+                  />
+                </Card.Footer>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 max-md:px-4 py-2 px-4 md:px-6">
+      <div className="flex items-center justify-end gap-3 px-4 md:px-6 pb-4">
         <button
           type="button"
           onClick={onPrev}

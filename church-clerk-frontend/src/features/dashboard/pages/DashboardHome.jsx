@@ -63,6 +63,8 @@ const ExpensesPage = React.lazy(() => import("../../expenses/pages/ExpensesPage.
 
 const BudgetingPage = React.lazy(() => import("../../budgeting/pages/BudgetingPage.jsx"));
 
+const BudgetDetailPage = React.lazy(() => import("../../budgeting/pages/BudgetDetailPage.jsx"));
+
 const PledgesPage = React.lazy(() => import("../../pledge/pages/PledgesPage.jsx"));
 
 const PledgeDetailsPage = React.lazy(() => import("../../pledge/pages/PledgeDetailsPage.jsx"));
@@ -1526,6 +1528,8 @@ function DashboardHome() {
   if (page === "expenses") PageComponent = ExpensesPage;
 
   if (page === "budgeting") PageComponent = BudgetingPage;
+
+  if (page === "budget-detail") PageComponent = BudgetDetailPage;
 
   if (page === "financial-statement") PageComponent = FinancialStatementPage;
 

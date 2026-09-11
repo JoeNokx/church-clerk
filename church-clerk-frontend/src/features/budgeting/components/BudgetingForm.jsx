@@ -5,8 +5,19 @@ import BudgetingContext from "../budgeting.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import EntityPicker, { ENTITY_TYPES } from "./EntityPicker.jsx";
 
-const STATUS_OPTIONS = ["draft", "active", "archived"];
+const STATUS_OPTIONS = [
+  { value: "draft",            label: "Draft" },
+  { value: "pending_approval", label: "Pending Approval" },
+  { value: "approved",         label: "Approved" },
+  { value: "active",           label: "Active" },
+  { value: "closed",           label: "Closed" },
+];
+
+const INCOME_CATEGORY_OPTIONS = [
+  "Tithe", "Offering", "Special Fund", "Church Project", "Other"
+];
 
 const CATEGORY_OPTIONS = [
   "Maintenance",
@@ -31,7 +42,7 @@ function formatYmdLocal(value) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-const emptyItem = () => ({ type: "expense", category: "", amount: "", notes: "" });
+const emptyItem = () => ({ type: "expense", category: "", amount: "", notes: "", dateFrom: "", dateTo: "", allocatedType: "", allocatedId: null, allocatedName: "" });
 
 function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
@@ -42,6 +53,9 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const { values: lookupExpenseCategories, reload: reloadExpenseCategories } = useLookupValues("expenseCategory");
   const expenseCategoryOptions = lookupExpenseCategories?.length ? lookupExpenseCategories : CATEGORY_OPTIONS;
+
+  const { values: lookupIncomeCategories, reload: reloadIncomeCategories } = useLookupValues("incomeCategory");
+  const incomeCategoryOptions = lookupIncomeCategories?.length ? lookupIncomeCategories : INCOME_CATEGORY_OPTIONS;
 
   const [name, setName] = useState("");
   const [fiscalYear, setFiscalYear] = useState("");
@@ -71,7 +85,12 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
             type: String(i?.type || "expense"),
             category: String(i?.category || ""),
             amount: i?.amount ?? "",
-            notes: String(i?.notes || "")
+            notes: String(i?.notes || ""),
+            dateFrom: i?.dateFrom ? new Date(i.dateFrom).toISOString().slice(0, 10) : "",
+            dateTo: i?.dateTo ? new Date(i.dateTo).toISOString().slice(0, 10) : "",
+            allocatedType: String(i?.allocatedTo?.entityType || ""),
+            allocatedId: i?.allocatedTo?.entityId || null,
+            allocatedName: String(i?.allocatedTo?.entityName || "")
           }))
         : [emptyItem()];
 
@@ -128,7 +147,14 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
             type: String(i?.type || "expense"),
             category: String(i?.category || "").trim(),
             amount: i?.amount === "" ? "" : Number(i?.amount),
-            notes: String(i?.notes || "").trim()
+            notes: String(i?.notes || "").trim(),
+            dateFrom: i?.dateFrom || null,
+            dateTo: i?.dateTo || null,
+            allocatedTo: {
+              entityType: i?.allocatedType || null,
+              entityId: i?.allocatedId || null,
+              entityName: String(i?.allocatedName || "").trim()
+            }
           }))
           .filter((i) => i.category)
       };
@@ -194,7 +220,7 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Fiscal year</label>
+              <label className="block font-semibold text-gray-500 text-xs">Financial year</label>
               <input
                 value={fiscalYear}
                 onChange={(e) => setFiscalYear(e.target.value)}
@@ -232,9 +258,7 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
               >
                 {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
+                  <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
             </div>
@@ -258,104 +282,177 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-100">
-                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                    <th className="sticky left-0 z-20 bg-slate-100 px-4 md:max-lg:px-6 py-2 whitespace-nowrap">Type</th>
-                    <th className="px-4 md:max-lg:px-6 py-2 whitespace-nowrap">Category</th>
-                    <th className="px-4 md:max-lg:px-6 py-2 whitespace-nowrap">Amount</th>
-                    <th className="px-4 md:max-lg:px-6 py-2 whitespace-nowrap">Notes</th>
-                    <th className="px-4 md:max-lg:px-6 py-2 text-right whitespace-nowrap">Actions</th>
+                  <tr className="text-left font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 whitespace-nowrap">Type</th>
+                    <th className="px-4 py-2 whitespace-nowrap">Category</th>
+                    <th className="px-4 py-2 whitespace-nowrap">Allocated To</th>
+                    <th className="px-4 py-2 whitespace-nowrap">Amount</th>
+                    <th className="px-4 py-2 whitespace-nowrap">Date From</th>
+                    <th className="px-4 py-2 whitespace-nowrap">Date To</th>
+                    <th className="px-4 py-2 whitespace-nowrap">Notes</th>
+                    <th className="px-4 py-2 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {items.map((row, idx) => {
                     const type = String(row?.type || "expense");
                     const category = String(row?.category || "");
+                    const allocType = row?.allocatedType || "";
+                    const allocMeta = ENTITY_TYPES.find((e) => e.value === allocType);
 
                     return (
-                      <tr key={`item-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                        <td className="sticky left-0 z-10 bg-white px-4 md:max-lg:px-6 py-2 whitespace-nowrap">
-                          <select
-                            value={type}
-                            onChange={(e) => updateItem(idx, { type: e.target.value })}
-                            className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                          >
-                            <option value="expense">Expense</option>
-                            <option value="income">Income</option>
-                          </select>
-                        </td>
-
-                        <td className="px-4 md:max-lg:px-6 py-2">
-                          <div className="flex items-center gap-2">
-                            {type === "expense" ? (
+                          <tr key={`item-${idx}`} className="text-gray-700 text-sm">
+                            {/* Type */}
+                            <td className="sticky left-0 z-10 bg-white px-4 py-2 whitespace-nowrap">
                               <select
-                                value={category}
-                                onChange={(e) => updateItem(idx, { category: e.target.value })}
-                                className="h-11 w-56 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                                value={type}
+                                onChange={(e) => updateItem(idx, { type: e.target.value, category: "" })}
+                                className="h-11 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                               >
-                                <option value="">Select category</option>
-                                {(expenseCategoryOptions || []).map((c) => (
-                                  <option key={c} value={c}>
-                                    {c}
-                                  </option>
-                                ))}
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
                               </select>
-                            ) : (
+                            </td>
+
+                            {/* Category */}
+                            <td className="px-4 py-2">
+                              <div className="flex items-center gap-2">
+                                {type === "expense" ? (
+                                  <>
+                                    <select
+                                      value={category}
+                                      onChange={(e) => updateItem(idx, { category: e.target.value })}
+                                      className="h-11 w-44 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                                    >
+                                      <option value="">Select category</option>
+                                      {(expenseCategoryOptions || []).map((c) => (
+                                        <option key={c} value={c}>{c}</option>
+                                      ))}
+                                    </select>
+                                    <AddLookupValueButton
+                                      label="Add"
+                                      kind="expenseCategory"
+                                      onCreated={async (value) => {
+                                        await reloadExpenseCategories();
+                                        updateItem(idx, { category: value });
+                                      }}
+                                    />
+                                  </>
+                                ) : (
+                                  <>
+                                    <select
+                                      value={category}
+                                      onChange={(e) => updateItem(idx, { category: e.target.value })}
+                                      className="h-11 w-44 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                                    >
+                                      <option value="">Select category</option>
+                                      {(incomeCategoryOptions || []).map((c) => (
+                                        <option key={c} value={c}>{c}</option>
+                                      ))}
+                                    </select>
+                                    <AddLookupValueButton
+                                      label="Add"
+                                      kind="incomeCategory"
+                                      onCreated={async (value) => {
+                                        await reloadIncomeCategories();
+                                        updateItem(idx, { category: value });
+                                      }}
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Allocated To */}
+                            <td className="px-4 py-2">
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={allocType}
+                                  onChange={(e) => updateItem(idx, { allocatedType: e.target.value, allocatedId: null, allocatedName: "" })}
+                                  className="h-11 w-40 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                                >
+                                  {ENTITY_TYPES.map((et) => (
+                                    <option key={et.value} value={et.value}>{et.label}</option>
+                                  ))}
+                                </select>
+                                {allocMeta?.needsPicker ? (
+                                  <EntityPicker
+                                    entityType={allocType}
+                                    value={{ entityId: row?.allocatedId, entityName: row?.allocatedName }}
+                                    onChange={(id, name) => updateItem(idx, { allocatedId: id, allocatedName: name })}
+                                    className="w-44"
+                                  />
+                                ) : null}
+                                {allocMeta?.isCustom ? (
+                                  <input
+                                    type="text"
+                                    value={row?.allocatedName || ""}
+                                    onChange={(e) => updateItem(idx, { allocatedId: null, allocatedName: e.target.value })}
+                                    placeholder="Enter name"
+                                    className="h-11 w-44 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                                  />
+                                ) : null}
+                              </div>
+                            </td>
+
+                            {/* Amount */}
+                            <td className="px-4 py-2">
                               <input
-                                value={category}
-                                onChange={(e) => updateItem(idx, { category: e.target.value })}
-                                className="h-11 w-56 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                                placeholder="Income category"
+                                type="number"
+                                value={row?.amount ?? ""}
+                                onChange={(e) => updateItem(idx, { amount: e.target.value })}
+                                className="h-11 w-36 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                                placeholder="0.00"
                               />
-                            )}
+                            </td>
 
-                            {type === "expense" ? (
-                              <AddLookupValueButton
-                                label="Add"
-                                kind="expenseCategory"
-                                onCreated={async (value) => {
-                                  await reloadExpenseCategories();
-                                  updateItem(idx, { category: value });
-                                }}
+                            {/* Date From */}
+                            <td className="px-4 py-2">
+                              <input
+                                type="date"
+                                value={row?.dateFrom || ""}
+                                onChange={(e) => updateItem(idx, { dateFrom: e.target.value })}
+                                className="h-11 w-36 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                               />
-                            ) : null}
-                          </div>
-                        </td>
+                            </td>
 
-                        <td className="px-4 md:max-lg:px-6 py-2">
-                          <input
-                            type="number"
-                            value={row?.amount ?? ""}
-                            onChange={(e) => updateItem(idx, { amount: e.target.value })}
-                            className="h-11 w-40 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                            placeholder="0.00"
-                          />
-                        </td>
+                            {/* Date To */}
+                            <td className="px-4 py-2">
+                              <input
+                                type="date"
+                                value={row?.dateTo || ""}
+                                onChange={(e) => updateItem(idx, { dateTo: e.target.value })}
+                                className="h-11 w-36 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                              />
+                            </td>
 
-                        <td className="px-4 md:max-lg:px-6 py-2">
-                          <div className="flex flex-col gap-0.5">
-                            <input
-                              value={row?.notes || ""}
-                              onChange={(e) => updateItem(idx, { notes: e.target.value.slice(0, 20) })}
-                              maxLength={20}
-                              className="h-11 w-52 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                              placeholder="Optional"
-                            />
-                            <div className="text-[10px] text-gray-400 text-right w-52">{(row?.notes || "").length}/20</div>
-                          </div>
-                        </td>
+                            {/* Notes */}
+                            <td className="px-4 py-2">
+                              <div className="flex flex-col gap-0.5">
+                                <input
+                                  value={row?.notes || ""}
+                                  onChange={(e) => updateItem(idx, { notes: e.target.value.slice(0, 20) })}
+                                  maxLength={20}
+                                  className="h-11 w-44 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                                  placeholder="Optional"
+                                />
+                                <div className="text-[10px] text-gray-400 text-right w-44">{(row?.notes || "").length}/20</div>
+                              </div>
+                            </td>
 
-                        <td className="px-4 md:max-lg:px-6 py-2 whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => removeItem(idx)}
-                              className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                            {/* Actions */}
+                            <td className="px-4 py-2 whitespace-nowrap">
+                              <div className="flex items-center justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => removeItem(idx)}
+                                  className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-red-600 hover:bg-gray-50 text-xs"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
                     );
                   })}
                 </tbody>

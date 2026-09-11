@@ -52,6 +52,18 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
       await mod.createLookupValue({ kind, value: v });
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("cck:lookups:changed", { detail: { kind, value: v } }));
+        // Fan out expense-category changes so the budget expense category list
+        // stays in sync when a category is added in welfare, business, etc.
+        const EXPENSE_KINDS = ["welfareDisbursementCategory", "businessExpenseCategory", "expenseCategory"];
+        if (EXPENSE_KINDS.includes(kind) && kind !== "expenseCategory") {
+          window.dispatchEvent(new CustomEvent("cck:lookups:changed", { detail: { kind: "expenseCategory", value: v } }));
+        }
+        // Fan out income-category changes so the budget income category list
+        // stays in sync when a category is added in special funds, offerings, etc.
+        const INCOME_KINDS = ["specialFundCategory", "offeringType", "incomeCategory"];
+        if (INCOME_KINDS.includes(kind) && kind !== "incomeCategory") {
+          window.dispatchEvent(new CustomEvent("cck:lookups:changed", { detail: { kind: "incomeCategory", value: v } }));
+        }
       }
       onCreated?.(v);
     } catch (e2) {

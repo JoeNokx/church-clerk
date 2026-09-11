@@ -20,6 +20,7 @@ import DepartmentOffering from "../models/ministryModel/departmentOfferingModel.
 import PledgePayment from "../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import Income from "../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Expense from "../models/financeModel/incomeExpenseModel/expenseModel.js";
+import Budget from "../models/financeModel/budgetingModel.js";
 
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
@@ -595,6 +596,68 @@ async function computeYearlyAnalytics({ churchId, year }) {
     periodEnd
   });
 
+  const [welfareContributionsMap, welfareDisbursementsMap, specialFundsMap] = await Promise.all([
+    aggregateMonthlySum({
+      Model: WelfareContributions,
+      churchId,
+      dateField: "date",
+      amountField: "amount",
+      periodStart,
+      periodEnd
+    }),
+    aggregateMonthlySum({
+      Model: WelfareDisbursements,
+      churchId,
+      dateField: "date",
+      amountField: "amount",
+      periodStart,
+      periodEnd
+    }),
+    aggregateMonthlySum({
+      Model: SpecialFund,
+      churchId,
+      dateField: "givingDate",
+      amountField: "totalAmount",
+      periodStart,
+      periodEnd
+    })
+  ]);
+
+  const yearBudgets = await Budget.find({ church: churchId, fiscalYear: y }).lean();
+
+  // Recommendation #5: period-aware monthly budget distribution.
+  // For each month key, sum the pro-rated share from every budget whose period overlaps that month.
+  // If a budget has no period dates, distribute evenly across all 12 months of the fiscal year.
+  const monthlyBudgetMap = new Map();
+  for (const k of keys) {
+    const [ky, km] = String(k).split("-");
+    const mStart = new Date(Number(ky), Number(km) - 1, 1);
+    const mEnd = new Date(Number(ky), Number(km), 0, 23, 59, 59, 999);
+    let monthTotal = 0;
+
+    for (const b of yearBudgets) {
+      const bFrom = b.periodFrom ? new Date(b.periodFrom) : new Date(Number(ky), 0, 1);
+      const bTo = b.periodTo ? new Date(b.periodTo) : new Date(Number(ky), 11, 31, 23, 59, 59, 999);
+
+      // Only count if this month overlaps the budget period
+      if (mStart > bTo || mEnd < bFrom) continue;
+
+      const expenseTotal = (b.items || [])
+        .filter((item) => item.type === "expense")
+        .reduce((s, item) => s + clampToNumber(item.amount), 0);
+
+      // Count how many calendar months the budget spans
+      const spanMonths = Math.max(
+        1,
+        (bTo.getFullYear() - bFrom.getFullYear()) * 12 +
+          (bTo.getMonth() - bFrom.getMonth()) + 1
+      );
+      monthTotal += expenseTotal / spanMonths;
+    }
+
+    monthlyBudgetMap.set(k, Math.round(monthTotal * 100) / 100);
+  }
+
   const incomeTotalMap = mergeMapsSum(incomeMaps);
   const expenseTotalMap = mergeMapsSum(expenseMaps);
   const offeringTotalMap = mergeMapsSum(offeringMaps);
@@ -623,6 +686,11 @@ async function computeYearlyAnalytics({ churchId, year }) {
     expenses: clampToNumber(expenseTotalMap.get(k)),
     offering: clampToNumber(offeringTotalMap.get(k)),
     tithe: clampToNumber(titheTotalMap.get(k)),
+    specialFunds: clampToNumber(specialFundsMap.get(k)),
+    welfareContributions: clampToNumber(welfareContributionsMap.get(k)),
+    welfareDisbursements: clampToNumber(welfareDisbursementsMap.get(k)),
+    budget: clampToNumber(monthlyBudgetMap.get(k)),
+    expenditure: clampToNumber(expenseTotalMap.get(k)),
     totalMembers: clampToNumber(totalMembersCounts?.[idx]),
     newMembers: clampToNumber(newMembersMap.get(k)),
     attendance: clampToNumber(attendanceMap.get(k)),

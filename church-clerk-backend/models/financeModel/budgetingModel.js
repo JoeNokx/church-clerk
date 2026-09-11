@@ -23,6 +23,30 @@ const budgetItemSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: ""
+    },
+    dateFrom: {
+      type: Date,
+      default: null
+    },
+    dateTo: {
+      type: Date,
+      default: null
+    },
+    allocatedTo: {
+      entityType: {
+        type: String,
+        enum: ["church", "branch", "cell", "group", "department", "event", "administration", "other", null],
+        default: null
+      },
+      entityId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null
+      },
+      entityName: {
+        type: String,
+        trim: true,
+        default: ""
+      }
     }
   },
   { _id: false }
@@ -54,7 +78,7 @@ const budgetingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "active", "archived"],
+      enum: ["draft", "pending_approval", "approved", "active", "closed"],
       default: "draft"
     },
     items: {
