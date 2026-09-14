@@ -10,9 +10,10 @@ import Income from "../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Offering from "../models/financeModel/offeringModel.js";
 import SpecialFund from "../models/financeModel/specialFundModel.js";
 import EventOffering from "../models/eventModel/eventOfferingModel.js";
-import CellOffering from "../models/ministryModel/cellOfferingModel.js";
-import GroupOffering from "../models/ministryModel/groupOfferingModel.js";
-import DepartmentOffering from "../models/ministryModel/departmentOfferingModel.js";
+import CellOffering from "../models/organisationModel/cellOfferingModel.js";
+import GroupOffering from "../models/organisationModel/groupOfferingModel.js";
+import DepartmentOffering from "../models/organisationModel/departmentOfferingModel.js";
+import MinistryOffering from "../models/organisationModel/ministryOfferingModel.js";
 import BusinessIncome from "../models/financeModel/businessModel/businessIncomeModel.js";
 
 const normalizeValue = (value) => String(value || "").trim().toLowerCase();
@@ -78,6 +79,7 @@ const defaultValuesByKind = {
     "Cell Offering",
     "Group Offering",
     "Department Offering",
+    "Ministry Offering",
     "Event Offering",
     "Pledge",
     "Welfare Contribution",
@@ -154,6 +156,7 @@ const INCOME_CATEGORY_STATIC = [
   "Cell Offering",
   "Group Offering",
   "Department Offering",
+  "Ministry Offering",
   "Pledge",
   "Welfare Contribution",
   "Church Project Contribution",

@@ -10,9 +10,10 @@ import BusinessIncome from "../../models/financeModel/businessModel/businessInco
 import BusinessExpenses from "../../models/financeModel/businessModel/businessExpensesModel.js";
 import GeneralExpenses from "../../models/generalExpenseModel.js";
 import EventOffering from "../../models/eventModel/eventOfferingModel.js";
-import CellOffering from "../../models/ministryModel/cellOfferingModel.js";
-import GroupOffering from "../../models/ministryModel/groupOfferingModel.js";
-import DepartmentOffering from "../../models/ministryModel/departmentOfferingModel.js";
+import CellOffering from "../../models/organisationModel/cellOfferingModel.js";
+import GroupOffering from "../../models/organisationModel/groupOfferingModel.js";
+import DepartmentOffering from "../../models/organisationModel/departmentOfferingModel.js";
+import MinistryOffering from "../../models/organisationModel/ministryOfferingModel.js";
 import PledgePayment from "../../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import Income from "../../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Expense from "../../models/financeModel/incomeExpenseModel/expenseModel.js";
@@ -205,6 +206,7 @@ async function buildStatement({ churchId, periodStart, periodEnd, prevStart, pre
     { key: "cellOfferings", label: "Cell Offering", Model: CellOffering, dateField: "date", amountField: "amount" },
     { key: "groupOfferings", label: "Group Offering", Model: GroupOffering, dateField: "date", amountField: "amount" },
     { key: "departmentOfferings", label: "Department Offering", Model: DepartmentOffering, dateField: "date", amountField: "amount" },
+    { key: "ministryOfferings", label: "Ministry Offering", Model: MinistryOffering, dateField: "date", amountField: "amount" },
     { key: "projectContributions", label: "Church Project Contributions", Model: ProjectContribution, dateField: "date", amountField: "amount" },
     { key: "welfareContributions", label: "Welfare Contributions", Model: WelfareContributions, dateField: "date", amountField: "amount" },
     { key: "specialFunds", label: "Special Funds", Model: SpecialFund, dateField: "givingDate", amountField: "totalAmount" },

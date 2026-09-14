@@ -51,9 +51,9 @@ const ProgramsEventsPage = React.lazy(() => import("../../event/pages/ProgramsEv
 
 const EventDetailsPage = React.lazy(() => import("../../event/pages/EventDetailsPage.jsx"));
 
-const MinistriesPage = React.lazy(() => import("../../ministries/pages/MinistriesPage.jsx"));
+const OrganisationsPage = React.lazy(() => import("../../organisations/pages/OrganisationsPage.jsx"));
 
-const MinistryDetailsPage = React.lazy(() => import("../../ministries/pages/MinistryDetailsPage.jsx"));
+const OrganisationDetailsPage = React.lazy(() => import("../../organisations/pages/OrganisationDetailsPage.jsx"));
 
 const BranchesOverviewPage = React.lazy(() => import("../../church/pages/BranchesOverviewPage.jsx"));
 
@@ -1513,9 +1513,9 @@ function DashboardHome() {
 
   if (page === "event-details") PageComponent = EventDetailsPage;
 
-  if (page === "ministries") PageComponent = MinistriesPage;
+  if (page === "organisations") PageComponent = OrganisationsPage;
 
-  if (page === "ministry-details") PageComponent = MinistryDetailsPage;
+  if (page === "organisation-details") PageComponent = OrganisationDetailsPage;
 
   if (page === "branches-overview") PageComponent = BranchesOverviewPage;
 

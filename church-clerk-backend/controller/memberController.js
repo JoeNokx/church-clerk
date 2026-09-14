@@ -5,7 +5,7 @@ import Visitor from "../models/visitorsModel.js"
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 
-import GroupMember from "../models/ministryModel/groupMembersModel.js"
+import GroupMember from "../models/organisationModel/groupMembersModel.js"
 import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import { parseCsvToObjects } from "../utils/csvParser.js";

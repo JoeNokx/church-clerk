@@ -39,7 +39,7 @@ export const requirePermission = (moduleKey, actionKey) => {
     }
 
     // Aliases / legacy
-    if (m === "ministry") return "ministries";
+    if (m === "organisation") return "organisations";
     if (m === "events") return "programsEvents";
     if (m === "tithe") return "tithes";
     if (m === "branches") return "branchesOverview";
@@ -68,6 +68,11 @@ export const requirePermission = (moduleKey, actionKey) => {
     if (featureKey === "budgeting") {
       if (features?.budgeting !== undefined) return Boolean(features.budgeting);
       return Boolean(features?.financeModule);
+    }
+
+    if (featureKey === "organisations") {
+      if (features?.organisations !== undefined) return Boolean(features.organisations);
+      return Boolean(features?.ministries);
     }
 
     if (featureKey === "dashboard") return features?.dashboard !== false;

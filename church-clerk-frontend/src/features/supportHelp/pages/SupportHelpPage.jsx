@@ -413,7 +413,7 @@ function SupportHelpPage() {
       "Members",
       "Visitors",
       "Attendance",
-      "Ministries",
+      "Organisations",
       "Outreach",
       "Announcements",
       "Events and Programs",

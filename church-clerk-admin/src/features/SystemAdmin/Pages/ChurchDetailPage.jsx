@@ -12,8 +12,8 @@ import ProgramsEventsPage from "../../event/pages/ProgramsEventsPage.jsx";
 import EventDetailsPage from "../../event/pages/EventDetailsPage.jsx";
 import EventCreatePage from "../../event/pages/EventCreatePage.jsx";
 import EventEditPage from "../../event/pages/EventEditPage.jsx";
-import MinistriesPage from "../../ministries/pages/MinistriesPage.jsx";
-import MinistryDetailsPage from "../../ministries/pages/MinistryDetailsPage.jsx";
+import OrganisationsPage from "../../organisations/pages/OrganisationsPage.jsx";
+import OrganisationDetailsPage from "../../organisations/pages/OrganisationDetailsPage.jsx";
 import BranchesOverviewPage from "../../Church/pages/BranchesOverviewPage.jsx";
 import TithePage from "../../tithe/pages/TithePage.jsx";
 import OfferingPage from "../../offering/pages/OfferingPage.jsx";
@@ -118,7 +118,7 @@ function ChurchDetailPage() {
     () => {
       const list = [
         { key: "dashboard", label: "Dashboard" },
-        { key: "people", label: "People & Ministries" },
+        { key: "people", label: "People & Organisations" },
         { key: "finance", label: "Finance" },
         { key: "admin", label: "Administration" }
       ];
@@ -136,14 +136,14 @@ function ChurchDetailPage() {
         "members",
         "attendance",
         "programs-events",
-        "ministries",
+        "organisations",
         "announcements",
         "member-form",
         "member-details",
         "event-details",
         "event-create",
         "event-edit",
-        "ministry-details"
+        "organisation-details"
       ].includes(page)
     ) {
       return "people";
@@ -175,7 +175,7 @@ function ChurchDetailPage() {
       { key: "members", label: "Members" },
       { key: "attendance", label: "Attendance" },
       { key: "programs-events", label: "Programs & Events" },
-      { key: "ministries", label: "Ministries" },
+      { key: "organisations", label: "Organisations" },
       { key: "announcements", label: "Announcements" }
     ],
     []
@@ -273,8 +273,8 @@ function ChurchDetailPage() {
     if (page === "members") return <MembersPage />;
     if (page === "attendance") return <AttendancePage />;
     if (page === "programs-events") return <ProgramsEventsPage />;
-    if (page === "ministries") return <MinistriesPage />;
-    if (page === "ministry-details") return <MinistryDetailsPage />;
+    if (page === "organisations") return <OrganisationsPage />;
+    if (page === "organisation-details") return <OrganisationDetailsPage />;
     if (page === "tithe") return <TithePage />;
     if (page === "church-projects") return <ChurchProjectsPage />;
     if (page === "church-project-details") return <ChurchProjectDetailsPage />;

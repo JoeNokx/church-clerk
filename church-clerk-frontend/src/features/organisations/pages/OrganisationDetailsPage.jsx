@@ -1,0 +1,2438 @@
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import BackButton from "../../../shared/components/BackButton/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
+import Skeleton from "react-loading-skeleton";
+
+import ChurchContext from "../../church/church.store.js";
+import PermissionContext from "../../permissions/permission.store.js";
+import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+
+import {
+  getGroup,
+  addGroupMember,
+  searchGroupMembersToAdd,
+  getGroupMembers,
+  updateGroupMemberRole,
+  removeGroupMember,
+  updateGroup
+} from "../../group/services/group.api.js";
+
+import {
+  createGroupAttendance,
+  getGroupAttendances,
+  updateGroupAttendance,
+  deleteGroupAttendance,
+  createGroupIndividualAttendance,
+  getGroupIndividualAttendances,
+  getGroupIndividualAttendance,
+  updateGroupIndividualAttendance,
+  deleteGroupIndividualAttendance
+} from "../../group/attendance/services/groupAttendance.api.js";
+import { createGroupOffering, getGroupOfferings, updateGroupOffering, deleteGroupOffering } from "../../group/offering/services/groupOffering.api.js";
+
+import {
+  getDepartment,
+  addDepartmentMember,
+  searchDepartmentMembersToAdd,
+  getDepartmentMembers,
+  updateDepartmentMemberRole,
+  removeDepartmentMember,
+  updateDepartment,
+  createDepartmentAttendance,
+  getDepartmentAttendances,
+  updateDepartmentAttendance,
+  deleteDepartmentAttendance,
+  createDepartmentIndividualAttendance,
+  getDepartmentIndividualAttendances,
+  getDepartmentIndividualAttendance,
+  updateDepartmentIndividualAttendance,
+  deleteDepartmentIndividualAttendance,
+  createDepartmentOffering,
+  getDepartmentOfferings,
+  updateDepartmentOffering,
+  deleteDepartmentOffering
+} from "../../department/services/department.api.js";
+
+import {
+  getCell,
+  addCellMember,
+  searchCellMembersToAdd,
+  getCellMembers,
+  updateCellMemberRole,
+  removeCellMember,
+  updateCell,
+  createCellAttendance,
+  getCellAttendances,
+  updateCellAttendance,
+  deleteCellAttendance,
+  createCellIndividualAttendance,
+  getCellIndividualAttendances,
+  getCellIndividualAttendance,
+  updateCellIndividualAttendance,
+  deleteCellIndividualAttendance,
+  createCellOffering,
+  getCellOfferings,
+  updateCellOffering,
+  deleteCellOffering
+} from "../../cell/services/cell.api.js";
+
+import {
+  getMinistry,
+  addMinistryMember,
+  searchMinistryMembersToAdd,
+  getMinistryMembers,
+  updateMinistryMemberRole,
+  removeMinistryMember,
+  updateMinistry,
+  createMinistryAttendance,
+  getMinistryAttendances,
+  updateMinistryAttendance,
+  deleteMinistryAttendance,
+  createMinistryIndividualAttendance,
+  getMinistryIndividualAttendances,
+  getMinistryIndividualAttendance,
+  updateMinistryIndividualAttendance,
+  deleteMinistryIndividualAttendance,
+  createMinistryOffering,
+  getMinistryOfferings,
+  updateMinistryOffering,
+  deleteMinistryOffering
+} from "../../ministry/services/ministry.api.js";
+
+function useDebouncedValue(value, delayMs) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+function safeText(value) {
+  return typeof value === "string" ? value : "";
+}
+
+function MinistryTypeIcon({ type }) {
+  if (type === "cell") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+        <path d="M12 21s7-4.5 7-10a7 7 0 10-14 0c0 5.5 7 10 7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M12 11a2 2 0 100-4 2 2 0 000 4Z" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    );
+  }
+
+  if (type === "department") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+        <path d="M4 20V8l8-4 8 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M9 20v-6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (type === "ministry") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+        <path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6L12 2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+      <path d="M8 12a4 4 0 108 0 4 4 0 00-8 0Z" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function Chip({ color = "gray", children }) {
+  const styles =
+    color === "blue"
+      ? "bg-blue-100 text-blue-700"
+      : color === "orange"
+        ? "bg-orange-100 text-orange-700"
+        : color === "purple"
+          ? "bg-purple-100 text-purple-700"
+          : color === "pink"
+            ? "bg-pink-100 text-pink-700"
+            : "bg-gray-100 text-gray-700";
+
+  return <span className={`inline-flex items-center rounded-full px-3 py-1 font-semibold ${styles} text-xs`}>{children}</span>;
+}
+
+function normalizeMeetingSchedule(item) {
+  const ms = item?.meetingSchedule;
+  if (Array.isArray(ms)) return ms;
+
+  const day = safeText(item?.mainMeetingDay).trim();
+  const time = safeText(item?.meetingTime).trim();
+  const venue = safeText(item?.meetingVenue).trim();
+  if (day && time && venue) {
+    return [{ meetingDay: day, meetingTime: time, meetingVenue: venue }];
+  }
+  return [];
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatDay(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { weekday: "long" });
+}
+
+function ConfirmDialog({ open, title, message, confirmLabel = "Delete", onCancel, onConfirm }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
+        </div>
+        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
+        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SimpleModal({ open, title, children, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{title}</div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
+            aria-label="Close"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-4 md:p-6 lg:p-8">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function OrganisationDetailsPage() {
+  const location = useLocation();
+  const { toPage } = useDashboardNavigator();
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
+  const churchStore = useContext(ChurchContext);
+  const { can } = useContext(PermissionContext) || {};
+  const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
+  const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+
+  const id = params.get("id") || "";
+  const type = (params.get("type") || "group").toLowerCase();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [entity, setEntity] = useState(null);
+
+  const [activeTab, setActiveTab] = useState("members");
+
+  // members
+  const [memberLoading, setMemberLoading] = useState(false);
+  const [memberError, setMemberError] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [members, setMembers] = useState([]);
+
+  const debouncedMemberSearch = useDebouncedValue(memberSearch, 250);
+
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [addMemberValue, setAddMemberValue] = useState("");
+  const [addMemberRole, setAddMemberRole] = useState("member");
+  const [addMemberSaving, setAddMemberSaving] = useState(false);
+  const [isSubmittingAddMember, setIsSubmittingAddMember] = useState(false);
+  const [addMemberError, setAddMemberError] = useState("");
+
+  const [addMemberCandidatesLoading, setAddMemberCandidatesLoading] = useState(false);
+  const [addMemberCandidatesError, setAddMemberCandidatesError] = useState("");
+  const [addMemberCandidates, setAddMemberCandidates] = useState([]);
+  const [addMemberSelectedIds, setAddMemberSelectedIds] = useState([]);
+
+  const debouncedAddMemberValue = useDebouncedValue(addMemberValue, 250);
+
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [roleModalMemberId, setRoleModalMemberId] = useState("");
+  const [roleModalValue, setRoleModalValue] = useState("");
+  const [roleModalError, setRoleModalError] = useState("");
+  const [isSubmittingRole, setIsSubmittingRole] = useState(false);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editMeetingSchedule, setEditMeetingSchedule] = useState([{ meetingDay: "", meetingTime: "", meetingVenue: "" }]);
+  const [editStatus, setEditStatus] = useState("active");
+
+  const meetingDays = useMemo(
+    () => ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    []
+  );
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMeta, setConfirmMeta] = useState(null); // { kind, payload }
+
+  // attendance
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceError, setAttendanceError] = useState("");
+  const [attendances, setAttendances] = useState([]);
+
+  const [attendanceView, setAttendanceView] = useState("total"); // total | individual
+
+  const [individualAttendanceLoading, setIndividualAttendanceLoading] = useState(false);
+  const [individualAttendanceError, setIndividualAttendanceError] = useState("");
+  const [individualAttendances, setIndividualAttendances] = useState([]);
+
+  const [individualAttendanceOpen, setIndividualAttendanceOpen] = useState(false);
+  const [individualAttendanceMode, setIndividualAttendanceMode] = useState("create");
+  const [individualAttendanceEditing, setIndividualAttendanceEditing] = useState(null);
+  const [individualAttendanceDate, setIndividualAttendanceDate] = useState("");
+  const [individualAttendanceSelectedIds, setIndividualAttendanceSelectedIds] = useState([]);
+  const [individualAttendanceSaving, setIndividualAttendanceSaving] = useState(false);
+  const [isSubmittingIndividualAttendance, setIsSubmittingIndividualAttendance] = useState(false);
+  const [individualAttendanceFormError, setIndividualAttendanceFormError] = useState("");
+
+  const [individualMembersLoading, setIndividualMembersLoading] = useState(false);
+  const [individualMembersError, setIndividualMembersError] = useState("");
+  const [individualMembers, setIndividualMembers] = useState([]); // { id, name }
+  const [individualMemberSearch, setIndividualMemberSearch] = useState("");
+
+  const [individualViewOpen, setIndividualViewOpen] = useState(false);
+  const [individualViewLoading, setIndividualViewLoading] = useState(false);
+  const [individualViewing, setIndividualViewing] = useState(null);
+  const [individualViewError, setIndividualViewError] = useState("");
+  const [individualViewTab, setIndividualViewTab] = useState("present");
+
+  const [attendanceOpen, setAttendanceOpen] = useState(false);
+  const [attendanceMode, setAttendanceMode] = useState("create");
+  const [attendanceEditing, setAttendanceEditing] = useState(null);
+  const [attendanceDate, setAttendanceDate] = useState("");
+  const [attendanceNumber, setAttendanceNumber] = useState("");
+  const [attendanceSpeaker, setAttendanceSpeaker] = useState("");
+  const [attendanceActivity, setAttendanceActivity] = useState("");
+  const [attendanceSaving, setAttendanceSaving] = useState(false);
+  const [isSubmittingAttendance, setIsSubmittingAttendance] = useState(false);
+  const [attendanceFormError, setAttendanceFormError] = useState("");
+
+  // offerings
+  const [offeringLoading, setOfferingLoading] = useState(false);
+  const [offeringError, setOfferingError] = useState("");
+  const [offerings, setOfferings] = useState([]);
+
+  const [offeringOpen, setOfferingOpen] = useState(false);
+  const [offeringMode, setOfferingMode] = useState("create");
+  const [offeringEditing, setOfferingEditing] = useState(null);
+  const [offeringDate, setOfferingDate] = useState("");
+  const [offeringAmount, setOfferingAmount] = useState("");
+  const [offeringNote, setOfferingNote] = useState("");
+  const [offeringSaving, setOfferingSaving] = useState(false);
+  const [isSubmittingOffering, setIsSubmittingOffering] = useState(false);
+  const [offeringFormError, setOfferingFormError] = useState("");
+  const [offeringSearch, setOfferingSearch] = useState("");
+  const [offeringViewOpen, setOfferingViewOpen] = useState(false);
+  const [offeringViewRow, setOfferingViewRow] = useState(null);
+
+  const [attendanceSearch, setAttendanceSearch] = useState("");
+  const [individualAttendanceSearch, setIndividualAttendanceSearch] = useState("");
+  const [individualAttendanceSpeaker, setIndividualAttendanceSpeaker] = useState("");
+
+  const [memberDateFrom, setMemberDateFrom] = useState("");
+  const [memberDateTo, setMemberDateTo] = useState("");
+  const [attendanceDateFrom, setAttendanceDateFrom] = useState("");
+  const [attendanceDateTo, setAttendanceDateTo] = useState("");
+  const [indivDateFrom, setIndivDateFrom] = useState("");
+  const [indivDateTo, setIndivDateTo] = useState("");
+  const [offeringDateFrom, setOfferingDateFrom] = useState("");
+  const [offeringDateTo, setOfferingDateTo] = useState("");
+
+  const title = type === "cell" ? "Cell" : type === "department" ? "Department" : type === "ministry" ? "Ministry" : "Group";
+
+  const loadEntity = useCallback(async () => {
+    if (!id) {
+      setError("Id is missing");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setEntity(null);
+
+    try {
+      if (type === "department") {
+        const res = await getDepartment(id);
+        const payload = res?.data?.data ?? res?.data;
+        setEntity(payload?.department || payload);
+      } else if (type === "cell") {
+        const res = await getCell(id);
+        const payload = res?.data?.data ?? res?.data;
+        setEntity(payload?.cell || payload);
+      } else if (type === "ministry") {
+        const res = await getMinistry(id);
+        const payload = res?.data?.data ?? res?.data;
+        setEntity(payload?.ministry || payload);
+      } else {
+        const res = await getGroup(id);
+        const payload = res?.data?.data ?? res?.data;
+        setEntity(payload?.group || payload);
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || `Failed to load ${title}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, type, title]);
+
+  const loadMembers = useCallback(async () => {
+    if (!id) return;
+    setMemberLoading(true);
+    setMemberError("");
+
+    try {
+      if (type === "department") {
+        const res = await getDepartmentMembers(id, { search: debouncedMemberSearch });
+        const payload = res?.data?.data ?? res?.data;
+        setMembers(Array.isArray(payload?.members) ? payload.members : []);
+      } else if (type === "cell") {
+        const res = await getCellMembers(id, { search: debouncedMemberSearch });
+        const payload = res?.data?.data ?? res?.data;
+        setMembers(Array.isArray(payload?.members) ? payload.members : []);
+      } else if (type === "ministry") {
+        const res = await getMinistryMembers(id, { search: debouncedMemberSearch });
+        const payload = res?.data?.data ?? res?.data;
+        setMembers(Array.isArray(payload?.members) ? payload.members : []);
+      } else {
+        const res = await getGroupMembers(id, { search: debouncedMemberSearch });
+        const payload = res?.data?.data ?? res?.data;
+        setMembers(Array.isArray(payload?.members) ? payload.members : []);
+      }
+    } catch (e) {
+      setMemberError(e?.response?.data?.message || e?.message || "Failed to load members");
+      setMembers([]);
+    } finally {
+      setMemberLoading(false);
+    }
+  }, [id, type, debouncedMemberSearch]);
+
+  const loadAttendances = useCallback(async (params) => {
+    if (!id) return;
+    setAttendanceLoading(true);
+    setAttendanceError("");
+
+    try {
+      if (type === "department") {
+        const res = await getDepartmentAttendances(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      } else if (type === "cell") {
+        const res = await getCellAttendances(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      } else if (type === "ministry") {
+        const res = await getMinistryAttendances(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      } else {
+        const res = await getGroupAttendances(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      }
+    } catch (e) {
+      setAttendanceError(e?.response?.data?.message || e?.message || "Failed to load attendance");
+      setAttendances([]);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }, [id, type]);
+
+  const loadIndividualAttendances = useCallback(async (params) => {
+    if (!id) return;
+    setIndividualAttendanceLoading(true);
+    setIndividualAttendanceError("");
+
+    try {
+      if (type === "department") {
+        const res = await getDepartmentIndividualAttendances(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      } else if (type === "cell") {
+        const res = await getCellIndividualAttendances(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      } else if (type === "ministry") {
+        const res = await getMinistryIndividualAttendances(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      } else {
+        const res = await getGroupIndividualAttendances(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setIndividualAttendances(Array.isArray(payload?.attendances) ? payload.attendances : []);
+      }
+    } catch (e) {
+      setIndividualAttendanceError(e?.response?.data?.message || e?.message || "Failed to load attendance");
+      setIndividualAttendances([]);
+    } finally {
+      setIndividualAttendanceLoading(false);
+    }
+  }, [id, type]);
+
+  const loadOfferings = useCallback(async (params) => {
+    if (!id) return;
+    setOfferingLoading(true);
+    setOfferingError("");
+
+    try {
+      if (type === "department") {
+        const res = await getDepartmentOfferings(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setOfferings(Array.isArray(payload?.offerings) ? payload.offerings : []);
+      } else if (type === "cell") {
+        const res = await getCellOfferings(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setOfferings(Array.isArray(payload?.offerings) ? payload.offerings : []);
+      } else if (type === "ministry") {
+        const res = await getMinistryOfferings(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setOfferings(Array.isArray(payload?.offerings) ? payload.offerings : []);
+      } else {
+        const res = await getGroupOfferings(id, params);
+        const payload = res?.data?.data ?? res?.data;
+        setOfferings(Array.isArray(payload?.offerings) ? payload.offerings : []);
+      }
+    } catch (e) {
+      setOfferingError(e?.response?.data?.message || e?.message || "Failed to load offerings");
+      setOfferings([]);
+    } finally {
+      setOfferingLoading(false);
+    }
+  }, [id, type]);
+
+  useEffect(() => {
+    loadEntity();
+  }, [loadEntity]);
+
+  useEffect(() => {
+    if (activeTab === "members") loadMembers();
+    if (activeTab === "attendance") {
+      if (attendanceView === "individual") loadIndividualAttendances();
+      else loadAttendances();
+    }
+    if (activeTab === "offerings") loadOfferings();
+  }, [activeTab, loadMembers, loadAttendances, loadIndividualAttendances, loadOfferings, attendanceView]);
+
+  const debouncedOfferingSearch = useDebouncedValue(offeringSearch, 350);
+  const debouncedAttendanceSearch = useDebouncedValue(attendanceSearch, 350);
+  const debouncedIndividualAttendanceSearch = useDebouncedValue(individualAttendanceSearch, 350);
+
+  useEffect(() => {
+    if (activeTab !== "offerings") return;
+    const params = debouncedOfferingSearch ? { search: debouncedOfferingSearch } : undefined;
+    loadOfferings(params);
+  }, [activeTab, debouncedOfferingSearch, loadOfferings]);
+
+  useEffect(() => {
+    if (activeTab !== "attendance" || attendanceView !== "total") return;
+    const params = debouncedAttendanceSearch ? { search: debouncedAttendanceSearch } : undefined;
+    loadAttendances(params);
+  }, [activeTab, attendanceView, debouncedAttendanceSearch, loadAttendances]);
+
+  useEffect(() => {
+    if (activeTab !== "attendance" || attendanceView !== "individual") return;
+    const params = debouncedIndividualAttendanceSearch ? { search: debouncedIndividualAttendanceSearch } : undefined;
+    loadIndividualAttendances(params);
+  }, [activeTab, attendanceView, debouncedIndividualAttendanceSearch, loadIndividualAttendances]);
+
+  useEffect(() => {
+    if (activeTab !== "members") return;
+    loadMembers();
+  }, [activeTab, loadMembers, debouncedMemberSearch]);
+
+  const filteredMembers = useMemo(() => {
+    if (!memberDateFrom && !memberDateTo) return members;
+    return members.filter((m) => {
+      const d = (m?.joinedAt || m?.createdAt || "").slice(0, 10);
+      if (!d) return true;
+      if (memberDateFrom && d < memberDateFrom) return false;
+      if (memberDateTo && d > memberDateTo) return false;
+      return true;
+    });
+  }, [members, memberDateFrom, memberDateTo]);
+
+  const filteredAttendances = useMemo(() => {
+    if (!attendanceDateFrom && !attendanceDateTo) return attendances;
+    return attendances.filter((r) => {
+      const d = (r?.date || "").slice(0, 10);
+      if (!d) return true;
+      if (attendanceDateFrom && d < attendanceDateFrom) return false;
+      if (attendanceDateTo && d > attendanceDateTo) return false;
+      return true;
+    });
+  }, [attendances, attendanceDateFrom, attendanceDateTo]);
+
+  const filteredIndividualAttendances = useMemo(() => {
+    if (!indivDateFrom && !indivDateTo) return individualAttendances;
+    return individualAttendances.filter((r) => {
+      const d = (r?.date || "").slice(0, 10);
+      if (!d) return true;
+      if (indivDateFrom && d < indivDateFrom) return false;
+      if (indivDateTo && d > indivDateTo) return false;
+      return true;
+    });
+  }, [individualAttendances, indivDateFrom, indivDateTo]);
+
+  const filteredOfferings = useMemo(() => {
+    if (!offeringDateFrom && !offeringDateTo) return offerings;
+    return offerings.filter((r) => {
+      const d = (r?.date || "").slice(0, 10);
+      if (!d) return true;
+      if (offeringDateFrom && d < offeringDateFrom) return false;
+      if (offeringDateTo && d > offeringDateTo) return false;
+      return true;
+    });
+  }, [offerings, offeringDateFrom, offeringDateTo]);
+
+
+  const goBack = () => {
+    toPage("organisations");
+  };
+
+  const typeColor = type === "group" ? "blue" : type === "cell" ? "orange" : type === "ministry" ? "pink" : "purple";
+
+  const addMemberSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmittingAddMember) return;
+    setIsSubmittingAddMember(true);
+    setAddMemberError("");
+
+    if (!addMemberSelectedIds.length) {
+      setIsSubmittingAddMember(false);
+      setAddMemberError("Please select at least one member to add.");
+      return;
+    }
+
+    setAddMemberSaving(true);
+    try {
+      const payload = { memberIds: addMemberSelectedIds, role: addMemberRole };
+
+      if (type === "department") {
+        await addDepartmentMember(id, payload);
+      } else if (type === "cell") {
+        await addCellMember(id, payload);
+      } else if (type === "ministry") {
+        await addMinistryMember(id, payload);
+      } else {
+        await addGroupMember(id, payload);
+      }
+
+      setAddMemberOpen(false);
+      setAddMemberValue("");
+      setAddMemberRole("member");
+      setAddMemberCandidates([]);
+      setAddMemberCandidatesError("");
+      setAddMemberSelectedIds([]);
+      await loadMembers();
+    } catch (e2) {
+      setAddMemberError(e2?.response?.data?.message || e2?.message || "Failed to add member");
+    } finally {
+      setAddMemberSaving(false);
+      setIsSubmittingAddMember(false);
+    }
+  };
+
+  const loadAllMembersForIndividualAttendance = useCallback(async () => {
+    if (!id) return;
+    setIndividualMembersLoading(true);
+    setIndividualMembersError("");
+    setIndividualMembers([]);
+
+    try {
+      let res;
+      const params = { page: 1, limit: 5000, search: "" };
+      if (type === "department") res = await getDepartmentMembers(id, params);
+      else if (type === "cell") res = await getCellMembers(id, params);
+      else if (type === "ministry") res = await getMinistryMembers(id, params);
+      else res = await getGroupMembers(id, params);
+
+      const payload = res?.data?.data ?? res?.data;
+      const rows = Array.isArray(payload?.members) ? payload.members : [];
+      const mapped = rows
+        .map((m) => {
+          const member = m?.member || {};
+          const name = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim();
+          const id2 = String(member?._id || "");
+          if (!id2) return null;
+          return { id: id2, name: name || "-" };
+        })
+        .filter(Boolean);
+
+      mapped.sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
+      setIndividualMembers(mapped);
+    } catch (e) {
+      setIndividualMembersError(e?.response?.data?.message || e?.message || "Failed to load members");
+      setIndividualMembers([]);
+    } finally {
+      setIndividualMembersLoading(false);
+    }
+  }, [id, type]);
+
+  const openIndividualAttendanceForm = async (mode, row) => {
+    setIndividualAttendanceFormError("");
+    setIndividualAttendanceMode(mode);
+    setIndividualAttendanceEditing(row || null);
+    setIndividualAttendanceDate((row?.date || "").slice(0, 10));
+    setIndividualAttendanceSpeaker(safeText(row?.mainSpeaker));
+    const preSelected = Array.isArray(row?.presentMembers) ? row.presentMembers.map((x) => String(x || "")).filter(Boolean) : [];
+    setIndividualAttendanceSelectedIds(preSelected);
+    setIndividualMemberSearch("");
+    setIndividualAttendanceOpen(true);
+    await loadAllMembersForIndividualAttendance();
+  };
+
+  const submitIndividualAttendance = async (e) => {
+    e.preventDefault();
+    if (isSubmittingIndividualAttendance) return;
+    setIsSubmittingIndividualAttendance(true);
+    setIndividualAttendanceFormError("");
+
+    if (!individualAttendanceDate) {
+      setIsSubmittingIndividualAttendance(false);
+      setIndividualAttendanceFormError("date is required");
+      return;
+    }
+
+    const payload = {
+      date: individualAttendanceDate,
+      mainSpeaker: individualAttendanceSpeaker,
+      presentMembers: Array.isArray(individualAttendanceSelectedIds) ? individualAttendanceSelectedIds : []
+    };
+
+    setIndividualAttendanceSaving(true);
+    try {
+      if (individualAttendanceMode === "edit") {
+        const attendanceId = individualAttendanceEditing?._id;
+        if (!attendanceId) return;
+        if (type === "department") await updateDepartmentIndividualAttendance(id, attendanceId, payload);
+        else if (type === "cell") await updateCellIndividualAttendance(id, attendanceId, payload);
+        else if (type === "ministry") await updateMinistryIndividualAttendance(id, attendanceId, payload);
+        else await updateGroupIndividualAttendance(id, attendanceId, payload);
+      } else {
+        if (type === "department") await createDepartmentIndividualAttendance(id, payload);
+        else if (type === "cell") await createCellIndividualAttendance(id, payload);
+        else if (type === "ministry") await createMinistryIndividualAttendance(id, payload);
+        else await createGroupIndividualAttendance(id, payload);
+      }
+
+      setIndividualAttendanceOpen(false);
+      setIndividualAttendanceEditing(null);
+      await loadIndividualAttendances();
+    } catch (e2) {
+      setIndividualAttendanceFormError(e2?.response?.data?.message || e2?.message || "Failed to save attendance");
+    } finally {
+      setIndividualAttendanceSaving(false);
+      setIsSubmittingIndividualAttendance(false);
+    }
+  };
+
+  const openIndividualView = async (row) => {
+    const attendanceId = row?._id;
+    if (!attendanceId) return;
+    setIndividualViewError("");
+    setIndividualViewing(null);
+    setIndividualViewOpen(true);
+    setIndividualViewTab("present");
+    setIndividualViewLoading(true);
+
+    try {
+      let res;
+      if (type === "department") res = await getDepartmentIndividualAttendance(id, attendanceId);
+      else if (type === "cell") res = await getCellIndividualAttendance(id, attendanceId);
+      else if (type === "ministry") res = await getMinistryIndividualAttendance(id, attendanceId);
+      else res = await getGroupIndividualAttendance(id, attendanceId);
+
+      const payload = res?.data?.data ?? res?.data;
+      setIndividualViewing(payload?.attendance || payload);
+    } catch (e) {
+      setIndividualViewError(e?.response?.data?.message || e?.message || "Failed to load attendance");
+      setIndividualViewing(null);
+    } finally {
+      setIndividualViewLoading(false);
+    }
+  };
+
+  const searchAddMemberCandidates = useCallback(async () => {
+    const q = String(debouncedAddMemberValue || "").trim();
+    setAddMemberCandidatesError("");
+    setAddMemberSelectedIds([]);
+
+    if (!q) {
+      setAddMemberCandidates([]);
+      return;
+    }
+
+    setAddMemberCandidatesLoading(true);
+    try {
+      let res;
+      if (type === "department") res = await searchDepartmentMembersToAdd(id, { search: q });
+      else if (type === "cell") res = await searchCellMembersToAdd(id, { search: q });
+      else if (type === "ministry") res = await searchMinistryMembersToAdd(id, { search: q });
+      else res = await searchGroupMembersToAdd(id, { search: q });
+
+      const payload = res?.data?.data ?? res?.data;
+      const rows = Array.isArray(payload?.members) ? payload.members : [];
+      setAddMemberCandidates(rows);
+    } catch (e2) {
+      setAddMemberCandidatesError(e2?.response?.data?.message || e2?.message || "Failed to search members");
+      setAddMemberCandidates([]);
+    } finally {
+      setAddMemberCandidatesLoading(false);
+    }
+  }, [debouncedAddMemberValue, id, type]);
+
+  useEffect(() => {
+    if (!addMemberOpen) return;
+    searchAddMemberCandidates();
+  }, [addMemberOpen, searchAddMemberCandidates, debouncedAddMemberValue]);
+
+  const openConfirm = (kind, payload) => {
+    setConfirmMeta({ kind, payload });
+    setConfirmOpen(true);
+  };
+
+  const confirmTitle = useMemo(() => {
+    if (confirmMeta?.kind === "remove-member") return "Confirm";
+    return "Confirm";
+  }, [confirmMeta]);
+
+  const confirmLabel = useMemo(() => {
+    if (confirmMeta?.kind === "remove-member") return "Remove";
+    return "Delete";
+  }, [confirmMeta]);
+
+  const confirmMessage = useMemo(() => {
+    if (confirmMeta?.kind === "remove-member") {
+      const name = safeText(confirmMeta?.payload?.memberName).trim();
+      if (name) return `Are you sure you want to remove ${name}`;
+      return "Are you sure you want to remove this member?";
+    }
+    return "Are you sure you want to proceed?";
+  }, [confirmMeta]);
+
+  const confirmAction = async () => {
+    const meta = confirmMeta;
+    setConfirmOpen(false);
+    setConfirmMeta(null);
+
+    if (!meta?.kind) return;
+
+    try {
+      if (meta.kind === "remove-member") {
+        const memberId = meta.payload?.memberId || meta.payload;
+        if (type === "department") await removeDepartmentMember(id, memberId);
+        else if (type === "cell") await removeCellMember(id, memberId);
+        else if (type === "ministry") await removeMinistryMember(id, memberId);
+        else await removeGroupMember(id, memberId);
+        await loadMembers();
+      }
+
+      if (meta.kind === "delete-attendance") {
+        const attendanceId = meta.payload;
+        if (type === "department") await deleteDepartmentAttendance(id, attendanceId);
+        else if (type === "cell") await deleteCellAttendance(id, attendanceId);
+        else if (type === "ministry") await deleteMinistryAttendance(id, attendanceId);
+        else await deleteGroupAttendance(id, attendanceId);
+        await loadAttendances();
+      }
+
+      if (meta.kind === "delete-individual-attendance") {
+        const attendanceId = meta.payload;
+        if (type === "department") await deleteDepartmentIndividualAttendance(id, attendanceId);
+        else if (type === "cell") await deleteCellIndividualAttendance(id, attendanceId);
+        else if (type === "ministry") await deleteMinistryIndividualAttendance(id, attendanceId);
+        else await deleteGroupIndividualAttendance(id, attendanceId);
+        await loadIndividualAttendances();
+      }
+
+      if (meta.kind === "delete-offering") {
+        const offeringId = meta.payload;
+        if (type === "department") await deleteDepartmentOffering(id, offeringId);
+        else if (type === "cell") await deleteCellOffering(id, offeringId);
+        else if (type === "ministry") await deleteMinistryOffering(id, offeringId);
+        else await deleteGroupOffering(id, offeringId);
+        await loadOfferings();
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Action failed");
+    }
+  };
+
+  const openEdit = () => {
+    if (!entity) return;
+    setEditError("");
+    setEditName(safeText(entity?.name));
+    setEditDescription(safeText(entity?.description));
+    const ms = normalizeMeetingSchedule(entity);
+    if (Array.isArray(ms) && ms.length) {
+      setEditMeetingSchedule(
+        ms.map((m) => ({
+          meetingDay: safeText(m?.meetingDay),
+          meetingTime: safeText(m?.meetingTime),
+          meetingVenue: safeText(m?.meetingVenue)
+        }))
+      );
+    } else {
+      setEditMeetingSchedule([{ meetingDay: "", meetingTime: "", meetingVenue: "" }]);
+    }
+    setEditStatus(safeText(entity?.status) || "active");
+    setEditOpen(true);
+  };
+
+  const submitEdit = async (e) => {
+    e.preventDefault();
+    if (isSubmittingEdit) return;
+    setIsSubmittingEdit(true);
+    setEditError("");
+
+    if (!editName.trim()) {
+      setIsSubmittingEdit(false);
+      setEditError("Name is required.");
+      return;
+    }
+
+    const invalidMeeting = (Array.isArray(editMeetingSchedule) ? editMeetingSchedule : []).find(
+      (m) => !String(m?.meetingDay || "").trim() || !String(m?.meetingTime || "").trim() || !String(m?.meetingVenue || "").trim()
+    );
+    if (invalidMeeting) {
+      setIsSubmittingEdit(false);
+      setEditError("Meeting day, time, and venue are required.");
+      return;
+    }
+
+    const cleanSchedule = editMeetingSchedule.map((m) => ({
+      meetingDay: String(m.meetingDay || "").trim(),
+      meetingTime: String(m.meetingTime || "").trim(),
+      meetingVenue: String(m.meetingVenue || "").trim()
+    }));
+
+    const payload = {
+      name: editName.trim(),
+      description: editDescription,
+      meetingSchedule: cleanSchedule,
+      mainMeetingDay: cleanSchedule?.[0]?.meetingDay,
+      meetingTime: cleanSchedule?.[0]?.meetingTime,
+      meetingVenue: cleanSchedule?.[0]?.meetingVenue
+    };
+    if (type === "cell" || type === "department" || type === "ministry") {
+      payload.status = editStatus;
+    }
+
+    setEditSaving(true);
+    try {
+      if (type === "department") await updateDepartment(id, payload);
+      else if (type === "cell") await updateCell(id, payload);
+      else if (type === "ministry") await updateMinistry(id, payload);
+      else await updateGroup(id, payload);
+
+      setEditOpen(false);
+      await loadEntity();
+    } catch (e2) {
+      setEditError(e2?.response?.data?.message || e2?.message || "Failed to update");
+    } finally {
+      setEditSaving(false);
+      setIsSubmittingEdit(false);
+    }
+  };
+
+  const openRoleModal = (memberId, currentRole) => {
+    setRoleModalError("");
+    setRoleModalMemberId(String(memberId || ""));
+    setRoleModalValue(String(currentRole || ""));
+    setRoleModalOpen(true);
+  };
+
+  const submitRoleModal = async (e) => {
+    e.preventDefault();
+    if (isSubmittingRole) return;
+    setIsSubmittingRole(true);
+    setRoleModalError("");
+    const memberId = roleModalMemberId;
+    const role = String(roleModalValue || "").trim();
+    if (!memberId) { setIsSubmittingRole(false); return; }
+    if (!role) {
+      setIsSubmittingRole(false);
+      setRoleModalError("Role is required.");
+      return;
+    }
+
+    try {
+      if (type === "department") await updateDepartmentMemberRole(id, memberId, { role });
+      else if (type === "cell") await updateCellMemberRole(id, memberId, { role });
+      else if (type === "ministry") await updateMinistryMemberRole(id, memberId, { role });
+      else await updateGroupMemberRole(id, memberId, { role });
+
+      await loadMembers();
+      setRoleModalOpen(false);
+    } catch (e2) {
+      setRoleModalError(e2?.response?.data?.message || e2?.message || "Failed to update role");
+    } finally {
+      setIsSubmittingRole(false);
+    }
+  };
+
+  const openAttendanceForm = (mode, row) => {
+    setAttendanceFormError("");
+    setAttendanceMode(mode);
+    setAttendanceEditing(row || null);
+    setAttendanceDate((row?.date || "").slice(0, 10));
+    setAttendanceNumber(row?.numberOfAttendees ?? "");
+    setAttendanceSpeaker(safeText(row?.mainSpeaker));
+    setAttendanceActivity(safeText(row?.activity));
+    setAttendanceOpen(true);
+  };
+
+  const submitAttendance = async (e) => {
+    e.preventDefault();
+    if (isSubmittingAttendance) return;
+    setIsSubmittingAttendance(true);
+    setAttendanceFormError("");
+
+    if (!attendanceDate) {
+      setIsSubmittingAttendance(false);
+      setAttendanceFormError("date is required");
+      return;
+    }
+
+    if (!attendanceNumber || Number(attendanceNumber) <= 0) {
+      setIsSubmittingAttendance(false);
+      setAttendanceFormError("number of attendees is required");
+      return;
+    }
+
+    const payload = {
+      date: attendanceDate,
+      numberOfAttendees: Number(attendanceNumber),
+      mainSpeaker: attendanceSpeaker,
+      activity: attendanceActivity
+    };
+
+    setAttendanceSaving(true);
+    try {
+      if (attendanceMode === "edit") {
+        const attendanceId = attendanceEditing?._id;
+        if (!attendanceId) return;
+        if (type === "department") await updateDepartmentAttendance(id, attendanceId, payload);
+        else if (type === "cell") await updateCellAttendance(id, attendanceId, payload);
+        else if (type === "ministry") await updateMinistryAttendance(id, attendanceId, payload);
+        else await updateGroupAttendance(id, attendanceId, payload);
+      } else {
+        if (type === "department") await createDepartmentAttendance(id, payload);
+        else if (type === "cell") await createCellAttendance(id, payload);
+        else if (type === "ministry") await createMinistryAttendance(id, payload);
+        else await createGroupAttendance(id, payload);
+      }
+
+      setAttendanceOpen(false);
+      setAttendanceEditing(null);
+      await loadAttendances();
+    } catch (e2) {
+      setAttendanceFormError(e2?.response?.data?.message || e2?.message || "Failed to save attendance");
+    } finally {
+      setAttendanceSaving(false);
+      setIsSubmittingAttendance(false);
+    }
+  };
+
+  const openOfferingForm = (mode, row) => {
+    setOfferingFormError("");
+    setOfferingMode(mode);
+    setOfferingEditing(row || null);
+    setOfferingDate((row?.date || "").slice(0, 10));
+    setOfferingAmount(row?.amount ?? "");
+    setOfferingNote(safeText(row?.note));
+    setOfferingOpen(true);
+  };
+
+  const submitOffering = async (e) => {
+    e.preventDefault();
+    if (isSubmittingOffering) return;
+    setIsSubmittingOffering(true);
+    setOfferingFormError("");
+
+    if (!offeringDate) {
+      setIsSubmittingOffering(false);
+      setOfferingFormError("date is required");
+      return;
+    }
+
+    if (!offeringAmount || Number(offeringAmount) <= 0) {
+      setIsSubmittingOffering(false);
+      setOfferingFormError("amount is required");
+      return;
+    }
+
+    const payload = {
+      date: offeringDate,
+      amount: Number(offeringAmount),
+      note: offeringNote
+    };
+
+    setOfferingSaving(true);
+    try {
+      if (offeringMode === "edit") {
+        const offeringId = offeringEditing?._id;
+        if (!offeringId) return;
+        if (type === "department") await updateDepartmentOffering(id, offeringId, payload);
+        else if (type === "cell") await updateCellOffering(id, offeringId, payload);
+        else if (type === "ministry") await updateMinistryOffering(id, offeringId, payload);
+        else await updateGroupOffering(id, offeringId, payload);
+      } else {
+        if (type === "department") await createDepartmentOffering(id, payload);
+        else if (type === "cell") await createCellOffering(id, payload);
+        else if (type === "ministry") await createMinistryOffering(id, payload);
+        else await createGroupOffering(id, payload);
+      }
+
+      setOfferingOpen(false);
+      setOfferingEditing(null);
+      await loadOfferings();
+    } catch (e2) {
+      setOfferingFormError(e2?.response?.data?.message || e2?.message || "Failed to save offering");
+    } finally {
+      setOfferingSaving(false);
+      setIsSubmittingOffering(false);
+    }
+  };
+
+  const totalMembersValue = useMemo(() => {
+    if (!entity) return 0;
+    if (entity?.totalMembers !== undefined && entity?.totalMembers !== null) {
+      const n = Number(entity.totalMembers);
+      return Number.isFinite(n) ? n : 0;
+    }
+    return Array.isArray(members) ? members.length : 0;
+  }, [entity, members]);
+
+  const meetingRows = useMemo(() => normalizeMeetingSchedule(entity), [entity]);
+
+  return (
+    <div className="max-w-6xl">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <BackButton onClick={goBack} />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+        {loading ? (
+          <div className="space-y-4 animate-pulse">
+            <div className="h-4 w-32 rounded bg-gray-200" />
+            <div className="h-7 w-52 rounded bg-gray-200" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i}>
+                  <div className="h-3 w-16 rounded bg-gray-200" />
+                  <div className="mt-1 h-4 w-24 rounded bg-gray-200" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
+        ) : !entity ? (
+          <div className="text-gray-600 text-sm">No record found.</div>
+        ) : (
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between md:gap-6">
+            {/* Edit button: absolute top-right on mobile, hidden on desktop (rendered in sidebar) */}
+            <button
+              type="button"
+              onClick={openEdit}
+              className="absolute top-0 right-0 lg:hidden rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
+            >
+              Edit
+            </button>
+
+            <div className="flex items-start gap-4 min-w-0 pr-16 lg:pr-0">
+              <div
+                className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ring-1 ${
+                  type === "group"
+                    ? "bg-blue-50 text-blue-700 ring-blue-100"
+                    : type === "cell"
+                      ? "bg-orange-50 text-orange-700 ring-orange-100"
+                      : type === "ministry"
+                        ? "bg-pink-50 text-pink-700 ring-pink-100"
+                        : "bg-purple-50 text-purple-700 ring-purple-100"
+                }`}
+              >
+                <MinistryTypeIcon type={type} />
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Chip color={typeColor}>{title}</Chip>
+                  {entity?.status ? <Chip>{entity.status}</Chip> : null}
+                </div>
+
+                {/* Total members: mobile inline, hidden on desktop (shown in sidebar) */}
+                <div className="lg:hidden mt-2 flex items-center gap-1.5 text-xs text-gray-500">
+                  <span>Total Members:</span>
+                  <span className="font-semibold text-gray-900 text-sm">{totalMembersValue}</span>
+                </div>
+
+                <div className="mt-2 font-semibold text-gray-900 truncate md:text-3xl lg:text-4xl text-xl md:text-2xl">{entity?.name || "—"}</div>
+                <div className="mt-2 text-gray-600 max-w-3xl whitespace-pre-wrap text-sm">{entity?.description || "—"}</div>
+
+                {meetingRows.length ? (
+                  <div className="mt-4 space-y-2">
+                    {meetingRows.map((m, idx) => (
+                      <div key={m?._id || idx} className="rounded-lg border border-gray-200 bg-white px-4 py-2">
+                        <div className="grid grid-cols-1 gap-1 md:grid-cols-3 md:gap-3 text-xs">
+                          <div className="text-gray-600">
+                            <span className="font-semibold text-gray-700">Day:</span> {m?.meetingDay || "—"}
+                          </div>
+                          <div className="text-gray-600">
+                            <span className="font-semibold text-gray-700">Time:</span> {m?.meetingTime || "—"}
+                          </div>
+                          <div className="text-gray-600 md:text-right">
+                            <span className="font-semibold text-gray-700">Venue:</span> {m?.meetingVenue || "—"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Desktop sidebar: total members card + edit button */}
+            <div className="hidden lg:flex flex-col gap-3 lg:w-auto lg:min-w-44">
+              <div className="rounded-xl border border-gray-200 bg-white p-4">
+                <div className="font-semibold text-gray-500 text-xs">Total Members</div>
+                <div className="mt-1 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{totalMembersValue}</div>
+              </div>
+              <button
+                type="button"
+                onClick={openEdit}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <PageTabs
+        tabs={[
+          { key: "members", label: "Members" },
+          { key: "attendance", label: "Attendance" },
+          { key: "offerings", label: "Offerings" },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        sticky={false}
+        className="mt-6"
+      />
+
+      {activeTab === "members" ? (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+          <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+            {/* Title row with Add Member on same line for mobile */}
+            <div className="flex items-center justify-between gap-3 md:block">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Members</div>
+                <div className="text-gray-500 text-xs">Manage members in this {title.toLowerCase()}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddMemberError("");
+                  setAddMemberValue("");
+                  setAddMemberRole("member");
+                  setAddMemberCandidates([]);
+                  setAddMemberCandidatesError("");
+                  setAddMemberSelectedIds([]);
+                  setAddMemberOpen(true);
+                }}
+                className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white shadow-sm hover:bg-blue-700 text-xs"
+              >
+                + Add Member
+              </button>
+            </div>
+
+            <FilterBar
+              searchValue={memberSearch}
+              onSearchChange={(v) => setMemberSearch(v)}
+              searchPlaceholder="Search members..."
+              searchWidth="md:w-[320px]"
+              dateFrom={memberDateFrom}
+              dateTo={memberDateTo}
+              onDateApply={(from, to) => { setMemberDateFrom(from); setMemberDateTo(to); }}
+            >
+              <MobileFilterBar
+                searchValue={memberSearch}
+                onSearchChange={(v) => setMemberSearch(v)}
+                searchPlaceholder="Search members..."
+                dateFrom={memberDateFrom}
+                dateTo={memberDateTo}
+                onDateApply={(from, to) => { setMemberDateFrom(from); setMemberDateTo(to); }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setAddMemberError("");
+                  setAddMemberValue("");
+                  setAddMemberRole("member");
+                  setAddMemberCandidates([]);
+                  setAddMemberCandidatesError("");
+                  setAddMemberSelectedIds([]);
+                  setAddMemberOpen(true);
+                }}
+                className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+              >
+                <span className="leading-none text-lg">+</span>
+                Add Member
+              </button>
+            </FilterBar>
+          </div>
+
+          {memberError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{memberError}</div> : null}
+
+          {memberLoading ? (
+            <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-3 py-1.5">
+                  <div className="h-11 rounded-full bg-gray-200 md:h-12 md:w-11 w-11 md:w-12" />
+                  <div className="h-4 w-24 rounded bg-gray-200" />
+                  <div className="ml-auto h-4 w-16 rounded bg-gray-200" />
+                </div>
+              ))}
+            </div>
+          ) : filteredMembers.length === 0 ? (
+            <EmptyState
+              compact
+              illustration={memberSearch ? "search" : "members"}
+              title={memberSearch ? "No members found" : "No members yet"}
+              description={memberSearch
+                ? "We couldn't find any members matching your search."
+                : "Add members to this ministry to see them here."}
+              actionLabel={memberSearch ? "Clear Search" : null}
+              onAction={memberSearch ? () => setMemberSearch("") : undefined}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-slate-100">
+                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
+                    <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredMembers.map((m, idx) => {
+                    const member = m?.member || {};
+                    const fullName = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() || "-";
+                    const nameParts = fullName.split(/\s+/);
+                    const displayName = fullName.length > 20 && nameParts.length > 2 ? `${nameParts[0]} ${nameParts[nameParts.length - 1]}` : fullName;
+                    return (
+                      <tr key={m?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                        <td className="sticky left-0 z-10 bg-white max-md:px-3 py-1.5 text-gray-900 whitespace-nowrap px-3 md:px-5">{displayName}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.phoneNumber || "-"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.email || "-"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{m?.role || "member"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                          <TableKebabMenu items={[
+                            canViewMembers && { label: "View", onClick: () => { const memberId = member?._id; if (!memberId) return; toPage("member-details", { id: memberId }); } },
+                            { label: "Edit Role", onClick: () => openRoleModal(member?._id, m?.role || "member") },
+                            { label: "Remove", onClick: () => openConfirm("remove-member", { memberId: member?._id, memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() }), danger: true }
+                          ]} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <SimpleModal
+            open={addMemberOpen}
+            title="Add Member"
+            onClose={() => {
+              setAddMemberOpen(false);
+            }}
+          >
+            <form onSubmit={addMemberSubmit}>
+              {addMemberError ? (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{addMemberError}</div>
+              ) : null}
+
+              <div>
+                <label className="block font-semibold text-gray-500 text-xs">Search member (name/email/phone)</label>
+                <div className="mt-2">
+                  <input
+                    value={addMemberValue}
+                    onChange={(e) => setAddMemberValue(e.target.value)}
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="Type to search (auto-search)"
+                  />
+                </div>
+              </div>
+
+              {addMemberCandidatesError ? (
+                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{addMemberCandidatesError}</div>
+              ) : null}
+
+              <div className="mt-4">
+                <div className="font-semibold text-gray-500 text-xs">Results</div>
+                <div className="mt-2 rounded-xl border border-gray-200 max-h-64 overflow-y-auto">
+                  {addMemberCandidatesLoading ? (
+                    <div className="px-4 py-3 space-y-2 animate-pulse">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center gap-3 py-1">
+                          <div className="h-6 w-6 rounded-full bg-gray-200" />
+                          <div className="h-4 w-24 rounded bg-gray-200" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : addMemberCandidates.length === 0 ? (
+                    <div className="px-4 py-3"><EmptyState compact illustration="search" title="No matching members found" description="Try a different name or phone number." /></div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {addMemberCandidates.map((m, idx) => {
+                        const name = `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-";
+                        const phone = m?.phoneNumber || "-";
+                        const city = m?.city || "-";
+                        const isSelected = addMemberSelectedIds.includes(String(m?._id || ""));
+                        return (
+                          <label
+                            key={m?._id || idx}
+                            className={`w-full flex items-start gap-3 px-4 py-3 transition cursor-pointer ${
+                              isSelected ? "bg-blue-50" : "bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                const id2 = String(m?._id || "");
+                                if (!id2) return;
+                                setAddMemberSelectedIds((prev) => {
+                                  const list = Array.isArray(prev) ? prev : [];
+                                  if (list.includes(id2)) return list.filter((x) => x !== id2);
+                                  return [...list, id2];
+                                });
+                              }}
+                              className="mt-1"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-gray-900 truncate text-sm">{name}</div>
+                                  <div className="mt-1 text-gray-500 truncate text-xs">{phone}</div>
+                                </div>
+                                <div className="font-semibold text-gray-600 shrink-0 text-xs">{city}</div>
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2 text-gray-500 text-xs">Selected: {addMemberSelectedIds.length}</div>
+              </div>
+
+              <div className="mt-4">
+                <label className="block font-semibold text-gray-500 text-xs">Role</label>
+                <input
+                  value={addMemberRole}
+                  onChange={(e) => setAddMemberRole(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  placeholder="e.g. leader"
+                />
+              </div>
+
+              <div className="mt-5 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAddMemberOpen(false)}
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+                >
+                  Cancel
+                </button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={isSubmittingAddMember}
+                  loadingText="Adding..."
+                  disabled={addMemberSelectedIds.length === 0}
+                  className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+                >
+                  Add
+                </Button>
+              </div>
+            </form>
+          </SimpleModal>
+        </div>
+      ) : null}
+
+      <SimpleModal open={roleModalOpen} title="Edit Role" onClose={() => setRoleModalOpen(false)}>
+        <form onSubmit={submitRoleModal}>
+          {roleModalError ? (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{roleModalError}</div>
+          ) : null}
+
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Role</label>
+            <input
+              value={roleModalValue}
+              onChange={(e) => setRoleModalValue(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="e.g. leader"
+            />
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setRoleModalOpen(false)}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+            >
+              Cancel
+            </button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmittingRole}
+              loadingText="Saving..."
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+            >
+              Save
+            </Button>
+          </div>
+        </form>
+      </SimpleModal>
+
+      <SimpleModal open={editOpen} title={`Edit ${title}`} onClose={() => setEditOpen(false)}>
+        <form onSubmit={submitEdit}>
+          {editError ? (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{editError}</div>
+          ) : null}
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Name</label>
+              <input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Description</label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={3}
+                className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold text-gray-500 text-xs">Meeting Schedule</div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditMeetingSchedule((prev) => [...(Array.isArray(prev) ? prev : []), { meetingDay: "", meetingTime: "", meetingVenue: "" }])
+                  }
+                  className="font-semibold text-blue-700 hover:underline text-xs"
+                >
+                  Add another meeting
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-3">
+                {(Array.isArray(editMeetingSchedule) ? editMeetingSchedule : []).map((m, idx) => (
+                  <div key={`meeting-${idx}`} className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div>
+                      <label className="block font-semibold text-gray-500 text-xs">Day</label>
+                      <select
+                        value={m?.meetingDay || ""}
+                        onChange={(e) =>
+                          setEditMeetingSchedule((prev) => prev.map((row, i) => (i === idx ? { ...row, meetingDay: e.target.value } : row)))
+                        }
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                      >
+                        <option value="">Select day</option>
+                        {meetingDays.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-gray-500 text-xs">Time</label>
+                      <input
+                        value={m?.meetingTime || ""}
+                        onChange={(e) =>
+                          setEditMeetingSchedule((prev) => prev.map((row, i) => (i === idx ? { ...row, meetingTime: e.target.value } : row)))
+                        }
+                        type="time"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-gray-500 text-xs">Venue</label>
+                      <input
+                        value={m?.meetingVenue || ""}
+                        onChange={(e) =>
+                          setEditMeetingSchedule((prev) => prev.map((row, i) => (i === idx ? { ...row, meetingVenue: e.target.value } : row)))
+                        }
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                        placeholder="Venue"
+                      />
+                    </div>
+
+                    {editMeetingSchedule.length > 1 ? (
+                      <div className="md:col-span-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setEditMeetingSchedule((prev) => prev.filter((_, i) => i !== idx))}
+                          className="font-semibold text-red-600 hover:underline text-xs"
+                        >
+                          Remove meeting
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {type === "cell" || type === "department" || type === "ministry" ? (
+              <div className="md:col-span-2">
+                <label className="block font-semibold text-gray-500 text-xs">Status</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                >
+                  <option value="active">active</option>
+                  <option value="inactive">inactive</option>
+                </select>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setEditOpen(false)}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+            >
+              Cancel
+            </button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmittingEdit}
+              loadingText="Saving..."
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+            >
+              Save
+            </Button>
+          </div>
+        </form>
+      </SimpleModal>
+
+      {activeTab === "attendance" ? (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+          <PageTabs
+            tabs={[
+              { key: "total", label: "Total Attendance" },
+              { key: "individual", label: "Individual Attendance" },
+            ]}
+            activeTab={attendanceView}
+            onChange={(key) => {
+              setAttendanceView(key);
+              setAttendanceError("");
+              setIndividualAttendanceError("");
+            }}
+            sticky={false}
+            className="px-4 md:px-5 lg:px-6 pt-4"
+          />
+
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+            <div className="flex items-center gap-3 justify-between w-full md:w-auto md:block">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Attendance</div>
+                <div className="text-gray-500 text-xs">Record attendance</div>
+              </div>
+              <button
+                type="button"
+                onClick={attendanceView === "individual" ? () => void openIndividualAttendanceForm("create", null) : () => openAttendanceForm("create", null)}
+                className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+              >
+                <span className="leading-none text-lg">+</span>
+                {attendanceView === "individual" ? "Record Attendance" : "Add Attendance"}
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 items-end w-full md:w-auto">
+              {attendanceView === "individual" ? (
+                <FilterBar
+                  searchValue={individualAttendanceSearch}
+                  onSearchChange={(v) => setIndividualAttendanceSearch(v)}
+                  searchPlaceholder="Search speaker..."
+                  searchWidth="md:w-[320px]"
+                  dateFrom={indivDateFrom}
+                  dateTo={indivDateTo}
+                  onDateApply={(from, to) => { setIndivDateFrom(from); setIndivDateTo(to); }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => void openIndividualAttendanceForm("create", null)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Record Attendance
+                  </button>
+                </FilterBar>
+              ) : (
+                <FilterBar
+                  searchValue={attendanceSearch}
+                  onSearchChange={(v) => setAttendanceSearch(v)}
+                  searchPlaceholder="Search speaker..."
+                  searchWidth="md:w-[320px]"
+                  dateFrom={attendanceDateFrom}
+                  dateTo={attendanceDateTo}
+                  onDateApply={(from, to) => { setAttendanceDateFrom(from); setAttendanceDateTo(to); }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => openAttendanceForm("create", null)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+                  >
+                    <span className="leading-none text-lg">+</span>
+                    Add Attendance
+                  </button>
+                </FilterBar>
+              )}
+              <MobileFilterBar
+                searchValue={attendanceView === "individual" ? individualAttendanceSearch : attendanceSearch}
+                onSearchChange={(v) => attendanceView === "individual" ? setIndividualAttendanceSearch(v) : setAttendanceSearch(v)}
+                searchPlaceholder="Search speaker..."
+                dateFrom={attendanceView === "individual" ? indivDateFrom : attendanceDateFrom}
+                dateTo={attendanceView === "individual" ? indivDateTo : attendanceDateTo}
+                onDateApply={(from, to) => attendanceView === "individual" ? (setIndivDateFrom(from), setIndivDateTo(to)) : (setAttendanceDateFrom(from), setAttendanceDateTo(to))}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          {attendanceView === "individual" ? (
+            <>
+              {individualAttendanceError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{individualAttendanceError}</div> : null}
+
+              {individualAttendanceLoading ? (
+                <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 py-1.5">
+                      <div className="h-4 w-24 rounded bg-gray-200" />
+                      <div className="h-4 w-16 rounded bg-gray-200" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredIndividualAttendances.length === 0 ? (
+                <EmptyState compact illustration="attendance" title="No attendance records yet" description="Attendance for this ministry will appear here." />
+              ) : (
+                <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-6">
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Day</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Speaker</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Present</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Absent</th>
+                        <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredIndividualAttendances.map((r, idx) => (
+                        <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDay(r?.date) || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.presentCount ?? 0)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            <TableKebabMenu items={[
+                              { label: "Edit", onClick: () => void openIndividualAttendanceForm("edit", r) },
+                              { label: "View", onClick: () => void openIndividualView(r) },
+                              { label: "Delete", onClick: () => openConfirm("delete-individual-attendance", r?._id), danger: true }
+                            ]} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <SimpleModal
+                open={individualAttendanceOpen}
+                title={individualAttendanceMode === "edit" ? "Edit Attendance" : "Record Attendance"}
+                onClose={() => setIndividualAttendanceOpen(false)}
+              >
+                <form onSubmit={submitIndividualAttendance} className="flex max-h-[75vh] flex-col">
+                  <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                    {individualAttendanceFormError ? (
+                      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{individualAttendanceFormError}</div>
+                    ) : null}
+
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                          <input
+                            value={individualAttendanceDate}
+                            onChange={(e) => setIndividualAttendanceDate(e.target.value)}
+                            type="date"
+                            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-gray-500 text-xs">Main Speaker</label>
+                          <input
+                            value={individualAttendanceSpeaker}
+                            onChange={(e) => setIndividualAttendanceSpeaker(e.target.value)}
+                            placeholder="Speaker name"
+                            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-gray-500 text-xs">Members present</label>
+                        <input
+                          value={individualMemberSearch}
+                          onChange={(e) => setIndividualMemberSearch(e.target.value)}
+                          placeholder="Search members..."
+                          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                        />
+
+                        <div className="mt-3 rounded-xl border border-gray-200 max-h-[45vh] overflow-y-auto">
+                          {individualMembersError ? (
+                            <div className="px-4 py-3 text-red-700 text-sm">{individualMembersError}</div>
+                          ) : individualMembersLoading ? (
+                            <div className="px-4 py-3 space-y-2 animate-pulse">
+                              {[0, 1, 2, 3].map((i) => (
+                                <div key={i} className="flex items-center gap-3 py-1">
+                                  <div className="h-4 w-4 rounded bg-gray-200" />
+                                  <div className="h-4 w-24 rounded bg-gray-200" />
+                                </div>
+                              ))}
+                            </div>
+                          ) : individualMembers.length === 0 ? (
+                            <div className="px-4 py-3"><EmptyState compact illustration="members" title="No members found" description="Add members to this ministry first." /></div>
+                          ) : (
+                            <div className="divide-y divide-gray-200">
+                              {individualMembers
+                                .filter((m) => {
+                                  const q = String(individualMemberSearch || "").trim().toLowerCase();
+                                  if (!q) return true;
+                                  return String(m?.name || "").toLowerCase().includes(q);
+                                })
+                                .map((m) => {
+                                  const checked = individualAttendanceSelectedIds.includes(String(m.id));
+                                  return (
+                                    <label
+                                      key={m.id}
+                                      className="flex items-center gap-3 px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-50 text-sm"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {
+                                          const mid = String(m.id);
+                                          setIndividualAttendanceSelectedIds((prev) => {
+                                            const list = Array.isArray(prev) ? prev : [];
+                                            if (list.includes(mid)) return list.filter((x) => x !== mid);
+                                            return [...list, mid];
+                                          });
+                                        }}
+                                      />
+                                      <span className="text-gray-900">{m.name}</span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 text-gray-500 text-xs">Selected: {individualAttendanceSelectedIds.length}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIndividualAttendanceOpen(false)}
+                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      loading={isSubmittingIndividualAttendance}
+                      loadingText={individualAttendanceMode === "edit" ? "Updating..." : "Saving..."}
+                      className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+                    >
+                      {individualAttendanceMode === "edit" ? "Update" : "Save"}
+                    </Button>
+                  </div>
+                </form>
+              </SimpleModal>
+
+              <SimpleModal
+                open={individualViewOpen}
+                title="Attendance Details"
+                onClose={() => setIndividualViewOpen(false)}
+              >
+                {individualViewError ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{individualViewError}</div>
+                ) : individualViewLoading ? (
+                  <div className="space-y-3 animate-pulse">
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <div key={i}>
+                        <div className="h-3 w-16 rounded bg-gray-200" />
+                        <div className="mt-1 h-4 w-24 rounded bg-gray-200" />
+                      </div>
+                    ))}
+                  </div>
+                ) : !individualViewing ? (
+                  <div className="text-gray-600 text-sm">No record found.</div>
+                ) : (
+                  <div className="flex max-h-[75vh] flex-col">
+                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                        <div>
+                          <div className="font-semibold text-gray-500 text-xs">Date</div>
+                          <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(individualViewing?.date)}</div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-500 text-xs">Day</div>
+                          <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDay(individualViewing?.date) || "-"}</div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-500 text-xs">Present</div>
+                          <div className="mt-1 font-semibold text-gray-900 text-sm">{Number(individualViewing?.presentCount ?? 0)}</div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-500 text-xs">Absent</div>
+                          <div className="mt-1 font-semibold text-gray-900 text-sm">{Number(individualViewing?.absentCount ?? 0)}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 border-b border-gray-200" />
+
+                      <div className="mt-4">
+                        {/* Present / Absent tabs */}
+                        <div className="flex gap-1 rounded-full bg-gray-100 p-1 w-fit mb-3">
+                          {["present", "absent"].map((tab) => (
+                            <button
+                              key={tab}
+                              type="button"
+                              onClick={() => setIndividualViewTab(tab)}
+                              className={`rounded-full px-4 py-1 text-xs font-semibold capitalize transition-colors ${
+                                individualViewTab === tab
+                                  ? "bg-white text-gray-900 shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              {tab === "present"
+                                ? `Present (${Number(individualViewing?.presentCount ?? 0)})`
+                                : `Absent (${Number(individualViewing?.absentCount ?? 0)})`}
+                            </button>
+                          ))}
+                        </div>
+
+                        {individualViewTab === "present" ? (
+                          <div className="rounded-xl border border-gray-200 overflow-hidden">
+                            <div className="max-h-80 overflow-y-auto">
+                              {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).length === 0 ? (
+                                <div className="px-4 py-3 text-gray-600 text-sm">No members marked present.</div>
+                              ) : (
+                                <table className="min-w-full">
+                                  <thead className="bg-slate-100">
+                                    <tr className="text-left font-semibold text-gray-500 text-xs">
+                                      <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 whitespace-nowrap">Name</th>
+                                      <th className="px-4 py-2 whitespace-nowrap">Phone</th>
+                                      <th className="px-4 py-2 whitespace-nowrap">Email</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).map((m, idx) => {
+                                      const fullN = `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-";
+                                      const nParts = fullN.split(/\s+/);
+                                      const dispN = fullN.length > 20 && nParts.length > 2 ? `${nParts[0]} ${nParts[nParts.length - 1]}` : fullN;
+                                      return (
+                                        <tr key={m?._id || idx} className="text-gray-700 text-sm">
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{dispN}</td>
+                                          <td className="px-4 py-1.5 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
+                                          <td className="px-4 py-1.5 whitespace-nowrap">{m?.email || "-"}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+                          </div>
+                        ) : (() => {
+                          const presentIds = new Set(
+                            (Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : [])
+                              .map((m) => String(m?._id || "")).filter(Boolean)
+                          );
+                          const apiAbsent = Array.isArray(individualViewing?.absentMembers) && individualViewing.absentMembers.length > 0
+                            ? individualViewing.absentMembers.map((m) => ({
+                                key: m?._id || String(Math.random()),
+                                name: `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-",
+                                phone: m?.phoneNumber || "-",
+                                email: m?.email || "-"
+                              }))
+                            : individualMembers
+                                .filter((m) => !presentIds.has(String(m?.id || "")))
+                                .map((m) => ({ key: String(m?.id), name: m?.name || "-", phone: "-", email: "-" }));
+                          return (
+                            <div className="rounded-xl border border-gray-200 overflow-hidden">
+                              <div className="max-h-80 overflow-y-auto">
+                                {apiAbsent.length === 0 ? (
+                                  <div className="px-4 py-3 text-gray-600 text-sm">No members marked absent.</div>
+                                ) : (
+                                  <table className="min-w-full">
+                                    <thead className="bg-slate-100">
+                                      <tr className="text-left font-semibold text-gray-500 text-xs">
+                                        <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 whitespace-nowrap">Name</th>
+                                        <th className="px-4 py-2 whitespace-nowrap">Phone</th>
+                                        <th className="px-4 py-2 whitespace-nowrap">Email</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                      {apiAbsent.map((m) => (
+                                        <tr key={m.key} className="text-gray-700 text-sm">
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{m.name}</td>
+                                          <td className="px-4 py-1.5 whitespace-nowrap">{m.phone}</td>
+                                          <td className="px-4 py-1.5 whitespace-nowrap">{m.email}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </SimpleModal>
+            </>
+          ) : (
+            <>
+              {attendanceError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{attendanceError}</div> : null}
+
+              {attendanceLoading ? (
+                <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 py-1.5">
+                      <div className="h-4 w-24 rounded bg-gray-200" />
+                      <div className="h-4 w-16 rounded bg-gray-200" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredAttendances.length === 0 ? (
+                <EmptyState compact illustration="attendance" title="No attendance records yet" description="Aggregate attendance for this ministry will appear here." />
+              ) : (
+                <div className="overflow-x-auto px-4 md:px-5 lg:px-6 pb-6">
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Attendees</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Speaker</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Activity</th>
+                        <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredAttendances.map((r, idx) => (
+                        <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.activity || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            <TableKebabMenu items={[
+                              { label: "Edit", onClick: () => openAttendanceForm("edit", r) },
+                              { label: "Delete", onClick: () => openConfirm("delete-attendance", r?._id), danger: true }
+                            ]} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <SimpleModal
+                open={attendanceOpen}
+                title={attendanceMode === "edit" ? "Edit Attendance" : "Add Attendance"}
+                onClose={() => setAttendanceOpen(false)}
+              >
+                <form onSubmit={submitAttendance}>
+                  {attendanceFormError ? (
+                    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{attendanceFormError}</div>
+                  ) : null}
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                      <input
+                        value={attendanceDate}
+                        onChange={(e) => setAttendanceDate(e.target.value)}
+                        type="date"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-gray-500 text-xs">Number of attendees</label>
+                      <input
+                        value={attendanceNumber}
+                        onChange={(e) => setAttendanceNumber(e.target.value)}
+                        type="number"
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-gray-500 text-xs">Main speaker</label>
+                      <input
+                        value={attendanceSpeaker}
+                        onChange={(e) => setAttendanceSpeaker(e.target.value)}
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-gray-500 text-xs">Activity</label>
+                      <input
+                        value={attendanceActivity}
+                        onChange={(e) => setAttendanceActivity(e.target.value)}
+                        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceOpen(false)}
+                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      loading={isSubmittingAttendance}
+                      loadingText={attendanceMode === "edit" ? "Updating..." : "Saving..."}
+                      className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+                    >
+                      {attendanceMode === "edit" ? "Update" : "Save"}
+                    </Button>
+                  </div>
+                </form>
+              </SimpleModal>
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {activeTab === "offerings" ? (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
+            <div className="flex items-center gap-3 justify-between w-full md:w-auto md:block">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Offerings</div>
+                <div className="text-gray-500 text-xs">Record ministry offerings</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => openOfferingForm("create", null)}
+                className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+              >
+                <span className="leading-none text-lg">+</span>
+                Add Offering
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 items-end w-full md:w-auto">
+              <FilterBar
+                searchValue={offeringSearch}
+                onSearchChange={(v) => setOfferingSearch(v)}
+                searchPlaceholder="Search recorded by"
+                searchWidth="md:w-[320px]"
+                dateFrom={offeringDateFrom}
+                dateTo={offeringDateTo}
+                onDateApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); }}
+              >
+                <button
+                  type="button"
+                  onClick={() => openOfferingForm("create", null)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Add Offering
+                </button>
+              </FilterBar>
+              <MobileFilterBar
+                searchValue={offeringSearch}
+                onSearchChange={(v) => setOfferingSearch(v)}
+                searchPlaceholder="Search recorded by"
+                dateFrom={offeringDateFrom}
+                dateTo={offeringDateTo}
+                onDateApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); }}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          {offeringError ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{offeringError}</div> : null}
+
+          {offeringLoading ? (
+            <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center justify-between gap-3 py-1.5">
+                  <div className="h-4 w-24 rounded bg-gray-200" />
+                  <div className="h-4 w-16 rounded bg-gray-200" />
+                </div>
+              ))}
+            </div>
+          ) : offerings.length === 0 ? (
+            <EmptyState compact illustration="offering" title="No offerings yet" description="Offerings recorded for this ministry will appear here." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-slate-100">
+                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
+                    <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredOfferings.map((r, idx) => (
+                    <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
+                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
+                      <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(r?.amount || 0, currency)}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.createdBy?.fullName || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                        {r?.referenceId ? (
+                          <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{r.referenceId}</span>
+                        ) : <span className="text-gray-300 text-xs">—</span>}
+                      </td>
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                        <TableKebabMenu items={[
+                          { label: "View", onClick: () => { setOfferingViewRow(r); setOfferingViewOpen(true); } },
+                          { label: "Edit", onClick: () => openOfferingForm("edit", r) },
+                          { label: "Delete", onClick: () => openConfirm("delete-offering", r?._id), danger: true }
+                        ]} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {offeringViewOpen && offeringViewRow && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+              <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+                  <div className="font-semibold text-gray-900 text-sm">Offering Details</div>
+                  <button type="button" onClick={() => { setOfferingViewOpen(false); setOfferingViewRow(null); }} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 px-4 md:px-5 lg:px-6 py-4">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Date</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(offeringViewRow?.date)}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                    <div className="mt-1 font-semibold text-blue-700 text-sm">{formatMoney(offeringViewRow?.amount || 0, currency)}</div>
+                  </div>
+                  <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{offeringViewRow?.createdBy?.fullName || "—"}</div>
+                  </div>
+                  {offeringViewRow?.referenceId ? (
+                    <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                      <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
+                      <div className="mt-1 font-mono text-gray-700 text-xs">{offeringViewRow.referenceId}</div>
+                    </div>
+                  ) : null}
+                  <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Note</div>
+                    <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{offeringViewRow?.note || "—"}</div>
+                  </div>
+                </div>
+                <div className="flex justify-end px-4 md:px-5 lg:px-6 py-4 border-t border-gray-200">
+                  <button type="button" onClick={() => { setOfferingViewOpen(false); setOfferingViewRow(null); }} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Close</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <SimpleModal
+            open={offeringOpen}
+            title={offeringMode === "edit" ? "Edit Offering" : "Add Offering"}
+            onClose={() => setOfferingOpen(false)}
+          >
+            <form onSubmit={submitOffering}>
+              {offeringFormError ? (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{offeringFormError}</div>
+              ) : null}
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                  <input
+                    value={offeringDate}
+                    onChange={(e) => setOfferingDate(e.target.value)}
+                    type="date"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Amount</label>
+                  <input
+                    value={offeringAmount}
+                    onChange={(e) => setOfferingAmount(e.target.value)}
+                    type="number"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-gray-500 text-xs">Note</label>
+                    <span className="text-xs text-gray-400">{offeringNote.trim().split(/\s+/).filter(Boolean).length}/5 words</span>
+                  </div>
+                  <textarea
+                    value={offeringNote}
+                    onChange={(e) => {
+                      const words = e.target.value.trim().split(/\s+/).filter(Boolean);
+                      if (words.length <= 5 || e.target.value.length < offeringNote.length) {
+                        setOfferingNote(e.target.value);
+                      }
+                    }}
+                    rows={3}
+                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
+                    placeholder="Max 5 words"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setOfferingOpen(false)}
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+                >
+                  Cancel
+                </button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={isSubmittingOffering}
+                  loadingText={offeringMode === "edit" ? "Updating..." : "Saving..."}
+                  className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
+                >
+                  {offeringMode === "edit" ? "Update" : "Save"}
+                </Button>
+              </div>
+            </form>
+          </SimpleModal>
+        </div>
+      ) : null}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmTitle}
+        message={confirmMessage}
+        confirmLabel={confirmLabel}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setConfirmMeta(null);
+        }}
+        onConfirm={confirmAction}
+      />
+    </div>
+  );
+}
+
+export default OrganisationDetailsPage;

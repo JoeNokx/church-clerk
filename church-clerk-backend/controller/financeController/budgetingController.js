@@ -10,9 +10,10 @@ import TitheAggregate from "../../models/financeModel/tithesModel/titheAggregate
 import Offering from "../../models/financeModel/offeringModel.js";
 import BusinessIncome from "../../models/financeModel/businessModel/businessIncomeModel.js";
 import EventOffering from "../../models/eventModel/eventOfferingModel.js";
-import CellOffering from "../../models/ministryModel/cellOfferingModel.js";
-import GroupOffering from "../../models/ministryModel/groupOfferingModel.js";
-import DepartmentOffering from "../../models/ministryModel/departmentOfferingModel.js";
+import CellOffering from "../../models/organisationModel/cellOfferingModel.js";
+import GroupOffering from "../../models/organisationModel/groupOfferingModel.js";
+import DepartmentOffering from "../../models/organisationModel/departmentOfferingModel.js";
+import MinistryOffering from "../../models/organisationModel/ministryOfferingModel.js";
 import SpecialFund from "../../models/financeModel/specialFundModel.js";
 import PledgePayment from "../../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import WelfareContribution from "../../models/financeModel/welfareModel/welfareContributionModel.js";
@@ -123,6 +124,7 @@ const INCOME_SOURCES = [
   { Model: CellOffering,      dateField: "date"         },
   { Model: GroupOffering,     dateField: "date"         },
   { Model: DepartmentOffering,dateField: "date"         },
+  { Model: MinistryOffering, dateField: "date"         },
   { Model: Income,            dateField: "dateReceived" },
 ];
 
@@ -176,6 +178,7 @@ const INCOME_CATEGORY_SOURCES = {
     { Model: CellOffering,       dateField: "date",         entityType: "cell",     entityField: "cell"      },
     { Model: GroupOffering,      dateField: "date",         entityType: "group",     entityField: "group"     },
     { Model: DepartmentOffering, dateField: "date",         entityType: "department", entityField: "department" },
+    { Model: MinistryOffering,  dateField: "date",         entityType: "ministry",  entityField: "ministry"  },
   ],
   "Cell Offering": [
     { Model: CellOffering,       dateField: "date",         entityType: "cell",     entityField: "cell"      },
@@ -185,6 +188,9 @@ const INCOME_CATEGORY_SOURCES = {
   ],
   "Department Offering": [
     { Model: DepartmentOffering, dateField: "date",         entityType: "department", entityField: "department" },
+  ],
+  "Ministry Offering": [
+    { Model: MinistryOffering,  dateField: "date",         entityType: "ministry",  entityField: "ministry"  },
   ],
   "Event Offering": [
     { Model: EventOffering,      dateField: "offeringDate", entityType: "event",    entityField: "event"     },

@@ -1,0 +1,16 @@
+import mongoose from "mongoose";
+
+const ministryIndividualAttendanceSchema = new mongoose.Schema(
+  {
+    church: { type: mongoose.Schema.Types.ObjectId, ref: "Church", required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    ministry: { type: mongoose.Schema.Types.ObjectId, ref: "Ministry", required: true },
+    date: { type: Date, required: true },
+    mainSpeaker: { type: String, default: "" },
+    presentMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }],
+    totalMembersSnapshot: { type: Number, default: 0 }
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("ministryIndividualAttendance", ministryIndividualAttendanceSchema);

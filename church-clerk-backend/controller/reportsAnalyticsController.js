@@ -14,9 +14,10 @@ import BusinessIncome from "../models/financeModel/businessModel/businessIncomeM
 import BusinessExpenses from "../models/financeModel/businessModel/businessExpensesModel.js";
 import GeneralExpenses from "../models/generalExpenseModel.js";
 import EventOffering from "../models/eventModel/eventOfferingModel.js";
-import CellOffering from "../models/ministryModel/cellOfferingModel.js";
-import GroupOffering from "../models/ministryModel/groupOfferingModel.js";
-import DepartmentOffering from "../models/ministryModel/departmentOfferingModel.js";
+import CellOffering from "../models/organisationModel/cellOfferingModel.js";
+import GroupOffering from "../models/organisationModel/groupOfferingModel.js";
+import DepartmentOffering from "../models/organisationModel/departmentOfferingModel.js";
+import MinistryOffering from "../models/organisationModel/ministryOfferingModel.js";
 import PledgePayment from "../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import Income from "../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Expense from "../models/financeModel/incomeExpenseModel/expenseModel.js";
@@ -272,6 +273,7 @@ const INCOME_SOURCES = [
   { Model: CellOffering, dateField: "date", amountField: "amount" },
   { Model: GroupOffering, dateField: "date", amountField: "amount" },
   { Model: DepartmentOffering, dateField: "date", amountField: "amount" },
+  { Model: MinistryOffering, dateField: "date", amountField: "amount" },
   { Model: PledgePayment, dateField: "paymentDate", amountField: "amount" },
   { Model: Income, dateField: "dateReceived", amountField: "amount" }
 ];
@@ -536,7 +538,8 @@ async function computeYearlyAnalytics({ churchId, year }) {
     { Model: EventOffering, dateField: "offeringDate", amountField: "amount" },
     { Model: CellOffering, dateField: "date", amountField: "amount" },
     { Model: GroupOffering, dateField: "date", amountField: "amount" },
-    { Model: DepartmentOffering, dateField: "date", amountField: "amount" }
+    { Model: DepartmentOffering, dateField: "date", amountField: "amount" },
+    { Model: MinistryOffering, dateField: "date", amountField: "amount" }
   ];
 
   const titheSources = [
@@ -1149,17 +1152,19 @@ async function buildModuleReport({ moduleKey, churchId, from, to }) {
     };
   }
 
-  if (module === "ministries") {
-    const Group = (await import("../models/ministryModel/groupModel.js")).default;
-    const Department = (await import("../models/ministryModel/departmentModel.js")).default;
-    const Cell = (await import("../models/ministryModel/cellModel.js")).default;
+  if (module === "organisations") {
+    const Group = (await import("../models/organisationModel/groupModel.js")).default;
+    const Department = (await import("../models/organisationModel/departmentModel.js")).default;
+    const Cell = (await import("../models/organisationModel/cellModel.js")).default;
+    const Ministry = (await import("../models/organisationModel/ministryModel.js")).default;
 
     const createdMatch = from && to ? { createdAt: { $gte: from, $lte: to } } : {};
 
-    const [groups, departments, cells] = await Promise.all([
+    const [groups, departments, cells, ministries] = await Promise.all([
       Group.find({ church: churchId, ...createdMatch }).select("name description createdAt").lean(),
       Department.find({ church: churchId, ...createdMatch }).select("name description status createdAt").lean(),
-      Cell.find({ church: churchId, ...createdMatch }).select("name description status createdAt").lean()
+      Cell.find({ church: churchId, ...createdMatch }).select("name description status createdAt").lean(),
+      Ministry.find({ church: churchId, ...createdMatch }).select("name description status createdAt").lean()
     ]);
 
     const rows = [
@@ -1183,11 +1188,18 @@ async function buildModuleReport({ moduleKey, churchId, from, to }) {
         status: r?.status || "—",
         createdAt: r?.createdAt ? new Date(r.createdAt).toISOString().slice(0, 10) : "—",
         description: r?.description || "—"
+      })),
+      ...(ministries || []).map((r) => ({
+        type: "Ministry",
+        name: r?.name || "—",
+        status: r?.status || "—",
+        createdAt: r?.createdAt ? new Date(r.createdAt).toISOString().slice(0, 10) : "—",
+        description: r?.description || "—"
       }))
     ].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
     return {
-      title: "Ministries",
+      title: "Organisations",
       columns: [
         { key: "type", label: "Type" },
         { key: "name", label: "Name" },

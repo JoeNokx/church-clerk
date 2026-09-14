@@ -149,7 +149,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
     (planAllows("ProgramsEvents") && canRead("events")) ||
 
-    (planAllows("Ministries") && canRead("ministry")) ||
+    (planAllows("Organisations") && canRead("organisation")) ||
 
     (planAllows("Announcements") && canRead("announcements"));
 
@@ -222,7 +222,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
     "event-details": "programs-events",
     "event-edit": "programs-events",
     "event-create": "programs-events",
-    "ministry-details": "ministries",
+    "ministry-details": "organisations",
+    "organisation-details": "organisations",
     "business-venture-details": "business-ventures",
     "church-project-details": "church-projects",
     "pledge-details": "pledges",
@@ -464,9 +465,9 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-                {planAllows("Ministries") && canRead("ministry") ? (
+                {planAllows("Organisations") && canRead("organisation") ? (
 
-                  <NavLink to={toPage("ministries")} className={itemClass("ministries")}>
+                  <NavLink to={toPage("organisations")} className={itemClass("organisations")}>
 
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
@@ -478,9 +479,9 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     </span>
 
-                    Ministries
+                    Organisations
 
-                    {isReadOnly("Ministries") ? <LockBadge /> : null}
+                    {isReadOnly("Organisations") ? <LockBadge /> : null}
 
                   </NavLink>
 

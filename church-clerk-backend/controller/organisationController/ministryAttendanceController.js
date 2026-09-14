@@ -1,0 +1,157 @@
+import Attendance from "../../models/organisationModel/ministryAttendanceModel.js";
+import Ministry from "../../models/organisationModel/ministryModel.js";
+
+const createMinistryAttendance = async (req, res) => {
+  try {
+    const { ministryId } = req.params;
+    const { date, numberOfAttendees, mainSpeaker, activity } = req.body;
+
+    if (!date || !numberOfAttendees) {
+      return res.status(400).json({ message: "date and number of attendees are required" });
+    }
+
+    const churchId = req.activeChurch?._id || req.user?.church;
+
+    const ministry = await Ministry.findOne({ _id: ministryId, church: churchId });
+    if (!ministry) {
+      return res.status(404).json({ message: "Ministry not found" });
+    }
+
+    const attendance = await Attendance.create({
+      ministry: ministryId,
+      church: churchId,
+      createdBy: req.user._id,
+      date,
+      numberOfAttendees,
+      mainSpeaker,
+      activity
+    });
+
+    return res.status(201).json({ message: "attendance recorded successfully", attendance });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllMinistryAttendances = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    const { ministryId } = req.params;
+    const churchId = req.activeChurch?._id || req.user?.church;
+
+    const query = { ministry: ministryId, church: churchId };
+
+    if (search) {
+      query.mainSpeaker = { $regex: search, $options: "i" };
+    }
+
+    const attendances = await Attendance.find(query)
+      .select("date numberOfAttendees mainSpeaker activity")
+      .populate("ministry", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    const totalMinistryAttendances = await Attendance.countDocuments(query);
+
+    if (!attendances || attendances.length === 0) {
+      return res.status(200).json({
+        message: "No attendance found.",
+        stats: {
+          totalMinistryAttendances: 0
+        },
+        pagination: {
+          totalResult: 0,
+          totalPages: 0,
+          currentPage: pageNum,
+          hasPrev: false,
+          hasNext: false,
+          prevPage: null,
+          nextPage: null
+        },
+        count: 0,
+        attendances: []
+      });
+    }
+
+    const totalPages = Math.ceil(totalMinistryAttendances / limitNum);
+
+    const pagination = {
+      totalResult: totalMinistryAttendances,
+      totalPages,
+      currentPage: pageNum,
+      hasPrev: pageNum > 1,
+      hasNext: pageNum < totalPages,
+      prevPage: pageNum > 1 ? pageNum - 1 : null,
+      nextPage: pageNum < totalPages ? pageNum + 1 : null
+    };
+
+    return res.status(200).json({
+      message: "All ministry attendances",
+      stats: {
+        totalMinistryAttendances
+      },
+      pagination,
+      count: attendances.length,
+      attendances
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const updateMinistryAttendance = async (req, res) => {
+  try {
+    const { ministryId, attendanceId } = req.params;
+    const churchId = req.activeChurch?._id || req.user?.church;
+
+    const ministry = await Ministry.findOne({ _id: ministryId, church: churchId });
+    if (!ministry) {
+      return res.status(404).json({ message: "Ministry not found" });
+    }
+
+    const attendance = await Attendance.findOneAndUpdate(
+      { _id: attendanceId, ministry: ministryId, church: churchId },
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!attendance) {
+      return res.status(404).json({ message: "attendance not found" });
+    }
+
+    return res.status(200).json({ message: "attendance updated successfully", attendance });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteMinistryAttendance = async (req, res) => {
+  try {
+    const { ministryId, attendanceId } = req.params;
+    const churchId = req.activeChurch?._id || req.user?.church;
+
+    const ministry = await Ministry.findOne({ _id: ministryId, church: churchId });
+    if (!ministry) {
+      return res.status(404).json({ message: "Ministry not found" });
+    }
+
+    const attendance = await Attendance.findOneAndDelete({ _id: attendanceId, ministry: ministryId, church: churchId });
+
+    if (!attendance) {
+      return res.status(404).json({ message: "attendance not found" });
+    }
+
+    return res.status(200).json({ message: "attendance deleted successfully", attendance });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export { createMinistryAttendance, updateMinistryAttendance, deleteMinistryAttendance, getAllMinistryAttendances };

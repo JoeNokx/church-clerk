@@ -7,7 +7,7 @@ export const MODULES = {
   dashboard: ["read"],
   branches: CRUD_VIEW,
   members: [...CRUD_VIEW, "import"],
-  ministry: CRUD_VIEW,
+  organisation: CRUD_VIEW,
   events: CRUD_VIEW,
   visitors: [...CRUD_VIEW, "convert"],
   attendance: CRUD_VIEW,

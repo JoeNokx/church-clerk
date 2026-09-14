@@ -1,12 +1,13 @@
 import Member from "../../models/memberModel.js";
-import GroupMember from "../../models/ministryModel/groupMembersModel.js";
-import CellMember from "../../models/ministryModel/cellMembersModel.js";
-import DepartmentMember from "../../models/ministryModel/departmentMembersModel.js";
+import GroupMember from "../../models/organisationModel/groupMembersModel.js";
+import CellMember from "../../models/organisationModel/cellMembersModel.js";
+import DepartmentMember from "../../models/organisationModel/departmentMembersModel.js";
+import MinistryMember from "../../models/organisationModel/ministryMembersModel.js";
 import mongoose from "mongoose";
 import { toObjectIdList } from "../../utils/announcementHelpers.js";
 
-async function distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, departmentIds }) {
-  const [g, c, d] = await Promise.all([
+async function distinctMemberIdsForOrganisations({ churchId, groupIds, cellIds, departmentIds, ministryIds }) {
+  const [g, c, d, m] = await Promise.all([
     groupIds.length
       ? GroupMember.find({ church: churchId, group: { $in: groupIds } }).distinct("member")
       : Promise.resolve([]),
@@ -15,13 +16,17 @@ async function distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, dep
       : Promise.resolve([]),
     departmentIds.length
       ? DepartmentMember.find({ church: churchId, department: { $in: departmentIds } }).distinct("member")
+      : Promise.resolve([]),
+    ministryIds.length
+      ? MinistryMember.find({ church: churchId, ministry: { $in: ministryIds } }).distinct("member")
       : Promise.resolve([])
   ]);
 
   const set = new Set([
     ...(Array.isArray(g) ? g : []),
     ...(Array.isArray(c) ? c : []),
-    ...(Array.isArray(d) ? d : [])
+    ...(Array.isArray(d) ? d : []),
+    ...(Array.isArray(m) ? m : [])
   ].map((id) => String(id || "")).filter(Boolean));
 
   return Array.from(set)
@@ -34,6 +39,10 @@ async function distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, dep
     })
     .filter(Boolean);
 }
+
+// Backward-compatible alias
+const distinctMemberIdsForMinistries = ({ churchId, groupIds, cellIds, departmentIds, ministryIds }) =>
+  distinctMemberIdsForOrganisations({ churchId, groupIds, cellIds, departmentIds, ministryIds });
 
 async function countUniqueMembersForAudience({ churchId, audience }) {
   const type = String(audience?.type || "all").trim();
@@ -48,10 +57,11 @@ async function countUniqueMembersForAudience({ churchId, audience }) {
     const groupIds = toObjectIdList(audience?.groupIds);
     const cellIds = toObjectIdList(audience?.cellIds);
     const departmentIds = toObjectIdList(audience?.departmentIds);
+    const ministryIds = toObjectIdList(audience?.ministryIds);
 
-    if (!groupIds.length && !cellIds.length && !departmentIds.length) return 0;
+    if (!groupIds.length && !cellIds.length && !departmentIds.length && !ministryIds.length) return 0;
 
-    const memberIds = await distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, departmentIds });
+    const memberIds = await distinctMemberIdsForOrganisations({ churchId, groupIds, cellIds, departmentIds, ministryIds });
     return memberIds.length;
   }
 
@@ -71,10 +81,11 @@ async function resolveAudienceMembers({ churchId, audience }) {
     const groupIds = toObjectIdList(audience?.groupIds);
     const cellIds = toObjectIdList(audience?.cellIds);
     const departmentIds = toObjectIdList(audience?.departmentIds);
+    const ministryIds = toObjectIdList(audience?.ministryIds);
 
-    if (!groupIds.length && !cellIds.length && !departmentIds.length) return [];
+    if (!groupIds.length && !cellIds.length && !departmentIds.length && !ministryIds.length) return [];
 
-    const memberIds = await distinctMemberIdsForMinistries({ churchId, groupIds, cellIds, departmentIds });
+    const memberIds = await distinctMemberIdsForOrganisations({ churchId, groupIds, cellIds, departmentIds, ministryIds });
     if (!memberIds.length) return [];
     return await Member.find({ church: churchId, _id: { $in: memberIds } }).lean();
   }
@@ -82,4 +93,4 @@ async function resolveAudienceMembers({ churchId, audience }) {
   return await Member.find({ church: churchId }).lean();
 }
 
-export { distinctMemberIdsForMinistries, countUniqueMembersForAudience, resolveAudienceMembers };
+export { distinctMemberIdsForOrganisations, distinctMemberIdsForMinistries, countUniqueMembersForAudience, resolveAudienceMembers };

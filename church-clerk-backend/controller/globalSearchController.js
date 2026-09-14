@@ -1,9 +1,10 @@
 import Member from "../models/memberModel.js";
 import Visitor from "../models/visitorsModel.js";
 import Attendance from "../models/attendanceModel.js";
-import Department from "../models/ministryModel/departmentModel.js";
-import Cell from "../models/ministryModel/cellModel.js";
-import Group from "../models/ministryModel/groupModel.js";
+import Department from "../models/organisationModel/departmentModel.js";
+import Cell from "../models/organisationModel/cellModel.js";
+import Group from "../models/organisationModel/groupModel.js";
+import Ministry from "../models/organisationModel/ministryModel.js";
 import Event from "../models/eventModel.js";
 import Announcement from "../models/announcementModel.js";
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
@@ -127,7 +128,7 @@ export const globalSearch = async (req, res) => {
     }
 
     // Departments
-    if (can(perms, "ministry")) {
+    if (can(perms, "organisation")) {
       tasks.push(
         Department.find({
           ...base,
@@ -187,6 +188,28 @@ export const globalSearch = async (req, res) => {
                 title: r.name || "—",
                 subtitle: r.description || "",
                 module: "groups",
+              }));
+            }
+          })
+      );
+
+      // Ministries
+      tasks.push(
+        Ministry.find({
+          ...base,
+          $or: [{ name: regex }, { description: regex }],
+        })
+          .select("_id name description status")
+          .limit(LIMIT)
+          .lean()
+          .then((rows) => {
+            if (rows.length) {
+              results.ministries = rows.map((r) => ({
+                _id: r._id,
+                title: r.name || "—",
+                subtitle: r.description || "",
+                badge: r.status || "",
+                module: "ministries",
               }));
             }
           })

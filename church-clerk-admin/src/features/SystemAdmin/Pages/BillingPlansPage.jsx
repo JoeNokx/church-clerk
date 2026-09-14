@@ -19,12 +19,12 @@ const FEATURE_GROUPS = [
     ]
   },
   {
-    label: "PEOPLE & MINISTRIES",
+    label: "PEOPLE & ORGANISATIONS",
     items: [
       { key: "members", label: "Members" },
       { key: "attendance", label: "Attendance" },
       { key: "programsEvents", label: "Programs & Events" },
-      { key: "ministries", label: "Ministries" },
+      { key: "organisations", label: "Organisations" },
       { key: "announcements", label: "Announcements" }
     ]
   },
@@ -255,7 +255,7 @@ function BillingPlansPage() {
     priceByCurrency.GHS = ghsPrices;
 
     const featuresPayload = { ...(features || {}) };
-    const peopleKeys = FEATURE_GROUPS.find((g) => g.label === "PEOPLE & MINISTRIES")?.items.map((x) => x.key) || [];
+    const peopleKeys = FEATURE_GROUPS.find((g) => g.label === "PEOPLE & ORGANISATIONS")?.items.map((x) => x.key) || [];
     const financeKeys = FEATURE_GROUPS.find((g) => g.label === "FINANCE")?.items.map((x) => x.key) || [];
     const adminKeys = FEATURE_GROUPS.find((g) => g.label === "ADMINISTRATION")?.items.map((x) => x.key) || [];
 

@@ -40,7 +40,7 @@ const planSchema = new mongoose.Schema(
       members: { type: Boolean, default: false },
       attendance: { type: Boolean, default: false },
       programsEvents: { type: Boolean, default: false },
-      ministries: { type: Boolean, default: false },
+      organisations: { type: Boolean, default: false },
       announcement: { type: Boolean, default: false },
 
       // FINANCE
@@ -65,7 +65,7 @@ const planSchema = new mongoose.Schema(
     },
 
     featureCategories: {
-      peopleMinistries: { type: Boolean, default: false },
+      peopleOrganisations: { type: Boolean, default: false },
       finance: { type: Boolean, default: false },
       administration: { type: Boolean, default: false }
     },

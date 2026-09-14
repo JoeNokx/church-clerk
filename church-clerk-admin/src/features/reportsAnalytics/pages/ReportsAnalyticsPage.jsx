@@ -252,7 +252,7 @@ function ReportsAnalyticsPage() {
       { value: "business-ventures", label: "Business Ventures" },
       { value: "church-projects", label: "Church Projects" },
       { value: "programs-events", label: "Programs & Events" },
-      { value: "ministries", label: "Ministries" }
+      { value: "organisations", label: "Organisations" }
     ],
     []
   );

@@ -53,14 +53,14 @@ const AREAS = [
     note: "Programs have their own attendance and offering records separate from the main church ones.",
   },
   {
-    id: "ministries",
+    id: "organisations",
     number: "05",
-    title: "Ministries",
+    title: "Organisations",
     color: "bg-purple-50 border-purple-100",
     badge: "bg-purple-100 text-purple-700",
     steps: [
-      "In the sidebar, click 'Ministries'.",
-      "Create one ministry each for all three ministries and check their details. Consider creating for at least one each for ongoing and upcoming.",
+      "In the sidebar, click 'Organisations'.",
+      "Create one entry each for all four organisation types (group, department, cell, ministry) and check their details. Consider creating for at least one each for ongoing and upcoming.",
       "Add at least 2 members. Record offering and attendance of one program or event. Use all two modes of attendance record."
     ],
     note: "Each ministry keeps its own records. Confirm members and data appear correctly under it.",

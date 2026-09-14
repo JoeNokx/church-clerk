@@ -609,6 +609,7 @@ export const illustrations = {
   attendance: Attendance,
   events: Events,
   ministries: Ministries,
+  organisations: Ministries,
   outreach: Outreach,
   finance: Finance,
   tithe: Tithe,

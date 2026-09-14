@@ -249,7 +249,7 @@ export const setActiveChurch = async (req, res, next) => {
 
       ProgramsEvents: computeModule("ProgramsEvents"),
 
-      Ministries: computeModule("Ministries"),
+      Organisations: computeModule("Organisations"),
 
       Announcements: computeModule("Announcements"),
 

@@ -1,8 +1,8 @@
 import Member from "../models/memberModel.js";
 import Attendance from "../models/attendanceModel.js";
 import Event from "../models/eventModel.js";
-import GroupModel from "../models/ministryModel/groupModel.js";
-import DepartmentModel from "../models/ministryModel/departmentModel.js";
+import GroupModel from "../models/organisationModel/groupModel.js";
+import DepartmentModel from "../models/organisationModel/departmentModel.js";
 import Announcement from "../models/announcementModel.js";
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
 import Budget from "../models/financeModel/budgetingModel.js";
@@ -54,7 +54,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
   if (members) used.push("Members");
   if (attendance) used.push("Attendance");
   if (events) used.push("ProgramsEvents");
-  if (groups || departments) used.push("Ministries");
+  if (groups || departments) used.push("Organisations");
   if (announcements) used.push("Announcements");
   if (tithes) used.push("Tithe");
   if (budgeting) used.push("Budgeting");
@@ -74,7 +74,7 @@ export const FEATURE_ROUTE_MAP = [
   { feature: "Members",          prefixes: ["/api/v1/member"] },
   { feature: "Attendance",       prefixes: ["/api/v1/attendance"] },
   { feature: "ProgramsEvents",   prefixes: ["/api/v1/event"] },
-  { feature: "Ministries",       prefixes: ["/api/v1/cell", "/api/v1/group", "/api/v1/department"] },
+  { feature: "Organisations",    prefixes: ["/api/v1/organisations"] },
   { feature: "Announcements",    prefixes: ["/api/v1/announcement"] },
   { feature: "Tithe",            prefixes: ["/api/v1/tithe"] },
   { feature: "Budgeting",        prefixes: ["/api/v1/budgeting"] },
@@ -95,7 +95,7 @@ export const isFeatureEnabledInPlan = (planFeatures, moduleKey) => {
     case "Members":          return Boolean(f.members);
     case "Attendance":       return Boolean(f.attendance);
     case "ProgramsEvents":   return Boolean(f.programsEvents);
-    case "Ministries":       return Boolean(f.ministries);
+    case "Organisations":    return Boolean(f.organisations || f.ministries);
     case "Announcements":    return Boolean(f.announcements || f.announcement);
     case "Tithe":            return Boolean(f.tithes);
     case "Budgeting":        return Boolean(f.budgeting || f.financeModule);

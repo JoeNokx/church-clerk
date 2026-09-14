@@ -93,7 +93,7 @@ export const ROLE_PERMISSIONS = {
 
   admin: {
     dashboard: ["read"],
-    ministry: ["read", "create", "update", "delete"],
+    organisation: ["read", "create", "update", "delete"],
     outreach: ["read", "create", "update", "delete"],
     settingsMyProfile: ["read", "update"]
   },

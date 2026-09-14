@@ -31,10 +31,11 @@ import attendanceRoute from "./attendanceRoute.js";
 import announcementRoute from "./announcementRoute.js";
 import activityLogRoute from "./activityLogRoute.js";
 
-// ministry routes
-import cellRoute from "./ministryRoute/cellRoute.js";
-import groupRoute from "./ministryRoute/groupRoute.js";
-import departmentRoute from "./ministryRoute/departmentRoute.js";
+// organisation routes
+import cellRoute from "./organisationRoute/cellRoute.js";
+import groupRoute from "./organisationRoute/groupRoute.js";
+import departmentRoute from "./organisationRoute/departmentRoute.js";
+import ministryRoute from "./organisationRoute/ministryRoute.js";
 
 // finance routes
 import titheRoute from "./financeRoute/titheRoute.js";
@@ -80,6 +81,7 @@ export {
   cellRoute,
   groupRoute,
   departmentRoute,
+  ministryRoute,
   titheRoute,
   budgetingRoute,
   pledgeRoute,

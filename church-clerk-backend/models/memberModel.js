@@ -31,10 +31,11 @@ const memberSchema = new mongoose.Schema({
   default: null,
   },
 
-  // Relationships to ministry models
+  // Relationships to organisation models
   department: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Department' }],         // department
-  group: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Group' }], // ministry
+  group: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Group' }], // group
   cell: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Cell' }],         // small group
+  ministry: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Ministry' }], // ministry
 
   //church information
   church: { type: mongoose.Schema.Types.ObjectId, ref: 'Church', required: true },

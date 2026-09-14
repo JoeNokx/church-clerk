@@ -1,113 +1,113 @@
 import http from "../../../shared/services/http.js";
 
 export const getDepartments = async (params) => {
-  return await http.get("/department/departments", { params });
+  return await http.get("/organisations/departments", { params });
 };
 
 export const getDepartment = async (id) => {
-  return await http.get(`/department/departments/${id}`);
+  return await http.get(`/organisations/departments/${id}`);
 };
 
 export const createDepartment = async (payload) => {
-  return await http.post("/department/departments", payload);
+  return await http.post("/organisations/departments", payload);
 };
 
 export const updateDepartment = async (id, payload) => {
-  return await http.put(`/department/departments/${id}`, payload);
+  return await http.put(`/organisations/departments/${id}`, payload);
 };
 
 export const deleteDepartment = async (id) => {
-  return await http.delete(`/department/departments/${id}`);
+  return await http.delete(`/organisations/departments/${id}`);
 };
 
 export const addDepartmentMember = async (id, payload) => {
-  return await http.post(`/department/departments/${id}/members`, payload);
+  return await http.post(`/organisations/departments/${id}/members`, payload);
 };
 
 export const searchDepartmentMembersToAdd = async (id, params) => {
-  return await http.get(`/department/departments/${id}/members/search`, { params });
+  return await http.get(`/organisations/departments/${id}/members/search`, { params });
 };
 
 export const getDepartmentMembers = async (id, params) => {
-  return await http.get(`/department/departments/${id}/members`, { params });
+  return await http.get(`/organisations/departments/${id}/members`, { params });
 };
 
 export const updateDepartmentMemberRole = async (id, memberId, payload) => {
-  return await http.put(`/department/departments/${id}/members/${memberId}`, payload);
+  return await http.put(`/organisations/departments/${id}/members/${memberId}`, payload);
 };
 
 export const removeDepartmentMember = async (id, memberId) => {
-  return await http.delete(`/department/departments/${id}/members/${memberId}`);
+  return await http.delete(`/organisations/departments/${id}/members/${memberId}`);
 };
 
 export const addDepartmentMeeting = async (id, payload) => {
-  return await http.post(`/department/departments/${id}/meetings`, payload);
+  return await http.post(`/organisations/departments/${id}/meetings`, payload);
 };
 
 export const getDepartmentMeetings = async (id, params) => {
-  return await http.get(`/department/departments/${id}/meetings`, { params });
+  return await http.get(`/organisations/departments/${id}/meetings`, { params });
 };
 
 export const updateDepartmentMeeting = async (id, meetingId, payload) => {
-  return await http.put(`/department/departments/${id}/meetings/${meetingId}`, payload);
+  return await http.put(`/organisations/departments/${id}/meetings/${meetingId}`, payload);
 };
 
 export const deleteDepartmentMeeting = async (id, meetingId) => {
-  return await http.delete(`/department/departments/${id}/meetings/${meetingId}`);
+  return await http.delete(`/organisations/departments/${id}/meetings/${meetingId}`);
 };
 
 export const createDepartmentAttendance = async (departmentId, payload) => {
-  return await http.post(`/department/departments/${departmentId}/attendances`, payload);
+  return await http.post(`/organisations/departments/${departmentId}/attendances`, payload);
 };
 
 export const getDepartmentAttendances = async (departmentId, params) => {
-  return await http.get(`/department/departments/${departmentId}/attendances`, { params });
+  return await http.get(`/organisations/departments/${departmentId}/attendances`, { params });
 };
 
 export const updateDepartmentAttendance = async (departmentId, attendanceId, payload) => {
-  return await http.put(`/department/departments/${departmentId}/attendances/${attendanceId}`, payload);
+  return await http.put(`/organisations/departments/${departmentId}/attendances/${attendanceId}`, payload);
 };
 
 export const deleteDepartmentAttendance = async (departmentId, attendanceId) => {
-  return await http.delete(`/department/departments/${departmentId}/attendances/${attendanceId}`);
+  return await http.delete(`/organisations/departments/${departmentId}/attendances/${attendanceId}`);
 };
 
 export const createDepartmentIndividualAttendance = async (departmentId, payload) => {
-  return await http.post(`/department/departments/${departmentId}/individual-attendances`, payload);
+  return await http.post(`/organisations/departments/${departmentId}/individual-attendances`, payload);
 };
 
 export const getDepartmentIndividualAttendances = async (departmentId, params) => {
-  return await http.get(`/department/departments/${departmentId}/individual-attendances`, { params });
+  return await http.get(`/organisations/departments/${departmentId}/individual-attendances`, { params });
 };
 
 export const getDepartmentIndividualAttendance = async (departmentId, attendanceId) => {
-  return await http.get(`/department/departments/${departmentId}/individual-attendances/${attendanceId}`);
+  return await http.get(`/organisations/departments/${departmentId}/individual-attendances/${attendanceId}`);
 };
 
 export const updateDepartmentIndividualAttendance = async (departmentId, attendanceId, payload) => {
-  return await http.put(`/department/departments/${departmentId}/individual-attendances/${attendanceId}`, payload);
+  return await http.put(`/organisations/departments/${departmentId}/individual-attendances/${attendanceId}`, payload);
 };
 
 export const deleteDepartmentIndividualAttendance = async (departmentId, attendanceId) => {
-  return await http.delete(`/department/departments/${departmentId}/individual-attendances/${attendanceId}`);
+  return await http.delete(`/organisations/departments/${departmentId}/individual-attendances/${attendanceId}`);
 };
 
 export const createDepartmentOffering = async (departmentId, payload) => {
-  return await http.post(`/department/departments/${departmentId}/offerings`, payload);
+  return await http.post(`/organisations/departments/${departmentId}/offerings`, payload);
 };
 
 export const getDepartmentOfferings = async (departmentId, params) => {
-  return await http.get(`/department/departments/${departmentId}/offerings`, { params });
+  return await http.get(`/organisations/departments/${departmentId}/offerings`, { params });
 };
 
 export const updateDepartmentOffering = async (departmentId, offeringId, payload) => {
-  return await http.put(`/department/departments/${departmentId}/offerings/${offeringId}`, payload);
+  return await http.put(`/organisations/departments/${departmentId}/offerings/${offeringId}`, payload);
 };
 
 export const deleteDepartmentOffering = async (departmentId, offeringId) => {
-  return await http.delete(`/department/departments/${departmentId}/offerings/${offeringId}`);
+  return await http.delete(`/organisations/departments/${departmentId}/offerings/${offeringId}`);
 };
 
 export const getDepartmentKPI = async () => {
-  return await http.get("/department/departments/stats/kpi");
+  return await http.get("/organisations/departments/stats/kpi");
 };
