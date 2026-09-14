@@ -1,8 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
-import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
-import { isValidPhoneNumber } from "react-phone-number-input";
 import Skeleton from "react-loading-skeleton";
 import PriceCard from "../../../shared/components/PriceCard/index.jsx";
 import {
@@ -10,15 +8,12 @@ import {
   undoMyCancellation,
   changeMyPlan,
   calculateUpgradeProration,
-  addCardPaymentMethod,
-  addMobileMoneyPaymentMethod,
   getAvailablePlans,
   getBillingInvoiceDownloadUrl,
   getMyBillingHistory,
   getMySubscription,
   initializePaystackPayment,
   removePaymentMethod,
-  updatePaymentMethod,
   verifyPaystackPayment,
   cancelPaystackPayment
 } from "../services/subscription.api.js";
@@ -91,50 +86,6 @@ function methodSubtitle(method) {
   return phoneEnding(method?.phone);
 }
 
-function normalizeGhanaPhone(raw) {
-  const digits = String(raw || "").replace(/\D+/g, "");
-  if (!digits) return "";
-  if (digits.startsWith("233") && digits.length === 12) return `0${digits.slice(3)}`;
-  if (digits.length === 10 && digits.startsWith("0")) return digits;
-  return "";
-}
-
-function toGhanaNationalFromE164(e164) {
-  const digits = String(e164 || "").replace(/\D+/g, "");
-  if (digits.startsWith("233") && digits.length === 12) return `0${digits.slice(3)}`;
-  return "";
-}
-
-function isValidMomo(provider, digits) {
-  const p = String(provider || "").toLowerCase();
-  if (!digits || digits.length !== 10 || !digits.startsWith("0")) return false;
-  const prefix = digits.slice(0, 3);
-  const prefixByProvider = {
-    mtn: ["024", "054", "055", "059"],
-    vod: ["020", "050"],
-    tgo: ["026", "027", "056", "057"]
-  };
-  const allowed = prefixByProvider[p] || [];
-  return allowed.length === 0 ? true : allowed.includes(prefix);
-}
-
-function luhnCheck(value) {
-  const digits = String(value || "").replace(/\D+/g, "");
-  if (!digits) return false;
-  let sum = 0;
-  let shouldDouble = false;
-  for (let i = digits.length - 1; i >= 0; i -= 1) {
-    let d = Number(digits[i]);
-    if (Number.isNaN(d)) return false;
-    if (shouldDouble) {
-      d *= 2;
-      if (d > 9) d -= 9;
-    }
-    sum += d;
-    shouldDouble = !shouldDouble;
-  }
-  return sum % 10 === 0;
-}
 
 function addMonths(date, months) {
   const d = new Date(date);
@@ -235,21 +186,6 @@ function BillingPage() {
 
   const [selectedSavedMethodIndex, setSelectedSavedMethodIndex] = useState(0);
 
-  const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
-  const [newProvider, setNewProvider] = useState("");
-  const [newPhone, setNewPhone] = useState("");
-  const [newCardNumber, setNewCardNumber] = useState("");
-  const [newCardExpiry, setNewCardExpiry] = useState("");
-  const [newCardCvv, setNewCardCvv] = useState("");
-  const [newCardHolderName, setNewCardHolderName] = useState("");
-
-  const cardNumberRef = useRef(null);
-  const cardExpiryRef = useRef(null);
-  const cardCvvRef = useRef(null);
-  const cardHolderRef = useRef(null);
-  const [editingMethodId, setEditingMethodId] = useState(null);
-  const [addMethodError, setAddMethodError] = useState("");
-  const [addMethodFieldErrors, setAddMethodFieldErrors] = useState({});
   const [checkoutError, setCheckoutError] = useState("");
 
   const [methodsLoading, setMethodsLoading] = useState(false);
@@ -332,13 +268,6 @@ function BillingPage() {
       setSysLoading(false);
     }
   };
-
-  const setAddFieldError = useCallback((field, message) => {
-    setAddMethodFieldErrors((prev) => ({
-      ...(prev || {}),
-      [field]: message || ""
-    }));
-  }, []);
 
   const country = String(activeChurch?.country || "").trim().toLowerCase();
   const isGhana = country === "ghana";
@@ -1200,28 +1129,9 @@ function BillingPage() {
             <div className="font-semibold text-gray-900 text-sm">Payment Methods</div>
             <div className="text-gray-500 text-xs">Manage your payment information</div>
             <div className="mt-2 text-blue-700 text-xs">
-              {isGhana ? "Payment options: Visa/Mastercard, Mobile Money" : "Payment options: Visa/Mastercard"}
+              {isGhana ? "Payment options: Visa/Mastercard (saved automatically after checkout), Mobile Money" : "Payment options: Visa/Mastercard (saved automatically after checkout)"}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setShowAddPaymentMethod(true);
-              setNewProvider("");
-              setNewPhone("");
-              setNewCardNumber("");
-              setNewCardExpiry("");
-              setNewCardCvv("");
-              setNewCardHolderName("");
-              setEditingMethodId(null);
-              setAddMethodError("");
-              setAddMethodFieldErrors({});
-            }}
-            disabled={methodsLoading}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-xs"
-          >
-            Add Payment Method
-          </button>
         </div>
 
         <div className="mt-5 space-y-3">
@@ -1251,29 +1161,6 @@ function BillingPage() {
                       ) : (
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700">Active</span>
                       )}
-
-                      {String(m?.type || "").toLowerCase() !== "card" ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (methodsLoading) return;
-                            setShowAddPaymentMethod(true);
-                            setEditingMethodId(m?._id || null);
-                            setNewProvider(String(m?.provider || ""));
-                            setNewPhone(String(m?.phone || ""));
-                            setNewCardNumber("");
-                            setNewCardExpiry("");
-                            setNewCardCvv("");
-                            setNewCardHolderName("");
-                            setAddMethodError("");
-                            setAddMethodFieldErrors({});
-                          }}
-                          disabled={methodsLoading}
-                          className="font-semibold text-blue-700 hover:underline disabled:opacity-60 text-xs"
-                        >
-                          Edit
-                        </button>
-                      ) : null}
 
                       <button
                         type="button"
@@ -1305,342 +1192,6 @@ function BillingPage() {
             <EmptyState compact illustration="paymentMethods" title="No saved payment methods yet" description="Add a payment method to subscribe to a plan." />
           )}
         </div>
-
-        <ModalShell
-          open={showAddPaymentMethod}
-          title={editingMethodId ? "Edit Payment Method" : "Add Payment Method"}
-          subtitle={editingMethodId ? "Update your payment method details" : "Add a new payment method"}
-          onClose={() => {
-            if (methodsLoading) return;
-            setShowAddPaymentMethod(false);
-          }}
-          maxWidthClass="max-w-2xl"
-          zIndexClass="z-[80]"
-        >
-          <div>
-            {addMethodError ? (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{addMethodError}</div>
-            ) : null}
-
-            <div className="font-semibold text-gray-700 text-xs">Payment Provider</div>
-            <select
-              value={newProvider}
-              onChange={(e) => {
-                if (editingMethodId) return;
-                setNewProvider(e.target.value);
-                setAddMethodError("");
-                setAddMethodFieldErrors({});
-              }}
-              disabled={methodsLoading}
-              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-            >
-              <option value="">Select payment method</option>
-              <option value="card">Visa/Mastercard</option>
-              {isGhana ? (
-                <>
-                  <option value="mtn">MTN Mobile Money</option>
-                  <option value="vod">Telecel Cash</option>
-                  <option value="tgo">AirtelTigo Money</option>
-                </>
-              ) : null}
-            </select>
-
-            {newProvider === "card" ? (
-              <div className="mt-4">
-                {!editingMethodId && savedPaymentMethods.some((m) => m?.type === "card") ? (
-                  <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-xs">
-                    <span className="font-semibold">One card allowed.</span> Saving this card will replace your existing saved card.
-                  </div>
-                ) : null}
-                <div className="font-semibold text-gray-700 text-xs">Card Number</div>
-                <input
-                  ref={cardNumberRef}
-                  value={newCardNumber}
-                  inputMode="numeric"
-                  maxLength={19}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/\D+/g, "").slice(0, 16);
-                    const formatted = raw.replace(/(.{4})/g, "$1 ").trim();
-                    setNewCardNumber(formatted);
-                    if (!raw) {
-                      setAddFieldError("cardNumber", "Card number is required");
-                    } else if (raw.length < 13) {
-                      setAddFieldError("cardNumber", "Card number length is invalid");
-                    } else if (!luhnCheck(raw)) {
-                      setAddFieldError("cardNumber", "Card number is invalid");
-                    } else {
-                      setAddFieldError("cardNumber", "");
-                      if (raw.length >= 16) cardExpiryRef.current?.focus();
-                    }
-                  }}
-                  placeholder="1234 5678 9012 3456"
-                  disabled={methodsLoading}
-                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 tracking-widest text-sm"
-                />
-                {addMethodFieldErrors?.cardNumber ? (
-                  <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.cardNumber}</div>
-                ) : null}
-
-                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <div className="font-semibold text-gray-700 text-xs">Expiry</div>
-                    <input
-                      ref={cardExpiryRef}
-                      value={newCardExpiry}
-                      inputMode="numeric"
-                      maxLength={5}
-                      onChange={(e) => {
-                        const prev = newCardExpiry;
-                        let raw = e.target.value.replace(/\D+/g, "").slice(0, 4);
-                        let formatted = raw;
-                        if (raw.length >= 3) {
-                          formatted = raw.slice(0, 2) + "/" + raw.slice(2);
-                        } else if (raw.length === 2 && prev.length < 3) {
-                          formatted = raw + "/";
-                        }
-                        setNewCardExpiry(formatted);
-                        const match = formatted.match(/^(\d{2})\/(\d{2})$/);
-                        if (!match) {
-                          setAddFieldError("expiry", "Use MM/YY");
-                          return;
-                        }
-                        const mm = Number(match[1]);
-                        if (mm < 1 || mm > 12) {
-                          setAddFieldError("expiry", "Expiry is invalid");
-                          return;
-                        }
-                        setAddFieldError("expiry", "");
-                        cardCvvRef.current?.focus();
-                      }}
-                      placeholder="MM/YY"
-                      disabled={methodsLoading}
-                      className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-                    />
-                    {addMethodFieldErrors?.expiry ? (
-                      <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.expiry}</div>
-                    ) : null}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-700 text-xs">CVV</div>
-                    <input
-                      ref={cardCvvRef}
-                      value={newCardCvv}
-                      inputMode="numeric"
-                      maxLength={4}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D+/g, "").slice(0, 4);
-                        setNewCardCvv(digits);
-                        if (!digits) {
-                          setAddFieldError("cvv", "CVV is required");
-                        } else if (digits.length !== 3 && digits.length !== 4) {
-                          setAddFieldError("cvv", "CVV must be 3 or 4 digits");
-                        } else {
-                          setAddFieldError("cvv", "");
-                          if (digits.length >= 3) cardHolderRef.current?.focus();
-                        }
-                      }}
-                      placeholder="123"
-                      disabled={methodsLoading}
-                      className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-                    />
-                    {addMethodFieldErrors?.cvv ? (
-                      <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.cvv}</div>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <div className="font-semibold text-gray-700 text-xs">Cardholder Name</div>
-                  <input
-                    ref={cardHolderRef}
-                    value={newCardHolderName}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setNewCardHolderName(v);
-                      const name = String(v || "").trim();
-                      if (!name) {
-                        setAddFieldError("holderName", "Cardholder name is required");
-                      } else {
-                        setAddFieldError("holderName", "");
-                      }
-                    }}
-                    placeholder="John Doe"
-                    disabled={methodsLoading}
-                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
-                  />
-                  {addMethodFieldErrors?.holderName ? (
-                    <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.holderName}</div>
-                  ) : null}
-                </div>
-              </div>
-            ) : newProvider ? (
-              <div className="mt-4">
-                <div className="font-semibold text-gray-700 text-xs">Mobile Number</div>
-                <div className="mt-2">
-                  <PhoneNumberInput
-                    value={newPhone}
-                    onChange={(v) => {
-                      setNewPhone(v);
-                      if (!v) {
-                        setAddFieldError("phone", "Mobile number is required");
-                        return;
-                      }
-                      if (!isValidPhoneNumber(v)) {
-                        setAddFieldError("phone", "Invalid phone number");
-                        return;
-                      }
-                      const gh = toGhanaNationalFromE164(v);
-                      if (!gh) {
-                        setAddFieldError("phone", "Mobile number must be a Ghana number");
-                        return;
-                      }
-                      if (!isValidMomo(newProvider, gh)) {
-                        setAddFieldError("phone", "Mobile number does not match selected provider");
-                        return;
-                      }
-                      setAddFieldError("phone", "");
-                    }}
-                    error={Boolean(addMethodFieldErrors?.phone)}
-                    disabled={methodsLoading}
-                    inputClassName="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
-                  />
-                </div>
-                {addMethodFieldErrors?.phone ? (
-                  <div className="mt-1 font-semibold text-red-600 text-xs">{addMethodFieldErrors.phone}</div>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowAddPaymentMethod(false)}
-                disabled={methodsLoading}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!newProvider) {
-                    setAddMethodError("Please select a payment provider");
-                    return;
-                  }
-
-                  if (!isGhana && newProvider !== "card") {
-                    setAddMethodError("Mobile money is only available for churches in Ghana");
-                    return;
-                  }
-
-                  setMethodsLoading(true);
-                  setAddMethodError("");
-                  try {
-                    if (editingMethodId) {
-                      const phoneDigits = normalizeGhanaPhone(newPhone);
-                      if (!isValidMomo(newProvider, phoneDigits)) {
-                        setAddMethodError("Mobile number does not match selected provider");
-                        return;
-                      }
-
-                      const res = await updatePaymentMethod(editingMethodId, { provider: newProvider, phone: phoneDigits });
-                      const nextSub = res?.data?.subscription || subscription;
-                      setSubscription(nextSub);
-                      setShowAddPaymentMethod(false);
-                      setEditingMethodId(null);
-                      return;
-                    }
-
-                    if (newProvider === "card") {
-                      const digits = String(newCardNumber || "").replace(/\D+/g, "");
-                      if (!digits || digits.length < 13 || digits.length > 19 || !luhnCheck(digits)) {
-                        setAddMethodError("Card number is invalid");
-                        return;
-                      }
-
-                      const expiry = String(newCardExpiry || "").trim();
-                      const match = expiry.match(/^(\d{2})\s*\/\s*(\d{2})$/);
-                      if (!match) {
-                        setAddMethodError("Expiry is invalid (use MM/YY)");
-                        return;
-                      }
-                      const mm = Number(match[1]);
-                      const yy = Number(match[2]);
-                      if (!Number.isInteger(mm) || mm < 1 || mm > 12 || !Number.isInteger(yy)) {
-                        setAddMethodError("Expiry is invalid (use MM/YY)");
-                        return;
-                      }
-                      const expYear = 2000 + yy;
-
-                      const cvvDigits = String(newCardCvv || "").replace(/\D+/g, "");
-                      if (!cvvDigits || (cvvDigits.length !== 3 && cvvDigits.length !== 4)) {
-                        setAddMethodError("CVV is invalid");
-                        return;
-                      }
-
-                      const holderName = String(newCardHolderName || "").trim();
-                      if (!holderName) {
-                        setAddMethodError("Cardholder name is required");
-                        return;
-                      }
-
-                      const res = await addCardPaymentMethod({
-                        cardNumber: digits,
-                        expMonth: mm,
-                        expYear,
-                        cvv: cvvDigits,
-                        holderName
-                      });
-                      const nextSub = res?.data?.subscription || subscription;
-                      setSubscription(nextSub);
-                      const nextMethods = Array.isArray(nextSub?.paymentMethods) ? nextSub.paymentMethods : [];
-                      const idx = nextMethods.findIndex(
-                        (m) => String(m?.type || "").toLowerCase() === "card" && String(m?.last4 || "") === digits.slice(-4)
-                      );
-                      if (idx >= 0) setSelectedSavedMethodIndex(idx);
-                      setShowAddPaymentMethod(false);
-                    } else {
-                      if (!newPhone || !isValidPhoneNumber(newPhone)) {
-                        setAddMethodError("Invalid phone number");
-                        return;
-                      }
-                      const phoneDigits = toGhanaNationalFromE164(newPhone);
-                      if (!phoneDigits) {
-                        setAddMethodError("Mobile money is only available for Ghana phone numbers");
-                        return;
-                      }
-                      if (!isValidMomo(newProvider, phoneDigits)) {
-                        setAddMethodError("Mobile number does not match selected provider");
-                        return;
-                      }
-
-                      const res = await addMobileMoneyPaymentMethod({ provider: newProvider, phone: newPhone });
-                      const nextSub = res?.data?.subscription || subscription;
-                      setSubscription(nextSub);
-                      const nextMethods = Array.isArray(nextSub?.paymentMethods) ? nextSub.paymentMethods : [];
-                      const idx = nextMethods.findIndex(
-                        (m) =>
-                          String(m?.type || "").toLowerCase() === "mobile_money" &&
-                          String(m?.provider || "") === String(newProvider) &&
-                          String(m?.phone || "") === String(newPhone)
-                      );
-                      if (idx >= 0) setSelectedSavedMethodIndex(idx);
-                      setShowAddPaymentMethod(false);
-                    }
-                  } catch (e) {
-                    setAddMethodError(e?.response?.data?.message || e?.message || "Failed to add payment method");
-                  } finally {
-                    setMethodsLoading(false);
-                  }
-                }}
-                disabled={methodsLoading}
-                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60 text-sm"
-              >
-                {methodsLoading ? "Saving…" : editingMethodId ? "Save Changes" : "Add Payment Method"}
-              </button>
-            </div>
-          </div>
-        </ModalShell>
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
@@ -2147,29 +1698,8 @@ function BillingPage() {
                 );
               })
             ) : (
-              <EmptyState compact illustration="paymentMethods" title="No saved payment methods yet" description="Add a payment method to subscribe to a plan." />
+              <EmptyState compact illustration="paymentMethods" title="No saved payment methods yet" description="Your card will be saved automatically after your first payment." />
             )}
-          </div>
-
-          <div className="mt-5 flex items-center justify-between">
-            <div className="font-semibold text-gray-900 text-sm">Add New Payment Method</div>
-            <button
-              type="button"
-              onClick={() => {
-                if (checkoutLoading) return;
-                setShowAddPaymentMethod(true);
-                setNewProvider("");
-                setNewPhone("");
-                setNewCardNumber("");
-                setNewCardExpiry("");
-                setNewCardCvv("");
-                setNewCardHolderName("");
-                setAddMethodError("");
-              }}
-              className="font-semibold text-blue-700 hover:underline text-sm"
-            >
-              + Add New
-            </button>
           </div>
 
           <div className="mt-6 flex items-center justify-end gap-3">
@@ -2206,10 +1736,6 @@ function BillingPage() {
                 }
 
                 const method = savedPaymentMethods?.[selectedSavedMethodIndex] || null;
-                if (!method) {
-                  setCheckoutError("Please select a payment method");
-                  return;
-                }
 
                 setCheckoutLoading(true);
                 setCheckoutError("");
@@ -2227,13 +1753,15 @@ function BillingPage() {
                     return finalStatus || "unknown";
                   };
 
-                  const type = String(method?.type || "mobile_money").toLowerCase();
+                  const type = String(method?.type || "").toLowerCase();
                   const channels =
                     type === "mobile_money"
                       ? ["mobile_money", "card"]
                       : type === "card"
                         ? ["card"]
-                        : ["bank_transfer"];
+                        : isGhana
+                          ? ["mobile_money", "card"]
+                          : ["card"];
 
                   const amountMinor = Math.round(amountMajor * 100);
 

@@ -102,18 +102,42 @@ export const chargeWithPaystack = async (subscription) => {
   const chargeStatus = String(response?.data?.status || "").toLowerCase();
 
   if (chargeStatus === "success") {
+    // Re-fetch the billing to check if the webhook already processed it
+    // (race condition: webhook may arrive before this function finishes)
+    const freshBilling = await BillingHistory.findById(billing._id);
+    if (freshBilling && freshBilling.status === "paid") {
+      // Webhook already handled it — don't overwrite subscription changes
+      return;
+    }
+
     billing.status = "paid";
     billing.providerReference = reference;
     billing.paymentMethodType = "card";
     await billing.save();
 
-    const now = new Date();
-    subscription.status = "active";
-    subscription.gracePeriodEnd = null;
-    subscription.expiryWarning.shown = false;
-    subscription.nextBillingDate = addInterval(now, subscription.billingInterval);
-    await subscription.save();
+    // Re-fetch the subscription to avoid overwriting webhook changes
+    const freshSubscription = await Subscription.findById(subscription._id);
+    if (!freshSubscription) return;
+
+    freshSubscription.status = "active";
+    freshSubscription.gracePeriodEnd = null;
+    freshSubscription.expiryWarning.shown = false;
+    freshSubscription.nextBillingDate = addInterval(new Date(), freshSubscription.billingInterval);
+    await freshSubscription.save();
   } else {
+    // Re-fetch to avoid overwriting webhook changes before marking as failed
+    const freshBilling = await BillingHistory.findById(billing._id);
+    if (freshBilling && freshBilling.status === "paid") {
+      // Webhook already marked it as paid — don't overwrite
+      return;
+    }
+
+    // If the charge is still pending (e.g., 3D Secure), don't mark as failed.
+    // Leave the billing as pending and let the webhook handle the final status.
+    if (chargeStatus === "pending" || chargeStatus === "send_otp" || chargeStatus === "ongoing") {
+      return;
+    }
+
     billing.status = "failed";
     billing.providerReference = reference;
     await billing.save();

@@ -1,7 +1,7 @@
 import Plan from "../../models/billingModel/planModel.js";
 import BillingHistory from "../../models/billingModel/billingHistoryModel.js";
 import ReferralCode from "../../models/referralModel/referralCodeModel.js";
-import { addMonths, addDays } from "../../utils/dateBillingUtils.js";
+import { addMonths, addDays, addInterval } from "../../utils/dateBillingUtils.js";
 import Church from "../../models/churchModel.js";
 import { getSystemSettingsSnapshot } from "../systemSettingsController.js";
 
@@ -75,6 +75,41 @@ export const processBillingForSubscription = async (subscription) => {
     subscription.gracePeriodEnd = null;
     await subscription.save();
     return { charged: false, reason: "free_plan" };
+  }
+
+  // Idempotency: if a pending billing record already exists for this subscription
+  // (e.g., cron ran twice due to server restart), don't create a duplicate.
+  const existingPending = await BillingHistory.findOne({
+    subscription: subscription._id,
+    status: "pending",
+    type: "payment",
+    amount: { $gt: 0 }
+  }).sort({ createdAt: -1 });
+
+  if (existingPending) {
+    return { charged: true, amount: existingPending.amount };
+  }
+
+  // Also check if a billing record was already paid today (edge case: charge
+  // succeeded but subscription.nextBillingDate save failed, leaving it in the past).
+  // This prevents a double-charge on the next cron tick.
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const existingPaidToday = await BillingHistory.findOne({
+    subscription: subscription._id,
+    status: "paid",
+    type: "payment",
+    amount: { $gt: 0 },
+    createdAt: { $gte: startOfToday }
+  }).sort({ createdAt: -1 });
+
+  if (existingPaidToday) {
+    // Already charged today — advance nextBillingDate to avoid re-processing
+    subscription.nextBillingDate = addInterval(new Date(), subscription.billingInterval);
+    subscription.status = "active";
+    subscription.gracePeriodEnd = null;
+    await subscription.save();
+    return { charged: false, reason: "already_paid_today" };
   }
 
   await BillingHistory.create({

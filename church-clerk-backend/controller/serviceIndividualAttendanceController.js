@@ -4,7 +4,7 @@ import Member from "../models/memberModel.js";
 
 const createServiceIndividualAttendance = async (req, res) => {
   try {
-    const { date, serviceType, mainSpeaker, presentMembers } = req.body;
+    const { date, serviceType, mainSpeaker, presentMembers, absentMembers } = req.body;
 
     if (!date) return res.status(400).json({ message: "date is required" });
     if (!serviceType) return res.status(400).json({ message: "serviceType is required" });
@@ -13,7 +13,11 @@ const createServiceIndividualAttendance = async (req, res) => {
 
     const totalMembersSnapshot = await Member.countDocuments({ church: churchId, status: "active" });
 
-    const ids = Array.isArray(presentMembers) ? presentMembers.filter(Boolean) : [];
+    const presentIds = Array.isArray(presentMembers) ? presentMembers.filter(Boolean) : [];
+    const absentIds = Array.isArray(absentMembers) ? absentMembers.filter(Boolean) : [];
+    // Ensure mutual exclusivity: a member cannot be both present and absent
+    const absentSet = new Set(absentIds.map((id) => String(id)));
+    const cleanPresentIds = presentIds.filter((id) => !absentSet.has(String(id)));
 
     const attendance = await ServiceIndividualAttendance.create({
       church: churchId,
@@ -21,7 +25,8 @@ const createServiceIndividualAttendance = async (req, res) => {
       date,
       serviceType,
       mainSpeaker: mainSpeaker || "",
-      presentMembers: ids,
+      presentMembers: cleanPresentIds,
+      absentMembers: absentIds,
       totalMembersSnapshot
     });
 
@@ -55,8 +60,8 @@ const getAllServiceIndividualAttendances = async (req, res) => {
     }
 
     const attendances = await ServiceIndividualAttendance.find(query)
-      .select("date serviceType mainSpeaker presentMembers totalMembersSnapshot")
-      .sort({ date: -1, createdAt: -1 })
+      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot")
+      .sort({ createdAt: -1, date: -1 })
       .skip(skip)
       .limit(limitNum)
       .lean();
@@ -65,9 +70,10 @@ const getAllServiceIndividualAttendances = async (req, res) => {
 
     const rows = attendances.map((a) => {
       const presentCount = Array.isArray(a?.presentMembers) ? a.presentMembers.length : 0;
+      const absentCount = Array.isArray(a?.absentMembers) ? a.absentMembers.length : 0;
       const totalSnap = Number(a?.totalMembersSnapshot || 0);
-      const absentCount = Math.max(0, totalSnap - presentCount);
-      return { ...a, presentCount, absentCount, mainSpeaker: a.mainSpeaker || "" };
+      const unmarkedCount = Math.max(0, totalSnap - presentCount - absentCount);
+      return { ...a, presentCount, absentCount, unmarkedCount, mainSpeaker: a.mainSpeaker || "" };
     });
 
     const totalPages = Math.ceil(total / limitNum);
@@ -92,17 +98,19 @@ const getSingleServiceIndividualAttendance = async (req, res) => {
     const { id } = req.params;
 
     const attendance = await ServiceIndividualAttendance.findOne({ _id: id, church: req.activeChurch._id })
-      .select("date serviceType mainSpeaker presentMembers totalMembersSnapshot")
-      .populate("presentMembers", "firstName lastName phoneNumber email streetAddress")
+      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot")
+      .populate("presentMembers", "firstName lastName phoneNumber email streetAddress city")
+      .populate("absentMembers", "firstName lastName phoneNumber email streetAddress city")
       .lean();
 
     if (!attendance) return res.status(404).json({ message: "Attendance not found" });
 
     const presentCount = Array.isArray(attendance?.presentMembers) ? attendance.presentMembers.length : 0;
+    const absentCount = Array.isArray(attendance?.absentMembers) ? attendance.absentMembers.length : 0;
     const totalSnap = Number(attendance?.totalMembersSnapshot || 0);
-    const absentCount = Math.max(0, totalSnap - presentCount);
+    const unmarkedCount = Math.max(0, totalSnap - presentCount - absentCount);
 
-    return res.status(200).json({ message: "Attendance fetched", attendance: { ...attendance, presentCount, absentCount } });
+    return res.status(200).json({ message: "Attendance fetched", attendance: { ...attendance, presentCount, absentCount, unmarkedCount } });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -111,17 +119,21 @@ const getSingleServiceIndividualAttendance = async (req, res) => {
 const updateServiceIndividualAttendance = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, serviceType, mainSpeaker, presentMembers } = req.body;
+    const { date, serviceType, mainSpeaker, presentMembers, absentMembers } = req.body;
 
     const churchId = req.activeChurch._id;
 
     const totalMembersSnapshot = await Member.countDocuments({ church: churchId, status: "active" });
 
-    const ids = Array.isArray(presentMembers) ? presentMembers.filter(Boolean) : [];
+    const presentIds = Array.isArray(presentMembers) ? presentMembers.filter(Boolean) : [];
+    const absentIds = Array.isArray(absentMembers) ? absentMembers.filter(Boolean) : [];
+    // Ensure mutual exclusivity: a member cannot be both present and absent
+    const absentSet = new Set(absentIds.map((id) => String(id)));
+    const cleanPresentIds = presentIds.filter((id) => !absentSet.has(String(id)));
 
     const attendance = await ServiceIndividualAttendance.findOneAndUpdate(
       { _id: id, church: churchId },
-      { date, serviceType, mainSpeaker: mainSpeaker || "", presentMembers: ids, totalMembersSnapshot },
+      { date, serviceType, mainSpeaker: mainSpeaker || "", presentMembers: cleanPresentIds, absentMembers: absentIds, totalMembersSnapshot },
       { new: true, runValidators: true }
     );
 
@@ -222,7 +234,10 @@ const memberCheckIn = async (req, res) => {
     if (alreadyPresent) {
       return res.status(200).json({ message: `You are already marked as present, ${member.firstName}!`, alreadyCheckedIn: true, memberName: `${member.firstName} ${member.lastName}` });
     }
-    await ServiceIndividualAttendance.findByIdAndUpdate(attendance._id, { $addToSet: { presentMembers: member._id } });
+    await ServiceIndividualAttendance.findByIdAndUpdate(attendance._id, {
+      $addToSet: { presentMembers: member._id },
+      $pull: { absentMembers: member._id }
+    });
     return res.status(200).json({ message: `Welcome, ${member.firstName}! You have been marked as present.`, memberName: `${member.firstName} ${member.lastName}` });
   } catch (error) {
     return res.status(500).json({ message: error.message });

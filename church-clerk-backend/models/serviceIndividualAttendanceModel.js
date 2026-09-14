@@ -8,6 +8,7 @@ const serviceIndividualAttendanceSchema = new mongoose.Schema(
     serviceType: { type: String, required: true, trim: true },
     mainSpeaker: { type: String, trim: true, default: "" },
     presentMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }],
+    absentMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }],
     totalMembersSnapshot: { type: Number, default: 0 },
     selfCheckInToken: { type: String, trim: true, unique: true, sparse: true },
     selfCheckInActive: { type: Boolean, default: false }

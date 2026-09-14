@@ -44,24 +44,12 @@ export const getMyBillingHistory = async (params) => {
   return await http.get("/subscription/billing-history", { params });
 };
 
-export const addMobileMoneyPaymentMethod = async (payload) => {
-  return await http.post("/subscription/payment-methods/mobile-money", payload);
-};
-
-export const addCardPaymentMethod = async (payload) => {
-  return await http.post("/subscription/payment-methods/card", payload);
-};
-
 export const addBankPaymentMethod = async (payload) => {
   return await http.post("/subscription/payment-methods/bank", payload);
 };
 
 export const removePaymentMethod = async (methodId) => {
   return await http.delete(`/subscription/payment-methods/${methodId}`);
-};
-
-export const updatePaymentMethod = async (methodId, payload) => {
-  return await http.put(`/subscription/payment-methods/${methodId}`, payload);
 };
 
 export const getBillingInvoiceDownloadUrl = (id) => {

@@ -132,6 +132,7 @@ function AttendancePageInner() {
   const [indivViewTab, setIndivViewTab] = useState("present");
   const [indivViewPresentPage, setIndivViewPresentPage] = useState(1);
   const [indivViewAbsentPage, setIndivViewAbsentPage] = useState(1);
+  const [indivViewUnmarkedPage, setIndivViewUnmarkedPage] = useState(1);
 
   const [indivConfirmOpen, setIndivConfirmOpen] = useState(false);
   const [indivConfirmId, setIndivConfirmId] = useState(null);
@@ -151,6 +152,7 @@ function AttendancePageInner() {
   const [indivMarkingSearch, setIndivMarkingSearch] = useState("");
   const [indivMarkingPage, setIndivMarkingPage] = useState(1);
   const [indivMarkingSelected, setIndivMarkingSelected] = useState([]);
+  const [indivMarkingAbsent, setIndivMarkingAbsent] = useState([]);
   const [indivMarkingSaving, setIndivMarkingSaving] = useState(false);
   const [indivMarkingError, setIndivMarkingError] = useState("");
   const [indivMarkingSuccess, setIndivMarkingSuccess] = useState("");
@@ -269,7 +271,8 @@ function AttendancePageInner() {
           const id2 = String(m?._id || "");
           if (!id2) return null;
           const name = `${String(m?.firstName || "")} ${String(m?.lastName || "")}`.trim() || "-";
-          return { id: id2, name, phoneNumber: m?.phoneNumber || "", streetAddress: m?.streetAddress || "" };
+          const location = [m?.streetAddress, m?.city].filter(Boolean).join(", ").trim() || "";
+          return { id: id2, name, phoneNumber: m?.phoneNumber || "", location };
         })
         .filter(Boolean)
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -343,6 +346,7 @@ function AttendancePageInner() {
     setIndivViewTab("present");
     setIndivViewPresentPage(1);
     setIndivViewAbsentPage(1);
+    setIndivViewUnmarkedPage(1);
     setIndivMarkingSearch("");
     setIndivMarkingPage(1);
     setIndivMarkingError("");
@@ -364,7 +368,11 @@ function AttendancePageInner() {
       const presIds = Array.isArray(rec?.presentMembers)
         ? rec.presentMembers.map((x) => String(x?._id || x || "")).filter(Boolean)
         : [];
+      const absIds = Array.isArray(rec?.absentMembers)
+        ? rec.absentMembers.map((x) => String(x?._id || x || "")).filter(Boolean)
+        : [];
       setIndivMarkingSelected(presIds);
+      setIndivMarkingAbsent(absIds);
       if (row?._id) {
         try {
           const lRes = await getAttendanceCheckInLink(row._id);
@@ -388,7 +396,8 @@ function AttendancePageInner() {
       await updateServiceIndividualAttendance(indivViewing._id, {
         date: (indivViewing.date || "").slice(0, 10),
         serviceType: indivViewing.serviceType || "",
-        presentMembers: indivMarkingSelected
+        presentMembers: indivMarkingSelected,
+        absentMembers: indivMarkingAbsent
       });
       const res = await getServiceIndividualAttendance(indivViewing._id);
       const payload = res?.data?.data ?? res?.data;
@@ -397,7 +406,11 @@ function AttendancePageInner() {
       const presIds = Array.isArray(rec?.presentMembers)
         ? rec.presentMembers.map((x) => String(x?._id || x || "")).filter(Boolean)
         : [];
+      const absIds = Array.isArray(rec?.absentMembers)
+        ? rec.absentMembers.map((x) => String(x?._id || x || "")).filter(Boolean)
+        : [];
       setIndivMarkingSelected(presIds);
+      setIndivMarkingAbsent(absIds);
       setIndivMarkingSuccess("Attendance saved successfully.");
       setTimeout(() => setIndivMarkingSuccess(""), 3000);
     } catch (e) {
@@ -518,7 +531,17 @@ function AttendancePageInner() {
             const markTotalPages = Math.max(1, Math.ceil(filteredMarkMembers.length / MARK_PAGE_SIZE));
             const markPaged = filteredMarkMembers.slice((indivMarkingPage - 1) * MARK_PAGE_SIZE, indivMarkingPage * MARK_PAGE_SIZE);
             const allIds = indivMembers.map((m) => String(m.id));
-            const allChecked = allIds.length > 0 && allIds.every((id) => indivMarkingSelected.includes(id));
+            const allPresent = allIds.length > 0 && allIds.every((id) => indivMarkingSelected.includes(id));
+            const allAbsent = allIds.length > 0 && allIds.every((id) => indivMarkingAbsent.includes(id));
+            const unmarkedCount = Math.max(0, indivMembers.length - indivMarkingSelected.length - indivMarkingAbsent.length);
+            const togglePresent = (mid) => {
+              setIndivMarkingSelected((prev) => prev.includes(mid) ? prev.filter((x) => x !== mid) : [...prev, mid]);
+              setIndivMarkingAbsent((prev) => prev.filter((x) => x !== mid));
+            };
+            const toggleAbsent = (mid) => {
+              setIndivMarkingAbsent((prev) => prev.includes(mid) ? prev.filter((x) => x !== mid) : [...prev, mid]);
+              setIndivMarkingSelected((prev) => prev.filter((x) => x !== mid));
+            };
             return (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
                 <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl bg-white shadow-xl overflow-hidden">
@@ -531,8 +554,8 @@ function AttendancePageInner() {
                     <div className="flex items-center gap-2 shrink-0">
                       {canUpdateAttendance ? (
                         <button type="button" onClick={saveManualMarking} disabled={indivMarkingSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
-                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                          {indivMarkingSaving ? "Saving..." : "Mark Attendance"}
+                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          {indivMarkingSaving ? "Saving..." : "Save Attendance"}
                         </button>
                       ) : null}
                       <button type="button" onClick={() => { if (!indivMarkingSaving) setIndivMarkingOpen(false); }} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
@@ -549,29 +572,60 @@ function AttendancePageInner() {
                     <div className="mx-4 mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">{indivMarkingSuccess}</div>
                   )}
 
-                  {/* Search + check all */}
+                  {/* Counts summary */}
+                  <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3 shrink-0">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      {indivMarkingSelected.length} Present
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                      {indivMarkingAbsent.length} Absent
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      {unmarkedCount} Unmarked
+                    </span>
+                  </div>
+
+                  {/* Search + bulk actions */}
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 shrink-0">
                     <input
                       value={indivMarkingSearch}
                       onChange={(e) => { setIndivMarkingSearch(e.target.value); setIndivMarkingPage(1); }}
                       placeholder="Search members..."
-                      className="h-9 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+                      className="h-9 md:w-[320px] w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
                     />
-                    <label className="flex items-center gap-2 cursor-pointer shrink-0 text-sm font-semibold text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={allChecked}
-                        onChange={() => {
-                          if (allChecked) {
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (allPresent) {
                             setIndivMarkingSelected([]);
                           } else {
                             setIndivMarkingSelected(allIds);
+                            setIndivMarkingAbsent([]);
                           }
                         }}
-                      />
-                      Check All Present
-                    </label>
-                    <span className="text-xs text-gray-500 shrink-0">Present: {indivMarkingSelected.length} / {indivMembers.length}</span>
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${allPresent ? "border-green-500 bg-green-500 text-white" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
+                      >
+                        {allPresent ? "Clear Present" : "All Present"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (allAbsent) {
+                            setIndivMarkingAbsent([]);
+                          } else {
+                            setIndivMarkingAbsent(allIds);
+                            setIndivMarkingSelected([]);
+                          }
+                        }}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${allAbsent ? "border-red-500 bg-red-500 text-white" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
+                      >
+                        {allAbsent ? "Clear Absent" : "All Absent"}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Table body - scrollable */}
@@ -595,46 +649,43 @@ function AttendancePageInner() {
                               <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
                               <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
                               <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
-                              <th className="px-4 py-2.5 whitespace-nowrap text-right">Action</th>
+                              <th className="px-4 py-2.5 whitespace-nowrap text-center">Present</th>
+                              <th className="px-4 py-2.5 whitespace-nowrap text-center">Absent</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
                             {markPaged.map((m) => {
-                              const isPresent = indivMarkingSelected.includes(String(m.id));
+                              const mid = String(m.id);
+                              const isPresent = indivMarkingSelected.includes(mid);
+                              const isAbsent = indivMarkingAbsent.includes(mid);
                               return (
-                                <tr
-                                  key={m.id}
-                                  className="cursor-pointer hover:bg-gray-50 text-sm"
-                                  onClick={() => {
-                                    const mid = String(m.id);
-                                    setIndivMarkingSelected((prev) => {
-                                      if (prev.includes(mid)) return prev.filter((x) => x !== mid);
-                                      return [...prev, mid];
-                                    });
-                                  }}
-                                >
+                                <tr key={m.id} className="hover:bg-gray-50 text-sm">
                                   <td className="sticky left-0 z-10 bg-white px-4 py-2.5 whitespace-nowrap" title={m.name}>
-                                    <span className={isPresent ? "text-green-700 font-semibold" : "text-gray-900"}>
+                                    <span className={isPresent ? "text-green-700 font-semibold" : isAbsent ? "text-red-600 font-semibold" : "text-gray-900"}>
                                       <span className="sm:hidden">{truncateMobileName(m.name)}</span>
                                       <span className="hidden sm:inline">{truncateDesktopName(m.name)}</span>
                                     </span>
                                   </td>
                                   <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
-                                  <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.streetAddress || "-"}</td>
-                                  <td className="px-4 py-2.5 whitespace-nowrap text-right">
+                                  <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.location || "-"}</td>
+                                  <td className="px-4 py-2.5 whitespace-nowrap text-center">
                                     <button
                                       type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const mid = String(m.id);
-                                        setIndivMarkingSelected((prev) => {
-                                          if (prev.includes(mid)) return prev.filter((x) => x !== mid);
-                                          return [...prev, mid];
-                                        });
-                                      }}
-                                      className={`cck-allow-icons h-7 w-7 inline-flex items-center justify-center rounded-lg border transition-colors ${isPresent ? "border-green-500 bg-green-500 text-white" : "border-gray-200 bg-white text-gray-300 hover:bg-gray-50"}`}
+                                      onClick={(e) => { e.stopPropagation(); togglePresent(mid); }}
+                                      aria-label={isPresent ? "Marked present - click to unmark" : "Mark as present"}
+                                      className={`cck-allow-icons h-8 w-8 inline-flex items-center justify-center rounded-full border-2 transition-all ${isPresent ? "border-green-500 bg-green-500 text-white shadow-sm" : "border-gray-300 bg-white text-transparent hover:border-green-400 hover:bg-green-50"}`}
                                     >
-                                      <svg viewBox="0 0 24 24" fill={isPresent ? "currentColor" : "none"} className="h-4 w-4"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                    </button>
+                                  </td>
+                                  <td className="px-4 py-2.5 whitespace-nowrap text-center">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); toggleAbsent(mid); }}
+                                      aria-label={isAbsent ? "Marked absent - click to unmark" : "Mark as absent"}
+                                      className={`cck-allow-icons h-8 w-8 inline-flex items-center justify-center rounded-full border-2 transition-all ${isAbsent ? "border-red-500 bg-red-500 text-white shadow-sm" : "border-gray-300 bg-white text-transparent hover:border-red-400 hover:bg-red-50"}`}
+                                    >
+                                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
                                     </button>
                                   </td>
                                 </tr>
@@ -662,7 +713,7 @@ function AttendancePageInner() {
           {/* Master-detail layout: card list on left, details on right */}
           <div className="mt-6 flex flex-col lg:flex-row gap-4">
               {/* LEFT: card list sidebar */}
-              <div className="lg:w-[380px] lg:shrink-0">
+              <div className={`lg:w-[380px] lg:shrink-0 ${indivViewing ? "hidden lg:block" : "block"}`}>
                 <div className="rounded-xl border border-gray-200 bg-white">
                   {/* Header with filters */}
                   <div className="flex flex-col gap-2 border-b border-gray-200 p-3">
@@ -772,6 +823,10 @@ function AttendancePageInner() {
                                   <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
                                   {Number(r?.absentCount ?? 0)}
                                 </span>
+                                <span className="inline-flex items-center gap-0.5 text-gray-400 text-[10px] font-semibold">
+                                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                  {Number(r?.unmarkedCount ?? 0)}
+                                </span>
                               </div>
                             </div>
                             <svg viewBox="0 0 24 24" fill="none" className={`h-4 w-4 shrink-0 transition-colors ${isSelected ? "text-blue-500" : "text-gray-300"}`}><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -794,8 +849,19 @@ function AttendancePageInner() {
 
               {/* RIGHT: details outlet */}
               <div className="flex-1 min-w-0">
+                {/* Mobile back button */}
+                {indivViewing ? (
+                  <button
+                    type="button"
+                    onClick={() => { setIndivViewing(null); setIndivViewError(""); }}
+                    className="lg:hidden mb-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    Back to list
+                  </button>
+                ) : null}
                 {!indivViewing || indivViewError ? (
-                  <div className="rounded-xl border border-gray-200 bg-white p-8 h-full flex flex-col items-center justify-center text-center min-h-[400px]">
+                  <div className="hidden lg:flex rounded-xl border border-gray-200 bg-white p-8 h-full flex-col items-center justify-center text-center min-h-[400px]">
                     <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center">
                       <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M8 3v3M16 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" /></svg>
                     </div>
@@ -813,65 +879,76 @@ function AttendancePageInner() {
                   (() => {
                     const VIEW_PAGE_SIZE = 15;
                     const allPresent = Array.isArray(indivViewing?.presentMembers) ? indivViewing.presentMembers : [];
+                    const allAbsent = Array.isArray(indivViewing?.absentMembers) ? indivViewing.absentMembers : [];
                     const presentTotalPages = Math.max(1, Math.ceil(allPresent.length / VIEW_PAGE_SIZE));
                     const presentPaged = allPresent.slice((indivViewPresentPage - 1) * VIEW_PAGE_SIZE, indivViewPresentPage * VIEW_PAGE_SIZE);
+                    const absentTotalPages = Math.max(1, Math.ceil(allAbsent.length / VIEW_PAGE_SIZE));
+                    const absentPaged = allAbsent.slice((indivViewAbsentPage - 1) * VIEW_PAGE_SIZE, indivViewAbsentPage * VIEW_PAGE_SIZE);
                     const presentIds = new Set(allPresent.map((m) => String(m?._id || "")).filter(Boolean));
-                    const absentList = indivMembers.filter((m) => !presentIds.has(String(m?.id || "")));
-                    const absentTotalPages = Math.max(1, Math.ceil(absentList.length / VIEW_PAGE_SIZE));
-                    const absentPaged = absentList.slice((indivViewAbsentPage - 1) * VIEW_PAGE_SIZE, indivViewAbsentPage * VIEW_PAGE_SIZE);
+                    const absentIds = new Set(allAbsent.map((m) => String(m?._id || "")).filter(Boolean));
+                    const unmarkedList = indivMembers.filter((m) => !presentIds.has(String(m?.id || "")) && !absentIds.has(String(m?.id || "")));
+                    const unmarkedTotalPages = Math.max(1, Math.ceil(unmarkedList.length / VIEW_PAGE_SIZE));
+                    const unmarkedPaged = unmarkedList.slice((indivViewUnmarkedPage - 1) * VIEW_PAGE_SIZE, indivViewUnmarkedPage * VIEW_PAGE_SIZE);
+                    const unmarkedCount = Number(indivViewing?.unmarkedCount ?? unmarkedList.length);
                     return (
                       <div className="rounded-xl border border-gray-200 bg-white">
                         {/* Details header */}
-                        <div className="flex items-center justify-between gap-3 border-b border-gray-200 p-4 md:p-6">
-                          <div>
-                            <h3 className="font-semibold text-gray-900 text-sm">{formatDay(indivViewing?.date) || "-"}, {formatDate(indivViewing?.date)}</h3>
-                            <div className="flex items-center gap-3 mt-1 text-gray-500 text-xs">
-                              <span>{indivViewing?.serviceType || "-"}</span>
-                              <span className="text-gray-300">·</span>
-                              <span className="inline-flex items-center gap-1 text-green-600 font-semibold">
-                                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                {Number(indivViewing?.presentCount ?? 0)} Present
-                              </span>
-                              <span className="text-gray-300">·</span>
-                              <span className="inline-flex items-center gap-1 text-red-500 font-semibold">
-                                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
-                                {Number(indivViewing?.absentCount ?? 0)} Absent
-                              </span>
+                        <div className="border-b border-gray-200 p-4 md:p-6">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <h3 className="font-semibold text-gray-900 text-sm">{formatDay(indivViewing?.date) || "-"}, {formatDate(indivViewing?.date)}</h3>
+                              <div className="text-gray-500 text-xs mt-0.5">{indivViewing?.serviceType || "-"}</div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => { setIndivLinkError(""); setIndivLinkModalOpen(true); }}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                              Generate Link
-                            </button>
-                            {canUpdateAttendance ? (
+                            <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 type="button"
-                                onClick={() => guarded(() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); })}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs"
+                                onClick={() => { setIndivLinkError(""); setIndivLinkModalOpen(true); }}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                               >
-                                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                Manual Marking
+                                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                Generate Link
                               </button>
-                            ) : null}
+                              {canUpdateAttendance ? (
+                                <button
+                                  type="button"
+                                  onClick={() => guarded(() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); })}
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs"
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                  Manual Marking
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                          {/* Counts summary - separate row for breathing room */}
+                          <div className="flex flex-wrap items-center gap-2 mt-3">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              {Number(indivViewing?.presentCount ?? 0)} Present
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                              {Number(indivViewing?.absentCount ?? 0)} Absent
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              {unmarkedCount} Unmarked
+                            </span>
                           </div>
                         </div>
 
-                        {/* Present/Absent tabs */}
+                        {/* Present/Absent/Unmarked tabs */}
                         <div>
                           <div className="flex gap-1 bg-gray-50 border-b border-gray-200 p-3">
                             {[
                               { key: "present", label: `Present (${Number(indivViewing?.presentCount ?? 0)})` },
-                              { key: "absent", label: `Absent (${Number(indivViewing?.absentCount ?? 0)})` }
+                              { key: "absent", label: `Absent (${Number(indivViewing?.absentCount ?? 0)})` },
+                              { key: "unmarked", label: `Unmarked (${unmarkedCount})` }
                             ].map(({ key, label }) => (
                               <button
                                 key={key}
                                 type="button"
-                                onClick={() => { setIndivViewTab(key); setIndivViewPresentPage(1); setIndivViewAbsentPage(1); }}
+                                onClick={() => { setIndivViewTab(key); setIndivViewPresentPage(1); setIndivViewAbsentPage(1); setIndivViewUnmarkedPage(1); }}
                                 className={`rounded-full px-4 py-1 text-xs font-semibold transition-colors ${indivViewTab === key ? "bg-white text-gray-900 shadow-sm border border-gray-200" : "text-gray-500 hover:text-gray-700"}`}
                               >
                                 {label}
@@ -896,6 +973,7 @@ function AttendancePageInner() {
                                     <tbody className="divide-y divide-gray-200">
                                       {presentPaged.map((m, idx) => {
                                         const fullN = `${String(m?.firstName || "")} ${String(m?.lastName || "")}`.trim() || "-";
+                                        const fullLoc = [m?.streetAddress, m?.city].filter(Boolean).join(", ").trim() || "";
                                         return (
                                           <tr key={m?._id || idx} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m?._id }, { state: { from: "attendance" } }); }}>
                                             <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={fullN}>
@@ -903,7 +981,7 @@ function AttendancePageInner() {
                                               <span className="hidden sm:inline">{truncateDesktopName(fullN)}</span>
                                             </td>
                                             <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
-                                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.streetAddress || "-"}</td>
+                                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap" title={fullLoc}>{fullLoc || "-"}</td>
                                           </tr>
                                         );
                                       })}
@@ -917,8 +995,8 @@ function AttendancePageInner() {
                                 </div>
                               </>
                             )
-                          ) : (
-                            absentList.length === 0 ? (
+                          ) : indivViewTab === "absent" ? (
+                            allAbsent.length === 0 ? (
                               <div className="px-4 py-6 text-gray-600 text-sm">No members marked absent.</div>
                             ) : (
                               <>
@@ -932,16 +1010,20 @@ function AttendancePageInner() {
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
-                                      {absentPaged.map((m) => (
-                                        <tr key={m.id} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m.id }, { state: { from: "attendance" } }); }}>
-                                          <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={m.name}>
-                                            <span className="sm:hidden">{truncateMobileName(m.name)}</span>
-                                            <span className="hidden sm:inline">{truncateDesktopName(m.name)}</span>
-                                          </td>
-                                          <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
-                                          <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.streetAddress || "-"}</td>
-                                        </tr>
-                                      ))}
+                                      {absentPaged.map((m, idx) => {
+                                        const fullN = `${String(m?.firstName || "")} ${String(m?.lastName || "")}`.trim() || "-";
+                                        const fullLoc = [m?.streetAddress, m?.city].filter(Boolean).join(", ").trim() || "";
+                                        return (
+                                          <tr key={m?._id || idx} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m?._id }, { state: { from: "attendance" } }); }}>
+                                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={fullN}>
+                                              <span className="sm:hidden">{truncateMobileName(fullN)}</span>
+                                              <span className="hidden sm:inline">{truncateDesktopName(fullN)}</span>
+                                            </td>
+                                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
+                                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap" title={fullLoc}>{fullLoc || "-"}</td>
+                                          </tr>
+                                        );
+                                      })}
                                     </tbody>
                                   </table>
                                 </div>
@@ -949,6 +1031,41 @@ function AttendancePageInner() {
                                   <button type="button" onClick={() => setIndivViewAbsentPage((p) => Math.max(1, p - 1))} disabled={indivViewAbsentPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
                                   <div className="text-gray-600 text-sm">Page {indivViewAbsentPage} of {absentTotalPages}</div>
                                   <button type="button" onClick={() => setIndivViewAbsentPage((p) => Math.min(absentTotalPages, p + 1))} disabled={indivViewAbsentPage >= absentTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                                </div>
+                              </>
+                            )
+                          ) : (
+                            unmarkedList.length === 0 ? (
+                              <div className="px-4 py-6 text-gray-600 text-sm">All members have been marked.</div>
+                            ) : (
+                              <>
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full">
+                                    <thead className="bg-slate-100">
+                                      <tr className="text-left font-semibold text-gray-500 text-xs">
+                                        <th className="sticky left-0 z-10 bg-slate-100 px-4 py-2.5 whitespace-nowrap">Name</th>
+                                        <th className="px-4 py-2.5 whitespace-nowrap">Phone</th>
+                                        <th className="px-4 py-2.5 whitespace-nowrap">Location</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                      {unmarkedPaged.map((m) => (
+                                        <tr key={m.id} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m.id }, { state: { from: "attendance" } }); }}>
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={m.name}>
+                                            <span className="sm:hidden">{truncateMobileName(m.name)}</span>
+                                            <span className="hidden sm:inline">{truncateDesktopName(m.name)}</span>
+                                          </td>
+                                          <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
+                                          <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap" title={m.location}>{m.location || "-"}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 border-t border-gray-200">
+                                  <button type="button" onClick={() => setIndivViewUnmarkedPage((p) => Math.max(1, p - 1))} disabled={indivViewUnmarkedPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+                                  <div className="text-gray-600 text-sm">Page {indivViewUnmarkedPage} of {unmarkedTotalPages}</div>
+                                  <button type="button" onClick={() => setIndivViewUnmarkedPage((p) => Math.min(unmarkedTotalPages, p + 1))} disabled={indivViewUnmarkedPage >= unmarkedTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
                                 </div>
                               </>
                             )
