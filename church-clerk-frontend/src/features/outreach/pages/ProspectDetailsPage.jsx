@@ -14,6 +14,7 @@ import {
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const DECISION_LABELS = {
   none: "No Decision",
@@ -82,6 +83,7 @@ function Badge({ label, className }) {
 }
 
 export default function ProspectDetailsPage() {
+  const guarded = useGuardedAction();
   const { can } = useContext(PermissionContext) || {};
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
@@ -206,12 +208,12 @@ export default function ProspectDetailsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setConvertOpen(true)} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 whitespace-nowrap">Connect</button>
+            <button onClick={() => guarded(() => setConvertOpen(true))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 whitespace-nowrap">Connect</button>
             {canWrite ? (
-              <button onClick={() => setEditOpen(true)} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">Edit</button>
+              <button onClick={() => guarded(() => setEditOpen(true))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">Edit</button>
             ) : null}
             {canDelete ? (
-              <button onClick={() => setDeleteOpen(true)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+              <button onClick={() => guarded(() => setDeleteOpen(true))} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             ) : null}
@@ -332,7 +334,7 @@ export default function ProspectDetailsPage() {
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <div className="font-semibold text-gray-800 text-sm">Follow-Ups History ({followUps.length})</div>
           {canWrite ? (
-            <button onClick={() => { setFuEditTarget(null); setFuModalOpen(true); }} className="h-8 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50">+ Schedule Follow-Up</button>
+            <button onClick={() => guarded(() => { setFuEditTarget(null); setFuModalOpen(true); })} className="h-8 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50">+ Schedule Follow-Up</button>
           ) : null}
         </div>
         {followUps.length === 0 ? (
@@ -371,8 +373,8 @@ export default function ProspectDetailsPage() {
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => setViewRow(fu) },
-                        canWrite && { label: "Edit", onClick: () => { setFuEditTarget(fu); setFuModalOpen(true); } },
-                        canDelete && { label: "Delete", onClick: () => setFuDeleteTarget(fu), danger: true }
+                        canWrite && { label: "Edit", onClick: () => guarded(() => { setFuEditTarget(fu); setFuModalOpen(true); }) },
+                        canDelete && { label: "Delete", onClick: () => guarded(() => setFuDeleteTarget(fu)), danger: true }
                       ]} />
                     </td>
                   </tr>

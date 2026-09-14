@@ -21,6 +21,7 @@ import {
 import { useMembersKpiQuery } from "../hooks/useMembers.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://churchclerkapp.com";
 
@@ -30,6 +31,7 @@ function MembersPageInner() {
   const store = useContext(MemberContext);
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
   const canImport = useMemo(() => (typeof can === "function" ? can("members", "import") : false), [can]);
@@ -263,7 +265,7 @@ function MembersPageInner() {
             <div className="inline-flex rounded-lg bg-blue-600 shadow-sm overflow-hidden">
               <button
                 type="button"
-                onClick={() => openCreate()}
+                onClick={() => guarded(() => openCreate())}
                 className="cck-allow-icons inline-flex items-center gap-2 px-3 py-2.5 font-semibold text-white hover:bg-blue-700 active:bg-blue-800 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
@@ -287,7 +289,7 @@ function MembersPageInner() {
                   {canCreate ? (
                     <button
                       type="button"
-                      onClick={() => { setMobileAddOpen(false); openCreate(); }}
+                      onClick={() => guarded(() => { setMobileAddOpen(false); openCreate(); })}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
                       className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
                     >
@@ -341,7 +343,7 @@ function MembersPageInner() {
           {canCreate && (
             <button
               type="button"
-              onClick={openCreate}
+              onClick={() => guarded(openCreate)}
               className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 text-sm"
             >
               <span className="leading-none text-lg">+</span>

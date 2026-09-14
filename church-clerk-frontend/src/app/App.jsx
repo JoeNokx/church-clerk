@@ -6,6 +6,8 @@ import { submitAdjustment } from "../features/governance/services/governance.api
 import AppRoutes from "./routes.jsx";
 import ErrorBoundary from "../shared/components/ErrorBoundary.jsx";
 import OfflineBanner from "../shared/components/OfflineBanner.jsx";
+import { SubscriptionLockProvider } from "../shared/context/SubscriptionLockContext.jsx";
+import AccountLockedModal from "../shared/components/AccountLockedModal.jsx";
 
 function RouteProgress() {
   const location = useLocation();
@@ -185,12 +187,15 @@ function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <OfflineBanner />
-        <RouteProgress />
-        <SubscriptionLockedModal />
-        <AdjustmentRequestModal />
-        <BackdateApprovalModal />
-        <AppRoutes />
+        <SubscriptionLockProvider>
+          <OfflineBanner />
+          <RouteProgress />
+          <SubscriptionLockedModal />
+          <AccountLockedModal />
+          <AdjustmentRequestModal />
+          <BackdateApprovalModal />
+          <AppRoutes />
+        </SubscriptionLockProvider>
       </ErrorBoundary>
     </BrowserRouter>
   );

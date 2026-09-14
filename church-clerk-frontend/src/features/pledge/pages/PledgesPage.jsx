@@ -21,6 +21,7 @@ import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -520,6 +521,7 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
 
 function PledgesPageInner() {
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const churchCtx = useContext(ChurchContext);
   const currency = String(churchCtx?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
@@ -787,10 +789,10 @@ function PledgesPageInner() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => {
+            onClick={() => guarded(() => {
               if (!canCreate) return;
               openCreate();
-            }}
+            })}
             disabled={!canCreate}
             title={!canCreate ? "You don't have permission to create pledges" : undefined}
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed text-sm"
@@ -984,7 +986,7 @@ function PledgesPageInner() {
                   ? "Create your first pledge to start tracking commitments and payments."
                   : "We couldn't find any pledges matching your current search or filters."}
                 actionLabel={showAdd ? "Add Pledge" : recovery?.actionLabel}
-                onAction={showAdd ? openCreate : recovery?.onAction}
+                onAction={showAdd ? () => guarded(openCreate) : recovery?.onAction}
                 secondaryLabel={showAdd ? null : recovery?.secondaryLabel}
                 onSecondary={showAdd ? null : recovery?.onSecondary}
               />
@@ -1028,8 +1030,8 @@ function PledgesPageInner() {
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu items={[
                           canView && { label: "View", onClick: () => viewDetails(row) },
-                          canEdit && { label: "Edit", onClick: () => openEdit(row) },
-                          canDelete && { label: "Delete", onClick: () => openDelete(row), danger: true }
+                          canEdit && { label: "Edit", onClick: () => guarded(() => openEdit(row)) },
+                          canDelete && { label: "Delete", onClick: () => guarded(() => openDelete(row)), danger: true }
                         ]} />
                       </td>
                     </tr>

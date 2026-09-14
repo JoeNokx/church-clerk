@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react";
+import { useGuardedAction } from "../../../../shared/context/SubscriptionLockContext.jsx";
 import PermissionContext from "../../../permissions/permission.store.js";
 import EventOfferingContext, { EventOfferingProvider } from "../eventOfferings.store.js";
 import EventOfferingFilters from "../components/EventOfferingFilters.jsx";
@@ -8,6 +9,7 @@ import EventOfferingTable from "../components/EventOfferingTable.jsx";
 export function EventOfferingPageInner() {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(EventOfferingContext);
+  const guarded = useGuardedAction();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOffering, setEditingOffering] = useState(null);
@@ -46,7 +48,7 @@ export function EventOfferingPageInner() {
           {canCreate && (
             <button
               type="button"
-              onClick={openCreate}
+              onClick={() => guarded(() => openCreate())}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               <span className="leading-none text-lg">+</span>

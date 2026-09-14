@@ -11,6 +11,7 @@ import BackButton from "../../../shared/components/BackButton/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import EntityPicker, { ENTITY_TYPES } from "../components/EntityPicker.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const EXPENSE_CATEGORY_DEFAULTS = [
   "Maintenance", "Equipment", "Utilities", "Transportation",
@@ -339,6 +340,7 @@ function AddItemModal({ onAdd, onClose, expenseCategoryOptions, reloadExpenseCat
 // ─── Main detail page inner ──────────────────────────────────────────────────
 
 function BudgetDetailPageInner() {
+  const guarded = useGuardedAction();
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(BudgetingContext);
   const churchStore = useContext(ChurchContext);
@@ -574,7 +576,7 @@ function BudgetDetailPageInner() {
               {canEdit ? (
                 <button
                   type="button"
-                  onClick={() => setAddModalOpen(true)}
+                  onClick={() => guarded(() => setAddModalOpen(true))}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white text-xs hover:bg-blue-700 shrink-0"
                 >
                   <span className="text-base leading-none">+</span>
@@ -635,7 +637,7 @@ function BudgetDetailPageInner() {
                             {canEdit ? (
                               <>
                                 <button
-                                  onClick={() => setEditItem({ idx, data: it })}
+                                  onClick={() => guarded(() => setEditItem({ idx, data: it }))}
                                   className="rounded px-2.5 py-1 border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-50"
                                 >
                                   Edit
@@ -658,7 +660,7 @@ function BudgetDetailPageInner() {
                                   </div>
                                 ) : (
                                   <button
-                                    onClick={() => setDeleteConfirm(idx)}
+                                    onClick={() => guarded(() => setDeleteConfirm(idx))}
                                     className="rounded px-2.5 py-1 border border-gray-200 text-red-500 text-xs font-semibold hover:bg-red-50"
                                   >
                                     Delete

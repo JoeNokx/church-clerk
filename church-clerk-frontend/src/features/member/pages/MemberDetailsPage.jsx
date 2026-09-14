@@ -6,6 +6,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
 import Skeleton from "react-loading-skeleton";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const STATUS_STYLES = {
   active: "border-green-200 bg-green-50 text-green-700",
@@ -95,6 +96,7 @@ function DataPair({ label, value }) {
 }
 
 function MemberDetailsPageInner() {
+  const guarded = useGuardedAction();
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(MemberContext);
   const location = useLocation();
@@ -206,7 +208,7 @@ function MemberDetailsPageInner() {
           {canEdit && memberId && (
             <button
               type="button"
-              onClick={() => toPage("member-form", { id: memberId })}
+              onClick={() => guarded(() => toPage("member-form", { id: memberId }))}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               Edit

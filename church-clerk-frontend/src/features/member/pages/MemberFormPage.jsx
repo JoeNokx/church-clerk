@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember, createMember as apiCreateMember, uploadMemberPhoto } from "../services/member.api.js";
@@ -96,6 +97,18 @@ function MemberFormPageInner() {
   const location = useLocation();
   const navigate = useNavigate();
   const { toPage } = useDashboardNavigator();
+  const { isLocked, showLockModal } = useSubscriptionLock();
+
+  // Mount guard: if the account is locked and the user landed here directly
+  // (e.g. via URL or browser back button), show the lock modal and bounce back.
+  useEffect(() => {
+    if (isLocked) {
+      showLockModal();
+      // Navigate back to members list after showing the modal
+      const t = setTimeout(() => toPage("members"), 50);
+      return () => clearTimeout(t);
+    }
+  }, [isLocked, showLockModal, toPage]);
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const memberId = params.get("id");

@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 import { useAuth } from "../../auth/useAuth.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
@@ -100,6 +101,7 @@ function activityTextFromLog(row) {
 function SettingsPage() {
   const location = useLocation();
   const { user, refreshUser } = useAuth();
+  const guarded = useGuardedAction();
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
   const switchChurch = churchCtx?.switchChurch;
@@ -2230,7 +2232,7 @@ function SettingsPage() {
                 {canWrite ? (
                   <button
                     type="button"
-                    onClick={handleOpenAdd}
+                    onClick={() => guarded(() => handleOpenAdd())}
                     className="md:hidden inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
                   >
                     Add User
@@ -2255,7 +2257,7 @@ function SettingsPage() {
                 {canWrite ? (
                   <button
                     type="button"
-                    onClick={handleOpenAdd}
+                    onClick={() => guarded(() => handleOpenAdd())}
                     className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm h-10"
                   >
                     Add User
@@ -2333,8 +2335,8 @@ function SettingsPage() {
                             </td>
                             <td className="px-4 py-3">
                               <TableKebabMenu items={[
-                                { label: "Edit", onClick: () => handleOpenEdit(row), disabled: !canWrite, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
-                                canDeactivateUsers && { label: isActive ? "Deactivate" : "Activate", onClick: () => openDeactivateConfirm(row), danger: isActive, desktopClassName: `rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}` }
+                                { label: "Edit", onClick: () => guarded(() => handleOpenEdit(row)), disabled: !canWrite, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
+                                canDeactivateUsers && { label: isActive ? "Deactivate" : "Activate", onClick: () => guarded(() => openDeactivateConfirm(row)), danger: isActive, desktopClassName: `rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}` }
                               ]} />
                             </td>
                           </tr>

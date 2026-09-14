@@ -9,12 +9,14 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function ExpensesPageInner() {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(ExpensesContext);
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const guarded = useGuardedAction();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -77,7 +79,7 @@ function ExpensesPageInner() {
           {canCreate && (
             <button
               type="button"
-              onClick={openCreate}
+              onClick={() => guarded(openCreate)}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               <span className="leading-none text-lg">+</span>

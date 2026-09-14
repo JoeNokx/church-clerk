@@ -15,6 +15,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const ROLE_OPTIONS = [
   { value: "team-leader", label: "Team Leader" },
@@ -57,6 +58,7 @@ function Avatar({ name, size = "md" }) {
 }
 
 export default function TeamDetailsPage() {
+  const guarded = useGuardedAction();
   const { can } = useContext(PermissionContext) || {};
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
@@ -224,10 +226,10 @@ export default function TeamDetailsPage() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {canWrite ? (
-              <button onClick={() => toPage("outreach", { ...backParams, editTeamId: team._id })} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">Edit</button>
+              <button onClick={() => guarded(() => toPage("outreach", { ...backParams, editTeamId: team._id }))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">Edit</button>
             ) : null}
             {canDelete ? (
-              <button onClick={() => setDeleteOpen(true)} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-red-600 hover:bg-red-50 whitespace-nowrap">Delete</button>
+              <button onClick={() => guarded(() => setDeleteOpen(true))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-red-600 hover:bg-red-50 whitespace-nowrap">Delete</button>
             ) : null}
           </div>
         </div>

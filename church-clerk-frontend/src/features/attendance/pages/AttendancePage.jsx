@@ -31,6 +31,7 @@ import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
 
@@ -164,6 +165,7 @@ function AttendancePageInner() {
   const { toPage } = useDashboardNavigator();
   const location = useLocation();
   const navigate = useNavigate();
+  const guarded = useGuardedAction();
 
   // Handle prefillVisitor from outreach Connect flow
   useEffect(() => {
@@ -459,7 +461,7 @@ function AttendancePageInner() {
               <button
                 type="button"
                 data-hq-action="true"
-                onClick={() => void openIndivForm("create", null)}
+                onClick={() => guarded(() => void openIndivForm("create", null))}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
@@ -469,7 +471,7 @@ function AttendancePageInner() {
               <button
                 type="button"
                 data-hq-action="true"
-                onClick={() => { setEditingAttendance(null); setIsAttendanceFormOpen(true); }}
+                onClick={() => guarded(() => { setEditingAttendance(null); setIsAttendanceFormOpen(true); })}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
@@ -479,7 +481,7 @@ function AttendancePageInner() {
               <button
                 type="button"
                 data-hq-action="true"
-                onClick={() => { setEditingVisitor(null); setIsVisitorFormOpen(true); }}
+                onClick={() => guarded(() => { setEditingVisitor(null); setIsVisitorFormOpen(true); })}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
@@ -743,7 +745,7 @@ function AttendancePageInner() {
                                   {canUpdateAttendance ? (
                                     <button
                                       type="button"
-                                      onClick={(e) => { e.stopPropagation(); void openIndivForm("edit", r); }}
+                                      onClick={(e) => { e.stopPropagation(); guarded(() => void openIndivForm("edit", r)); }}
                                       className="cck-allow-icons h-6 w-6 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
                                     >
                                       <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
@@ -752,7 +754,7 @@ function AttendancePageInner() {
                                   {canDeleteAttendance ? (
                                     <button
                                       type="button"
-                                      onClick={(e) => { e.stopPropagation(); confirmDelete(r?._id); }}
+                                      onClick={(e) => { e.stopPropagation(); guarded(() => confirmDelete(r?._id)); }}
                                       className="cck-allow-icons h-6 w-6 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50"
                                     >
                                       <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -849,7 +851,7 @@ function AttendancePageInner() {
                             {canUpdateAttendance ? (
                               <button
                                 type="button"
-                                onClick={() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); }}
+                                onClick={() => guarded(() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); })}
                                 className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs"
                               >
                                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1092,7 +1094,7 @@ function AttendancePageInner() {
               </div>
               <AttendanceFilters />
             </div>
-            <AttendanceTable onEdit={(row) => { setEditingAttendance(row); setIsAttendanceFormOpen(true); }} onDeleted={refreshAttendances} />
+            <AttendanceTable onEdit={(row) => guarded(() => { setEditingAttendance(row); setIsAttendanceFormOpen(true); })} onDeleted={refreshAttendances} />
           </div>
 
           <AttendanceForm
@@ -1186,7 +1188,7 @@ function AttendancePageInner() {
               </div>
               <VisitorFilters />
             </div>
-            <VisitorTable onEdit={(row) => { setEditingVisitor(row); setIsVisitorFormOpen(true); }} onDeleted={refreshVisitors} />
+            <VisitorTable onEdit={(row) => guarded(() => { setEditingVisitor(row); setIsVisitorFormOpen(true); })} onDeleted={refreshVisitors} />
           </div>
 
           <VisitorForm

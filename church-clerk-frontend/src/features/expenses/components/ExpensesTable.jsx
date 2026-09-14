@@ -9,6 +9,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -22,6 +23,7 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
   const store = useContext(ExpensesContext);
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const guarded = useGuardedAction();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -136,7 +138,7 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
 
     const showAdd = isZero && canCreate && onCreate;
     const actionLabel = showAdd ? "Add Expense" : recovery?.actionLabel;
-    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -184,8 +186,8 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
                     { label: "View", onClick: () => { setViewRow(row); setViewOpen(true); } },
-                    canEdit && { label: "Edit", onClick: () => { if (!row?._id) return; onEdit?.(row); } },
-                    canDelete && { label: "Delete", onClick: () => { if (!row?._id) return; openConfirmDelete(row._id); }, danger: true }
+                    canEdit && { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); }) },
+                    canDelete && { label: "Delete", onClick: () => guarded(() => { if (!row?._id) return; openConfirmDelete(row._id); }), danger: true }
                   ]} />
                 </td>
               </tr>

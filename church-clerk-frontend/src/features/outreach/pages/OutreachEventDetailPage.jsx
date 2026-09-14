@@ -21,6 +21,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 // ─── Constants & Helpers ─────────────────────────────────────────
 const DECISION_LABELS = {
@@ -184,6 +185,7 @@ function ConfirmDelete({ open, title, body, onCancel, onConfirm, loading }) {
 
 // ─── Main Detail Page ─────────────────────────────────────────────
 export default function OutreachEventDetailPage() {
+  const guarded = useGuardedAction();
   const { can } = useContext(PermissionContext) || {};
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canCreate = typeof can === "function" ? can("outreach", "create") : false;
@@ -393,10 +395,10 @@ export default function OutreachEventDetailPage() {
           {canWrite && event.status !== "completed" && event.status !== "cancelled" ? (
             <div className="flex flex-wrap gap-2 shrink-0">
               {event.status === "planned" ? (
-                <button onClick={() => handleStatusChange("ongoing")} disabled={statusUpdating} className="h-9 px-4 rounded-lg bg-amber-600 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60">Mark Ongoing</button>
+                <button onClick={() => guarded(() => handleStatusChange("ongoing"))} disabled={statusUpdating} className="h-9 px-4 rounded-lg bg-amber-600 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60">Mark Ongoing</button>
               ) : null}
               {event.status !== "completed" ? (
-                <button onClick={() => handleStatusChange("completed")} disabled={statusUpdating} className="h-9 px-4 rounded-lg bg-green-700 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60">Mark Complete</button>
+                <button onClick={() => guarded(() => handleStatusChange("completed"))} disabled={statusUpdating} className="h-9 px-4 rounded-lg bg-green-700 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60">Mark Complete</button>
               ) : null}
             </div>
           ) : null}
@@ -498,7 +500,7 @@ export default function OutreachEventDetailPage() {
                 onDateApply={(from, to) => { setProspectDateFrom(from); setProspectDateTo(to); setProspectsPage(1); }}
               />
               {canCreate ? (
-                <button onClick={() => setProspectForm({ open: true, mode: "create", data: null })} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+                <button onClick={() => guarded(() => setProspectForm({ open: true, mode: "create", data: null }))} className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
                   <span className="text-base leading-none">+</span> Record Person
                 </button>
               ) : null}
@@ -514,7 +516,7 @@ export default function OutreachEventDetailPage() {
                   title={prospectSearch || prospectDateFrom || prospectDateTo ? "No people found" : "No people recorded yet"}
                   description={prospectSearch || prospectDateFrom || prospectDateTo ? "We couldn't find anyone matching your filters." : "Record the first person reached during this outreach."}
                   actionLabel={prospectSearch || prospectDateFrom || prospectDateTo ? "Clear Filters" : (canCreate ? "Record Person" : null)}
-                  onAction={prospectSearch || prospectDateFrom || prospectDateTo ? () => { setProspectSearch(""); setProspectDateFrom(""); setProspectDateTo(""); } : (canCreate ? () => setProspectForm({ open: true, mode: "create", data: null }) : undefined)}
+                  onAction={prospectSearch || prospectDateFrom || prospectDateTo ? () => { setProspectSearch(""); setProspectDateFrom(""); setProspectDateTo(""); } : (canCreate ? () => guarded(() => setProspectForm({ open: true, mode: "create", data: null })) : undefined)}
                 />
               </div>
             ) : (
@@ -536,9 +538,9 @@ export default function OutreachEventDetailPage() {
                         key={p._id}
                         prospect={p}
                         onView={(prospect) => toPage("prospect-details", { id: prospect._id, from: fromTab })}
-                        onEdit={(prospect) => setProspectForm({ open: true, mode: "edit", data: prospect })}
-                        onDelete={(prospect) => setDeleteModal({ open: true, type: "prospect", id: prospect._id, name: `${prospect.firstName} ${prospect.lastName || ""}` })}
-                        onAddFollowUp={(prospect) => setFollowUpForm({ open: true, mode: "create", data: null, prospectId: prospect._id })}
+                        onEdit={(prospect) => guarded(() => setProspectForm({ open: true, mode: "edit", data: prospect }))}
+                        onDelete={(prospect) => guarded(() => setDeleteModal({ open: true, type: "prospect", id: prospect._id, name: `${prospect.firstName} ${prospect.lastName || ""}` }))}
+                        onAddFollowUp={(prospect) => guarded(() => setFollowUpForm({ open: true, mode: "create", data: null, prospectId: prospect._id }))}
                         canWrite={canWrite}
                         canDelete={canDelete}
                       />
@@ -627,8 +629,8 @@ export default function OutreachEventDetailPage() {
                         key={f._id}
                         followUp={f}
                         onView={(fu) => setDetailsFU(fu)}
-                        onEdit={(fu) => setFollowUpForm({ open: true, mode: "edit", data: fu, prospectId: fu.prospect?._id })}
-                        onDelete={(fu) => setDeleteModal({ open: true, type: "followup", id: fu._id, name: `follow-up on ${fmtDate(fu.scheduledDate || fu.followUpDate)}` })}
+                        onEdit={(fu) => guarded(() => setFollowUpForm({ open: true, mode: "edit", data: fu, prospectId: fu.prospect?._id }))}
+                        onDelete={(fu) => guarded(() => setDeleteModal({ open: true, type: "followup", id: fu._id, name: `follow-up on ${fmtDate(fu.scheduledDate || fu.followUpDate)}` }))}
                         canWrite={canWrite}
                         canDelete={canDelete}
                       />

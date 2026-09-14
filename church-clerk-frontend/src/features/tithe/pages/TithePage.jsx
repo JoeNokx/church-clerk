@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 import debounce from "../../../shared/utils/debounce.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
@@ -388,6 +389,7 @@ function TithePageInner() {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("tithe", "read") : true), [can]);
   const store = useContext(TitheContext);
+  const guarded = useGuardedAction();
 
   const [kpi, setKpi] = useState(null);
   const [view, setView] = useState(() => {
@@ -578,7 +580,7 @@ function TithePageInner() {
               {canCreate && mode === "individual" ? (
                 <button
                   type="button"
-                  onClick={openCreateIndividual}
+                  onClick={() => guarded(() => openCreateIndividual())}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                 >
                   <span className="leading-none text-lg">+</span>
@@ -589,7 +591,7 @@ function TithePageInner() {
               {canCreate && mode === "aggregate" ? (
                 <button
                   type="button"
-                  onClick={openCreateAggregate}
+                  onClick={() => guarded(() => openCreateAggregate())}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
                 >
                   <span className="leading-none text-lg">+</span>
@@ -680,9 +682,9 @@ function TithePageInner() {
             </div>
 
             {mode === "aggregate" ? (
-              <TitheAggregateTable onEdit={openEditAggregate} onDeleted={refreshKpi} onCreate={openCreateAggregate} />
+              <TitheAggregateTable onEdit={(row) => guarded(() => openEditAggregate(row))} onDeleted={refreshKpi} onCreate={() => guarded(() => openCreateAggregate())} />
             ) : (
-              <TitheIndividualTable onEdit={openEditIndividual} onDeleted={refreshKpi} onCreate={openCreateIndividual} />
+              <TitheIndividualTable onEdit={(row) => guarded(() => openEditIndividual(row))} onDeleted={refreshKpi} onCreate={() => guarded(() => openCreateIndividual())} />
             )}
           </div>
         </>

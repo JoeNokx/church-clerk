@@ -28,6 +28,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -515,6 +516,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
 }
 
 function ChurchProjectDetailsPage() {
+  const guarded = useGuardedAction();
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const canWrite = churchStore?.activeChurch?._id ? churchStore?.activeChurch?.canEdit !== false : true;
@@ -837,7 +839,7 @@ function ChurchProjectDetailsPage() {
                 {canWrite ? (
                   <button
                     type="button"
-                    onClick={openCreateContribution}
+                    onClick={() => guarded(openCreateContribution)}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
@@ -877,7 +879,7 @@ function ChurchProjectDetailsPage() {
                 {canWrite ? (
                   <button
                     type="button"
-                    onClick={openCreateExpense}
+                    onClick={() => guarded(openCreateExpense)}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
@@ -947,8 +949,8 @@ function ChurchProjectDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => setViewRow(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              { label: "Edit", onClick: () => openEditContribution(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              { label: "Delete", onClick: () => openConfirmDelete("contribution", row?._id), danger: true, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs" }
+                              { label: "Edit", onClick: () => guarded(() => openEditContribution(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              { label: "Delete", onClick: () => guarded(() => openConfirmDelete("contribution", row?._id)), danger: true, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
                           </td>
                         </tr>
@@ -1023,8 +1025,8 @@ function ChurchProjectDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setExpenseViewRow(row); setExpenseViewOpen(true); }, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              { label: "Edit", onClick: () => openEditExpense(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              { label: "Delete", onClick: () => openConfirmDelete("expense", row?._id), danger: true, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs" }
+                              { label: "Edit", onClick: () => guarded(() => openEditExpense(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              { label: "Delete", onClick: () => guarded(() => openConfirmDelete("expense", row?._id)), danger: true, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
                           </td>
                         </tr>

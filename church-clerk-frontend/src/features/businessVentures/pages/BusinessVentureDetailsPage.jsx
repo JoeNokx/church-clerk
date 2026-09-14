@@ -33,6 +33,7 @@ import {
   updateBusinessExpense
 } from "../expenses/services/businessExpenses.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -654,6 +655,7 @@ function SearchInput({ activeTab, incomeSearch, expenseSearch, incomeSearchRef, 
 }
 
 function BusinessVentureDetailsPage() {
+  const guarded = useGuardedAction();
   const location = useLocation();
   const navigate = useNavigate();
   const { toPage } = useDashboardNavigator();
@@ -942,7 +944,7 @@ function BusinessVentureDetailsPage() {
                 activeTab === "incomes" ? (
                   <button
                     type="button"
-                    onClick={() => setAddIncomeOpen(true)}
+                    onClick={() => guarded(() => setAddIncomeOpen(true))}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
                   >
                     <span className="leading-none text-lg">+</span>
@@ -951,7 +953,7 @@ function BusinessVentureDetailsPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setAddExpenseOpen(true)}
+                    onClick={() => guarded(() => setAddExpenseOpen(true))}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10 md:hidden"
                   >
                     <span className="leading-none text-lg">+</span>
@@ -994,7 +996,7 @@ function BusinessVentureDetailsPage() {
                 activeTab === "incomes" ? (
                   <button
                     type="button"
-                    onClick={() => setAddIncomeOpen(true)}
+                    onClick={() => guarded(() => setAddIncomeOpen(true))}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
@@ -1003,7 +1005,7 @@ function BusinessVentureDetailsPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setAddExpenseOpen(true)}
+                    onClick={() => guarded(() => setAddExpenseOpen(true))}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
@@ -1090,8 +1092,8 @@ function BusinessVentureDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setViewIncomeRow(row); setViewIncomeOpen(true); } },
-                              canEdit && { label: "Edit", onClick: () => { setEditIncomeRow(row); setEditIncomeOpen(true); } },
-                              canEdit && { label: "Delete", onClick: () => { setDeleteIncomeRow(row); setDeleteIncomeOpen(true); }, danger: true }
+                              canEdit && { label: "Edit", onClick: () => guarded(() => { setEditIncomeRow(row); setEditIncomeOpen(true); }) },
+                              canEdit && { label: "Delete", onClick: () => guarded(() => { setDeleteIncomeRow(row); setDeleteIncomeOpen(true); }), danger: true }
                             ]} />
                           </td>
                         </tr>
@@ -1155,8 +1157,8 @@ function BusinessVentureDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setViewExpenseRow(row); setViewExpenseOpen(true); } },
-                              canEdit && { label: "Edit", onClick: () => { setEditExpenseRow(row); setEditExpenseOpen(true); } },
-                              canEdit && { label: "Delete", onClick: () => { setDeleteExpenseRow(row); setDeleteExpenseOpen(true); }, danger: true }
+                              canEdit && { label: "Edit", onClick: () => guarded(() => { setEditExpenseRow(row); setEditExpenseOpen(true); }) },
+                              canEdit && { label: "Delete", onClick: () => guarded(() => { setDeleteExpenseRow(row); setDeleteExpenseOpen(true); }), danger: true }
                             ]} />
                           </td>
                         </tr>

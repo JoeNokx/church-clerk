@@ -20,6 +20,7 @@ import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.js
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -500,6 +501,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
 }
 
 function ChurchProjectsPageInner() {
+  const guarded = useGuardedAction();
   const { toPage } = useDashboardNavigator();
 
   const churchCtx = useContext(ChurchContext);
@@ -667,7 +669,7 @@ function ChurchProjectsPageInner() {
           {canEdit ? (
             <button
               type="button"
-              onClick={() => setAddProjectOpen(true)}
+              onClick={() => guarded(() => setAddProjectOpen(true))}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
             >
               <span className="leading-none text-lg">+</span>
@@ -807,12 +809,12 @@ function ChurchProjectsPageInner() {
                   actions={
                     <>
                       {canEdit ? (
-                        <button onClick={() => openEdit(p)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                        <button onClick={() => guarded(() => openEdit(p))} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
                           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                         </button>
                       ) : null}
                       {canEdit ? (
-                        <button onClick={() => openDelete(p)} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
+                        <button onClick={() => guarded(() => openDelete(p))} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
                           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                         </button>
                       ) : null}
@@ -847,8 +849,8 @@ function ChurchProjectsPageInner() {
                     <div className="flex items-center gap-2">
                       {canEdit ? (
                         <>
-                          <button type="button" onClick={() => openContribution(p)} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs">Contribution</button>
-                          <button type="button" onClick={() => openExpense(p)} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs">Expense</button>
+                          <button type="button" onClick={() => guarded(() => openContribution(p))} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs">Contribution</button>
+                          <button type="button" onClick={() => guarded(() => openExpense(p))} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs">Expense</button>
                         </>
                       ) : null}
                     </div>

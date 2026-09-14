@@ -1,4 +1,5 @@
 import { useContext, useMemo, useState } from "react";
+import { useGuardedAction } from "../../../../shared/context/SubscriptionLockContext.jsx";
 import { formatMoney as _fm } from "../../../../shared/utils/formatMoney.js";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../../permissions/permission.store.js";
@@ -20,6 +21,7 @@ function EventOfferingTable({ onEdit, onCreate }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(EventOfferingContext);
   const churchStore = useContext(ChurchContext);
+  const guarded = useGuardedAction();
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -178,8 +180,8 @@ function EventOfferingTable({ onEdit, onCreate }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
                     { label: "View", onClick: () => openView(offering) },
-                    canEdit && { label: "Edit", onClick: () => { if (!offering?._id) return; onEdit?.(offering); } },
-                    canDelete && { label: "Delete", onClick: () => { if (!offering?._id) return; openConfirmDelete(offering._id); }, danger: true }
+                    canEdit && { label: "Edit", onClick: () => { if (!offering?._id) return; guarded(() => onEdit?.(offering)); } },
+                    canDelete && { label: "Delete", onClick: () => { if (!offering?._id) return; guarded(() => openConfirmDelete(offering._id)); }, danger: true }
                   ]} />
                 </td>
               </tr>

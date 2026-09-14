@@ -14,6 +14,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 import {
   getGroup,
@@ -253,6 +254,7 @@ function SimpleModal({ open, title, children, onClose }) {
 }
 
 function OrganisationDetailsPage() {
+  const guarded = useGuardedAction();
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -1253,7 +1255,7 @@ function OrganisationDetailsPage() {
               </div>
               <button
                 type="button"
-                onClick={openEdit}
+                onClick={() => guarded(() => openEdit())}
                 className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
               >
                 Edit
@@ -1286,7 +1288,7 @@ function OrganisationDetailsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => {
+                onClick={() => guarded(() => {
                   setAddMemberError("");
                   setAddMemberValue("");
                   setAddMemberRole("member");
@@ -1294,7 +1296,7 @@ function OrganisationDetailsPage() {
                   setAddMemberCandidatesError("");
                   setAddMemberSelectedIds([]);
                   setAddMemberOpen(true);
-                }}
+                })}
                 className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white shadow-sm hover:bg-blue-700 text-xs"
               >
                 + Add Member
@@ -1320,7 +1322,7 @@ function OrganisationDetailsPage() {
               />
               <button
                 type="button"
-                onClick={() => {
+                onClick={() => guarded(() => {
                   setAddMemberError("");
                   setAddMemberValue("");
                   setAddMemberRole("member");
@@ -1328,7 +1330,7 @@ function OrganisationDetailsPage() {
                   setAddMemberCandidatesError("");
                   setAddMemberSelectedIds([]);
                   setAddMemberOpen(true);
-                }}
+                })}
                 className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
               >
                 <span className="leading-none text-lg">+</span>
@@ -1388,8 +1390,8 @@ function OrganisationDetailsPage() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             canViewMembers && { label: "View", onClick: () => { const memberId = member?._id; if (!memberId) return; toPage("member-details", { id: memberId }); } },
-                            { label: "Edit Role", onClick: () => openRoleModal(member?._id, m?.role || "member") },
-                            { label: "Remove", onClick: () => openConfirm("remove-member", { memberId: member?._id, memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() }), danger: true }
+                            { label: "Edit Role", onClick: () => guarded(() => openRoleModal(member?._id, m?.role || "member")) },
+                            { label: "Remove", onClick: () => guarded(() => openConfirm("remove-member", { memberId: member?._id, memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() })), danger: true }
                           ]} />
                         </td>
                       </tr>
@@ -1742,7 +1744,7 @@ function OrganisationDetailsPage() {
                 >
                   <button
                     type="button"
-                    onClick={() => void openIndividualAttendanceForm("create", null)}
+                    onClick={() => guarded(() => void openIndividualAttendanceForm("create", null))}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
@@ -1761,7 +1763,7 @@ function OrganisationDetailsPage() {
                 >
                   <button
                     type="button"
-                    onClick={() => openAttendanceForm("create", null)}
+                    onClick={() => guarded(() => openAttendanceForm("create", null))}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
@@ -1822,9 +1824,9 @@ function OrganisationDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
-                              { label: "Edit", onClick: () => void openIndividualAttendanceForm("edit", r) },
+                              { label: "Edit", onClick: () => guarded(() => void openIndividualAttendanceForm("edit", r)) },
                               { label: "View", onClick: () => void openIndividualView(r) },
-                              { label: "Delete", onClick: () => openConfirm("delete-individual-attendance", r?._id), danger: true }
+                              { label: "Delete", onClick: () => guarded(() => openConfirm("delete-individual-attendance", r?._id)), danger: true }
                             ]} />
                           </td>
                         </tr>
@@ -2141,8 +2143,8 @@ function OrganisationDetailsPage() {
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
-                              { label: "Edit", onClick: () => openAttendanceForm("edit", r) },
-                              { label: "Delete", onClick: () => openConfirm("delete-attendance", r?._id), danger: true }
+                              { label: "Edit", onClick: () => guarded(() => openAttendanceForm("edit", r)) },
+                              { label: "Delete", onClick: () => guarded(() => openConfirm("delete-attendance", r?._id)), danger: true }
                             ]} />
                           </td>
                         </tr>
@@ -2234,7 +2236,7 @@ function OrganisationDetailsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => openOfferingForm("create", null)}
+                onClick={() => guarded(() => openOfferingForm("create", null))}
                 className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
               >
                 <span className="leading-none text-lg">+</span>
@@ -2254,7 +2256,7 @@ function OrganisationDetailsPage() {
               >
                 <button
                   type="button"
-                  onClick={() => openOfferingForm("create", null)}
+                  onClick={() => guarded(() => openOfferingForm("create", null))}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
                 >
                   <span className="leading-none text-lg">+</span>
@@ -2315,8 +2317,8 @@ function OrganisationDetailsPage() {
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu items={[
                           { label: "View", onClick: () => { setOfferingViewRow(r); setOfferingViewOpen(true); } },
-                          { label: "Edit", onClick: () => openOfferingForm("edit", r) },
-                          { label: "Delete", onClick: () => openConfirm("delete-offering", r?._id), danger: true }
+                          { label: "Edit", onClick: () => guarded(() => openOfferingForm("edit", r)) },
+                          { label: "Delete", onClick: () => guarded(() => openConfirm("delete-offering", r?._id)), danger: true }
                         ]} />
                       </td>
                     </tr>
