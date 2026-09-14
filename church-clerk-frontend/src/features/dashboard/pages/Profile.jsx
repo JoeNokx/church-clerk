@@ -28,7 +28,7 @@ function Profile() {
     loadUser();
   }, []);
 
-  if (loading) return <div className="flex items-center gap-2 text-gray-600 text-sm"><Spinner size="sm" className="text-gray-400" /> Loading profile...</div>;
+  if (loading) return <div className="flex items-center justify-center"><Spinner className="text-gray-400" /></div>;
   if (error) return <p className="text-red-500">{error}</p>;
   if (!user) return <p>User not found.</p>;
 

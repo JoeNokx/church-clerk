@@ -7,6 +7,7 @@ import ChurchContext from "../../Church/church.store.js";
 import PledgeContext, { PledgeProvider } from "../pledge.store.js";
 import { getPledges as apiGetPledges } from "../services/pledge.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -871,9 +872,15 @@ function PledgesPageInner() {
                 <tbody className="divide-y divide-gray-200">
                   {rows.map((row, index) => (
                     <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                      <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">{row?.name || "—"}</td>
+                      <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap" title={row?.name || ""}>
+                        <span className="sm:hidden">{truncateMobileName(row?.name)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(row?.name)}</span>
+                      </td>
                       <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap">{row?.phoneNumber || "—"}</td>
-                      <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap">{row?.serviceType || "—"}</td>
+                      <td className="px-6 py-1.5 text-gray-600 whitespace-nowrap" title={row?.serviceType || ""}>
+                        <span className="sm:hidden">{truncateMobileName(row?.serviceType)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(row?.serviceType)}</span>
+                      </td>
                       <td className="px-6 py-1.5 font-semibold text-gray-900 whitespace-nowrap">
                         {formatCurrency(row?.amount || 0, currency)}
                       </td>

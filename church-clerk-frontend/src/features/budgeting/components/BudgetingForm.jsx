@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { Fragment, useContext, useEffect, useMemo, useState } from "react";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import BudgetingContext from "../budgeting.store.js";
@@ -65,6 +65,7 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
   const [items, setItems] = useState([emptyItem()]);
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notesIdx, setNotesIdx] = useState(null);
 
   useEffect(() => {
     if (!open) return;
@@ -289,7 +290,6 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                     <th className="px-4 py-2 whitespace-nowrap">Amount</th>
                     <th className="px-4 py-2 whitespace-nowrap">Date From</th>
                     <th className="px-4 py-2 whitespace-nowrap">Date To</th>
-                    <th className="px-4 py-2 whitespace-nowrap">Notes</th>
                     <th className="px-4 py-2 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
@@ -301,7 +301,8 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                     const allocMeta = ENTITY_TYPES.find((e) => e.value === allocType);
 
                     return (
-                          <tr key={`item-${idx}`} className="text-gray-700 text-sm">
+                        <Fragment key={`item-${idx}`}>
+                          <tr className="text-gray-700 text-sm">
                             {/* Type */}
                             <td className="sticky left-0 z-10 bg-white px-4 py-2 whitespace-nowrap">
                               <select
@@ -426,23 +427,16 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                               />
                             </td>
 
-                            {/* Notes */}
-                            <td className="px-4 py-2">
-                              <div className="flex flex-col gap-0.5">
-                                <input
-                                  value={row?.notes || ""}
-                                  onChange={(e) => updateItem(idx, { notes: e.target.value.slice(0, 20) })}
-                                  maxLength={20}
-                                  className="h-11 w-44 rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                                  placeholder="Optional"
-                                />
-                                <div className="text-[10px] text-gray-400 text-right w-44">{(row?.notes || "").length}/20</div>
-                              </div>
-                            </td>
-
                             {/* Actions */}
                             <td className="px-4 py-2 whitespace-nowrap">
-                              <div className="flex items-center justify-end">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setNotesIdx(notesIdx === idx ? null : idx)}
+                                  className={`rounded-md border px-3 py-1 font-semibold text-xs ${notesIdx === idx ? "border-blue-200 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
+                                >
+                                  {notesIdx === idx ? "Hide Notes" : "Notes"}
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => removeItem(idx)}
@@ -453,6 +447,23 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                               </div>
                             </td>
                           </tr>
+                          {notesIdx === idx ? (
+                            <tr key={`item-notes-${idx}`}>
+                              <td colSpan={7} className="px-4 py-3 bg-gray-50">
+                                <label className="block font-semibold text-gray-500 text-xs mb-1">Notes</label>
+                                <textarea
+                                  value={row?.notes || ""}
+                                  onChange={(e) => updateItem(idx, { notes: e.target.value.slice(0, 500) })}
+                                  maxLength={500}
+                                  rows={2}
+                                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm resize-none"
+                                  placeholder="Optional"
+                                />
+                                <div className="mt-1 text-[10px] text-gray-400 text-right">{(row?.notes || "").length}/500</div>
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
                     );
                   })}
                 </tbody>

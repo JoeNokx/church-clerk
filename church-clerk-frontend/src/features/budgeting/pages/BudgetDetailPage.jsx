@@ -314,10 +314,10 @@ function AddItemModal({ onAdd, onClose, expenseCategoryOptions, reloadExpenseCat
             <label className="block text-xs font-semibold text-gray-500 mb-1.5">
               Notes <span className="font-normal text-gray-400">(optional)</span>
             </label>
-            <input value={notes} onChange={(e) => setNotes(e.target.value.slice(0, 20))}
-              maxLength={20} placeholder="Short note"
+            <input value={notes} onChange={(e) => setNotes(e.target.value.slice(0, 500))}
+              maxLength={500} placeholder="Short note"
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700" />
-            <div className="mt-0.5 text-right text-[10px] text-gray-400">{notes.length}/20</div>
+            <div className="mt-0.5 text-right text-[10px] text-gray-400">{notes.length}/500</div>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-1">

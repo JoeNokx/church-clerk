@@ -10,6 +10,7 @@ import {
   adminDevRunCycleForChurch,
   adminDevRunBillingCycle
 } from "../Services/adminBilling.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -289,10 +290,16 @@ function BillingSubscriptionsPage() {
                 return (
                   <tr key={s?._id} className="border-b last:border-b-0">
                     <td className="py-3 text-gray-900">
-                      <div>{s?.church?.name || "—"}</div>
+                      <div title={s?.church?.name || ""}>
+                        <span className="sm:hidden">{truncateMobileName(s?.church?.name)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(s?.church?.name)}</span>
+                      </div>
                       <div className="text-xs text-gray-400">{s?.church?.email || ""}</div>
                     </td>
-                    <td className="py-3 text-gray-700">{s?.plan?.name || "—"}</td>
+                    <td className="py-3 text-gray-700" title={s?.plan?.name || ""}>
+                      <span className="sm:hidden">{truncateMobileName(s?.plan?.name)}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(s?.plan?.name)}</span>
+                    </td>
                     <td className="py-3">
                       <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
                         s?.status === "active" ? "bg-green-100 text-green-700" :

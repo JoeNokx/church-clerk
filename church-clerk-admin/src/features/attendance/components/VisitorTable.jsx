@@ -2,6 +2,8 @@ import { useContext, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../Permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -151,7 +153,7 @@ function VisitorTable({ onEdit, onDeleted }) {
   };
 
   if (store?.visitorLoading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return <div className="p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>;
   }
 
   if (store?.visitorError) {
@@ -186,10 +188,19 @@ function VisitorTable({ onEdit, onDeleted }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                <td className="px-6 py-1.5 text-gray-900">{row?.fullName || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-900" title={row?.fullName || ""}>
+                  <span className="sm:hidden">{truncateMobileName(row?.fullName)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.fullName)}</span>
+                </td>
                 <td className="px-6 py-1.5 text-gray-700">{row?.phoneNumber || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-700">{row?.location || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-700">{row?.invitedBy || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-700" title={row?.location || ""}>
+                  <span className="sm:hidden">{truncateMobileName(row?.location)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.location)}</span>
+                </td>
+                <td className="px-6 py-1.5 text-gray-700" title={row?.invitedBy || ""}>
+                  <span className="sm:hidden">{truncateMobileName(row?.invitedBy)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.invitedBy)}</span>
+                </td>
                 <td className="px-6 py-1.5 text-gray-700">
                   <StatusChip value={row?.status} />
                 </td>
@@ -371,7 +382,7 @@ function VisitorTable({ onEdit, onDeleted }) {
 
             <div className="px-6 py-5">
               {detailsLoading ? (
-                <div className="text-sm text-gray-600">Loading...</div>
+                <div className="flex items-center justify-center"><Spinner className="text-gray-400" /></div>
               ) : detailsError ? (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{detailsError}</div>
               ) : (

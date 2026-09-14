@@ -7,6 +7,7 @@ import {
   unsuspendSystemChurch,
   deleteSystemChurch
 } from "../Services/systemAdmin.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function ConfirmModal({ open, title, message, confirmLabel, confirmClass, onConfirm, onCancel, loading, children }) {
   if (!open) return null;
@@ -218,7 +219,10 @@ function ChurchesPage() {
                   return (
                     <tr key={c._id} className={`border-b last:border-b-0 ${isSuspended ? "bg-red-50/30" : ""}`}>
                       <td className="py-3 pr-4">
-                        <div className="font-medium text-gray-900">{c.name || "—"}</div>
+                        <div className="font-medium text-gray-900" title={c.name || ""}>
+                          <span className="sm:hidden">{truncateMobileName(c.name)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(c.name)}</span>
+                        </div>
                         {c.city && <div className="text-xs text-gray-400">{c.city}</div>}
                       </td>
                       <td className="py-3 pr-4">
@@ -229,9 +233,18 @@ function ChurchesPage() {
                         }`}>{c.type || "—"}</span>
                       </td>
                       <td className="py-3 pr-4"><StatusPill isActive={c.isActive} /></td>
-                      <td className="py-3 pr-4 text-gray-700">{c.pastor || "—"}</td>
-                      <td className="py-3 pr-4 text-gray-500 text-xs">{c.email || "—"}</td>
-                      <td className="py-3 pr-4 text-gray-500 text-xs">{c.country || "—"}</td>
+                      <td className="py-3 pr-4 text-gray-700" title={c.pastor || ""}>
+                        <span className="sm:hidden">{truncateMobileName(c.pastor)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(c.pastor)}</span>
+                      </td>
+                      <td className="py-3 pr-4 text-gray-500 text-xs" title={c.email || ""}>
+                        <span className="sm:hidden">{truncateMobileName(c.email)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(c.email)}</span>
+                      </td>
+                      <td className="py-3 pr-4 text-gray-500 text-xs" title={c.country || ""}>
+                        <span className="sm:hidden">{truncateMobileName(c.country)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(c.country)}</span>
+                      </td>
                       <td className="py-3 text-right">
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button type="button" onClick={() => navigate(`/admin/churches/${c._id}`)}

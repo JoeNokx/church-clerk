@@ -8,6 +8,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -170,11 +171,11 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.category || "-"}</td>
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.category || "-"}><span className="sm:hidden">{truncateMobileName(row?.category || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.category || "-")}</span></td>
                 <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatMoney(row?.amount || 0, currency)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.paymentMethod || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "-"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "-"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "-")}</span></td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   {row?.referenceId ? (
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>

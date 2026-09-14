@@ -12,6 +12,7 @@ import {
   updatePledgePayment
 } from "../payments/services/pledgePayments.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -270,6 +271,8 @@ function PledgeDetailsPageInner() {
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmDeletePayment, setConfirmDeletePayment] = useState(null);
+
+  const [viewRow, setViewRow] = useState(null);
 
   const goBack = () => {
     toPage("pledges");
@@ -530,7 +533,7 @@ function PledgeDetailsPageInner() {
           </div>
         </div>
 
-        {paymentsLoading ? <div className="mt-4 text-sm text-gray-600">Loading payments...</div> : null}
+        {paymentsLoading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
         {!paymentsLoading && paymentsError ? (
           <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{paymentsError}</div>
         ) : null}
@@ -546,7 +549,6 @@ function PledgeDetailsPageInner() {
                     <th className="px-6 py-2">Date</th>
                     <th className="px-6 py-2">Amount</th>
                     <th className="px-6 py-2">Method</th>
-                    <th className="px-6 py-2">Note</th>
                     <th className="px-6 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -556,9 +558,10 @@ function PledgeDetailsPageInner() {
                       <td className="px-6 py-1.5 text-gray-900">{formatDate(p?.paymentDate)}</td>
                       <td className="px-6 py-1.5 text-green-700 font-semibold">{formatCurrency(p?.amount || 0, currency)}</td>
                       <td className="px-6 py-1.5 text-gray-600">{p?.paymentMethod || "—"}</td>
-                      <td className="px-6 py-1.5 text-gray-600">{p?.note || "—"}</td>
                       <td className="px-6 py-1.5">
                         <div className="flex items-center justify-end gap-2">
+                          <button type="button" onClick={() => setViewRow(p)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs">View</button>
+
                           {canEditPayment ? (
                             <button
                               type="button"
@@ -650,6 +653,37 @@ function PledgeDetailsPageInner() {
         onCancel={closeDelete}
         onConfirm={confirmDelete}
       />
+
+      {viewRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Date</div>
+                <div className="mt-1 text-gray-900">{formatDate(viewRow?.paymentDate)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Amount</div>
+                <div className="mt-1 text-gray-900">{formatCurrency(viewRow?.amount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Method</div>
+                <div className="mt-1 text-gray-900">{viewRow?.paymentMethod || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Note</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap">{viewRow?.note || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

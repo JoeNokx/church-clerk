@@ -7,6 +7,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -23,6 +24,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
+  const [viewRow, setViewRow] = useState(null);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("tithe", "delete") : false), [can]);
@@ -147,7 +149,6 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Total Amount</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Notes</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
@@ -159,8 +160,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
                   <div className="font-semibold text-gray-900">{formatMoney(row?.amount || 0, currency)}</div>
                 </td>
                 <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
-                <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || row?.createdBy?.email || "-"}</td>
-                <td className="max-md:px-4 py-3 text-gray-900 px-4 md:px-6">{row?.description || "-"}</td>
+                <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || row?.createdBy?.email || "-"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || row?.createdBy?.email || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || row?.createdBy?.email || "-")}</span></td>
                 <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">
                   {row?.referenceId ? (
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -168,6 +168,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
                 </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
+                    { label: "View", onClick: () => setViewRow(row) },
                     canEdit && {
                       label: "Edit",
                       onClick: () => { if (!row?._id) return; onEdit?.(row); },
@@ -248,6 +249,41 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
           </div>
         </div>
       )}
+
+      {viewRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Total Amount</div>
+                <div className="mt-0.5 text-gray-800 font-semibold">{formatMoney(viewRow?.amount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.date)}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Notes</div>
+                <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.description || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.createdBy?.fullName || viewRow?.createdBy?.email || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.referenceId || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

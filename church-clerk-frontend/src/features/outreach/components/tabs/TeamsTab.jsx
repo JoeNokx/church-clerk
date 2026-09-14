@@ -8,6 +8,7 @@ import Card from "../../../../shared/components/Card/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
 
 const PAGE_SIZE = 9;
 
@@ -413,11 +414,14 @@ function TeamDetailModal({ team, open, onClose }) {
                         const memberId = mem?._id || (typeof m.member === "string" ? m.member : null);
                         return (
                           <tr key={i} className="max-md:text-xs text-gray-700 text-sm">
-                            <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 sticky left-0 z-10 bg-white">
+                            <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 sticky left-0 z-10 bg-white" title={name}>
                               <div className="flex items-center gap-2.5">
                                 <Avatar name={name} size="sm" />
                                 <div>
-                                  <div className="text-sm font-semibold text-gray-900">{name}</div>
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    <span className="sm:hidden">{truncateMobileName(name)}</span>
+                                    <span className="hidden sm:inline">{truncateDesktopName(name)}</span>
+                                  </div>
                                   {mem?.community || mem?.address ? (
                                     <div className="text-[11px] text-gray-400">{mem.community || mem.address}</div>
                                   ) : null}
@@ -468,14 +472,17 @@ function TeamDetailModal({ team, open, onClose }) {
                     <tbody className="divide-y divide-gray-200">
                       {events.map((ev) => (
                         <tr key={ev._id} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 sticky left-0 z-10 bg-white">
-                            <div className="text-sm font-semibold text-gray-900">{ev.title}</div>
+                          <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 sticky left-0 z-10 bg-white" title={ev.title}>
+                            <div className="text-sm font-semibold text-gray-900">
+                              <span className="sm:hidden">{truncateMobileName(ev.title)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(ev.title)}</span>
+                            </div>
                             {ev.type ? <div className="text-[11px] text-gray-400 capitalize mt-0.5">{ev.type.replace(/-/g, " ")}</div> : null}
                           </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             {fmtDate(ev.date)}{ev.endDate ? ` – ${fmtDate(ev.endDate)}` : ""}
                           </td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{ev.location || "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={ev.location || "Not Specified"}><span className="sm:hidden">{truncateMobileName(ev.location || "Not Specified")}</span><span className="hidden sm:inline">{truncateDesktopName(ev.location || "Not Specified")}</span></td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${EVENT_STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
                               {ev.status}

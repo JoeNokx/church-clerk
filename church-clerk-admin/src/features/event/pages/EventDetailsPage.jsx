@@ -13,6 +13,8 @@ import {
   uploadEventAttendanceFile
 } from "../attendanceFiles/services/eventAttendanceFiles.api.js";
 import FileUploadButton from "../../../shared/components/FileUploadButton.jsx";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import EventCreatePage from "./EventCreatePage.jsx";
 import EventOfferingPage from "../offerings/pages/EventOfferingPage.jsx";
 
@@ -382,7 +384,7 @@ function EventDetailsPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
         {loading ? (
-          <div className="text-sm text-gray-600">Loading...</div>
+          <div className="flex items-center justify-center"><Spinner className="text-gray-400" /></div>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : !event ? (
@@ -531,10 +533,19 @@ function EventDetailsPage() {
                       ) : (
                         attendees.map((r, idx) => (
                           <tr key={r?._id || `att-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2 text-gray-900">{r?.fullName || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600">{r?.email || "—"}</td>
+                            <td className="px-6 py-2 text-gray-900" title={r?.fullName || ""}>
+                              <span className="sm:hidden">{truncateMobileName(r?.fullName)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.fullName)}</span>
+                            </td>
+                            <td className="px-6 py-2 text-gray-600" title={r?.email || ""}>
+                              <span className="sm:hidden">{truncateMobileName(r?.email)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.email)}</span>
+                            </td>
                             <td className="px-6 py-2 text-gray-600">{r?.phoneNumber || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600">{r?.location || "—"}</td>
+                            <td className="px-6 py-2 text-gray-600" title={r?.location || ""}>
+                              <span className="sm:hidden">{truncateMobileName(r?.location)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.location)}</span>
+                            </td>
                           </tr>
                         ))
                       )}
@@ -592,7 +603,10 @@ function EventDetailsPage() {
                           <tr key={r?._id || `tot-${idx}`} className="text-sm text-gray-700">
                             <td className="px-6 py-2 text-gray-900">{formatDate(r?.date)}</td>
                             <td className="px-6 py-2 text-gray-600">{Number(r?.numberOfAttendees || 0) || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600">{r?.mainSpeaker || "—"}</td>
+                            <td className="px-6 py-2 text-gray-600" title={r?.mainSpeaker || ""}>
+                              <span className="sm:hidden">{truncateMobileName(r?.mainSpeaker)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.mainSpeaker)}</span>
+                            </td>
                           </tr>
                         ))
                       )}
@@ -645,7 +659,10 @@ function EventDetailsPage() {
                       ) : (
                         files.map((f, idx) => (
                           <tr key={f?._id || `f-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2 text-gray-900">{f?.originalName || "—"}</td>
+                            <td className="px-6 py-2 text-gray-900" title={f?.originalName || ""}>
+                              <span className="sm:hidden">{truncateMobileName(f?.originalName)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(f?.originalName)}</span>
+                            </td>
                             <td className="px-6 py-2 text-gray-600">{guessFileType(f?.mimeType, f?.originalName)}</td>
                             <td className="px-6 py-2 text-gray-600">{formatBytes(f?.size)}</td>
                             <td className="px-6 py-2 text-gray-600">{formatDate(f?.createdAt)}</td>

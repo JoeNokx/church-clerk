@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 
 import PermissionContext from "../../Permissions/permission.store.js";
 import { getMyReferralCode, getMyReferralHistory } from "../services/referral.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function ReferralProgramPage() {
   const { can } = useContext(PermissionContext) || {};
@@ -94,7 +95,7 @@ function ReferralProgramPage() {
     return (
       <div className="max-w-6xl">
         <div className="text-2xl font-semibold text-gray-900">Referral Program</div>
-        <div className="mt-2 text-sm text-gray-600">Loading…</div>
+        <div className="mt-2 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
       </div>
     );
   }

@@ -8,6 +8,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -22,15 +23,6 @@ function memberName(member) {
   const last = member?.lastName || "";
   const full = `${first} ${last}`.trim();
   return full || "-";
-}
-
-function truncateMobileName(name) {
-  if (!name || name === "-") return name || "-";
-  const words = name.trim().split(/\s+/);
-  if (words.length > 3 && name.length > 20) {
-    return words.slice(0, 2).join(" ") + "\u2026";
-  }
-  return name;
 }
 
 function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
@@ -187,10 +179,10 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
                 }}
                 className="max-md:text-xs text-gray-700 text-sm cursor-pointer hover:bg-blue-50/40 transition-colors"
               >
-                <td className="sticky left-0 z-10 bg-inherit max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">
+                <td className="sticky left-0 z-10 bg-inherit max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6" title={memberName(row?.member)}>
                   <div className="font-semibold text-gray-900">
                     <span className="sm:hidden">{truncateMobileName(memberName(row?.member))}</span>
-                    <span className="hidden sm:inline">{memberName(row?.member)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(memberName(row?.member))}</span>
                   </div>
                 </td>
                 <td className="max-md:px-4 py-3 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(row?.amount || 0, currency)}</td>

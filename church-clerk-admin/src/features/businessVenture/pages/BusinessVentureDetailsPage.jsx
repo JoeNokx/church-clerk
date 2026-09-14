@@ -5,6 +5,8 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import ChurchContext from "../../Church/church.store.js";
 import PermissionContext from "../../Permissions/permission.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import { getBusinessIncomeExpensesKPI, getBusinessVenture } from "../services/businessVentures.api.js";
 import {
   createBusinessIncome,
@@ -584,6 +586,9 @@ function BusinessVentureDetailsPage() {
   const [deleteExpenseOpen, setDeleteExpenseOpen] = useState(false);
   const [deleteExpenseRow, setDeleteExpenseRow] = useState(null);
 
+  const [viewIncomeRow, setViewIncomeRow] = useState(null);
+  const [viewExpenseRow, setViewExpenseRow] = useState(null);
+
   const loadHeader = async () => {
     if (!businessId) return;
     const [bizRes, kpiRes] = await Promise.allSettled([getBusinessVenture(businessId), getBusinessIncomeExpensesKPI(businessId)]);
@@ -754,7 +759,7 @@ function BusinessVentureDetailsPage() {
       </div>
 
       {loading ? (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
       ) : (
         <div className="mt-8">
           <div className="flex items-center justify-between gap-4">
@@ -850,7 +855,6 @@ function BusinessVentureDetailsPage() {
                     <thead className="bg-slate-100">
                       <tr className="text-left text-xs font-semibold text-gray-500">
                         <th className="px-6 py-2">Received From</th>
-                        <th className="px-6 py-2">Note</th>
                         <th className="px-6 py-2">Date</th>
                         <th className="px-6 py-2">Amount</th>
                         <th className="px-6 py-2 text-right">Actions</th>
@@ -859,12 +863,16 @@ function BusinessVentureDetailsPage() {
                     <tbody className="divide-y divide-gray-200">
                       {incomeRows.map((row, idx) => (
                         <tr key={row?._id ?? `i-${idx}`} className="text-sm text-gray-700">
-                          <td className="px-6 py-1.5 text-gray-900">{row?.recievedFrom || "—"}</td>
-                          <td className="px-6 py-1.5 text-gray-600">{row?.note || "—"}</td>
+                          <td className="px-6 py-1.5 text-gray-900" title={row?.recievedFrom || ""}>
+                            <span className="sm:hidden">{truncateMobileName(row?.recievedFrom)}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(row?.recievedFrom)}</span>
+                          </td>
                           <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
                           <td className="px-6 py-1.5 text-green-700">{formatCurrency(row?.amount, currency)}</td>
                           <td className="px-6 py-1.5">
                             <div className="flex items-center justify-end gap-2">
+                              <button type="button" onClick={() => setViewIncomeRow(row)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs">View</button>
+
                               {canUpdate ? (
                                 <button
                                   type="button"
@@ -931,7 +939,6 @@ function BusinessVentureDetailsPage() {
                       <tr className="text-left text-xs font-semibold text-gray-500">
                         <th className="px-6 py-2">Spent By</th>
                         <th className="px-6 py-2">Category</th>
-                        <th className="px-6 py-2">Description</th>
                         <th className="px-6 py-2">Date</th>
                         <th className="px-6 py-2">Amount</th>
                         <th className="px-6 py-2 text-right">Actions</th>
@@ -940,13 +947,20 @@ function BusinessVentureDetailsPage() {
                     <tbody className="divide-y divide-gray-200">
                       {expenseRows.map((row, idx) => (
                         <tr key={row?._id ?? `e-${idx}`} className="text-sm text-gray-700">
-                          <td className="px-6 py-1.5 text-gray-900">{row?.spentBy || "—"}</td>
-                          <td className="px-6 py-1.5 text-gray-600">{row?.category || "—"}</td>
-                          <td className="px-6 py-1.5 text-gray-600">{row?.description || "—"}</td>
+                          <td className="px-6 py-1.5 text-gray-900" title={row?.spentBy || ""}>
+                            <span className="sm:hidden">{truncateMobileName(row?.spentBy)}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(row?.spentBy)}</span>
+                          </td>
+                          <td className="px-6 py-1.5 text-gray-600" title={row?.category || ""}>
+                            <span className="sm:hidden">{truncateMobileName(row?.category)}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(row?.category)}</span>
+                          </td>
                           <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
                           <td className="px-6 py-1.5 text-orange-600">{formatCurrency(row?.amount, currency)}</td>
                           <td className="px-6 py-1.5">
                             <div className="flex items-center justify-end gap-2">
+                              <button type="button" onClick={() => setViewExpenseRow(row)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs">View</button>
+
                               {canUpdate ? (
                                 <button
                                   type="button"
@@ -1113,6 +1127,72 @@ function BusinessVentureDetailsPage() {
           await Promise.all([loadHeader(), loadExpenses(expensePage)]);
         }}
       />
+
+      {viewIncomeRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewIncomeRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewIncomeRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Received From</div>
+                <div className="mt-1 text-gray-900">{viewIncomeRow?.recievedFrom || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Date</div>
+                <div className="mt-1 text-gray-900">{formatDate(viewIncomeRow?.date)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Amount</div>
+                <div className="mt-1 text-gray-900">{formatCurrency(viewIncomeRow?.amount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Note</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap">{viewIncomeRow?.note || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {viewExpenseRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewExpenseRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewExpenseRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Spent By</div>
+                <div className="mt-1 text-gray-900">{viewExpenseRow?.spentBy || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Category</div>
+                <div className="mt-1 text-gray-900">{viewExpenseRow?.category || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Date</div>
+                <div className="mt-1 text-gray-900">{formatDate(viewExpenseRow?.date)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Amount</div>
+                <div className="mt-1 text-gray-900">{formatCurrency(viewExpenseRow?.amount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Description</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap">{viewExpenseRow?.description || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

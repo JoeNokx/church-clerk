@@ -20,6 +20,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 // ─── Constants & Helpers ─────────────────────────────────────────
 const DECISION_LABELS = {
@@ -78,8 +79,11 @@ function Avatar({ name, photo, size = "sm" }) {
 function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWrite, canDelete }) {
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
-      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
-        <div className="font-semibold text-gray-900 text-sm">{prospect.firstName} {prospect.lastName || ""}</div>
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={`${prospect.firstName} ${prospect.lastName || ""}`.trim()}>
+        <div className="font-semibold text-gray-900 text-sm">
+          <span className="sm:hidden">{truncateMobileName(`${prospect.firstName} ${prospect.lastName || ""}`.trim())}</span>
+          <span className="hidden sm:inline">{truncateDesktopName(`${prospect.firstName} ${prospect.lastName || ""}`.trim())}</span>
+        </div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <Badge label={DECISION_LABELS[prospect.decision] || prospect.decision} className={DECISION_STYLES[prospect.decision] || "bg-gray-100 text-gray-500"} />
@@ -127,9 +131,10 @@ function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }
   const dateVal = followUp.scheduledDate || followUp.followUpDate;
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
-      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={`${followUp.prospect?.firstName} ${followUp.prospect?.lastName || ""}`.trim()}>
         <div className="font-semibold text-gray-900 text-sm">
-          {followUp.prospect?.firstName} {followUp.prospect?.lastName || ""}
+          <span className="sm:hidden">{truncateMobileName(`${followUp.prospect?.firstName} ${followUp.prospect?.lastName || ""}`.trim())}</span>
+          <span className="hidden sm:inline">{truncateDesktopName(`${followUp.prospect?.firstName} ${followUp.prospect?.lastName || ""}`.trim())}</span>
         </div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 text-xs text-gray-600">{fmtDate(dateVal)}</td>

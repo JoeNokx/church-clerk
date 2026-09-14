@@ -7,6 +7,7 @@ import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboa
 import { getUpcomingEvents } from "../../event/services/event.api.js";
 import { getMyReferralCode, getMyReferralHistory } from "../../referral/services/referral.api.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function formatPercent(value) {
   const v = Number(value || 0);
@@ -359,7 +360,7 @@ function ChurchDashboardPage() {
     return (
       <div className="max-w-6xl">
         <div className="text-2xl font-semibold text-gray-900">Dashboard Overview</div>
-        <div className="mt-2 text-sm text-gray-600">Loading…</div>
+        <div className="mt-2 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
       </div>
     );
   }
@@ -579,7 +580,7 @@ function ChurchDashboardPage() {
 
           <div className="px-5 pb-5">
             {upcomingEventsLoading && !upcomingEvents.length ? (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
             ) : upcomingEventsError ? (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{upcomingEventsError}</div>
             ) : upcomingEvents.length ? (
@@ -690,7 +691,7 @@ function ChurchDashboardPage() {
               </div>
 
               {birthdaysModalLoading ? (
-                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
               ) : birthdaysModalError ? (
                 <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{birthdaysModalError}</div>
               ) : (

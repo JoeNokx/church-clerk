@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../Permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
 
-const MAX_DESCRIPTION_LENGTH = 60;
+const MAX_DESCRIPTION_LENGTH = 2000;
 
 function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};

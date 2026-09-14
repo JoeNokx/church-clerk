@@ -353,7 +353,7 @@ function MembersPageInner() {
 
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
           {kpiLoading ? (
-            <div className="text-gray-600 col-span-2 lg:col-span-4 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading KPI...</div>
+            <div className="col-span-2 lg:col-span-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
           ) : (
             <>
               <KpiCard

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { getSystemAuditLogs } from "../Services/systemAdmin.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const fmtDateTime = (v) => {
   if (!v) return "—";
@@ -197,7 +198,10 @@ function AuditLogPage() {
                   return (
                     <tr key={r?._id} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
                       <td className="py-3 pr-4 text-xs text-gray-600 whitespace-nowrap">{fmtDateTime(r?.createdAt)}</td>
-                      <td className="py-3 pr-4 text-xs font-medium text-gray-900">{r?.user?.fullName || r?.userName || "—"}</td>
+                      <td className="py-3 pr-4 text-xs font-medium text-gray-900" title={r?.user?.fullName || r?.userName || ""}>
+                        <span className="sm:hidden">{truncateMobileName(r?.user?.fullName || r?.userName)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(r?.user?.fullName || r?.userName)}</span>
+                      </td>
                       <td className="py-3 pr-4">
                         <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">{role}</span>
                       </td>

@@ -211,13 +211,13 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
               <label className="block font-semibold text-gray-500 text-xs">Description</label>
               <input
                 value={description}
-                onChange={(e) => setDescription(e.target.value.slice(0, 20))}
-                maxLength={20}
+                onChange={(e) => setDescription(e.target.value.slice(0, 500))}
+                maxLength={500}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder="Optional (max 20 chars)"
+                placeholder="Optional (max 500 chars)"
               />
               <div className="mt-1 text-right text-gray-400 text-xs">
-                {description.length}/20 chars
+                {description.length}/500 chars
               </div>
             </div>
           </div>

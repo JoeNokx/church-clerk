@@ -3,6 +3,8 @@ import PermissionContext from "../../../Permissions/permission.store.js";
 import EventOfferingContext from "../eventOfferings.store.js";
 import ChurchContext from "../../../Church/church.store.js";
 import { formatMoney } from "../../../../shared/utils/formatMoney.js";
+import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
+import Spinner from "../../../../shared/components/Spinner.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -19,6 +21,7 @@ function EventOfferingTable({ onEdit }) {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
+  const [viewRow, setViewRow] = useState(null);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("events", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("events", "delete") : false), [can]);
@@ -53,7 +56,7 @@ function EventOfferingTable({ onEdit }) {
   };
 
   if (store?.loading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return <div className="p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>;
   }
 
   if (store?.error) {
@@ -79,19 +82,22 @@ function EventOfferingTable({ onEdit }) {
               <th className="px-6 py-2">Offering Type</th>
               <th className="px-6 py-2">Amount</th>
               <th className="px-6 py-2">Date</th>
-              <th className="px-6 py-2">Note</th>
               <th className="px-6 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {rows.map((offering, index) => (
               <tr key={offering?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                <td className="px-6 py-1.5 text-gray-900">{offering?.offeringType || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-900" title={offering?.offeringType || ""}>
+                  <span className="sm:hidden">{truncateMobileName(offering?.offeringType)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(offering?.offeringType)}</span>
+                </td>
                 <td className="px-6 py-1.5 text-blue-700">{formatMoney(offering?.amount || 0, currency)}</td>
                 <td className="px-6 py-1.5">{formatDate(offering?.offeringDate)}</td>
-                <td className="px-6 py-1.5 text-gray-700">{offering?.note || "-"}</td>
                 <td className="px-6 py-1.5">
                   <div className="flex items-center justify-end gap-2">
+                    <button type="button" onClick={() => setViewRow(offering)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs">View</button>
+
                     {canEdit && (
                       <button
                         type="button"
@@ -171,6 +177,37 @@ function EventOfferingTable({ onEdit }) {
           </div>
         </div>
       )}
+
+      {viewRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Offering Type</div>
+                <div className="mt-1 text-gray-900">{viewRow?.offeringType || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Amount</div>
+                <div className="mt-1 text-gray-900">{formatMoney(viewRow?.amount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Date</div>
+                <div className="mt-1 text-gray-900">{formatDate(viewRow?.offeringDate)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Note</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap">{viewRow?.note || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

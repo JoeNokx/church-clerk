@@ -32,6 +32,7 @@ import {
   getBusinessExpenses,
   updateBusinessExpense
 } from "../expenses/services/businessExpenses.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -1077,10 +1078,10 @@ function BusinessVentureDetailsPage() {
                     <tbody className="divide-y divide-gray-200">
                       {incomeRows.map((row, idx) => (
                         <tr key={row?._id ?? `i-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.recievedFrom || "—"}</td>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.recievedFrom || "—"}><span className="sm:hidden">{truncateMobileName(row?.recievedFrom || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.recievedFrom || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount, currency)}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
                               <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -1141,11 +1142,11 @@ function BusinessVentureDetailsPage() {
                     <tbody className="divide-y divide-gray-200">
                       {expenseRows.map((row, idx) => (
                         <tr key={row?._id ?? `e-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.spentBy || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.category || "—"}</td>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.spentBy || "—"}><span className="sm:hidden">{truncateMobileName(row?.spentBy || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.spentBy || "—")}</span></td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.category || "—"}><span className="sm:hidden">{truncateMobileName(row?.category || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.category || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount, currency)}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
                               <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>

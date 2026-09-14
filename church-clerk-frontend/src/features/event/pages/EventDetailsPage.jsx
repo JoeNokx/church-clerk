@@ -30,6 +30,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -770,13 +771,6 @@ function EventDetailsPage() {
     });
   }, [files, filesSearch, filesDateFrom, filesDateTo]);
 
-  const truncateAttendanceName = (name) => {
-    if (!name) return "\u2014";
-    const words = name.trim().split(/\s+/);
-    if (name.length > 20 && words.length > 3) return `${words[0]} ${words[1]}\u2026`;
-    return name;
-  };
-
   const badge = formatShortMonthDay(event?.dateFrom);
   const organizerText =
     typeof event?.organizers === "string"
@@ -1091,13 +1085,19 @@ function EventDetailsPage() {
                           <tr key={r?._id || `att-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                             <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <button type="button" className="text-blue-700 hover:underline" title={r?.fullName || "—"}>
-                                <span className="md:hidden">{truncateAttendanceName(r?.fullName)}</span>
-                                <span className="hidden md:inline">{r?.fullName || "—"}</span>
+                                <span className="md:hidden">{truncateMobileName(r?.fullName)}</span>
+                                <span className="hidden md:inline">{truncateDesktopName(r?.fullName)}</span>
                               </button>
                             </td>
-                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.email || "—"}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.email || "—"}>
+                              <span className="sm:hidden">{truncateMobileName(r?.email || "—")}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.email || "—")}</span>
+                            </td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.phoneNumber || "—"}</td>
-                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.location || "—"}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.location || "—"}>
+                              <span className="sm:hidden">{truncateMobileName(r?.location || "—")}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.location || "—")}</span>
+                            </td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <TableKebabMenu items={[
                                 canEdit && { label: "Edit", onClick: () => openEditAttendee(r) },
@@ -1224,7 +1224,10 @@ function EventDetailsPage() {
                               </button>
                             </td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0) || "—"}</td>
-                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "—"}</td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.mainSpeaker || "—"}>
+                              <span className="sm:hidden">{truncateMobileName(r?.mainSpeaker || "—")}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.mainSpeaker || "—")}</span>
+                            </td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <TableKebabMenu items={[
                                 canEdit && { label: "Edit", onClick: () => openEditTotal(r) },
@@ -1355,7 +1358,10 @@ function EventDetailsPage() {
                       <tbody className="divide-y divide-gray-200">
                         {filteredFiles.map((f, idx) => (
                           <tr key={f?._id || `f-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{f?.originalName || "—"}</td>
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6" title={f?.originalName || "—"}>
+                              <span className="sm:hidden">{truncateMobileName(f?.originalName || "—")}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(f?.originalName || "—")}</span>
+                            </td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{guessFileType(f?.mimeType, f?.originalName)}</td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatBytes(f?.size)}</td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(f?.createdAt)}</td>

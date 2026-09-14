@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminGetPayments, adminVerifyPayment } from "../Services/adminBilling.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const fmtDateTime = (v) => {
   if (!v) return "—";
@@ -164,8 +165,14 @@ function BillingPaymentsPage() {
             ) : (
               filtered.map((p) => (
                 <tr key={p?._id} className="border-b last:border-b-0">
-                  <td className="py-3 text-gray-900">{p?.church?.name || "—"}</td>
-                  <td className="py-3 text-gray-700">{p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName || "—"}</td>
+                  <td className="py-3 text-gray-900" title={p?.church?.name || ""}>
+                    <span className="sm:hidden">{truncateMobileName(p?.church?.name)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(p?.church?.name)}</span>
+                  </td>
+                  <td className="py-3 text-gray-700" title={p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName || ""}>
+                    <span className="sm:hidden">{truncateMobileName(p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName)}</span>
+                  </td>
                   <td className="py-3 text-gray-700">
                     {Number(p?.amount || 0).toLocaleString()} {p?.currency || ""}
                   </td>

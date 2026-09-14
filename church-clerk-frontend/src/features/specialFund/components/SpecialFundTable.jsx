@@ -7,15 +7,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
-
-function truncateMobileName(name) {
-  if (!name) return "-";
-  const words = name.trim().split(/\s+/);
-  if (words.length > 3 && name.length > 20) {
-    return words.slice(0, 2).join(" ") + "\u2026";
-  }
-  return name;
-}
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -186,9 +178,9 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((fund, index) => (
               <tr key={fund?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={fund?.giverName || "-"}>
                   <span className="sm:hidden">{truncateMobileName(fund?.giverName)}</span>
-                  <span className="hidden sm:inline">{fund?.giverName || "-"}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(fund?.giverName)}</span>
                 </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(fund?.givingDate)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{fund?.category || "-"}</td>

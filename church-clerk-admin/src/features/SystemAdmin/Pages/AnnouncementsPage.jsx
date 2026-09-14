@@ -13,6 +13,8 @@ import {
   getSupportRequests,
   updateSupportRequestStatusApi
 } from "../Services/systemAdmin.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function TabButton({ active, onClick, children }) {
   return (
@@ -513,7 +515,7 @@ function AnnouncementsPage() {
             <div className="text-sm font-semibold text-gray-900">Credit Configuration</div>
             <div className="mt-1 text-xs text-gray-500">Configure credit-to-money conversion and per-channel costs.</div>
 
-            {loading ? <div className="mt-4 text-sm text-gray-600">Loading…</div> : null}
+            {loading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
             {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
             {success ? <div className="mt-4 text-sm text-green-600">{success}</div> : null}
 
@@ -775,7 +777,7 @@ function AnnouncementsPage() {
                         <div className="absolute z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
                           <div className="max-h-56 overflow-y-auto">
                             {churchesLoading ? (
-                              <div className="px-3 py-3 text-sm text-gray-600">Loading…</div>
+                              <div className="px-3 py-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
                             ) : churches.length ? (
                               churches.map((c) => {
                                 const id = String(c?._id || "");
@@ -829,7 +831,7 @@ function AnnouncementsPage() {
                         <div className="absolute z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
                           <div className="max-h-56 overflow-y-auto">
                             {rolesLoading ? (
-                              <div className="px-3 py-3 text-sm text-gray-600">Loading…</div>
+                              <div className="px-3 py-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
                             ) : churchRoles.length ? (
                               churchRoles.map((r) => {
                                 const role = String(r || "");
@@ -977,7 +979,10 @@ function AnnouncementsPage() {
                       ) : annRows.length ? (
                         annRows.map((r) => (
                           <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900">{r?.title || "—"}</td>
+                            <td className="py-3 text-gray-900" title={r?.title || ""}>
+                              <span className="sm:hidden">{truncateMobileName(r?.title)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.title)}</span>
+                            </td>
                             <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
                             <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
                             <td className="py-3 text-gray-700">{fmtDateTime(r?.scheduledAt)}</td>
@@ -1041,7 +1046,10 @@ function AnnouncementsPage() {
                       ) : annRows.length ? (
                         annRows.map((r) => (
                           <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900">{r?.title || "—"}</td>
+                            <td className="py-3 text-gray-900" title={r?.title || ""}>
+                              <span className="sm:hidden">{truncateMobileName(r?.title)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.title)}</span>
+                            </td>
                             <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
                             <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
                             <td className="py-3 text-gray-700">{fmtDateTime(r?.updatedAt)}</td>
@@ -1110,7 +1118,10 @@ function AnnouncementsPage() {
                       ) : annRows.length ? (
                         annRows.map((r) => (
                           <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900">{r?.title || "—"}</td>
+                            <td className="py-3 text-gray-900" title={r?.title || ""}>
+                              <span className="sm:hidden">{truncateMobileName(r?.title)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.title)}</span>
+                            </td>
                             <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
                             <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
                             <td className="py-3 text-gray-700">{fmtDateTime(r?.updatedAt)}</td>
@@ -1177,7 +1188,10 @@ function AnnouncementsPage() {
                       ) : annRows.length ? (
                         annRows.map((r) => (
                           <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900">{r?.title || "—"}</td>
+                            <td className="py-3 text-gray-900" title={r?.title || ""}>
+                              <span className="sm:hidden">{truncateMobileName(r?.title)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(r?.title)}</span>
+                            </td>
                             <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
                             <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
                             <td className="py-3 text-gray-700">{fmtDateTime(r?.sentAt)}</td>
@@ -1270,7 +1284,7 @@ function AnnouncementsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {srLoading ? (
-                    <tr><td colSpan={8} className="py-8 text-center text-gray-500">Loading…</td></tr>
+                    <tr><td colSpan={8} className="py-8 text-center"><Spinner className="mx-auto text-gray-400" /></td></tr>
                   ) : srRows.length ? (
                     srRows.map((r) => {
                       const statusColors = {
@@ -1286,8 +1300,14 @@ function AnnouncementsPage() {
                           </td>
                           <td className="py-3 px-4 text-gray-900 max-w-[200px] truncate">{r?.subject || "—"}</td>
                           <td className="py-3 px-4 text-gray-600 whitespace-nowrap">{r?.category || "—"}</td>
-                          <td className="py-3 px-4 text-gray-700 whitespace-nowrap">{r?.name || r?.submittedBy?.fullName || "—"}</td>
-                          <td className="py-3 px-4 text-gray-700 whitespace-nowrap">{r?.churchName || r?.church?.name || "—"}</td>
+                          <td className="py-3 px-4 text-gray-700 whitespace-nowrap" title={r?.name || r?.submittedBy?.fullName || ""}>
+                            <span className="sm:hidden">{truncateMobileName(r?.name || r?.submittedBy?.fullName)}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(r?.name || r?.submittedBy?.fullName)}</span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-700 whitespace-nowrap" title={r?.churchName || r?.church?.name || ""}>
+                            <span className="sm:hidden">{truncateMobileName(r?.churchName || r?.church?.name)}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(r?.churchName || r?.church?.name)}</span>
+                          </td>
                           <td className="py-3 px-4 text-gray-500 whitespace-nowrap text-xs">{r?.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
                           <td className="py-3 px-4">
                             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusColors[r?.status] || "bg-gray-100 text-gray-500 border-gray-200"}`}>

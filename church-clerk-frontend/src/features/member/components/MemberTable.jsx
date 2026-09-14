@@ -10,6 +10,7 @@ import { updateMember as apiUpdateMember } from "../services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "active" },
@@ -105,15 +106,6 @@ function InlineStatusPicker({ row, onUpdate, updating }) {
       )}
     </div>
   );
-}
-
-function truncateName(name) {
-  if (!name || name === "-") return name;
-  const parts = name.trim().split(/\s+/);
-  if (name.length > 20 && parts.length > 2) {
-    return `${parts[0]} ${parts[parts.length - 1]}`;
-  }
-  return name;
 }
 
 function formatDate(value) {
@@ -306,11 +298,13 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => {
               const name = row?.fullName || [row?.firstName, row?.lastName].filter(Boolean).join(" ") || "-";
-              const displayName = truncateName(name);
 
               return (
                 <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{displayName}</td>
+                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={name}>
+                    <span className="sm:hidden">{truncateMobileName(name)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(name)}</span>
+                  </td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || <span className="text-gray-400 italic">Not Specified</span>}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 capitalize">{row?.ageGroup || <span className="text-gray-400 italic">Not Specified</span>}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.city || <span className="text-gray-400 italic">Not Specified</span>}</td>

@@ -6,6 +6,7 @@ import { getMembers } from "../../../member/services/member.api.js";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
 
 // ── Helpers ───────────────────────────────────────────────────────
 function fmtDate(v) {
@@ -398,17 +399,24 @@ export default function ReportsTab() {
                         </td></tr>
                       ) : paginatedEvents.map((e) => (
                         <tr key={e._id} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 truncate max-w-[16rem]">{e.title}</td>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={e.title}>
+                            <span className="sm:hidden">{truncateMobileName(e.title)}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(e.title)}</span>
+                          </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{TYPE_LABELS[e.type] || e.type?.replace(/-/g, " ") || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(e.date)}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{e.location || "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={e.location || "Not Specified"}>
+                            <span className="sm:hidden">{truncateMobileName(e.location || "Not Specified")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(e.location || "Not Specified")}</span>
+                          </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${STATUS_STYLES[e.status] || "bg-gray-100 text-gray-600"}`}>{e.status}</span>
                           </td>
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums font-semibold">{e.prospectCount || 0}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums font-semibold text-green-700">{e.decisionCount || 0}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">
-                            {e.coordinator ? (Array.isArray(e.coordinator) ? e.coordinator.map((c) => `${c.firstName} ${c.lastName}`).join(", ") : `${e.coordinator.firstName} ${e.coordinator.lastName}`) : "Not Specified"}
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={e.coordinator ? (Array.isArray(e.coordinator) ? e.coordinator.map((c) => `${c.firstName} ${c.lastName}`).join(", ") : `${e.coordinator.firstName} ${e.coordinator.lastName}`) : "Not Specified"}>
+                            <span className="sm:hidden">{truncateMobileName(e.coordinator ? (Array.isArray(e.coordinator) ? e.coordinator.map((c) => `${c.firstName} ${c.lastName}`).join(", ") : `${e.coordinator.firstName} ${e.coordinator.lastName}`) : "Not Specified")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(e.coordinator ? (Array.isArray(e.coordinator) ? e.coordinator.map((c) => `${c.firstName} ${c.lastName}`).join(", ") : `${e.coordinator.firstName} ${e.coordinator.lastName}`) : "Not Specified")}</span>
                           </td>
                         </tr>
                       ))}
@@ -476,14 +484,20 @@ export default function ReportsTab() {
                             {p.convertedToMember ? <span className="ml-1 text-[10px] font-bold text-emerald-600">Member</span> : null}
                           </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p.phone || "Not Specified"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[10rem]">{p.community || p.address || "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={p.community || p.address || "Not Specified"}>
+                            <span className="sm:hidden">{truncateMobileName(p.community || p.address || "Not Specified")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(p.community || p.address || "Not Specified")}</span>
+                          </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                             <span className="inline-flex rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-[11px] font-semibold">
                               {STAGE_LABELS[p.stage] || p.stage || "Not Specified"}
                             </span>
                           </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{HOW_REACHED_LABELS[p.howReached] || p.howReached || "Not Specified"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{p.outreachEvent?.title || "Personal"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={p.outreachEvent?.title || "Personal"}>
+                            <span className="sm:hidden">{truncateMobileName(p.outreachEvent?.title || "Personal")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(p.outreachEvent?.title || "Personal")}</span>
+                          </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(p.createdAt)}</td>
                         </tr>
                       ))}
@@ -557,7 +571,10 @@ export default function ReportsTab() {
                           </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{TYPE_LABELS[f.type] || f.type || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{f.assignedTo ? `${f.assignedTo.firstName} ${f.assignedTo.lastName}` : "Not Specified"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{f.outreachEvent?.title || "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={f.outreachEvent?.title || "Not Specified"}>
+                            <span className="sm:hidden">{truncateMobileName(f.outreachEvent?.title || "Not Specified")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(f.outreachEvent?.title || "Not Specified")}</span>
+                          </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{f.nextFollowUpDate ? fmtDate(f.nextFollowUpDate) : "Not Specified"}</td>
                         </tr>
                       ))}

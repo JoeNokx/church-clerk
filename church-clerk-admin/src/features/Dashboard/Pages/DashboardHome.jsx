@@ -7,6 +7,7 @@ import {
 
 import { useAuth } from "../../Auth/useAuth.js";
 import { getAdminDashboardStats, getSystemAuditLogs } from "../../SystemAdmin/Services/systemAdmin.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const fmt = (n) => Number(n || 0).toLocaleString();
 const fmtGhs = (n) => `GHS ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -345,13 +346,19 @@ function DashboardHome() {
                       </tr>
                     ) : (d.recentChurches || []).map((c) => (
                       <tr key={c?._id} className="border-b border-gray-50 last:border-b-0">
-                        <td className="py-2.5 text-gray-900 font-medium">{c?.name || "—"}</td>
+                        <td className="py-2.5 text-gray-900 font-medium" title={c?.name || ""}>
+                          <span className="sm:hidden">{truncateMobileName(c?.name)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(c?.name)}</span>
+                        </td>
                         <td className="py-2.5">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${c?.type === "Headquarters" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                             {c?.type || "—"}
                           </span>
                         </td>
-                        <td className="py-2.5 text-gray-500 text-xs">{c?.country || "—"}</td>
+                        <td className="py-2.5 text-gray-500 text-xs" title={c?.country || ""}>
+                          <span className="sm:hidden">{truncateMobileName(c?.country)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(c?.country)}</span>
+                        </td>
                         <td className="py-2.5 text-gray-400 text-xs">{c?.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}</td>
                         <td className="py-2.5 text-right">
                           <button

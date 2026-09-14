@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import PermissionContext from "../../Permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import MemberFilters from "../components/MemberFilters.jsx";
@@ -198,7 +199,7 @@ function MembersPageInner() {
       <div className="mt-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {kpiLoading ? (
-            <div className="text-sm text-gray-600 sm:col-span-2 lg:col-span-4">Loading KPI...</div>
+            <div className="sm:col-span-2 lg:col-span-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
           ) : (
             <>
               <KpiCard label="Total Members" value={memberKPI?.totalMembers} />

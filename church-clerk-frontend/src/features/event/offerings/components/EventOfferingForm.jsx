@@ -177,15 +177,15 @@ function EventOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
             <div>
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-gray-500 text-xs">Note</label>
-                <span className="text-xs text-gray-400">{note.length}/20</span>
+                <span className="text-xs text-gray-400">{note.length}/500</span>
               </div>
               <input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                maxLength={20}
+                maxLength={500}
                 type="text"
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Optional (max 20 chars)"
+                placeholder="Optional (max 500 chars)"
               />
             </div>
           </div>

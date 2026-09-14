@@ -4,6 +4,7 @@ import PermissionContext from "../../Permissions/permission.store.js";
 import WelfareContext from "../welfare.store.js";
 import ChurchContext from "../../Church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -113,7 +114,10 @@ function WelfareContributionTable({ onEdit, onDeleted }) {
               const memberName = `${row?.member?.firstName || ""} ${row?.member?.lastName || ""}`.trim();
               return (
                 <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                  <td className="px-6 py-1.5 text-gray-900">{memberName || "-"}</td>
+                  <td className="px-6 py-1.5 text-gray-900" title={memberName || ""}>
+                    <span className="sm:hidden">{truncateMobileName(memberName)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(memberName)}</span>
+                  </td>
                   <td className="px-6 py-1.5 text-green-700">{formatMoney(row?.amount || 0, currency)}</td>
                   <td className="px-6 py-1.5">{formatDate(row?.date)}</td>
                   <td className="px-6 py-1.5 text-gray-600">{row?.paymentMethod || "-"}</td>

@@ -30,6 +30,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
 
@@ -448,13 +449,6 @@ function AttendancePageInner() {
   const closeAttendanceForm = () => { setIsAttendanceFormOpen(false); setEditingAttendance(null); };
   const closeVisitorForm = () => { setIsVisitorFormOpen(false); setEditingVisitor(null); };
 
-  const truncateName = (name) => {
-    if (!name) return "-";
-    const words = String(name).trim().split(/\s+/).filter(Boolean);
-    if (words.length >= 3 && name.length > 20) return name.slice(0, 20) + "\u2026";
-    return name;
-  };
-
   return (
     <div className="w-full max-w-6xl overflow-x-hidden lg:overflow-x-visible">
       <div>
@@ -617,8 +611,11 @@ function AttendancePageInner() {
                                     });
                                   }}
                                 >
-                                  <td className="sticky left-0 z-10 bg-white px-4 py-2.5 whitespace-nowrap">
-                                    <span className={isPresent ? "text-green-700 font-semibold" : "text-gray-900"}>{truncateName(m.name)}</span>
+                                  <td className="sticky left-0 z-10 bg-white px-4 py-2.5 whitespace-nowrap" title={m.name}>
+                                    <span className={isPresent ? "text-green-700 font-semibold" : "text-gray-900"}>
+                                      <span className="sm:hidden">{truncateMobileName(m.name)}</span>
+                                      <span className="hidden sm:inline">{truncateDesktopName(m.name)}</span>
+                                    </span>
                                   </td>
                                   <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
                                   <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.streetAddress || "-"}</td>
@@ -899,7 +896,10 @@ function AttendancePageInner() {
                                         const fullN = `${String(m?.firstName || "")} ${String(m?.lastName || "")}`.trim() || "-";
                                         return (
                                           <tr key={m?._id || idx} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m?._id }, { state: { from: "attendance" } }); }}>
-                                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={fullN}>{truncateName(fullN)}</td>
+                                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={fullN}>
+                                              <span className="sm:hidden">{truncateMobileName(fullN)}</span>
+                                              <span className="hidden sm:inline">{truncateDesktopName(fullN)}</span>
+                                            </td>
                                             <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
                                             <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m?.streetAddress || "-"}</td>
                                           </tr>
@@ -932,7 +932,10 @@ function AttendancePageInner() {
                                     <tbody className="divide-y divide-gray-200">
                                       {absentPaged.map((m) => (
                                         <tr key={m.id} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m.id }, { state: { from: "attendance" } }); }}>
-                                          <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={m.name}>{truncateName(m.name)}</td>
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={m.name}>
+                                            <span className="sm:hidden">{truncateMobileName(m.name)}</span>
+                                            <span className="hidden sm:inline">{truncateDesktopName(m.name)}</span>
+                                          </td>
                                           <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.phoneNumber || "-"}</td>
                                           <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{m.streetAddress || "-"}</td>
                                         </tr>

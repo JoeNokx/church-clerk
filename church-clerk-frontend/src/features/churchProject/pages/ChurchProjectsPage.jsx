@@ -271,7 +271,7 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
         contributorName: String(contributorName).trim(),
         date,
         amount: Number(amount),
-        notes: String(notes || "").trim().slice(0, 25)
+        notes: String(notes || "").trim().slice(0, 500)
       });
       onSuccess?.();
     } catch (e2) {
@@ -331,7 +331,7 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
             onChange={(e) => setNotes(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
-            maxLength={25}
+            maxLength={500}
           />
         </div>
 
@@ -411,7 +411,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
         spentOn: String(spentOn).trim(),
         date,
         amount: Number(amount),
-        description: String(description || "").trim().slice(0, 25)
+        description: String(description || "").trim().slice(0, 2000)
       });
       onSuccess?.();
     } catch (e2) {
@@ -471,7 +471,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
-            maxLength={25}
+            maxLength={2000}
           />
         </div>
 

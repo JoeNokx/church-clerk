@@ -20,6 +20,7 @@ import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.js
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -455,12 +456,12 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
             <label className="block font-semibold text-gray-500 text-xs">Note</label>
             <input
               value={note}
-              onChange={(e) => setNote(e.target.value.slice(0, 20))}
-              maxLength={20}
+              onChange={(e) => setNote(e.target.value.slice(0, 500))}
+              maxLength={500}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="Optional (max 20 chars)"
+              placeholder="Optional (max 500 chars)"
             />
-            <div className="mt-1 text-right text-gray-400 text-xs">{note.length}/20</div>
+            <div className="mt-1 text-right text-gray-400 text-xs">{note.length}/500</div>
           </div>
         </div>
 
@@ -515,15 +516,6 @@ function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onCo
       </div>
     </div>
   );
-}
-
-function truncatePledgeName(name) {
-  if (!name) return "—";
-  const words = name.trim().split(/\s+/);
-  if (name.length > 20 && words.length > 3) {
-    return `${words[0]} ${words[1]}\u2026`;
-  }
-  return name;
 }
 
 function PledgesPageInner() {
@@ -1020,7 +1012,10 @@ function PledgesPageInner() {
                 <tbody className="divide-y divide-gray-200">
                   {rows.map((row, index) => (
                     <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.name || "—"}>{truncatePledgeName(row?.name)}</td>
+                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.name || "—"}>
+                        <span className="sm:hidden">{truncateMobileName(row?.name)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(row?.name)}</span>
+                      </td>
                       <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || "—"}</td>
                       <td className="max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
                       <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.totalPaid || 0, currency)}</td>

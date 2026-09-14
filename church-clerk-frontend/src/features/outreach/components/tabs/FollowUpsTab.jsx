@@ -9,6 +9,7 @@ import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
 
 const INP = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500";
 const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500 bg-white";
@@ -249,17 +250,22 @@ const TYPE_LABELS = {
 function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDelete }) {
   return (
     <tr className={`max-md:text-xs text-gray-700 text-sm ${isOverdue ? "bg-red-50/40" : ""}`}>
-      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
-        <div className="font-semibold text-gray-900 text-sm truncate">
-          {fu.prospect?.firstName} {fu.prospect?.lastName}
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={`${fu.prospect?.firstName || ""} ${fu.prospect?.lastName || ""}`.trim() || "Not Specified"}>
+        <div className="font-semibold text-gray-900 text-sm">
+          <span className="sm:hidden">{truncateMobileName(`${fu.prospect?.firstName || ""} ${fu.prospect?.lastName || ""}`.trim() || "Not Specified")}</span>
+          <span className="hidden sm:inline">{truncateDesktopName(`${fu.prospect?.firstName || ""} ${fu.prospect?.lastName || ""}`.trim() || "Not Specified")}</span>
         </div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu.scheduledDate)}</td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6"><StatusBadge status={fu.status} /></td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[10rem]">
-        {fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "Not Specified"}
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "Not Specified"}>
+        <span className="sm:hidden">{truncateMobileName(fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "Not Specified")}</span>
+        <span className="hidden sm:inline">{truncateDesktopName(fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "Not Specified")}</span>
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[14rem]">{fu.outreachEvent?.title || "Not Specified"}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={fu.outreachEvent?.title || "Not Specified"}>
+        <span className="sm:hidden">{truncateMobileName(fu.outreachEvent?.title || "Not Specified")}</span>
+        <span className="hidden sm:inline">{truncateDesktopName(fu.outreachEvent?.title || "Not Specified")}</span>
+      </td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(fu) },

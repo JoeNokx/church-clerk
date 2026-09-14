@@ -2,6 +2,8 @@ import { useContext, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../Permissions/permission.store.js";
 import MemberContext from "../member.store.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function StatusChip({ value }) {
   const v = String(value || "").toLowerCase();
@@ -75,7 +77,7 @@ function MemberTable({ onEdit, onDeleted }) {
   };
 
   if (store?.loading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return <div className="p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>;
   }
 
   if (store?.error) {
@@ -113,10 +115,19 @@ function MemberTable({ onEdit, onDeleted }) {
 
               return (
                 <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                  <td className="px-6 py-1.5 text-gray-900">{name}</td>
+                  <td className="px-6 py-1.5 text-gray-900" title={name}>
+                    <span className="sm:hidden">{truncateMobileName(name)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(name)}</span>
+                  </td>
                   <td className="px-6 py-1.5 text-gray-700">{row?.phoneNumber || "-"}</td>
-                  <td className="px-6 py-1.5 text-gray-700">{row?.email || "-"}</td>
-                  <td className="px-6 py-1.5 text-gray-700">{row?.city || "-"}</td>
+                  <td className="px-6 py-1.5 text-gray-700" title={row?.email || ""}>
+                    <span className="sm:hidden">{truncateMobileName(row?.email)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(row?.email)}</span>
+                  </td>
+                  <td className="px-6 py-1.5 text-gray-700" title={row?.city || ""}>
+                    <span className="sm:hidden">{truncateMobileName(row?.city)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(row?.city)}</span>
+                  </td>
                   <td className="px-6 py-1.5 text-gray-700">
                     <StatusChip value={row?.status} />
                   </td>

@@ -5,6 +5,7 @@ import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.j
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
+import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
 import {
   getAllProspects, createProspect, createProspectDirect, updateProspectDirect, deleteProspectDirect,
   checkDuplicate, getOutreachEvents,
@@ -550,12 +551,21 @@ export function ConvertModal({ open, prospect, onClose, onDone }) {
 function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canDelete }) {
   return (
     <tr className="max-md:text-xs text-gray-700 text-sm">
-      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">
-        <div className="font-semibold text-gray-900 text-sm truncate">{person.firstName} {person.lastName}</div>
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={`${person.firstName} ${person.lastName}`}>
+        <div className="font-semibold text-gray-900 text-sm">
+          <span className="sm:hidden">{truncateMobileName(`${person.firstName} ${person.lastName}`)}</span>
+          <span className="hidden sm:inline">{truncateDesktopName(`${person.firstName} ${person.lastName}`)}</span>
+        </div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{person.phone || <span className="text-gray-400 italic">Not Specified</span>}</td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[12rem]">{person.community || person.address || <span className="text-gray-400 italic">Not Specified</span>}</td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[14rem]">{person.outreachEvent?.title || "Not Specified"}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={person.community || person.address || "Not Specified"}>
+        <span className="sm:hidden">{truncateMobileName(person.community || person.address || "Not Specified")}</span>
+        <span className="hidden sm:inline">{truncateDesktopName(person.community || person.address || "Not Specified")}</span>
+      </td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={person.outreachEvent?.title || "Not Specified"}>
+        <span className="sm:hidden">{truncateMobileName(person.outreachEvent?.title || "Not Specified")}</span>
+        <span className="hidden sm:inline">{truncateDesktopName(person.outreachEvent?.title || "Not Specified")}</span>
+      </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(person.createdAt)}</td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[

@@ -1,6 +1,8 @@
 import { useContext, useMemo, useState } from "react";
 import PermissionContext from "../../Permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -54,7 +56,7 @@ function AttendanceTable({ onEdit, onDeleted }) {
   };
 
   if (store?.attendanceLoading) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return <div className="p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>;
   }
 
   if (store?.attendanceError) {
@@ -87,9 +89,15 @@ function AttendanceTable({ onEdit, onDeleted }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                <td className="px-6 py-1.5 text-gray-900">{row?.serviceType || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-900" title={row?.serviceType || ""}>
+                  <span className="sm:hidden">{truncateMobileName(row?.serviceType)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.serviceType)}</span>
+                </td>
                 <td className="px-6 py-1.5">{formatDate(row?.serviceDate)}</td>
-                <td className="px-6 py-1.5 text-gray-700">{row?.mainSpeaker || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-700" title={row?.mainSpeaker || ""}>
+                  <span className="sm:hidden">{truncateMobileName(row?.mainSpeaker)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.mainSpeaker)}</span>
+                </td>
                 <td className="px-6 py-1.5 text-blue-700">{Number(row?.totalNumber || 0).toLocaleString()}</td>
                 <td className="px-6 py-1.5">
                   <div className="flex items-center justify-end gap-2">

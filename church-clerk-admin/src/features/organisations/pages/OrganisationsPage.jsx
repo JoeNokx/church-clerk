@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import { getGroups, createGroup, updateGroup, deleteGroup } from "../../group/services/group.api.js";
 import {
   getDepartments,
@@ -705,7 +706,7 @@ function OrganisationsPage() {
       <div className="mt-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {kpiLoading ? (
-            <div className="text-sm text-gray-600 sm:col-span-2 lg:col-span-4">Loading KPI...</div>
+            <div className="sm:col-span-2 lg:col-span-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
           ) : (
             <>
               <KpiCard label="Total Groups" value={Number(kpi?.totalGroups || 0)} />

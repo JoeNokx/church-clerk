@@ -13,6 +13,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 import {
   getGroup,
@@ -1375,11 +1376,12 @@ function OrganisationDetailsPage() {
                   {filteredMembers.map((m, idx) => {
                     const member = m?.member || {};
                     const fullName = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() || "-";
-                    const nameParts = fullName.split(/\s+/);
-                    const displayName = fullName.length > 20 && nameParts.length > 2 ? `${nameParts[0]} ${nameParts[nameParts.length - 1]}` : fullName;
                     return (
                       <tr key={m?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
-                        <td className="sticky left-0 z-10 bg-white max-md:px-3 py-1.5 text-gray-900 whitespace-nowrap px-3 md:px-5">{displayName}</td>
+                        <td className="sticky left-0 z-10 bg-white max-md:px-3 py-1.5 text-gray-900 whitespace-nowrap px-3 md:px-5" title={fullName}>
+                          <span className="sm:hidden">{truncateMobileName(fullName)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(fullName)}</span>
+                        </td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.phoneNumber || "-"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.email || "-"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{m?.role || "member"}</td>
@@ -1812,7 +1814,10 @@ function OrganisationDetailsPage() {
                         <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDay(r?.date) || "-"}</td>
-                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" title={r?.mainSpeaker || "-"}>
+                            <span className="sm:hidden">{truncateMobileName(r?.mainSpeaker || "-")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(r?.mainSpeaker || "-")}</span>
+                          </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.presentCount ?? 0)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.absentCount ?? 0)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
@@ -2025,11 +2030,12 @@ function OrganisationDetailsPage() {
                                   <tbody className="divide-y divide-gray-200">
                                     {(Array.isArray(individualViewing?.presentMembers) ? individualViewing.presentMembers : []).map((m, idx) => {
                                       const fullN = `${safeText(m?.firstName)} ${safeText(m?.lastName)}`.trim() || "-";
-                                      const nParts = fullN.split(/\s+/);
-                                      const dispN = fullN.length > 20 && nParts.length > 2 ? `${nParts[0]} ${nParts[nParts.length - 1]}` : fullN;
                                       return (
                                         <tr key={m?._id || idx} className="text-gray-700 text-sm">
-                                          <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{dispN}</td>
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap" title={fullN}>
+                                            <span className="sm:hidden">{truncateMobileName(fullN)}</span>
+                                            <span className="hidden sm:inline">{truncateDesktopName(fullN)}</span>
+                                          </td>
                                           <td className="px-4 py-1.5 whitespace-nowrap">{m?.phoneNumber || "-"}</td>
                                           <td className="px-4 py-1.5 whitespace-nowrap">{m?.email || "-"}</td>
                                         </tr>
@@ -2072,7 +2078,10 @@ function OrganisationDetailsPage() {
                                     <tbody className="divide-y divide-gray-200">
                                       {apiAbsent.map((m) => (
                                         <tr key={m.key} className="text-gray-700 text-sm">
-                                          <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap">{m.name}</td>
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-1.5 text-gray-900 whitespace-nowrap" title={m.name}>
+                                            <span className="sm:hidden">{truncateMobileName(m.name)}</span>
+                                            <span className="hidden sm:inline">{truncateDesktopName(m.name)}</span>
+                                          </td>
                                           <td className="px-4 py-1.5 whitespace-nowrap">{m.phone}</td>
                                           <td className="px-4 py-1.5 whitespace-nowrap">{m.email}</td>
                                         </tr>
@@ -2122,8 +2131,14 @@ function OrganisationDetailsPage() {
                         <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0)}</td>
-                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.mainSpeaker || "-"}</td>
-                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{r?.activity || "-"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" title={r?.mainSpeaker || "-"}>
+                            <span className="sm:hidden">{truncateMobileName(r?.mainSpeaker || "-")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(r?.mainSpeaker || "-")}</span>
+                          </td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" title={r?.activity || "-"}>
+                            <span className="sm:hidden">{truncateMobileName(r?.activity || "-")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(r?.activity || "-")}</span>
+                          </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "Edit", onClick: () => openAttendanceForm("edit", r) },
@@ -2288,7 +2303,10 @@ function OrganisationDetailsPage() {
                     <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
                       <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(r?.amount || 0, currency)}</td>
-                      <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.createdBy?.fullName || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.createdBy?.fullName || "—"}>
+                        <span className="sm:hidden">{truncateMobileName(r?.createdBy?.fullName || "—")}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(r?.createdBy?.fullName || "—")}</span>
+                      </td>
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         {r?.referenceId ? (
                           <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{r.referenceId}</span>

@@ -28,6 +28,7 @@ import {
   getMessageTemplates,
   updateMessageTemplate
 } from "../services/communication.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatMoneyGhs(amount) {
   const n = Number(amount || 0);
@@ -163,15 +164,6 @@ function TemplatesAndDraftsTab({ open, onUseTemplate, onUseDraft, onOpenDelivery
       )}
     </div>
   );
-}
-
-function truncateMobileTitle(title) {
-  if (!title) return "—";
-  const words = title.trim().split(/\s+/);
-  if (words.length > 3 && title.length > 20) {
-    return words.slice(0, 2).join(" ") + "\u2026";
-  }
-  return title;
 }
 
 function formatInt(value) {
@@ -336,6 +328,8 @@ function FundWalletModal({ open, onClose, onFund, loading, error, isGhana, usdTo
 }
 
 function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhana, usdToGhs }) {
+  const [viewTx, setViewTx] = useState(null);
+
   if (!open) return null;
 
   return (
@@ -364,7 +358,6 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
               <tr className="text-left font-semibold text-gray-500 text-xs">
                 <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Date</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Type</th>
-                <th className="py-2 pr-4 whitespace-nowrap">Description</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Amount</th>
                 <th className="py-2 whitespace-nowrap">Balance After</th>
               </tr>
@@ -372,20 +365,19 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
+                  <td colSpan={4} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
                 </tr>
               ) : !transactions.length ? (
                 <tr>
-                  <td colSpan={5} className="px-4">
+                  <td colSpan={4} className="px-4">
                     <EmptyState compact illustration="wallet" title="No wallet transactions yet" description="Top up your wallet to start sending announcements." />
                   </td>
                 </tr>
               ) : (
                 transactions.map((t, idx) => (
-                  <tr key={t?._id || `tx-${idx}`} className="text-gray-700 text-sm">
+                  <tr key={t?._id || `tx-${idx}`} className="text-gray-700 text-sm cursor-pointer hover:bg-gray-50" onClick={() => setViewTx(t)}>
                     <td className="sticky left-0 z-10 bg-white py-2 pr-4 text-gray-600 whitespace-nowrap">{t?.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}</td>
                     <td className="py-2 pr-4 whitespace-nowrap">{t?.type || "—"}</td>
-                    <td className="py-2 pr-4 text-gray-600">{t?.description || "—"}</td>
                     <td className="py-2 pr-4 font-semibold whitespace-nowrap">
                       {typeof t?.amountCredits === "number" ? (
                         !isGhana && usdToGhs
@@ -407,6 +399,60 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
           </table>
         </div>
       </div>
+
+      {viewTx ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewTx(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Transaction Details</div>
+              <button
+                type="button"
+                onClick={() => setViewTx(null)}
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                aria-label="Close"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-4 md:px-5 lg:px-6 py-4 space-y-3 text-sm">
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="mt-0.5 text-gray-800">{viewTx?.createdAt ? new Date(viewTx.createdAt).toLocaleString() : "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Type</div>
+                <div className="mt-0.5 text-gray-800">{viewTx?.type || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Description</div>
+                <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewTx?.description || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                <div className="mt-0.5 text-gray-800 font-semibold">
+                  {typeof viewTx?.amountCredits === "number" ? (
+                    !isGhana && usdToGhs
+                      ? `${viewTx.amountCredits >= 0 ? "+" : ""}${formatMoneyUsd(creditsToGhs(viewTx.amountCredits) / Number(usdToGhs))}`
+                      : `${viewTx.amountCredits >= 0 ? "+" : "-"}${Math.abs(viewTx.amountCredits)} credits`
+                  ) : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Balance After</div>
+                <div className="mt-0.5 text-gray-800 font-semibold">
+                  {typeof viewTx?.balanceAfterCredits === "number" ? (
+                    !isGhana && usdToGhs
+                      ? formatMoneyUsd(creditsToGhs(viewTx.balanceAfterCredits) / Number(usdToGhs))
+                      : `${viewTx.balanceAfterCredits} credits`
+                  ) : "—"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -424,6 +470,7 @@ function TemplatesTab({ open, onUseTemplate }) {
   const [name, setName] = useState("");
   const [channel, setChannel] = useState("sms");
   const [message, setMessage] = useState("");
+  const [viewRow, setViewRow] = useState(null);
 
   const load = async () => {
     if (!canRead) {
@@ -570,18 +617,17 @@ function TemplatesTab({ open, onUseTemplate }) {
               <tr className="text-left font-semibold text-gray-500 text-xs">
                 <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Template Name</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Channel</th>
-                <th className="py-2 pr-4 whitespace-nowrap">Message Preview</th>
                 <th className="py-2 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
+                  <td colSpan={3} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
                 </tr>
               ) : !rows.length ? (
                 <tr>
-                  <td colSpan={4} className="px-4">
+                  <td colSpan={3} className="px-4">
                     <EmptyState compact illustration="templates" title="No templates found" description="Save reusable message templates to speed up announcements." />
                   </td>
                 </tr>
@@ -590,9 +636,9 @@ function TemplatesTab({ open, onUseTemplate }) {
                   <tr key={t?._id || `tpl-${idx}`} className="text-gray-700 text-sm">
                     <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{t?.name || "—"}</td>
                     <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{String(t?.channel || "").toUpperCase() || "—"}</td>
-                    <td className="py-2 pr-4 text-gray-600">{String(t?.message || "").slice(0, 60) || "—"}</td>
                     <td className="py-2">
                       <TableKebabMenu items={[
+                        { label: "View", onClick: () => setViewRow(t) },
                         { label: "Use", onClick: () => onUseTemplate?.(t), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
                         { label: "Edit", onClick: () => onEdit(t) },
                         { label: "Delete", onClick: () => onDelete(t?._id), danger: true }
@@ -605,6 +651,33 @@ function TemplatesTab({ open, onUseTemplate }) {
           </table>
         </div>
       </div>
+
+      {viewRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Template Name</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.name || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Channel</div>
+                <div className="mt-0.5 text-gray-800">{String(viewRow?.channel || "").toUpperCase() || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Message</div>
+                <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.message || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -759,8 +832,8 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
               rows.map((m, idx) => (
                 <tr key={m?._id || `m-${idx}`} className="text-gray-700 text-sm">
                   <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap" title={m?.title || ""}>
-                    <span className="sm:hidden">{truncateMobileTitle(m?.title)}</span>
-                    <span className="hidden sm:inline">{m?.title || "—"}</span>
+                    <span className="sm:hidden">{truncateMobileName(m?.title)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(m?.title)}</span>
                   </td>
                   <td className="py-2 pr-4 text-gray-600">{Array.isArray(m?.channels) ? m.channels.map((c) => String(c).toUpperCase()).join(", ") : "—"}</td>
                   <td className="py-2 pr-4 text-gray-600">{typeof m?.recipientCount === "number" ? m.recipientCount : "—"}</td>
@@ -2109,7 +2182,7 @@ function AnnouncementPage() {
           isGhana={isGhana}
           usdToGhs={usdToGhs}
         />
-        {walletLoading ? <div className="mt-2 text-gray-500 text-xs flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading wallet...</div> : null}
+        {walletLoading ? <div className="mt-2 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
       </div>
 
       <PageTabs

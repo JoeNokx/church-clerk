@@ -3,6 +3,7 @@ import PermissionContext from "../../Permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
 import ChurchContext from "../../Church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -126,7 +127,10 @@ function TitheIndividualTable({ onEdit, onDeleted }) {
                         <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <div className="font-semibold text-gray-900">{memberName(row?.member)}</div>
+                    <div className="font-semibold text-gray-900" title={memberName(row?.member)}>
+                      <span className="sm:hidden">{truncateMobileName(memberName(row?.member))}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(memberName(row?.member))}</span>
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-3 text-blue-700">{formatMoney(row?.amount || 0, currency)}</td>

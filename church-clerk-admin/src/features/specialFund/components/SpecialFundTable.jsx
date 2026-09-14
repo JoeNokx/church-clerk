@@ -3,6 +3,7 @@ import PermissionContext from "../../Permissions/permission.store.js";
 import SpecialFundContext from "../specialFund.store.js";
 import ChurchContext from "../../Church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -19,6 +20,7 @@ function SpecialFundTable({ onEdit, onDeleted }) {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
+  const [viewRow, setViewRow] = useState(null);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("specialFunds", "update") : false), [can]);
   const canDelete = useMemo(() => (typeof can === "function" ? can("specialFunds", "delete") : false), [can]);
@@ -108,20 +110,26 @@ function SpecialFundTable({ onEdit, onDeleted }) {
               <th className="px-6 py-2">Category</th>
               <th className="px-6 py-2">Amount</th>
               <th className="px-6 py-2">Date</th>
-              <th className="px-6 py-2">Description</th>
               <th className="px-6 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {rows.map((fund, index) => (
               <tr key={fund?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                <td className="px-6 py-1.5 text-gray-700">{fund?.giverName || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-900">{fund?.category || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-700" title={fund?.giverName || ""}>
+                  <span className="sm:hidden">{truncateMobileName(fund?.giverName)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(fund?.giverName)}</span>
+                </td>
+                <td className="px-6 py-1.5 text-gray-900" title={fund?.category || ""}>
+                  <span className="sm:hidden">{truncateMobileName(fund?.category)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(fund?.category)}</span>
+                </td>
                 <td className="px-6 py-1.5 text-blue-700">{formatMoney(fund?.totalAmount || 0, currency)}</td>
                 <td className="px-6 py-1.5">{formatDate(fund?.givingDate)}</td>
-                <td className="px-6 py-1.5 text-gray-600 max-w-[360px] break-words">{fund?.description || "-"}</td>
                 <td className="px-6 py-1.5">
                   <div className="flex items-center justify-end gap-2">
+                    <button type="button" onClick={() => setViewRow(fund)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs">View</button>
+
                     {canEdit && (
                       <button
                         type="button"
@@ -201,6 +209,41 @@ function SpecialFundTable({ onEdit, onDeleted }) {
           </div>
         </div>
       )}
+
+      {viewRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Giver Name</div>
+                <div className="mt-1 text-gray-900">{viewRow?.giverName || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Category</div>
+                <div className="mt-1 text-gray-900">{viewRow?.category || "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Amount</div>
+                <div className="mt-1 text-gray-900">{formatMoney(viewRow?.amount || viewRow?.totalAmount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Date</div>
+                <div className="mt-1 text-gray-900">{formatDate(viewRow?.date || viewRow?.givingDate)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Note</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap">{viewRow?.note || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

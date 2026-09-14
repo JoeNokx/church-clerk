@@ -4,6 +4,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../Permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function StatusChip({ value }) {
   const v = String(value || "").toLowerCase();
@@ -181,7 +182,7 @@ function MemberDetailsPageInner() {
 
       <div className="mt-6 space-y-5">
         {loading ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">Loading...</div>
+          <div className="rounded-xl border border-gray-200 bg-white p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
         ) : error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : (

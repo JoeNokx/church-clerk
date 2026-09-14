@@ -13,6 +13,7 @@ import {
 } from "../services/outreach.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const DECISION_LABELS = {
   none: "No Decision",
@@ -104,6 +105,7 @@ export default function ProspectDetailsPage() {
   const [fuDeleteTarget, setFuDeleteTarget] = useState(null);
   const [fuDeleting, setFuDeleting] = useState(false);
   const [followUpsPage, setFollowUpsPage] = useState(1);
+  const [viewRow, setViewRow] = useState(null);
 
   const backParams = useMemo(() => {
     const params = {};
@@ -351,7 +353,6 @@ export default function ProspectDetailsPage() {
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Assigned To</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Notes</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6" />
                 </tr>
               </thead>
@@ -363,12 +364,13 @@ export default function ProspectDetailsPage() {
                     <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                       <Badge label={FU_STATUS_LABELS[fu.status] || fu.status || "Not Specified"} className={FU_STATUS_STYLES[fu.status] || "bg-gray-100 text-gray-500"} />
                     </td>
-                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-                      {fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "Not Specified"}
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "Not Specified"}>
+                      <span className="sm:hidden">{truncateMobileName(fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "Not Specified")}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "Not Specified")}</span>
                     </td>
-                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 truncate max-w-[16rem]">{fu.notes || "Not Specified"}</td>
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
+                        { label: "View", onClick: () => setViewRow(fu) },
                         canWrite && { label: "Edit", onClick: () => { setFuEditTarget(fu); setFuModalOpen(true); } },
                         canDelete && { label: "Delete", onClick: () => setFuDeleteTarget(fu), danger: true }
                       ]} />
@@ -401,6 +403,41 @@ export default function ProspectDetailsPage() {
       </div>
 
       {/* Modals */}
+      {viewRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="mt-0.5 text-gray-800">{fmtDate(viewRow?.scheduledDate || viewRow?.followUpDate)}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Type</div>
+                <div className="mt-0.5 text-gray-800">{FOLLOWUP_TYPE_LABELS[viewRow?.type] || viewRow?.type || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Status</div>
+                <div className="mt-0.5 text-gray-800">{FU_STATUS_LABELS[viewRow?.status] || viewRow?.status || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Assigned To</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.assignedTo ? `${viewRow.assignedTo?.firstName || ""} ${viewRow.assignedTo?.lastName || ""}`.trim() : "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Notes</div>
+                <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.notes || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <PersonFormModal
         open={editOpen}
         mode="edit"

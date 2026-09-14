@@ -18,6 +18,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -284,6 +285,7 @@ function PledgeDetailsPageInner() {
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmDeletePayment, setConfirmDeletePayment] = useState(null);
+  const [viewRow, setViewRow] = useState(null);
 
   const goBack = () => {
     toPage("pledges");
@@ -547,7 +549,7 @@ function PledgeDetailsPageInner() {
           </div>
         </div>
 
-          {paymentsLoading ? <div className="mt-4 text-gray-600 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading payments...</div> : null}
+          {paymentsLoading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
           {!paymentsLoading && paymentsError ? (
             <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{paymentsError}</div>
           ) : null}
@@ -572,7 +574,6 @@ function PledgeDetailsPageInner() {
                       <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Method</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Note</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                       <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -584,8 +585,7 @@ function PledgeDetailsPageInner() {
                         <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(p?.paymentDate)}</td>
                         <td className="max-md:px-4 py-1.5 text-green-700 font-semibold whitespace-nowrap px-4 md:px-6">{formatCurrency(p?.amount || 0, currency)}</td>
                         <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{p?.paymentMethod || "—"}</td>
-                        <td className="max-md:px-4 py-1.5 text-gray-600 px-4 md:px-6">{p?.note || "—"}</td>
-                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{p?.createdBy?.fullName || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" title={p?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(p?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(p?.createdBy?.fullName || "—")}</span></td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           {p?.referenceId ? (
                             <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{p.referenceId}</span>
@@ -593,6 +593,7 @@ function PledgeDetailsPageInner() {
                         </td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
+                            { label: "View", onClick: () => setViewRow(p) },
                             canEditPayment && { label: "Edit", onClick: () => openEdit(p) },
                             canDeletePayment && { label: "Delete", onClick: () => openDelete(p), danger: true }
                           ]} />
@@ -660,6 +661,45 @@ function PledgeDetailsPageInner() {
         }}
         currency={currency}
       />
+
+      {viewRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.paymentDate)}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                <div className="mt-0.5 text-gray-800 font-semibold text-green-700">{formatCurrency(viewRow?.amount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Method</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.paymentMethod || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Note</div>
+                <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.note || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.createdBy?.fullName || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.referenceId || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <ConfirmDeleteModal
         open={confirmDeleteOpen}

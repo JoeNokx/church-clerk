@@ -3,6 +3,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import ChurchContext from "../../Church/church.store.js";
 
 import { adminGetInvoices, adminGetPayments, adminGetPlans, adminGetSubscriptions } from "../Services/adminBilling.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -273,7 +274,7 @@ function ChurchBillingPage() {
               <div className="mt-1 text-sm text-gray-700">Status: {activeSubscription?.status || "—"}</div>
               <div className="mt-1 text-sm text-gray-700">Next billing: {fmtDate(activeSubscription?.nextBillingDate)}</div>
               {subsError ? <div className="mt-2 text-sm text-red-600">{subsError}</div> : null}
-              {subsLoading ? <div className="mt-2 text-sm text-gray-500">Loading…</div> : null}
+              {subsLoading ? <div className="mt-2 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white p-5">
@@ -282,7 +283,7 @@ function ChurchBillingPage() {
               <div className="mt-1 text-sm text-gray-700">Unpaid: {invoiceStats.unpaidCount}</div>
               <div className="mt-1 text-sm text-gray-700">Paid: {invoiceStats.paidCount}</div>
               {invError ? <div className="mt-2 text-sm text-red-600">{invError}</div> : null}
-              {invLoading ? <div className="mt-2 text-sm text-gray-500">Loading…</div> : null}
+              {invLoading ? <div className="mt-2 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white p-5">
@@ -290,7 +291,7 @@ function ChurchBillingPage() {
               <div className="mt-2 text-2xl font-semibold text-gray-900">{paymentStats.total}</div>
               <div className="mt-1 text-sm text-gray-700">Paid: {paymentStats.paidCount}</div>
               {payError ? <div className="mt-2 text-sm text-red-600">{payError}</div> : null}
-              {payLoading ? <div className="mt-2 text-sm text-gray-500">Loading…</div> : null}
+              {payLoading ? <div className="mt-2 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
             </div>
           </div>
 
@@ -330,7 +331,7 @@ function ChurchBillingPage() {
               </div>
 
               {plansError ? <div className="mt-3 text-sm text-red-600">{plansError}</div> : null}
-              {plansLoading ? <div className="mt-3 text-sm text-gray-500">Loading plans…</div> : null}
+              {plansLoading ? <div className="mt-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
 
               {activePlan?.priceByCurrency || activePlan?.pricing ? (
                 <div className="mt-4">

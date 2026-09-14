@@ -27,6 +27,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -280,7 +281,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
         contributorName: String(contributorName).trim(),
         date,
         amount: Number(amount),
-        notes: String(notes || "").trim().slice(0, 25)
+        notes: String(notes || "").trim().slice(0, 500)
       });
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
@@ -339,7 +340,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
             onChange={(e) => setNotes(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
-            maxLength={25}
+            maxLength={500}
           />
         </div>
 
@@ -426,7 +427,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
         spentOn: String(spentOn).trim(),
         date,
         amount: Number(amount),
-        description: String(description || "").trim().slice(0, 25)
+        description: String(description || "").trim().slice(0, 2000)
       });
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
@@ -485,7 +486,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
             placeholder="Optional"
-            maxLength={25}
+            maxLength={2000}
           />
         </div>
 
@@ -562,6 +563,8 @@ function ChurchProjectDetailsPage() {
 
   const [expenseViewOpen, setExpenseViewOpen] = useState(false);
   const [expenseViewRow, setExpenseViewRow] = useState(null);
+
+  const [viewRow, setViewRow] = useState(null);
 
   const debouncedContribSearch = useDebouncedValue(contribSearch, 300);
   const debouncedExpenseSearch = useDebouncedValue(expenseSearch, 300);
@@ -924,7 +927,6 @@ function ChurchProjectDetailsPage() {
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Contributor</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Notes</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -933,11 +935,10 @@ function ChurchProjectDetailsPage() {
                     <tbody className="divide-y divide-gray-200">
                       {contribRows.map((row, idx) => (
                         <tr key={row?._id ?? `c-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.contributorName || "—"}</td>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.contributorName || "—"}><span className="sm:hidden">{truncateMobileName(row?.contributorName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.contributorName || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 max-w-[320px] break-words px-4 md:px-6">{row?.notes || "—"}</td>
-                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
                               <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -945,6 +946,7 @@ function ChurchProjectDetailsPage() {
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
+                              { label: "View", onClick: () => setViewRow(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
                               { label: "Edit", onClick: () => openEditContribution(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
                               { label: "Delete", onClick: () => openConfirmDelete("contribution", row?._id), danger: true, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-red-600 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
@@ -1009,10 +1011,10 @@ function ChurchProjectDetailsPage() {
                     <tbody className="divide-y divide-gray-200">
                       {expenseRows.map((row, idx) => (
                         <tr key={row?._id ?? `e-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{row?.spentOn || "—"}</td>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.spentOn || "—"}><span className="sm:hidden">{truncateMobileName(row?.spentOn || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.spentOn || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
-                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.createdBy?.fullName || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
                               <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -1101,6 +1103,45 @@ function ChurchProjectDetailsPage() {
           </div>
         </div>
       )}
+
+      {viewRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Contributor</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.contributorName || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                <div className="mt-0.5 text-gray-800 font-semibold text-green-700">{formatCurrency(viewRow?.amount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.date)}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Notes</div>
+                <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.notes || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.createdBy?.fullName || "—"}</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
+                <div className="mt-0.5 text-gray-800">{viewRow?.referenceId || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <ContributionFormModal
         open={contributionModalOpen}

@@ -21,6 +21,7 @@ import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.js
 import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -2292,7 +2293,7 @@ function SettingsPage() {
             </div>
 
             {usersLoading ? (
-              <div className="mt-4 text-gray-600 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading users…</div>
+              <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
             ) : (
               <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
                 <table className="min-w-full text-sm">
@@ -2312,10 +2313,19 @@ function SettingsPage() {
                         const isActive = row?.isActive !== false;
                         return (
                           <tr key={row?._id} className="hover:bg-gray-50">
-                            <td className="sticky left-0 z-10 bg-white px-4 py-3 font-semibold text-gray-900">{row?.fullName || "—"}</td>
-                            <td className="px-4 py-3 text-gray-700">{row?.email || "—"}</td>
+                            <td className="sticky left-0 z-10 bg-white px-4 py-3 font-semibold text-gray-900" title={row?.fullName || "—"}>
+                              <span className="sm:hidden">{truncateMobileName(row?.fullName || "—")}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(row?.fullName || "—")}</span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-700" title={row?.email || "—"}>
+                              <span className="sm:hidden">{truncateMobileName(row?.email || "—")}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(row?.email || "—")}</span>
+                            </td>
                             <td className="px-4 py-3 text-gray-700">{row?.phoneNumber || "—"}</td>
-                            <td className="px-4 py-3 text-gray-700">{row?.role || "—"}</td>
+                            <td className="px-4 py-3 text-gray-700" title={row?.role || "—"}>
+                              <span className="sm:hidden">{truncateMobileName(row?.role || "—")}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(row?.role || "—")}</span>
+                            </td>
                             <td className="px-4 py-3">
                               <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"} text-xs`}>
                                 {isActive ? "Active" : "Deactivated"}
@@ -2364,7 +2374,7 @@ function SettingsPage() {
             </div>
 
             {rolesLoading ? (
-              <div className="mt-4 text-gray-600 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading roles…</div>
+              <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
             ) : churchRoles.length ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {churchRoles.map((r) => {
@@ -2577,12 +2587,24 @@ function SettingsPage() {
                         <tr key={row?._id} className="hover:bg-gray-50">
                           <td className="sticky left-0 z-10 bg-white px-4 py-3 text-gray-700 whitespace-nowrap">{timestamp}</td>
                           <td className="px-4 py-3">
-                            <div className="font-semibold text-gray-900">{userName}</div>
+                            <div className="font-semibold text-gray-900" title={userName}>
+                              <span className="sm:hidden">{truncateMobileName(userName)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(userName)}</span>
+                            </div>
                             <div className="text-gray-500 text-xs">{userRole}</div>
                           </td>
-                          <td className="px-4 py-3 text-gray-700">{row?.action || "—"}</td>
-                          <td className="px-4 py-3 text-gray-700">{row?.module || "—"}</td>
-                          <td className="px-4 py-3 text-gray-700">{activity}</td>
+                          <td className="px-4 py-3 text-gray-700" title={row?.action || "—"}>
+                            <span className="sm:hidden">{truncateMobileName(row?.action || "—")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(row?.action || "—")}</span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700" title={row?.module || "—"}>
+                            <span className="sm:hidden">{truncateMobileName(row?.module || "—")}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(row?.module || "—")}</span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700" title={activity}>
+                            <span className="sm:hidden">{truncateMobileName(activity)}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(activity)}</span>
+                          </td>
                           <td className="px-4 py-3 text-gray-700">{deviceType}</td>
                           <td className="px-4 py-3">
                             <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold text-xs ${ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>

@@ -4,6 +4,8 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 
 import ChurchContext from "../../Church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 import {
   getGroup,
@@ -304,6 +306,8 @@ function OrganisationDetailsPage() {
   const [offeringNote, setOfferingNote] = useState("");
   const [offeringSaving, setOfferingSaving] = useState(false);
   const [offeringFormError, setOfferingFormError] = useState("");
+
+  const [viewOfferingRow, setViewOfferingRow] = useState(null);
 
   const title = type === "cell" ? "Cell" : type === "department" ? "Department" : type === "ministry" ? "Ministry" : "Group";
 
@@ -821,7 +825,7 @@ function OrganisationDetailsPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
         {loading ? (
-          <div className="text-sm text-gray-600">Loading...</div>
+          <div className="flex items-center justify-center"><Spinner className="text-gray-400" /></div>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : !entity ? (
@@ -939,7 +943,7 @@ function OrganisationDetailsPage() {
           {memberError ? <div className="p-5 text-sm text-red-700">{memberError}</div> : null}
 
           {memberLoading ? (
-            <div className="p-5 text-sm text-gray-600">Loading...</div>
+            <div className="p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
           ) : members.length === 0 ? (
             <div className="p-5 text-sm text-gray-600">No member record found.</div>
           ) : (
@@ -960,9 +964,15 @@ function OrganisationDetailsPage() {
                     const name = `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() || "-";
                     return (
                       <tr key={m?._id || idx} className="text-sm text-gray-700">
-                        <td className="px-6 py-1.5 text-gray-900">{name}</td>
+                        <td className="px-6 py-1.5 text-gray-900" title={name}>
+                          <span className="sm:hidden">{truncateMobileName(name)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(name)}</span>
+                        </td>
                         <td className="px-6 py-1.5">{member?.phoneNumber || "-"}</td>
-                        <td className="px-6 py-1.5">{member?.email || "-"}</td>
+                        <td className="px-6 py-1.5" title={member?.email || ""}>
+                          <span className="sm:hidden">{truncateMobileName(member?.email)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(member?.email)}</span>
+                        </td>
                         <td className="px-6 py-1.5">{m?.role || "member"}</td>
                         <td className="px-6 py-1.5">
                           <div className="flex items-center justify-end gap-2">
@@ -1029,7 +1039,7 @@ function OrganisationDetailsPage() {
                 <div className="text-xs font-semibold text-gray-500">Results</div>
                 <div className="mt-2 rounded-xl border border-gray-200 max-h-64 overflow-y-auto">
                   {addMemberCandidatesLoading ? (
-                    <div className="px-4 py-3 text-sm text-gray-600">Loading...</div>
+                    <div className="px-4 py-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
                   ) : addMemberCandidates.length === 0 ? (
                     <div className="px-4 py-3 text-sm text-gray-600">No matching members found.</div>
                   ) : (
@@ -1296,7 +1306,7 @@ function OrganisationDetailsPage() {
           {attendanceError ? <div className="p-5 text-sm text-red-700">{attendanceError}</div> : null}
 
           {attendanceLoading ? (
-            <div className="p-5 text-sm text-gray-600">Loading...</div>
+            <div className="p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
           ) : attendances.length === 0 ? (
             <div className="p-5 text-sm text-gray-600">No attendance record found.</div>
           ) : (
@@ -1316,8 +1326,14 @@ function OrganisationDetailsPage() {
                     <tr key={r?._id || idx} className="text-sm text-gray-700">
                       <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
                       <td className="px-6 py-1.5">{Number(r?.numberOfAttendees || 0)}</td>
-                      <td className="px-6 py-1.5">{r?.mainSpeaker || "-"}</td>
-                      <td className="px-6 py-1.5">{r?.activity || "-"}</td>
+                      <td className="px-6 py-1.5" title={r?.mainSpeaker || ""}>
+                        <span className="sm:hidden">{truncateMobileName(r?.mainSpeaker)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(r?.mainSpeaker)}</span>
+                      </td>
+                      <td className="px-6 py-1.5" title={r?.activity || ""}>
+                        <span className="sm:hidden">{truncateMobileName(r?.activity)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(r?.activity)}</span>
+                      </td>
                       <td className="px-6 py-1.5">
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -1428,7 +1444,7 @@ function OrganisationDetailsPage() {
           {offeringError ? <div className="p-5 text-sm text-red-700">{offeringError}</div> : null}
 
           {offeringLoading ? (
-            <div className="p-5 text-sm text-gray-600">Loading...</div>
+            <div className="p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
           ) : offerings.length === 0 ? (
             <div className="p-5 text-sm text-gray-600">No offering record found.</div>
           ) : (
@@ -1438,7 +1454,6 @@ function OrganisationDetailsPage() {
                   <tr className="text-left text-xs font-semibold text-gray-500">
                     <th className="px-6 py-2">Date</th>
                     <th className="px-6 py-2">Amount</th>
-                    <th className="px-6 py-2">Note</th>
                     <th className="px-6 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -1447,9 +1462,10 @@ function OrganisationDetailsPage() {
                     <tr key={r?._id || idx} className="text-sm text-gray-700">
                       <td className="px-6 py-1.5 text-gray-900">{formatDate(r?.date)}</td>
                       <td className="px-6 py-1.5 text-blue-700">{formatMoney(r?.amount || 0, currency)}</td>
-                      <td className="px-6 py-1.5 text-gray-600 max-w-[420px] break-words">{r?.note || "-"}</td>
                       <td className="px-6 py-1.5">
                         <div className="flex items-center justify-end gap-2">
+                          <button type="button" onClick={() => setViewOfferingRow(r)} className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs">View</button>
+
                           <button
                             type="button"
                             onClick={() => openOfferingForm("edit", r)}
@@ -1540,6 +1556,33 @@ function OrganisationDetailsPage() {
         }}
         onConfirm={confirmAction}
       />
+
+      {viewOfferingRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewOfferingRow(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <button type="button" onClick={() => setViewOfferingRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Date</div>
+                <div className="mt-1 text-gray-900">{formatDate(viewOfferingRow?.date)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Amount</div>
+                <div className="mt-1 text-gray-900">{formatMoney(viewOfferingRow?.amount || 0, currency)}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-500">Note</div>
+                <div className="mt-1 text-gray-900 whitespace-pre-wrap">{viewOfferingRow?.note || "—"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

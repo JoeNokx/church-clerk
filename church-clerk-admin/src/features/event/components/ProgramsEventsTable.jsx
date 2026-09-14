@@ -3,6 +3,8 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import EventContext from "../event.store.js";
 import PermissionContext from "../../Permissions/permission.store.js";
 import { deleteEvent as apiDeleteEvent } from "../services/event.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -96,7 +98,7 @@ function ProgramsEventsTable({ status, onEdit }) {
   const rows = Array.isArray(store?.events) ? store.events : [];
 
   if (store?.loading && !rows.length) {
-    return <div className="p-5 text-sm text-gray-600">Loading...</div>;
+    return <div className="p-5 flex items-center justify-center"><Spinner className="text-gray-400" /></div>;
   }
 
   if (!rows.length) {
@@ -105,7 +107,7 @@ function ProgramsEventsTable({ status, onEdit }) {
 
   return (
     <div>
-      {store?.loading ? <div className="px-6 pt-3 text-xs font-semibold text-gray-500">Loading...</div> : null}
+      {store?.loading ? <div className="px-6 pt-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-slate-100">
@@ -121,11 +123,20 @@ function ProgramsEventsTable({ status, onEdit }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                <td className="px-6 py-1.5 text-gray-900">{row?.title || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-700">{row?.category || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-900" title={row?.title || ""}>
+                  <span className="sm:hidden">{truncateMobileName(row?.title)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.title)}</span>
+                </td>
+                <td className="px-6 py-1.5 text-gray-700" title={row?.category || ""}>
+                  <span className="sm:hidden">{truncateMobileName(row?.category)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.category)}</span>
+                </td>
                 <td className="px-6 py-1.5 text-gray-700">{formatRange(row?.dateFrom, row?.dateTo)}</td>
                 <td className="px-6 py-1.5 text-gray-700">{formatTimeRange(row?.timeFrom, row?.timeTo, row?.time)}</td>
-                <td className="px-6 py-1.5 text-gray-700">{row?.venue || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-700" title={row?.venue || ""}>
+                  <span className="sm:hidden">{truncateMobileName(row?.venue)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.venue)}</span>
+                </td>
                 <td className="px-6 py-1.5">
                   <div className="flex items-center justify-end gap-2">
                     <button

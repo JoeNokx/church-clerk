@@ -4,6 +4,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import ChurchContext from "../../Church/church.store.js";
 import PermissionContext from "../../Permissions/permission.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 import {
   createBusinessVenture,
   deleteBusinessVenture,
@@ -470,7 +471,7 @@ function BusinessVenturesPage() {
       </div>
 
       {loading ? (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading…</div>
+        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           {ventures.map((v, idx) => (

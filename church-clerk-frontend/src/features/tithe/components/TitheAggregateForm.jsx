@@ -3,7 +3,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
 import Button from "../../../shared/components/Button/index.jsx";
 
-const MAX_DESCRIPTION_LENGTH = 15;
+const MAX_DESCRIPTION_LENGTH = 2000;
 
 function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};

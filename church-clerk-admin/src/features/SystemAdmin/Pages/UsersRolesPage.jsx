@@ -12,6 +12,7 @@ import {
   deleteSystemUserApi,
   verifyUserEmailByAdminApi
 } from "../Services/systemAdmin.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -482,11 +483,20 @@ function UsersRolesPage() {
                   ) : (
                   rows.map((u) => (
                     <tr key={u?._id} className="border-b last:border-b-0">
-                      <td className="py-3 text-gray-900">{u?.fullName || "—"}</td>
-                      <td className="py-3 text-gray-700">{u?.email || "—"}</td>
+                      <td className="py-3 text-gray-900" title={u?.fullName || ""}>
+                        <span className="sm:hidden">{truncateMobileName(u?.fullName)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(u?.fullName)}</span>
+                      </td>
+                      <td className="py-3 text-gray-700" title={u?.email || ""}>
+                        <span className="sm:hidden">{truncateMobileName(u?.email)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(u?.email)}</span>
+                      </td>
                       <td className="py-3 text-gray-700">{u?.phoneNumber || "—"}</td>
                       <td className="py-3 text-gray-700">{u?.role || "—"}</td>
-                      <td className="py-3 text-gray-700">{u?.church?.name || "—"}</td>
+                      <td className="py-3 text-gray-700" title={u?.church?.name || ""}>
+                        <span className="sm:hidden">{truncateMobileName(u?.church?.name)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(u?.church?.name)}</span>
+                      </td>
                       <td className="py-3">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                           u?.isActive === false ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
@@ -643,7 +653,10 @@ function UsersRolesPage() {
                   ) : (
                     customRoles.map((r) => (
                       <tr key={r?._id} className="border-b last:border-b-0">
-                        <td className="py-3 text-gray-900">{r?.name || "—"}</td>
+                        <td className="py-3 text-gray-900" title={r?.name || ""}>
+                          <span className="sm:hidden">{truncateMobileName(r?.name)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(r?.name)}</span>
+                        </td>
                         <td className="py-3 text-gray-700">{r?.key || "—"}</td>
                         <td className="py-3 text-gray-700">{r?.scope || "—"}</td>
                         <td className="py-3 text-gray-700">{r?.isActive === false ? "inactive" : "active"}</td>

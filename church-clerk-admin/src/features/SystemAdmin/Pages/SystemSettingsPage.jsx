@@ -13,6 +13,8 @@ import {
   toggleGovernanceFlags
 } from "../Services/systemAdmin.api.js";
 import { updateMyPassword, updateMyProfile, registerSystemAdmin } from "../../Auth/services/auth.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function SystemSettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -259,7 +261,7 @@ function SystemSettingsPage() {
     return (
       <div className="space-y-2">
         <div className="text-2xl font-semibold text-gray-900">System Settings</div>
-        <div className="text-sm text-gray-600">Loading…</div>
+        <div className="text-sm text-gray-600 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
       </div>
     );
   }
@@ -407,8 +409,14 @@ function SystemSettingsPage() {
                   <tbody>
                     {adminList.filter(u => u?.role === "superadmin" || u?.role === "supportadmin").map((u) => (
                       <tr key={u._id} className="border-b last:border-0">
-                        <td className="py-3 pr-4 text-xs font-medium text-gray-900">{u.fullName || "—"}</td>
-                        <td className="py-3 pr-4 text-xs text-gray-600">{u.email || "—"}</td>
+                        <td className="py-3 pr-4 text-xs font-medium text-gray-900" title={u.fullName || ""}>
+                          <span className="sm:hidden">{truncateMobileName(u.fullName)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(u.fullName)}</span>
+                        </td>
+                        <td className="py-3 pr-4 text-xs text-gray-600" title={u.email || ""}>
+                          <span className="sm:hidden">{truncateMobileName(u.email)}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(u.email)}</span>
+                        </td>
                         <td className="py-3 pr-4 text-xs text-gray-600">{u.phoneNumber || "—"}</td>
                         <td className="py-3 pr-4">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -813,7 +821,10 @@ function SystemSettingsPage() {
 
                       return (
                         <tr key={row?._id} className="border-b last:border-b-0">
-                          <td className="py-3 text-gray-900">{row?.name || "—"}</td>
+                          <td className="py-3 text-gray-900" title={row?.name || ""}>
+                            <span className="sm:hidden">{truncateMobileName(row?.name)}</span>
+                            <span className="hidden sm:inline">{truncateDesktopName(row?.name)}</span>
+                          </td>
                           <td className="py-3 text-gray-700">{row?.sender_id || "—"}</td>
                           <td className="py-3">
                             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${pill}`}>{label}</span>

@@ -2,6 +2,8 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ChurchContext from "../church.store.js";
 import { getMyBranches } from "../services/church.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function KpiCard({ label, value, valueClassName }) {
   return (
@@ -154,7 +156,7 @@ function BranchesOverviewPage() {
       ) : null}
 
       {canViewBranches && loading ? (
-        <div className="mt-4 text-sm text-gray-600">Loading…</div>
+        <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
       ) : canViewBranches ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
           {!branches.length ? (
@@ -174,9 +176,18 @@ function BranchesOverviewPage() {
                 <tbody className="divide-y divide-gray-200">
                   {branches.map((b, idx) => (
                     <tr key={b?._id ?? `b-${idx}`} className="text-sm text-gray-700">
-                      <td className="px-6 py-1.5 text-gray-900">{b?.name || "—"}</td>
-                      <td className="px-6 py-1.5">{`${b?.city || ""}${b?.region ? `, ${b.region}` : ""}`.trim() || "—"}</td>
-                      <td className="px-6 py-1.5">{b?.pastor || "—"}</td>
+                      <td className="px-6 py-1.5 text-gray-900" title={b?.name || ""}>
+                        <span className="sm:hidden">{truncateMobileName(b?.name)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(b?.name)}</span>
+                      </td>
+                      <td className="px-6 py-1.5" title={`${b?.city || ""}${b?.region ? `, ${b.region}` : ""}`.trim()}>
+                        <span className="sm:hidden">{truncateMobileName(`${b?.city || ""}${b?.region ? `, ${b.region}` : ""}`.trim())}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(`${b?.city || ""}${b?.region ? `, ${b.region}` : ""}`.trim())}</span>
+                      </td>
+                      <td className="px-6 py-1.5" title={b?.pastor || ""}>
+                        <span className="sm:hidden">{truncateMobileName(b?.pastor)}</span>
+                        <span className="hidden sm:inline">{truncateDesktopName(b?.pastor)}</span>
+                      </td>
                       <td className="px-6 py-1.5 text-blue-700">{Number(b?.memberCount || 0).toLocaleString()}</td>
                       <td className="px-6 py-1.5">
                         <div className="flex items-center justify-end gap-2">

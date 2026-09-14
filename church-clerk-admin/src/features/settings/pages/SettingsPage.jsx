@@ -18,6 +18,8 @@ import {
   setChurchUserStatus,
   updateChurchUser
 } from "../services/settings.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function SettingsPage() {
   const location = useLocation();
@@ -608,7 +610,7 @@ function SettingsPage() {
             <div className="text-sm font-semibold text-gray-900">Church Details</div>
             <div className="mt-2 text-xs text-gray-500">Active church: {activeChurch?.name || "—"}</div>
 
-            {churchLoading ? <div className="mt-4 text-sm text-gray-600">Loading…</div> : null}
+            {churchLoading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
 
             <form onSubmit={saveChurchProfile} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -907,7 +909,7 @@ function SettingsPage() {
             ) : null}
 
             {usersLoading ? (
-              <div className="mt-4 text-sm text-gray-600">Loading users…</div>
+              <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
             ) : (
               <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
                 <table className="min-w-full text-sm">
@@ -927,8 +929,14 @@ function SettingsPage() {
                         const isActive = row?.isActive !== false;
                         return (
                           <tr key={row?._id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-semibold text-gray-900">{row?.fullName || "—"}</td>
-                            <td className="px-4 py-3 text-gray-700">{row?.email || "—"}</td>
+                            <td className="px-4 py-3 font-semibold text-gray-900" title={row?.fullName || ""}>
+                              <span className="sm:hidden">{truncateMobileName(row?.fullName)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(row?.fullName)}</span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-700" title={row?.email || ""}>
+                              <span className="sm:hidden">{truncateMobileName(row?.email)}</span>
+                              <span className="hidden sm:inline">{truncateDesktopName(row?.email)}</span>
+                            </td>
                             <td className="px-4 py-3 text-gray-700">{row?.phoneNumber || "—"}</td>
                             <td className="px-4 py-3 text-gray-700">{row?.role || "—"}</td>
                             <td className="px-4 py-3">
@@ -1035,7 +1043,7 @@ function SettingsPage() {
               </div>
             ) : null}
 
-            {rolesLoading ? <div className="mt-4 text-sm text-gray-600">Loading roles…</div> : null}
+            {rolesLoading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
           </div>
         </div>
       ) : null}
@@ -1142,7 +1150,10 @@ function SettingsPage() {
                           <tr key={row?._id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{timestamp}</td>
                             <td className="px-4 py-3">
-                              <div className="font-semibold text-gray-900">{userName}</div>
+                              <div className="font-semibold text-gray-900" title={userName}>
+                                <span className="sm:hidden">{truncateMobileName(userName)}</span>
+                                <span className="hidden sm:inline">{truncateDesktopName(userName)}</span>
+                              </div>
                               {userRole ? <div className="text-xs text-gray-500">{userRole}</div> : null}
                             </td>
                             <td className="px-4 py-3 text-gray-700">{row?.action || "—"}</td>

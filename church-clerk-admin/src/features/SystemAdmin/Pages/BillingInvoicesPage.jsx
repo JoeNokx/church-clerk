@@ -7,6 +7,7 @@ import {
   adminMarkInvoiceStatus
 } from "../Services/adminBilling.api.js";
 import { adminGetSubscriptions } from "../Services/adminBilling.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -207,7 +208,10 @@ function BillingInvoicesPage() {
               filtered.map((i) => (
                 <tr key={i?._id} className="border-b last:border-b-0">
                   <td className="py-3 text-gray-900">{i?.invoiceNumber || "—"}</td>
-                  <td className="py-3 text-gray-700">{i?.church?.name || "—"}</td>
+                  <td className="py-3 text-gray-700" title={i?.church?.name || ""}>
+                    <span className="sm:hidden">{truncateMobileName(i?.church?.name)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(i?.church?.name)}</span>
+                  </td>
                   <td className="py-3 text-gray-700">
                     {Number(i?.amount || 0).toLocaleString()} {i?.currency || ""}
                   </td>

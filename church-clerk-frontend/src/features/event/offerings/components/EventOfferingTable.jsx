@@ -7,6 +7,7 @@ import ChurchContext from "../../../church/church.store.js";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../../shared/utils/emptyState.js";
+import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -165,10 +166,10 @@ function EventOfferingTable({ onEdit, onCreate }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((offering, index) => (
               <tr key={offering?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{offering?.offeringType || "-"}</td>
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={offering?.offeringType || "-"}><span className="sm:hidden">{truncateMobileName(offering?.offeringType || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(offering?.offeringType || "-")}</span></td>
                 <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{_fm(offering?.amount || 0, currency)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(offering?.offeringDate)}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{offering?.createdBy?.fullName || "—"}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={offering?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(offering?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(offering?.createdBy?.fullName || "—")}</span></td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   {offering?.referenceId ? (
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{offering.referenceId}</span>

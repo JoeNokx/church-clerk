@@ -474,7 +474,7 @@ function FinancialStatementContent() {
       ) : null}
 
       {loading ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 text-gray-600 md:p-6 lg:p-8 text-sm flex items-center gap-2"><Spinner size="sm" className="text-gray-400" /> Loading statement…</div>
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
       ) : null}
 
       {!loading && !error ? (

@@ -8,6 +8,7 @@ import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavi
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import KpiCard from "../../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../../shared/components/KpiGrid/index.jsx";
+import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
 
 function fmtDate(v) {
   if (!v) return "Not Specified";
@@ -348,7 +349,10 @@ export default function OverviewTab() {
                             </span>
                           </div>
                         </td>
-                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 capitalize truncate">{fu?.type || "Not Specified"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 capitalize" title={fu?.type || "Not Specified"}>
+                          <span className="sm:hidden">{truncateMobileName(fu?.type || "Not Specified")}</span>
+                          <span className="hidden sm:inline">{truncateDesktopName(fu?.type || "Not Specified")}</span>
+                        </td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu?.scheduledDate)}</td>
                         <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                           <span className="rounded-full bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5">Overdue</span>

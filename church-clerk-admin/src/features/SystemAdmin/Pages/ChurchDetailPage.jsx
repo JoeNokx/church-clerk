@@ -33,6 +33,7 @@ import ReferralProgramPage from "../../referral/pages/ReferralProgramPage.jsx";
 import SettingsPage from "../../settings/pages/SettingsPage.jsx";
 import ChurchBillingPage from "./ChurchBillingPage.jsx";
 import { getSystemChurch } from "../Services/systemAdmin.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function ChurchDashboardHome() {
   return (
@@ -375,7 +376,7 @@ function ChurchDetailPage() {
 
       <div className="mt-6">
         {loading ? (
-          <div className="text-sm text-gray-600">Loading…</div>
+          <div className="flex items-center justify-center"><Spinner className="text-gray-400" /></div>
         ) : (
           content
         )}

@@ -11,6 +11,7 @@ import {
 } from "../services/reportsAnalytics.api.js";
 import ChurchContext from "../../Church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function safeNumber(n) {
   const v = Number(n || 0);
@@ -404,7 +405,7 @@ function ReportsAnalyticsPage() {
       ) : null}
 
       {error ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
-      {loading ? <div className="mt-4 text-sm text-gray-600">Loading…</div> : null}
+      {loading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
 
       {activeTab === "analytics" ? (
         <>
@@ -559,7 +560,7 @@ function ReportsAnalyticsPage() {
           </div>
 
           {reportError ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{reportError}</div> : null}
-          {reportLoading ? <div className="mt-4 text-sm text-gray-600">Loading…</div> : null}
+          {reportLoading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
 
           {report?.columns?.length ? (
             <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">

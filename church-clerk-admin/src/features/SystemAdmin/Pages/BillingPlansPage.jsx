@@ -7,6 +7,7 @@ import {
   adminUpdatePlan,
   getPublicExchangeRate
 } from "../Services/adminBilling.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -430,7 +431,10 @@ function BillingPlansPage() {
 
                 return (
                   <tr key={p?._id} className="border-b last:border-b-0">
-                    <td className="py-3 text-gray-900">{p?.name || "—"}</td>
+                    <td className="py-3 text-gray-900" title={p?.name || ""}>
+                      <span className="sm:hidden">{truncateMobileName(p?.name)}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(p?.name)}</span>
+                    </td>
                     <td className="py-3 text-gray-700">{fmtGhs()}</td>
                     {usdToGhsRate > 0 && (
                       <td className="py-3 text-blue-700 font-medium">{fmtUsd()}</td>

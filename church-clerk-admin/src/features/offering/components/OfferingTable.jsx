@@ -3,6 +3,7 @@ import PermissionContext from "../../Permissions/permission.store.js";
 import OfferingContext from "../offering.store.js";
 import ChurchContext from "../../Church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -114,8 +115,14 @@ function OfferingTable({ onEdit, onDeleted }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((offering, index) => (
               <tr key={offering?._id ?? `row-${index}`} className="text-sm text-gray-700">
-                <td className="px-6 py-1.5 text-gray-900">{offering?.serviceType || "-"}</td>
-                <td className="px-6 py-1.5 text-gray-700">{offering?.offeringType || "-"}</td>
+                <td className="px-6 py-1.5 text-gray-900" title={offering?.serviceType || ""}>
+                  <span className="sm:hidden">{truncateMobileName(offering?.serviceType)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(offering?.serviceType)}</span>
+                </td>
+                <td className="px-6 py-1.5 text-gray-700" title={offering?.offeringType || ""}>
+                  <span className="sm:hidden">{truncateMobileName(offering?.offeringType)}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(offering?.offeringType)}</span>
+                </td>
                 <td className="px-6 py-1.5 text-blue-700">{formatMoney(offering?.amount || 0, currency)}</td>
                 <td className="px-6 py-1.5">{formatDate(offering?.serviceDate)}</td>
                 <td className="px-6 py-1.5">

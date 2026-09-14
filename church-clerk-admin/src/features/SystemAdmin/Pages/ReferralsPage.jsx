@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getSystemReferralHistory, getSystemReferralSummary } from "../Services/systemAdmin.api.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 const fmtDateTime = (v) => {
   if (!v) return "—";
@@ -155,9 +156,18 @@ function ReferralsPage() {
               ) : (
                 rows.map((r) => (
                   <tr key={r?._id} className="border-b last:border-b-0">
-                    <td className="py-3 text-gray-900">{r?.referredChurch?.name || "—"}</td>
-                    <td className="py-3 text-gray-700">{r?.referredChurchEmail || r?.referredChurch?.email || "—"}</td>
-                    <td className="py-3 text-gray-700">{r?.referrerChurch?.name || "—"}</td>
+                    <td className="py-3 text-gray-900" title={r?.referredChurch?.name || ""}>
+                      <span className="sm:hidden">{truncateMobileName(r?.referredChurch?.name)}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(r?.referredChurch?.name)}</span>
+                    </td>
+                    <td className="py-3 text-gray-700" title={r?.referredChurchEmail || r?.referredChurch?.email || ""}>
+                      <span className="sm:hidden">{truncateMobileName(r?.referredChurchEmail || r?.referredChurch?.email)}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(r?.referredChurchEmail || r?.referredChurch?.email)}</span>
+                    </td>
+                    <td className="py-3 text-gray-700" title={r?.referrerChurch?.name || ""}>
+                      <span className="sm:hidden">{truncateMobileName(r?.referrerChurch?.name)}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(r?.referrerChurch?.name)}</span>
+                    </td>
                     <td className="py-3 text-gray-700">{r?.rewardStatus || "—"}</td>
                     <td className="py-3 text-gray-700">{fmtDateTime(r?.referredAt)}</td>
                     <td className="py-3 text-gray-700">{fmtDateTime(r?.subscribedAt)}</td>

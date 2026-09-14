@@ -9,6 +9,7 @@ import {
   getQuarterlyFinancialStatement
 } from "../services/financialStatement.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -386,7 +387,7 @@ function FinancialStatementPage() {
       {error ? <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
 
       {loading ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">Loading statement…</div>
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
       ) : null}
 
       {!loading && !error ? (

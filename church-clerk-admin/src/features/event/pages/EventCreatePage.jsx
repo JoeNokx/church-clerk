@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../Permissions/permission.store.js";
 import { createEvent as apiCreateEvent, getEvent as apiGetEvent, updateEvent as apiUpdateEvent } from "../services/event.api.js";
+import Spinner from "../../../shared/components/Spinner.jsx";
 
 const CATEGORY_OPTIONS = [
   "Conference",
@@ -315,7 +316,7 @@ function EventCreatePage({ open, onClose, onSuccess, mode = "create", eventId: e
             ) : null)}
 
             {initialLoading ? (
-              <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Loading...</div>
+              <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
             ) : null}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

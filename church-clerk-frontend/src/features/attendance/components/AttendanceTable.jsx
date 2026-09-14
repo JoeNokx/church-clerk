@@ -5,6 +5,7 @@ import AttendanceContext from "../attendance.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -20,11 +21,6 @@ function formatDateWithDay(value) {
   const day = d.toLocaleDateString(undefined, { weekday: "short" });
   const date = d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
   return `${day}, ${date}`;
-}
-
-function truncateSpeaker(name) {
-  if (!name) return "-";
-  return name.length > 20 ? name.slice(0, 20) + "…" : name;
 }
 
 function AttendanceTable({ onEdit, onDeleted }) {
@@ -158,7 +154,10 @@ function AttendanceTable({ onEdit, onDeleted }) {
               <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
                 <td className="sticky left-0 z-10 bg-white py-1.5 text-gray-900 whitespace-nowrap px-3 md:px-6">{formatDateWithDay(row?.serviceDate)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{row?.serviceType || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{truncateSpeaker(row?.mainSpeaker)}</td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={row?.mainSpeaker || "-"}>
+                  <span className="sm:hidden">{truncateMobileName(row?.mainSpeaker || "-")}</span>
+                  <span className="hidden sm:inline">{truncateDesktopName(row?.mainSpeaker || "-")}</span>
+                </td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{Number(row?.totalNumber || 0).toLocaleString()}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
