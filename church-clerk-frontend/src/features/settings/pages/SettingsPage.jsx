@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 import { useAuth } from "../../auth/useAuth.js";
 import PermissionContext from "../../permissions/permission.store.js";
@@ -23,6 +24,8 @@ import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import ApprovalsTab from "../../governance/pages/ApprovalsPage.jsx";
+import { getApprovals } from "../../governance/services/governance.api.js";
 import {
   getRolePermissions,
   getChurchUsers,
@@ -164,6 +167,20 @@ function SettingsPage() {
     return norm === "superadmin" || norm === "supportadmin";
   }, [user?.role]);
 
+  const canSeeApprovals = useMemo(() => {
+    const raw = String(user?.role || "").trim().toLowerCase();
+    return raw === "superadmin" || raw === "churchadmin";
+  }, [user?.role]);
+
+  const { data: pendingApprovalsCount = 0 } = useQuery({
+    queryKey: ["church-governance", "PENDING_APPROVAL", "settings-tab-count"],
+    queryFn: () => getApprovals({ status: "PENDING_APPROVAL", limit: 1 }).then((r) => r.data?.pagination?.total || 0),
+    enabled: canSeeApprovals,
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+  const pendingApprovalCount = typeof pendingApprovalsCount === "number" ? pendingApprovalsCount : 0;
+
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const requestedTab = String(sp.get("tab") || "").trim().toLowerCase();
@@ -189,6 +206,10 @@ function SettingsPage() {
     }
     if (requestedTab === "audit") {
       setTab("audit");
+      return;
+    }
+    if (requestedTab === "approvals" && canSeeApprovals) {
+      setTab("approvals");
       return;
     }
     if (requestedTab === "system" || requestedTab === "governance") {
@@ -1319,6 +1340,7 @@ function SettingsPage() {
           { key: "configure", label: "Configure" },
           { key: "users", label: "Users & Roles" },
           { key: "audit", label: "Audit Log" },
+          ...(canSeeApprovals ? [{ key: "approvals", label: "Approvals", badge: pendingApprovalCount > 0 ? (pendingApprovalCount > 99 ? "99+" : pendingApprovalCount) : null, badgeColor: "bg-indigo-500 text-white" }] : []),
         ]}
         activeTab={tab}
         onChange={setTab}
@@ -2676,6 +2698,12 @@ function SettingsPage() {
               </button>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {tab === "approvals" && canSeeApprovals ? (
+        <div className="mt-6">
+          <ApprovalsTab />
         </div>
       ) : null}
 

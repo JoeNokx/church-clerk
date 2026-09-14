@@ -869,38 +869,6 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-                {(user?.role === "superadmin" || user?.role === "churchadmin") ? (
-
-                  <NavLink to={toPage("approvals")} className={itemClass("approvals")}>
-
-                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
-
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-
-                        <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-
-                        <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.8" />
-
-                      </svg>
-
-                    </span>
-
-                    Approvals
-
-                    {pendingApprovalCount > 0 ? (
-                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-500 px-1 text-[11px] font-bold text-white">
-                        {pendingApprovalCount > 99 ? "99+" : pendingApprovalCount}
-                      </span>
-                    ) : null}
-
-                  </NavLink>
-
-                ) : null}
-
-
-
                 {planAllows("Settings") && canSeeSettings() ? (
 
                   <NavLink to={toPage("settings")} className={itemClass("settings")}>
@@ -917,6 +885,12 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Settings
+
+                    {canSeeApprovals && pendingApprovalCount > 0 ? (
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-500 px-1 text-[11px] font-bold text-white">
+                        {pendingApprovalCount > 99 ? "99+" : pendingApprovalCount}
+                      </span>
+                    ) : null}
 
                   </NavLink>
 

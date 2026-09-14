@@ -83,8 +83,6 @@ const NotificationsPage = React.lazy(() => import("../../notifications/pages/Not
 
 const AnnouncementPage = React.lazy(() => import("../../announcement/pages/AnnouncementPage.jsx"));
 
-const ApprovalsPage = React.lazy(() => import("../../governance/pages/ApprovalsPage.jsx"));
-
 const OutreachPage = React.lazy(() => import("../../outreach/pages/OutreachPage.jsx"));
 
 const OutreachEventDetailPage = React.lazy(() => import("../../outreach/pages/OutreachEventDetailPage.jsx"));
@@ -1542,8 +1540,6 @@ function DashboardHome() {
   if (page === "notifications") PageComponent = NotificationsPage;
 
   if (page === "announcements") PageComponent = AnnouncementPage;
-
-  if (page === "approvals") PageComponent = ApprovalsPage;
 
   if (page === "outreach") PageComponent = OutreachPage;
 
