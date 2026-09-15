@@ -15,11 +15,6 @@ export const updateOffering = async (id, payload, churchId) => {
   return await http.put(`/offering/offerings/${id}`, payload);
 };
 
-export const deleteOffering = async (id, churchId) => {
-  if (!churchId) throw new Error("Active church not selected");
-  return await http.delete(`/offering/offerings/${id}`);
-};
-
 export const getOfferingKPI = async (churchId) => {
   if (!churchId) throw new Error("Active church not selected");
   return await http.get("/offering/offerings/stats/kpi");

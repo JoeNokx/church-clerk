@@ -22,13 +22,11 @@ import {
 } from "../services/businessVentures.api.js";
 import {
   createBusinessIncome,
-  deleteBusinessIncome,
   getBusinessIncomes,
   updateBusinessIncome
 } from "../incomes/services/businessIncomes.api.js";
 import {
   createBusinessExpense,
-  deleteBusinessExpense,
   getBusinessExpenses,
   updateBusinessExpense
 } from "../expenses/services/businessExpenses.api.js";
@@ -68,36 +66,6 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
           </button>
         </div>
         <div className="p-4 md:p-6 lg:p-8">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function ConfirmModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-          <div className="font-semibold text-gray-900 text-sm">{title}</div>
-        </div>
-        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
-          >
-            {confirmLabel}
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -698,14 +666,10 @@ function BusinessVentureDetailsPage() {
   const [addIncomeOpen, setAddIncomeOpen] = useState(false);
   const [editIncomeOpen, setEditIncomeOpen] = useState(false);
   const [editIncomeRow, setEditIncomeRow] = useState(null);
-  const [deleteIncomeOpen, setDeleteIncomeOpen] = useState(false);
-  const [deleteIncomeRow, setDeleteIncomeRow] = useState(null);
 
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [editExpenseOpen, setEditExpenseOpen] = useState(false);
   const [editExpenseRow, setEditExpenseRow] = useState(null);
-  const [deleteExpenseOpen, setDeleteExpenseOpen] = useState(false);
-  const [deleteExpenseRow, setDeleteExpenseRow] = useState(null);
 
   const loadHeader = async () => {
     if (!businessId) return;
@@ -1092,8 +1056,7 @@ function BusinessVentureDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setViewIncomeRow(row); setViewIncomeOpen(true); } },
-                              canEdit && { label: "Edit", onClick: () => guarded(() => { setEditIncomeRow(row); setEditIncomeOpen(true); }) },
-                              canEdit && { label: "Delete", onClick: () => guarded(() => { setDeleteIncomeRow(row); setDeleteIncomeOpen(true); }), danger: true }
+                              canEdit && { label: "Edit", onClick: () => guarded(() => { setEditIncomeRow(row); setEditIncomeOpen(true); }) }
                             ]} />
                           </td>
                         </tr>
@@ -1157,8 +1120,7 @@ function BusinessVentureDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setViewExpenseRow(row); setViewExpenseOpen(true); } },
-                              canEdit && { label: "Edit", onClick: () => guarded(() => { setEditExpenseRow(row); setEditExpenseOpen(true); }) },
-                              canEdit && { label: "Delete", onClick: () => guarded(() => { setDeleteExpenseRow(row); setDeleteExpenseOpen(true); }), danger: true }
+                              canEdit && { label: "Edit", onClick: () => guarded(() => { setEditExpenseRow(row); setEditExpenseOpen(true); }) }
                             ]} />
                           </td>
                         </tr>
@@ -1274,24 +1236,6 @@ function BusinessVentureDetailsPage() {
         }}
       />
 
-      <ConfirmModal
-        open={deleteIncomeOpen}
-        title="Delete Income"
-        message="Are you sure you want to delete this income record?"
-        confirmLabel="Delete"
-        onCancel={() => {
-          setDeleteIncomeOpen(false);
-          setDeleteIncomeRow(null);
-        }}
-        onConfirm={async () => {
-          if (!deleteIncomeRow?._id) return;
-          await deleteBusinessIncome(businessId, deleteIncomeRow._id);
-          setDeleteIncomeOpen(false);
-          setDeleteIncomeRow(null);
-          await Promise.all([loadHeader(), loadIncomes(incomePage)]);
-        }}
-      />
-
       <ExpenseFormModal
         open={addExpenseOpen}
         mode="add"
@@ -1325,24 +1269,6 @@ function BusinessVentureDetailsPage() {
           await updateBusinessExpense(businessId, editExpenseRow._id, payload);
           setEditExpenseOpen(false);
           setEditExpenseRow(null);
-          await Promise.all([loadHeader(), loadExpenses(expensePage)]);
-        }}
-      />
-
-      <ConfirmModal
-        open={deleteExpenseOpen}
-        title="Delete Expense"
-        message="Are you sure you want to delete this expense record?"
-        confirmLabel="Delete"
-        onCancel={() => {
-          setDeleteExpenseOpen(false);
-          setDeleteExpenseRow(null);
-        }}
-        onConfirm={async () => {
-          if (!deleteExpenseRow?._id) return;
-          await deleteBusinessExpense(businessId, deleteExpenseRow._id);
-          setDeleteExpenseOpen(false);
-          setDeleteExpenseRow(null);
           await Promise.all([loadHeader(), loadExpenses(expensePage)]);
         }}
       />

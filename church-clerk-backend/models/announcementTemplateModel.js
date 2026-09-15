@@ -20,7 +20,7 @@ const announcementTemplateSchema = new mongoose.Schema(
     },
     channel: {
       type: String,
-      enum: ["sms", "whatsapp"],
+      enum: ["sms"],
       required: true
     },
     message: {

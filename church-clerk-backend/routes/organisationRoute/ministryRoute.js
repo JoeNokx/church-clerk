@@ -292,17 +292,6 @@ router.put(
   conditionalImmutableGuard(),
   updateMinistryOffering
 );
-router.delete(
-  "/ministries/:ministryId/offerings/:offeringId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "delete"),
-  conditionalImmutableGuard(),
-  deleteMinistryOffering
-);
 
 
 router.get(

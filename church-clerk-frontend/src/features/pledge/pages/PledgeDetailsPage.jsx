@@ -8,7 +8,6 @@ import ChurchContext from "../../church/church.store.js";
 import PledgeContext, { PledgeProvider } from "../pledge.store.js";
 import {
   createPledgePayment,
-  deletePledgePayment,
   getPledgePayments,
   updatePledgePayment
 } from "../payments/services/pledgePayments.api.js";
@@ -221,36 +220,6 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
   );
 }
 
-function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-          <div className="font-semibold text-gray-900 text-sm">{title}</div>
-        </div>
-        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PledgeDetailsPageInner() {
   const store = useContext(PledgeContext);
   const churchStore = useContext(ChurchContext);
@@ -265,7 +234,6 @@ function PledgeDetailsPageInner() {
 
   const canCreatePayment = useMemo(() => (typeof can === "function" ? can("pledges", "create") : false), [can]);
   const canEditPayment = useMemo(() => (typeof can === "function" ? can("pledges", "update") : false), [can]);
-  const canDeletePayment = useMemo(() => (typeof can === "function" ? can("pledges", "delete") : false), [can]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -283,8 +251,6 @@ function PledgeDetailsPageInner() {
   const [editPaymentOpen, setEditPaymentOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
 
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [confirmDeletePayment, setConfirmDeletePayment] = useState(null);
   const [viewRow, setViewRow] = useState(null);
 
   const goBack = () => {
@@ -368,25 +334,6 @@ function PledgeDetailsPageInner() {
     setNewPaymentOpen(false);
     setEditPaymentOpen(false);
     setEditingPayment(null);
-  };
-
-  const openDelete = (payment) => {
-    setConfirmDeletePayment(payment || null);
-    setConfirmDeleteOpen(true);
-  };
-
-  const closeDelete = () => {
-    setConfirmDeleteOpen(false);
-    setConfirmDeletePayment(null);
-  };
-
-  const confirmDelete = async () => {
-    const id = confirmDeletePayment?._id;
-    closeDelete();
-    if (!pledgeId || !id) return;
-    await deletePledgePayment(pledgeId, id);
-    await loadPayments({ page: 1 });
-    await loadPledge();
   };
 
   const onPrev = async () => {
@@ -594,8 +541,7 @@ function PledgeDetailsPageInner() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             { label: "View", onClick: () => setViewRow(p) },
-                            canEditPayment && { label: "Edit", onClick: () => openEdit(p) },
-                            canDeletePayment && { label: "Delete", onClick: () => openDelete(p), danger: true }
+                            canEditPayment && { label: "Edit", onClick: () => openEdit(p) }
                           ]} />
                         </td>
                       </tr>
@@ -701,14 +647,6 @@ function PledgeDetailsPageInner() {
         </div>
       ) : null}
 
-      <ConfirmDeleteModal
-        open={confirmDeleteOpen}
-        title="Delete Payment"
-        message="Are you sure you want to delete this payment?"
-        confirmLabel="Delete"
-        onCancel={closeDelete}
-        onConfirm={confirmDelete}
-      />
     </div>
   );
 }

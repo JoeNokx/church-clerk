@@ -16,8 +16,4 @@ export const updateEventOffering = async (eventId, offeringId, payload) => {
   return await http.put(`/event/events/${eventId}/offerings/${offeringId}`, payload);
 };
 
-export const deleteEventOffering = async (eventId, offeringId) => {
-  if (!eventId) throw new Error("Event id is required");
-  if (!offeringId) throw new Error("Offering id is required");
-  return await http.delete(`/event/events/${eventId}/offerings/${offeringId}`);
-};
+

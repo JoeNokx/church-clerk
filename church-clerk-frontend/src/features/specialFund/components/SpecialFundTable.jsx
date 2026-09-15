@@ -24,13 +24,10 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const guarded = useGuardedAction();
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmId, setConfirmId] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewRow, setViewRow] = useState(null);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("specialFunds", "update") : false), [can]);
-  const canDelete = useMemo(() => (typeof can === "function" ? can("specialFunds", "delete") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("specialFunds", "create") : false), [can]);
 
   const clearSearch = () => {
@@ -56,28 +53,6 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
     const nextPage = store?.pagination?.nextPage;
     if (!nextPage) return;
     await store?.fetchSpecialFunds({ page: nextPage });
-  };
-
-  const onDelete = async (id) => {
-    await store?.deleteSpecialFund(id);
-    onDeleted?.();
-  };
-
-  const openConfirmDelete = (id) => {
-    setConfirmId(id);
-    setConfirmOpen(true);
-  };
-
-  const closeConfirmDelete = () => {
-    setConfirmOpen(false);
-    setConfirmId(null);
-  };
-
-  const confirmDelete = async () => {
-    const id = confirmId;
-    closeConfirmDelete();
-    if (!id) return;
-    await onDelete(id);
   };
 
   if (store?.loading) {
@@ -196,8 +171,7 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
                     { label: "View", onClick: () => { setViewRow(fund); setViewOpen(true); } },
-                    canEdit && { label: "Edit", onClick: () => guarded(() => { if (!fund?._id) return; onEdit?.(fund); }) },
-                    canDelete && { label: "Delete", onClick: () => guarded(() => { if (!fund?._id) return; openConfirmDelete(fund._id); }), danger: true }
+                    canEdit && { label: "Edit", onClick: () => guarded(() => { if (!fund?._id) return; onEdit?.(fund); }) }
                   ]} />
                 </td>
               </tr>
@@ -250,32 +224,6 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
         </div>
       )}
 
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-          <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Delete Fund</div>
-            </div>
-            <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">Are you sure you want to delete this record?</div>
-            <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-              <button
-                type="button"
-                onClick={closeConfirmDelete}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

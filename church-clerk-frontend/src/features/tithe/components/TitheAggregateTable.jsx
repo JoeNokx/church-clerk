@@ -22,12 +22,9 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmId, setConfirmId] = useState(null);
   const [viewRow, setViewRow] = useState(null);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
-  const canDelete = useMemo(() => (typeof can === "function" ? can("tithe", "delete") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("tithe", "create") : false), [can]);
 
   const rows = Array.isArray(store?.aggregates) ? store.aggregates : [];
@@ -45,24 +42,6 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
     const nextPage = store?.aggregatePagination?.nextPage;
     if (!nextPage) return;
     await store?.fetchAggregates?.({ page: nextPage });
-  };
-
-  const openConfirmDelete = (id) => {
-    setConfirmId(id);
-    setConfirmOpen(true);
-  };
-
-  const closeConfirmDelete = () => {
-    setConfirmOpen(false);
-    setConfirmId(null);
-  };
-
-  const confirmDelete = async () => {
-    const id = confirmId;
-    closeConfirmDelete();
-    if (!id) return;
-    await store?.deleteTitheAggregate?.(id);
-    onDeleted?.();
   };
 
   if (store?.loading) {
@@ -179,21 +158,6 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
                           <path d="M13.5 6.5 17.5 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                         </svg>
                       )
-                    },
-                    canDelete && {
-                      label: "Delete",
-                      onClick: () => { if (!row?._id) return; openConfirmDelete(row._id); },
-                      danger: true,
-                      desktopClassName: "h-11 inline-flex items-center justify-center rounded-lg bg-white text-red-600 hover:bg-red-50 md:h-12 md:w-11 w-11 md:w-12",
-                      desktopContent: (
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                          <path d="M4 7h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M10 11v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M14 11v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M6 7l1 14h10l1-14" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                          <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" strokeWidth="1.8" />
-                        </svg>
-                      )
                     }
                   ]} />
                 </td>
@@ -222,33 +186,6 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
           Next
         </button>
       </div>
-
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-          <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Delete Tithe</div>
-            </div>
-            <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">Are you sure you want to delete this record?</div>
-            <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-              <button
-                type="button"
-                onClick={closeConfirmDelete}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {viewRow ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>

@@ -12,6 +12,4 @@ export const updateGroupOffering = async (groupId, offeringId, payload) => {
   return await http.put(`/organisations/groups/${groupId}/offerings/${offeringId}`, payload);
 };
 
-export const deleteGroupOffering = async (groupId, offeringId) => {
-  return await http.delete(`/organisations/groups/${groupId}/offerings/${offeringId}`);
-};
+

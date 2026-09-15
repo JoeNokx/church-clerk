@@ -60,11 +60,7 @@ function BudgetingTable({ onEdit, onCreate }) {
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const { toPage } = useDashboardNavigator();
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmId, setConfirmId] = useState(null);
-
   const canEdit = useMemo(() => (typeof can === "function" ? can("budgeting", "update") : false), [can]);
-  const canDelete = useMemo(() => (typeof can === "function" ? can("budgeting", "delete") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("budgeting", "create") : false), [can]);
 
   const clearSearch = () => {
@@ -86,23 +82,6 @@ function BudgetingTable({ onEdit, onCreate }) {
     const nextPage = store?.pagination?.nextPage;
     if (!nextPage) return;
     await store?.fetchBudgets?.({ page: nextPage });
-  };
-
-  const openConfirmDelete = (id) => {
-    setConfirmId(id);
-    setConfirmOpen(true);
-  };
-
-  const closeConfirmDelete = () => {
-    setConfirmOpen(false);
-    setConfirmId(null);
-  };
-
-  const confirmDelete = async () => {
-    const id = confirmId;
-    closeConfirmDelete();
-    if (!id) return;
-    await store?.deleteBudget?.(id);
   };
 
   if (store?.loading) {
@@ -232,18 +211,6 @@ function BudgetingTable({ onEdit, onCreate }) {
                           </svg>
                         </button>
                       ) : null}
-                      {canDelete ? (
-                        <button
-                          type="button"
-                          onClick={() => row?._id && openConfirmDelete(row._id)}
-                          className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50"
-                          aria-label="Delete"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
-                            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </button>
-                      ) : null}
                     </>
                   }
                 />
@@ -321,32 +288,6 @@ function BudgetingTable({ onEdit, onCreate }) {
         </button>
       </div>
 
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-          <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Delete Budget</div>
-            </div>
-            <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">Are you sure you want to delete this budget?</div>
-            <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-              <button
-                type="button"
-                onClick={closeConfirmDelete}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

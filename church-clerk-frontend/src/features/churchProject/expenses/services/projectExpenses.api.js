@@ -15,6 +15,4 @@ export const updateProjectExpense = async (projectId, expensesId, payload) => {
   );
 };
 
-export const deleteProjectExpense = async (projectId, expensesId) => {
-  return await http.delete(`/church-project/church-projects/${projectId}/expenses/${expensesId}`);
-};
+

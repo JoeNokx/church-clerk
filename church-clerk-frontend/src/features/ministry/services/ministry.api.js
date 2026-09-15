@@ -104,10 +104,6 @@ export const updateMinistryOffering = async (ministryId, offeringId, payload) =>
   return await http.put(`/organisations/ministries/${ministryId}/offerings/${offeringId}`, payload);
 };
 
-export const deleteMinistryOffering = async (ministryId, offeringId) => {
-  return await http.delete(`/organisations/ministries/${ministryId}/offerings/${offeringId}`);
-};
-
 export const getMinistryKPI = async () => {
   return await http.get("/organisations/ministries/stats/kpi");
 };

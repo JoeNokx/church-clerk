@@ -3,8 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTitheAggregate as apiCreateTitheAggregate,
   createTitheIndividual as apiCreateTitheIndividual,
-  deleteTitheAggregate as apiDeleteTitheAggregate,
-  deleteTitheIndividual as apiDeleteTitheIndividual,
   getTitheAggregateKPI as apiGetTitheAggregateKPI,
   getTitheAggregates as apiGetTitheAggregates,
   getTitheIndividualKPI as apiGetTitheIndividualKPI,
@@ -171,13 +169,6 @@ export function useTitheMutations(activeChurchId) {
     onSuccess: invalidateIndividuals
   });
 
-  const deleteIndividual = useMutation({
-    mutationFn: async (id) => {
-      return await apiDeleteTitheIndividual(id, churchId);
-    },
-    onSuccess: invalidateIndividuals
-  });
-
   const createAggregate = useMutation({
     mutationFn: async (payload) => {
       return await apiCreateTitheAggregate(payload, churchId);
@@ -192,21 +183,12 @@ export function useTitheMutations(activeChurchId) {
     onSuccess: invalidateAggregates
   });
 
-  const deleteAggregate = useMutation({
-    mutationFn: async (id) => {
-      return await apiDeleteTitheAggregate(id, churchId);
-    },
-    onSuccess: invalidateAggregates
-  });
-
   return {
     createIndividual,
     createIndividualsBulk,
     updateIndividual,
-    deleteIndividual,
     createAggregate,
     updateAggregate,
-    deleteAggregate,
     invalidateIndividuals,
     invalidateAggregates
   };

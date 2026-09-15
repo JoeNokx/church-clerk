@@ -30,7 +30,6 @@ export const getSystemSettings = async (req, res) => {
         gracePeriodDays: settings.gracePeriodDays,
         creditsPerGhs: settings.creditsPerGhs,
         smsCostCredits: settings.smsCostCredits,
-        whatsappCostCredits: settings.whatsappCostCredits,
         referralBonusDays: settings.referralBonusDays,
         usdToGhsRate: settings.usdToGhsRate,
         enforceBackdating: !!settings.enforceBackdating,
@@ -44,7 +43,7 @@ export const getSystemSettings = async (req, res) => {
 
 export const updateSystemSettings = async (req, res) => {
   try {
-    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, whatsappCostCredits, referralBonusDays, usdToGhsRate, enforceBackdating, enforceImmutability } = req.body || {};
+    const { trialDays, gracePeriodDays, creditsPerGhs, smsCostCredits, referralBonusDays, usdToGhsRate, enforceBackdating, enforceImmutability } = req.body || {};
 
     const update = {};
 
@@ -78,14 +77,6 @@ export const updateSystemSettings = async (req, res) => {
         return res.status(400).json({ message: "smsCostCredits must be a whole number >= 0" });
       }
       update.smsCostCredits = n;
-    }
-
-    if (whatsappCostCredits !== undefined) {
-      const n = Number(whatsappCostCredits);
-      if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
-        return res.status(400).json({ message: "whatsappCostCredits must be a whole number >= 0" });
-      }
-      update.whatsappCostCredits = n;
     }
 
     if (referralBonusDays !== undefined) {
@@ -122,7 +113,6 @@ export const updateSystemSettings = async (req, res) => {
           gracePeriodDays: settings.gracePeriodDays,
           creditsPerGhs: settings.creditsPerGhs,
           smsCostCredits: settings.smsCostCredits,
-          whatsappCostCredits: settings.whatsappCostCredits,
           referralBonusDays: settings.referralBonusDays,
           usdToGhsRate: settings.usdToGhsRate,
           enforceBackdating: !!settings.enforceBackdating,
@@ -186,7 +176,6 @@ export const updateSystemSettings = async (req, res) => {
         gracePeriodDays: settings.gracePeriodDays,
         creditsPerGhs: settings.creditsPerGhs,
         smsCostCredits: settings.smsCostCredits,
-        whatsappCostCredits: settings.whatsappCostCredits,
         referralBonusDays: settings.referralBonusDays,
         usdToGhsRate: settings.usdToGhsRate,
         enforceBackdating: !!settings.enforceBackdating,
@@ -209,7 +198,6 @@ export const getSystemSettingsSnapshot = async () => {
     gracePeriodDays: Number(settings.gracePeriodDays ?? 7),
     creditsPerGhs: Number(settings.creditsPerGhs || 100),
     smsCostCredits: Number(settings.smsCostCredits ?? 5),
-    whatsappCostCredits: Number(settings.whatsappCostCredits ?? 20),
     referralBonusDays: Number(settings.referralBonusDays || 30),
     usdToGhsRate: Number(settings.usdToGhsRate ?? 0),
     enforceBackdating: Boolean(settings.enforceBackdating),

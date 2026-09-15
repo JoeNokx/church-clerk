@@ -12,6 +12,4 @@ export const updateWelfareContribution = async (id, payload) => {
   return await http.put(`/welfare/welfare-contributions/${id}`, payload);
 };
 
-export const deleteWelfareContribution = async (id) => {
-  return await http.delete(`/welfare/welfare-contributions/${id}`);
-};
+

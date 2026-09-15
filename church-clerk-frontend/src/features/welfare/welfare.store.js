@@ -3,13 +3,11 @@ import { createContext, createElement, useCallback, useContext, useEffect, useMe
 import ChurchContext from "../church/church.store.js";
 import {
   createWelfareContribution as apiCreateWelfareContribution,
-  deleteWelfareContribution as apiDeleteWelfareContribution,
   getWelfareContributions as apiGetWelfareContributions,
   updateWelfareContribution as apiUpdateWelfareContribution
 } from "./contributions/services/welfareContributions.api.js";
 import {
   createWelfareDisbursement as apiCreateWelfareDisbursement,
-  deleteWelfareDisbursement as apiDeleteWelfareDisbursement,
   getWelfareDisbursements as apiGetWelfareDisbursements,
   updateWelfareDisbursement as apiUpdateWelfareDisbursement
 } from "./disbursements/services/welfareDisbursements.api.js";
@@ -217,23 +215,6 @@ export function WelfareProvider({ children }) {
     [fetchContributions]
   );
 
-  const deleteContribution = useCallback(
-    async (id) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await apiDeleteWelfareContribution(id);
-        await fetchContributions();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to delete welfare contribution");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchContributions]
-  );
-
   const createDisbursement = useCallback(
     async (payload) => {
       setLoading(true);
@@ -268,23 +249,6 @@ export function WelfareProvider({ children }) {
     [fetchDisbursements]
   );
 
-  const deleteDisbursement = useCallback(
-    async (id) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await apiDeleteWelfareDisbursement(id);
-        await fetchDisbursements();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to delete welfare disbursement");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchDisbursements]
-  );
-
   const getWelfareKPI = useCallback(async () => {
     return await apiGetWelfareKPI();
   }, [activeChurchId]);
@@ -311,10 +275,8 @@ export function WelfareProvider({ children }) {
       fetchDisbursements,
       createContribution,
       updateContribution,
-      deleteContribution,
       createDisbursement,
       updateDisbursement,
-      deleteDisbursement,
       getWelfareKPI,
       searchMembers,
       loading,
@@ -334,10 +296,8 @@ export function WelfareProvider({ children }) {
     fetchDisbursements,
     createContribution,
     updateContribution,
-    deleteContribution,
     createDisbursement,
     updateDisbursement,
-    deleteDisbursement,
     getWelfareKPI,
     searchMembers,
     loading,

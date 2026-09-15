@@ -10,6 +10,7 @@ import { computeProration } from "./prorationController.js";
 import { getPaystackSecretKey, paystackRequest } from "../../utils/paystackHelpers.js";
 import { normalizeBillingIntervalKey } from "../../utils/planHelpers.js";
 import { rewardReferralIfEligible } from "../referralSystemController.js";
+import { resetAllowanceForPeriod } from "../../services/announcement/allowanceService.js";
 
 const getSupportedPaystackCurrencies = () => {
   const raw = String(process.env.PAYSTACK_SUPPORTED_CURRENCIES || "").trim();
@@ -614,6 +615,18 @@ export const verifyPaystackPayment = async (req, res) => {
         }
 
         await subscription.save();
+
+        // Reset the monthly SMS allowance for the new billing period.
+        try {
+          await resetAllowanceForPeriod({
+            churchId: subscription.church,
+            periodIndex: subscription.nextBillingDate ? new Date(subscription.nextBillingDate).getTime() : Date.now(),
+            periodEnd: subscription.nextBillingDate,
+            planId: subscription.plan
+          });
+        } catch (allowanceErr) {
+          console.error("[verifyPaystackPayment] allowance reset error:", allowanceErr?.message || allowanceErr);
+        }
 
         // Fire referral reward for the referrer church (idempotent — no-op if already rewarded)
         try {

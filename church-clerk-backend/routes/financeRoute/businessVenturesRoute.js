@@ -60,17 +60,6 @@ router.put(
   conditionalImmutableGuard(),
   updateBusinessVentures
 );
-router.delete(
-  "/business-ventures/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("businessVentures", "delete"),
-  conditionalImmutableGuard(),
-  deleteBusinessVentures
-);
 
 router.post(
   "/business-ventures/:id/adjustments",
@@ -148,17 +137,6 @@ router.put(
   conditionalImmutableGuard(),
   updateBusinessIncome
 );
-router.delete(
-  "/business-ventures/:businessId/incomes/:incomeId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("businessVentures", "delete"),
-  conditionalImmutableGuard(),
-  deleteBusinessIncome
-);
 
 router.post(
   "/business-ventures/:businessId/incomes/:incomeId/adjustments",
@@ -224,17 +202,6 @@ router.put(
   requirePermission("businessVentures", "update"),
   conditionalImmutableGuard(),
   updateBusinessExpenses
-);
-router.delete(
-  "/business-ventures/:businessId/expenses/:expensesId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("businessVentures", "delete"),
-  conditionalImmutableGuard(),
-  deleteBusinessExpenses
 );
 
 router.post(

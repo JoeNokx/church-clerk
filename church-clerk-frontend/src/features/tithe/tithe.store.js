@@ -172,14 +172,6 @@ export function TitheProvider({ children }) {
     [activeChurchId, titheMutations.updateIndividual]
   );
 
-  const deleteTitheIndividual = useCallback(
-    async (id) => {
-      if (!activeChurchId) throw new Error("Active church not selected");
-      await titheMutations.deleteIndividual.mutateAsync(id);
-    },
-    [activeChurchId, titheMutations.deleteIndividual]
-  );
-
   const createTitheAggregate = useCallback(
     async (payload) => {
       if (!activeChurchId) throw new Error("Active church not selected");
@@ -194,14 +186,6 @@ export function TitheProvider({ children }) {
       await titheMutations.updateAggregate.mutateAsync({ id, payload });
     },
     [activeChurchId, titheMutations.updateAggregate]
-  );
-
-  const deleteTitheAggregate = useCallback(
-    async (id) => {
-      if (!activeChurchId) throw new Error("Active church not selected");
-      await titheMutations.deleteAggregate.mutateAsync(id);
-    },
-    [activeChurchId, titheMutations.deleteAggregate]
   );
 
   const getIndividualKPI = useCallback(async () => {
@@ -238,10 +222,8 @@ export function TitheProvider({ children }) {
       createTitheIndividuals,
       createTitheIndividualsBulk,
       updateTitheIndividual,
-      deleteTitheIndividual,
       createTitheAggregate,
       updateTitheAggregate,
-      deleteTitheAggregate,
       getIndividualKPI,
       getAggregateKPI,
       searchMembers,
@@ -263,10 +245,8 @@ export function TitheProvider({ children }) {
     createTitheIndividuals,
     createTitheIndividualsBulk,
     updateTitheIndividual,
-    deleteTitheIndividual,
     createTitheAggregate,
     updateTitheAggregate,
-    deleteTitheAggregate,
     getIndividualKPI,
     getAggregateKPI,
     searchMembers,

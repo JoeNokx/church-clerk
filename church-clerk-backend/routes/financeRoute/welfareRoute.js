@@ -61,17 +61,6 @@ router.put(
   conditionalImmutableGuard(),
   updateWelfareContribution
 );
-router.delete(
-  "/welfare-contributions/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("welfare", "delete"),
-  conditionalImmutableGuard(),
-  deleteWelfareContribution
-);
 
 router.post(
   "/welfare-contributions/:id/adjustments",
@@ -139,17 +128,6 @@ router.put(
   requirePermission("welfare", "update"),
   conditionalImmutableGuard(),
   updateWelfareDisbursement
-);
-router.delete(
-  "/welfare-disbursements/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("welfare", "delete"),
-  conditionalImmutableGuard(),
-  deleteWelfareDisbursement
 );
 
 router.post(

@@ -303,16 +303,5 @@ router.put(
   conditionalImmutableGuard(),
   updateGroupOffering
 );
-router.delete(
-  "/groups/:groupId/offerings/:offeringId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("organisation", "delete"),
-  conditionalImmutableGuard(),
-  deleteGroupOffering
-);
 
 export default router

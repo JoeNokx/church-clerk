@@ -29,8 +29,8 @@ export const createTemplate = async (req, res) => {
     if (!name) {
       return res.status(400).json({ message: "Template name is required" });
     }
-    if (!["sms", "whatsapp"].includes(channel)) {
-      return res.status(400).json({ message: "channel must be sms or whatsapp" });
+    if (!["sms"].includes(channel)) {
+      return res.status(400).json({ message: "channel must be sms" });
     }
     if (!message) {
       return res.status(400).json({ message: "Template message is required" });
@@ -69,8 +69,8 @@ export const updateTemplate = async (req, res) => {
     if (req.body?.channel !== undefined) updates.channel = String(req.body?.channel || "").trim();
     if (req.body?.message !== undefined) updates.message = String(req.body?.message || "").trim();
 
-    if (updates.channel && !["sms", "whatsapp"].includes(updates.channel)) {
-      return res.status(400).json({ message: "channel must be sms or whatsapp" });
+    if (updates.channel && !["sms"].includes(updates.channel)) {
+      return res.status(400).json({ message: "channel must be sms" });
     }
 
     const template = await AnnouncementTemplate.findOneAndUpdate(

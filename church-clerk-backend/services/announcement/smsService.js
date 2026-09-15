@@ -1,7 +1,13 @@
 import AnnouncementMessage from "../../models/announcementMessageModel.js";
 import AnnouncementMessageDelivery from "../../models/announcementMessageDeliveryModel.js";
 import { sendBulkSms } from "../africasTalkingSmsService.js";
-import { normalizeSmsPhoneE164, resolveSmsSenderIdOrThrow, mapAfricasTalkingRecipientToStatus } from "../../utils/announcementHelpers.js";
+import {
+  normalizeSmsPhoneE164,
+  resolveSmsSenderIdOrThrow,
+  mapAfricasTalkingRecipientToStatus,
+  isAfricasTalkingPreAcceptanceRejection,
+  friendlySmsError
+} from "../../utils/announcementHelpers.js";
 
 async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, deliveries, markProviderErrorsFailed = true }) {
   const senderId = resolveSmsSenderIdOrThrow({ church, requestedSenderId: messageDoc?.smsSenderId });
@@ -33,7 +39,7 @@ async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, delive
           $set: {
             status: "failed",
             provider: "africastalking",
-            errorMessage: "Invalid phone number"
+            errorMessage: "The phone number is invalid or not formatted correctly."
           }
         }
       }
@@ -45,8 +51,11 @@ async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, delive
     return {
       attempted: 0,
       delivered: 0,
+      sent: 0,
       failed: invalid.length,
-      invalid: invalid.length
+      invalid: invalid.length,
+      rejectedBeforeAcceptance: invalid.length,
+      rejectedDeliveryIds: []
     };
   }
 
@@ -58,6 +67,9 @@ async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, delive
       from: senderId
     });
   } catch (err) {
+    // Provider threw — could be auth failure, network error, etc.
+    // If markProviderErrorsFailed is true (immediate send), mark as failed.
+    // If false (scheduled retry), keep pending for retry.
     const ops = valid.map((v) => ({
       updateOne: {
         filter: { _id: v.delivery._id, church: churchId },
@@ -65,7 +77,7 @@ async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, delive
           $set: {
             status: markProviderErrorsFailed ? "failed" : "pending",
             provider: "africastalking",
-            errorMessage: String(err?.message || "SMS send failed")
+            errorMessage: friendlySmsError(err?.message || "SMS send failed")
           }
         }
       }
@@ -81,13 +93,26 @@ async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, delive
   const byPhone = new Map(list.map((r) => [String(r?.number || "").trim(), r]));
 
   let delivered = 0;
+  let sent = 0;
   let failed = 0;
+  const rejectedDeliveryIds = [];
 
   const ops = valid.map((v) => {
     const r = byPhone.get(v.phoneE164);
-    const status = mapAfricasTalkingRecipientToStatus(r?.status);
-    if (status === "delivered") delivered += 1;
-    else failed += 1;
+    const rawStatus = r?.status;
+    const status = mapAfricasTalkingRecipientToStatus(rawStatus);
+
+    if (status === "delivered") {
+      delivered += 1;
+    } else if (status === "sent") {
+      sent += 1;
+    } else {
+      failed += 1;
+      // Track pre-acceptance rejections for refund
+      if (isAfricasTalkingPreAcceptanceRejection(rawStatus)) {
+        rejectedDeliveryIds.push(v.delivery._id);
+      }
+    }
 
     return {
       updateOne: {
@@ -97,7 +122,7 @@ async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, delive
             status,
             provider: "africastalking",
             providerMessageId: r?.messageId ? String(r.messageId) : null,
-            errorMessage: status === "failed" ? String(r?.status || "Failed") : null,
+            errorMessage: status === "failed" ? friendlySmsError(rawStatus || "Failed") : null,
             phone: v.phoneE164
           }
         }
@@ -112,8 +137,12 @@ async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, delive
   return {
     attempted: valid.length,
     delivered,
+    sent,
     failed: failed + invalid.length,
-    invalid: invalid.length
+    invalid: invalid.length,
+    // Deliveries rejected by the provider before acceptance — eligible for refund
+    rejectedBeforeAcceptance: rejectedDeliveryIds.length + invalid.length,
+    rejectedDeliveryIds
   };
 }
 

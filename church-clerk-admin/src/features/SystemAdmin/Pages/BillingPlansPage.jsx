@@ -94,6 +94,7 @@ function BillingPlansPage() {
 
   const [memberLimit, setMemberLimit] = useState("");
   const [userLimit, setUserLimit] = useState("");
+  const [monthlySmsCredits, setMonthlySmsCredits] = useState("0");
 
   const [features, setFeatures] = useState(getEmptyFeatures);
 
@@ -165,6 +166,7 @@ function BillingPlansPage() {
     setIsActive(true);
     setMemberLimit("");
     setUserLimit("");
+    setMonthlySmsCredits("0");
     setFeatures(getEmptyFeatures());
     setPrices({
       GHS: { hourly: "", daily: "", weekly: "", monthly: "", quarterly: "", halfYear: "", yearly: "" }
@@ -184,6 +186,7 @@ function BillingPlansPage() {
 
     setMemberLimit(p?.memberLimit === null || p?.memberLimit === undefined ? "" : String(p.memberLimit));
     setUserLimit(p?.userLimit === null || p?.userLimit === undefined ? "" : String(p.userLimit));
+    setMonthlySmsCredits(p?.monthlySmsCredits === null || p?.monthlySmsCredits === undefined ? "0" : String(p.monthlySmsCredits));
 
     const by = p?.priceByCurrency || p?.pricing || {};
     const toStr = (v) => (v !== undefined && v !== null ? String(v) : "");
@@ -240,6 +243,12 @@ function BillingPlansPage() {
       return;
     }
 
+    const monthlySmsCreditsNum = Number(monthlySmsCredits);
+    if (!Number.isFinite(monthlySmsCreditsNum) || monthlySmsCreditsNum < 0 || !Number.isInteger(monthlySmsCreditsNum)) {
+      setError("Monthly SMS Credits must be a whole number >= 0");
+      return;
+    }
+
     const priceByCurrency = {};
     const row = prices?.GHS || {};
     const INTERVALS = ["hourly", "daily", "weekly", "monthly", "quarterly", "halfYear", "yearly"];
@@ -286,6 +295,7 @@ function BillingPlansPage() {
           isActive,
           memberLimit: memberLimitNum,
           userLimit: userLimitNum,
+          monthlySmsCredits: monthlySmsCreditsNum,
           priceByCurrency,
           features: featuresPayload,
           featureCategories
@@ -297,6 +307,7 @@ function BillingPlansPage() {
           isActive,
           memberLimit: memberLimitNum,
           userLimit: userLimitNum,
+          monthlySmsCredits: monthlySmsCreditsNum,
           priceByCurrency,
           features: featuresPayload,
           featureCategories
@@ -387,6 +398,7 @@ function BillingPlansPage() {
               {usdToGhsRate > 0 && (
                 <th className="py-3 text-left font-semibold text-blue-700">USD equiv. (Hr / Day / Wk / Mo / Qtr / 6M / Yr)</th>
               )}
+              <th className="py-3 text-left font-semibold">Monthly SMS Credits</th>
               <th className="py-3 text-left font-semibold">Status</th>
               <th className="py-3 text-right font-semibold">Actions</th>
             </tr>
@@ -405,7 +417,7 @@ function BillingPlansPage() {
               </>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-6 text-center text-gray-500">
+                <td colSpan={5} className="py-6 text-center text-gray-500">
                   No plans found.
                 </td>
               </tr>
@@ -439,6 +451,9 @@ function BillingPlansPage() {
                     {usdToGhsRate > 0 && (
                       <td className="py-3 text-blue-700 font-medium">{fmtUsd()}</td>
                     )}
+                    <td className="py-3 text-gray-900 font-semibold">
+                      {Number(p?.monthlySmsCredits || 0).toLocaleString()}
+                    </td>
                     <td className="py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -541,6 +556,20 @@ function BillingPlansPage() {
                       placeholder="Leave empty for unlimited"
                       inputMode="numeric"
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">Monthly Included SMS Credits</div>
+                  <input
+                    value={monthlySmsCredits}
+                    onChange={(e) => setMonthlySmsCredits(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                    placeholder="e.g. 0, 100, 500, 1000"
+                    inputMode="numeric"
+                  />
+                  <div className="mt-1 text-xs text-gray-500">
+                    Included SMS credits granted each billing period. Resets when the subscription renews. Set 0 for no included credits.
                   </div>
                 </div>
 

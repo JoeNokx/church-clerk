@@ -21,10 +21,11 @@ import {
   normalizePlanName,
   validatePlanName
 } from "../utils/planHelpers.js";
+import { syncAllowancesForPlan } from "../services/announcement/allowanceService.js";
 
 export const createPlan = async (req, res) => {
   try {
-    const { name, description, memberLimit = null, userLimit = null, features = {}, featureCategories = {}, isActive = true } = req.body;
+    const { name, description, memberLimit = null, userLimit = null, features = {}, featureCategories = {}, isActive = true, monthlySmsCredits = 0 } = req.body;
     const rawPriceByCurrency = normalizePriceByCurrency(req.body);
     const priceByCurrency = sanitizePriceByCurrency(rawPriceByCurrency);
 
@@ -35,6 +36,11 @@ export const createPlan = async (req, res) => {
     }
 
     validatePlanName(normalizedName);
+
+    const monthlySmsCreditsNum = Number(monthlySmsCredits);
+    if (!Number.isFinite(monthlySmsCreditsNum) || monthlySmsCreditsNum < 0 || !Number.isInteger(monthlySmsCreditsNum)) {
+      return res.status(400).json({ message: "monthlySmsCredits must be a whole number >= 0" });
+    }
 
     const existingPlan = await Plan.findOne({ name: normalizedName });
     if (existingPlan) {
@@ -53,6 +59,7 @@ export const createPlan = async (req, res) => {
       paystackPlanCodes,
       memberLimit,
       userLimit,
+      monthlySmsCredits: monthlySmsCreditsNum,
       features,
       featureCategories,
       isActive,
@@ -104,6 +111,14 @@ export const updatePlan = async (req, res) => {
       updates.pricing = priceByCurrency;
     }
 
+    if (updates.monthlySmsCredits !== undefined) {
+      const n = Number(updates.monthlySmsCredits);
+      if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
+        return res.status(400).json({ message: "monthlySmsCredits must be a whole number >= 0" });
+      }
+      updates.monthlySmsCredits = n;
+    }
+
     delete updates.createdBy;
 
     const plan = await Plan.findByIdAndUpdate(req.params.id, updates, {
@@ -141,6 +156,16 @@ export const updatePlan = async (req, res) => {
     }
 
     const finalPlan = await Plan.findById(req.params.id).lean();
+
+    // Dynamically sync all churches' allowances when the plan's SMS config changes.
+    if (updates.monthlySmsCredits !== undefined) {
+      try {
+        await syncAllowancesForPlan(req.params.id);
+      } catch (syncErr) {
+        console.error("[updatePlan] syncAllowancesForPlan error:", syncErr?.message || syncErr);
+      }
+    }
+
     return res.status(200).json({
       message: "Plan updated",
       plan: sanitizePlanCurrencies(finalPlan),

@@ -20,6 +20,4 @@ export const updateBudget = async (id, payload) => {
   return await http.put(`/budgeting/budgets/${id}`, payload);
 };
 
-export const deleteBudget = async (id) => {
-  return await http.delete(`/budgeting/budgets/${id}`);
-};
+

@@ -3,7 +3,6 @@ import { createContext, createElement, useCallback, useContext, useEffect, useMe
 import ChurchContext from "../church/church.store.js";
 import {
   createGeneralExpenses as apiCreateGeneralExpenses,
-  deleteGeneralExpenses as apiDeleteGeneralExpenses,
   getGeneralExpenses as apiGetGeneralExpenses,
   getGeneralExpensesKPI as apiGetGeneralExpensesKPI,
   updateGeneralExpenses as apiUpdateGeneralExpenses
@@ -123,24 +122,6 @@ export function ExpensesProvider({ children }) {
     [fetchGeneralExpenses]
   );
 
-  const deleteGeneralExpenses = useCallback(
-    async (id) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        await apiDeleteGeneralExpenses(id);
-        await fetchGeneralExpenses();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to delete general expense");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchGeneralExpenses]
-  );
-
   const getGeneralExpensesKPI = useCallback(async () => {
     return await apiGetGeneralExpensesKPI();
   }, [activeChurchId]);
@@ -157,7 +138,6 @@ export function ExpensesProvider({ children }) {
       fetchGeneralExpenses,
       createGeneralExpenses,
       updateGeneralExpenses,
-      deleteGeneralExpenses,
       getGeneralExpensesKPI
     };
   }, [
@@ -171,7 +151,6 @@ export function ExpensesProvider({ children }) {
     fetchGeneralExpenses,
     createGeneralExpenses,
     updateGeneralExpenses,
-    deleteGeneralExpenses,
     getGeneralExpensesKPI
   ]);
 

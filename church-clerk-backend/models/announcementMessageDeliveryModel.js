@@ -30,7 +30,7 @@ const announcementMessageDeliverySchema = new mongoose.Schema(
     },
     channel: {
       type: String,
-      enum: ["sms", "whatsapp"],
+      enum: ["sms"],
       required: true
     },
     status: {
@@ -50,6 +50,24 @@ const announcementMessageDeliverySchema = new mongoose.Schema(
     errorMessage: {
       type: String,
       default: null
+    },
+    lastCallbackStatus: {
+      type: String,
+      default: null
+    },
+    lastCallbackAt: {
+      type: Date,
+      default: null
+    },
+    attemptNumber: {
+      type: Number,
+      default: 1
+    },
+    resendOf: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AnnouncementMessageDelivery",
+      default: null,
+      index: true
     }
   },
   { timestamps: true }

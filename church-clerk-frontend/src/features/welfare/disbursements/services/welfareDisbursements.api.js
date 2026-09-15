@@ -12,6 +12,4 @@ export const updateWelfareDisbursement = async (id, payload) => {
   return await http.put(`/welfare/welfare-disbursements/${id}`, payload);
 };
 
-export const deleteWelfareDisbursement = async (id) => {
-  return await http.delete(`/welfare/welfare-disbursements/${id}`);
-};
+

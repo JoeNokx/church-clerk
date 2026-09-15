@@ -292,17 +292,6 @@ router.put(
   conditionalImmutableGuard(),
   updateCellOffering
 );
-router.delete(
-  "/cells/:cellId/offerings/:offeringId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "delete"),
-  conditionalImmutableGuard(),
-  deleteCellOffering
-);
 
 
 router.get(

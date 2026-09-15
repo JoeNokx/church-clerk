@@ -61,17 +61,6 @@ router.put(
   conditionalImmutableGuard(),
   updateChurchProjects
 );
-router.delete(
-  "/church-projects/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("churchProjects", "delete"),
-  conditionalImmutableGuard(),
-  deleteChurchProjects
-);
 
 router.post(
   "/church-projects/:id/adjustments",
@@ -138,17 +127,6 @@ router.put(
   conditionalImmutableGuard(),
   updateProjectContributions
 );
-router.delete(
-  "/church-projects/:projectId/contributions/:contributionId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("churchProjects", "delete"),
-  conditionalImmutableGuard(),
-  deleteProjectContributions
-);
 
 router.post(
   "/church-projects/:projectId/contributions/:contributionId/adjustments",
@@ -214,17 +192,6 @@ router.put(
   requirePermission("churchProjects", "update"),
   conditionalImmutableGuard(),
   updateProjectExpenses
-);
-router.delete(
-  "/church-projects/:projectId/expenses/:expensesId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("churchProjects", "delete"),
-  conditionalImmutableGuard(),
-  deleteProjectExpenses
 );
 
 router.post(

@@ -21,6 +21,7 @@ import {
 } from "../../utils/subscriptionEmails.js";
 
 import { detectTrialFeatureUsage } from "../../utils/featureUsageChecker.js";
+import { resetAllowanceForPeriod } from "../../services/announcement/allowanceService.js";
 
 const validatePlanForChurch = (church, plan) => {
   if (church.type === "Headquarters" && String(plan.name || "").toLowerCase() !== "premium") {
@@ -118,6 +119,18 @@ export const createSubscriptionForChurch = async ({
 
   const subscription = await Subscription.create(subscriptionData);
 
+  // Initialize the monthly SMS allowance for the new subscription / trial.
+  try {
+    await resetAllowanceForPeriod({
+      churchId: church._id,
+      periodIndex: subscription.nextBillingDate ? new Date(subscription.nextBillingDate).getTime() : Date.now(),
+      periodEnd: subscription.nextBillingDate,
+      planId: subscription.plan || null
+    });
+  } catch (allowanceErr) {
+    console.error("[createSubscriptionForChurch] allowance init error:", allowanceErr?.message || allowanceErr);
+  }
+
   return subscription;
 
 };
@@ -165,6 +178,18 @@ export const upgradeTrialToPlans = async (church, planId) => {
 
 
   await subscription.save();
+
+  // Reset the monthly SMS allowance for the new plan / billing period.
+  try {
+    await resetAllowanceForPeriod({
+      churchId: church._id,
+      periodIndex: subscription.nextBillingDate ? new Date(subscription.nextBillingDate).getTime() : Date.now(),
+      periodEnd: subscription.nextBillingDate,
+      planId: subscription.plan
+    });
+  } catch (allowanceErr) {
+    console.error("[upgradeTrialToPlans] allowance reset error:", allowanceErr?.message || allowanceErr);
+  }
 
   return subscription;
 
@@ -237,6 +262,20 @@ export const processSubscriptionBillings = async (subscription) => {
       status: "rewarded"
 
     });
+
+
+
+    // Reset the monthly SMS allowance for the new billing period (free month path).
+    try {
+      await resetAllowanceForPeriod({
+        churchId: subscription.church,
+        periodIndex: subscription.nextBillingDate ? new Date(subscription.nextBillingDate).getTime() : Date.now(),
+        periodEnd: subscription.nextBillingDate,
+        planId: subscription.plan
+      });
+    } catch (allowanceErr) {
+      console.error("[processSubscriptionBillings] allowance reset error:", allowanceErr?.message || allowanceErr);
+    }
 
 
 
@@ -469,6 +508,18 @@ export const releaseExpiredTrialForChurch = async (churchId) => {
   if (subscription.expiryWarning) subscription.expiryWarning.shown = false;
   await subscription.save();
 
+  // Reset the monthly SMS allowance for the Free Lite plan.
+  try {
+    await resetAllowanceForPeriod({
+      churchId,
+      periodIndex: subscription.nextBillingDate ? new Date(subscription.nextBillingDate).getTime() : Date.now(),
+      periodEnd: subscription.nextBillingDate,
+      planId: freeLitePlan._id
+    });
+  } catch (allowanceErr) {
+    console.error("[releaseExpiredTrialForChurch] allowance reset error:", allowanceErr?.message || allowanceErr);
+  }
+
   return subscription.toObject();
 };
 
@@ -509,6 +560,18 @@ export const releaseExpiredTrials = async () => {
       subscription.expiryWarning.shown = false;
 
       await subscription.save();
+
+      // Reset the monthly SMS allowance for the Free Lite plan.
+      try {
+        await resetAllowanceForPeriod({
+          churchId: subscription.church,
+          periodIndex: subscription.nextBillingDate ? new Date(subscription.nextBillingDate).getTime() : Date.now(),
+          periodEnd: subscription.nextBillingDate,
+          planId: freeLitePlan._id
+        });
+      } catch (allowanceErr) {
+        console.error("[releaseExpiredTrials] allowance reset error:", allowanceErr?.message || allowanceErr);
+      }
     } catch {
       // do not abort cycle for a single subscription failure
     }

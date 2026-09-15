@@ -104,10 +104,6 @@ export const updateCellOffering = async (cellId, offeringId, payload) => {
   return await http.put(`/organisations/cells/${cellId}/offerings/${offeringId}`, payload);
 };
 
-export const deleteCellOffering = async (cellId, offeringId) => {
-  return await http.delete(`/organisations/cells/${cellId}/offerings/${offeringId}`);
-};
-
 export const getCellKPI = async () => {
   return await http.get("/organisations/cells/stats/kpi");
 };

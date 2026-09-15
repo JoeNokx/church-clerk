@@ -23,13 +23,10 @@ function WelfareDisbursementTable({ onEdit, onDeleted, onCreate }) {
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmId, setConfirmId] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewRow, setViewRow] = useState(null);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("welfare", "update") : false), [can]);
-  const canDelete = useMemo(() => (typeof can === "function" ? can("welfare", "delete") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
 
   const clearSearch = () => {
@@ -55,24 +52,6 @@ function WelfareDisbursementTable({ onEdit, onDeleted, onCreate }) {
     const nextPage = store?.disbursementPagination?.nextPage;
     if (!nextPage) return;
     await store?.fetchDisbursements?.({ page: nextPage });
-  };
-
-  const openConfirmDelete = (id) => {
-    setConfirmId(id);
-    setConfirmOpen(true);
-  };
-
-  const closeConfirmDelete = () => {
-    setConfirmOpen(false);
-    setConfirmId(null);
-  };
-
-  const confirmDelete = async () => {
-    const id = confirmId;
-    closeConfirmDelete();
-    if (!id) return;
-    await store?.deleteDisbursement?.(id);
-    onDeleted?.();
   };
 
   if (store?.loading) {
@@ -194,8 +173,7 @@ function WelfareDisbursementTable({ onEdit, onDeleted, onCreate }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
                     { label: "View", onClick: () => { setViewRow(row); setViewOpen(true); } },
-                    canEdit && { label: "Edit", onClick: () => { if (!row?._id) return; onEdit?.(row); } },
-                    canDelete && { label: "Delete", onClick: () => { if (!row?._id) return; openConfirmDelete(row._id); }, danger: true }
+                    canEdit && { label: "Edit", onClick: () => { if (!row?._id) return; onEdit?.(row); } }
                   ]} />
                 </td>
               </tr>
@@ -249,32 +227,6 @@ function WelfareDisbursementTable({ onEdit, onDeleted, onCreate }) {
         </div>
       )}
 
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-          <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Delete Disbursement</div>
-            </div>
-            <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">Are you sure you want to delete this record?</div>
-            <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-              <button
-                type="button"
-                onClick={closeConfirmDelete}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

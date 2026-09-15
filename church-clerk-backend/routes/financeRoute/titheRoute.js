@@ -60,17 +60,6 @@ router.put(
   conditionalImmutableGuard(),
   updateTitheIndividual
 );
-router.delete(
-  "/tithe-individuals/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("tithe", "delete"),
-  conditionalImmutableGuard(),
-  deleteTitheIndividual
-);
 router.get(
   "/tithe-individuals/stats/kpi",
   protect,
@@ -154,17 +143,6 @@ router.put(
   requirePermission("tithe", "update"),
   conditionalImmutableGuard(),
   updateTitheAggregate
-);
-router.delete(
-  "/tithe-aggregates/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("tithe", "delete"),
-  conditionalImmutableGuard(),
-  deleteTitheAggregate
 );
 router.get(
   "/tithe-aggregates/stats/kpi",

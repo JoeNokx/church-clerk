@@ -489,36 +489,6 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
   );
 }
 
-function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-          <div className="font-semibold text-gray-900 text-sm">{title}</div>
-        </div>
-        <div className="px-4 md:px-5 lg:px-6 py-4 text-gray-700 text-sm">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-red-700 text-sm"
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PledgesPageInner() {
   const { toPage } = useDashboardNavigator();
   const guarded = useGuardedAction();
@@ -532,15 +502,11 @@ function PledgesPageInner() {
   const canCreate = useMemo(() => (typeof can === "function" ? can("pledges", "create") : true), [can]);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("pledges", "update") : false), [can]);
-  const canDelete = useMemo(() => (typeof can === "function" ? can("pledges", "delete") : false), [can]);
   const [kpi, setKpi] = useState({ total: 0, pledged: 0, paid: 0, outstanding: 0 });
   const [pledgesKpi, setPledgesKpi] = useState(null);
   const [newOpen, setNewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
-
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [confirmDeleteRow, setConfirmDeleteRow] = useState(null);
 
   const [menuOpenId, setMenuOpenId] = useState(null);
   const menuRef = useRef(null);
@@ -701,24 +667,6 @@ function PledgesPageInner() {
   const viewDetails = (row) => {
     if (!row?._id) return;
     toPage("pledge-details", { id: row._id });
-  };
-
-  const openDelete = (row) => {
-    setConfirmDeleteRow(row || null);
-    setConfirmDeleteOpen(true);
-  };
-
-  const closeDelete = () => {
-    setConfirmDeleteOpen(false);
-    setConfirmDeleteRow(null);
-  };
-
-  const confirmDelete = async () => {
-    const id = confirmDeleteRow?._id;
-    closeDelete();
-    if (!id) return;
-    await store?.deletePledge?.(id);
-    await computeKpi();
   };
 
   const onSearchChange = (value) => {
@@ -1030,8 +978,7 @@ function PledgesPageInner() {
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu items={[
                           canView && { label: "View", onClick: () => viewDetails(row) },
-                          canEdit && { label: "Edit", onClick: () => guarded(() => openEdit(row)) },
-                          canDelete && { label: "Delete", onClick: () => guarded(() => openDelete(row)), danger: true }
+                          canEdit && { label: "Edit", onClick: () => guarded(() => openEdit(row)) }
                         ]} />
                       </td>
                     </tr>
@@ -1097,14 +1044,6 @@ function PledgesPageInner() {
         title="Edit Pledge"
       />
 
-      <ConfirmDeleteModal
-        open={confirmDeleteOpen}
-        title="Delete Pledge"
-        message="Are you sure you want to delete this pledge?"
-        confirmLabel="Delete"
-        onCancel={closeDelete}
-        onConfirm={confirmDelete}
-      />
     </div>
   );
 }

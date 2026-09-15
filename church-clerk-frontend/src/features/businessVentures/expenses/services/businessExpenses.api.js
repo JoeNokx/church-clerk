@@ -15,8 +15,4 @@ export const updateBusinessExpense = async (businessId, expensesId, payload) => 
   );
 };
 
-export const deleteBusinessExpense = async (businessId, expensesId) => {
-  return await http.delete(
-    `/business-ventures/business-ventures/${businessId}/expenses/${expensesId}`
-  );
-};
+

@@ -12,6 +12,4 @@ export const updatePledgePayment = async (pledgeId, id, payload) => {
   return await http.put(`/pledge/pledges/${pledgeId}/payments/${id}`, payload);
 };
 
-export const deletePledgePayment = async (pledgeId, id) => {
-  return await http.delete(`/pledge/pledges/${pledgeId}/payments/${id}`);
-};
+

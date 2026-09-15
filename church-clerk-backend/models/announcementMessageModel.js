@@ -27,7 +27,7 @@ const announcementMessageSchema = new mongoose.Schema(
       type: [String],
       default: [],
       validate: {
-        validator: (arr) => (Array.isArray(arr) ? arr.every((c) => ["sms", "whatsapp"].includes(String(c))) : false),
+        validator: (arr) => (Array.isArray(arr) ? arr.every((c) => ["sms"].includes(String(c))) : false),
         message: "Invalid channels"
       }
     },
@@ -43,7 +43,7 @@ const announcementMessageSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "sent", "scheduled"],
+      enum: ["draft", "sent", "scheduled", "processing", "cancelled", "failed"],
       default: "draft",
       index: true
     },
@@ -63,6 +63,14 @@ const announcementMessageSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    sentCount: {
+      type: Number,
+      default: 0
+    },
+    pendingCount: {
+      type: Number,
+      default: 0
+    },
     failedCount: {
       type: Number,
       default: 0
@@ -72,6 +80,24 @@ const announcementMessageSchema = new mongoose.Schema(
       default: 0
     },
     totalCostCredits: {
+      type: Number,
+      default: 0
+    },
+    // Hybrid SMS billing fields
+    segmentsPerMessage: {
+      type: Number,
+      default: 0
+    },
+    deductionKey: {
+      type: String,
+      default: null,
+      index: true
+    },
+    fromIncludedCredits: {
+      type: Number,
+      default: 0
+    },
+    fromWalletCredits: {
       type: Number,
       default: 0
     }

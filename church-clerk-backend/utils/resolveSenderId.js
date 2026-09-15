@@ -6,6 +6,11 @@ export const resolveSenderId = (church) => {
     return requested;
   }
 
-  const fallback = String(process.env.AT_DEFAULT_SENDER_ID || process.env.AT_SENDER_ID || "").trim();
-  return fallback || null;
+  const fallback = String(process.env.AFRICA_TALKING_SENDER_ID || "").trim();
+  if (fallback) return fallback;
+
+  // Development-only fallback: return null so AT uses its default sender.
+  // Sending an unregistered sender ID causes "InvalidSenderId" rejection.
+  // In production, this returns null and the controller blocks the send.
+  return null;
 };

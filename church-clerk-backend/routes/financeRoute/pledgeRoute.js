@@ -66,17 +66,6 @@ router.put(
   conditionalImmutableGuard(),
   updatePledge
 );
-router.delete(
-  "/pledges/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("pledges", "delete"),
-  conditionalImmutableGuard(),
-  deletePledge
-);
 
 router.post(
   "/pledges/:id/adjustments",
@@ -149,17 +138,6 @@ router.put(
   requirePermission("pledges", "update"),
   conditionalImmutableGuard(),
   updatePledgePayment
-);
-router.delete(
-  "/pledges/:pledgeId/payments/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("pledges", "delete"),
-  conditionalImmutableGuard(),
-  deletePledgePayment
 );
 
 router.post(

@@ -40,6 +40,14 @@ export const deleteCommunicationMessage = async (id) => {
   return await http.delete(`/announcement/messages/${id}`);
 };
 
+export const cancelCommunicationMessage = async (id) => {
+  return await http.post(`/announcement/messages/${id}/cancel`);
+};
+
+export const resendFailedDelivery = async (id) => {
+  return await http.post(`/announcement/deliveries/${id}/resend`);
+};
+
 export const getMessageTemplates = async (params) => {
   return await http.get("/announcement/templates", { params });
 };

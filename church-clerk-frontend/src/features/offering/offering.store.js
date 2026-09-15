@@ -2,7 +2,6 @@ import { createContext, createElement, useCallback, useContext, useEffect, useMe
 
 import {
   createOffering as apiCreateOffering,
-  deleteOffering as apiDeleteOffering,
   getOfferings,
   getOfferingKPI as apiGetOfferingKPI,
   updateOffering as apiUpdateOffering
@@ -116,21 +115,6 @@ export function OfferingProvider({ children }) {
     }
   }, [fetchOfferings, activeChurch]);
 
-  const deleteOffering = useCallback(async (id) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      await apiDeleteOffering(id, activeChurch);
-      await fetchOfferings();
-    } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Failed to delete offering");
-      throw e;
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchOfferings, activeChurch]);
-
   const getOfferingKPI = useCallback(async () => {
     return await apiGetOfferingKPI(activeChurch);
   }, [activeChurch]);
@@ -147,10 +131,9 @@ export function OfferingProvider({ children }) {
       fetchOfferings,
       createOffering,
       updateOffering,
-      deleteOffering,
       getOfferingKPI
     };
-  }, [offerings, pagination, loading, error, activeChurch, filters, setFilters, fetchOfferings, createOffering, updateOffering, deleteOffering, getOfferingKPI]);
+  }, [offerings, pagination, loading, error, activeChurch, filters, setFilters, fetchOfferings, createOffering, updateOffering, getOfferingKPI]);
 
   return createElement(
     OfferingContext.Provider,

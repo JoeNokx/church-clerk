@@ -23,13 +23,6 @@ export const updateSpecialFund = async (id, payload, churchId) => {
   });
 };
 
-export const deleteSpecialFund = async (id, churchId) => {
-  if (!churchId) throw new Error("Active church not selected");
-  return await http.delete(`/special-fund/special-funds/${id}`, {
-    headers: { "x-active-church": churchId }
-  });
-};
-
 export const getSpecialFundKPI = async (churchId) => {
   if (!churchId) throw new Error("Active church not selected");
   return await http.get("/special-fund/special-funds/stats/kpi", {

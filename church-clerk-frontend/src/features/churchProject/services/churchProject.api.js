@@ -12,10 +12,6 @@ export const updateChurchProject = async (id, payload) => {
   return await http.put(`/church-project/church-projects/${id}`, payload);
 };
 
-export const deleteChurchProject = async (id) => {
-  return await http.delete(`/church-project/church-projects/${id}`);
-};
-
 export const getProjectContributionExpensesKPI = async (projectId) => {
   return await http.get(`/church-project/church-projects/${projectId}/contribution-expenses/kpi`);
 };

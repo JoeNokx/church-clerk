@@ -1,7 +1,6 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   createSpecialFund as apiCreateSpecialFund,
-  deleteSpecialFund as apiDeleteSpecialFund,
   getSpecialFunds,
   getSpecialFundKPI as apiGetSpecialFundKPI,
   updateSpecialFund as apiUpdateSpecialFund
@@ -132,21 +131,6 @@ export function SpecialFundProvider({ children }) {
     }
   }, [fetchSpecialFunds, activeChurch]);
 
-  const deleteSpecialFund = useCallback(async (id) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      await apiDeleteSpecialFund(id, activeChurch);
-      await fetchSpecialFunds();
-    } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Failed to delete special fund");
-      throw e;
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchSpecialFunds, activeChurch]);
-
   const getSpecialFundKPI = useCallback(async () => {
     return await apiGetSpecialFundKPI(activeChurch);
   }, [activeChurch]);
@@ -163,10 +147,9 @@ export function SpecialFundProvider({ children }) {
       fetchSpecialFunds,
       createSpecialFund,
       updateSpecialFund,
-      deleteSpecialFund,
       getSpecialFundKPI
     };
-  }, [specialFunds, pagination, loading, error, activeChurch, filters, setFilters, fetchSpecialFunds, createSpecialFund, updateSpecialFund, deleteSpecialFund, getSpecialFundKPI]);
+  }, [specialFunds, pagination, loading, error, activeChurch, filters, setFilters, fetchSpecialFunds, createSpecialFund, updateSpecialFund, getSpecialFundKPI]);
 
   return createElement(
     SpecialFundContext.Provider,

@@ -15,8 +15,4 @@ export const updateProjectContribution = async (projectId, contributionId, paylo
   );
 };
 
-export const deleteProjectContribution = async (projectId, contributionId) => {
-  return await http.delete(
-    `/church-project/church-projects/${projectId}/contributions/${contributionId}`
-  );
-};
+

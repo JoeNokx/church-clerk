@@ -71,6 +71,11 @@ const isPaystackWebhookRoute = (req) => {
   return url.startsWith("/api/v1/subscription/webhooks/paystack");
 };
 
+const isAfricasTalkingWebhookRoute = (req) => {
+  const url = String(req.originalUrl || "");
+  return url.startsWith("/api/v1/announcement/sms/delivery-report");
+};
+
 const isPublicRegistrationRoute = (req) => {
   const url = String(req.originalUrl || "");
   return url.startsWith("/api/v1/public");
@@ -131,7 +136,7 @@ app.param(
     "cellId"
   ],
   (req, res, next, value, name) => {
-    if (isPaystackWebhookRoute(req)) return next();
+    if (isPaystackWebhookRoute(req) || isAfricasTalkingWebhookRoute(req)) return next();
 
     const sanitized = sanitizeRouteParam(value, name);
     if (req.params && typeof req.params === "object") {
@@ -154,13 +159,13 @@ const jsonParser = express.json({
 });
 
 app.use((req, res, next) => {
-  if (isPaystackWebhookRoute(req)) return next();
+  if (isPaystackWebhookRoute(req) || isAfricasTalkingWebhookRoute(req)) return next();
   return jsonParser(req, res, next);
 });
 
 // 2) NoSQL injection protection (sanitize req.body + req.query)
 app.use((req, res, next) => {
-  if (isPaystackWebhookRoute(req)) return next();
+  if (isPaystackWebhookRoute(req) || isAfricasTalkingWebhookRoute(req)) return next();
   if (req.body) {
     req.body = mongoSanitize(req.body);
   }
@@ -183,7 +188,7 @@ app.use((req, res, next) => {
 
 // 3) XSS protection
 app.use((req, res, next) => {
-  if (isPaystackWebhookRoute(req)) return next();
+  if (isPaystackWebhookRoute(req) || isAfricasTalkingWebhookRoute(req)) return next();
 
   sanitizeXssInPlace(req.body);
   sanitizeXssInPlace(req.query);
@@ -234,7 +239,7 @@ const getLimiter = rateLimit({
 
 // Apply loose limits for normal data fetching, medium limits for writes
 app.use((req, res, next) => {
-  if (isPaystackWebhookRoute(req)) return next();
+  if (isPaystackWebhookRoute(req) || isAfricasTalkingWebhookRoute(req)) return next();
 
   if (req.method === "GET") {
     return getLimiter(req, res, next);
@@ -290,7 +295,7 @@ function csrfProtection(req, res, next) {
 }
 
 app.use((req, res, next) => {
-  if (isPaystackWebhookRoute(req)) return next();
+  if (isPaystackWebhookRoute(req) || isAfricasTalkingWebhookRoute(req)) return next();
   if (isPublicRegistrationRoute(req)) return next();
   return csrfProtection(req, res, next);
 });

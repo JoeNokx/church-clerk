@@ -46,17 +46,6 @@ router.put(
   conditionalImmutableGuard(),
   updateSpecialFund
 );
-router.delete(
-  "/special-funds/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("specialFunds", "delete"),
-  conditionalImmutableGuard(),
-  deleteSpecialFund
-);
 router.get(
   "/special-funds/stats/kpi",
   protect,

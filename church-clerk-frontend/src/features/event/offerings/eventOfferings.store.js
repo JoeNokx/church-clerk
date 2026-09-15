@@ -2,7 +2,6 @@ import { createContext, createElement, useCallback, useMemo, useRef, useState } 
 
 import {
   createEventOffering as apiCreateEventOffering,
-  deleteEventOffering as apiDeleteEventOffering,
   getEventOfferings as apiGetEventOfferings,
   updateEventOffering as apiUpdateEventOffering
 } from "./services/eventOfferings.api.js";
@@ -111,24 +110,6 @@ export function EventOfferingProvider({ eventId, children }) {
     [eventId, fetchOfferings]
   );
 
-  const deleteOffering = useCallback(
-    async (offeringId) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        await apiDeleteEventOffering(eventId, offeringId);
-        await fetchOfferings();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to delete event offering");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [eventId, fetchOfferings]
-  );
-
   const value = useMemo(() => {
     return {
       eventId,
@@ -140,10 +121,9 @@ export function EventOfferingProvider({ eventId, children }) {
       setFilters,
       fetchOfferings,
       createOffering,
-      updateOffering,
-      deleteOffering
+      updateOffering
     };
-  }, [eventId, offerings, pagination, filters, loading, error, setFilters, fetchOfferings, createOffering, updateOffering, deleteOffering]);
+  }, [eventId, offerings, pagination, filters, loading, error, setFilters, fetchOfferings, createOffering, updateOffering]);
 
   return createElement(
     EventOfferingContext.Provider,

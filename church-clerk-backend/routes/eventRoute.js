@@ -321,16 +321,4 @@ router.put(
   updateEventOffering
 );
 
-router.delete(
-  "/events/:eventId/offerings/:offeringId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("events", "delete"),
-  conditionalImmutableGuard(),
-  deleteEventOffering
-);
-
 export default router

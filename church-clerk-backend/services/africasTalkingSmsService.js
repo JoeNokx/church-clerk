@@ -5,14 +5,14 @@ let atClient = null;
 function getAfricasTalkingClient() {
   if (atClient) return atClient;
 
-  const username = process.env.AT_USERNAME;
-  const apiKey = process.env.AT_API_KEY;
+  const username = process.env.AFRICA_TALKING_USERNAME;
+  const apiKey = process.env.AFRICA_TALKING_API_KEY;
 
   if (!username) {
-    throw new Error("Missing AT_USERNAME");
+    throw new Error("Missing Africa's Talking username (set AFRICA_TALKING_USERNAME in .env)");
   }
   if (!apiKey) {
-    throw new Error("Missing AT_API_KEY");
+    throw new Error("Missing Africa's Talking API key (set AFRICA_TALKING_API_KEY in .env)");
   }
 
   atClient = AfricasTalking({ username, apiKey });
@@ -20,8 +20,12 @@ function getAfricasTalkingClient() {
 }
 
 export function getDefaultSmsSenderId() {
-  const senderId = String(process.env.AT_DEFAULT_SENDER_ID || process.env.AT_SENDER_ID || "").trim();
-  return senderId || null;
+  const senderId = String(process.env.AFRICA_TALKING_SENDER_ID || "").trim();
+  if (senderId) return senderId;
+
+  // No fallback — return null so AT uses its default sender.
+  // Sending an unregistered sender ID causes "InvalidSenderId" rejection.
+  return null;
 }
 
 export async function sendBulkSms({ to, message, from }) {
@@ -50,5 +54,9 @@ export async function sendBulkSms({ to, message, from }) {
     payload.from = sender;
   }
 
-  return await sms.send(payload);
+  console.log("[AT] Sending SMS:", { to: recipients, from: sender || "(none)", messageLength: msg.length });
+
+  const response = await sms.send(payload);
+  console.log("[AT] Raw response:", JSON.stringify(response, null, 2));
+  return response;
 }

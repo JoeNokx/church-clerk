@@ -3,7 +3,6 @@ import { createContext, createElement, useCallback, useContext, useEffect, useMe
 import ChurchContext from "../church/church.store.js";
 import {
   createPledge as apiCreatePledge,
-  deletePledge as apiDeletePledge,
   getPledge as apiGetPledge,
   getPledges as apiGetPledges,
   updatePledge as apiUpdatePledge
@@ -142,24 +141,6 @@ export function PledgeProvider({ children }) {
     [fetchPledges]
   );
 
-  const deletePledge = useCallback(
-    async (id) => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        await apiDeletePledge(id);
-        await fetchPledges();
-      } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "Failed to delete pledge");
-        throw e;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchPledges]
-  );
-
   const getPledge = useCallback(async (id) => {
     return await apiGetPledge(id);
   }, []);
@@ -176,7 +157,6 @@ export function PledgeProvider({ children }) {
       fetchPledges,
       createPledge,
       updatePledge,
-      deletePledge,
       getPledge
     };
   }, [
@@ -190,7 +170,6 @@ export function PledgeProvider({ children }) {
     fetchPledges,
     createPledge,
     updatePledge,
-    deletePledge,
     getPledge
   ]);
 

@@ -41,7 +41,6 @@ function AnnouncementsPage() {
 
   const [creditsPerGhs, setCreditsPerGhs] = useState("100");
   const [smsCostCredits, setSmsCostCredits] = useState("5");
-  const [whatsappCostCredits, setWhatsappCostCredits] = useState("20");
 
   const [kpis, setKpis] = useState(null);
 
@@ -113,11 +112,9 @@ function AnnouncementsPage() {
       const s = settingsRes?.data?.settings || null;
       const cpg = s?.creditsPerGhs;
       const sms = s?.smsCostCredits;
-      const wa = s?.whatsappCostCredits;
 
       setCreditsPerGhs(cpg === null || cpg === undefined ? "100" : String(cpg));
       setSmsCostCredits(sms === null || sms === undefined ? "5" : String(sms));
-      setWhatsappCostCredits(wa === null || wa === undefined ? "20" : String(wa));
 
       setKpis(kpiRes?.data?.data || null);
     } catch (e) {
@@ -476,8 +473,7 @@ function AnnouncementsPage() {
     try {
       const payload = {
         creditsPerGhs: creditsPerGhs === "" ? undefined : Number(creditsPerGhs),
-        smsCostCredits: smsCostCredits === "" ? undefined : Number(smsCostCredits),
-        whatsappCostCredits: whatsappCostCredits === "" ? undefined : Number(whatsappCostCredits)
+        smsCostCredits: smsCostCredits === "" ? undefined : Number(smsCostCredits)
       };
 
       await updateSystemSettings(payload);
@@ -535,7 +531,7 @@ function AnnouncementsPage() {
               </div>
 
               <div>
-                <div className="text-xs font-semibold text-gray-600">SMS Cost (Credits)</div>
+                <div className="text-xs font-semibold text-gray-600">SMS Cost per Segment (Credits)</div>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -546,20 +542,7 @@ function AnnouncementsPage() {
                   disabled={loading || saving}
                   className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                 />
-              </div>
-
-              <div>
-                <div className="text-xs font-semibold text-gray-600">WhatsApp Cost (Credits)</div>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={1}
-                  value={whatsappCostCredits}
-                  onChange={(e) => setWhatsappCostCredits(e.target.value)}
-                  disabled={loading || saving}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                />
+                <div className="mt-1 text-xs text-gray-500">Cost per SMS segment (160 chars GSM-7 / 70 chars UCS-2).</div>
               </div>
 
               <div className="flex items-center justify-end gap-2">
@@ -620,6 +603,24 @@ function AnnouncementsPage() {
                 <div className="text-xs text-gray-500">Total SMS Sent</div>
                 <div className="mt-1 text-lg font-semibold text-gray-900">
                   {loading ? "…" : Number.isFinite(Number(kpis?.totalSmsSent)) ? Number(kpis.totalSmsSent).toLocaleString() : "—"}
+                </div>
+              </div>
+              <div className="rounded-lg border border-gray-100 bg-blue-50 p-4">
+                <div className="text-xs text-gray-500">Subscription SMS Granted (Current Period)</div>
+                <div className="mt-1 text-lg font-semibold text-gray-900">
+                  {loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedGranted)) ? Number(kpis.totalIncludedGranted).toLocaleString() : "—"}
+                </div>
+              </div>
+              <div className="rounded-lg border border-gray-100 bg-blue-50 p-4">
+                <div className="text-xs text-gray-500">Subscription SMS Used (Current Period)</div>
+                <div className="mt-1 text-lg font-semibold text-gray-900">
+                  {loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedUsed)) ? Number(kpis.totalIncludedUsed).toLocaleString() : "—"}
+                </div>
+              </div>
+              <div className="rounded-lg border border-gray-100 bg-blue-50 p-4 sm:col-span-2">
+                <div className="text-xs text-gray-500">Subscription SMS Remaining (Current Period)</div>
+                <div className="mt-1 text-lg font-semibold text-gray-900">
+                  {loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedRemaining)) ? Number(kpis.totalIncludedRemaining).toLocaleString() : "—"}
                 </div>
               </div>
             </div>

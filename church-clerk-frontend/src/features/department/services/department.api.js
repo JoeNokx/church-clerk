@@ -104,10 +104,6 @@ export const updateDepartmentOffering = async (departmentId, offeringId, payload
   return await http.put(`/organisations/departments/${departmentId}/offerings/${offeringId}`, payload);
 };
 
-export const deleteDepartmentOffering = async (departmentId, offeringId) => {
-  return await http.delete(`/organisations/departments/${departmentId}/offerings/${offeringId}`);
-};
-
 export const getDepartmentKPI = async () => {
   return await http.get("/organisations/departments/stats/kpi");
 };

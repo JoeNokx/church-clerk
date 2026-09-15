@@ -71,14 +71,8 @@ const paystackRequest = ({ path, method, body }) =>
     req.end();
   });
 
-const getOrCreateWallet = async ({ churchId }) => {
-  const wallet = await AnnouncementWallet.findOneAndUpdate(
-    { church: churchId },
-    { $setOnInsert: { balanceCredits: 0 } },
-    { new: true, upsert: true }
-  );
-  return wallet;
-};
+import { getOrCreateWallet } from "../services/announcement/walletService.js";
+import { getOrCreateAllowance, remainingIncluded } from "../services/announcement/allowanceService.js";
 
 export const getWallet = async (req, res) => {
   try {
@@ -86,9 +80,26 @@ export const getWallet = async (req, res) => {
       return res.status(400).json({ message: "Active church context is required" });
     }
 
-    const wallet = await getOrCreateWallet({ churchId: req.activeChurch._id });
+    const [wallet, allowance] = await Promise.all([
+      getOrCreateWallet({ churchId: req.activeChurch._id }),
+      getOrCreateAllowance({ churchId: req.activeChurch._id })
+    ]);
 
-    return res.status(200).json({ wallet });
+    const includedRemaining = remainingIncluded(allowance);
+
+    return res.status(200).json({
+      wallet,
+      allowance: {
+        grantedCredits: Number(allowance?.grantedCredits || 0),
+        usedCredits: Number(allowance?.usedCredits || 0),
+        remainingIncludedCredits: includedRemaining,
+        planMonthlySmsCredits: Number(allowance?.planMonthlySmsCredits || 0),
+        periodStart: allowance?.periodStart || null,
+        periodEnd: allowance?.periodEnd || null,
+        periodIndex: Number(allowance?.periodIndex || 0)
+      },
+      totalAvailableCredits: Number(wallet?.balanceCredits || 0) + includedRemaining
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

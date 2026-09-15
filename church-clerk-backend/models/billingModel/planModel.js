@@ -29,6 +29,15 @@ const planSchema = new mongoose.Schema(
       default: null
     },
 
+    // Monthly included SMS credits granted to churches on this plan.
+    // Resets each subscription billing period. 0 means no included credits.
+    // Configured dynamically by System Admin in Billing -> Plans.
+    monthlySmsCredits: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
     features: {
       financeModule: { type: Boolean, default: false },
       announcements: { type: Boolean, default: false },

@@ -72,15 +72,4 @@ router.put(
   updateBudget
 );
 
-router.delete(
-  "/budgets/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("budgeting", "delete"),
-  deleteBudget
-);
-
 export default router;

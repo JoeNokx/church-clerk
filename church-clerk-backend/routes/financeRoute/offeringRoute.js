@@ -46,17 +46,6 @@ router.put(
   conditionalImmutableGuard(),
   updateOffering
 );
-router.delete(
-  "/offerings/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("offerings", "delete"),
-  conditionalImmutableGuard(),
-  deleteOffering
-);
 router.get(
   "/offerings/stats/kpi",
   protect,

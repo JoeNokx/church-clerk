@@ -16,10 +16,6 @@ export const updateBusinessVenture = async (id, payload) => {
   return await http.put(`/business-ventures/business-ventures/${id}`, payload);
 };
 
-export const deleteBusinessVenture = async (id) => {
-  return await http.delete(`/business-ventures/business-ventures/${id}`);
-};
-
 export const getBusinessKPI = async () => {
   return await http.get("/business-ventures/business-ventures/stats/kpi");
 };

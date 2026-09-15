@@ -26,11 +26,6 @@ const systemSettingsSchema = new mongoose.Schema(
       default: 5,
       min: 0
     },
-    whatsappCostCredits: {
-      type: Number,
-      default: 20,
-      min: 0
-    },
     referralBonusDays: {
       type: Number,
       default: 30,

@@ -49,18 +49,6 @@ router.put(
   conditionalImmutableGuard(),
   updateGeneralExpenses
 );
-router.delete(
-  "/general-expenses/:id",
-  protect,
-  attachPermissions,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachBillingBanner,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("expenses", "delete"),
-  conditionalImmutableGuard(),
-  deleteGeneralExpenses
-);
 router.get(
   "/general-expenses/stats/kpi",
   protect,

@@ -1,6 +1,7 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 const router = express.Router();
-import {getAllAnnouncements, getSingleAnnouncement, createAnnouncement, updateAnnouncement, deleteAnnouncement} from "../controller/announcementController.js"
+import {getAllAnnouncements, getSingleAnnouncement, createAnnouncement, updateAnnouncement, deleteAnnouncement} from "../controller/announcementController.js";
 import {
   getWallet,
   getWalletTransactions,
@@ -14,7 +15,10 @@ import {
   getMessages,
   getMessageDeliveryReport,
   updateScheduledMessage,
-  deleteScheduledMessage
+  deleteScheduledMessage,
+  cancelScheduledMessage,
+  resendFailedDelivery,
+  africasTalkingDeliveryReport
 } from "../controller/announcementMessagingController.js";
 import {
   getTemplates,
@@ -32,6 +36,24 @@ import { requirePermission } from "../middleware/permissionMiddleware.js";
 router.post(
   "/wallet/webhooks/paystack",
   paystackWalletWebhook
+);
+
+// Africa's Talking delivery report callback — public, no auth
+// AT may send form-urlencoded data, so parse it here
+// Rate limited to prevent abuse while allowing legitimate bulk callbacks
+const deliveryReportLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many delivery report callbacks. Please try again later." }
+});
+
+router.post(
+  "/sms/delivery-report",
+  deliveryReportLimiter,
+  express.urlencoded({ extended: true, limit: "50kb" }),
+  africasTalkingDeliveryReport
 );
 
 router.get(
@@ -193,6 +215,28 @@ router.delete(
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("announcements", "delete"),
   deleteScheduledMessage
+);
+
+router.post(
+  "/messages/:id/cancel",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "update"),
+  cancelScheduledMessage
+);
+
+router.post(
+  "/deliveries/:id/resend",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "update"),
+  resendFailedDelivery
 );
 
 router.get(

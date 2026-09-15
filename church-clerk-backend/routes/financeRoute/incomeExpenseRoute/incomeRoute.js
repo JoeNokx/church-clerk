@@ -53,17 +53,6 @@ router.put(
   conditionalImmutableGuard(),
   updateIncome
 );
-router.delete(
-  "/incomes/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("expenses", "delete"),
-  conditionalImmutableGuard(),
-  deleteIncome
-);
 
 router.post(
   "/incomes/:id/adjustments",

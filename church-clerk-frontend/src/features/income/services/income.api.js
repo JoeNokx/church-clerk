@@ -16,6 +16,4 @@ export const updateIncome = async (id, payload) => {
   return await http.put(`/income/incomes/${id}`, payload);
 };
 
-export const deleteIncome = async (id) => {
-  return await http.delete(`/income/incomes/${id}`);
-};
+

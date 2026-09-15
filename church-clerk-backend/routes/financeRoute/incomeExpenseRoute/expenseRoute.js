@@ -53,17 +53,6 @@ router.put(
   conditionalImmutableGuard(),
   updateExpense
 );
-router.delete(
-  "/expenses/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("expenses", "delete"),
-  conditionalImmutableGuard(),
-  deleteExpense
-);
 
 router.post(
   "/expenses/:id/adjustments",

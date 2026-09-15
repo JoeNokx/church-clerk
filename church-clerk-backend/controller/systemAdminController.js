@@ -9,6 +9,7 @@ import ReferralCode from "../models/referralModel/referralCodeModel.js";
 import AnnouncementWallet from "../models/announcementWalletModel.js";
 import AnnouncementWalletTransaction from "../models/announcementWalletTransactionModel.js";
 import AnnouncementMessageDelivery from "../models/announcementMessageDeliveryModel.js";
+import SmsAllowance from "../models/billingModel/smsAllowanceModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import BillingHistory from "../models/billingModel/billingHistoryModel.js";
 import Plan from "../models/billingModel/planModel.js";
@@ -589,7 +590,7 @@ const getDashboardStats = async (req, res) => {
 
 const getGlobalAnnouncementWalletKpis = async (req, res) => {
   try {
-    const [walletAgg, creditsAgg, totalTx, smsAgg] = await Promise.all([
+    const [walletAgg, creditsAgg, totalTx, smsAgg, allowanceAgg] = await Promise.all([
       AnnouncementWallet.aggregate([
         { $group: { _id: null, totalWalletBalanceCredits: { $sum: "$balanceCredits" } } }
       ]),
@@ -611,6 +612,16 @@ const getGlobalAnnouncementWalletKpis = async (req, res) => {
               $sum: {
                 $cond: [{ $eq: ["$type", "deduct"] }, { $multiply: ["$amountCredits", -1] }, 0]
               }
+            },
+            totalIncludedUsed: {
+              $sum: {
+                $cond: [{ $eq: ["$type", "deduct"] }, { $ifNull: ["$metadata.fromIncluded", 0] }, 0]
+              }
+            },
+            totalWalletUsed: {
+              $sum: {
+                $cond: [{ $eq: ["$type", "deduct"] }, { $ifNull: ["$metadata.fromWallet", 0] }, 0]
+              }
             }
           }
         }
@@ -624,6 +635,19 @@ const getGlobalAnnouncementWalletKpis = async (req, res) => {
           }
         },
         { $group: { _id: null, totalSmsSent: { $sum: 1 } } }
+      ]),
+      // Allowance aggregates across all churches for the current period.
+      SmsAllowance.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalIncludedGranted: { $sum: "$grantedCredits" },
+            totalIncludedUsed: { $sum: "$usedCredits" },
+            totalIncludedRemaining: {
+              $sum: { $subtract: ["$grantedCredits", "$usedCredits"] }
+            }
+          }
+        }
       ])
     ]);
 
@@ -632,15 +656,28 @@ const getGlobalAnnouncementWalletKpis = async (req, res) => {
     const totalCreditsUsed = Number(creditsAgg?.[0]?.totalCreditsUsed || 0);
     const totalWalletTransactions = Number(totalTx || 0);
     const totalSmsSent = Number(smsAgg?.[0]?.totalSmsSent || 0);
+    const totalIncludedGranted = Number(allowanceAgg?.[0]?.totalIncludedGranted || 0);
+    const totalIncludedUsed = Number(allowanceAgg?.[0]?.totalIncludedUsed || 0);
+    const totalIncludedRemaining = Number(allowanceAgg?.[0]?.totalIncludedRemaining || 0);
+    const totalIncludedConsumedFromDeductions = Number(creditsAgg?.[0]?.totalIncludedUsed || 0);
+    const totalWalletConsumedFromDeductions = Number(creditsAgg?.[0]?.totalWalletUsed || 0);
 
     return res.status(200).json({
       message: "Global wallet KPIs fetched",
       data: {
+        // Wallet (purchased top-up) credits
         totalWalletBalanceCredits,
         totalCreditsIssued,
         totalCreditsUsed,
         totalWalletTransactions,
-        totalSmsSent
+        totalSmsSent,
+        // Subscription included (monthly allowance) credits — current period snapshot
+        totalIncludedGranted,
+        totalIncludedUsed,
+        totalIncludedRemaining,
+        // Consumption split across all deductions (historical)
+        totalIncludedConsumedFromDeductions,
+        totalWalletConsumedFromDeductions
       }
     });
   } catch (error) {

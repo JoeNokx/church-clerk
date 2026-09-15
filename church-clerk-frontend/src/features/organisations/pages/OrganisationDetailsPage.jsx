@@ -37,7 +37,7 @@ import {
   updateGroupIndividualAttendance,
   deleteGroupIndividualAttendance
 } from "../../group/attendance/services/groupAttendance.api.js";
-import { createGroupOffering, getGroupOfferings, updateGroupOffering, deleteGroupOffering } from "../../group/offering/services/groupOffering.api.js";
+import { createGroupOffering, getGroupOfferings, updateGroupOffering } from "../../group/offering/services/groupOffering.api.js";
 
 import {
   getDepartment,
@@ -58,8 +58,7 @@ import {
   deleteDepartmentIndividualAttendance,
   createDepartmentOffering,
   getDepartmentOfferings,
-  updateDepartmentOffering,
-  deleteDepartmentOffering
+  updateDepartmentOffering
 } from "../../department/services/department.api.js";
 
 import {
@@ -81,8 +80,7 @@ import {
   deleteCellIndividualAttendance,
   createCellOffering,
   getCellOfferings,
-  updateCellOffering,
-  deleteCellOffering
+  updateCellOffering
 } from "../../cell/services/cell.api.js";
 
 import {
@@ -104,8 +102,7 @@ import {
   deleteMinistryIndividualAttendance,
   createMinistryOffering,
   getMinistryOfferings,
-  updateMinistryOffering,
-  deleteMinistryOffering
+  updateMinistryOffering
 } from "../../ministry/services/ministry.api.js";
 
 function useDebouncedValue(value, delayMs) {
@@ -895,15 +892,6 @@ function OrganisationDetailsPage() {
         else if (type === "ministry") await deleteMinistryIndividualAttendance(id, attendanceId);
         else await deleteGroupIndividualAttendance(id, attendanceId);
         await loadIndividualAttendances();
-      }
-
-      if (meta.kind === "delete-offering") {
-        const offeringId = meta.payload;
-        if (type === "department") await deleteDepartmentOffering(id, offeringId);
-        else if (type === "cell") await deleteCellOffering(id, offeringId);
-        else if (type === "ministry") await deleteMinistryOffering(id, offeringId);
-        else await deleteGroupOffering(id, offeringId);
-        await loadOfferings();
       }
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Action failed");
@@ -2317,8 +2305,7 @@ function OrganisationDetailsPage() {
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu items={[
                           { label: "View", onClick: () => { setOfferingViewRow(r); setOfferingViewOpen(true); } },
-                          { label: "Edit", onClick: () => guarded(() => openOfferingForm("edit", r)) },
-                          { label: "Delete", onClick: () => guarded(() => openConfirm("delete-offering", r?._id)), danger: true }
+                          { label: "Edit", onClick: () => guarded(() => openOfferingForm("edit", r)) }
                         ]} />
                       </td>
                     </tr>

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { Fragment, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useAuth } from "../../auth/useAuth.js";
@@ -23,12 +23,56 @@ import {
   estimateMessageCost,
   updateCommunicationMessage,
   deleteCommunicationMessage,
+  cancelCommunicationMessage,
+  resendFailedDelivery,
   createMessageTemplate,
   deleteMessageTemplate,
   getMessageTemplates,
   updateMessageTemplate
 } from "../services/communication.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+
+function InfoTooltip({ text }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors"
+        aria-label="More info"
+        aria-expanded={open}
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="h-2.5 w-2.5">
+          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm.75 14.5h-1.5v-6h1.5v6zm0-7.5h-1.5V7.5h1.5V9z" />
+        </svg>
+      </button>
+      <div
+        role="tooltip"
+        className={`absolute top-full left-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white px-3 py-2 leading-relaxed text-gray-500 shadow-lg transition-opacity ${open ? "visible opacity-100 pointer-events-auto" : "invisible opacity-0 pointer-events-none"}`}
+        style={{ fontSize: "11px" }}
+      >
+        <div className="absolute bottom-full left-3 border-4 border-transparent border-b-gray-200" />
+        {text}
+      </div>
+    </div>
+  );
+}
 
 function formatMoneyGhs(amount) {
   const n = Number(amount || 0);
@@ -151,16 +195,7 @@ function TemplatesAndDraftsTab({ open, onUseTemplate, onUseDraft, onOpenDelivery
       {subTab === "templates" ? (
         <TemplatesTab open={open} onUseTemplate={onUseTemplate} />
       ) : (
-        <MessagesTable
-          title="Draft Messages"
-          open={open}
-          query={{ status: "draft" }}
-          onOpenDeliveryReport={onOpenDeliveryReport}
-          onWalletUpdated={onWalletUpdated}
-          showUse
-          onUse={onUseDraft}
-          menuStatuses={["draft"]}
-        />
+        <DraftsTable open={open} onUseDraft={onUseDraft} onWalletUpdated={onWalletUpdated} />
       )}
     </div>
   );
@@ -195,27 +230,25 @@ function toScheduleParts(dateValue) {
 }
 
 
-function WalletCard({ wallet, onFund, onViewHistory, isGhana, usdToGhs }) {
+function WalletCard({ wallet, allowance, onFund, onViewHistory, isGhana, usdToGhs }) {
   const balanceCredits = Number(wallet?.balanceCredits || 0);
   const balanceGhs = creditsToGhs(balanceCredits);
   const balanceUsd = (!isGhana && usdToGhs) ? balanceGhs / Number(usdToGhs) : null;
+
+  const includedRemaining = Number(allowance?.remainingIncludedCredits || 0);
+  const includedGranted = Number(allowance?.grantedCredits || 0);
+  const includedUsed = Number(allowance?.usedCredits || 0);
+  const totalAvailable = balanceCredits + includedRemaining;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="font-semibold text-gray-500 text-xs">Wallet Balance</div>
-          {!isGhana && balanceUsd !== null ? (
-            <>
-              <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatMoneyUsd(balanceUsd)}</div>
-              <div className="mt-1 text-gray-500 text-xs">{formatInt(balanceCredits)} credits</div>
-            </>
-          ) : (
-            <>
-              <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">₵{formatMoneyGhs(balanceGhs)}</div>
-              <div className="mt-1 text-gray-500 text-xs">{formatInt(balanceCredits)} credits</div>
-            </>
-          )}
+          <div className="font-semibold text-gray-500 text-xs">Total Available Credits</div>
+          <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatInt(totalAvailable)}</div>
+          <div className="mt-1 text-gray-500 text-xs">
+            {formatInt(includedRemaining)} subscription + {formatInt(balanceCredits)} top-up
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -226,6 +259,46 @@ function WalletCard({ wallet, onFund, onViewHistory, isGhana, usdToGhs }) {
           >
             Fund Wallet
           </button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Subscription credits bar */}
+        <div className="rounded-lg border border-gray-100 bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="font-semibold text-gray-600">Subscription Credits</span>
+            <span className="text-gray-500">
+              {formatInt(includedRemaining)} / {formatInt(includedGranted)} left
+            </span>
+          </div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full bg-blue-600"
+              style={{ width: `${includedGranted > 0 ? Math.min(100, Math.round((includedRemaining / includedGranted) * 100)) : 0}%` }}
+            />
+          </div>
+          <div className="mt-1 text-gray-500 text-xs">
+            {formatInt(includedUsed)} used — resets next billing period
+          </div>
+        </div>
+
+        {/* Top-up credits bar */}
+        <div className="rounded-lg border border-gray-100 bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="font-semibold text-gray-600">Top-up Credits</span>
+            <span className="text-gray-500">
+              {formatInt(balanceCredits)} left
+            </span>
+          </div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full bg-green-600"
+              style={{ width: `${totalAvailable > 0 ? Math.min(100, Math.round((balanceCredits / totalAvailable) * 100)) : 0}%` }}
+            />
+          </div>
+          <div className="mt-1 text-gray-500 text-xs">
+            Persists across billing periods
+          </div>
         </div>
       </div>
     </div>
@@ -327,6 +400,15 @@ function FundWalletModal({ open, onClose, onFund, loading, error, isGhana, usdTo
   );
 }
 
+function formatTxType(type) {
+  const t = String(type || "").toLowerCase();
+  if (t === "fund") return "Top-up";
+  if (t === "deduct") return "Deduction";
+  if (t === "refund") return "Refund";
+  if (t === "adjust") return "Adjustment";
+  return t ? (t.charAt(0).toUpperCase() + t.slice(1)) : "—";
+}
+
 function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhana, usdToGhs }) {
   const [viewTx, setViewTx] = useState(null);
 
@@ -377,7 +459,7 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
                 transactions.map((t, idx) => (
                   <tr key={t?._id || `tx-${idx}`} className="text-gray-700 text-sm cursor-pointer hover:bg-gray-50" onClick={() => setViewTx(t)}>
                     <td className="sticky left-0 z-10 bg-white py-2 pr-4 text-gray-600 whitespace-nowrap">{t?.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}</td>
-                    <td className="py-2 pr-4 whitespace-nowrap">{t?.type || "—"}</td>
+                    <td className="py-2 pr-4 whitespace-nowrap">{formatTxType(t?.type)}</td>
                     <td className="py-2 pr-4 font-semibold whitespace-nowrap">
                       {typeof t?.amountCredits === "number" ? (
                         !isGhana && usdToGhs
@@ -423,7 +505,7 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
               </div>
               <div>
                 <div className="font-semibold text-gray-500 text-xs">Type</div>
-                <div className="mt-0.5 text-gray-800">{viewTx?.type || "—"}</div>
+                <div className="mt-0.5 text-gray-800">{formatTxType(viewTx?.type)}</div>
               </div>
               <div>
                 <div className="font-semibold text-gray-500 text-xs">Description</div>
@@ -516,9 +598,9 @@ function TemplatesTab({ open, onUseTemplate }) {
     setLoading(true);
     try {
       if (editId) {
-        await updateMessageTemplate(editId, { name, channel, message });
+        await updateMessageTemplate(editId, { name, channel: "sms", message });
       } else {
-        await createMessageTemplate({ name, channel, message });
+        await createMessageTemplate({ name, channel: "sms", message });
       }
       resetForm();
       await load();
@@ -560,15 +642,6 @@ function TemplatesTab({ open, onUseTemplate }) {
             disabled={loading || !canWrite}
             className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
-
-          <select
-            value={channel}
-            onChange={(e) => setChannel(e.target.value)}
-            disabled={loading || !canWrite}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          >
-            <option value="sms">SMS</option>
-          </select>
 
           <textarea
             value={message}
@@ -616,7 +689,7 @@ function TemplatesTab({ open, onUseTemplate }) {
             <thead>
               <tr className="text-left font-semibold text-gray-500 text-xs">
                 <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Template Name</th>
-                <th className="py-2 pr-4 whitespace-nowrap">Channel</th>
+                <th className="py-2 pr-4 whitespace-nowrap">Message</th>
                 <th className="py-2 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
@@ -635,7 +708,9 @@ function TemplatesTab({ open, onUseTemplate }) {
                 rows.map((t, idx) => (
                   <tr key={t?._id || `tpl-${idx}`} className="text-gray-700 text-sm">
                     <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{t?.name || "—"}</td>
-                    <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{String(t?.channel || "").toUpperCase() || "—"}</td>
+                    <td className="py-2 pr-4 text-gray-600" title={t?.message || ""}>
+                      <span className="block max-w-xs truncate">{t?.message || "—"}</span>
+                    </td>
                     <td className="py-2">
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => setViewRow(t) },
@@ -667,10 +742,6 @@ function TemplatesTab({ open, onUseTemplate }) {
                 <div className="mt-0.5 text-gray-800">{viewRow?.name || "—"}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-500 text-xs">Channel</div>
-                <div className="mt-0.5 text-gray-800">{String(viewRow?.channel || "").toUpperCase() || "—"}</div>
-              </div>
-              <div>
                 <div className="font-semibold text-gray-500 text-xs">Message</div>
                 <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.message || "—"}</div>
               </div>
@@ -682,7 +753,159 @@ function TemplatesTab({ open, onUseTemplate }) {
   );
 }
 
-function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdated, showUse = false, onUse, menuStatuses = null }) {
+function formatAudienceLabel(audience) {
+  const type = String(audience?.type || "all");
+  if (type === "all") return "All Members";
+  if (type === "groups") {
+    const g = Array.isArray(audience?.groupIds) ? audience.groupIds.length : 0;
+    const c = Array.isArray(audience?.cellIds) ? audience.cellIds.length : 0;
+    const d = Array.isArray(audience?.departmentIds) ? audience.departmentIds.length : 0;
+    const parts = [];
+    if (g) parts.push(`${g} group${g > 1 ? "s" : ""}`);
+    if (c) parts.push(`${c} cell${c > 1 ? "s" : ""}`);
+    if (d) parts.push(`${d} dept${d > 1 ? "s" : ""}`);
+    return parts.length ? parts.join(", ") : "Groups / Cells / Depts";
+  }
+  if (type === "members") {
+    const n = Array.isArray(audience?.memberIds) ? audience.memberIds.length : 0;
+    return `${n} member${n !== 1 ? "s" : ""}`;
+  }
+  return type;
+}
+
+function DraftsTable({ open, onUseDraft, onWalletUpdated }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [rows, setRows] = useState([]);
+
+  const { can } = useContext(PermissionContext) || {};
+  const canDelete = useMemo(() => (typeof can === "function" ? can("announcements", "delete") : true), [can]);
+
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getCommunicationMessages({ status: "draft" });
+      setRows(Array.isArray(res?.data?.messages) ? res.data.messages : []);
+    } catch (e) {
+      setRows([]);
+      setError(e?.response?.data?.message || e?.message || "Failed to load drafts");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    load();
+  }, [open]);
+
+  if (!open) return null;
+
+  const onDeleteRow = async (row) => {
+    const id = String(row?._id || "");
+    if (!id) return;
+    const ok = window.confirm("Delete this draft?");
+    if (!ok) return;
+
+    setActionLoadingId(id);
+    setError("");
+    try {
+      await deleteCommunicationMessage(id);
+      await load();
+      if (typeof onWalletUpdated === "function") {
+        await onWalletUpdated();
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to delete draft");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  return (
+    <div className="mt-5 rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
+        <div>
+          <div className="font-semibold text-gray-900 text-sm">Draft Messages</div>
+          {error ? <div className="mt-1 text-red-700 text-xs">{error}</div> : null}
+        </div>
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div className="p-4 overflow-x-auto md:p-6 lg:p-8">
+        <table className="min-w-full">
+          <thead>
+            <tr className="text-left font-semibold text-gray-500 text-xs">
+              <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Title</th>
+              <th className="py-2 pr-4 whitespace-nowrap">Audience / Recipients</th>
+              <th className="py-2 pr-4 whitespace-nowrap">Created Date</th>
+              <th className="py-2 pr-4 whitespace-nowrap">Last Updated</th>
+              <th className="py-2 whitespace-nowrap">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
+              </tr>
+            ) : !rows.length ? (
+              <tr>
+                <td colSpan={5} className="px-4">
+                  <EmptyState compact illustration="announcements" title="No drafts found" description="Save a message as a draft to continue editing later." />
+                </td>
+              </tr>
+            ) : (
+              rows.map((m, idx) => (
+                <tr key={m?._id || `d-${idx}`} className="text-gray-700 text-sm">
+                  <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap" title={m?.title || ""}>
+                    <span className="sm:hidden">{truncateMobileName(m?.title)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(m?.title)}</span>
+                  </td>
+                  <td className="py-2 pr-4 text-gray-600">{formatAudienceLabel(m?.audience)}</td>
+                  <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
+                  <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{m?.updatedAt ? new Date(m.updatedAt).toLocaleString() : "—"}</td>
+                  <td className="py-2">
+                    <TableKebabMenu items={[
+                      { label: "Continue Editing", onClick: () => onUseDraft?.(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                      canDelete && { label: "Delete", onClick: () => onDeleteRow(m), danger: true, disabled: actionLoadingId === m?._id }
+                    ]} />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function statusBadge(status) {
+  const s = String(status || "").toLowerCase();
+  const map = {
+    scheduled: "bg-blue-100 text-blue-700",
+    processing: "bg-amber-100 text-amber-700",
+    sent: "bg-green-100 text-green-700",
+    cancelled: "bg-gray-200 text-gray-600",
+    failed: "bg-red-100 text-red-700",
+    draft: "bg-gray-100 text-gray-500"
+  };
+  const cls = map[s] || "bg-gray-100 text-gray-500";
+  const label = s === "processing" ? "Sending" : (s.charAt(0).toUpperCase() + s.slice(1));
+  return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{label}</span>;
+}
+
+function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdated, variant = "sent" }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -690,18 +913,14 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
   const { can } = useContext(PermissionContext) || {};
   const canView = useMemo(() => (typeof can === "function" ? can("announcements", "view") : false), [can]);
   const canUpdate = useMemo(() => (typeof can === "function" ? can("announcements", "update") : true), [can]);
-  const canDelete = useMemo(() => (typeof can === "function" ? can("announcements", "delete") : true), [can]);
 
   const [menuId, setMenuId] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editRow, setEditRow] = useState(null);
-
-  const allowedMenuStatuses = Array.isArray(menuStatuses)
-    ? menuStatuses
-    : String(query?.status || "") === "scheduled"
-      ? ["scheduled"]
-      : [];
+  const [cancelRow, setCancelRow] = useState(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState("");
 
   const closeEdit = () => {
     if (actionLoadingId) return;
@@ -760,32 +979,35 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
     }
   };
 
-  const onDeleteRow = async (row) => {
-    const id = String(row?._id || "");
-    if (!id) return;
-    const status = String(row?.status || "");
-    const ok = window.confirm(
-      status === "scheduled"
-        ? "Delete this scheduled message? This will refund its credits back to the wallet."
-        : "Delete this draft message?"
-    );
-    if (!ok) return;
-
+  const onCancelRow = (row) => {
     setMenuId(null);
-    setActionLoadingId(id);
-    setError("");
+    setCancelRow(row);
+    setCancelError("");
+  };
+
+  const confirmCancel = async () => {
+    const id = String(cancelRow?._id || "");
+    if (!id) return;
+    setCancelLoading(true);
+    setCancelError("");
     try {
-      await deleteCommunicationMessage(id);
+      await cancelCommunicationMessage(id);
+      setCancelRow(null);
       await load();
       if (typeof onWalletUpdated === "function") {
         await onWalletUpdated();
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Failed to delete message");
+      setCancelError(e?.response?.data?.message || e?.message || "Failed to cancel message");
     } finally {
-      setActionLoadingId(null);
+      setCancelLoading(false);
     }
   };
+
+  const isScheduledVariant = variant === "scheduled";
+
+  // Column count for colSpan
+  const colCount = isScheduledVariant ? 6 : 7;
 
   return (
     <div className="mt-5 rounded-xl border border-gray-200 bg-white overflow-hidden">
@@ -809,47 +1031,72 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
           <thead>
             <tr className="text-left font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Title</th>
-              <th className="py-2 pr-4 whitespace-nowrap">Channel</th>
               <th className="py-2 pr-4 whitespace-nowrap">Recipients</th>
-              <th className="py-2 pr-4 whitespace-nowrap">Delivered</th>
-              <th className="py-2 pr-4 whitespace-nowrap">Failed</th>
-              <th className="py-2 pr-4 whitespace-nowrap">Date</th>
+              {isScheduledVariant ? (
+                <>
+                  <th className="py-2 pr-4 whitespace-nowrap">Scheduled Date/Time</th>
+                  <th className="py-2 pr-4 whitespace-nowrap">Status</th>
+                </>
+              ) : (
+                <>
+                  <th className="py-2 pr-4 whitespace-nowrap">Delivered</th>
+                  <th className="py-2 pr-4 whitespace-nowrap">Pending</th>
+                  <th className="py-2 pr-4 whitespace-nowrap">Failed</th>
+                </>
+              )}
+              <th className="py-2 pr-4 whitespace-nowrap">Created Date</th>
               <th className="py-2 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
+                <td colSpan={colCount} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
               </tr>
             ) : !rows.length ? (
               <tr>
-                <td colSpan={7} className="px-4">
-                  <EmptyState compact illustration="announcements" title="No messages found" description="Sent announcements will appear here." />
+                <td colSpan={colCount} className="px-4">
+                  <EmptyState compact illustration="announcements" title="No messages found" description={isScheduledVariant ? "Scheduled messages will appear here." : "Sent announcements will appear here."} />
                 </td>
               </tr>
             ) : (
-              rows.map((m, idx) => (
-                <tr key={m?._id || `m-${idx}`} className="text-gray-700 text-sm">
-                  <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap" title={m?.title || ""}>
-                    <span className="sm:hidden">{truncateMobileName(m?.title)}</span>
-                    <span className="hidden sm:inline">{truncateDesktopName(m?.title)}</span>
-                  </td>
-                  <td className="py-2 pr-4 text-gray-600">{Array.isArray(m?.channels) ? m.channels.map((c) => String(c).toUpperCase()).join(", ") : "—"}</td>
-                  <td className="py-2 pr-4 text-gray-600">{typeof m?.recipientCount === "number" ? m.recipientCount : "—"}</td>
-                  <td className="py-2 pr-4 text-gray-600">{typeof m?.deliveredCount === "number" ? m.deliveredCount : "—"}</td>
-                  <td className="py-2 pr-4 text-gray-600">{typeof m?.failedCount === "number" ? m.failedCount : "—"}</td>
-                  <td className="py-2 pr-4 text-gray-600">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
-                  <td className="py-2">
-                    <TableKebabMenu items={[
-                      showUse && { label: "Use", onClick: () => onUse?.(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                      canView && { label: "View Report", onClick: () => onOpenDeliveryReport(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                      allowedMenuStatuses.includes(String(m?.status || "")) && canUpdate && { label: "Edit", onClick: () => openEdit(m), disabled: actionLoadingId === m?._id },
-                      allowedMenuStatuses.includes(String(m?.status || "")) && canDelete && { label: "Delete", onClick: () => onDeleteRow(m), danger: true, disabled: actionLoadingId === m?._id }
-                    ]} />
-                  </td>
-                </tr>
-              ))
+              rows.map((m, idx) => {
+                const status = String(m?.status || "");
+                const canEdit = isScheduledVariant && status === "scheduled" && canUpdate;
+                const canCancel = isScheduledVariant && status === "scheduled" && canUpdate;
+
+                return (
+                  <tr key={m?._id || `m-${idx}`} className="text-gray-700 text-sm">
+                    <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap" title={m?.title || ""}>
+                      <span className="sm:hidden">{truncateMobileName(m?.title)}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(m?.title)}</span>
+                    </td>
+                    <td className="py-2 pr-4 text-gray-600">{typeof m?.recipientCount === "number" ? m.recipientCount : "—"}</td>
+                    {isScheduledVariant ? (
+                      <>
+                        <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">
+                          {m?.scheduledAt ? new Date(m.scheduledAt).toLocaleString() : "—"}
+                        </td>
+                        <td className="py-2 pr-4 whitespace-nowrap">{statusBadge(status)}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 pr-4 text-gray-600">{typeof m?.deliveredCount === "number" ? m.deliveredCount : "—"}</td>
+                        <td className="py-2 pr-4 text-gray-600">{typeof m?.pendingCount === "number" ? m.pendingCount : "—"}</td>
+                        <td className="py-2 pr-4 text-gray-600">{typeof m?.failedCount === "number" ? m.failedCount : "—"}</td>
+                      </>
+                    )}
+                    <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
+                    <td className="py-2">
+                      <TableKebabMenu items={[
+                        canView && { label: "View", onClick: () => onOpenDeliveryReport(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                        canEdit && { label: "Edit", onClick: () => openEdit(m), disabled: actionLoadingId === m?._id },
+                        canCancel && { label: "Cancel", onClick: () => onCancelRow(m), danger: true, disabled: actionLoadingId === m?._id }
+                      ]} />
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -862,6 +1109,43 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
         loading={Boolean(actionLoadingId)}
         onSave={onSaveEdit}
       />
+
+      {cancelRow ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="border-b border-gray-200 px-5 py-4">
+              <div className="font-semibold text-gray-900 text-sm">Cancel Scheduled Message</div>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm">
+              {cancelError ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{cancelError}</div> : null}
+              <div className="text-gray-600">
+                Are you sure you want to cancel <span className="font-semibold text-gray-900">{cancelRow?.title || "this message"}</span>?
+              </div>
+              <div className="text-gray-500 text-xs">
+                Sending will be stopped. The status will change to Cancelled. Reserved SMS credits will be released back to your wallet. The record will remain in Scheduled Messages as Cancelled for history.
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => { if (!cancelLoading) { setCancelRow(null); setCancelError(""); } }}
+                disabled={cancelLoading}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
+              >
+                Keep Scheduled
+              </button>
+              <button
+                type="button"
+                onClick={confirmCancel}
+                disabled={cancelLoading}
+                className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:opacity-60 text-sm"
+              >
+                {cancelLoading ? "Cancelling..." : "Yes, Cancel Message"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1011,6 +1295,9 @@ function DeliveryReportModal({ open, onClose, message }) {
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState(null);
+  const [resendingId, setResendingId] = useState(null);
+  const [resendError, setResendError] = useState("");
+  const [expandedRecipient, setExpandedRecipient] = useState(null);
 
   useEffect(() => {
     if (!open) return;
@@ -1024,7 +1311,8 @@ function DeliveryReportModal({ open, onClose, message }) {
       try {
         const res = await getMessageDeliveryReport(message._id);
         if (cancelled) return;
-        setRows(Array.isArray(res?.data?.deliveries) ? res.data.deliveries : []);
+        const all = Array.isArray(res?.data?.deliveries) ? res.data.deliveries : [];
+        setRows(all);
         setStats(res?.data?.stats || null);
       } catch (e) {
         if (cancelled) return;
@@ -1042,6 +1330,52 @@ function DeliveryReportModal({ open, onClose, message }) {
       cancelled = true;
     };
   }, [open, message?._id]);
+
+  const reloadReport = async () => {
+    try {
+      const res = await getMessageDeliveryReport(message._id);
+      setRows(Array.isArray(res?.data?.deliveries) ? res.data.deliveries : []);
+      setStats(res?.data?.stats || null);
+    } catch (e) {
+      setResendError(e?.response?.data?.message || e?.message || "Failed to reload report");
+    }
+  };
+
+  const onResend = async (deliveryId) => {
+    setResendingId(deliveryId);
+    setResendError("");
+    try {
+      await resendFailedDelivery(deliveryId);
+      await reloadReport();
+    } catch (e) {
+      setResendError(e?.response?.data?.message || e?.message || "Failed to resend SMS");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  // Group all deliveries by recipient (member ID or phone) and keep only the
+  // latest attempt for the main table. Full history is available on expand.
+  const groupedRows = useMemo(() => {
+    const byKey = new Map();
+    for (const d of rows) {
+      const key = d?.member ? String(d.member) : String(d?.phone || "");
+      const existing = byKey.get(key);
+      if (!existing) {
+        byKey.set(key, { latest: d, all: [d] });
+      } else {
+        existing.all.push(d);
+        if ((d.attemptNumber || 1) > (existing.latest.attemptNumber || 1)) {
+          existing.latest = d;
+        }
+      }
+    }
+    // Sort all attempts within each group by attemptNumber ascending
+    for (const g of byKey.values()) {
+      g.all.sort((a, b) => (a.attemptNumber || 1) - (b.attemptNumber || 1));
+    }
+    return Array.from(byKey.values());
+  }, [rows]);
 
   if (!open) return null;
 
@@ -1097,7 +1431,7 @@ function DeliveryReportModal({ open, onClose, message }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
               <div className="font-semibold text-gray-500 text-xs">Total Recipients</div>
               <div className="mt-1 font-semibold text-gray-900 text-lg">{stats?.total ?? message?.recipientCount ?? 0}</div>
@@ -1111,10 +1445,18 @@ function DeliveryReportModal({ open, onClose, message }) {
               <div className="mt-1 font-semibold text-gray-900 text-lg">{stats?.delivered ?? message?.deliveredCount ?? 0}</div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="font-semibold text-gray-500 text-xs">Pending</div>
+              <div className="mt-1 font-semibold text-gray-900 text-lg">{stats?.pending ?? message?.pendingCount ?? 0}</div>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
               <div className="font-semibold text-gray-500 text-xs">Failed</div>
               <div className="mt-1 font-semibold text-gray-900 text-lg">{stats?.failed ?? message?.failedCount ?? 0}</div>
             </div>
           </div>
+
+          {resendError ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{resendError}</div>
+          ) : null}
 
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full">
@@ -1123,29 +1465,93 @@ function DeliveryReportModal({ open, onClose, message }) {
                   <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Member</th>
                   <th className="py-2 pr-4 whitespace-nowrap">Phone</th>
                   <th className="py-2 pr-4 whitespace-nowrap">Status</th>
-                  <th className="py-2 whitespace-nowrap">Time</th>
+                  <th className="py-2 pr-4 whitespace-nowrap">Time</th>
+                  <th className="py-2 whitespace-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
+                    <td colSpan={5} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
                   </tr>
-                ) : !rows.length ? (
+                ) : !groupedRows.length ? (
                   <tr>
-                    <td colSpan={4} className="px-4">
+                    <td colSpan={5} className="px-4">
                       <EmptyState compact illustration="announcements" title="No delivery records" description="Delivery reports for this message will appear here." />
                     </td>
                   </tr>
                 ) : (
-                  rows.map((d, idx) => (
-                    <tr key={d?._id || `d-${idx}`} className="text-gray-700 text-sm">
-                      <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{d?.memberName || "—"}</td>
-                      <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{d?.phone || "—"}</td>
-                      <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{d?.status || "—"}</td>
-                      <td className="py-2 text-gray-600">{d?.updatedAt ? new Date(d.updatedAt).toLocaleString() : d?.createdAt ? new Date(d.createdAt).toLocaleString() : "—"}</td>
-                    </tr>
-                  ))
+                  groupedRows.map((g, idx) => {
+                    const d = g.latest;
+                    const isFailed = String(d?.status || "").toLowerCase() === "failed";
+                    const recipientKey = d?.member ? String(d.member) : String(d?.phone || "");
+                    const isExpanded = expandedRecipient === recipientKey;
+                    const hasMultipleAttempts = g.all.length > 1;
+                    return (
+                      <Fragment key={recipientKey || `g-${idx}`}>
+                        <tr className="text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">
+                            {hasMultipleAttempts ? (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedRecipient(isExpanded ? null : recipientKey)}
+                                className="mr-1 text-blue-600 hover:text-blue-800"
+                              >
+                                {isExpanded ? "▼" : "▶"}
+                              </button>
+                            ) : null}
+                            {d?.memberName || "—"}
+                          </td>
+                          <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{d?.phone || "—"}</td>
+                          <td className="py-2 pr-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-gray-700">{d?.status || "—"}</span>
+                              {isFailed && d?.errorMessage ? (
+                                <InfoTooltip text={d.errorMessage} />
+                              ) : null}
+                              {hasMultipleAttempts ? (
+                                <span className="text-gray-400 text-xs">({g.all.length} attempts)</span>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="py-2 text-gray-600 whitespace-nowrap">{d?.updatedAt ? new Date(d.updatedAt).toLocaleString() : d?.createdAt ? new Date(d.createdAt).toLocaleString() : "—"}</td>
+                          <td className="py-2 whitespace-nowrap">
+                            {isFailed ? (
+                              <button
+                                type="button"
+                                onClick={() => onResend(d?._id)}
+                                disabled={resendingId === d?._id}
+                                className="rounded-md border border-blue-200 bg-blue-50 px-3 py-1 font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-60 text-xs"
+                              >
+                                {resendingId === d?._id ? "Sending..." : "Resend"}
+                              </button>
+                            ) : "—"}
+                          </td>
+                        </tr>
+                        {isExpanded && hasMultipleAttempts ? (
+                          <tr className="bg-gray-50">
+                            <td colSpan={5} className="px-8 py-3">
+                              <div className="text-xs font-semibold text-gray-500 mb-2">Attempt History</div>
+                              <div className="space-y-1.5">
+                                {g.all.map((a, aIdx) => (
+                                  <div key={a?._id || aIdx} className="flex items-center gap-3 text-xs text-gray-600">
+                                    <span className="font-semibold text-gray-700 w-16">Attempt {a.attemptNumber || (aIdx + 1)}</span>
+                                    <span className={
+                                      String(a?.status || "").toLowerCase() === "delivered" ? "text-green-600 font-semibold" :
+                                      String(a?.status || "").toLowerCase() === "failed" ? "text-red-600 font-semibold" :
+                                      "text-gray-600 font-semibold"
+                                    }>{a?.status || "—"}</span>
+                                    {a?.errorMessage ? <span className="text-gray-400">{a.errorMessage}</span> : null}
+                                    <span className="text-gray-400">{a?.updatedAt ? new Date(a.updatedAt).toLocaleString() : a?.createdAt ? new Date(a.createdAt).toLocaleString() : "—"}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1156,7 +1562,7 @@ function DeliveryReportModal({ open, onClose, message }) {
   );
 }
 
-function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
+function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey }) {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
   const canWrite = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
@@ -1206,16 +1612,32 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
   const [estimatedRecipients, setEstimatedRecipients] = useState(0);
   const [estimatedCostPerRecipient, setEstimatedCostPerRecipient] = useState(0);
   const [estimatedTotalCostServer, setEstimatedTotalCostServer] = useState(0);
+  const [estimatedSegments, setEstimatedSegments] = useState(0);
+  const [estimatedAvailableCredits, setEstimatedAvailableCredits] = useState(0);
+  const [estimatedIncludedCredits, setEstimatedIncludedCredits] = useState(0);
+  const [estimatedWalletCredits, setEstimatedWalletCredits] = useState(0);
 
   const totalRecipientsPreview = useMemo(() => {
     if (audienceType === "members") return memberIds.length;
     return estimatedRecipients;
   }, [audienceType, estimatedRecipients, memberIds.length]);
 
+  // Local segment counter (matches backend GSM-7 / UCS-2 logic for preview only).
+  const previewSegments = useMemo(() => {
+    const len = String(content || "").length;
+    if (!len) return 0;
+    // Approximate: assume GSM-7 unless content has non-ASCII chars.
+    const isAscii = /^[\x00-\x7F]*$/.test(String(content || ""));
+    const single = isAscii ? 160 : 70;
+    const multi = isAscii ? 153 : 67;
+    if (len <= single) return 1;
+    return Math.ceil(len / multi);
+  }, [content]);
+
   const costPerRecipient = useMemo(() => {
     const smsCost = channels.sms ? 5 : 0;
-    return smsCost;
-  }, [channels.sms]);
+    return smsCost * Math.max(1, previewSegments);
+  }, [channels.sms, previewSegments]);
 
   const estimatedTotalCost = useMemo(() => {
     if (audienceType === "members") return totalRecipientsPreview * costPerRecipient;
@@ -1223,7 +1645,9 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
   }, [audienceType, costPerRecipient, estimatedTotalCostServer, totalRecipientsPreview]);
 
   const walletCredits = Number(wallet?.balanceCredits || 0);
-  const hasEnoughCredits = walletCredits >= estimatedTotalCost;
+  const includedCredits = Number(allowance?.remainingIncludedCredits || 0);
+  const totalAvailableCredits = walletCredits + includedCredits;
+  const hasEnoughCredits = totalAvailableCredits >= estimatedTotalCost;
 
   const messageCharCount = String(content || "").length;
 
@@ -1302,18 +1726,27 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
             departmentIds,
             memberIds
           },
-          channels: selectedChannels
+          channels: selectedChannels,
+          content
         });
 
         if (cancelled) return;
         setEstimatedRecipients(Number(res?.data?.recipientCount || 0));
         setEstimatedCostPerRecipient(Number(res?.data?.costPerRecipientCredits || 0));
         setEstimatedTotalCostServer(Number(res?.data?.totalCostCredits || 0));
+        setEstimatedSegments(Number(res?.data?.segmentsPerMessage || 0));
+        setEstimatedAvailableCredits(Number(res?.data?.availableCredits || 0));
+        setEstimatedIncludedCredits(Number(res?.data?.includedCredits || 0));
+        setEstimatedWalletCredits(Number(res?.data?.walletCredits || 0));
       } catch (e) {
         if (cancelled) return;
         setEstimatedRecipients(0);
         setEstimatedCostPerRecipient(0);
         setEstimatedTotalCostServer(0);
+        setEstimatedSegments(0);
+        setEstimatedAvailableCredits(0);
+        setEstimatedIncludedCredits(0);
+        setEstimatedWalletCredits(0);
         setEstimateError(e?.response?.data?.message || e?.message || "Failed to estimate message cost");
       } finally {
         if (cancelled) return;
@@ -1326,7 +1759,7 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
     return () => {
       cancelled = true;
     };
-  }, [audienceType, cellIds, channels, departmentIds, groupIds, memberIds, open]);
+  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, memberIds, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -1634,7 +2067,12 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
       />
 
       <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-        <div className="font-semibold text-gray-900 text-sm">Announcement Info</div>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="font-semibold text-gray-900 text-sm">Announcement Info</div>
+          <div className="text-gray-500 text-xs">
+            Sender ID: <span className="font-semibold text-gray-700">{activeChurch?.sender_id_status === "approved" ? (activeChurch?.sender_id || "—") : "CHURCHCLERK"}</span>
+          </div>
+        </div>
 
         <div className="mt-4 grid grid-cols-1 gap-3">
           <input
@@ -1837,39 +2275,49 @@ function CommunicationTab({ open, wallet, onSent, prefill, prefillKey }) {
         </div>
 
         <div className="mt-6 border-t border-gray-100 pt-5">
-          <div className="font-semibold text-gray-900 text-sm">Select Channel</div>
-          <div className="mt-3 flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 text-gray-700 text-sm">
-              <input
-                type="checkbox"
-                checked={channels.sms}
-                onChange={(e) => setChannels((prev) => ({ ...prev, sms: e.target.checked }))}
-              />
-              SMS
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-6 border-t border-gray-100 pt-5">
           <div className="font-semibold text-gray-900 text-sm">Message Cost Preview</div>
           {estimateError ? <div className="mt-2 font-semibold text-red-700 text-xs">{estimateError}</div> : null}
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="font-semibold text-gray-500 text-xs">Cost per Recipient</div>
+              <div className="flex items-center gap-1.5">
+                <div className="font-semibold text-gray-500 text-xs">Segments per Message</div>
+                <InfoTooltip text="A segment is a piece of your SMS. Short messages fit in 1 segment (160 characters). Longer messages split into multiple segments. Each segment costs credits." />
+              </div>
+              <div className="mt-1 font-semibold text-gray-900 text-sm">
+                {audienceType === "members" ? previewSegments : (estimatedSegments || previewSegments)}
+              </div>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="flex items-center gap-1.5">
+                <div className="font-semibold text-gray-500 text-xs">Cost per Recipient</div>
+                <InfoTooltip text="How many credits it costs to send this message to one person. It is segments multiplied by the credit cost per segment set by the admin." />
+              </div>
               <div className="mt-1 font-semibold text-gray-900 text-sm">
                 {(audienceType === "members" ? costPerRecipient : estimatedCostPerRecipient || costPerRecipient)} credits
               </div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <div className="font-semibold text-gray-500 text-xs">Estimated Total Cost</div>
+              <div className="flex items-center gap-1.5">
+                <div className="font-semibold text-gray-500 text-xs">Estimated Total Cost</div>
+                <InfoTooltip text="The total credits needed to send to everyone. It is cost per recipient multiplied by the number of recipients. Subscription credits are used first, then wallet top-up credits." />
+              </div>
               <div className="mt-1 font-semibold text-gray-900 text-sm">{`${estimatedTotalCost} credits`}</div>
-              <div className="mt-1 text-gray-500 text-xs">Wallet: {walletCredits} credits</div>
+              <div className="mt-1 text-gray-500 text-xs">
+                Available: {totalAvailableCredits} (subscription {includedCredits} + top-up {walletCredits})
+              </div>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="flex items-center gap-1.5">
+                <div className="font-semibold text-gray-500 text-xs">Recipients</div>
+                <InfoTooltip text="The number of people who will receive this message. Each recipient gets one copy of the SMS." />
+              </div>
+              <div className="mt-1 font-semibold text-gray-900 text-sm">{totalRecipientsPreview}</div>
             </div>
           </div>
 
           {!hasEnoughCredits && estimatedTotalCost > 0 ? (
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
-              Insufficient credits. Please fund your wallet.
+              Insufficient credits. Needed {estimatedTotalCost}, available {totalAvailableCredits}. Please fund your wallet.
             </div>
           ) : null}
 
@@ -1962,6 +2410,7 @@ function AnnouncementPage() {
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState("");
   const [wallet, setWallet] = useState(null);
+  const [allowance, setAllowance] = useState(null);
 
   const [fundOpen, setFundOpen] = useState(false);
   const [fundLoading, setFundLoading] = useState(false);
@@ -1984,8 +2433,10 @@ function AnnouncementPage() {
     try {
       const res = await getWallet();
       setWallet(res?.data?.wallet || null);
+      setAllowance(res?.data?.allowance || null);
     } catch (e) {
       setWallet(null);
+      setAllowance(null);
       setWalletError(e?.response?.data?.message || e?.message || "Failed to load wallet");
     } finally {
       setWalletLoading(false);
@@ -2177,6 +2628,7 @@ function AnnouncementPage() {
       <div className="mt-6">
         <WalletCard
           wallet={wallet}
+          allowance={allowance}
           onFund={openFund}
           onViewHistory={() => setTab("wallet-history")}
           isGhana={isGhana}
@@ -2192,7 +2644,6 @@ function AnnouncementPage() {
           { key: "scheduled", label: "Scheduled Messages" },
           { key: "templates", label: "Templates & Drafts" },
           { key: "wallet-history", label: "Wallet History" },
-          { key: "message-history", label: "Message History" },
         ]}
         activeTab={tab}
         onChange={setTab}
@@ -2203,6 +2654,7 @@ function AnnouncementPage() {
       <CommunicationTab
         open={tab === "communication"}
         wallet={wallet}
+        allowance={allowance}
         onSent={onMessageSent}
         prefill={communicationPrefill}
         prefillKey={communicationPrefillKey}
@@ -2213,13 +2665,16 @@ function AnnouncementPage() {
         open={tab === "sent"}
         query={{ status: "sent" }}
         onOpenDeliveryReport={openDelivery}
+        variant="sent"
       />
 
       <MessagesTable
         title="Scheduled Messages"
         open={tab === "scheduled"}
-        query={{ status: "scheduled" }}
+        query={{ status: "scheduled,processing,cancelled,failed" }}
         onOpenDeliveryReport={openDelivery}
+        onWalletUpdated={loadWallet}
+        variant="scheduled"
       />
 
       <TemplatesAndDraftsTab
@@ -2238,13 +2693,6 @@ function AnnouncementPage() {
         onReload={loadTx}
         isGhana={isGhana}
         usdToGhs={usdToGhs}
-      />
-
-      <MessagesTable
-        title="Message History"
-        open={tab === "message-history"}
-        query={{}}
-        onOpenDeliveryReport={openDelivery}
       />
 
       <FundWalletModal
