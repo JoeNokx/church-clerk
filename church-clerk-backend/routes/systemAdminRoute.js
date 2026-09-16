@@ -21,7 +21,8 @@ import {
   listChurchSenderIdRequests,
   approveChurchSenderId,
   rejectChurchSenderId,
-  verifyUserEmailByAdmin
+  verifyUserEmailByAdmin,
+  delegateChurchSession
 } from "../controller/systemAdminController.js";
 import {
   listSystemInAppAnnouncements,
@@ -102,6 +103,16 @@ router.delete(
   authorizeRoles("superadmin"),
   requirePermission("settingsChurchProfile", "delete"),
   deleteChurch
+);
+
+// Delegated session: issues a short-lived JWT so a system admin can open
+// the church-facing frontend as that church.
+router.post(
+  "/churches/:id/delegate",
+  protectAdmin,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin"),
+  delegateChurchSession
 );
 
 router.patch(

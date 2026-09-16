@@ -23,7 +23,7 @@ function _acGet(key) {
 function _acSet(key, val, ttl) { _ac.set(key, { v: val, exp: Date.now() + ttl }); }
 export function bustAuthCacheForChurch(churchId) { _ac.delete(`s:${String(churchId)}`); }
 
-const protectWithCookie = (cookieNames) => async (req, res, next) => {
+const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: "Service unavailable. Database connection is not ready." });
@@ -31,13 +31,29 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
 
     const cookies = req.cookies || {};
     const names = Array.isArray(cookieNames) ? cookieNames : [cookieNames];
-    let token = names.map((n) => cookies?.[n]).find(Boolean);
+    const allowBearer = options.allowBearer !== false; // default true
 
-    if (!token) {
+    // Check the Bearer header FIRST (for church-facing routes only), then
+    // fall back to cookies.
+    // This matters for delegated sessions: the delegate token is sent as a
+    // Bearer token, but the browser may also send a stale `token` cookie
+    // from a previous church login on the same domain. If the cookie is
+    // checked first, the stale token authenticates the wrong user and the
+    // request fails with "Unauthorized branch access".
+    //
+    // Admin routes (protectAdmin) set allowBearer=false so a church user's
+    // Bearer token can NEVER authenticate against an admin endpoint —
+    // admin auth is strictly via the adminToken cookie.
+    let token = "";
+    if (allowBearer) {
       const authHeader = String(req.headers?.authorization || "");
       if (authHeader.toLowerCase().startsWith("bearer ")) {
         token = authHeader.slice(7).trim();
       }
+    }
+
+    if (!token) {
+      token = names.map((n) => cookies?.[n]).find(Boolean);
     }
 
     // If request comes from the system admin app, prefer adminToken for auth.
@@ -53,6 +69,11 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Flag delegated sessions issued by the system admin "View as Church" flow.
+    // The token payload contains { delegate: true, delegateChurch: churchId }.
+    req.isDelegate = Boolean(decoded?.delegate);
+    req.delegateChurch = decoded?.delegateChurch || null;
 
     req.user = await User.findById(decoded.id).select("-password");
 
@@ -315,6 +336,8 @@ const protectWithCookie = (cookieNames) => async (req, res, next) => {
 };
 
 const protect = protectWithCookie(["token", "userToken"]);
-const protectAdmin = protectWithCookie(["adminToken"]);
+// Admin routes are strictly cookie-authenticated. A church user's Bearer
+// token must NEVER authenticate against an admin endpoint.
+const protectAdmin = protectWithCookie(["adminToken"], { allowBearer: false });
 
 export { protect, protectAdmin };

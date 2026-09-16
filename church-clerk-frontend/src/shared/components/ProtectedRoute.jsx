@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/useAuth.js";
+import { isDelegateSession } from "../utils/delegateSession.js";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -27,7 +28,7 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (user?.isEmailVerified === false) {
+  if (user?.isEmailVerified === false && !isDelegateSession()) {
     if (location.pathname !== "/verify-email") {
       const email = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
       return <Navigate to={`/verify-email${email}`} replace />;
@@ -35,7 +36,9 @@ function ProtectedRoute({ children }) {
   }
 
   // Logged in but no church → register church
-  if (!user.church) {
+  // Skip this redirect for delegated sessions (system admin viewing as church),
+  // because the admin user legitimately has no church of their own.
+  if (!user.church && !isDelegateSession()) {
     if (location.pathname !== "/register-church") {
       return <Navigate to="/register-church" replace />;
     }

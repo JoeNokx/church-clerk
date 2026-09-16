@@ -12,6 +12,10 @@ export const getSystemChurch = async (id) => {
   return await http.get(`/system-admin/churches/${id}`);
 };
 
+export const delegateChurchSession = async (id) => {
+  return await http.post(`/system-admin/churches/${id}/delegate`);
+};
+
 export const suspendSystemChurch = async (id, payload) => {
   return await http.patch(`/system-admin/churches/${id}/suspend`, payload);
 };

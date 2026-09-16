@@ -20,7 +20,15 @@ export const setActiveChurch = async (req, res, next) => {
 
 
 
-    if (!req.user?.church && effectiveRole !== "superadmin" && effectiveRole !== "supportadmin") {
+    // Delegated sessions: the system admin is viewing as a specific church.
+    // The role was overridden to "churchadmin" by attachPermissions, but the
+    // admin user has no home church. Treat delegated sessions like superadmin
+    // for church scoping (trust the x-active-church header), but enforce that
+    // the active church matches the one the delegate token was issued for.
+    const isDelegate = Boolean(req.isDelegate);
+    const delegateChurchId = req.delegateChurch || null;
+
+    if (!req.user?.church && effectiveRole !== "superadmin" && effectiveRole !== "supportadmin" && !isDelegate) {
 
       req.activeChurch = null;    // explicitly set for dashboard controllers
 
@@ -38,6 +46,12 @@ export const setActiveChurch = async (req, res, next) => {
 
     let activeChurchId = headerChurchId || userChurchId;
 
+    // Delegated sessions: enforce tenant isolation.
+    // The active church must match the one the delegate token was issued for.
+    if (isDelegate && delegateChurchId) {
+      activeChurchId = delegateChurchId;
+    }
+
 
 
     // Branch/Independent users should never switch context via header.
@@ -51,6 +65,8 @@ export const setActiveChurch = async (req, res, next) => {
       effectiveRole !== "superadmin" &&
 
       effectiveRole !== "supportadmin" &&
+
+      !isDelegate &&
 
       headerChurchId &&
 
@@ -104,6 +120,8 @@ export const setActiveChurch = async (req, res, next) => {
 
       effectiveRole !== "supportadmin" &&
 
+      !isDelegate &&
+
       userChurchId &&
 
       activeChurchId.toString() !== userChurchId.toString()
@@ -145,6 +163,8 @@ export const setActiveChurch = async (req, res, next) => {
       effectiveRole === "superadmin" ||
 
       effectiveRole === "supportadmin" ||
+
+      isDelegate ||
 
       req.activeChurch._id.toString() === userChurchId?.toString();
 

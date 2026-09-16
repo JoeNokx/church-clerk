@@ -9,6 +9,15 @@ export const attachPermissions = async (req, res, next) => {
     req.permissions = req.user?.role
       ? await resolvePermissions(req.user.role, req.user?.roleRef, scope)
       : {};
+
+    // Delegated sessions: the system admin is viewing as a specific church.
+    // Keep the resolved super permissions (so requirePermission still passes
+    // via perms.super), but override the role to a church-level role so that
+    // every controller's `if (req.user.role !== "superadmin")` church-scoping
+    // check naturally applies and scopes queries to req.activeChurch._id.
+    if (req.isDelegate && req.user?.role) {
+      req.user.role = "churchadmin";
+    }
   } catch (e) {
     req.permissions = {};
   }

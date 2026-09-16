@@ -5,7 +5,8 @@ import {
   getSystemChurches,
   suspendSystemChurch,
   unsuspendSystemChurch,
-  deleteSystemChurch
+  deleteSystemChurch,
+  delegateChurchSession
 } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
@@ -57,6 +58,25 @@ function ChurchesPage() {
   const [suspendReason, setSuspendReason] = useState("");
   const [deleteModal, setDeleteModal] = useState(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
+  const [delegateLoading, setDelegateLoading] = useState("");
+  const [delegateModal, setDelegateModal] = useState(null);
+
+  const handleDelegate = async (church) => {
+    if (!church?._id) return;
+    setDelegateLoading(church._id);
+    try {
+      const res = await delegateChurchSession(church._id);
+      const url = res?.data?.data?.delegateUrl;
+      if (url) {
+        window.open(url, "_blank");
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to open delegated session");
+    } finally {
+      setDelegateLoading("");
+      setDelegateModal(null);
+    }
+  };
 
   const load = useCallback(
     async ({ nextPage } = {}) => {
@@ -251,6 +271,13 @@ function ChurchesPage() {
                             className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                             View
                           </button>
+                          <button type="button"
+                            onClick={() => setDelegateModal(c)}
+                            disabled={isSuspended}
+                            title={isSuspended ? "Cannot delegate into a suspended church" : "Open this church's frontend in a delegated session"}
+                            className="rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                            View as Church
+                          </button>
                           {isSuspended ? (
                             <button type="button"
                               onClick={() => handleUnsuspend(c)}
@@ -334,6 +361,49 @@ function ChurchesPage() {
           placeholder="Type church name to confirm..."
           className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100" />
       </ConfirmModal>
+
+      {/* Delegate Session Modal */}
+      {delegateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-200">
+              <div className="text-base font-bold text-gray-900">View as Church — "{delegateModal?.name}"</div>
+              <button type="button" onClick={() => setDelegateModal(null)}
+                disabled={!!delegateLoading}
+                aria-label="Close"
+                className="-mr-1 -mt-1 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-60">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <div className="text-xs text-gray-700 bg-blue-50 rounded-lg px-3 py-3 leading-relaxed">
+                This will open the Church Clerk frontend in a new browser tab, logged in as this church.
+                <br /><br />
+                You will see exactly what the church admin sees — dashboard, members, tithes, offerings, billing, settings, everything. Any changes you make will affect this church's real data.
+                <br /><br />
+                <strong className="text-blue-800">This is not a simulation.</strong> Actions you take in the delegated session are real.
+                <br /><br />
+                The session expires automatically after 2 hours, or when you click "Exit Session" in the banner at the top of the page.
+              </div>
+              <div className="mt-5 flex justify-end gap-3">
+                <button type="button" onClick={() => setDelegateModal(null)}
+                  disabled={!!delegateLoading}
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+                  Cancel
+                </button>
+                <button type="button"
+                  onClick={() => handleDelegate(delegateModal)}
+                  disabled={!!delegateLoading}
+                  className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
+                  {delegateLoading ? "Opening…" : "Open Church Frontend"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

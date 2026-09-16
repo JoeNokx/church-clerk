@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import NProgress from "nprogress";
 import { startRouteProgress, stopRouteProgress } from "../shared/services/http.js";
 import { submitAdjustment } from "../features/governance/services/governance.api.js";
+import { isDelegateSession, clearDelegateSession } from "../shared/utils/delegateSession.js";
 import AppRoutes from "./routes.jsx";
 import ErrorBoundary from "../shared/components/ErrorBoundary.jsx";
 import OfflineBanner from "../shared/components/OfflineBanner.jsx";
@@ -183,11 +184,99 @@ function BackdateApprovalModal() {
   );
 }
 
+function DelegateSessionBanner() {
+  const [show, setShow] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
+
+  useEffect(() => {
+    setShow(isDelegateSession());
+  }, []);
+
+  if (!show) return null;
+
+  const performExit = () => {
+    clearDelegateSession();
+    // Try to close this tab (opened via window.open from the admin app).
+    // If the browser blocks window.close(), fall back to redirecting
+    // this tab back to the admin churches page.
+    const adminUrl = import.meta.env.VITE_ADMIN_URL || "http://localhost:5174";
+    const fallback = `${adminUrl}/admin/churches`;
+    try {
+      window.close();
+    } catch {
+      window.location.href = fallback;
+      return;
+    }
+    // Some browsers silently ignore window.close(); redirect if still open.
+    setTimeout(() => {
+      if (!window.closed) {
+        window.location.href = fallback;
+      }
+    }, 300);
+  };
+
+  return (
+    <>
+      <div className="sticky top-0 z-[9998] flex items-center justify-between gap-3 bg-amber-600 px-4 py-2 text-sm text-white">
+        <div className="flex items-center gap-2">
+          <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          <span className="font-semibold">Delegated Session</span>
+          <span className="hidden sm:inline">— You are viewing this church as a system admin. Actions you take here affect this church.</span>
+          <span className="sm:hidden">Viewing as system admin.</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setConfirmExit(true)}
+          className="rounded-md bg-white/20 px-3 py-1 text-xs font-semibold hover:bg-white/30"
+        >
+          Exit Session
+        </button>
+      </div>
+
+      {confirmExit && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-200">
+              <div className="text-base font-bold text-gray-900">Exit Delegated Session?</div>
+              <button type="button" onClick={() => setConfirmExit(false)}
+                aria-label="Close"
+                className="-mr-1 -mt-1 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <div className="text-sm text-gray-600 leading-relaxed">
+                This will end your delegated session and close this tab. You will return to the System Admin churches list. Any unsaved changes will be lost.
+              </div>
+              <div className="mt-5 flex justify-end gap-3">
+                <button type="button" onClick={() => setConfirmExit(false)}
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                  Stay
+                </button>
+                <button type="button"
+                  onClick={performExit}
+                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
+                  Exit Session
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
         <SubscriptionLockProvider>
+          <DelegateSessionBanner />
           <OfflineBanner />
           <RouteProgress />
           <SubscriptionLockedModal />

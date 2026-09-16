@@ -6,10 +6,15 @@ import { AuthProvider } from "./features/auth/auth.store.jsx";
 import { PermissionProvider } from "./features/permissions/permission.store.js";
 import { ChurchProvider } from "./features/church/church.store.js";
 import { ToastContainer } from "react-toastify";
+import { bootstrapDelegateSession } from "./shared/utils/delegateSession.js";
 import "react-toastify/dist/ReactToastify.css";
 import "nprogress/nprogress.css";
 import "react-loading-skeleton/dist/skeleton.css";
 import "./styles/index.css";
+
+// Detect and store a delegated session token before React mounts,
+// so the auth provider and http interceptor pick it up naturally.
+bootstrapDelegateSession();
 
 const queryClient = new QueryClient({
   defaultOptions: {

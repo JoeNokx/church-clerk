@@ -40,43 +40,30 @@ async function getOrCreateAllowance({ churchId }) {
   const { planId, planMonthly, subscription } = await resolvePlanForChurch(churchId);
   const periodWindow = getPeriodWindow(subscription);
 
-  let allowance = await SmsAllowance.findOne({ church: churchId });
-
-  if (!allowance) {
-    allowance = await SmsAllowance.create({
-      church: churchId,
+  // Use an atomic upsert to avoid E11000 duplicate key errors when multiple
+  // parallel requests (e.g. announcements page loading) race to create the
+  // first allowance doc for a church. $setOnInsert only applies on insert;
+  // $set applies on every call so plan changes are synced dynamically.
+  const filter = { church: churchId };
+  const update = {
+    $set: {
       subscription: subscription?._id || null,
       plan: planId,
       grantedCredits: planMonthly,
-      usedCredits: 0,
       planMonthlySmsCredits: planMonthly,
+      periodEnd: periodWindow?.periodEnd || null
+    },
+    $setOnInsert: {
+      usedCredits: 0,
       periodStart: subscription?.trialStart || subscription?.createdAt || new Date(),
-      periodEnd: periodWindow?.periodEnd || null,
       periodIndex: 0
-    });
-    return allowance;
-  }
-
-  // Sync: if the plan's monthlySmsCredits changed since last read, update grantedCredits
-  // dynamically. This makes admin plan changes reflect immediately on the church side.
-  const currentPlanMonthly = Number(allowance.planMonthlySmsCredits || 0);
-  const currentPlanId = allowance.plan?.toString?.() || null;
-  const planChanged = (planId && planId.toString() !== currentPlanId) || planMonthly !== currentPlanMonthly;
-
-  if (planChanged) {
-    allowance.plan = planId;
-    allowance.planMonthlySmsCredits = planMonthly;
-    allowance.grantedCredits = planMonthly;
-    // Cap usedCredits so it doesn't exceed the new grant (avoids negative remaining).
-    if (Number(allowance.usedCredits) > planMonthly) {
-      allowance.usedCredits = planMonthly;
     }
-    allowance.subscription = subscription?._id || allowance.subscription;
-    if (periodWindow?.periodEnd) {
-      allowance.periodEnd = periodWindow.periodEnd;
-    }
-    await allowance.save();
-  }
+  };
+
+  const allowance = await SmsAllowance.findOneAndUpdate(filter, update, {
+    new: true,
+    upsert: true
+  });
 
   return allowance;
 }

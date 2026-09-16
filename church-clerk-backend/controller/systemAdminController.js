@@ -4,6 +4,7 @@ import Member from "../models/memberModel.js";
 import { CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
 import Role from "../models/roleModel.js";
 import ActivityLog from "../models/activityLogModel.js";
+import { generateDelegateToken } from "../utils/generateToken.js";
 import ReferralHistory from "../models/referralModel/referralHistoryModel.js";
 import ReferralCode from "../models/referralModel/referralCodeModel.js";
 import AnnouncementWallet from "../models/announcementWalletModel.js";
@@ -897,6 +898,66 @@ const verifyUserEmailByAdmin = async (req, res) => {
   }
 };
 
+// POST /system-admin/churches/:id/delegate
+// Issues a short-lived JWT that lets a system admin open the church-facing
+// frontend as that church through a delegated session.
+const delegateChurchSession = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const church = await Church.findById(id).lean();
+    if (!church) {
+      return res.status(404).json({ message: "Church not found" });
+    }
+
+    if (church.isActive === false) {
+      return res.status(403).json({ message: "Cannot delegate into a suspended church" });
+    }
+
+    const adminUser = req.user;
+    if (!adminUser) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const token = generateDelegateToken(adminUser._id, church._id);
+
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const delegateUrl = `${frontendUrl}/dashboard?delegateToken=${encodeURIComponent(token)}&churchId=${encodeURIComponent(String(church._id))}`;
+
+    // Audit log
+    try {
+      await ActivityLog.create({
+        user: adminUser._id,
+        userName: adminUser.fullName || adminUser.email || "System Admin",
+        userRole: adminUser.role,
+        church: church._id,
+        action: "DELEGATE_CHURCH_SESSION",
+        module: "system-admin",
+        resource: String(church.name || ""),
+        httpMethod: "POST",
+        path: `/system-admin/churches/${id}/delegate`,
+        description: `System admin ${adminUser.fullName || adminUser.email} opened a delegated session for church "${church.name}"`,
+        ipAddress: req.ip || "",
+        userAgent: String(req.headers["user-agent"] || ""),
+        status: "Success"
+      });
+    } catch {
+      // audit failure must not block delegation
+    }
+
+    return res.status(200).json({
+      message: "Delegated session token issued",
+      data: {
+        token,
+        churchId: String(church._id),
+        churchName: church.name,
+        delegateUrl
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   getAllChurches,
   getSystemChurchById,
@@ -917,5 +978,6 @@ export {
   listChurchSenderIdRequests,
   approveChurchSenderId,
   rejectChurchSenderId,
-  verifyUserEmailByAdmin
+  verifyUserEmailByAdmin,
+  delegateChurchSession
 };

@@ -27,6 +27,7 @@ import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
 import { getSystemSettingsAdmin, updateSystemSettingsAdmin, toggleGovernanceFlags } from "../../settings/services/settings.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { isDelegateSession } from "../../../shared/utils/delegateSession.js";
 
 function formatCurrency(amount, currency) {
   return formatMoney(amount, currency);
@@ -202,7 +203,9 @@ function BillingPage() {
   const [referralBonusDays, setReferralBonusDays] = useState(30);
 
   // System admin settings (configuration durations + governance toggles)
+  // Hidden for delegated sessions — those are scoped to a single church view.
   const isSystemAdmin = useMemo(() => {
+    if (isDelegateSession()) return false;
     const raw = String(user?.role || "").trim().toLowerCase();
     const norm = raw.replace(/[\s_\-]+/g, "");
     return norm === "superadmin" || norm === "supportadmin";
