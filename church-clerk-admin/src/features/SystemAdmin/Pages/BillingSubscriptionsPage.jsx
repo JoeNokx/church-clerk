@@ -6,9 +6,9 @@ import {
   adminUpdateSubscription,
   adminSuspendSubscription,
   adminResumeSubscription,
-  adminDevFastForward,
-  adminDevRunCycleForChurch,
-  adminDevRunBillingCycle
+  adminDeleteSubscription,
+  adminRunCycleForChurch,
+  adminRunBillingCycle
 } from "../Services/adminBilling.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
@@ -26,12 +26,19 @@ function BillingSubscriptionsPage() {
   const [plans, setPlans] = useState([]);
   const [changePlanModal, setChangePlanModal] = useState(null);
   const [changePlanId, setChangePlanId] = useState("");
+  const [changePlanInterval, setChangePlanInterval] = useState("");
+  const [changePlanNextBillingDate, setChangePlanNextBillingDate] = useState("");
   const [actionLoading, setActionLoading] = useState("");
-  const [fastForwardModal, setFastForwardModal] = useState(null);
-  const [fastForwardMinutes, setFastForwardMinutes] = useState("2");
   const [cycleLoadingId, setCycleLoadingId] = useState("");
   const [globalCycleLoading, setGlobalCycleLoading] = useState(false);
   const [cycleMessage, setCycleMessage] = useState("");
+  const [confirmCycleChurch, setConfirmCycleChurch] = useState(null);
+  const [confirmGlobalCycle, setConfirmGlobalCycle] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [confirmActivate, setConfirmActivate] = useState(null);
+  const [confirmSuspend, setConfirmSuspend] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleteText, setDeleteText] = useState("");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -118,25 +125,23 @@ function BillingSubscriptionsPage() {
     if (!id) return;
 
     if (action === "activate") {
-      runAction("activate", () => adminUpdateSubscription(id, { status: "active", gracePeriodEnd: null }));
+      setConfirmActivate(sub);
       return;
     }
     if (action === "suspend") {
-      runAction("suspend", () => adminSuspendSubscription(id));
+      setConfirmSuspend(sub);
       return;
     }
     if (action === "resume") {
       runAction("resume", () => adminResumeSubscription(id));
       return;
     }
-    if (action === "fastForward") {
-      setFastForwardModal(sub);
-      setFastForwardMinutes("2");
-      return;
-    }
     if (action === "changePlan") {
       setChangePlanModal(sub);
       setChangePlanId(sub?.plan?._id || "");
+      setChangePlanInterval(sub?.billingInterval || "monthly");
+      const nb = sub?.nextBillingDate ? new Date(sub.nextBillingDate) : null;
+      setChangePlanNextBillingDate(nb ? nb.toISOString().slice(0, 16) : "");
       return;
     }
   };
@@ -144,24 +149,20 @@ function BillingSubscriptionsPage() {
   const submitChangePlan = async () => {
     const id = changePlanModal?._id;
     if (!id || !changePlanId) return;
-    await runAction("changePlan", () => adminUpdateSubscription(id, { planId: changePlanId }));
+    const payload = { planId: changePlanId };
+    if (changePlanInterval) payload.billingInterval = changePlanInterval;
+    if (changePlanNextBillingDate) payload.nextBillingDate = new Date(changePlanNextBillingDate).toISOString();
+    await runAction("changePlan", () => adminUpdateSubscription(id, payload));
     setChangePlanModal(null);
   };
 
-  const submitFastForward = async () => {
-    const churchId = fastForwardModal?.church?._id;
-    if (!churchId) return;
-    const mins = Math.max(1, Math.min(Number(fastForwardMinutes || 2), 1440));
-    await runAction("fastForward", () => adminDevFastForward(churchId, mins));
-    setFastForwardModal(null);
-  };
-
   const runGlobalCycle = async () => {
+    setConfirmGlobalCycle(false);
     setGlobalCycleLoading(true);
     setCycleMessage("");
     setError("");
     try {
-      await adminDevRunBillingCycle();
+      await adminRunBillingCycle();
       setCycleMessage("Global billing cycle executed — all overdue subscriptions processed.");
       await load();
     } catch (e) {
@@ -171,14 +172,15 @@ function BillingSubscriptionsPage() {
     }
   };
 
-  const runCycleForChurch = async (sub) => {
-    const churchId = sub?.church?._id;
+  const runCycleForChurch = async () => {
+    const churchId = confirmCycleChurch?.church?._id;
     if (!churchId) return;
+    setConfirmCycleChurch(null);
     setCycleLoadingId(String(churchId));
     setCycleMessage("");
     setError("");
     try {
-      const res = await adminDevRunCycleForChurch(churchId);
+      const res = await adminRunCycleForChurch(churchId);
       setCycleMessage(res?.data?.message || "Billing cycle ran for this church.");
       await load();
     } catch (e) {
@@ -198,7 +200,7 @@ function BillingSubscriptionsPage() {
         <div className="flex-1" />
         <button
           type="button"
-          onClick={runGlobalCycle}
+          onClick={() => { setConfirmGlobalCycle(true); setConfirmText(""); }}
           disabled={globalCycleLoading}
           title="Runs billing cycle for ALL churches with overdue nextBillingDate — same as the nightly scheduled job"
           className="shrink-0 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
@@ -340,15 +342,9 @@ function BillingSubscriptionsPage() {
                             Resume
                           </button>
                         )}
-                        <button type="button" onClick={() => onQuickAction(s, "fastForward")}
-                          disabled={!!actionLoading}
-                          title="Dev only: fast-forward billing date by N minutes"
-                          className="rounded-md border border-purple-200 bg-white px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-50 disabled:opacity-50">
-                          ⚡ Fast Forward
-                        </button>
-                        <button type="button" onClick={() => runCycleForChurch(s)}
+                        <button type="button" onClick={() => { setConfirmCycleChurch(s); setConfirmText(""); }}
                           disabled={!!actionLoading || cycleLoadingId === String(s?.church?._id)}
-                          title="Dev only: run billing cycle for this church only"
+                          title="Run billing cycle for this church only — processes payment or moves to past_due"
                           className="rounded-md border border-indigo-200 bg-white px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">
                           {cycleLoadingId === String(s?.church?._id) ? "Running…" : "▶ Run Cycle"}
                         </button>
@@ -356,6 +352,12 @@ function BillingSubscriptionsPage() {
                           disabled={!!actionLoading}
                           className="rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">
                           Change Plan
+                        </button>
+                        <button type="button" onClick={() => { setConfirmDelete(s); setDeleteText(""); }}
+                          disabled={!!actionLoading}
+                          title="Permanently delete this subscription record"
+                          className="rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -367,31 +369,82 @@ function BillingSubscriptionsPage() {
         </table>
       </div>
 
-      {fastForwardModal && (
+      {confirmCycleChurch && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <div className="text-base font-semibold text-gray-900 mb-1">⚡ Fast Forward Billing</div>
-            <div className="text-xs text-gray-500 mb-1">{fastForwardModal?.church?.name}</div>
-            <div className="mb-4 text-xs text-purple-700 bg-purple-50 rounded-lg px-3 py-2">
-              Sets <strong>nextBillingDate</strong> to N minutes from now. Then click <strong>Run Billing Cycle</strong> to trigger it.
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="text-base font-semibold text-gray-900 mb-1">Run Billing Cycle</div>
+            <div className="text-xs text-gray-500 mb-3">{confirmCycleChurch?.church?.name}</div>
+            <div className="mb-4 text-xs text-gray-700 bg-indigo-50 rounded-lg px-3 py-3 leading-relaxed">
+              This will run the <strong>real billing engine</strong> for this church only. No other churches are affected.
+              <br /><br />
+              If their <strong>nextBillingDate</strong> has passed, this will:
+              <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                <li>Attempt a real Paystack charge if a saved card exists</li>
+                <li>Move the subscription to <strong>past_due</strong> and start the grace period if no card or charge fails</li>
+                <li>Advance the nextBillingDate to the next cycle</li>
+                <li>Create a payment record in billing history</li>
+              </ul>
+              <br />
+              If the trial has expired, this releases them to the Free Lite plan.
             </div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Minutes from now</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Type <strong className="text-indigo-700">RUN</strong> to confirm
+            </label>
             <input
-              type="number"
-              min={1}
-              max={1440}
-              value={fastForwardMinutes}
-              onChange={(e) => setFastForwardMinutes(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-100 mb-4"
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="RUN"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-100 mb-4"
             />
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setFastForwardModal(null)}
+              <button type="button" onClick={() => setConfirmCycleChurch(null)}
                 className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
                 Cancel
               </button>
-              <button type="button" onClick={submitFastForward} disabled={!!actionLoading}
-                className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800 disabled:opacity-50">
-                {actionLoading === "fastForward" ? "Saving…" : "Fast Forward"}
+              <button type="button" onClick={runCycleForChurch} disabled={confirmText.trim().toUpperCase() !== "RUN"}
+                className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800 disabled:opacity-40 disabled:cursor-not-allowed">
+                Run Cycle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmGlobalCycle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="text-base font-semibold text-gray-900 mb-1">Run Global Billing Cycle</div>
+            <div className="mb-4 text-xs text-gray-700 bg-purple-50 rounded-lg px-3 py-3 leading-relaxed">
+              This runs the billing engine for <strong>ALL churches</strong> whose nextBillingDate has passed — the same as the nightly scheduled job.
+              <br /><br />
+              <strong className="text-red-600">Warning:</strong> This affects every overdue subscription in the system, including real customers. Each one will be:
+              <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                <li>Charged via Paystack if a saved card exists</li>
+                <li>Moved to <strong>past_due</strong> with a grace period if no card or charge fails</li>
+                <li>Released to Free Lite if their trial has expired</li>
+              </ul>
+              <br />
+              Use this only if you want to process all overdue subscriptions immediately instead of waiting for the nightly cron.
+            </div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Type <strong className="text-purple-700">RUN</strong> to confirm
+            </label>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="RUN"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-100 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmGlobalCycle(false)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+              <button type="button" onClick={runGlobalCycle} disabled={confirmText.trim().toUpperCase() !== "RUN"}
+                className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800 disabled:opacity-40 disabled:cursor-not-allowed">
+                Run Global Cycle
               </button>
             </div>
           </div>
@@ -407,13 +460,36 @@ function BillingSubscriptionsPage() {
             <select
               value={changePlanId}
               onChange={(e) => setChangePlanId(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 mb-4"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 mb-3"
             >
               <option value="">— select a plan —</option>
               {plans.map((p) => (
                 <option key={p._id} value={p._id}>{p.name}</option>
               ))}
             </select>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Billing Interval</label>
+            <select
+              value={changePlanInterval}
+              onChange={(e) => setChangePlanInterval(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 mb-3"
+            >
+              <option value="hourly">Hourly</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly (3 months)</option>
+              <option value="halfYear">Half-Yearly (6 months)</option>
+              <option value="yearly">Yearly</option>
+            </select>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Next Billing Date <span className="text-gray-400 font-normal">(optional — set to a past date to make due immediately)</span>
+            </label>
+            <input
+              type="datetime-local"
+              value={changePlanNextBillingDate}
+              onChange={(e) => setChangePlanNextBillingDate(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 mb-4"
+            />
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setChangePlanModal(null)}
                 className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
@@ -422,6 +498,109 @@ function BillingSubscriptionsPage() {
               <button type="button" onClick={submitChangePlan} disabled={!changePlanId || !!actionLoading}
                 className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
                 {actionLoading === "changePlan" ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmActivate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="text-base font-semibold text-gray-900 mb-1">Activate Subscription</div>
+            <div className="text-xs text-gray-500 mb-3">{confirmActivate?.church?.name}</div>
+            <div className="mb-4 text-xs text-gray-700 bg-green-50 rounded-lg px-3 py-3 leading-relaxed">
+              This will force-set the subscription status to <strong>active</strong> and clear any grace period.
+              <br /><br />
+              Use this when a church has been suspended or moved to <strong>past_due</strong> and you want to restore their access immediately — for example, after they've paid manually outside the system or you've resolved a billing issue.
+              <br /><br />
+              The next billing date stays as-is. The church will be billed normally on their next cycle.
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmActivate(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+              <button type="button"
+                onClick={() => {
+                  const id = confirmActivate?._id;
+                  setConfirmActivate(null);
+                  runAction("activate", () => adminUpdateSubscription(id, { status: "active", gracePeriodEnd: null }));
+                }}
+                className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800">
+                Activate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmSuspend && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="text-base font-semibold text-gray-900 mb-1">Suspend Subscription</div>
+            <div className="text-xs text-gray-500 mb-3">{confirmSuspend?.church?.name}</div>
+            <div className="mb-4 text-xs text-gray-700 bg-red-50 rounded-lg px-3 py-3 leading-relaxed">
+              This will set the subscription status to <strong>suspended</strong>. The church will lose access to their dashboard and all paid features immediately.
+              <br /><br />
+              An email notification will be sent to the church informing them of the suspension.
+              <br /><br />
+              The subscription is not cancelled — you can restore access at any time by clicking <strong>Resume</strong>.
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmSuspend(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+              <button type="button"
+                onClick={() => {
+                  const id = confirmSuspend?._id;
+                  setConfirmSuspend(null);
+                  runAction("suspend", () => adminSuspendSubscription(id));
+                }}
+                className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800">
+                Suspend
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="text-base font-semibold text-gray-900 mb-1">Delete Subscription</div>
+            <div className="text-xs text-gray-500 mb-3">{confirmDelete?.church?.name}</div>
+            <div className="mb-4 text-xs text-gray-700 bg-red-50 rounded-lg px-3 py-3 leading-relaxed">
+              <strong className="text-red-600">This permanently deletes the subscription record.</strong> This cannot be undone.
+              <br /><br />
+              The church's billing history and payment records are kept, but the subscription itself is removed. If the church logs into their billing page, a new trial subscription will be created automatically.
+              <br /><br />
+              Use this only to clean up test data or remove orphaned subscriptions. Do not use this on real customers — use <strong>Suspend</strong> instead.
+            </div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Type <strong className="text-red-700">DELETE</strong> to confirm
+            </label>
+            <input
+              type="text"
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              placeholder="DELETE"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmDelete(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+              <button type="button"
+                disabled={deleteText.trim().toUpperCase() !== "DELETE"}
+                onClick={() => {
+                  const id = confirmDelete?._id;
+                  setConfirmDelete(null);
+                  runAction("delete", () => adminDeleteSubscription(id));
+                }}
+                className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed">
+                Delete
               </button>
             </div>
           </div>

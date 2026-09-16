@@ -20,6 +20,7 @@ import {
   updateSubscription,
   adminSuspendSubscription,
   adminResumeSubscription,
+  adminDeleteSubscription,
   verifyPayment,
   updatePlan
 } from "../controller/adminBillingController.js";
@@ -41,6 +42,7 @@ router.get("/subscriptions", requirePermission("billing", "read"), getSubscripti
 router.put("/subscriptions/:id", requirePermission("billing", "update"), updateSubscription);
 router.post("/subscriptions/:id/suspend", requirePermission("billing", "update"), adminSuspendSubscription);
 router.post("/subscriptions/:id/resume", requirePermission("billing", "update"), adminResumeSubscription);
+router.delete("/subscriptions/:id", requirePermission("billing", "delete"), adminDeleteSubscription);
 
 router.get("/payments", requirePermission("billing", "read"), getPayments);
 router.post("/payments/:id/verify", requirePermission("billing", "update"), verifyPayment);

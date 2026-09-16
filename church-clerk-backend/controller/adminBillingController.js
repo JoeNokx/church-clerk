@@ -276,6 +276,19 @@ export const adminResumeSubscription = async (req, res) => {
   }
 };
 
+export const adminDeleteSubscription = async (req, res) => {
+  try {
+    const id = req.params?.id;
+    if (!id) return res.status(400).json({ message: "Subscription id is required" });
+
+    const sub = await Subscription.findByIdAndDelete(id);
+    if (!sub) return res.status(404).json({ message: "Subscription not found" });
+    return res.json({ message: "Subscription deleted" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export const getPayments = async (req, res) => {
   try {
     const page = clamp(req.query?.page || 1, 1, 100000);

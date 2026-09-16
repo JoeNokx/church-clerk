@@ -30,7 +30,7 @@ import {
   updateSystemInAppAnnouncement,
   deleteSystemInAppAnnouncement
 } from "../controller/systemInAppAnnouncementController.js";
-import { runBillingCycle, devFastForwardSubscription, devRunBillingCycleForChurch } from "../controller/billingController/subscriptionController.js";
+import { runBillingCycle, runBillingCycleForChurch } from "../controller/billingController/subscriptionController.js";
 import { getSystemSettings, updateSystemSettings } from "../controller/systemSettingsController.js";
 import {
   getPermissionCatalog,
@@ -339,21 +339,12 @@ router.post(
 );
 
 router.post(
-  "/dev/subscriptions/:churchId/fast-forward",
+  "/billing/run-cycle/:churchId",
   protectAdmin,
   attachPermissions,
   authorizeRoles("superadmin"),
   requirePermission("billing", "update"),
-  devFastForwardSubscription
-);
-
-router.post(
-  "/dev/subscriptions/:churchId/run-cycle",
-  protectAdmin,
-  attachPermissions,
-  authorizeRoles("superadmin"),
-  requirePermission("billing", "update"),
-  devRunBillingCycleForChurch
+  runBillingCycleForChurch
 );
 
 router.get(

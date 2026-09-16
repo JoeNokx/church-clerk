@@ -36,6 +36,10 @@ export const adminResumeSubscription = async (id) => {
   return await http.post(`/admin/billing/subscriptions/${id}/resume`);
 };
 
+export const adminDeleteSubscription = async (id) => {
+  return await http.delete(`/admin/billing/subscriptions/${id}`);
+};
+
 export const adminGetPayments = async (params) => {
   return await http.get("/admin/billing/payments", { params });
 };
@@ -71,14 +75,10 @@ export const adminGetWebhookLogs = async (params) => {
   return await http.get("/admin/billing/webhook-logs", { params });
 };
 
-export const adminDevFastForward = async (churchId, minutes) => {
-  return await http.post(`/system-admin/dev/subscriptions/${churchId}/fast-forward`, { minutes });
-};
-
-export const adminDevRunBillingCycle = async () => {
+export const adminRunBillingCycle = async () => {
   return await http.post("/system-admin/dev/billing/run-cycle");
 };
 
-export const adminDevRunCycleForChurch = async (churchId) => {
-  return await http.post(`/system-admin/dev/subscriptions/${churchId}/run-cycle`);
+export const adminRunCycleForChurch = async (churchId) => {
+  return await http.post(`/system-admin/billing/run-cycle/${churchId}`);
 };
