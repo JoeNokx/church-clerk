@@ -6,7 +6,14 @@ import {
   getReportsAnalyticsKpi,
   exportReportsAnalytics,
   getReportsAnalyticsReport,
-  exportReportsAnalyticsReport
+  exportReportsAnalyticsReport,
+  createSavedReport,
+  getSavedReports,
+  getSavedReport,
+  deleteSavedReport,
+  downloadSavedReport,
+  getSharedReport,
+  downloadSharedReport
 } from "../controller/reportsAnalyticsController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -70,5 +77,64 @@ router.get(
   requirePermission("reportsAnalytics", "export"),
   exportReportsAnalyticsReport
 );
+
+router.post(
+  "/report/saved",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "generate"),
+  createSavedReport
+);
+
+router.get(
+  "/report/saved",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "read"),
+  getSavedReports
+);
+
+router.get(
+  "/report/saved/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "read"),
+  getSavedReport
+);
+
+router.delete(
+  "/report/saved/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "generate"),
+  deleteSavedReport
+);
+
+router.get(
+  "/report/saved/:id/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "export"),
+  downloadSavedReport
+);
+
+// Public share endpoints (token-gated, no auth)
+router.get("/shared/:token", getSharedReport);
+router.get("/shared/:token/download", downloadSharedReport);
 
 export default router;

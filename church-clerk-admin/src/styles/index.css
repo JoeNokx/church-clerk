@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-html,
-body {
+ html,
+ body {
   font-size: 16px !important;
   height: 100%;
   width: 100%;
@@ -9,31 +9,39 @@ body {
   text-size-adjust: 100%;
   cursor: default;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
+ }
 
-body {
+ body {
   font-size: 1rem !important;
   font-weight: 400;
   line-height: 1.5;
   color: #111827;
-}
+ }
 
-#root {
+ #root {
   width: 100%;
   min-height: 100vh;
   height: 100%;
-}
+ }
 
-button,
-a {
+ .cck-dashboard-outlet > .max-w-4xl,
+ .cck-dashboard-outlet > .max-w-5xl,
+ .cck-dashboard-outlet > .max-w-6xl,
+ .cck-dashboard-outlet > .max-w-7xl {
+  max-width: none !important;
+  width: 100% !important;
+ }
+
+ button,
+ a {
   cursor: pointer;
-}
+ }
 
-input,
-textarea,
-[contenteditable="true"] {
+ input,
+ textarea,
+ [contenteditable="true"] {
   cursor: text;
-}
+ }
 
 /* Mobile UX improvements */
 * {
@@ -57,4 +65,178 @@ textarea,
   a:active {
     opacity: 0.75;
   }
+}
+
+/* ── Responsive overrides (mobile < 640px, tablet 640-1023px) ────────── */
+
+@media (max-width: 1023px) {
+  button {
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
+
+  button,
+  button * {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  button .text-xs {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+
+  button svg,
+  button img {
+    display: none !important;
+  }
+
+  header button[aria-label="Toggle sidebar"] svg {
+    display: inline-block !important;
+  }
+  header button.relative.h-11.w-11 svg,
+  header button.relative.h-11.w-11.rounded-lg svg {
+    display: inline-block !important;
+  }
+  header button.relative.h-11.w-11 span,
+  header button.relative.h-11.w-11.rounded-lg span {
+    font-size: 10px !important;
+    line-height: 1rem !important;
+    top: 4px !important;
+    right: 4px !important;
+  }
+
+  button.cck-allow-icons,
+  button.cck-allow-icons * {
+    text-align: left !important;
+  }
+
+  button.cck-allow-icons .cck-avatar-initial {
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  button.cck-allow-icons .cck-calendar-month,
+  button.cck-allow-icons .cck-calendar-day {
+    text-align: center !important;
+  }
+
+  button.cck-allow-icons .cck-calendar-month {
+    font-size: 7px !important;
+  }
+
+  button.cck-allow-icons .cck-calendar-day {
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+  }
+
+  button.cck-allow-icons svg,
+  button.cck-allow-icons img {
+    display: inline-block !important;
+  }
+
+  button[aria-label] svg,
+  button[aria-label] img {
+    display: inline-block !important;
+  }
+
+  .cck-tab-bar {
+    display: flex !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .cck-tab-bar > button {
+    flex: 1 1 0% !important;
+    justify-content: center !important;
+    margin-left: 0 !important;
+  }
+}
+
+/* Typography Responsive Settings */
+h1, .page-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+h2, .section-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+h3, .card-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+@media (min-width: 768px) {
+  h1, .page-title { font-size: 28px; }
+  h2, .section-title { font-size: 22px; }
+  h3, .card-title { font-size: 18px; }
+}
+@media (min-width: 1024px) {
+  /* Inherits or desktop sizes where appropriate */
+}
+
+/* Card / table section headers: reduce p-5 to p-3 on mobile, p-4 on tablet */
+@media (max-width: 767px) {
+  .flex-col.gap-3.border-b.p-5,
+  .flex-col.gap-3.border-b.border-gray-200.p-5,
+  .p-5 {
+    padding: 16px !important;
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .flex-col.gap-3.border-b.p-5,
+  .flex-col.gap-3.border-b.border-gray-200.p-5,
+  .p-5 {
+    padding: 20px !important;
+  }
+}
+
+/* Date picker dropdown: keep on screen on small viewports */
+@media (max-width: 479px) {
+  .cck-date-dropdown {
+    left: 0 !important;
+    right: auto !important;
+    width: calc(100vw - 2rem) !important;
+    max-width: 300px;
+  }
+}
+
+/* Scrollable modals —
+   Targets every modal overlay (fixed inset-0) and its card child.
+   Overlay becomes scrollable; card is capped at the visible viewport
+   height so it never overflows. Scrollbar is always visible on the right. */
+.fixed.inset-0 {
+  overflow-y: auto !important;
+}
+.fixed.inset-0 > div {
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.6) transparent;
+}
+.fixed.inset-0 > div::-webkit-scrollbar {
+  width: 6px;
+}
+.fixed.inset-0 > div::-webkit-scrollbar-track {
+  background: transparent;
+}
+.fixed.inset-0 > div::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.6);
+  border-radius: 3px;
+}
+.fixed.inset-0 > div::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.8);
+}
+
+@keyframes cck-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.cck-marquee-track {
+  animation: cck-marquee 14s linear infinite;
+  animation-play-state: running;
+}
+.cck-marquee-track:hover {
+  animation-play-state: paused;
 }

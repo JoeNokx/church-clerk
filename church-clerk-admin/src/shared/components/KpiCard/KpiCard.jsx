@@ -1,6 +1,40 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
-function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, accent }) {
+function splitCurrency(value) {
+  if (value === null || value === undefined) return { prefix: "", rest: value };
+  const str = String(value);
+  const match = str.match(/^([^\d.-]*)([\d.,-].*)$/);
+  if (match) return { prefix: match[1], rest: match[2] };
+  return { prefix: "", rest: str };
+}
+
+function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, icon, accent, iconBg, iconColor, tooltip }) {
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [tooltipSide, setTooltipSide] = useState("left");
+  const tooltipRef = useRef(null);
+
+  useEffect(() => {
+    if (!tooltipOpen) return;
+
+    if (tooltipRef.current) {
+      const rect = tooltipRef.current.getBoundingClientRect();
+      const tooltipWidth = 208;
+      setTooltipSide(rect.left + tooltipWidth > window.innerWidth ? "right" : "left");
+    }
+
+    function handleOutside(e) {
+      if (tooltipRef.current && !tooltipRef.current.contains(e.target)) {
+        setTooltipOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [tooltipOpen]);
+
   const deltaClass = useMemo(() => {
     if (change === undefined || change === null) return "bg-gray-100 text-gray-600";
     if (change > 0) return "bg-green-100 text-green-700";
@@ -11,7 +45,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
   const deltaText = useMemo(() => {
     if (change === undefined || change === null) return "—";
     const sign = change > 0 ? "+" : "";
-    return `${sign}${change}%`;
+    return `${sign}${Math.round(change)}%`;
   }, [change]);
 
   const arrow = useMemo(() => {
@@ -19,69 +53,122 @@ function KpiCard({ title, value, subtitle, change, compareLabel, onClick, icon, 
     if (change > 0) {
       return (
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
-          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.94a.75.75 0 111.08 1.04l-4.24 4.5a.75.75 0 01-1.08 0l-4.24-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5-5.25a.75.75 0 011.08 0l5 5.25a.75.75 0 11-1.08 1.04L10.75 5.612V16.25A.75.75 0 0110 17z" clipRule="evenodd" />
         </svg>
       );
     }
     if (change < 0) {
       return (
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
-          <path fillRule="evenodd" d="M14.77 12.79a.75.75 0 01-1.06-.02L10 8.832l-3.71 3.94a.75.75 0 11-1.08-1.04l4.24-4.5a.75.75 0 011.08 0l4.24 4.5a.75.75 0 01-.02 1.06z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5 5.25a.75.75 0 01-1.08 0l-5-5.25a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clipRule="evenodd" />
         </svg>
       );
     }
     return null;
   }, [change]);
 
-  const topBar = accent || null;
-  const isSimpleVariant = !icon && !change && !onClick;
+  const diffLabel = useMemo(() => {
+    if (diff === undefined || diff === null) return compareLabel || null;
+    const period = compareLabel || "last month";
+    if (diff > 0) return `${diff} more than ${period}`;
+    if (diff < 0) return `${Math.abs(diff)} less than ${period}`;
+    return `No change from ${period}`;
+  }, [diff, compareLabel]);
 
-  if (isSimpleVariant) {
+  // Button (clickable) variant
+  if (onClick) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-        {topBar && <div className={`h-1.5 ${topBar}`} />}
-        <div className="p-3 sm:p-4">
-          <div className="text-xs font-semibold text-gray-500">{title}</div>
-          <div className="mt-2 text-xl sm:text-2xl font-semibold text-gray-900">{value}</div>
+      <button
+        type="button"
+        onClick={onClick}
+        className="cck-allow-icons w-full text-left rounded-3xl border border-gray-200 bg-white p-4 md:p-5 hover:border-blue-200 hover:bg-blue-50/20 active:bg-blue-50/40 transition-colors"
+      >
+        <div className="flex items-start justify-between gap-2">
+          {icon ? (
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-600 [&>svg]:h-5 [&>svg]:w-5">
+              {icon}
+            </span>
+          ) : <span />}
+          {change !== undefined && change !== null ? (
+            <span className={`inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 font-semibold text-xs ${deltaClass}`}>
+              {arrow}
+              {deltaText}
+            </span>
+          ) : null}
         </div>
-      </div>
+        <div className="mt-4">
+          <div className="text-gray-500 text-sm leading-snug">{title}</div>
+          <div className="mt-1 font-bold text-gray-900 tabular-nums leading-tight text-lg md:text-xl">
+            {(() => { const { prefix, rest } = splitCurrency(value); return prefix ? <><span className="text-[10px] md:text-xs font-semibold">{prefix}</span>{rest ?? "—"}</> : (value ?? "—"); })()}
+          </div>
+          {subtitle ? (
+            <div className="mt-1.5 text-gray-400 text-xs leading-snug">{subtitle}</div>
+          ) : compareLabel ? (
+            <div className="mt-1.5 text-gray-400 text-xs">{compareLabel}</div>
+          ) : null}
+        </div>
+      </button>
     );
   }
 
+  // Standard (display) variant — unified design, all optional features supported
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left rounded-xl border border-gray-200 bg-white p-3 sm:p-4 lg:p-5 hover:border-blue-200 hover:bg-blue-50/30 active:bg-blue-50/40 transition"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="h-6 w-6 sm:h-8 sm:w-8 shrink-0 rounded-lg bg-gray-50 ring-1 ring-gray-200 flex items-center justify-center text-gray-700 [&>svg]:h-4 [&>svg]:w-4 sm:[&>svg]:h-5 sm:[&>svg]:w-5">
+    <div className="rounded-2xl border border-gray-200 bg-white">
+      {accent ? <div className={`h-1.5 rounded-t-2xl ${accent}`} /> : null}
+      <div className="px-4 py-4 md:px-5 md:py-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <div className="text-gray-500 text-xs leading-snug truncate">{title}</div>
+              {tooltip ? (
+                <div ref={tooltipRef} className="relative flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setTooltipOpen((v) => !v)}
+                    className="flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label={`Info: ${title}`}
+                    aria-expanded={tooltipOpen}
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-2.5 w-2.5">
+                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm.75 14.5h-1.5v-6h1.5v6zm0-7.5h-1.5V7.5h1.5V9z" />
+                    </svg>
+                  </button>
+                  <div
+                    role="tooltip"
+                    className={`absolute top-full z-50 mt-2 w-52 rounded-lg border border-gray-200 bg-white px-3 py-2 leading-relaxed text-gray-500 shadow-lg transition-opacity ${tooltipSide === "right" ? "right-0" : "left-0"} ${tooltipOpen ? "visible opacity-100 pointer-events-auto" : "invisible opacity-0 pointer-events-none"}`}
+                    style={{ fontSize: '10px' }}
+                  >
+                    <div className={`absolute bottom-full border-4 border-transparent border-b-gray-200 ${tooltipSide === "right" ? "right-3" : "left-3"}`} />
+                    {tooltip}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <span className="font-bold text-gray-900 tabular-nums leading-tight text-base md:text-lg">
+                {(() => { const { prefix, rest } = splitCurrency(value); return prefix ? <><span className="text-[10px] md:text-xs font-semibold">{prefix}</span>{rest ?? "—"}</> : (value ?? "—"); })()}
+              </span>
+              {change !== undefined && change !== null ? (
+                <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-semibold text-xs ${deltaClass}`}>
+                  {arrow}
+                  {deltaText}
+                </span>
+              ) : null}
+            </div>
+          </div>
+          {icon ? (
+            <span className={`hidden md:inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl mt-0.5 [&>svg]:h-4 [&>svg]:w-4 ${iconBg || "bg-gray-100"} ${iconColor || "text-gray-600"}`}>
               {icon}
             </span>
-            <div className="text-xs sm:text-sm font-semibold text-gray-500 truncate leading-tight">{title}</div>
-          </div>
-
-          <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 tabular-nums leading-tight">{value ?? "—"}</div>
-          {subtitle ? <div className="mt-0.5 text-xs text-gray-500 truncate">{subtitle}</div> : null}
-
-          {change !== undefined && change !== null ? (
-            <div className="mt-2 flex items-center gap-1 sm:gap-2 flex-wrap">
-              <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-semibold ${deltaClass}`}>
-                {arrow}
-                <span>{deltaText}</span>
-              </span>
-              <span className="text-xs text-gray-500">{compareLabel || ""}</span>
-            </div>
           ) : null}
         </div>
-
-        <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300 shrink-0 mt-0.5">
-          <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 111.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z" clipRule="evenodd" />
-        </svg>
+        {subtitle ? (
+          <div className="mt-1 text-gray-400 text-xs leading-snug">{subtitle}</div>
+        ) : diffLabel ? (
+          <div className="mt-1 text-gray-400 text-xs">{diffLabel}</div>
+        ) : null}
       </div>
-    </button>
+    </div>
   );
 }
 

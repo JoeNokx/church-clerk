@@ -22,6 +22,7 @@ import PledgePayment from "../models/financeModel/pledgeModel/pledgePaymentModel
 import Income from "../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Expense from "../models/financeModel/incomeExpenseModel/expenseModel.js";
 import Budget from "../models/financeModel/budgetingModel.js";
+import SavedReport from "../models/savedReportModel.js";
 
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
@@ -766,7 +767,7 @@ async function buildModuleReport({ moduleKey, churchId, from, to }) {
     };
   }
 
-  if (module === "attendance") {
+  if (module === "attendance" || module === "attendance-total") {
     const match = { church: churchId, ...rangeMatch("serviceDate") };
     const rows = await Attendance.find(match)
       .select("serviceType serviceDate totalNumber mainSpeaker")
@@ -775,7 +776,7 @@ async function buildModuleReport({ moduleKey, churchId, from, to }) {
       .lean();
 
     return {
-      title: "Attendance",
+      title: module === "attendance-total" ? "Attendance (Total)" : "Attendance",
       columns: [
         { key: "serviceDate", label: "Date" },
         { key: "serviceType", label: "Service Type" },
@@ -1211,7 +1212,338 @@ async function buildModuleReport({ moduleKey, churchId, from, to }) {
     };
   }
 
+  if (module === "attendance-individual") {
+    const ServiceIndividualAttendance = (await import("../models/serviceIndividualAttendanceModel.js")).default;
+    const match = { church: churchId, ...rangeMatch("date") };
+    const rows = await ServiceIndividualAttendance.find(match)
+      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot")
+      .sort({ date: -1 })
+      .limit(2000)
+      .lean();
+
+    return {
+      title: "Attendance (Individual)",
+      columns: [
+        { key: "date", label: "Date" },
+        { key: "serviceType", label: "Service Type" },
+        { key: "present", label: "Present" },
+        { key: "absent", label: "Absent" },
+        { key: "total", label: "Total Members" },
+        { key: "mainSpeaker", label: "Speaker" }
+      ],
+      rows: rows.map((r) => ({
+        date: r?.date ? new Date(r.date).toISOString().slice(0, 10) : "—",
+        serviceType: r?.serviceType || "—",
+        present: Array.isArray(r?.presentMembers) ? r.presentMembers.length : 0,
+        absent: Array.isArray(r?.absentMembers) ? r.absentMembers.length : 0,
+        total: clampToNumber(r?.totalMembersSnapshot),
+        mainSpeaker: r?.mainSpeaker || "—"
+      }))
+    };
+  }
+
+  if (module === "visitors") {
+    const match = { church: churchId, ...rangeMatch("serviceDate") };
+    const rows = await Visitor.find(match)
+      .select("fullName phoneNumber email location serviceType serviceDate invitedBy source status")
+      .sort({ serviceDate: -1 })
+      .limit(2000)
+      .lean();
+
+    return {
+      title: "Visitors",
+      columns: [
+        { key: "serviceDate", label: "Date" },
+        { key: "fullName", label: "Name" },
+        { key: "phoneNumber", label: "Phone" },
+        { key: "location", label: "Location" },
+        { key: "serviceType", label: "Service Type" },
+        { key: "invitedBy", label: "Invited By" },
+        { key: "status", label: "Status" }
+      ],
+      rows: rows.map((r) => ({
+        serviceDate: r?.serviceDate ? new Date(r.serviceDate).toISOString().slice(0, 10) : "—",
+        fullName: r?.fullName || "—",
+        phoneNumber: r?.phoneNumber || "—",
+        location: r?.location || "—",
+        serviceType: r?.serviceType || "—",
+        invitedBy: r?.invitedBy || "—",
+        status: r?.status || "—"
+      }))
+    };
+  }
+
+  if (module === "announcements") {
+    const Announcement = (await import("../models/announcementModel.js")).default;
+    const AnnouncementMessage = (await import("../models/announcementMessageModel.js")).default;
+    const match = { church: churchId, ...rangeMatch("createdAt") };
+
+    const [announcements, messages] = await Promise.all([
+      Announcement.find(match)
+        .select("title message sendMethod createdAt")
+        .sort({ createdAt: -1 })
+        .limit(2000)
+        .lean(),
+      AnnouncementMessage.find(match)
+        .select("title content channels status scheduledAt recipientCount createdAt")
+        .sort({ createdAt: -1 })
+        .limit(2000)
+        .lean()
+    ]);
+
+    const rows = [
+      ...(announcements || []).map((r) => ({
+        type: "Announcement",
+        title: r?.title || "—",
+        channel: r?.sendMethod || "In-App",
+        status: "—",
+        date: r?.createdAt ? new Date(r.createdAt).toISOString().slice(0, 10) : "—",
+        recipients: "—",
+        note: r?.message || "—"
+      })),
+      ...(messages || []).map((r) => ({
+        type: "Message",
+        title: r?.title || "—",
+        channel: Array.isArray(r?.channels) && r.channels.length ? r.channels.join(", ").toUpperCase() : "—",
+        status: r?.status || "—",
+        date: r?.scheduledAt || r?.createdAt
+          ? new Date(r.scheduledAt || r.createdAt).toISOString().slice(0, 10)
+          : "—",
+        recipients: clampToNumber(r?.recipientCount),
+        note: r?.content || "—"
+      }))
+    ].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+
+    return {
+      title: "Announcements",
+      columns: [
+        { key: "type", label: "Type" },
+        { key: "title", label: "Title" },
+        { key: "channel", label: "Channel" },
+        { key: "status", label: "Status" },
+        { key: "date", label: "Date" },
+        { key: "recipients", label: "Recipients" },
+        { key: "note", label: "Message" }
+      ],
+      rows
+    };
+  }
+
+  if (module === "outreach-followup") {
+    const OutreachEvent = (await import("../models/outreachModel/outreachEventModel.js")).default;
+    const OutreachProspect = (await import("../models/outreachModel/outreachProspectModel.js")).default;
+    const OutreachFollowUp = (await import("../models/outreachModel/outreachFollowUpModel.js")).default;
+
+    const createdMatch = { church: churchId, ...rangeMatch("createdAt") };
+
+    const [events, prospects, followUps] = await Promise.all([
+      OutreachEvent.find({ church: churchId, ...rangeMatch("date") })
+        .select("title type status date location")
+        .sort({ date: -1 })
+        .limit(2000)
+        .lean(),
+      OutreachProspect.find(createdMatch)
+        .select("firstName lastName phone stage howReached dateReached createdAt")
+        .populate("outreachEvent", "title")
+        .sort({ createdAt: -1 })
+        .limit(2000)
+        .lean(),
+      OutreachFollowUp.find(createdMatch)
+        .select("type status outcome scheduledDate followUpDate createdAt")
+        .populate("prospect", "firstName lastName")
+        .populate("outreachEvent", "title")
+        .sort({ createdAt: -1 })
+        .limit(2000)
+        .lean()
+    ]);
+
+    const rows = [
+      ...(events || []).map((r) => ({
+        type: "Outreach Event",
+        name: r?.title || "—",
+        detail: r?.type || "—",
+        status: r?.status || "—",
+        date: r?.date ? new Date(r.date).toISOString().slice(0, 10) : "—",
+        note: r?.location || "—"
+      })),
+      ...(prospects || []).map((r) => ({
+        type: "Prospect",
+        name: [r?.firstName, r?.lastName].filter(Boolean).join(" ") || "—",
+        detail: r?.outreachEvent?.title || r?.howReached || "—",
+        status: r?.stage || "—",
+        date: r?.dateReached || r?.createdAt
+          ? new Date(r.dateReached || r.createdAt).toISOString().slice(0, 10)
+          : "—",
+        note: r?.phone || "—"
+      })),
+      ...(followUps || []).map((r) => ({
+        type: "Follow-Up",
+        name: r?.prospect
+          ? [r.prospect?.firstName, r.prospect?.lastName].filter(Boolean).join(" ") || "—"
+          : "—",
+        detail: r?.type || "—",
+        status: r?.status || "—",
+        date: r?.scheduledDate || r?.followUpDate || r?.createdAt
+          ? new Date(r.scheduledDate || r.followUpDate || r.createdAt).toISOString().slice(0, 10)
+          : "—",
+        note: r?.outcome || "—"
+      }))
+    ].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+
+    return {
+      title: "Outreach & Follow-Up",
+      columns: [
+        { key: "type", label: "Type" },
+        { key: "name", label: "Name" },
+        { key: "detail", label: "Detail" },
+        { key: "status", label: "Status" },
+        { key: "date", label: "Date" },
+        { key: "note", label: "Note" }
+      ],
+      rows
+    };
+  }
+
+  if (module === "budgeting") {
+    const match = { church: churchId, ...rangeMatch("createdAt") };
+    const budgets = await Budget.find(match)
+      .select("name fiscalYear periodFrom periodTo status items createdAt")
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .lean();
+
+    const formatPeriod = (from, to) => {
+      const f = from ? new Date(from).toISOString().slice(0, 10) : "";
+      const t = to ? new Date(to).toISOString().slice(0, 10) : "";
+      if (f && t) return `${f} - ${t}`;
+      return f || t || "—";
+    };
+
+    const rows = [];
+    (budgets || []).forEach((b) => {
+      const items = Array.isArray(b?.items) ? b.items : [];
+      if (!items.length) {
+        rows.push({
+          budget: b?.name || "—",
+          fiscalYear: b?.fiscalYear ?? "—",
+          type: "—",
+          category: "—",
+          amount: 0,
+          status: b?.status || "—",
+          period: formatPeriod(b?.periodFrom, b?.periodTo)
+        });
+        return;
+      }
+      items.forEach((it) => {
+        rows.push({
+          budget: b?.name || "—",
+          fiscalYear: b?.fiscalYear ?? "—",
+          type: it?.type || "—",
+          category: it?.category || "—",
+          amount: clampToNumber(it?.amount),
+          status: b?.status || "—",
+          period: formatPeriod(it?.dateFrom || b?.periodFrom, it?.dateTo || b?.periodTo)
+        });
+      });
+    });
+
+    return {
+      title: "Budgeting",
+      columns: [
+        { key: "budget", label: "Budget" },
+        { key: "fiscalYear", label: "Fiscal Year" },
+        { key: "type", label: "Type" },
+        { key: "category", label: "Category" },
+        { key: "amount", label: "Amount" },
+        { key: "status", label: "Status" },
+        { key: "period", label: "Period" }
+      ],
+      rows
+    };
+  }
+
   return { error: "Unsupported module" };
+}
+
+const REPORT_MODULE_LABELS = {
+  members: "Members",
+  attendance: "Attendance",
+  "attendance-total": "Attendance (Total)",
+  "attendance-individual": "Attendance (Individual)",
+  visitors: "Visitors",
+  tithe: "Tithe",
+  "tithe-individual": "Tithe (Individual)",
+  "tithe-aggregate": "Tithe (Aggregate)",
+  offerings: "Offerings",
+  "special-funds": "Special Fund",
+  expenses: "Expenses",
+  budgeting: "Budgeting",
+  pledges: "Pledges",
+  welfare: "Welfare",
+  "business-ventures": "Business Ventures",
+  "church-projects": "Church Projects",
+  "programs-events": "Programs & Events",
+  organisations: "Organisations",
+  "outreach-followup": "Outreach & Follow-Up",
+  announcements: "Announcements"
+};
+
+function applyFieldSelection(report, fieldsRaw) {
+  const available = Array.isArray(report?.availableColumns) && report.availableColumns.length
+    ? report.availableColumns
+    : report?.columns;
+  const requested = String(fieldsRaw || "")
+    .split(",")
+    .map((k) => String(k || "").trim())
+    .filter(Boolean);
+  if (!requested.length || !Array.isArray(available) || !available.length) return report;
+
+  const cols = requested.map((key) => available.find((c) => c?.key === key)).filter(Boolean);
+  if (!cols.length) return report;
+
+  const keys = cols.map((c) => c.key);
+  return {
+    ...report,
+    columns: cols,
+    rows: (Array.isArray(report?.rows) ? report.rows : []).map((r) => {
+      const o = {};
+      keys.forEach((k) => {
+        o[k] = r?.[k];
+      });
+      return o;
+    })
+  };
+}
+
+function csvEscapeCell(value) {
+  const s = String(value ?? "");
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function writeCsvTableReport({ title, columns, rows, res, fileName }) {
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename=\"${fileName}\"`);
+
+  const cols = Array.isArray(columns) ? columns : [];
+  const lines = [cols.map((c) => csvEscapeCell(c?.label || c?.key)).join(",")];
+  (Array.isArray(rows) ? rows : []).forEach((r) => {
+    lines.push(cols.map((c) => csvEscapeCell(r?.[c.key])).join(","));
+  });
+
+  res.send(`﻿${lines.join("\r\n")}`);
+}
+
+function writeReportFile({ format, title, columns, rows, res, fileName }) {
+  if (format === "csv") {
+    writeCsvTableReport({ title, columns, rows, res, fileName });
+    return Promise.resolve();
+  }
+  if (format === "excel") {
+    return writeExcelTableReport({ title, columns, rows, res, fileName });
+  }
+  writePdfTableReport({ title, columns, rows, res, fileName });
+  return Promise.resolve();
 }
 
 function writePdfTableReport({ title, columns, rows, res, fileName }) {
@@ -1507,7 +1839,7 @@ const getReportsAnalyticsReport = async (req, res) => {
 
     return res.status(200).json({
       message: "Report generated successfully",
-      report
+      report: applyFieldSelection(report, req.query?.fields)
     });
   } catch (error) {
     return res.status(400).json({
@@ -1530,7 +1862,7 @@ const exportReportsAnalyticsReport = async (req, res) => {
     }
 
     const format = String(req.query.format || "pdf").toLowerCase();
-    if (!["pdf", "excel"].includes(format)) {
+    if (!["pdf", "excel", "csv"].includes(format)) {
       return res.status(400).json({ message: "Invalid export format" });
     }
 
@@ -1550,44 +1882,19 @@ const exportReportsAnalyticsReport = async (req, res) => {
       return res.status(400).json({ message: report.error });
     }
 
-    const ext = format === "excel" ? "xlsx" : "pdf";
+    const ext = format === "excel" ? "xlsx" : format === "csv" ? "csv" : "pdf";
     const periodLabel = resolved.from && resolved.to
       ? `${resolved.from.toISOString().slice(0, 10)}-to-${resolved.to.toISOString().slice(0, 10)}`
       : "all-time";
     const fileName = `report-${toSafeFileName(moduleKey)}-${toSafeFileName(periodLabel)}.${ext}`;
 
-    const availableColumns = Array.isArray(report?.availableColumns) && report.availableColumns.length
-      ? report.availableColumns
-      : report?.columns;
+    const finalReport = applyFieldSelection(report, req.query?.fields);
 
-    const fieldsRaw = String(req.query?.fields || "").trim();
-    const requestedKeys = fieldsRaw
-      ? fieldsRaw.split(",").map((k) => String(k || "").trim()).filter(Boolean)
-      : [];
-
-    const exportColumns = requestedKeys.length && Array.isArray(availableColumns)
-      ? requestedKeys
-          .map((key) => availableColumns.find((c) => c.key === key))
-          .filter(Boolean)
-      : report?.columns;
-
-    const finalColumns = Array.isArray(exportColumns) && exportColumns.length ? exportColumns : report?.columns;
-
-    if (format === "excel") {
-      await writeExcelTableReport({
-        title: report?.title,
-        columns: finalColumns,
-        rows: report?.rows,
-        res,
-        fileName
-      });
-      return;
-    }
-
-    writePdfTableReport({
-      title: report?.title,
-      columns: finalColumns,
-      rows: report?.rows,
+    await writeReportFile({
+      format,
+      title: finalReport?.title,
+      columns: finalReport?.columns,
+      rows: finalReport?.rows,
       res,
       fileName
     });
@@ -1658,10 +1965,235 @@ const exportReportsAnalytics = async (req, res) => {
   }
 };
 
+const createSavedReport = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const moduleKey = req.body?.module;
+    if (!moduleKey) {
+      return res.status(400).json({ message: "Module is required" });
+    }
+
+    const resolved = resolveReportRange({ query: req.body });
+    if (resolved?.error) {
+      return res.status(400).json({ message: resolved.error });
+    }
+
+    let report = await buildModuleReport({
+      moduleKey,
+      churchId,
+      from: resolved.from,
+      to: resolved.to
+    });
+
+    if (report?.error) {
+      return res.status(400).json({ message: report.error });
+    }
+
+    const fieldsRaw = Array.isArray(req.body?.fields)
+      ? req.body.fields.join(",")
+      : req.body?.fields;
+    report = applyFieldSelection(report, fieldsRaw);
+
+    const moduleKeyNorm = String(moduleKey).trim().toLowerCase();
+    const moduleLabel = REPORT_MODULE_LABELS[moduleKeyNorm] || report?.title || moduleKeyNorm;
+    const name = String(req.body?.name || "").trim() || `${moduleLabel} Report`;
+
+    const doc = await SavedReport.create({
+      church: churchId,
+      name,
+      module: moduleKeyNorm,
+      moduleLabel,
+      columns: Array.isArray(report?.columns) ? report.columns : [],
+      rows: Array.isArray(report?.rows) ? report.rows : [],
+      rowCount: Array.isArray(report?.rows) ? report.rows.length : 0,
+      dateFrom: resolved.from || null,
+      dateTo: resolved.to || null,
+      createdBy: req.user?._id || null
+    });
+
+    return res.status(201).json({ message: "Report saved successfully", savedReport: doc });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Report could not be saved",
+      error: error.message
+    });
+  }
+};
+
+const getSavedReports = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const rows = await SavedReport.find({ church: churchId })
+      .select("name module moduleLabel rowCount dateFrom dateTo shareToken createdAt createdBy")
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+
+    return res.status(200).json({ message: "Saved reports fetched", savedReports: rows });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Saved reports could not be fetched",
+      error: error.message
+    });
+  }
+};
+
+const getSavedReport = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const doc = await SavedReport.findOne({ _id: req.params?.id, church: churchId }).lean();
+    if (!doc) {
+      return res.status(404).json({ message: "Saved report not found" });
+    }
+
+    return res.status(200).json({ message: "Saved report fetched", savedReport: doc });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Saved report could not be fetched",
+      error: error.message
+    });
+  }
+};
+
+const deleteSavedReport = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const doc = await SavedReport.findOneAndDelete({ _id: req.params?.id, church: churchId }).lean();
+    if (!doc) {
+      return res.status(404).json({ message: "Saved report not found" });
+    }
+
+    return res.status(200).json({ message: "Saved report deleted" });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Saved report could not be deleted",
+      error: error.message
+    });
+  }
+};
+
+const downloadSavedReport = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) {
+      return res.status(400).json({ message: "Active church context is required" });
+    }
+
+    const format = String(req.query.format || "pdf").toLowerCase();
+    if (!["pdf", "excel", "csv"].includes(format)) {
+      return res.status(400).json({ message: "Invalid export format" });
+    }
+
+    const doc = await SavedReport.findOne({ _id: req.params?.id, church: churchId }).lean();
+    if (!doc) {
+      return res.status(404).json({ message: "Saved report not found" });
+    }
+
+    const ext = format === "excel" ? "xlsx" : format === "csv" ? "csv" : "pdf";
+    const fileName = `${toSafeFileName(doc.name) || "report"}.${ext}`;
+
+    await writeReportFile({
+      format,
+      title: doc.name,
+      columns: doc.columns,
+      rows: doc.rows,
+      res,
+      fileName
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Saved report download failed",
+      error: error.message
+    });
+  }
+};
+
+const getSharedReport = async (req, res) => {
+  try {
+    const token = String(req.params?.token || "").trim();
+    if (!token) {
+      return res.status(400).json({ message: "Invalid share link" });
+    }
+
+    const doc = await SavedReport.findOne({ shareToken: token })
+      .select("name moduleLabel columns rows rowCount dateFrom dateTo createdAt")
+      .lean();
+    if (!doc) {
+      return res.status(404).json({ message: "Shared report not found" });
+    }
+
+    return res.status(200).json({ message: "Shared report fetched", report: doc });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Shared report could not be fetched",
+      error: error.message
+    });
+  }
+};
+
+const downloadSharedReport = async (req, res) => {
+  try {
+    const token = String(req.params?.token || "").trim();
+    if (!token) {
+      return res.status(400).json({ message: "Invalid share link" });
+    }
+
+    const format = String(req.query.format || "pdf").toLowerCase();
+    if (!["pdf", "csv"].includes(format)) {
+      return res.status(400).json({ message: "Invalid export format" });
+    }
+
+    const doc = await SavedReport.findOne({ shareToken: token }).lean();
+    if (!doc) {
+      return res.status(404).json({ message: "Shared report not found" });
+    }
+
+    const ext = format === "csv" ? "csv" : "pdf";
+    const fileName = `${toSafeFileName(doc.name) || "report"}.${ext}`;
+
+    await writeReportFile({
+      format,
+      title: doc.name,
+      columns: doc.columns,
+      rows: doc.rows,
+      res,
+      fileName
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Shared report download failed",
+      error: error.message
+    });
+  }
+};
+
 export {
   getReportsAnalyticsKpi,
   getReportsAnalytics,
   exportReportsAnalytics,
   getReportsAnalyticsReport,
-  exportReportsAnalyticsReport
+  exportReportsAnalyticsReport,
+  createSavedReport,
+  getSavedReports,
+  getSavedReport,
+  deleteSavedReport,
+  downloadSavedReport,
+  getSharedReport,
+  downloadSharedReport
 };

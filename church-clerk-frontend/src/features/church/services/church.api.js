@@ -19,6 +19,10 @@ export const getMyBranches = async (params) => {
   return await http.get("/church/branches", { params });
 };
 
+export const getBranchesConsolidated = async () => {
+  return await http.get("/church/branches/consolidated");
+};
+
 export const getActiveChurchContext = async () => {
   return await http.get("/church/active-context");
 };

@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import NotFoundPage from "../shared/pages/NotFoundPage.jsx";
 import JoinPage from "../features/member/pages/JoinPage.jsx";
 import AttendanceCheckInPage from "../features/attendance/pages/AttendanceCheckInPage.jsx";
+import SharedReportPage from "../features/reportsAnalytics/pages/SharedReportPage.jsx";
 
 import AuthLayout from "../layouts/AuthLayout.jsx";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
@@ -124,6 +125,7 @@ function AppRoutes() {
 
       <Route path="/join/:token" element={<JoinPage />} />
       <Route path="/attend/:token" element={<AttendanceCheckInPage />} />
+      <Route path="/shared-report/:token" element={<SharedReportPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

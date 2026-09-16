@@ -2,12 +2,19 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../church.store.js";
-import { getMyBranches } from "../services/church.api.js";
+import { getMyBranches, getBranchesConsolidated } from "../services/church.api.js";
 import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
 import Skeleton from "react-loading-skeleton";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import {
+  BranchOverviewTab,
+  BranchMembershipTab,
+  BranchAttendanceTab,
+  BranchFinancesTab,
+} from "../components/BranchInsights.jsx";
 
 function BranchesOverviewPage() {
   const navigate = useNavigate();
@@ -24,6 +31,10 @@ function BranchesOverviewPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingSwitch, setPendingSwitch] = useState(null);
   const [switching, setSwitching] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [consolidated, setConsolidated] = useState(null);
+  const [consolidatedLoading, setConsolidatedLoading] = useState(false);
+  const [consolidatedError, setConsolidatedError] = useState("");
   const limit = 10;
 
   const activeChurch = churchStore?.activeChurch;
@@ -147,6 +158,39 @@ function BranchesOverviewPage() {
     };
   }, [canViewBranches, page, search]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!canViewBranches) {
+      setConsolidated(null);
+      setConsolidatedError("");
+      return;
+    }
+
+    const load = async () => {
+      setConsolidatedLoading(true);
+      setConsolidatedError("");
+      try {
+        const res = await getBranchesConsolidated();
+        const payload = res?.data?.data ?? res?.data;
+        if (!cancelled) setConsolidated(payload || null);
+      } catch (e) {
+        if (!cancelled) {
+          setConsolidated(null);
+          setConsolidatedError(e?.response?.data?.message || e?.message || "Failed to load consolidated branch data");
+        }
+      } finally {
+        if (!cancelled) setConsolidatedLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canViewBranches]);
+
   const onPrev = () => {
     const prev = pagination?.prevPage;
     if (!prev) return;
@@ -248,41 +292,75 @@ function BranchesOverviewPage() {
             />
           </KpiGrid>
 
-          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="font-semibold text-gray-900 text-sm">Search</div>
-            <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <input
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
+          <PageTabs
+            tabs={[
+              { key: "overview", label: "Overview" },
+              { key: "membership", label: "Membership" },
+              { key: "attendance", label: "Attendance" },
+              { key: "finances", label: "Finances" },
+              { key: "directory", label: "All Branches", badge: Number(kpis.totalBranches || 0) || null, badgeColor: "bg-blue-600 text-white" },
+            ]}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            sticky={false}
+            className="mt-6"
+          />
+        </div>
+      ) : null}
+
+      {canViewBranches && activeTab !== "directory" ? (
+        <div className="mt-4">
+          {consolidatedLoading ? (
+            <Skeleton height={14} count={6} />
+          ) : consolidatedError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{consolidatedError}</div>
+          ) : activeTab === "overview" ? (
+            <BranchOverviewTab data={consolidated} currency={activeChurch?.currency || "GHS"} onViewBranch={openConfirmBranch} />
+          ) : activeTab === "membership" ? (
+            <BranchMembershipTab data={consolidated} onViewBranch={openConfirmBranch} />
+          ) : activeTab === "attendance" ? (
+            <BranchAttendanceTab data={consolidated} onViewBranch={openConfirmBranch} />
+          ) : activeTab === "finances" ? (
+            <BranchFinancesTab data={consolidated} currency={activeChurch?.currency || "GHS"} onViewBranch={openConfirmBranch} />
+          ) : null}
+        </div>
+      ) : null}
+
+      {canViewBranches && activeTab === "directory" ? (
+        <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="font-semibold text-gray-900 text-sm">Search</div>
+          <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search by church name, location, or pastor"
+              className="h-11 w-full md:w-[420px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            />
+            {search ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
                   setPage(1);
                 }}
-                placeholder="Search by church name, location, or pastor"
-                className="h-11 w-full md:w-[420px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              />
-              {search ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearch("");
-                    setPage(1);
-                  }}
-                  className="h-11 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 md:h-12 text-sm"
-                >
-                  Clear
-                </button>
-              ) : null}
-            </div>
+                className="h-11 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 md:h-12 text-sm"
+              >
+                Clear
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
 
-      {canViewBranches && loading ? (
+      {canViewBranches && activeTab === "directory" && loading ? (
         <div className="mt-4">
           <Skeleton height={14} count={4} />
         </div>
-      ) : canViewBranches ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
+      ) : canViewBranches && activeTab === "directory" ? (
+        <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden">
           {!branches.length ? (
             <EmptyState
               illustration={String(search || "").trim() ? "search" : "ministries"}

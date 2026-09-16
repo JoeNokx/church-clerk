@@ -10,7 +10,7 @@ import { getWelcomeEmailTemplate } from "../utils/emailTemplates.js";
 import { buildPaginationParams, buildPaginationResponse } from "../utils/paginationHelper.js";
 import { buildSearchQuery } from "../utils/searchHelper.js";
 import { handleReferralCode, assignUserRole, createReferralCodeForChurch } from "../services/church/churchCreationService.js";
-import { getBranchesPaginated, getBranchKPIs } from "../services/church/branchService.js";
+import { getBranchesPaginated, getBranchKPIs, getBranchesConsolidated } from "../services/church/branchService.js";
 
 const createMyChurch = async (req, res) => {
   try {
@@ -514,6 +514,31 @@ const getMyBranches = async (req, res) => {
 };
 
 
+//consolidated per-branch stats for headquarters overview
+
+const getMyBranchesConsolidated = async (req, res) => {
+  try {
+    const headquarters = req.activeChurch;
+
+    if (String(headquarters?.type || "").toLowerCase() !== "headquarters") {
+      return res.status(403).json({
+        message: "Only headquarters churches can view branches"
+      });
+    }
+
+    const data = await getBranchesConsolidated({ churchId: req.activeChurch._id });
+
+    return res.status(200).json({
+      message: "Consolidated branch data fetched successfully",
+      currency: headquarters?.currency || "GHS",
+      ...data
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 //view spcified modules by branch or hq
 
 const getActiveChurchContext = (req, res) => {
@@ -657,6 +682,7 @@ export {
   getMyChurchProfile,
   updateMyChurchProfile,
   getMyBranches,
+  getMyBranchesConsolidated,
   getActiveChurchContext,
   requestMyChurchSenderId,
   generateRegistrationToken,
