@@ -8,6 +8,11 @@ import {
   getPublicExchangeRate
 } from "../Services/adminBilling.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
+import StatusChip from "../../../shared/components/StatusChip/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -340,40 +345,38 @@ function BillingPlansPage() {
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-lg font-semibold text-gray-900">Plans</div>
-          <div className="mt-1 text-sm text-gray-600">Create, edit, deactivate, or delete plans.</div>
-        </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-        >
-          New Plan
-        </button>
-      </div>
+    <Card className="!rounded-xl !gap-0">
+      <Card.Header
+        title="Plans"
+        actions={
+          <Button variant="primary" size="sm" onClick={openCreate}>
+            New Plan
+          </Button>
+        }
+      />
+      <div className="mt-1 text-sm text-gray-600">Create, edit, deactivate, or delete plans.</div>
 
-      <div className="mt-4 flex flex-col md:flex-row md:items-center gap-3">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search plan name or description..."
-          className="w-full md:w-80 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        />
-        <select
-          value={activeFilter}
-          onChange={(e) => setActiveFilter(e.target.value)}
-          className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="">All statuses</option>
-          <option value="active">active</option>
-          <option value="inactive">inactive</option>
-        </select>
-        <div className="flex-1" />
-        <div className="text-xs text-gray-500">{filtered.length} plan(s)</div>
-      </div>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search plan name or description..."
+        searchWidth="md:w-80"
+        selects={[
+          {
+            key: "status",
+            value: activeFilter,
+            onChange: setActiveFilter,
+            placeholder: "All statuses",
+            options: [
+              { label: "Active", value: "active" },
+              { label: "Inactive", value: "inactive" }
+            ]
+          }
+        ]}
+        className="mt-4"
+      >
+        <div className="text-xs text-gray-500 ml-auto self-center">{filtered.length} plan(s)</div>
+      </FilterBar>
 
       {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
 
@@ -417,8 +420,13 @@ function BillingPlansPage() {
               </>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-gray-500">
-                  No plans found.
+                <td colSpan={usdToGhsRate > 0 ? 6 : 5}>
+                  <EmptyState
+                    compact
+                    illustration="billing"
+                    title="No plans found"
+                    description="Try adjusting your search or filters, or create a new plan."
+                  />
                 </td>
               </tr>
             ) : (
@@ -455,30 +463,24 @@ function BillingPlansPage() {
                       {Number(p?.monthlySmsCredits || 0).toLocaleString()}
                     </td>
                     <td className="py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          p?.isActive ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {p?.isActive ? "active" : "inactive"}
-                      </span>
+                      <StatusChip value={p?.isActive ? "active" : "inactive"} />
                     </td>
                     <td className="py-3 text-right">
                       <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => openEdit(p)}
-                          className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                         >
                           Edit
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
                           onClick={() => onDelete(p?._id)}
-                          className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -498,16 +500,16 @@ function BillingPlansPage() {
                   <div className="text-lg font-semibold text-gray-900">{editingId ? "Edit Plan" : "New Plan"}</div>
                   <div className="mt-1 text-sm text-gray-600">Set pricing per currency and billing cycle.</div>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     setFormOpen(false);
                     resetForm();
                   }}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                 >
                   Close
-                </button>
+                </Button>
               </div>
 
               <div className="mt-4 grid gap-3">
@@ -663,31 +665,30 @@ function BillingPlansPage() {
                 </label>
 
                 <div className="mt-2 flex items-center justify-end gap-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
                     onClick={() => {
                       setFormOpen(false);
                       resetForm();
                     }}
-                    className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                   >
                     Cancel
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="primary"
                     onClick={onSave}
-                    disabled={loading}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    loading={loading}
+                    loadingText="Saving..."
                   >
                     Save
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       ) : null}
-    </div>
+    </Card>
   );
 }
 

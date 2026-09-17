@@ -15,20 +15,13 @@ import {
 } from "../Services/systemAdmin.api.js";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
-
-function TabButton({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`h-10 rounded-lg px-4 text-sm font-semibold ${
-        active ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 function AnnouncementsPage() {
   const [tab, setTab] = useState("support");
@@ -493,160 +486,139 @@ function AnnouncementsPage() {
         <div className="mt-1 text-sm text-gray-600">Manage platform-wide announcements and system controls.</div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <TabButton active={tab === "support"} onClick={() => setTab("support")}>
-          Support Requests
-        </TabButton>
-        <TabButton active={tab === "system"} onClick={() => setTab("system")}>
-          System Controls &amp; KPIs
-        </TabButton>
-        <TabButton active={tab === "communications"} onClick={() => setTab("communications")}>
-          In-App Communications
-        </TabButton>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "support", label: "Support Requests" },
+          { key: "system", label: "System Controls & KPIs" },
+          { key: "communications", label: "In-App Communications" }
+        ]}
+        activeTab={tab}
+        onChange={setTab}
+        sticky={false}
+      />
 
       {tab === "system" ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Credit Configuration</div>
-            <div className="mt-1 text-xs text-gray-500">Configure credit-to-money conversion and per-channel costs.</div>
+          <Card>
+            <Card.Header title="Credit Configuration" />
+            <div className="text-xs text-gray-500">Configure credit-to-money conversion and per-channel costs.</div>
 
-            {loading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
-            {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
-            {success ? <div className="mt-4 text-sm text-green-600">{success}</div> : null}
+            {loading ? <div className="flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
+            {error ? <div className="text-sm text-red-600">{error}</div> : null}
+            {success ? <div className="text-sm text-green-600">{success}</div> : null}
 
-            <div className="mt-4 grid gap-3">
-              <div>
-                <div className="text-xs font-semibold text-gray-600">1 GHS = Credits</div>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={1}
-                  value={creditsPerGhs}
-                  onChange={(e) => setCreditsPerGhs(e.target.value)}
-                  disabled={loading || saving}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
+            <Card.Body>
+              <div className="grid gap-3">
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">1 GHS = Credits</div>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    step={1}
+                    value={creditsPerGhs}
+                    onChange={(e) => setCreditsPerGhs(e.target.value)}
+                    disabled={loading || saving}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
 
-              <div>
-                <div className="text-xs font-semibold text-gray-600">SMS Cost per Segment (Credits)</div>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={1}
-                  value={smsCostCredits}
-                  onChange={(e) => setSmsCostCredits(e.target.value)}
-                  disabled={loading || saving}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-                />
-                <div className="mt-1 text-xs text-gray-500">Cost per SMS segment (160 chars GSM-7 / 70 chars UCS-2).</div>
-              </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">SMS Cost per Segment (Credits)</div>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    value={smsCostCredits}
+                    onChange={(e) => setSmsCostCredits(e.target.value)}
+                    disabled={loading || saving}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                  <div className="mt-1 text-xs text-gray-500">Cost per SMS segment (160 chars GSM-7 / 70 chars UCS-2).</div>
+                </div>
 
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={onSave}
-                  disabled={loading || saving}
-                  className="inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
-                >
-                  {saving ? "Saving…" : "Save"}
-                </button>
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="primary"
+                    onClick={onSave}
+                    disabled={loading || saving}
+                    loading={saving}
+                    loadingText="Saving…"
+                  >
+                    Save
+                  </Button>
 
-                <button
-                  type="button"
-                  onClick={load}
-                  disabled={saving}
-                  className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
-                >
-                  Refresh
-                </button>
+                  <Button
+                    variant="secondary"
+                    onClick={load}
+                    disabled={saving}
+                  >
+                    Refresh
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </Card.Body>
+          </Card>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Global Wallet KPIs</div>
-            <div className="mt-1 text-xs text-gray-500">System-wide view across all churches.</div>
+          <Card>
+            <Card.Header title="Global Wallet KPIs" />
+            <div className="text-xs text-gray-500">System-wide view across all churches.</div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="rounded-lg border border-gray-100 bg-slate-50 p-4">
-                <div className="text-xs text-gray-500">Total Wallet Balance</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">
-                  {loading ? "…" : Number.isFinite(Number(kpis?.totalWalletBalanceCredits)) ? `${Number(kpis.totalWalletBalanceCredits).toLocaleString()} Credits` : "—"}
-                </div>
-                {Number.isFinite(Number(balanceGhs)) ? (
-                  <div className="mt-1 text-xs text-gray-500">≈ {Number(balanceGhs).toLocaleString()} GHS</div>
-                ) : null}
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-slate-50 p-4">
-                <div className="text-xs text-gray-500">Total Credits Issued</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">
-                  {loading ? "…" : Number.isFinite(Number(kpis?.totalCreditsIssued)) ? Number(kpis.totalCreditsIssued).toLocaleString() : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-slate-50 p-4">
-                <div className="text-xs text-gray-500">Total Credits Used</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">
-                  {loading ? "…" : Number.isFinite(Number(kpis?.totalCreditsUsed)) ? Number(kpis.totalCreditsUsed).toLocaleString() : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-slate-50 p-4">
-                <div className="text-xs text-gray-500">Total Wallet Transactions</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">
-                  {loading ? "…" : Number.isFinite(Number(kpis?.totalWalletTransactions)) ? Number(kpis.totalWalletTransactions).toLocaleString() : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-slate-50 p-4 sm:col-span-2">
-                <div className="text-xs text-gray-500">Total SMS Sent</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">
-                  {loading ? "…" : Number.isFinite(Number(kpis?.totalSmsSent)) ? Number(kpis.totalSmsSent).toLocaleString() : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-blue-50 p-4">
-                <div className="text-xs text-gray-500">Subscription SMS Granted (Current Period)</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">
-                  {loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedGranted)) ? Number(kpis.totalIncludedGranted).toLocaleString() : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-blue-50 p-4">
-                <div className="text-xs text-gray-500">Subscription SMS Used (Current Period)</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">
-                  {loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedUsed)) ? Number(kpis.totalIncludedUsed).toLocaleString() : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-blue-50 p-4 sm:col-span-2">
-                <div className="text-xs text-gray-500">Subscription SMS Remaining (Current Period)</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">
-                  {loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedRemaining)) ? Number(kpis.totalIncludedRemaining).toLocaleString() : "—"}
-                </div>
-              </div>
-            </div>
-          </div>
+            <KpiGrid className="gap-3">
+              <KpiStatCard
+                label="Total Wallet Balance"
+                value={loading ? "…" : Number.isFinite(Number(kpis?.totalWalletBalanceCredits)) ? `${Number(kpis.totalWalletBalanceCredits).toLocaleString()} Credits` : "—"}
+                subLabel={Number.isFinite(Number(balanceGhs)) ? `≈ ${Number(balanceGhs).toLocaleString()} GHS` : undefined}
+              />
+              <KpiStatCard
+                label="Total Credits Issued"
+                value={loading ? "…" : Number.isFinite(Number(kpis?.totalCreditsIssued)) ? Number(kpis.totalCreditsIssued).toLocaleString() : "—"}
+              />
+              <KpiStatCard
+                label="Total Credits Used"
+                value={loading ? "…" : Number.isFinite(Number(kpis?.totalCreditsUsed)) ? Number(kpis.totalCreditsUsed).toLocaleString() : "—"}
+              />
+              <KpiStatCard
+                label="Total Wallet Transactions"
+                value={loading ? "…" : Number.isFinite(Number(kpis?.totalWalletTransactions)) ? Number(kpis.totalWalletTransactions).toLocaleString() : "—"}
+              />
+              <KpiStatCard
+                label="Total SMS Sent"
+                value={loading ? "…" : Number.isFinite(Number(kpis?.totalSmsSent)) ? Number(kpis.totalSmsSent).toLocaleString() : "—"}
+              />
+              <KpiStatCard
+                label="Subscription SMS Granted (Current Period)"
+                value={loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedGranted)) ? Number(kpis.totalIncludedGranted).toLocaleString() : "—"}
+              />
+              <KpiStatCard
+                label="Subscription SMS Used (Current Period)"
+                value={loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedUsed)) ? Number(kpis.totalIncludedUsed).toLocaleString() : "—"}
+              />
+              <KpiStatCard
+                label="Subscription SMS Remaining (Current Period)"
+                value={loading ? "…" : Number.isFinite(Number(kpis?.totalIncludedRemaining)) ? Number(kpis.totalIncludedRemaining).toLocaleString() : "—"}
+              />
+            </KpiGrid>
+          </Card>
         </div>
       ) : tab === "communications" ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <TabButton active={commTab === "compose"} onClick={() => setCommTab("compose")}>
-              Compose
-            </TabButton>
-            <TabButton active={commTab === "templates"} onClick={() => setCommTab("templates")}>
-              Templates
-            </TabButton>
-            <TabButton active={commTab === "drafts"} onClick={() => setCommTab("drafts")}>
-              Drafts
-            </TabButton>
-            <TabButton active={commTab === "scheduled"} onClick={() => setCommTab("scheduled")}>
-              Scheduled
-            </TabButton>
-            <TabButton active={commTab === "history"} onClick={() => setCommTab("history")}>
-              Message History
-            </TabButton>
-          </div>
+          <PageTabs
+            tabs={[
+              { key: "compose", label: "Compose" },
+              { key: "templates", label: "Templates" },
+              { key: "drafts", label: "Drafts" },
+              { key: "scheduled", label: "Scheduled" },
+              { key: "history", label: "Message History" }
+            ]}
+            activeTab={commTab}
+            onChange={setCommTab}
+            sticky={false}
+          />
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <Card>
+            <Card.Body>
             {commTab === "compose" ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -922,8 +894,8 @@ function AnnouncementsPage() {
 
                 <div className="flex items-center justify-end gap-2">
                   {composeEditingId ? (
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
                       onClick={() => {
                         setComposeEditingId(null);
                         setComposeTitle("");
@@ -940,19 +912,19 @@ function AnnouncementsPage() {
                         setComposeExpiresAt("");
                       }}
                       disabled={composeSaving}
-                      className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                     >
                       Cancel Edit
-                    </button>
+                    </Button>
                   ) : null}
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
                     onClick={onComposeSubmit}
                     disabled={composeSaving}
-                    className="inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60"
+                    loading={composeSaving}
+                    loadingText="Saving…"
                   >
-                    {composeSaving ? "Saving…" : composeSendMode === "template" ? "Save Template" : composeSendMode === "draft" ? "Save Draft" : composeSendMode === "schedule" ? "Schedule" : composeEditingId ? "Update" : "Send"}
-                  </button>
+                    {composeSendMode === "template" ? "Save Template" : composeSendMode === "draft" ? "Save Draft" : composeSendMode === "schedule" ? "Schedule" : composeEditingId ? "Update" : "Send"}
+                  </Button>
                 </div>
               </div>
             ) : commTab === "scheduled" ? (
@@ -1010,8 +982,8 @@ function AnnouncementsPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className="py-6 text-center text-gray-500">
-                            No scheduled announcements.
+                          <td colSpan={6}>
+                            <EmptyState compact illustration="announcements" title="No scheduled announcements." />
                           </td>
                         </tr>
                       )}
@@ -1084,8 +1056,8 @@ function AnnouncementsPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className="py-6 text-center text-gray-500">
-                            No drafts.
+                          <td colSpan={6}>
+                            <EmptyState compact illustration="announcements" title="No drafts." />
                           </td>
                         </tr>
                       )}
@@ -1155,8 +1127,8 @@ function AnnouncementsPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="py-6 text-center text-gray-500">
-                            No templates.
+                          <td colSpan={5}>
+                            <EmptyState compact illustration="templates" title="No templates." />
                           </td>
                         </tr>
                       )}
@@ -1220,8 +1192,8 @@ function AnnouncementsPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className="py-6 text-center text-gray-500">
-                            No announcements.
+                          <td colSpan={6}>
+                            <EmptyState compact illustration="announcements" title="No announcements." />
                           </td>
                         </tr>
                       )}
@@ -1233,42 +1205,43 @@ function AnnouncementsPage() {
                 ) : null}
               </div>
             )}
-          </div>
+            </Card.Body>
+          </Card>
         </div>
       ) : null}
       {tab === "support" ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              type="text"
-              value={srSearch}
-              onChange={(e) => setSrSearch(e.target.value)}
-              placeholder="Search subject, name, church…"
-              className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100 w-56"
-            />
-            <select
-              value={srStatusFilter}
-              onChange={(e) => setSrStatusFilter(e.target.value)}
-              className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-            >
-              <option value="">All Statuses</option>
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
-            </select>
-            <button
-              type="button"
+          <FilterBar
+            searchValue={srSearch}
+            onSearchChange={setSrSearch}
+            searchPlaceholder="Search subject, name, church…"
+            searchWidth="w-56"
+            selects={[
+              {
+                key: "status",
+                value: srStatusFilter,
+                onChange: setSrStatusFilter,
+                placeholder: "All Statuses",
+                options: [
+                  { label: "Open", value: "open" },
+                  { label: "In Progress", value: "in_progress" },
+                  { label: "Resolved", value: "resolved" },
+                  { label: "Closed", value: "closed" }
+                ]
+              }
+            ]}
+          >
+            <Button
+              variant="primary"
               onClick={() => loadSupportRequests({ page: 1, search: srSearch, status: srStatusFilter })}
-              className="h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800"
             >
               Search
-            </button>
-          </div>
+            </Button>
+          </FilterBar>
 
           {srError ? <div className="text-sm text-red-600">{srError}</div> : null}
 
-          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50">
@@ -1340,7 +1313,7 @@ function AnnouncementsPage() {
                       );
                     })
                   ) : (
-                    <tr><td colSpan={8} className="py-8 text-center text-gray-500">No support requests found.</td></tr>
+                    <tr><td colSpan={8}><EmptyState compact illustration="support" title="No support requests found." /></td></tr>
                   )}
                 </tbody>
               </table>
@@ -1367,7 +1340,7 @@ function AnnouncementsPage() {
                 </button>
               </div>
             ) : null}
-          </div>
+          </Card>
         </div>
       ) : null}
 

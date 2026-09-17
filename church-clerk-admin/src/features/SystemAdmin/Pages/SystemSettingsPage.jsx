@@ -14,6 +14,11 @@ import {
 } from "../Services/systemAdmin.api.js";
 import { updateMyPassword, updateMyProfile, registerSystemAdmin } from "../../Auth/services/auth.api.js";
 import Spinner from "../../../shared/components/Spinner.jsx";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function SystemSettingsPage() {
@@ -273,54 +278,28 @@ function SystemSettingsPage() {
         <div className="text-sm text-gray-600">Configure duration settings for all churches.</div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setTab("billing")}
-          className={`h-10 rounded-lg px-4 text-sm font-semibold ${
-            tab === "billing" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
-          }`}
-        >
-          Configure Durations
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("sender-ids")}
-          className={`h-10 rounded-lg px-4 text-sm font-semibold ${
-            tab === "sender-ids" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
-          }`}
-        >
-          Requested IDs
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("profile")}
-          className={`h-10 rounded-lg px-4 text-sm font-semibold ${
-            tab === "profile" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
-          }`}
-        >
-          My Profile
-        </button>
-        {isSuperAdmin && (
-          <button
-            type="button"
-            onClick={() => { setTab("admins"); refreshAdminList(); }}
-            className={`h-10 rounded-lg px-4 text-sm font-semibold ${
-              tab === "admins" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
-            }`}
-          >
-            Admins
-          </button>
-        )}
-      </div>
+      <PageTabs
+        activeTab={tab}
+        onChange={(key) => {
+          setTab(key);
+          if (key === "admins") refreshAdminList();
+        }}
+        tabs={[
+          { key: "billing", label: "Configure Durations" },
+          { key: "sender-ids", label: "Requested IDs" },
+          { key: "profile", label: "My Profile" },
+          ...(isSuperAdmin ? [{ key: "admins", label: "Admins" }] : [])
+        ]}
+      />
 
       {tab === "admins" && isSuperAdmin ? (
         <div className="space-y-5">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900 mb-1">Create System Admin</div>
-            <div className="text-xs text-gray-500 mb-4">Only superadmins can create other system admin accounts.</div>
-            {adminFormError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{adminFormError}</div>}
-            {adminFormSuccess && <div className="mb-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">{adminFormSuccess}</div>}
+          <Card>
+            <Card.Header title="Create System Admin" />
+            <div className="text-xs text-gray-500">Only superadmins can create other system admin accounts.</div>
+            {adminFormError && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{adminFormError}</div>}
+            {adminFormSuccess && <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">{adminFormSuccess}</div>}
+            <Card.Body>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
@@ -356,7 +335,10 @@ function SystemSettingsPage() {
               </div>
             </div>
             <div className="mt-4 flex justify-end">
-              <button type="button" disabled={adminFormLoading}
+              <Button
+                variant="primary"
+                loading={adminFormLoading}
+                loadingText="Creating…"
                 onClick={async () => {
                   setAdminFormError("");
                   setAdminFormSuccess("");
@@ -381,18 +363,19 @@ function SystemSettingsPage() {
                     setAdminFormLoading(false);
                   }
                 }}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
-                {adminFormLoading ? "Creating…" : "Create Admin"}
-              </button>
+              >
+                Create Admin
+              </Button>
             </div>
-          </div>
+            </Card.Body>
+          </Card>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900 mb-4">System Admins</div>
+          <Card>
+            <Card.Header title="System Admins" />
             {adminListLoading ? (
               <div className="space-y-2 animate-pulse">{[0,1,2].map(i => <div key={i} className="h-10 rounded bg-gray-100" />)}</div>
             ) : adminList.length === 0 ? (
-              <div className="text-xs text-gray-400">No admin users found.</div>
+              <EmptyState compact illustration="users" title="No admin users found" />
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
@@ -466,7 +449,7 @@ function SystemSettingsPage() {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* Edit Admin Modal */}
           {adminEditModal && (
@@ -486,11 +469,13 @@ function SystemSettingsPage() {
                   </select>
                 </div>
                 <div className="px-6 pb-4 flex justify-end gap-2">
-                  <button type="button" onClick={() => setAdminEditModal(null)}
-                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                  <Button variant="secondary" onClick={() => setAdminEditModal(null)}>
                     Cancel
-                  </button>
-                  <button type="button" disabled={adminEditLoading}
+                  </Button>
+                  <Button
+                    variant="primary"
+                    loading={adminEditLoading}
+                    loadingText="Saving…"
                     onClick={async () => {
                       setAdminEditLoading(true);
                       setAdminEditError("");
@@ -504,9 +489,9 @@ function SystemSettingsPage() {
                         setAdminEditLoading(false);
                       }
                     }}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
-                    {adminEditLoading ? "Saving…" : "Save Changes"}
-                  </button>
+                  >
+                    Save Changes
+                  </Button>
                 </div>
               </div>
             </div>
@@ -523,11 +508,13 @@ function SystemSettingsPage() {
                   Are you sure you want to permanently delete <strong>{adminDeleteModal.fullName}</strong> ({adminDeleteModal.email})? This cannot be undone.
                 </div>
                 <div className="px-6 pb-4 flex justify-end gap-2">
-                  <button type="button" onClick={() => setAdminDeleteModal(null)}
-                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                  <Button variant="secondary" onClick={() => setAdminDeleteModal(null)}>
                     Cancel
-                  </button>
-                  <button type="button" disabled={adminDeleteLoading}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    loading={adminDeleteLoading}
+                    loadingText="Deleting…"
                     onClick={async () => {
                       setAdminDeleteLoading(true);
                       try {
@@ -537,9 +524,9 @@ function SystemSettingsPage() {
                       } catch { /* noop */ }
                       finally { setAdminDeleteLoading(false); }
                     }}
-                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
-                    {adminDeleteLoading ? "Deleting…" : "Delete"}
-                  </button>
+                  >
+                    Delete
+                  </Button>
                 </div>
               </div>
             </div>
@@ -560,15 +547,16 @@ function SystemSettingsPage() {
             </div>
           ) : null}
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Financial Governance</div>
-            <div className="mt-1 text-xs text-gray-500">Control backdating and immutability across all financial modules</div>
+          <Card>
+            <Card.Header title="Financial Governance" />
+            <div className="text-xs text-gray-500">Control backdating and immutability across all financial modules</div>
 
             {govError ? (
-              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{govError}</div>
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{govError}</div>
             ) : null}
 
-            <div className="mt-4 space-y-4">
+            <Card.Body>
+            <div className="space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-sm font-medium text-gray-900">Enforce Backdating Control</div>
@@ -601,13 +589,15 @@ function SystemSettingsPage() {
                 </div>
               </div>
             </div>
-          </div>
+            </Card.Body>
+          </Card>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Free Trial Duration</div>
-            <div className="mt-1 text-xs text-gray-500">Select how many days a new church gets in free trial.</div>
+          <Card>
+            <Card.Header title="Free Trial Duration" />
+            <div className="text-xs text-gray-500">Select how many days a new church gets in free trial.</div>
 
-            <div className="mt-4">
+            <Card.Body>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Trial days</label>
               <select
                 value={trialDays}
@@ -622,15 +612,17 @@ function SystemSettingsPage() {
                 ))}
               </select>
             </div>
-          </div>
+            </Card.Body>
+          </Card>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Grace Period (Payment Due)</div>
-            <div className="mt-1 text-xs text-gray-500">
+          <Card>
+            <Card.Header title="Grace Period (Payment Due)" />
+            <div className="text-xs text-gray-500">
               After subscription expires and payment is due, users have this many days to pay before the system blocks actions.
             </div>
 
-            <div className="mt-4">
+            <Card.Body>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Grace period days</label>
               <input
                 type="number"
@@ -643,15 +635,17 @@ function SystemSettingsPage() {
                 className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm disabled:opacity-60"
               />
             </div>
-          </div>
+            </Card.Body>
+          </Card>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Referral Bonus Duration</div>
-            <div className="mt-1 text-xs text-gray-500">
+          <Card>
+            <Card.Header title="Referral Bonus Duration" />
+            <div className="text-xs text-gray-500">
               How many free days a church earns when someone they referred subscribes.
             </div>
 
-            <div className="mt-4">
+            <Card.Body>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Referral bonus days</label>
               <input
                 type="number"
@@ -664,29 +658,22 @@ function SystemSettingsPage() {
                 className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm disabled:opacity-60"
               />
             </div>
-          </div>
+            </Card.Body>
+          </Card>
 
-          <div className="rounded-xl border border-blue-100 bg-white p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-sm font-semibold text-gray-900">USD → GHS Exchange Rate</div>
-                <div className="mt-1 text-xs text-gray-500">
-                  Set the conversion rate used when displaying subscription prices in USD for non-Ghana churches.
-                  Set to <strong>0</strong> to use the live market rate automatically.
-                </div>
-              </div>
-              {Number(usdToGhsRate) > 0 ? (
-                <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                  Custom rate active
-                </span>
-              ) : (
-                <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
-                  Using live rate
-                </span>
-              )}
+          <Card className="border-blue-100">
+            <Card.Header
+              title="USD → GHS Exchange Rate"
+              badge={Number(usdToGhsRate) > 0 ? "Custom rate active" : "Using live rate"}
+              badgeClass={Number(usdToGhsRate) > 0 ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}
+            />
+            <div className="text-xs text-gray-500">
+              Set the conversion rate used when displaying subscription prices in USD for non-Ghana churches.
+              Set to <strong>0</strong> to use the live market rate automatically.
             </div>
 
-            <div className="mt-4 flex items-center gap-3">
+            <Card.Body>
+            <div className="flex items-center gap-3">
               <div className="relative w-56">
                 <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-gray-400">1 USD =</span>
                 <input
@@ -710,72 +697,72 @@ function SystemSettingsPage() {
                 <span className="text-xs text-gray-400">Live rate will be fetched automatically</span>
               )}
             </div>
-          </div>
+            </Card.Body>
+          </Card>
 
           <div className="flex items-center gap-3">
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="lg"
+              loading={saving}
+              loadingText="Saving…"
               onClick={onSave}
-              disabled={!canSave || saving}
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60"
+              disabled={!canSave}
             >
-              {saving ? "Saving…" : "Save changes"}
-            </button>
+              Save changes
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="lg"
               onClick={load}
               disabled={saving}
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
             >
               Refresh
-            </button>
+            </Button>
           </div>
         </>
       ) : tab === "sender-ids" ? (
         <>
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Requested Sender IDs</div>
-            <div className="mt-1 text-xs text-gray-500">
+          <Card>
+            <Card.Header title="Requested Sender IDs" />
+            <div className="text-xs text-gray-500">
               Review church Sender ID requests and approve or reject them after completing approval on Africa&apos;s Talking.
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center">
-              <input
-                value={senderIdSearch}
-                onChange={(e) => setSenderIdSearch(e.target.value)}
-                placeholder="Search church name, email, phone, city, sender ID…"
-                className="h-11 w-full md:w-96 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-              />
-
-              <select
-                value={senderIdStatus}
-                onChange={(e) => setSenderIdStatus(e.target.value)}
-                className="h-11 w-full md:w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-              >
-                <option value="pending">Pending: Under review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="all">All</option>
-              </select>
-
-              <div className="flex-1" />
-
-              <button
-                type="button"
+            <FilterBar
+              searchValue={senderIdSearch}
+              onSearchChange={setSenderIdSearch}
+              searchPlaceholder="Search church name, email, phone, city, sender ID…"
+              searchWidth="md:w-96"
+              selects={[
+                {
+                  key: "status",
+                  value: senderIdStatus,
+                  onChange: setSenderIdStatus,
+                  options: [
+                    { label: "Pending: Under review", value: "pending" },
+                    { label: "Approved", value: "approved" },
+                    { label: "Rejected", value: "rejected" },
+                    { label: "All", value: "all" }
+                  ]
+                }
+              ]}
+            >
+              <Button
+                variant="secondary"
                 onClick={() => loadSenderIdRequests({ nextPage: 1 })}
                 disabled={senderIdLoading}
-                className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
               >
                 Refresh
-              </button>
-            </div>
+              </Button>
+            </FilterBar>
 
             {senderIdError ? (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">{senderIdError}</div>
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">{senderIdError}</div>
             ) : null}
 
-            <div className="mt-4 overflow-x-auto">
+            <Card.Body className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="text-xs uppercase text-gray-400">
                   <tr className="border-b">
@@ -795,8 +782,8 @@ function SystemSettingsPage() {
                     </tr>
                   ) : senderIdRows.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-6 text-center text-gray-500">
-                        No requests found.
+                      <td colSpan={5} className="p-0">
+                        <EmptyState compact illustration="settings" title="No requests found" />
                       </td>
                     </tr>
                   ) : (
@@ -850,9 +837,9 @@ function SystemSettingsPage() {
                   )}
                 </tbody>
               </table>
-            </div>
+            </Card.Body>
 
-            <div className="mt-4 flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => loadSenderIdRequests({ nextPage: Math.max(1, senderIdPage - 1) })}
@@ -874,7 +861,7 @@ function SystemSettingsPage() {
                 Next
               </button>
             </div>
-          </div>
+          </Card>
 
           {senderIdModalOpen ? (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -884,8 +871,8 @@ function SystemSettingsPage() {
                     <div className="text-sm font-semibold text-gray-900">Sender ID Request</div>
                     <div className="mt-1 text-xs text-gray-500">Review and take action.</div>
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
                     onClick={() => {
                       if (senderIdActionLoading) return;
                       setSenderIdModalOpen(false);
@@ -894,10 +881,9 @@ function SystemSettingsPage() {
                       setSenderIdActionSuccess("");
                     }}
                     disabled={senderIdActionLoading}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                   >
                     Close
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="px-5 py-4">
@@ -934,9 +920,11 @@ function SystemSettingsPage() {
                     </a>
 
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={senderIdActionLoading || !senderIdSelected?._id}
+                      <Button
+                        variant="danger"
+                        loading={senderIdActionLoading}
+                        loadingText="Working…"
+                        disabled={!senderIdSelected?._id}
                         onClick={async () => {
                           if (!senderIdSelected?._id) return;
                           setSenderIdActionLoading(true);
@@ -954,13 +942,14 @@ function SystemSettingsPage() {
                             setSenderIdActionLoading(false);
                           }
                         }}
-                        className="inline-flex h-11 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-5 text-sm font-semibold text-red-800 shadow-sm hover:bg-red-100 disabled:opacity-60"
                       >
-                        {senderIdActionLoading ? "Working…" : "Reject"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={senderIdActionLoading || !senderIdSelected?._id}
+                        Reject
+                      </Button>
+                      <Button
+                        variant="primary"
+                        loading={senderIdActionLoading}
+                        loadingText="Working…"
+                        disabled={!senderIdSelected?._id}
                         onClick={async () => {
                           if (!senderIdSelected?._id) return;
                           setSenderIdActionLoading(true);
@@ -978,10 +967,9 @@ function SystemSettingsPage() {
                             setSenderIdActionLoading(false);
                           }
                         }}
-                        className="inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60"
                       >
-                        {senderIdActionLoading ? "Working…" : "Approve"}
-                      </button>
+                        Approve
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -998,11 +986,12 @@ function SystemSettingsPage() {
             <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">{profileSuccess}</div>
           ) : null}
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Profile</div>
-            <div className="mt-1 text-xs text-gray-500">Update your system admin profile details.</div>
+          <Card>
+            <Card.Header title="Profile" />
+            <div className="text-xs text-gray-500">Update your system admin profile details.</div>
 
-            <div className="mt-4 grid gap-3">
+            <Card.Body>
+            <div className="grid gap-3">
               <div>
                 <div className="text-xs font-semibold text-gray-600">Full name</div>
                 <input
@@ -1048,9 +1037,10 @@ function SystemSettingsPage() {
               </div>
 
               <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  disabled={profileSaving}
+                <Button
+                  variant="primary"
+                  loading={profileSaving}
+                  loadingText="Saving…"
                   onClick={async () => {
                     setProfileSaving(true);
                     setProfileError("");
@@ -1072,19 +1062,20 @@ function SystemSettingsPage() {
                       setProfileSaving(false);
                     }
                   }}
-                  className="inline-flex h-11 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60"
                 >
-                  {profileSaving ? "Saving…" : "Save profile"}
-                </button>
+                  Save profile
+                </Button>
               </div>
             </div>
-          </div>
+            </Card.Body>
+          </Card>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Change password</div>
-            <div className="mt-1 text-xs text-gray-500">Use a strong password and do not share it.</div>
+          <Card>
+            <Card.Header title="Change password" />
+            <div className="text-xs text-gray-500">Use a strong password and do not share it.</div>
 
-            <div className="mt-4 grid gap-3">
+            <Card.Body>
+            <div className="grid gap-3">
               <div>
                 <div className="text-xs font-semibold text-gray-600">Old password</div>
                 <input
@@ -1119,9 +1110,10 @@ function SystemSettingsPage() {
               </div>
 
               <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  disabled={profileSaving}
+                <Button
+                  variant="secondary"
+                  loading={profileSaving}
+                  loadingText="Saving…"
                   onClick={async () => {
                     setProfileSaving(true);
                     setProfileError("");
@@ -1138,13 +1130,13 @@ function SystemSettingsPage() {
                       setProfileSaving(false);
                     }
                   }}
-                  className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
                 >
-                  {profileSaving ? "Saving…" : "Update password"}
-                </button>
+                  Update password
+                </Button>
               </div>
             </div>
-          </div>
+            </Card.Body>
+          </Card>
         </>
       )}
     </div>

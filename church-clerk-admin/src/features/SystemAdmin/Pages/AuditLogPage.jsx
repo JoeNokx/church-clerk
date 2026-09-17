@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import { getSystemAuditLogs } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const fmtDateTime = (v) => {
   if (!v) return "—";
@@ -21,6 +25,7 @@ function DetailRow({ label, value, mono, wide }) {
   );
 }
 
+
 function AuditDetailModal({ log, onClose }) {
   if (!log) return null;
   const statusOk = String(log?.status || "").toLowerCase() === "success";
@@ -34,10 +39,7 @@ function AuditDetailModal({ log, onClose }) {
             <div className="text-base font-bold text-gray-900">Audit Log Details</div>
             <div className="text-xs text-gray-500 mt-0.5">All captured fields for this activity.</div>
           </div>
-          <button type="button" onClick={onClose}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">
-            Close
-          </button>
+          <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
         </div>
         <div className="px-6 py-4 space-y-0">
           <DetailRow label="Timestamp" value={fmtDateTime(log?.createdAt)} />
@@ -70,6 +72,7 @@ function AuditDetailModal({ log, onClose }) {
     </div>
   );
 }
+
 
 function AuditLogPage() {
   const [loading, setLoading] = useState(false);
@@ -135,32 +138,38 @@ function AuditLogPage() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search user, module, action, IP, path..."
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+      <Card className="mt-6">
+        <FilterBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search user, module, action, IP, path..."
+          selects={[
+            {
+              key: "status",
+              value: status,
+              onChange: setStatus,
+              placeholder: "All statuses",
+              options: [
+                { label: "Success", value: "Success" },
+                { label: "Failed", value: "Failed" },
+              ],
+            },
+          ]}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); }}
+        >
           <input value={module} onChange={(e) => setModule(e.target.value)}
             placeholder="Module (e.g. Billing, Members)"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+            className="h-10 w-full md:w-[200px] rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
           <input value={action} onChange={(e) => setAction(e.target.value)}
             placeholder="Action (e.g. Create, Update)"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
-          <select value={status} onChange={(e) => setStatus(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-            <option value="">All statuses</option>
-            <option value="Success">Success</option>
-            <option value="Failed">Failed</option>
-          </select>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
-        </div>
+            className="h-10 w-full md:w-[200px] rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" />
+        </FilterBar>
 
-        {error && <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>}
+        {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>}
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="text-xs uppercase text-gray-400">
               <tr className="border-b">
@@ -189,7 +198,14 @@ function AuditLogPage() {
                 </>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-8 text-center text-sm text-gray-400">No activity logs found.</td>
+                  <td colSpan={10}>
+                    <EmptyState
+                      compact
+                      illustration="auditLogs"
+                      title="No activity logs found"
+                      description="There are no audit events matching your current filters."
+                    />
+                  </td>
                 </tr>
               ) : (
                 rows.map((r) => {
@@ -237,25 +253,23 @@ function AuditLogPage() {
           </table>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <div className="text-xs text-gray-400">
             {pagination?.total ? `${pagination.total.toLocaleString()} total` : ""}
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => load({ nextPage: Math.max(1, page - 1) })}
-              disabled={loading || !pagination?.prevPage}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50">
+            <Button variant="secondary" size="sm" onClick={() => load({ nextPage: Math.max(1, page - 1) })}
+              disabled={loading || !pagination?.prevPage}>
               Prev
-            </button>
+            </Button>
             <div className="text-xs text-gray-600">Page {page}{pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}</div>
-            <button type="button" onClick={() => load({ nextPage: page + 1 })}
-              disabled={loading || !pagination?.nextPage}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50">
+            <Button variant="secondary" size="sm" onClick={() => load({ nextPage: page + 1 })}
+              disabled={loading || !pagination?.nextPage}>
               Next
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
 
     <AuditDetailModal log={selectedLog} onClose={() => setSelectedLog(null)} />

@@ -8,6 +8,10 @@ import {
 import { useAuth } from "../../Auth/useAuth.js";
 import { getAdminDashboardStats, getSystemAuditLogs } from "../../SystemAdmin/Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 
 const fmt = (n) => Number(n || 0).toLocaleString();
 const fmtGhs = (n) => `GHS ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -15,35 +19,6 @@ const fmtGhs = (n) => `GHS ${Number(n || 0).toLocaleString(undefined, { minimumF
 function trendPct(current, prev) {
   if (!prev) return current > 0 ? 100 : 0;
   return Math.round(((current - prev) / prev) * 100);
-}
-
-function TrendBadge({ current, prev }) {
-  const pct = trendPct(Number(current || 0), Number(prev || 0));
-  if (pct === 0) return <span className="text-xs text-gray-400">No change</span>;
-  const up = pct > 0;
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${up ? "text-emerald-600" : "text-red-500"}`}>
-      {up ? "↑" : "↓"} {Math.abs(pct)}% vs last month
-    </span>
-  );
-}
-
-function KpiCard({ icon, label, value, sub, trend }) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-          {icon}
-        </div>
-        {trend}
-      </div>
-      <div>
-        <div className="text-2xl font-bold text-gray-900 leading-tight">{value}</div>
-        <div className="mt-0.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</div>
-        {sub && <div className="mt-1 text-xs text-gray-400">{sub}</div>}
-      </div>
-    </div>
-  );
 }
 
 const STATUS_COLORS = {
@@ -167,61 +142,54 @@ function DashboardHome() {
       {loading && !stats ? <Skeleton /> : (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <KpiGrid className="lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <KpiCard
               icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9.5L12 4l9 5.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/></svg>}
-              label="Total Churches"
+              title="Total Churches"
               value={fmt(churches.total)}
-              sub={`${fmt(churches.hq)} HQ · ${fmt(churches.branches)} Branches`}
-              trend={<TrendBadge current={churches.thisMonth} prev={churches.prevMonth} />}
+              subtitle={`${fmt(churches.hq)} HQ · ${fmt(churches.branches)} Branches`}
+              change={trendPct(churches.thisMonth, churches.prevMonth)}
+              compareLabel="vs last month"
             />
             <KpiCard
               icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
-              label="Active Subscriptions"
+              title="Active Subscriptions"
               value={fmt(subs.active)}
-              sub={`${fmt(subs.trial)} on trial`}
-              trend={null}
+              subtitle={`${fmt(subs.trial)} on trial`}
             />
             <KpiCard
               icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
-              label="Revenue (This Month)"
+              title="Revenue (This Month)"
               value={fmtGhs(rev.thisMonth)}
-              sub={`Prev: ${fmtGhs(rev.prevMonth)}`}
-              trend={<TrendBadge current={rev.thisMonth} prev={rev.prevMonth} />}
+              subtitle={`Prev: ${fmtGhs(rev.prevMonth)}`}
+              change={trendPct(rev.thisMonth, rev.prevMonth)}
+              compareLabel="vs last month"
             />
             <KpiCard
               icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>}
-              label="Total Members"
+              title="Total Members"
               value={fmt(d.members?.total)}
-              sub="Across all churches"
-              trend={null}
+              subtitle="Across all churches"
             />
             <KpiCard
               icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>}
-              label="New Churches (30d)"
+              title="New Churches (30d)"
               value={fmt(churches.thisMonth)}
-              sub="Registered this month"
-              trend={null}
+              subtitle="Registered this month"
             />
             <KpiCard
               icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
-              label="Total Users"
+              title="Total Users"
               value={fmt(d.users?.total)}
-              sub="Admin + church users"
-              trend={null}
+              subtitle="Admin + church users"
             />
-          </div>
+          </KpiGrid>
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Revenue Bar Chart */}
-            <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">Revenue Trend</div>
-                  <div className="text-xs text-gray-500">Monthly collected payments (GHS)</div>
-                </div>
-              </div>
+            <Card className="lg:col-span-2 !gap-0">
+              <Card.Header title="Revenue Trend" badge="Monthly collected payments (GHS)" badgeClass="bg-transparent !text-gray-500 !text-xs !font-normal !px-0" />
               {(d.revenueByMonth || []).length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={d.revenueByMonth} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -240,16 +208,13 @@ function DashboardHome() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex h-48 items-center justify-center text-sm text-gray-400">No revenue data yet</div>
+                <EmptyState compact illustration="finance" title="No revenue data yet" description="Collected payments will appear here." />
               )}
-            </div>
+            </Card>
 
             {/* Subscription Status Donut */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <div className="mb-4">
-                <div className="text-sm font-semibold text-gray-900">Subscription Status</div>
-                <div className="text-xs text-gray-500">Total: {fmt(subs.total)}</div>
-              </div>
+            <Card className="!gap-0">
+              <Card.Header title="Subscription Status" badge={`Total: ${fmt(subs.total)}`} badgeClass="bg-transparent !text-gray-500 !text-xs !font-normal !px-0" />
               {statusDonut.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -274,19 +239,16 @@ function DashboardHome() {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex h-48 items-center justify-center text-sm text-gray-400">No subscription data</div>
+                <EmptyState compact illustration="billing" title="No subscription data" description="Subscriptions will appear here." />
               )}
-            </div>
+            </Card>
           </div>
 
           {/* Plan Distribution + Recent Churches */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Plan Distribution */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <div className="mb-4">
-                <div className="text-sm font-semibold text-gray-900">Plan Distribution</div>
-                <div className="text-xs text-gray-500">Subscriptions by plan</div>
-              </div>
+            <Card className="!gap-0">
+              <Card.Header title="Plan Distribution" badge="Subscriptions by plan" badgeClass="bg-transparent !text-gray-500 !text-xs !font-normal !px-0" />
               {(d.planDistribution || []).length > 0 ? (
                 <div className="space-y-3">
                   {(d.planDistribution || []).map((p, i) => {
@@ -309,25 +271,26 @@ function DashboardHome() {
                   })}
                 </div>
               ) : (
-                <div className="flex h-32 items-center justify-center text-sm text-gray-400">No plan data</div>
+                <EmptyState compact illustration="billing" title="No plan data" description="Plan distribution will appear here." />
               )}
-            </div>
+            </Card>
 
             {/* Recent Churches */}
-            <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">Recent Registrations</div>
-                  <div className="text-xs text-gray-500">Latest 5 churches</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate("/admin/churches")}
-                  className="text-xs font-semibold text-blue-600 hover:underline"
-                >
-                  View all →
-                </button>
-              </div>
+            <Card className="lg:col-span-2 !gap-0">
+              <Card.Header
+                title="Recent Registrations"
+                badge="Latest 5 churches"
+                badgeClass="bg-transparent !text-gray-500 !text-xs !font-normal !px-0"
+                actions={
+                  <button
+                    type="button"
+                    onClick={() => navigate("/admin/churches")}
+                    className="text-xs font-semibold text-blue-600 hover:underline"
+                  >
+                    View all →
+                  </button>
+                }
+              />
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
@@ -342,7 +305,9 @@ function DashboardHome() {
                   <tbody>
                     {(d.recentChurches || []).length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-6 text-center text-sm text-gray-400">No churches yet</td>
+                        <td colSpan={5}>
+                          <EmptyState compact illustration="generic" title="No churches yet" description="New registrations will appear here." />
+                        </td>
                       </tr>
                     ) : (d.recentChurches || []).map((c) => (
                       <tr key={c?._id} className="border-b border-gray-50 last:border-b-0">
@@ -374,21 +339,20 @@ function DashboardHome() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Recent Audit Activity */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="text-sm font-semibold text-gray-900">Recent Activity</div>
-                {auditPagination?.total ? (
-                  <div className="text-xs text-gray-400 mt-0.5">{auditPagination.total.toLocaleString()} total events</div>
-                ) : null}
-              </div>
-              <button type="button" onClick={() => navigate("/admin/audit")}
-                className="text-xs font-semibold text-blue-600 hover:underline">View all →</button>
-            </div>
+          <Card className="!gap-0">
+            <Card.Header
+              title="Recent Activity"
+              badge={auditPagination?.total ? `${auditPagination.total.toLocaleString()} total events` : null}
+              badgeClass="bg-transparent !text-gray-400 !text-xs !font-normal !px-0"
+              actions={
+                <button type="button" onClick={() => navigate("/admin/audit")}
+                  className="text-xs font-semibold text-blue-600 hover:underline">View all →</button>
+              }
+            />
 
             {auditLoading ? (
               <div className="space-y-3 animate-pulse">
@@ -404,7 +368,7 @@ function DashboardHome() {
                 ))}
               </div>
             ) : auditLogs.length === 0 ? (
-              <div className="py-6 text-center text-xs text-gray-400">No recent activity.</div>
+              <EmptyState compact illustration="auditLogs" title="No recent activity" description="Audit events will appear here." />
             ) : (
               <>
                 <div className="divide-y divide-gray-100">
@@ -451,11 +415,11 @@ function DashboardHome() {
                 </div>
               </>
             )}
-          </div>
+          </Card>
 
           {/* Quick Actions */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900 mb-4">Quick Actions</div>
+          <Card className="!gap-0">
+            <Card.Header title="Quick Actions" />
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
               {quickLinks.map((ql) => (
                 <button
@@ -469,7 +433,7 @@ function DashboardHome() {
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
         </>
       )}
     </div>

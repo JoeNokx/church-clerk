@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminGetPayments, adminVerifyPayment } from "../Services/adminBilling.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import Card from "../../../shared/components/Card/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import StatusChip from "../../../shared/components/StatusChip/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
 
 const fmtDateTime = (v) => {
   if (!v) return "—";
@@ -81,52 +86,50 @@ function BillingPaymentsPage() {
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <div className="flex flex-col md:flex-row md:items-center gap-3">
-        <div>
-          <div className="text-lg font-semibold text-gray-900">Payments</div>
-          <div className="mt-1 text-sm text-gray-600">View payment transactions across churches.</div>
-        </div>
-        <div className="flex-1" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search church, plan, reference..."
-          className="w-full md:w-72 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="w-full md:w-56 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="">All statuses</option>
-          <option value="paid">paid</option>
-          <option value="failed">failed</option>
-          <option value="pending">pending</option>
-        </select>
-        <select
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
-          className="w-full md:w-36 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="">All currencies</option>
-          <option value="GHS">GHS</option>
-          <option value="NGN">NGN</option>
-          <option value="USD">USD</option>
-        </select>
-        <select
-          value={provider}
-          onChange={(e) => setProvider(e.target.value)}
-          className="w-full md:w-40 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="">All providers</option>
-          <option value="paystack">paystack</option>
-        </select>
-      </div>
+    <Card>
+      <Card.Header title="Payments" />
+      <p className="-mt-2 text-sm text-gray-600">View payment transactions across churches.</p>
 
-      {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search church, plan, reference..."
+        selects={[
+          {
+            key: "status",
+            value: status,
+            onChange: setStatus,
+            placeholder: "All statuses",
+            options: [
+              { label: "paid", value: "paid" },
+              { label: "failed", value: "failed" },
+              { label: "pending", value: "pending" },
+            ],
+          },
+          {
+            key: "currency",
+            value: currency,
+            onChange: setCurrency,
+            placeholder: "All currencies",
+            options: [
+              { label: "GHS", value: "GHS" },
+              { label: "NGN", value: "NGN" },
+              { label: "USD", value: "USD" },
+            ],
+          },
+          {
+            key: "provider",
+            value: provider,
+            onChange: setProvider,
+            placeholder: "All providers",
+            options: [{ label: "paystack", value: "paystack" }],
+          },
+        ]}
+      />
 
-      <div className="mt-4 overflow-x-auto">
+      {error ? <div className="text-sm text-red-600">{error}</div> : null}
+
+      <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="text-xs uppercase text-gray-400">
             <tr className="border-b">
@@ -158,8 +161,13 @@ function BillingPaymentsPage() {
               </>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-gray-500">
-                  No payments found.
+                <td colSpan={8}>
+                  <EmptyState
+                    compact
+                    illustration="billing"
+                    title="No payments found"
+                    description="Try adjusting your search or filters to see results."
+                  />
                 </td>
               </tr>
             ) : (
@@ -179,24 +187,18 @@ function BillingPaymentsPage() {
                   <td className="py-3 text-gray-700">{p?.paymentProvider || "—"}</td>
                   <td className="py-3 text-gray-700">{p?.providerReference || "—"}</td>
                   <td className="py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      p?.status === "paid" ? "bg-green-100 text-green-700" :
-                      p?.status === "failed" ? "bg-red-100 text-red-700" :
-                      p?.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                      "bg-gray-100 text-gray-600"
-                    }`}>{p?.status || "—"}</span>
+                    <StatusChip value={p?.status || "—"} />
                   </td>
                   <td className="py-3 text-gray-700">{fmtDateTime(p?.createdAt)}</td>
                   <td className="py-3 text-right">
                     {(p?.status === "pending" || p?.status === "failed") && p?.paymentProvider === "paystack" && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => onVerify(p?._id)}
-                        title="Re-check this payment with Paystack and update status"
-                        className="rounded-md border border-blue-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
                       >
                         Verify
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -206,29 +208,29 @@ function BillingPaymentsPage() {
         </table>
       </div>
 
-      <div className="mt-4 flex items-center justify-end gap-2">
-        <button
-          type="button"
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => load({ nextPage: Math.max(1, page - 1) })}
           disabled={loading || !(pagination?.prevPage ?? false)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50"
         >
           Prev
-        </button>
+        </Button>
         <div className="text-xs text-gray-600">
           Page {page}
           {pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}
         </div>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => load({ nextPage: page + 1 })}
           disabled={loading || !(pagination?.nextPage ?? false)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50"
         >
           Next
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 

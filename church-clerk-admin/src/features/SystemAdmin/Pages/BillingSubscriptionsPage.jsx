@@ -11,6 +11,11 @@ import {
   adminRunBillingCycle
 } from "../Services/adminBilling.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import Card from "../../../shared/components/Card/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import StatusChip from "../../../shared/components/StatusChip/index.jsx";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -191,68 +196,64 @@ function BillingSubscriptionsPage() {
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <div className="flex flex-col md:flex-row md:items-center gap-3">
-        <div>
-          <div className="text-lg font-semibold text-gray-900">Subscriptions</div>
-          <div className="mt-1 text-sm text-gray-600">View and override subscriptions across churches.</div>
-        </div>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => { setConfirmGlobalCycle(true); setConfirmText(""); }}
-          disabled={globalCycleLoading}
-          title="Runs billing cycle for ALL churches with overdue nextBillingDate — same as the nightly scheduled job"
-          className="shrink-0 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
-        >
-          {globalCycleLoading ? "Running…" : "⚡ Run Global Cycle"}
-        </button>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search church, plan, status..."
-          className="w-full md:w-72 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="">All statuses</option>
-          <option value="free trial">free trial</option>
-          <option value="trialing">trialing</option>
-          <option value="active">active</option>
-          <option value="past_due">past_due</option>
-          <option value="suspended">suspended</option>
-          <option value="cancelled">cancelled</option>
-          <option value="canceled">canceled</option>
-        </select>
-        <select
-          value={planFilter}
-          onChange={(e) => setPlanFilter(e.target.value)}
-          className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="">All plans</option>
-          {planOptions.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-        <select
-          value={currencyFilter}
-          onChange={(e) => setCurrencyFilter(e.target.value)}
-          className="w-full md:w-36 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        >
-          <option value="">All currencies</option>
-          <option value="GHS">GHS</option>
-        </select>
-      </div>
+    <Card>
+      <Card.Header
+        title="Subscriptions"
+        actions={
+          <button
+            type="button"
+            onClick={() => { setConfirmGlobalCycle(true); setConfirmText(""); }}
+            disabled={globalCycleLoading}
+            title="Runs billing cycle for ALL churches with overdue nextBillingDate — same as the nightly scheduled job"
+            className="shrink-0 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
+          >
+            {globalCycleLoading ? "Running…" : "⚡ Run Global Cycle"}
+          </button>
+        }
+      />
+      <div className="text-sm text-gray-600">View and override subscriptions across churches.</div>
 
-      {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
-      {cycleMessage ? <div className="mt-4 text-sm text-green-600">{cycleMessage}</div> : null}
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search church, plan, status..."
+        selects={[
+          {
+            key: "status",
+            value: statusFilter,
+            onChange: setStatusFilter,
+            placeholder: "All statuses",
+            options: [
+              { label: "free trial", value: "free trial" },
+              { label: "trialing", value: "trialing" },
+              { label: "active", value: "active" },
+              { label: "past_due", value: "past_due" },
+              { label: "suspended", value: "suspended" },
+              { label: "cancelled", value: "cancelled" },
+              { label: "canceled", value: "canceled" },
+            ],
+          },
+          {
+            key: "plan",
+            value: planFilter,
+            onChange: setPlanFilter,
+            placeholder: "All plans",
+            options: planOptions.map((n) => ({ label: n, value: n })),
+          },
+          {
+            key: "currency",
+            value: currencyFilter,
+            onChange: setCurrencyFilter,
+            placeholder: "All currencies",
+            options: [{ label: "GHS", value: "GHS" }],
+          },
+        ]}
+      />
 
-      <div className="mt-4 overflow-x-auto">
+      {error ? <div className="text-sm text-red-600">{error}</div> : null}
+      {cycleMessage ? <div className="text-sm text-green-600">{cycleMessage}</div> : null}
+
+      <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="text-xs uppercase text-gray-400">
             <tr className="border-b">
@@ -280,8 +281,13 @@ function BillingSubscriptionsPage() {
               </>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-gray-500">
-                  No subscriptions found.
+                <td colSpan={6}>
+                  <EmptyState
+                    compact
+                    illustration="billing"
+                    title="No subscriptions found"
+                    description="Try adjusting your search or filters to see subscriptions."
+                  />
                 </td>
               </tr>
             ) : (
@@ -303,13 +309,7 @@ function BillingSubscriptionsPage() {
                       <span className="hidden sm:inline">{truncateDesktopName(s?.plan?.name)}</span>
                     </td>
                     <td className="py-3">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        s?.status === "active" ? "bg-green-100 text-green-700" :
-                        s?.status === "suspended" ? "bg-red-100 text-red-700" :
-                        s?.status === "past_due" ? "bg-orange-100 text-orange-700" :
-                        s?.status === "free trial" || s?.status === "trialing" ? "bg-blue-100 text-blue-700" :
-                        "bg-gray-100 text-gray-600"
-                      }`}>{s?.status || "—"}</span>
+                      <StatusChip value={s?.status} />
                     </td>
                     <td className="py-3 text-xs text-gray-500">
                       {pendingAction ? (
@@ -320,46 +320,50 @@ function BillingSubscriptionsPage() {
                     </td>
                     <td className="py-3 text-gray-700">{fmtDate(s?.nextBillingDate)}</td>
                     <td className="py-3 text-right">
-                      <div className="flex flex-wrap justify-end gap-1">
-                        {s?.status !== "active" && !isSuspended && (
-                          <button type="button" onClick={() => onQuickAction(s, "activate")}
-                            disabled={!!actionLoading}
-                            title="Force-set subscription to active and clear grace period"
-                            className="rounded-md border border-green-200 bg-white px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
-                            Activate
-                          </button>
-                        )}
-                        {!isSuspended ? (
-                          <button type="button" onClick={() => onQuickAction(s, "suspend")}
-                            disabled={!!actionLoading}
-                            className="rounded-md border border-orange-200 bg-white px-2 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50">
-                            Suspend
-                          </button>
-                        ) : (
-                          <button type="button" onClick={() => onQuickAction(s, "resume")}
-                            disabled={!!actionLoading}
-                            className="rounded-md border border-green-200 bg-white px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
-                            Resume
-                          </button>
-                        )}
-                        <button type="button" onClick={() => { setConfirmCycleChurch(s); setConfirmText(""); }}
-                          disabled={!!actionLoading || cycleLoadingId === String(s?.church?._id)}
-                          title="Run billing cycle for this church only — processes payment or moves to past_due"
-                          className="rounded-md border border-indigo-200 bg-white px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">
-                          {cycleLoadingId === String(s?.church?._id) ? "Running…" : "▶ Run Cycle"}
-                        </button>
-                        <button type="button" onClick={() => onQuickAction(s, "changePlan")}
-                          disabled={!!actionLoading}
-                          className="rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">
-                          Change Plan
-                        </button>
-                        <button type="button" onClick={() => { setConfirmDelete(s); setDeleteText(""); }}
-                          disabled={!!actionLoading}
-                          title="Permanently delete this subscription record"
-                          className="rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
-                          Delete
-                        </button>
-                      </div>
+                      <TableKebabMenu items={[
+                        s?.status !== "active" && !isSuspended && {
+                          label: "Activate",
+                          onClick: () => onQuickAction(s, "activate"),
+                          disabled: !!actionLoading,
+                          desktopClassName: "rounded-md border border-green-200 bg-white px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50",
+                          desktopContent: "Activate",
+                        },
+                        !isSuspended ? {
+                          label: "Suspend",
+                          onClick: () => onQuickAction(s, "suspend"),
+                          disabled: !!actionLoading,
+                          desktopClassName: "rounded-md border border-orange-200 bg-white px-2 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50",
+                          desktopContent: "Suspend",
+                        } : {
+                          label: "Resume",
+                          onClick: () => onQuickAction(s, "resume"),
+                          disabled: !!actionLoading,
+                          desktopClassName: "rounded-md border border-green-200 bg-white px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50",
+                          desktopContent: "Resume",
+                        },
+                        {
+                          label: "Run Cycle",
+                          onClick: () => { setConfirmCycleChurch(s); setConfirmText(""); },
+                          disabled: !!actionLoading || cycleLoadingId === String(s?.church?._id),
+                          desktopClassName: "rounded-md border border-indigo-200 bg-white px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50",
+                          desktopContent: cycleLoadingId === String(s?.church?._id) ? "Running…" : "▶ Run Cycle",
+                        },
+                        {
+                          label: "Change Plan",
+                          onClick: () => onQuickAction(s, "changePlan"),
+                          disabled: !!actionLoading,
+                          desktopClassName: "rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50",
+                          desktopContent: "Change Plan",
+                        },
+                        {
+                          label: "Delete",
+                          onClick: () => { setConfirmDelete(s); setDeleteText(""); },
+                          disabled: !!actionLoading,
+                          danger: true,
+                          desktopClassName: "rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50",
+                          desktopContent: "Delete",
+                        },
+                      ]} />
                     </td>
                   </tr>
                 );
@@ -606,7 +610,7 @@ function BillingSubscriptionsPage() {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 

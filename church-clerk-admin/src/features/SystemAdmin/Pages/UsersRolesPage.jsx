@@ -13,6 +13,12 @@ import {
   verifyUserEmailByAdminApi
 } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
+import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -390,43 +396,48 @@ function UsersRolesPage() {
         <div className="mt-1 text-sm text-gray-600">Manage system users and view role definitions.</div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setTab("users")}
-          className={`h-10 rounded-lg px-4 text-sm font-semibold ${
-            tab === "users" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
-          }`}
-        >
-          Users
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("roles")}
-          className={`h-10 rounded-lg px-4 text-sm font-semibold ${
-            tab === "roles" ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-700"
-          }`}
-        >
-          Roles
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          { key: "users", label: "Users" },
+          { key: "roles", label: "Roles" }
+        ]}
+        activeTab={tab}
+        onChange={setTab}
+        sticky={false}
+      />
 
       {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">{error}</div> : null}
 
       {tab === "users" ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+        <Card>
+          <FilterBar
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search name, email, phone..."
+            selects={[{
+              key: "role",
+              value: roleFilter,
+              onChange: setRoleFilter,
+              placeholder: "All roles",
+              options: allRoles.map((r) => ({ label: r, value: r }))
+            }]}
+          >
+            <div className="text-xs text-gray-500">
+              {pagination?.totalResult !== undefined ? `Total: ${pagination.totalResult}` : ""}
+            </div>
+          </FilterBar>
+
+          <div className="flex flex-col gap-3 md:hidden">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name, email, phone..."
-              className="w-full md:w-80 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
             />
-
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="w-full md:w-56 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
             >
               <option value="">All roles</option>
               {allRoles.map((r) => (
@@ -435,8 +446,6 @@ function UsersRolesPage() {
                 </option>
               ))}
             </select>
-
-            <div className="flex-1" />
             <div className="text-xs text-gray-500">
               {pagination?.totalResult !== undefined ? `Total: ${pagination.totalResult}` : ""}
             </div>
@@ -476,8 +485,8 @@ function UsersRolesPage() {
                   </>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-6 text-center text-gray-500">
-                      No users found.
+                    <td colSpan={9}>
+                      <EmptyState compact illustration="users" title="No users found." />
                     </td>
                   </tr>
                   ) : (
@@ -498,9 +507,7 @@ function UsersRolesPage() {
                         <span className="hidden sm:inline">{truncateDesktopName(u?.church?.name)}</span>
                       </td>
                       <td className="py-3">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          u?.isActive === false ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-                        }`}>{u?.isActive === false ? "Inactive" : "Active"}</span>
+                        <StatusChip value={u?.isActive === false ? "Inactive" : "Active"} />
                       </td>
                       <td className="py-3">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -565,60 +572,54 @@ function UsersRolesPage() {
               Next
             </button>
           </div>
-        </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">System roles</div>
-            <div className="mt-1 text-xs text-gray-500">Only superadmin and supportadmin can access the system admin portal.</div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(roles?.systemRoles || []).map((r) => (
-                <span key={r} className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-900">
-                  {r}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Church roles</div>
-            <div className="mt-1 text-xs text-gray-500">Roles used inside a church dashboard.</div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(roles?.churchRoles || []).map((r) => (
-                <span key={r} className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800">
-                  {r}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5 lg:col-span-2">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-sm font-semibold text-gray-900">Custom roles</div>
-                <div className="mt-1 text-xs text-gray-500">Roles stored in the database (dynamic permissions).</div>
+          <Card>
+            <Card.Header title="System roles" />
+            <Card.Body>
+              <div className="text-xs text-gray-500">Only superadmin and supportadmin can access the system admin portal.</div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(roles?.systemRoles || []).map((r) => (
+                  <span key={r} className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-900">
+                    {r}
+                  </span>
+                ))}
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={openCreate}
-                  disabled={loading}
-                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  Create role
-                </button>
-                <button
-                  type="button"
-                  onClick={loadRolesTab}
-                  disabled={loading}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Refresh
-                </button>
-              </div>
-            </div>
+            </Card.Body>
+          </Card>
 
-            <div className="mt-4 overflow-x-auto">
+          <Card>
+            <Card.Header title="Church roles" />
+            <Card.Body>
+              <div className="text-xs text-gray-500">Roles used inside a church dashboard.</div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(roles?.churchRoles || []).map((r) => (
+                  <span key={r} className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800">
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </Card.Body>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <Card.Header
+              title="Custom roles"
+              actions={
+                <>
+                  <Button variant="primary" size="sm" onClick={openCreate} disabled={loading}>
+                    Create role
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={loadRolesTab} disabled={loading}>
+                    Refresh
+                  </Button>
+                </>
+              }
+            />
+            <Card.Body>
+              <div className="text-xs text-gray-500">Roles stored in the database (dynamic permissions).</div>
+              <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="text-xs uppercase text-gray-400">
                   <tr className="border-b">
@@ -646,8 +647,8 @@ function UsersRolesPage() {
                     </>
                   ) : customRoles.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-gray-500">
-                        No custom roles found.
+                      <td colSpan={6}>
+                        <EmptyState compact illustration="users" title="No custom roles found." />
                       </td>
                     </tr>
                   ) : (
@@ -659,7 +660,7 @@ function UsersRolesPage() {
                         </td>
                         <td className="py-3 text-gray-700">{r?.key || "—"}</td>
                         <td className="py-3 text-gray-700">{r?.scope || "—"}</td>
-                        <td className="py-3 text-gray-700">{r?.isActive === false ? "inactive" : "active"}</td>
+                        <td className="py-3"><StatusChip value={r?.isActive === false ? "inactive" : "active"} /></td>
                         <td className="py-3 text-gray-700">{fmtDateTime(r?.createdAt)}</td>
                         <td className="py-3 text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -694,7 +695,8 @@ function UsersRolesPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card.Body>
+        </Card>
         </div>
       )}
 

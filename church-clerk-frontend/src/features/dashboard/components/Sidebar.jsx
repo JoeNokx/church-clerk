@@ -472,9 +472,10 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
                       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8"/>
-                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <rect x="9" y="3" width="6" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+                        <rect x="3" y="16" width="6" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+                        <rect x="15" y="16" width="6" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M12 8v4m0 0H6v4m6-4h6v4" stroke="currentColor" strokeWidth="1.8"/>
                       </svg>
 
                     </span>

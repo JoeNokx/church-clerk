@@ -9,6 +9,12 @@ import {
   delegateChurchSession
 } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import StatusChip from "../../../shared/components/StatusChip/index.jsx";
+import Card from "../../../shared/components/Card/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
+import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function ConfirmModal({ open, title, message, confirmLabel, confirmClass, onConfirm, onCancel, loading, children }) {
   if (!open) return null;
@@ -31,13 +37,6 @@ function ConfirmModal({ open, title, message, confirmLabel, confirmClass, onConf
       </div>
     </div>
   );
-}
-
-function StatusPill({ isActive }) {
-  if (isActive === false) {
-    return <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">Suspended</span>;
-  }
-  return <span className="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">Active</span>;
 }
 
 function ChurchesPage() {
@@ -163,6 +162,16 @@ function ChurchesPage() {
       })
     : rows;
 
+  const typeOptions = [
+    { label: "Independent", value: "Independent" },
+    { label: "Headquarters", value: "Headquarters" },
+    { label: "Branch", value: "Branch" }
+  ];
+  const statusOptions = [
+    { label: "Active", value: "active" },
+    { label: "Suspended", value: "suspended" }
+  ];
+
   return (
     <div className="max-w-screen-xl">
       <div className="flex items-start justify-between gap-4">
@@ -172,32 +181,48 @@ function ChurchesPage() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
-        <div className="flex flex-col md:flex-row md:items-center gap-3">
+      <Card className="mt-6 hover:shadow-none hover:border-gray-200">
+        {/* Mobile filters (stacked) */}
+        <div className="md:hidden flex flex-col gap-3">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, email, phone, city..."
-            className="w-full md:w-80 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
           />
           <select value={type} onChange={(e) => setType(e.target.value)}
-            className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
             <option value="">All types</option>
             <option value="Independent">Independent</option>
             <option value="Headquarters">Headquarters</option>
             <option value="Branch">Branch</option>
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full md:w-40 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
             <option value="">All statuses</option>
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
           </select>
-          <div className="flex-1" />
           <div className="text-xs text-gray-500">
             {pagination?.totalResult !== undefined ? `Total: ${pagination.totalResult}` : ""}
           </div>
         </div>
+
+        {/* Desktop filters */}
+        <FilterBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search name, email, phone, city..."
+          selects={[
+            { key: "type", value: type, onChange: setType, options: typeOptions, placeholder: "All types" },
+            { key: "status", value: statusFilter, onChange: setStatusFilter, options: statusOptions, placeholder: "All statuses" }
+          ]}
+        >
+          <div className="flex-1" />
+          <div className="text-xs text-gray-500">
+            {pagination?.totalResult !== undefined ? `Total: ${pagination.totalResult}` : ""}
+          </div>
+        </FilterBar>
 
         {error && <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>}
 
@@ -231,7 +256,14 @@ function ChurchesPage() {
                 </>
               ) : displayRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm text-gray-400">No churches found.</td>
+                  <td colSpan={7} className="py-8">
+                    <EmptyState
+                      compact
+                      illustration="church"
+                      title="No churches found"
+                      description="No churches match your current filters."
+                    />
+                  </td>
                 </tr>
               ) : (
                 displayRows.map((c) => {
@@ -252,7 +284,9 @@ function ChurchesPage() {
                           "bg-gray-100 text-gray-600"
                         }`}>{c.type || "—"}</span>
                       </td>
-                      <td className="py-3 pr-4"><StatusPill isActive={c.isActive} /></td>
+                      <td className="py-3 pr-4">
+                        <StatusChip value={isSuspended ? "suspended" : "active"} />
+                      </td>
                       <td className="py-3 pr-4 text-gray-700" title={c.pastor || ""}>
                         <span className="sm:hidden">{truncateMobileName(c.pastor)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(c.pastor)}</span>
@@ -266,38 +300,39 @@ function ChurchesPage() {
                         <span className="hidden sm:inline">{truncateDesktopName(c.country)}</span>
                       </td>
                       <td className="py-3 text-right">
-                        <div className="inline-flex items-center gap-1 justify-end">
-                          <button type="button" onClick={() => navigate(`/admin/churches/${c._id}`)}
-                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
-                            View
-                          </button>
-                          <button type="button"
-                            onClick={() => setDelegateModal(c)}
-                            disabled={isSuspended}
-                            title={isSuspended ? "Cannot delegate into a suspended church" : "Open this church's frontend in a delegated session"}
-                            className="rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                            View as Church
-                          </button>
-                          {isSuspended ? (
-                            <button type="button"
-                              onClick={() => handleUnsuspend(c)}
-                              disabled={actionLoading === c._id + "_unsuspend"}
-                              className="rounded-md border border-green-200 bg-white px-2.5 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
-                              Unsuspend
-                            </button>
-                          ) : (
-                            <button type="button"
-                              onClick={() => { setSuspendModal(c); setSuspendReason(""); }}
-                              className="rounded-md border border-amber-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-50">
-                              Suspend
-                            </button>
-                          )}
-                          <button type="button"
-                            onClick={() => { setDeleteModal(c); setDeleteConfirmName(""); }}
-                            className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
-                            Delete
-                          </button>
-                        </div>
+                        <TableKebabMenu
+                          items={[
+                            {
+                              label: "View",
+                              onClick: () => navigate(`/admin/churches/${c._id}`),
+                              desktopClassName: "rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            },
+                            {
+                              label: "View as Church",
+                              onClick: () => setDelegateModal(c),
+                              disabled: isSuspended,
+                              desktopClassName: "rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            },
+                            isSuspended
+                              ? {
+                                  label: "Unsuspend",
+                                  onClick: () => handleUnsuspend(c),
+                                  disabled: actionLoading === c._id + "_unsuspend",
+                                  desktopClassName: "rounded-md border border-green-200 bg-white px-2.5 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50"
+                                }
+                              : {
+                                  label: "Suspend",
+                                  onClick: () => { setSuspendModal(c); setSuspendReason(""); },
+                                  desktopClassName: "rounded-md border border-amber-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-50"
+                                },
+                            {
+                              label: "Delete",
+                              onClick: () => { setDeleteModal(c); setDeleteConfirmName(""); },
+                              danger: true,
+                              desktopClassName: "rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                            }
+                          ]}
+                        />
                       </td>
                     </tr>
                   );
@@ -308,21 +343,29 @@ function ChurchesPage() {
         </div>
 
         <div className="mt-4 flex items-center justify-end gap-2">
-          <button type="button" onClick={() => load({ nextPage: Math.max(1, page - 1) })}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => load({ nextPage: Math.max(1, page - 1) })}
             disabled={loading || !(pagination?.hasPrev ?? page > 1)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50">
+            className="lg:h-8 lg:px-3 lg:text-xs"
+          >
             Prev
-          </button>
+          </Button>
           <div className="text-xs text-gray-600">
             Page {page}{pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}
           </div>
-          <button type="button" onClick={() => load({ nextPage: page + 1 })}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => load({ nextPage: page + 1 })}
             disabled={loading || !(pagination?.hasNext ?? false)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50">
+            className="lg:h-8 lg:px-3 lg:text-xs"
+          >
             Next
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Suspend Modal */}
       <ConfirmModal

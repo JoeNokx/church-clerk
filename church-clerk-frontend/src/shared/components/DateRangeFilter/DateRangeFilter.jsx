@@ -7,11 +7,6 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply }) {
   const [draftTo, setDraftTo] = useState("");
   const [panelStyle, setPanelStyle] = useState(null);
 
-  useEffect(() => {
-    setDraftFrom(appliedFrom || "");
-    setDraftTo(appliedTo || "");
-  }, [appliedFrom, appliedTo]);
-
   const labelText = useMemo(() => {
     if (!appliedFrom && !appliedTo) return "Date";
     if (appliedFrom && appliedTo && appliedFrom === appliedTo) return appliedFrom;
@@ -79,16 +74,27 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply }) {
       return;
     }
 
-    const isMobileTablet = window.innerWidth < 1024;
-    if (isMobileTablet && datePickerRef.current) {
+    setDraftFrom(appliedFrom || "");
+    setDraftTo(appliedTo || "");
+
+    if (datePickerRef.current) {
       const rect = datePickerRef.current.getBoundingClientRect();
       const PANEL_W = 320;
+      const PANEL_H = 230;
       const EDGE = 8;
       const vw = window.innerWidth;
+      const vh = window.innerHeight;
       const w = Math.min(PANEL_W, vw - EDGE * 2);
       let left = Math.round(rect.right - w);
       left = Math.max(EDGE, Math.min(left, vw - w - EDGE));
-      setPanelStyle({ position: "fixed", top: Math.round(rect.bottom) + EDGE, left, width: w, zIndex: 50 });
+
+      const spaceBelow = vh - rect.bottom;
+      const openUp = spaceBelow < PANEL_H + EDGE && rect.top > PANEL_H + EDGE;
+      setPanelStyle(
+        openUp
+          ? { position: "fixed", bottom: Math.round(vh - rect.top) + EDGE, left, width: w, zIndex: 50 }
+          : { position: "fixed", top: Math.round(rect.bottom) + EDGE, left, width: w, zIndex: 50 }
+      );
     } else {
       setPanelStyle(null);
     }
