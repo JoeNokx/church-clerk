@@ -1,6 +1,7 @@
 import cellModel from '../../models/organisationModel/cellModel.js'
 import Member from "../../models/memberModel.js";
 import CellMember from "../../models/organisationModel/cellMembersModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 const searchMembersToAddToCell = async (req, res) => {
   try {
@@ -102,7 +103,7 @@ const getAllCells = async (req, res) => {
         const cells = await cellModel
             .find(query)
             .sort({ createdAt: -1 })
-            .select("name description meetingSchedule mainMeetingDay meetingTime meetingVenue status");
+            .select("name description meetingSchedule mainMeetingDay meetingTime meetingVenue status members church");
 
         if (!cells || cells.length === 0) {
             return res.status(200).json({ message: "No cells found", count: 0, cells: [] });
@@ -118,7 +119,7 @@ const getAllCells = async (req, res) => {
         return res.status(200).json({
           message: "cells found",
           count: cellsWithCounts.reduce((sum, c) => sum + (c.totalMembers || 0), 0),
-          cells: cellsWithCounts
+          cells: await annotateDeletable("cell", cellsWithCounts, churchId)
         });
     } catch (error) {
         return res.status(400).json({ message: "cells could not be found", error: error.message });
@@ -138,7 +139,9 @@ const getSingleCell = async (req, res) => {
             return res.status(404).json({ message: "cell not found" });
         }
 
-        return res.status(200).json({ message: "cell found", cell });
+        const [annotatedCell] = await annotateDeletable("cell", [cell], churchId);
+
+        return res.status(200).json({ message: "cell found", cell: annotatedCell });
     } catch (error) {
         return res.status(400).json({ message: "cell could not be found", error: error.message });
     }
@@ -232,6 +235,11 @@ const addMemberToCell = async (req, res) => {
 
       const created = await CellMember.insertMany(docs);
 
+      await Member.updateMany(
+        { _id: { $in: toCreate.map((m) => m._id) }, church: churchId },
+        { $addToSet: { cell: cellId } }
+      );
+
       return res.status(200).json({
         message: "Members added to cell successfully",
         count: created.length,
@@ -276,6 +284,8 @@ const addMemberToCell = async (req, res) => {
       church: churchId,
       createdBy: req.user._id
     });
+
+    await Member.findByIdAndUpdate(member._id, { $addToSet: { cell: cellId } });
 
     return res.status(200).json({ message: "Member added to cell successfully", memberCreated });
   } catch (error) {
@@ -394,6 +404,8 @@ const removeMemberFromCell = async (req, res) => {
     const query = { cell: cellId, member: memberId, church: churchId };
     const cellMember = await CellMember.findOneAndDelete(query);
     if (!cellMember) return res.status(404).json({ message: "cell member not found" });
+
+    await Member.findByIdAndUpdate(memberId, { $pull: { cell: cellId } });
 
     return res.status(200).json({ message: "Member removed from cell successfully", cellMember });
   } catch (error) {

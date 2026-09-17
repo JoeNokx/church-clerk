@@ -19,6 +19,7 @@ import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../middleware/permissionMiddleware.js";
+import { deletionGuard } from "../services/recordDependencyService.js";
 
 
 router.get(
@@ -91,6 +92,7 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("visitors", "delete"),
+  deletionGuard("visitor"),
   deleteVisitor
 );
 router.get(
@@ -164,6 +166,7 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("attendance", "delete"),
+  deletionGuard("serviceIndividualAttendance"),
   deleteServiceIndividualAttendance
 );
 

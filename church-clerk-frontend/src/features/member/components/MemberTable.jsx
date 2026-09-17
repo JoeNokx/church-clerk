@@ -322,7 +322,7 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
                     <TableKebabMenu items={[
                       canView && { label: "View", onClick: () => { if (!row?._id) return; toPage("member-details", { id: row._id }, { state: { from: "members" } }); } },
                       canEdit && { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; toPage("member-form", { id: row._id }); }) },
-                      canDelete && { label: "Delete", onClick: () => guarded(() => { if (!row?._id) return; openConfirmDelete(row._id); }), danger: true }
+                      canDelete && row?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => { if (!row?._id) return; openConfirmDelete(row._id); }), danger: true }
                     ]} />
                   </td>
                 </tr>

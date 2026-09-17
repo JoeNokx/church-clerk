@@ -20,6 +20,7 @@ import {
 } from "../services/announcement/audienceService.js";
 import { sendSmsAndUpdateDeliveries } from "../services/announcement/smsService.js";
 import { getOrCreateWallet, getAvailableCredits, deductCreditsForMessage, refundCreditsForMessage } from "../services/announcement/walletService.js";
+import { annotateDeletable } from "../services/recordDependencyService.js";
 
 export const createMessage = async (req, res) => {
   try {
@@ -284,7 +285,7 @@ export const getMessages = async (req, res) => {
 
     const messages = await AnnouncementMessage.find(query).sort({ createdAt: -1 }).lean();
 
-    return res.status(200).json({ messages });
+    return res.status(200).json({ messages: await annotateDeletable("announcementMessage", messages, req.activeChurch._id) });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

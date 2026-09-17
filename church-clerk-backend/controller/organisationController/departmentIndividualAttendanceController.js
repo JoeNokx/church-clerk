@@ -1,6 +1,7 @@
 import IndividualAttendance from "../../models/organisationModel/departmentIndividualAttendanceModel.js";
 import Department from "../../models/organisationModel/departmentModel.js";
 import DepartmentMember from "../../models/organisationModel/departmentMembersModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 const createDepartmentIndividualAttendance = async (req, res) => {
   try {
@@ -64,12 +65,13 @@ const getAllDepartmentIndividualAttendances = async (req, res) => {
 
     const total = await IndividualAttendance.countDocuments(query);
 
-    const rows = (Array.isArray(attendances) ? attendances : []).map((a) => {
+    let rows = (Array.isArray(attendances) ? attendances : []).map((a) => {
       const presentCount = Array.isArray(a?.presentMembers) ? a.presentMembers.length : 0;
       const totalSnap = Number(a?.totalMembersSnapshot || 0);
       const absentCount = Math.max(0, totalSnap - presentCount);
       return { ...a, presentCount, absentCount };
     });
+    rows = await annotateDeletable("departmentIndividualAttendance", rows, churchId);
 
     const totalPages = Math.ceil(total / limitNum);
     const pagination = {

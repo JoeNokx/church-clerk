@@ -268,7 +268,7 @@ function VisitorTable({ onEdit, onDeleted }) {
                       desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
                     },
                     canEdit && { label: "Edit", onClick: () => { const id = row?._id ?? row?.id; if (!id) return; onEdit?.(row); } },
-                    canDelete && { label: "Delete", onClick: () => { const id = row?._id ?? row?.id; if (!id) return; openConfirmDelete(id); }, danger: true }
+                    canDelete && row?.canDelete !== false && { label: "Delete", onClick: () => { const id = row?._id ?? row?.id; if (!id) return; openConfirmDelete(id); }, danger: true }
                   ]} />
                 </td>
               </tr>

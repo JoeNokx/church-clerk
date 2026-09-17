@@ -877,7 +877,7 @@ function DraftsTable({ open, onUseDraft, onWalletUpdated }) {
                   <td className="py-2">
                     <TableKebabMenu items={[
                       { label: "Continue Editing", onClick: () => onUseDraft?.(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                      canDelete && { label: "Delete", onClick: () => onDeleteRow(m), danger: true, disabled: actionLoadingId === m?._id }
+                      canDelete && m?.canDelete !== false && { label: "Delete", onClick: () => onDeleteRow(m), danger: true, disabled: actionLoadingId === m?._id }
                     ]} />
                   </td>
                 </tr>

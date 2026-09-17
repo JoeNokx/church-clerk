@@ -1,6 +1,7 @@
 import ministryModel from '../../models/organisationModel/ministryModel.js'
 import Member from "../../models/memberModel.js";
 import MinistryMember from "../../models/organisationModel/ministryMembersModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 const searchMembersToAddToMinistry = async (req, res) => {
   try {
@@ -102,7 +103,7 @@ const getAllMinistries = async (req, res) => {
         const ministries = await ministryModel
             .find(query)
             .sort({ createdAt: -1 })
-            .select("name description meetingSchedule mainMeetingDay meetingTime meetingVenue status");
+            .select("name description meetingSchedule mainMeetingDay meetingTime meetingVenue status members church");
 
         if (!ministries || ministries.length === 0) {
             return res.status(200).json({ message: "No ministries found", count: 0, ministries: [] });
@@ -118,7 +119,7 @@ const getAllMinistries = async (req, res) => {
         return res.status(200).json({
           message: "ministries found",
           count: ministriesWithCounts.reduce((sum, m) => sum + (m.totalMembers || 0), 0),
-          ministries: ministriesWithCounts
+          ministries: await annotateDeletable("ministry", ministriesWithCounts, churchId)
         });
     } catch (error) {
         return res.status(400).json({ message: "ministries could not be found", error: error.message });
@@ -138,7 +139,9 @@ const getSingleMinistry = async (req, res) => {
             return res.status(404).json({ message: "ministry not found" });
         }
 
-        return res.status(200).json({ message: "ministry found", ministry });
+        const [annotatedMinistry] = await annotateDeletable("ministry", [ministry], churchId);
+
+        return res.status(200).json({ message: "ministry found", ministry: annotatedMinistry });
     } catch (error) {
         return res.status(400).json({ message: "ministry could not be found", error: error.message });
     }
@@ -232,6 +235,11 @@ const addMemberToMinistry = async (req, res) => {
 
       const created = await MinistryMember.insertMany(docs);
 
+      await Member.updateMany(
+        { _id: { $in: toCreate.map((m) => m._id) }, church: churchId },
+        { $addToSet: { ministry: ministryId } }
+      );
+
       return res.status(200).json({
         message: "Members added to ministry successfully",
         count: created.length,
@@ -276,6 +284,8 @@ const addMemberToMinistry = async (req, res) => {
       church: churchId,
       createdBy: req.user._id
     });
+
+    await Member.findByIdAndUpdate(member._id, { $addToSet: { ministry: ministryId } });
 
     return res.status(200).json({ message: "Member added to ministry successfully", memberCreated });
   } catch (error) {
@@ -394,6 +404,8 @@ const removeMemberFromMinistry = async (req, res) => {
     const query = { ministry: ministryId, member: memberId, church: churchId };
     const ministryMember = await MinistryMember.findOneAndDelete(query);
     if (!ministryMember) return res.status(404).json({ message: "ministry member not found" });
+
+    await Member.findByIdAndUpdate(memberId, { $pull: { ministry: ministryId } });
 
     return res.status(200).json({ message: "Member removed from ministry successfully", ministryMember });
   } catch (error) {

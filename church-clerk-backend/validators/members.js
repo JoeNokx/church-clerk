@@ -41,7 +41,8 @@ export const createMemberSchema = Joi.object({
 
   department: Joi.array().items(objectId).max(50).optional(),
   cell: Joi.array().items(objectId).max(10).optional(),
-  group: Joi.array().items(objectId).max(50).optional()
+  group: Joi.array().items(objectId).max(50).optional(),
+  ministry: Joi.array().items(objectId).max(50).optional()
 });
 
 export const updateMemberSchema = createMemberSchema.fork(

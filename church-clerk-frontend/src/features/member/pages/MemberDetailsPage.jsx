@@ -156,6 +156,7 @@ function MemberDetailsPageInner() {
   const cells = Array.isArray(member?.cell) ? member.cell : [];
   const departments = Array.isArray(member?.department) ? member.department : [];
   const groups = Array.isArray(member?.group) ? member.group : [];
+  const ministries = Array.isArray(member?.ministry) ? member.ministry : [];
 
   const renderMinistryChips = (items) => {
     if (!items?.length) return <div className="text-gray-600 text-sm">-</div>;
@@ -335,8 +336,8 @@ function MemberDetailsPageInner() {
               </div>
             </BigCard>
 
-            <BigCard title="Ministry Information" subtitle="Cells, departments, and groups">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <BigCard title="Organisation Information" subtitle="Cells, departments, groups, and ministries">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <div className="font-semibold text-gray-500 text-xs">Cells</div>
                   <div className="mt-2">{renderMinistryChips(cells)}</div>
@@ -348,6 +349,10 @@ function MemberDetailsPageInner() {
                 <div>
                   <div className="font-semibold text-gray-500 text-xs">Groups</div>
                   <div className="mt-2">{renderMinistryChips(groups)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Ministries</div>
+                  <div className="mt-2">{renderMinistryChips(ministries)}</div>
                 </div>
               </div>
             </BigCard>

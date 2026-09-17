@@ -8,6 +8,7 @@ import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js
 import authorizeRoles from "../middleware/roleMiddleware.js";
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../middleware/permissionMiddleware.js";
+import { deletionGuard } from "../services/recordDependencyService.js";
 
 import {
   getAllOutreachEvents, getOutreachEventById, createOutreachEvent,
@@ -49,7 +50,7 @@ router.get("/events", ...R, getAllOutreachEvents);
 router.get("/events/:id", ...R, getOutreachEventById);
 router.post("/events", ...W, createOutreachEvent);
 router.put("/events/:id", ...U, updateOutreachEvent);
-router.delete("/events/:id", ...D, deleteOutreachEvent);
+router.delete("/events/:id", ...D, deletionGuard("outreachEvent"), deleteOutreachEvent);
 
 // ── Prospects (cross-event) ───────────────────────────────────────
 router.get("/prospects/check-duplicate", ...R, checkDuplicate);
@@ -57,7 +58,7 @@ router.get("/prospects", ...R, getAllProspects);
 router.post("/prospects", ...W, createProspectDirect);
 router.get("/prospects/:prospectId", ...R, getProspectById);
 router.put("/prospects/:prospectId", ...U, updateProspect);
-router.delete("/prospects/:prospectId", ...D, deleteProspect);
+router.delete("/prospects/:prospectId", ...D, deletionGuard("outreachProspect", "prospectId"), deleteProspect);
 router.post("/prospects/:prospectId/assign-worker", ...U, assignFollowUpWorker);
 router.post("/prospects/:prospectId/convert-to-member", ...U, convertToMember);
 router.post("/prospects/:prospectId/mark-as-visitor", ...U, markAsVisitor);
@@ -66,7 +67,7 @@ router.post("/prospects/:prospectId/mark-as-visitor", ...U, markAsVisitor);
 router.get("/events/:eventId/prospects", ...R, getProspectsByEvent);
 router.post("/events/:eventId/prospects", ...W, createProspect);
 router.put("/events/:eventId/prospects/:prospectId", ...U, updateProspect);
-router.delete("/events/:eventId/prospects/:prospectId", ...D, deleteProspect);
+router.delete("/events/:eventId/prospects/:prospectId", ...D, deletionGuard("outreachProspect", "prospectId"), deleteProspect);
 
 // ── Follow-ups ────────────────────────────────────────────────────
 router.get("/follow-ups/stats", ...R, getFollowUpsStats);
@@ -86,6 +87,6 @@ router.get("/outreach-teams", ...R, getTeams);
 router.get("/outreach-teams/:teamId", ...R, getTeamById);
 router.post("/outreach-teams", ...W, createTeam);
 router.put("/outreach-teams/:teamId", ...U, updateTeam);
-router.delete("/outreach-teams/:teamId", ...D, deleteTeam);
+router.delete("/outreach-teams/:teamId", ...D, deletionGuard("outreachTeam", "teamId"), deleteTeam);
 
 export default router;

@@ -2,6 +2,7 @@ import OutreachProspect from "../../models/outreachModel/outreachProspectModel.j
 import OutreachFollowUp from "../../models/outreachModel/outreachFollowUpModel.js";
 import Member from "../../models/memberModel.js";
 import Visitor from "../../models/visitorsModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 const PROSPECT_ALLOWED_FIELDS = [
   "firstName", "lastName", "phone", "alternativePhone", "email",
@@ -68,7 +69,7 @@ export const getAllProspects = async (req, res) => {
 
     return res.status(200).json({
       message: "Prospects fetched",
-      data,
+      data: await annotateDeletable("outreachProspect", data, churchId),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
@@ -103,7 +104,7 @@ export const getProspectsByEvent = async (req, res) => {
     const fuMap = Object.fromEntries(followUpCounts.map((f) => [String(f._id), f.count]));
 
     const data = prospects.map((p) => ({ ...p, followUpCount: fuMap[String(p._id)] || 0 }));
-    return res.status(200).json({ message: "Prospects fetched", data });
+    return res.status(200).json({ message: "Prospects fetched", data: await annotateDeletable("outreachProspect", data, req.activeChurch._id) });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -123,7 +124,10 @@ export const getProspectById = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    return res.status(200).json({ message: "Prospect fetched", data: { ...prospect.toObject ? prospect.toObject() : prospect, followUps } });
+    const prospectData = prospect.toObject ? prospect.toObject() : prospect;
+    const [annotatedProspect] = await annotateDeletable("outreachProspect", [prospectData], req.activeChurch._id);
+
+    return res.status(200).json({ message: "Prospect fetched", data: { ...annotatedProspect, followUps } });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

@@ -1,6 +1,7 @@
 import departmentModel from "../../models/organisationModel/departmentModel.js";
 import Member from "../../models/memberModel.js";
 import DepartmentMember from "../../models/organisationModel/departmentMembersModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 const searchMembersToAddToDepartment = async (req, res) => {
   try {
@@ -101,7 +102,7 @@ const getAllDepartments = async (req, res) => {
         const departments = await departmentModel
             .find(query)
             .sort({ createdAt: -1 })
-            .select("name description meetingSchedule mainMeetingDay meetingTime meetingVenue roles status");
+            .select("name description meetingSchedule mainMeetingDay meetingTime meetingVenue roles status members church");
 
         if (!departments || departments.length === 0) {
             return res.status(200).json({ message: "No departments found", count: 0, departments: [] });
@@ -117,7 +118,7 @@ const getAllDepartments = async (req, res) => {
         return res.status(200).json({
           message: "departments found",
           count: departmentsWithCounts.reduce((sum, d) => sum + (d.totalMembers || 0), 0),
-          departments: departmentsWithCounts
+          departments: await annotateDeletable("department", departmentsWithCounts, churchId)
         });
     } catch (error) {
         return res.status(400).json({ message: "departments could not be found", error: error.message });
@@ -137,7 +138,9 @@ const getSingleDepartment = async (req, res) => {
             return res.status(404).json({ message: "department not found" });
         }
 
-        return res.status(200).json({ message: "department found", department });
+        const [annotatedDepartment] = await annotateDeletable("department", [department], churchId);
+
+        return res.status(200).json({ message: "department found", department: annotatedDepartment });
     } catch (error) {
         return res.status(400).json({ message: "department could not be found", error: error.message });
     }
@@ -230,6 +233,11 @@ const addMemberToDepartment = async (req, res) => {
 
       const created = await DepartmentMember.insertMany(docs);
 
+      await Member.updateMany(
+        { _id: { $in: toCreate.map((m) => m._id) }, church: churchId },
+        { $addToSet: { department: departmentId } }
+      );
+
       return res.status(200).json({
         message: "Members added to department successfully",
         count: created.length,
@@ -274,6 +282,8 @@ const addMemberToDepartment = async (req, res) => {
       church: churchId,
       createdBy: req.user._id
     });
+
+    await Member.findByIdAndUpdate(member._id, { $addToSet: { department: departmentId } });
 
     return res.status(200).json({ message: "Member added to department successfully", memberCreated });
   } catch (error) {
@@ -394,6 +404,8 @@ const removeMemberFromDepartment = async (req, res) => {
 
     const departmentMember = await DepartmentMember.findOneAndDelete(query);
     if (!departmentMember) return res.status(404).json({ message: "department member not found" });
+
+    await Member.findByIdAndUpdate(memberId, { $pull: { department: departmentId } });
 
     return res.status(200).json({ message: "Member removed from department successfully", departmentMember });
   } catch (error) {

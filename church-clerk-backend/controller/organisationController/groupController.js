@@ -54,7 +54,7 @@ const getAllGroups = async (req, res) => {
 
         const groups = await Group.find(query)
         .sort({createdAt: -1})
-        .select("name description meetingSchedule")
+        .select("name description meetingSchedule church")
 
         if (groups.length === 0) {
   return res.status(404).json({ message: "groups not found" });
@@ -72,7 +72,7 @@ const getAllGroups = async (req, res) => {
         return res.status(200).json({
           message: "groups found",
           count: groupsWithCounts.reduce((sum, g) => sum + g.totalMembers, 0),
-      groups: groupsWithCounts
+      groups: await annotateDeletable("group", groupsWithCounts, req.activeChurch._id)
         })
     } catch (error) {
         return res.status(400).json({message: "groups could not be found", error: error.message})
@@ -89,13 +89,15 @@ const getSingleGroup = async (req, res) => {
         const query = {_id: groupId, church: req.activeChurch._id}
 
         const group = await Group.findOne(query)
-        .select("name description meetingSchedule members");
+        .select("name description meetingSchedule members church");
 
         if (!group) {
             return res.status(404).json({ message: "Group not found" });
           }
 
-          return res.status(200).json({ message: "Group found successfully", group });
+          const [annotatedGroup] = await annotateDeletable("group", [group], req.activeChurch._id);
+
+          return res.status(200).json({ message: "Group found successfully", group: annotatedGroup });
     } catch (error) {
         return res.status(400).json({message: "group could not be found", error: error.message})
     }
@@ -105,6 +107,7 @@ const getSingleGroup = async (req, res) => {
 
 import Member from "../../models/memberModel.js"
 import GroupMember from "../../models/organisationModel/groupMembersModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 const searchMembersToAddToGroup = async (req, res) => {
   try {
@@ -198,6 +201,11 @@ const addMemberToGroup = async (req, res) => {
 
             const created = await GroupMember.insertMany(docs);
 
+            await Member.updateMany(
+              { _id: { $in: toCreate.map((m) => m._id) }, church: churchId },
+              { $addToSet: { group: groupId } }
+            );
+
             return res.status(200).json({
               message: "Members added to group successfully",
               count: created.length,
@@ -250,6 +258,8 @@ const addMemberToGroup = async (req, res) => {
     church: churchId,
     createdBy: req.user._id
     });
+
+    await Member.findByIdAndUpdate(member._id, { $addToSet: { group: groupId } });
 
           return res.status(200).json({ message: "Member added to group successfully", memberCreated });
         
@@ -406,7 +416,8 @@ const removeMemberFromGroup = async (req, res) => {
     const groupMember = await GroupMember.findOneAndDelete(query);
     if (!groupMember) return res.status(404).json({ message: "group member not found" });
 
-   
+    await Member.findByIdAndUpdate(memberId, { $pull: { group: groupId } });
+
     return res
       .status(200)
       .json({ message: "Member removed from group successfully", groupMember });

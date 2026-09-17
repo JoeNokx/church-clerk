@@ -32,6 +32,7 @@ import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js
 import authorizeRoles from "../middleware/roleMiddleware.js";
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../middleware/permissionMiddleware.js";
+import { deletionGuard } from "../services/recordDependencyService.js";
 
 router.post(
   "/wallet/webhooks/paystack",
@@ -214,6 +215,7 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("announcements", "delete"),
+  deletionGuard("announcementMessage"),
   deleteScheduledMessage
 );
 

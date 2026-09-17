@@ -212,7 +212,7 @@ export default function ProspectDetailsPage() {
             {canWrite ? (
               <button onClick={() => guarded(() => setEditOpen(true))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">Edit</button>
             ) : null}
-            {canDelete ? (
+            {canDelete && prospect?.canDelete !== false ? (
               <button onClick={() => guarded(() => setDeleteOpen(true))} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>

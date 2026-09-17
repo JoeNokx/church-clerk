@@ -23,6 +23,7 @@ import {blockMemberCreationIfOverdue} from "../middleware/blockMemberCreationMid
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 import { createMemberSchema, getMembersQuerySchema, updateMemberSchema } from "../validators/members.js";
+import { deletionGuard } from "../services/recordDependencyService.js";
 
 const uploadMemberCsv = (req, res, next) => {
   uploadMemoryFile.single("file")(req, res, (err) => {
@@ -160,6 +161,7 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("members", "delete"),
+  deletionGuard("member"),
   deleteMember
 );
 router.get(

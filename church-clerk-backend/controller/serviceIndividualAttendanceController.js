@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Member from "../models/memberModel.js";
+import { annotateDeletable } from "../services/recordDependencyService.js";
 
 const createServiceIndividualAttendance = async (req, res) => {
   try {
@@ -68,13 +69,14 @@ const getAllServiceIndividualAttendances = async (req, res) => {
 
     const total = await ServiceIndividualAttendance.countDocuments(query);
 
-    const rows = attendances.map((a) => {
+    let rows = attendances.map((a) => {
       const presentCount = Array.isArray(a?.presentMembers) ? a.presentMembers.length : 0;
       const absentCount = Array.isArray(a?.absentMembers) ? a.absentMembers.length : 0;
       const totalSnap = Number(a?.totalMembersSnapshot || 0);
       const unmarkedCount = Math.max(0, totalSnap - presentCount - absentCount);
       return { ...a, presentCount, absentCount, unmarkedCount, mainSpeaker: a.mainSpeaker || "" };
     });
+    rows = await annotateDeletable("serviceIndividualAttendance", rows, req.activeChurch._id);
 
     const totalPages = Math.ceil(total / limitNum);
     const pagination = {

@@ -484,25 +484,38 @@ function ReportsAnalyticsPage() {
   };
 
   const shareSaved = async (row) => {
-    const token = row?.shareToken;
-    if (!token) {
-      showError("Share link unavailable for this report");
+    if (!row?._id) {
+      showError("Share unavailable for this report");
       return;
     }
-    const url = `${window.location.origin}/shared-report/${token}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: row?.name || "Report", url });
-      } catch {
-        // user cancelled the share sheet
-      }
-      return;
-    }
+    setDownloadingKey(`${row._id}:share`);
     try {
-      await navigator.clipboard.writeText(url);
-      showSuccess("Share link copied to clipboard");
-    } catch {
-      showError("Could not copy share link");
+      const res = await downloadSavedReport(row._id, { format: "pdf" });
+      const contentType = res?.headers?.["content-type"] || "application/pdf";
+      const blob = new Blob([res.data], { type: contentType });
+      const fileName = `${row?.name || "report"}.pdf`;
+      const file = new File([blob], fileName, { type: contentType });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: row?.name || "Report",
+            mimeType: contentType
+          });
+        } catch {
+          // user cancelled the share sheet
+        }
+        return;
+      }
+
+      // Fallback: download the file so the user can share it manually
+      saveBlob(res, fileName);
+      showSuccess("Report downloaded — share the file from your device");
+    } catch (e) {
+      showError(e?.response?.data?.message || "Share failed");
+    } finally {
+      setDownloadingKey("");
     }
   };
 
@@ -556,13 +569,13 @@ function ReportsAnalyticsPage() {
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-sm">Report Modules</div>
             <div className="text-gray-500 text-xs">Pick a module to generate its report</div>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 md:p-6 lg:p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 px-4 py-3 md:px-6 md:py-4">
           {MODULES.map((m) => (
             <Card key={m.value}>
               <Card.Header
@@ -591,13 +604,11 @@ function ReportsAnalyticsPage() {
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5 md:flex-row md:items-end md:justify-between md:px-6">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="font-semibold text-gray-900 text-sm">Saved Reports</div>
-              <div className="text-gray-500 text-xs">Generated reports — preview, download or share anytime</div>
-            </div>
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">Saved Reports</div>
+            <div className="text-gray-500 text-xs">Generated reports — preview, download or share anytime</div>
             {savedPagination?.totalResult ? (
-              <div className="shrink-0 text-xs text-gray-600 font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">
+              <div className="mt-1 inline-block text-xs text-gray-600 font-medium whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5">
                 {savedPagination.totalResult} saved
               </div>
             ) : null}
@@ -698,10 +709,11 @@ function ReportsAnalyticsPage() {
                           <button
                             type="button"
                             title="Share"
+                            disabled={downloadingKey === `${row?._id}:share`}
                             onClick={() => shareSaved(row)}
-                            className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                            className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                           >
-                            <ShareIcon />
+                            {downloadingKey === `${row?._id}:share` ? "…" : <ShareIcon />}
                           </button>
                           {canGenerate ? (
                             <button
@@ -834,10 +846,11 @@ function ReportsAnalyticsPage() {
               ) : null}
               <button
                 type="button"
+                disabled={downloadingKey === `${previewDoc?._id}:share`}
                 onClick={() => shareSaved(previewDoc)}
-                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
+                className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
               >
-                Share
+                {downloadingKey === `${previewDoc?._id}:share` ? "Sharing…" : "Share"}
               </button>
             </div>
           </div>

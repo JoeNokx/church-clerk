@@ -1814,7 +1814,7 @@ function OrganisationDetailsPage() {
                             <TableKebabMenu items={[
                               { label: "Edit", onClick: () => guarded(() => void openIndividualAttendanceForm("edit", r)) },
                               { label: "View", onClick: () => void openIndividualView(r) },
-                              { label: "Delete", onClick: () => guarded(() => openConfirm("delete-individual-attendance", r?._id)), danger: true }
+                              r?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => openConfirm("delete-individual-attendance", r?._id)), danger: true }
                             ]} />
                           </td>
                         </tr>

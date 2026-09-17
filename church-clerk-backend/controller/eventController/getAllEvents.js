@@ -1,4 +1,5 @@
 import Event from "../../models/eventModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 const getScopedChurchId = (req) => {
   if (req.user?.role === "superadmin" || req.user?.role === "supportadmin") {
@@ -208,6 +209,8 @@ const getEvents = async (req, res) => {
       nextPage: pageNum < totalPages ? pageNum + 1 : null,
     };
 
+    await annotateDeletable("event", events, req.activeChurch?._id);
+
     return res.status(200).json({
       message: "Events fetched successfully",
       pagination,
@@ -354,6 +357,8 @@ const getUpcomingEvents = async (req, res) => {
       nextPage: pageNum < totalPages ? pageNum + 1 : null,
     };
 
+    await annotateDeletable("event", events, req.activeChurch?._id);
+
     return res.status(200).json({
       message: "Upcoming events fetched successfully",
       pagination,
@@ -495,6 +500,8 @@ if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
       nextPage: pageNum < totalPages ? pageNum + 1 : null,
     };
 
+    await annotateDeletable("event", events, req.activeChurch?._id);
+
     return res.status(200).json({
       message: "Ongoing events fetched successfully",
       pagination,
@@ -631,6 +638,8 @@ let query = {
       prevPage: pageNum > 1 ? pageNum - 1 : null,
       nextPage: pageNum < totalPages ? pageNum + 1 : null,
     };
+
+    await annotateDeletable("event", events, req.activeChurch?._id);
 
     return res.status(200).json({
       message: "Past events fetched successfully",

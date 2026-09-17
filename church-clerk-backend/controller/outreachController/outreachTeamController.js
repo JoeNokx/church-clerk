@@ -1,4 +1,5 @@
 import OutreachTeam from "../../models/outreachModel/outreachTeamModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 const populateTeam = (query) =>
   query.populate("members.member", "firstName lastName photoUrl phoneNumber");
@@ -10,7 +11,7 @@ export const getTeams = async (req, res) => {
     const teams = await populateTeam(
       OutreachTeam.find({ church: churchId }).sort({ createdAt: -1 })
     );
-    return res.status(200).json({ data: teams });
+    return res.status(200).json({ data: await annotateDeletable("outreachTeam", teams, churchId) });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -23,7 +24,8 @@ export const getTeamById = async (req, res) => {
       OutreachTeam.findOne({ _id: req.params.teamId, church: req.activeChurch._id })
     );
     if (!team) return res.status(404).json({ message: "Team not found" });
-    return res.status(200).json({ data: team });
+    const [annotatedTeam] = await annotateDeletable("outreachTeam", [team], req.activeChurch._id);
+    return res.status(200).json({ data: annotatedTeam });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

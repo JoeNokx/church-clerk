@@ -572,7 +572,7 @@ function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canD
           { label: "View", onClick: () => onView(person) },
           { label: "Connect", onClick: () => onConvert(person) },
           canWrite && { label: "Edit", onClick: () => onEdit(person) },
-          canDelete && { label: "Delete", onClick: () => onDelete(person), danger: true },
+          canDelete && person?.canDelete !== false && { label: "Delete", onClick: () => onDelete(person), danger: true },
         ]} />
       </td>
     </tr>

@@ -9,6 +9,7 @@ import Skeleton from "react-loading-skeleton";
 import { getCells, createCell as apiCreateCell } from "../../cell/services/cell.api.js";
 import { getDepartments, createDepartment as apiCreateDepartment } from "../../department/services/department.api.js";
 import { getGroups, createGroup as apiCreateGroup } from "../../group/services/group.api.js";
+import { getMinistries } from "../../ministry/services/ministry.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import Select from "react-select";
@@ -186,10 +187,12 @@ function MemberFormPageInner() {
   const [departmentIds, setDepartmentIds] = useState([]);
   const [groupIds, setGroupIds] = useState([]);
   const [cellIds, setCellIds] = useState([]);
+  const [ministryIds, setMinistryIds] = useState([]);
 
   const [departmentSelectId, setDepartmentSelectId] = useState("");
   const [groupSelectId, setGroupSelectId] = useState("");
   const [cellSelectId, setCellSelectId] = useState("");
+  const [ministrySelectId, setMinistrySelectId] = useState("");
   const [status, setStatus] = useState("active");
   const [note, setNote] = useState("");
   const [visitorId, setVisitorId] = useState(null);
@@ -201,6 +204,7 @@ function MemberFormPageInner() {
   const [cells, setCells] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [ministries, setMinistries] = useState([]);
 
   const [ministryLoading, setMinistryLoading] = useState(false);
 
@@ -250,6 +254,7 @@ function MemberFormPageInner() {
     setDepartmentIds(Array.isArray(m?.department) ? m.department.map((d) => (typeof d === "string" ? d : d?._id)).filter(Boolean) : []);
     setGroupIds(Array.isArray(m?.group) ? m.group.map((g) => (typeof g === "string" ? g : g?._id)).filter(Boolean) : []);
     setCellIds(Array.isArray(m?.cell) ? m.cell.map((c) => (typeof c === "string" ? c : c?._id)).filter(Boolean) : []);
+    setMinistryIds(Array.isArray(m?.ministry) ? m.ministry.map((x) => (typeof x === "string" ? x : x?._id)).filter(Boolean) : []);
 
     setAgeGroup(m?.ageGroup || "");
     setExistingPhotoUrl(m?.photoUrl || m?.profileImageUrl || "");
@@ -264,15 +269,17 @@ function MemberFormPageInner() {
     if (!store?.activeChurch) return;
     setMinistryLoading(true);
     try {
-      const [cellsRes, deptRes, groupRes] = await Promise.all([
+      const [cellsRes, deptRes, groupRes, ministryRes] = await Promise.all([
         getCells({ limit: 500 }),
         getDepartments({ limit: 500 }),
-        getGroups({ limit: 500 })
+        getGroups({ limit: 500 }),
+        getMinistries({ limit: 500 })
       ]);
 
       const cellsPayload = cellsRes?.data?.data ?? cellsRes?.data;
       const departmentsPayload = deptRes?.data?.data ?? deptRes?.data;
       const groupsPayload = groupRes?.data?.data ?? groupRes?.data;
+      const ministriesPayload = ministryRes?.data?.data ?? ministryRes?.data;
 
       setCells(Array.isArray(cellsPayload?.cells) ? cellsPayload.cells : Array.isArray(cellsPayload) ? cellsPayload : []);
       setDepartments(
@@ -283,12 +290,14 @@ function MemberFormPageInner() {
             : []
       );
       setGroups(Array.isArray(groupsPayload?.groups) ? groupsPayload.groups : Array.isArray(groupsPayload) ? groupsPayload : []);
+      setMinistries(Array.isArray(ministriesPayload?.ministries) ? ministriesPayload.ministries : Array.isArray(ministriesPayload) ? ministriesPayload : []);
     } catch (e) {
       const statusCode = e?.response?.status;
       if (statusCode === 404) {
         setCells([]);
         setDepartments([]);
         setGroups([]);
+        setMinistries([]);
       }
     } finally {
       setMinistryLoading(false);
@@ -460,6 +469,7 @@ function MemberFormPageInner() {
       department: departmentIds,
       group: groupIds,
       cell: cellIds,
+      ministry: ministryIds,
 
       ageGroup: ageGroup || undefined,
       status,
@@ -767,8 +777,8 @@ function MemberFormPageInner() {
               </div>
             </Section>
 
-            <Section title="Ministry Information" subtitle="Cells, departments and groups">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Section title="Organisation Information" subtitle="Cells, departments, groups and ministries">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <div className="flex items-center justify-between">
                     <label className="block font-semibold text-gray-500 text-xs">Cell</label>
@@ -917,6 +927,57 @@ function MemberFormPageInner() {
                       })
                     ) : (
                       <div className="text-gray-500 text-xs">No group selected</div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-gray-500 text-xs">Ministries</label>
+                  </div>
+                  <select
+                    value={ministrySelectId}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      setMinistrySelectId(nextId);
+                      if (!nextId) return;
+                      setMinistryIds((prev) => (prev.includes(nextId) ? prev : [...prev, nextId]));
+                      setMinistrySelectId("");
+                    }}
+                    disabled={ministryLoading}
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 disabled:opacity-50 md:h-12 text-sm"
+                  >
+                    <option value="">Select ministry</option>
+                    {ministries.map((mn) => (
+                      <option key={mn?._id} value={mn?._id}>
+                        {mn?.name || "-"}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {ministryIds.length ? (
+                      ministryIds.map((id) => {
+                        const label = ministries.find((mn) => mn?._id === id)?.name || id;
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 font-semibold text-gray-700 text-xs"
+                          >
+                            {label}
+                            <button
+                              type="button"
+                              onClick={() => setMinistryIds((prev) => prev.filter((x) => x !== id))}
+                              className="text-gray-500 hover:text-gray-900"
+                              aria-label="Remove ministry"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <div className="text-gray-500 text-xs">No ministry selected</div>
                     )}
                   </div>
                 </div>

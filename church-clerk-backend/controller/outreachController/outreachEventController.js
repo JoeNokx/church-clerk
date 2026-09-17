@@ -1,6 +1,7 @@
 import OutreachEvent from "../../models/outreachModel/outreachEventModel.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
 import OutreachFollowUp from "../../models/outreachModel/outreachFollowUpModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 
 export const getAllOutreachEvents = async (req, res) => {
   try {
@@ -60,7 +61,7 @@ export const getAllOutreachEvents = async (req, res) => {
 
     return res.status(200).json({
       message: "Events fetched",
-      data,
+      data: await annotateDeletable("outreachEvent", data, churchId),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
@@ -84,7 +85,9 @@ export const getOutreachEventById = async (req, res) => {
       OutreachProspect.countDocuments({ outreachEvent: event._id, church: req.activeChurch._id, decision: { $ne: "none" } }),
     ]);
 
-    return res.status(200).json({ message: "Event fetched", data: { ...event.toObject(), prospectCount, decisionCount } });
+    const [annotatedEvent] = await annotateDeletable("outreachEvent", [{ ...event.toObject(), prospectCount, decisionCount }], req.activeChurch._id);
+
+    return res.status(200).json({ message: "Event fetched", data: annotatedEvent });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

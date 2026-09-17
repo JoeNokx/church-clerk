@@ -235,6 +235,7 @@ const getSingleVisitor = async (req, res) => {
 //get all visitors
 
 import Member from "../models/memberModel.js";
+import { annotateDeletable } from "../services/recordDependencyService.js";
 
 const getAllVisitors = async (req, res) => {
   try {
@@ -304,7 +305,7 @@ const getAllVisitors = async (req, res) => {
       convertedVisitorsPrev
     ] = await Promise.all([
       Visitor.find(query)
-        .select("fullName phoneNumber email location serviceType serviceDate invitedBy source status")
+        .select("fullName phoneNumber email location serviceType serviceDate invitedBy source status church")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)
@@ -371,6 +372,8 @@ const getAllVisitors = async (req, res) => {
       prevPage: pageNum > 1 ? pageNum - 1 : null,
       nextPage: pageNum < totalPages ? pageNum + 1 : null,
     };
+
+    await annotateDeletable("visitor", visitors, req.activeChurch._id);
 
     return res.status(200).json({
       stats,

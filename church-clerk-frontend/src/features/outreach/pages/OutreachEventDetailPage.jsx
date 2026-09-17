@@ -104,7 +104,7 @@ function ProspectRow({ prospect, onEdit, onDelete, onAddFollowUp, onView, canWri
           { label: "View", onClick: () => onView(prospect) },
           canWrite && { label: "Schedule Follow-Up", onClick: () => onAddFollowUp(prospect) },
           canWrite && { label: "Edit", onClick: () => onEdit(prospect) },
-          canDelete && { label: "Delete", onClick: () => onDelete(prospect), danger: true },
+          canDelete && prospect?.canDelete !== false && { label: "Delete", onClick: () => onDelete(prospect), danger: true },
         ]} />
       </td>
     </tr>

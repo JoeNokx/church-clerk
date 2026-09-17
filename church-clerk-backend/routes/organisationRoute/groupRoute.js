@@ -19,6 +19,7 @@ import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware
 import authorizeRoles from "../../middleware/roleMiddleware.js";
 import { attachPermissions } from "../../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../../middleware/permissionMiddleware.js";
+import { deletionGuard } from "../../services/recordDependencyService.js";
 
 
 router.get(
@@ -69,6 +70,7 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("organisation", "delete"),
+  deletionGuard("group"),
   deleteGroup
 );
 
@@ -267,6 +269,7 @@ router.delete(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("organisation", "delete"),
+  deletionGuard("groupIndividualAttendance", "attendanceId"),
   deleteGroupIndividualAttendance
 );
 

@@ -6,11 +6,15 @@ import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 
 import GroupMember from "../models/organisationModel/groupMembersModel.js"
+import MinistryMember from "../models/organisationModel/ministryMembersModel.js"
+import CellMember from "../models/organisationModel/cellMembersModel.js"
+import DepartmentMember from "../models/organisationModel/departmentMembersModel.js"
 import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import { parseCsvToObjects } from "../utils/csvParser.js";
 import { parseOptionalDate, getChurchPrefix, generateMemberId } from "../utils/memberHelpers.js";
 import { validateMemberImportRows } from "../services/member/memberImportService.js";
+import { annotateDeletable } from "../services/recordDependencyService.js";
 
 const downloadMembersImportTemplate = async (req, res) => {
   try {
@@ -184,7 +188,7 @@ const importMembersCsv = async (req, res) => {
 
 const createMember = async (req, res) => {
   try {
-    const { firstName, lastName, email, visitorId, phoneNumber, gender, occupation, nationality, ageGroup, status, note, dateOfBirth, churchRole, dateJoined, streetAddress, city, region, country, maritalStatus, department, group: groupIds, cell } = req.body;
+    const { firstName, lastName, email, visitorId, phoneNumber, gender, occupation, nationality, ageGroup, status, note, dateOfBirth, churchRole, dateJoined, streetAddress, city, region, country, maritalStatus, department, group: groupIds, cell, ministry: ministryIds } = req.body;
 
     if (!firstName || !lastName || !phoneNumber) {
       return res.status(400).json({ message: "first name, last name and phone number are required" })
@@ -246,6 +250,7 @@ const createMember = async (req, res) => {
         department,
         cell,
         group: groupIds || [], 
+        ministry: ministryIds || [],
         createdBy,
         church: churchId
       });
@@ -263,6 +268,42 @@ const createMember = async (req, res) => {
       await Promise.all(groupIds.map(groupId => 
         GroupMember.create({
           group: groupId,
+          member: member._id,
+          role: "Member",
+          church: member.church,
+          createdBy: req.user._id
+        })
+      ));
+    }
+
+    if (ministryIds && ministryIds.length > 0) {
+      await Promise.all(ministryIds.map(ministryId => 
+        MinistryMember.create({
+          ministry: ministryId,
+          member: member._id,
+          role: "Member",
+          church: member.church,
+          createdBy: req.user._id
+        })
+      ));
+    }
+
+    if (Array.isArray(cell) && cell.length > 0) {
+      await Promise.all(cell.map(cellId => 
+        CellMember.create({
+          cell: cellId,
+          member: member._id,
+          role: "Member",
+          church: member.church,
+          createdBy: req.user._id
+        })
+      ));
+    }
+
+    if (Array.isArray(department) && department.length > 0) {
+      await Promise.all(department.map(departmentId => 
+        DepartmentMember.create({
+          department: departmentId,
           member: member._id,
           role: "Member",
           church: member.church,
@@ -290,6 +331,49 @@ const createMember = async (req, res) => {
   }
 }
 
+const AFFILIATION_SYNC = [
+  { key: "cell", model: CellMember, field: "cell" },
+  { key: "department", model: DepartmentMember, field: "department" },
+  { key: "group", model: GroupMember, field: "group" },
+  { key: "ministry", model: MinistryMember, field: "ministry" },
+];
+
+// Keep the entity join collections (CellMember, DepartmentMember, GroupMember,
+// MinistryMember) in sync with the ids submitted on the member form, so members
+// selected there actually appear in each cell/department/group/ministry roster.
+const syncMemberAffiliations = async ({ memberId, churchId, userId, body }) => {
+  for (const { key, model, field } of AFFILIATION_SYNC) {
+    if (body[key] === undefined) continue;
+
+    const desired = new Set(
+      (Array.isArray(body[key]) ? body[key] : [])
+        .map((v) => String(v?._id || v))
+        .filter(Boolean)
+    );
+
+    const existing = await model.find({ member: memberId, church: churchId }).select(field).lean();
+    const existingIds = new Set(existing.map((d) => String(d[field])));
+
+    const toAdd = [...desired].filter((id) => !existingIds.has(id));
+    const toRemove = existing.filter((d) => !desired.has(String(d[field]))).map((d) => d._id);
+
+    if (toRemove.length) {
+      await model.deleteMany({ _id: { $in: toRemove } });
+    }
+    if (toAdd.length) {
+      await model.insertMany(
+        toAdd.map((id) => ({
+          [field]: id,
+          member: memberId,
+          role: "Member",
+          church: churchId,
+          createdBy: userId
+        }))
+      );
+    }
+  }
+};
+
 const updateMember = async (req, res) => {
   try {
     const memberId = req.params.id;
@@ -313,6 +397,13 @@ const updateMember = async (req, res) => {
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
     }
+
+    await syncMemberAffiliations({
+      memberId: member._id,
+      churchId: req.activeChurch._id,
+      userId: req.user._id,
+      body: req.body
+    });
 
     if (member.visitorId && (req.body.firstName !== undefined || req.body.lastName !== undefined)) {
       const fullName = [member.firstName, member.lastName].filter(Boolean).join(" ");
@@ -396,11 +487,13 @@ const getAllMembers = async (req, res) => {
       }
     }
 
-    const members = await Member.find(query)
-      .sort({ createdAt: -1 })
-      .select("firstName lastName phoneNumber email dateJoined createdAt churchRole city status ageGroup")
-      .skip(skip)
-      .limit(limitNum);
+    const members = await annotateDeletable("member",
+      await Member.find(query)
+        .sort({ createdAt: -1 })
+        .select("firstName lastName phoneNumber email dateJoined createdAt churchRole city status ageGroup visitorId department group cell ministry")
+        .skip(skip)
+        .limit(limitNum),
+      req.activeChurch._id);
 
     const totalMembers = await Member.countDocuments(query);
 
@@ -453,16 +546,48 @@ const getSingleMember = async (req, res) => {
       .populate("cell", "name role status")
       .populate("group", "name role status")
       .populate("department", "name role status")
-
-    const memberStatus = member.status;
+      .populate("ministry", "name status")
 
     if (!member) {
       return res.status(404).json({ message: "member not found" })
     }
 
+    const memberStatus = member.status;
+    const memberObj = member.toObject();
+
+    // Entity rosters live in the join collections (CellMember, DepartmentMember,
+    // GroupMember, MinistryMember). member.cell/department/group/ministry can drift
+    // from them, so merge both so the form and details page show true membership.
+    const [cellLinks, deptLinks, groupLinks, ministryLinks] = await Promise.all([
+      CellMember.find({ member: member._id, church: req.activeChurch._id }).select("cell").lean(),
+      DepartmentMember.find({ member: member._id, church: req.activeChurch._id }).select("department").lean(),
+      GroupMember.find({ member: member._id, church: req.activeChurch._id }).select("group").lean(),
+      MinistryMember.find({ member: member._id, church: req.activeChurch._id }).select("ministry").lean(),
+    ]);
+
+    const unionIds = (populated, ids) => {
+      const set = new Set((populated || []).map((d) => String(d?._id || d)));
+      ids.forEach((id) => set.add(String(id)));
+      return [...set];
+    };
+
+    memberObj.cell = unionIds(memberObj.cell, cellLinks.map((l) => l.cell));
+    memberObj.department = unionIds(memberObj.department, deptLinks.map((l) => l.department));
+    memberObj.group = unionIds(memberObj.group, groupLinks.map((l) => l.group));
+    memberObj.ministry = unionIds(memberObj.ministry, ministryLinks.map((l) => l.ministry));
+
+    await Member.populate(memberObj, [
+      { path: "cell", select: "name role status" },
+      { path: "department", select: "name role status" },
+      { path: "group", select: "name role status" },
+      { path: "ministry", select: "name status" },
+    ]);
+
+    const [annotatedMember] = await annotateDeletable("member", [memberObj], req.activeChurch._id);
+
     return res.status(200).json({
       message: "Member retrieved successfully",
-      member,
+      member: annotatedMember,
       memberStatus: memberStatus
     });
   } catch (error) {
@@ -480,6 +605,10 @@ const deleteMember = async (req, res) => {
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
     }
+
+    await Promise.all(
+      AFFILIATION_SYNC.map(({ model }) => model.deleteMany({ member: member._id, church: req.activeChurch._id }))
+    );
 
     const totalMembers = await Member.countDocuments({
       church: req.activeChurch._id
