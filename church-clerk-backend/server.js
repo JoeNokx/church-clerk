@@ -14,6 +14,7 @@ import Tokens from "csrf";
 
 import * as Routes from "./routes/index.js"; // imports the named exports from routes/index.js
 import { activityLogMiddleware } from "./middleware/activityLogMiddleware.js";
+import { deleteConfirmationMiddleware } from "./middleware/deleteConfirmationMiddleware.js";
 import { impersonationNotificationMiddleware } from "./middleware/impersonationNotificationMiddleware.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
 import { startSystemInAppAnnouncementWorker } from "./services/systemInAppAnnouncementWorker.js";
@@ -304,6 +305,9 @@ app.use((req, res, next) => {
 app.get(["/api/csrf-token", "/api/v1/csrf-token"], (req, res) => {
   return res.status(200).json({ csrfToken: req.csrfToken() });
 });
+
+// Typed delete confirmation for system-admin clients
+app.use(deleteConfirmationMiddleware);
 
 // Audit logging (records all write actions on protected routes)
 app.use(activityLogMiddleware);

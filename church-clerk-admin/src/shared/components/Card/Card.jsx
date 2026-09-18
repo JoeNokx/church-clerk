@@ -17,7 +17,7 @@ function Card({ children, className = "", onClick }) {
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3 hover:shadow-md hover:border-gray-300 transition-shadow duration-200 ${className}`}
+      className={`rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3 ${className}`}
     >
       {children}
     </div>

@@ -59,7 +59,7 @@ function DateRangePopover({ valueFrom, valueTo, onApply, onClear }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+        className="inline-flex h-9 items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
       >
         <span className="inline-flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -671,23 +671,22 @@ function TithePageInner() {
             </div>
           ) : null}
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Filter by Date</div>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <input
-                value={searchValue}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={mode === "aggregate" ? "Search recorded by..." : "Search by name..."}
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-              />
-              <DateRangePopover valueFrom={dateFrom} valueTo={dateTo} onApply={applyDateRange} onClear={clearDateRange} />
-            </div>
-          </div>
-
           <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-            <div className="border-b border-gray-200 p-5">
-              <div className="text-sm font-semibold text-gray-900">Tithe Records</div>
-              <div className="text-xs text-gray-500">{mode === "aggregate" ? "All aggregate tithe collections" : "All individual tithe payments"}</div>
+            <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Tithe Records</div>
+                <div className="text-xs text-gray-500">{mode === "aggregate" ? "All aggregate tithe collections" : "All individual tithe payments"}</div>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <input
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder={mode === "aggregate" ? "Search recorded by..." : "Search by name..."}
+                  className="h-9 w-full sm:w-56 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                />
+                <DateRangePopover valueFrom={dateFrom} valueTo={dateTo} onApply={applyDateRange} onClear={clearDateRange} />
+              </div>
             </div>
 
             {mode === "aggregate" ? (

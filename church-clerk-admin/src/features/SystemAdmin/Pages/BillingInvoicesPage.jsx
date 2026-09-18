@@ -8,6 +8,7 @@ import {
 } from "../Services/adminBilling.api.js";
 import { adminGetSubscriptions } from "../Services/adminBilling.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -140,17 +141,17 @@ function BillingInvoicesPage() {
         </button>
       </div>
 
-      <div className="mt-4 flex flex-col md:flex-row md:items-center gap-3">
+      <div className="mt-4 flex flex-col gap-3 md:hidden">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search invoice #, church, status..."
-          className="w-full md:w-80 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+          className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-100"
         />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="w-full md:w-48 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+          className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-100"
         >
           <option value="">All statuses</option>
           <option value="paid">paid</option>
@@ -159,42 +160,74 @@ function BillingInvoicesPage() {
         <select
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
-          className="w-full md:w-36 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+          className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-100"
         >
           <option value="">All currencies</option>
           <option value="GHS">GHS</option>
           <option value="NGN">NGN</option>
           <option value="USD">USD</option>
         </select>
-        <div className="flex-1" />
         <div className="text-xs text-gray-500">{filtered.length} invoice(s)</div>
       </div>
+
+      <FilterBar
+        className="mt-4"
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search invoice #, church, status..."
+        searchWidth="md:w-80"
+        selects={[
+          {
+            key: "status",
+            value: status,
+            onChange: setStatus,
+            placeholder: "All statuses",
+            options: [
+              { label: "paid", value: "paid" },
+              { label: "unpaid", value: "unpaid" },
+            ],
+          },
+          {
+            key: "currency",
+            value: currency,
+            onChange: setCurrency,
+            placeholder: "All currencies",
+            options: [
+              { label: "GHS", value: "GHS" },
+              { label: "NGN", value: "NGN" },
+              { label: "USD", value: "USD" },
+            ],
+          },
+        ]}
+      >
+        <div className="text-xs text-gray-500 self-center">{filtered.length} invoice(s)</div>
+      </FilterBar>
 
       {error ? <div className="mt-4 text-sm text-red-600">{error}</div> : null}
 
       <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="text-xs uppercase text-gray-400">
-            <tr className="border-b">
-              <th className="py-3 text-left font-semibold">Invoice #</th>
-              <th className="py-3 text-left font-semibold">Church</th>
-              <th className="py-3 text-left font-semibold">Amount</th>
-              <th className="py-3 text-left font-semibold">Due</th>
-              <th className="py-3 text-left font-semibold">Status</th>
-              <th className="py-3 text-right font-semibold">Actions</th>
+        <table className="min-w-full">
+          <thead className="bg-slate-100">
+            <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Invoice #</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Church</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Due</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+              <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-200">
             {loading ? (
               <>
                 {[0, 1, 2, 3].map((i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                   </tr>
                 ))}
               </>
@@ -206,24 +239,24 @@ function BillingInvoicesPage() {
               </tr>
             ) : (
               filtered.map((i) => (
-                <tr key={i?._id} className="border-b last:border-b-0">
-                  <td className="py-3 text-gray-900">{i?.invoiceNumber || "—"}</td>
-                  <td className="py-3 text-gray-700" title={i?.church?.name || ""}>
+                <tr key={i?._id} className="max-md:text-xs text-gray-700 text-sm">
+                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{i?.invoiceNumber || "—"}</td>
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={i?.church?.name || ""}>
                     <span className="sm:hidden">{truncateMobileName(i?.church?.name)}</span>
                     <span className="hidden sm:inline">{truncateDesktopName(i?.church?.name)}</span>
                   </td>
-                  <td className="py-3 text-gray-700">
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                     {Number(i?.amount || 0).toLocaleString()} {i?.currency || ""}
                   </td>
-                  <td className="py-3 text-gray-700">{fmtDate(i?.dueDate)}</td>
-                  <td className="py-3">
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(i?.dueDate)}</td>
+                  <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                       i?.status === "paid" ? "bg-green-100 text-green-700" :
                       i?.status === "unpaid" ? "bg-yellow-100 text-yellow-700" :
                       "bg-gray-100 text-gray-600"
                     }`}>{i?.status || "—"}</span>
                   </td>
-                  <td className="py-3 text-right">
+                  <td className="max-md:px-4 py-1.5 text-right whitespace-nowrap px-4 md:px-6">
                     <div className="flex justify-end gap-2">
                       <a
                         href={adminGetInvoiceDownloadUrl(i?._id)}

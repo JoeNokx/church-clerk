@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminGetWebhookLogs } from "../Services/adminBilling.api.js";
+import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 
 const fmtDateTime = (v) => {
   if (!v) return "—";
@@ -73,59 +74,89 @@ function BillingWebhookLogsPage() {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
-        <div>
-          <div className="text-lg font-semibold text-gray-900">Webhook Logs</div>
-          <div className="mt-0.5 text-sm text-gray-500">Paystack webhook events — click a row to view payload.</div>
+      <div className="mb-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          <div>
+            <div className="text-lg font-semibold text-gray-900">Webhook Logs</div>
+            <div className="mt-0.5 text-sm text-gray-500">Paystack webhook events — click a row to view payload.</div>
+          </div>
+          <div className="flex-1" />
+          <FilterBar
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search event, reference, error..."
+            searchWidth="md:w-72"
+            selects={[
+              {
+                key: "status",
+                value: status,
+                onChange: setStatus,
+                placeholder: "All statuses",
+                options: [
+                  { label: "Received", value: "received" },
+                  { label: "Processed", value: "processed" },
+                  { label: "Failed", value: "failed" },
+                  { label: "Rejected", value: "rejected" },
+                ],
+              },
+            ]}
+          >
+            <button type="button" onClick={() => load({ nextPage: 1 })} disabled={loading}
+              className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              Refresh
+            </button>
+          </FilterBar>
         </div>
-        <div className="flex-1" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search event, reference, error..."
-          className="w-full md:w-72 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
-        />
-        <select value={status} onChange={(e) => setStatus(e.target.value)}
-          className="w-full md:w-44 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-          <option value="">All statuses</option>
-          <option value="received">Received</option>
-          <option value="processed">Processed</option>
-          <option value="failed">Failed</option>
-          <option value="rejected">Rejected</option>
-        </select>
-        <button type="button" onClick={() => load({ nextPage: 1 })} disabled={loading}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-          Refresh
-        </button>
+
+        <div className="mt-3 flex flex-col gap-3 md:hidden">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search event, reference, error..."
+            className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-100"
+          />
+          <select value={status} onChange={(e) => setStatus(e.target.value)}
+            className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-100">
+            <option value="">All statuses</option>
+            <option value="received">Received</option>
+            <option value="processed">Processed</option>
+            <option value="failed">Failed</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button type="button" onClick={() => load({ nextPage: 1 })} disabled={loading}
+            className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>}
 
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="text-xs uppercase text-gray-400">
-            <tr className="border-b">
-              <th className="py-3 text-left font-semibold w-6"></th>
-              <th className="py-3 text-left font-semibold">Event Type</th>
-              <th className="py-3 text-left font-semibold">Reference</th>
-              <th className="py-3 text-left font-semibold">Provider</th>
-              <th className="py-3 text-left font-semibold">Status</th>
-              <th className="py-3 text-left font-semibold">Error</th>
-              <th className="py-3 text-left font-semibold">Received At</th>
+        <table className="min-w-full">
+          <thead className="bg-slate-100">
+            <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 w-6 whitespace-nowrap px-4 md:px-6"></th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Event Type</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Reference</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Provider</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Error</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Received At</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-200">
             {loading ? (
               <>
                 {[0, 1, 2, 3].map((i) => (
-                  <tr key={i} className="animate-pulse border-b">
-                    <td className="py-3 pr-2"><div className="h-4 w-4 rounded bg-gray-200" /></td>
-                    <td className="py-3 pr-4"><div className="h-4 w-40 rounded bg-gray-200" /></td>
-                    <td className="py-3 pr-4"><div className="h-4 w-28 rounded bg-gray-200" /></td>
-                    <td className="py-3 pr-4"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="py-3 pr-4"><div className="h-5 w-20 rounded-full bg-gray-200" /></td>
-                    <td className="py-3 pr-4"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                    <td className="py-3"><div className="h-4 w-32 rounded bg-gray-200" /></td>
+                  <tr key={i} className="animate-pulse">
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-4 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-40 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-20 rounded-full bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-32 rounded bg-gray-200" /></td>
                   </tr>
                 ))}
               </>
@@ -143,18 +174,18 @@ function BillingWebhookLogsPage() {
                 return (
                   <>
                     <tr key={l?._id}
-                      className={`border-b cursor-pointer transition-colors ${isExpanded ? "bg-blue-50" : "hover:bg-gray-50"}`}
+                      className={`group cursor-pointer transition-colors max-md:text-xs text-gray-700 text-sm ${isExpanded ? "bg-blue-50" : "hover:bg-gray-50"}`}
                       onClick={() => setExpandedId(isExpanded ? null : l?._id)}>
-                      <td className="py-3 pr-2 text-gray-400 text-xs select-none">{isExpanded ? "▼" : "▶"}</td>
-                      <td className="py-3 pr-4 font-mono text-xs text-gray-900">{l?.eventType || "—"}</td>
-                      <td className="py-3 pr-4 font-mono text-xs text-gray-600">{l?.reference || "—"}</td>
-                      <td className="py-3 pr-4 text-xs text-gray-500 capitalize">{l?.provider || "paystack"}</td>
-                      <td className="py-3 pr-4">{statusPill(l?.status)}</td>
-                      <td className="py-3 pr-4 text-xs text-red-600 max-w-[200px] truncate">{l?.errorMessage || "—"}</td>
-                      <td className="py-3 text-xs text-gray-500">{fmtDateTime(l?.createdAt)}</td>
+                      <td className={`sticky left-0 z-10 max-md:px-4 py-1.5 text-gray-400 text-xs select-none whitespace-nowrap px-4 md:px-6 ${isExpanded ? "bg-blue-50" : "bg-white group-hover:bg-gray-50"}`}>{isExpanded ? "▼" : "▶"}</td>
+                      <td className="max-md:px-4 py-1.5 font-mono text-gray-900 whitespace-nowrap px-4 md:px-6">{l?.eventType || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 font-mono text-gray-600 whitespace-nowrap px-4 md:px-6">{l?.reference || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-500 capitalize whitespace-nowrap px-4 md:px-6">{l?.provider || "paystack"}</td>
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{statusPill(l?.status)}</td>
+                      <td className="max-md:px-4 py-1.5 text-red-600 max-w-[200px] truncate px-4 md:px-6">{l?.errorMessage || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-500 whitespace-nowrap px-4 md:px-6">{fmtDateTime(l?.createdAt)}</td>
                     </tr>
                     {isExpanded && (
-                      <tr key={l?._id + "_expanded"} className="bg-blue-50 border-b">
+                      <tr key={l?._id + "_expanded"} className="bg-blue-50">
                         <td colSpan={7} className="px-4 pb-4 pt-1">
                           <div className="text-xs font-semibold text-gray-600 mb-1">Payload</div>
                           {payloadStr ? (

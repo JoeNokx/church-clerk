@@ -11,6 +11,7 @@ import {
 } from "../../department/services/department.api.js";
 import { getCells, createCell, updateCell, deleteCell } from "../../cell/services/cell.api.js";
 import { getMinistries, createMinistry, updateMinistry, deleteMinistry } from "../../ministry/services/ministry.api.js";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -438,35 +439,6 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
   );
 }
 
-function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
-        </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function OrganisationsPage() {
   const { toPage } = useDashboardNavigator();
@@ -790,7 +762,7 @@ function OrganisationsPage() {
         }}
       />
 
-      <ConfirmDialog
+      <ConfirmDeleteModal
         open={confirmOpen}
         title="Delete Record"
         message="Are you sure you want to delete this record?"

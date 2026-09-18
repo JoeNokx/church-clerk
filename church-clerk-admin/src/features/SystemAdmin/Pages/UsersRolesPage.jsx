@@ -13,6 +13,7 @@ import {
   verifyUserEmailByAdminApi
 } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -452,34 +453,34 @@ function UsersRolesPage() {
           </div>
 
           <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-xs uppercase text-gray-400">
-                <tr className="border-b">
-                  <th className="py-3 text-left font-semibold">Name</th>
-                  <th className="py-3 text-left font-semibold">Email</th>
-                  <th className="py-3 text-left font-semibold">Phone</th>
-                  <th className="py-3 text-left font-semibold">Role</th>
-                  <th className="py-3 text-left font-semibold">Church</th>
-                  <th className="py-3 text-left font-semibold">Status</th>
-                  <th className="py-3 text-left font-semibold">Email Status</th>
-                  <th className="py-3 text-left font-semibold">Created</th>
-                  <th className="py-3 text-right font-semibold">Actions</th>
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Church</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email Status</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Created</th>
+                  <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <>
                     {[0, 1, 2, 3].map((i) => (
                       <tr key={i} className="animate-pulse">
-                        <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                       </tr>
                     ))}
                   </>
@@ -491,31 +492,31 @@ function UsersRolesPage() {
                   </tr>
                   ) : (
                   rows.map((u) => (
-                    <tr key={u?._id} className="border-b last:border-b-0">
-                      <td className="py-3 text-gray-900" title={u?.fullName || ""}>
+                    <tr key={u?._id} className="max-md:text-xs text-gray-700 text-sm">
+                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={u?.fullName || ""}>
                         <span className="sm:hidden">{truncateMobileName(u?.fullName)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(u?.fullName)}</span>
                       </td>
-                      <td className="py-3 text-gray-700" title={u?.email || ""}>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={u?.email || ""}>
                         <span className="sm:hidden">{truncateMobileName(u?.email)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(u?.email)}</span>
                       </td>
-                      <td className="py-3 text-gray-700">{u?.phoneNumber || "—"}</td>
-                      <td className="py-3 text-gray-700">{u?.role || "—"}</td>
-                      <td className="py-3 text-gray-700" title={u?.church?.name || ""}>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{u?.phoneNumber || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{u?.role || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={u?.church?.name || ""}>
                         <span className="sm:hidden">{truncateMobileName(u?.church?.name)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(u?.church?.name)}</span>
                       </td>
-                      <td className="py-3">
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <StatusChip value={u?.isActive === false ? "Inactive" : "Active"} />
                       </td>
-                      <td className="py-3">
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                           u?.isEmailVerified === false ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
                         }`}>{u?.isEmailVerified === false ? "Unverified" : "Verified"}</span>
                       </td>
-                      <td className="py-3 text-gray-700">{fmtDateTime(u?.createdAt)}</td>
-                      <td className="py-3 text-right">
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(u?.createdAt)}</td>
+                      <td className="max-md:px-4 py-1.5 text-right whitespace-nowrap px-4 md:px-6">
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button type="button" onClick={() => openEdit(u)}
                             className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50">
@@ -620,28 +621,28 @@ function UsersRolesPage() {
             <Card.Body>
               <div className="text-xs text-gray-500">Roles stored in the database (dynamic permissions).</div>
               <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="text-xs uppercase text-gray-400">
-                  <tr className="border-b">
-                    <th className="py-3 text-left font-semibold">Name</th>
-                    <th className="py-3 text-left font-semibold">Key</th>
-                    <th className="py-3 text-left font-semibold">Scope</th>
-                    <th className="py-3 text-left font-semibold">Status</th>
-                    <th className="py-3 text-left font-semibold">Created</th>
-                    <th className="py-3 text-right font-semibold">Actions</th>
+              <table className="min-w-full">
+                <thead className="bg-slate-100">
+                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Key</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scope</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Created</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-200">
                   {loading ? (
                     <>
                       {[0, 1, 2, 3].map((i) => (
                         <tr key={i} className="animate-pulse">
-                          <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                          <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                          <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                          <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                          <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                          <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                          <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                          <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                          <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                          <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                          <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                          <td className="max-md:px-4 py-2 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                         </tr>
                       ))}
                     </>
@@ -653,16 +654,16 @@ function UsersRolesPage() {
                     </tr>
                   ) : (
                     customRoles.map((r) => (
-                      <tr key={r?._id} className="border-b last:border-b-0">
-                        <td className="py-3 text-gray-900" title={r?.name || ""}>
+                      <tr key={r?._id} className="max-md:text-xs text-gray-700 text-sm">
+                        <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.name || ""}>
                           <span className="sm:hidden">{truncateMobileName(r?.name)}</span>
                           <span className="hidden sm:inline">{truncateDesktopName(r?.name)}</span>
                         </td>
-                        <td className="py-3 text-gray-700">{r?.key || "—"}</td>
-                        <td className="py-3 text-gray-700">{r?.scope || "—"}</td>
-                        <td className="py-3"><StatusChip value={r?.isActive === false ? "inactive" : "active"} /></td>
-                        <td className="py-3 text-gray-700">{fmtDateTime(r?.createdAt)}</td>
-                        <td className="py-3 text-right">
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{r?.key || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{r?.scope || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6"><StatusChip value={r?.isActive === false ? "inactive" : "active"} /></td>
+                        <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(r?.createdAt)}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               type="button"
@@ -1112,53 +1113,17 @@ function UsersRolesPage() {
         </div>
       ) : null}
 
-      {deleteOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-lg font-semibold text-gray-900">Delete role</div>
-                <div className="mt-1 text-sm text-gray-600">This will deactivate the role.</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setDeleteOpen(false);
-                  setDeletingRole(null);
-                }}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800">
-              Are you sure you want to delete <span className="font-semibold">{deletingRole?.name || "this role"}</span>?
-            </div>
-
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setDeleteOpen(false);
-                  setDeletingRole(null);
-                }}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onConfirmDeleteRole}
-                disabled={loading}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDeleteModal
+        open={!!deleteOpen}
+        title="Delete Role"
+        message={`Are you sure you want to delete ${deletingRole?.name || "this role"}? This will deactivate the role.`}
+        onCancel={() => {
+          setDeleteOpen(false);
+          setDeletingRole(null);
+        }}
+        onConfirm={onConfirmDeleteRole}
+        loading={loading}
+      />
 
       {verifyEmailModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -1197,31 +1162,14 @@ function UsersRolesPage() {
       ) : null}
 
       {/* Delete User Modal */}
-      {deleteUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <div className="text-base font-bold text-gray-900">Delete User?</div>
-            <div className="mt-2 text-sm text-gray-600">
-              Are you sure you want to permanently delete{" "}
-              <strong>{deleteUserModal?.fullName || deleteUserModal?.email || "this user"}</strong>?
-              This action cannot be undone.
-            </div>
-            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-              All associated data for this user will be removed.
-            </div>
-            <div className="mt-5 flex justify-end gap-3">
-              <button type="button" onClick={() => setDeleteUserModal(null)} disabled={deleteUserLoading}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
-                Cancel
-              </button>
-              <button type="button" onClick={onDeleteUser} disabled={deleteUserLoading}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
-                {deleteUserLoading ? "Deleting…" : "Delete User"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        open={!!deleteUserModal}
+        title="Delete User"
+        message={`Are you sure you want to permanently delete ${deleteUserModal?.fullName || deleteUserModal?.email || "this user"}? All associated data for this user will be removed.`}
+        onCancel={() => setDeleteUserModal(null)}
+        onConfirm={onDeleteUser}
+        loading={deleteUserLoading}
+      />
     </div>
   );
 }

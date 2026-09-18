@@ -11,6 +11,7 @@ import {
 } from "../services/churchProject.api.js";
 import { createProjectContribution } from "../contributions/services/projectContributions.api.js";
 import { createProjectExpense } from "../expenses/services/projectExpenses.api.js";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -909,34 +910,5 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
   );
 }
 
-function ConfirmDeleteModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
-        </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default ChurchProjectsPage;

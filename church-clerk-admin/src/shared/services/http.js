@@ -65,6 +65,15 @@ api.interceptors.request.use(
     }
 
     const method = String(config?.method || "get").toLowerCase();
+
+    if (method === "delete") {
+      if (config?.data == null) {
+        config.data = { confirmText: "DELETE" };
+      } else if (typeof config.data === "object" && !(config.data instanceof FormData)) {
+        config.data = { ...config.data, confirmText: "DELETE" };
+      }
+    }
+
     const isStateChanging = ["post", "put", "patch", "delete"].includes(method);
     if (isStateChanging && config?.skipCsrf !== true) {
       const token = await fetchCsrfToken();

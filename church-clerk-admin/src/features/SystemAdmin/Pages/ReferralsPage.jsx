@@ -162,26 +162,26 @@ function ReferralsPage() {
 
         {loading ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-xs uppercase text-gray-400">
-                <tr className="border-b">
-                  <th className="py-3 text-left font-semibold">Referred church</th>
-                  <th className="py-3 text-left font-semibold">Referred email</th>
-                  <th className="py-3 text-left font-semibold">Referrer church</th>
-                  <th className="py-3 text-left font-semibold">Status</th>
-                  <th className="py-3 text-left font-semibold">Referred at</th>
-                  <th className="py-3 text-left font-semibold">Subscribed at</th>
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {[0, 1, 2, 3].map((i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -196,37 +196,37 @@ function ReferralsPage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-xs uppercase text-gray-400">
-                <tr className="border-b">
-                  <th className="py-3 text-left font-semibold">Referred church</th>
-                  <th className="py-3 text-left font-semibold">Referred email</th>
-                  <th className="py-3 text-left font-semibold">Referrer church</th>
-                  <th className="py-3 text-left font-semibold">Status</th>
-                  <th className="py-3 text-left font-semibold">Referred at</th>
-                  <th className="py-3 text-left font-semibold">Subscribed at</th>
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Referred church</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Referred email</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Referrer church</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Referred at</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Subscribed at</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {rows.map((r) => (
-                  <tr key={r?._id} className="border-b last:border-b-0">
-                    <td className="py-3 text-gray-900" title={r?.referredChurch?.name || ""}>
+                  <tr key={r?._id} className="max-md:text-xs text-gray-700 text-sm">
+                    <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.referredChurch?.name || ""}>
                       <span className="sm:hidden">{truncateMobileName(r?.referredChurch?.name)}</span>
                       <span className="hidden sm:inline">{truncateDesktopName(r?.referredChurch?.name)}</span>
                     </td>
-                    <td className="py-3 text-gray-700" title={r?.referredChurchEmail || r?.referredChurch?.email || ""}>
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={r?.referredChurchEmail || r?.referredChurch?.email || ""}>
                       <span className="sm:hidden">{truncateMobileName(r?.referredChurchEmail || r?.referredChurch?.email)}</span>
                       <span className="hidden sm:inline">{truncateDesktopName(r?.referredChurchEmail || r?.referredChurch?.email)}</span>
                     </td>
-                    <td className="py-3 text-gray-700" title={r?.referrerChurch?.name || ""}>
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={r?.referrerChurch?.name || ""}>
                       <span className="sm:hidden">{truncateMobileName(r?.referrerChurch?.name)}</span>
                       <span className="hidden sm:inline">{truncateDesktopName(r?.referrerChurch?.name)}</span>
                     </td>
-                    <td className="py-3 text-gray-700">
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                       {r?.rewardStatus ? <StatusChip value={r.rewardStatus} /> : "—"}
                     </td>
-                    <td className="py-3 text-gray-700">{fmtDateTime(r?.referredAt)}</td>
-                    <td className="py-3 text-gray-700">{fmtDateTime(r?.subscribedAt)}</td>
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(r?.referredAt)}</td>
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(r?.subscribedAt)}</td>
                   </tr>
                 ))}
               </tbody>

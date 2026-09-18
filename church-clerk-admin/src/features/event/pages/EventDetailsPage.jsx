@@ -14,6 +14,7 @@ import {
 } from "../attendanceFiles/services/eventAttendanceFiles.api.js";
 import FileUploadButton from "../../../shared/components/FileUploadButton.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import EventCreatePage from "./EventCreatePage.jsx";
 import EventOfferingPage from "../offerings/pages/EventOfferingPage.jsx";
@@ -117,6 +118,7 @@ function EventDetailsPage() {
   const [filesError, setFilesError] = useState(null);
   const [files, setFiles] = useState([]);
   const [fileUploading, setFileUploading] = useState(false);
+  const [deleteFileTarget, setDeleteFileTarget] = useState(null);
 
   const [editOpen, setEditOpen] = useState(false);
 
@@ -319,19 +321,18 @@ function EventDetailsPage() {
     }
   };
 
-  const onDeleteFile = async (file) => {
+  const onDeleteFile = async () => {
+    const file = deleteFileTarget;
     if (!eventId) return;
     if (!file?._id) return;
     if (!canDelete) return;
-
-    const ok = window.confirm(`Delete file "${file?.originalName || ""}"?`);
-    if (!ok) return;
 
     setFilesLoading(true);
     setFilesError(null);
 
     try {
       await deleteEventAttendanceFile(eventId, file._id);
+      setDeleteFileTarget(null);
       await loadFiles();
     } catch (err) {
       setFilesError(err?.response?.data?.message || err?.message || "Failed to delete file");
@@ -503,12 +504,12 @@ function EventDetailsPage() {
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
                   <table className="min-w-full">
-                    <thead className="bg-white">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-3">Name</th>
-                        <th className="px-6 py-3">Email</th>
-                        <th className="px-6 py-3">Phone</th>
-                        <th className="px-6 py-3">Location</th>
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -532,17 +533,17 @@ function EventDetailsPage() {
                         </tr>
                       ) : (
                         attendees.map((r, idx) => (
-                          <tr key={r?._id || `att-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2 text-gray-900" title={r?.fullName || ""}>
+                          <tr key={r?._id || `att-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.fullName || ""}>
                               <span className="sm:hidden">{truncateMobileName(r?.fullName)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.fullName)}</span>
                             </td>
-                            <td className="px-6 py-2 text-gray-600" title={r?.email || ""}>
+                            <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.email || ""}>
                               <span className="sm:hidden">{truncateMobileName(r?.email)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.email)}</span>
                             </td>
-                            <td className="px-6 py-2 text-gray-600">{r?.phoneNumber || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600" title={r?.location || ""}>
+                            <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.phoneNumber || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.location || ""}>
                               <span className="sm:hidden">{truncateMobileName(r?.location)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.location)}</span>
                             </td>
@@ -572,11 +573,11 @@ function EventDetailsPage() {
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
                   <table className="min-w-full">
-                    <thead className="bg-white">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-3">Date</th>
-                        <th className="px-6 py-3">Total Attendees</th>
-                        <th className="px-6 py-3">Main Speaker</th>
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -600,10 +601,10 @@ function EventDetailsPage() {
                         </tr>
                       ) : (
                         totals.map((r, idx) => (
-                          <tr key={r?._id || `tot-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2 text-gray-900">{formatDate(r?.date)}</td>
-                            <td className="px-6 py-2 text-gray-600">{Number(r?.numberOfAttendees || 0) || "—"}</td>
-                            <td className="px-6 py-2 text-gray-600" title={r?.mainSpeaker || ""}>
+                          <tr key={r?._id || `tot-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0) || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.mainSpeaker || ""}>
                               <span className="sm:hidden">{truncateMobileName(r?.mainSpeaker)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.mainSpeaker)}</span>
                             </td>
@@ -634,13 +635,13 @@ function EventDetailsPage() {
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
                   <table className="min-w-full">
-                    <thead className="bg-white">
-                      <tr className="text-left text-xs font-semibold text-gray-500">
-                        <th className="px-6 py-3">File Name</th>
-                        <th className="px-6 py-3">Type</th>
-                        <th className="px-6 py-3">Size</th>
-                        <th className="px-6 py-3">Uploaded</th>
-                        <th className="px-6 py-3">Actions</th>
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">File Name</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Size</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Uploaded</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -658,15 +659,15 @@ function EventDetailsPage() {
                         </tr>
                       ) : (
                         files.map((f, idx) => (
-                          <tr key={f?._id || `f-${idx}`} className="text-sm text-gray-700">
-                            <td className="px-6 py-2 text-gray-900" title={f?.originalName || ""}>
+                          <tr key={f?._id || `f-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={f?.originalName || ""}>
                               <span className="sm:hidden">{truncateMobileName(f?.originalName)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(f?.originalName)}</span>
                             </td>
-                            <td className="px-6 py-2 text-gray-600">{guessFileType(f?.mimeType, f?.originalName)}</td>
-                            <td className="px-6 py-2 text-gray-600">{formatBytes(f?.size)}</td>
-                            <td className="px-6 py-2 text-gray-600">{formatDate(f?.createdAt)}</td>
-                            <td className="px-6 py-2">
+                            <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{guessFileType(f?.mimeType, f?.originalName)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatBytes(f?.size)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(f?.createdAt)}</td>
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center gap-3">
                                 <button
                                   type="button"
@@ -692,7 +693,7 @@ function EventDetailsPage() {
                                 {canDelete ? (
                                   <button
                                     type="button"
-                                    onClick={() => onDeleteFile(f)}
+                                    onClick={() => setDeleteFileTarget(f)}
                                     className="text-red-600 hover:text-red-800"
                                   >
                                     Delete
@@ -823,6 +824,15 @@ function EventDetailsPage() {
           </button>
         </div>
       </SimpleModal>
+
+      <ConfirmDeleteModal
+        open={!!deleteFileTarget}
+        title="Delete File"
+        message={`Are you sure you want to delete the file "${deleteFileTarget?.originalName || ""}"? This cannot be undone.`}
+        onCancel={() => setDeleteFileTarget(null)}
+        onConfirm={onDeleteFile}
+        loading={filesLoading}
+      />
     </div>
   );
 }

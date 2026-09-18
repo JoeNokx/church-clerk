@@ -130,32 +130,32 @@ function BillingPaymentsPage() {
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
 
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="text-xs uppercase text-gray-400">
-            <tr className="border-b">
-              <th className="py-3 text-left font-semibold">Church</th>
-              <th className="py-3 text-left font-semibold">Plan</th>
-              <th className="py-3 text-left font-semibold">Amount</th>
-              <th className="py-3 text-left font-semibold">Method</th>
-              <th className="py-3 text-left font-semibold">Reference</th>
-              <th className="py-3 text-left font-semibold">Status</th>
-              <th className="py-3 text-left font-semibold">Date</th>
-              <th className="py-3 text-right font-semibold">Actions</th>
+        <table className="min-w-full">
+          <thead className="bg-slate-100">
+            <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Church</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Plan</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Method</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Reference</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-200">
             {loading ? (
               <>
                 {[0, 1, 2, 3].map((i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                   </tr>
                 ))}
               </>
@@ -172,25 +172,25 @@ function BillingPaymentsPage() {
               </tr>
             ) : (
               filtered.map((p) => (
-                <tr key={p?._id} className="border-b last:border-b-0">
-                  <td className="py-3 text-gray-900" title={p?.church?.name || ""}>
+                <tr key={p?._id} className="max-md:text-xs text-gray-700 text-sm">
+                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={p?.church?.name || ""}>
                     <span className="sm:hidden">{truncateMobileName(p?.church?.name)}</span>
                     <span className="hidden sm:inline">{truncateDesktopName(p?.church?.name)}</span>
                   </td>
-                  <td className="py-3 text-gray-700" title={p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName || ""}>
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName || ""}>
                     <span className="sm:hidden">{truncateMobileName(p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName)}</span>
                     <span className="hidden sm:inline">{truncateDesktopName(p?.subscription?.plan?.name || p?.invoiceSnapshot?.planName)}</span>
                   </td>
-                  <td className="py-3 text-gray-700">
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                     {Number(p?.amount || 0).toLocaleString()} {p?.currency || ""}
                   </td>
-                  <td className="py-3 text-gray-700">{p?.paymentProvider || "—"}</td>
-                  <td className="py-3 text-gray-700">{p?.providerReference || "—"}</td>
-                  <td className="py-3">
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p?.paymentProvider || "—"}</td>
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p?.providerReference || "—"}</td>
+                  <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <StatusChip value={p?.status || "—"} />
                   </td>
-                  <td className="py-3 text-gray-700">{fmtDateTime(p?.createdAt)}</td>
-                  <td className="py-3 text-right">
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(p?.createdAt)}</td>
+                  <td className="max-md:px-4 py-1.5 text-right whitespace-nowrap px-4 md:px-6">
                     {(p?.status === "pending" || p?.status === "failed") && p?.paymentProvider === "paystack" && (
                       <Button
                         variant="secondary"

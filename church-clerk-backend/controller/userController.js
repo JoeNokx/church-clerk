@@ -1,5 +1,5 @@
 import User from "../models/userModel.js"
-import { ROLE_PERMISSIONS, CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js"
+import { ROLE_PERMISSIONS, CHURCH_ROLES } from "../config/roles.js"
 import cloudinary from "../config/cloudinary.js"
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js"
 import Role from "../models/roleModel.js"
@@ -415,8 +415,9 @@ const getRolePermissionMatrix = async (req, res) => {
       roles[roleKey] = await resolvePermissions(roleKey, null, "church");
     }
 
+    // Only church-scoped roles are exposed to the church app — system roles
+    // must never appear here.
     const roleList = {
-      systemRoles: SYSTEM_ROLES,
       churchRoles
     };
 

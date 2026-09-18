@@ -4,7 +4,10 @@ import { resolvePermissions } from "../utils/resolvePermissions.js";
 export const attachPermissions = async (req, res, next) => {
   try {
     const clientApp = String(req.headers?.["x-client-app"] || "").trim().toLowerCase();
-    const scope = clientApp === "system-admin" ? "system" : "church";
+    // Delegated sessions resolve the system admin's real (system-scoped)
+    // role, so they must be evaluated in the system scope — otherwise the
+    // cross-scope block in resolvePermissions would zero their permissions.
+    const scope = clientApp === "system-admin" || req.isDelegate ? "system" : "church";
 
     req.permissions = req.user?.role
       ? await resolvePermissions(req.user.role, req.user?.roleRef, scope)

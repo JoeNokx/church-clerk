@@ -126,9 +126,20 @@ function BranchesOverviewPage() {
             <KpiCard label="Active Branches" value={kpis.activeBranches} valueClassName="text-green-700" />
           </div>
 
-          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-semibold text-gray-900">Search</div>
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        </div>
+      ) : null}
+
+      {canViewBranches && loading ? (
+        <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
+      ) : canViewBranches ? (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-sm font-semibold text-gray-900">Branches</div>
+              <div className="text-xs text-gray-500">All branches and their details</div>
+            </div>
+
+            <div className="flex items-center gap-3">
               <input
                 value={search}
                 onChange={(e) => {
@@ -136,7 +147,7 @@ function BranchesOverviewPage() {
                   setPage(1);
                 }}
                 placeholder="Search by church name, location, or pastor"
-                className="h-10 w-full sm:w-[420px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-9 w-full sm:w-[320px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               />
               {search ? (
                 <button
@@ -145,20 +156,13 @@ function BranchesOverviewPage() {
                     setSearch("");
                     setPage(1);
                   }}
-                  className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="h-9 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                 >
                   Clear
                 </button>
               ) : null}
             </div>
           </div>
-        </div>
-      ) : null}
-
-      {canViewBranches && loading ? (
-        <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
-      ) : canViewBranches ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
           {!branches.length ? (
             <div className="p-5 text-sm text-gray-600">No branches found.</div>
           ) : (

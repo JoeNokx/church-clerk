@@ -6,6 +6,7 @@ import ChurchContext from "../../Church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import Spinner from "../../../shared/components/Spinner.jsx";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -155,32 +156,12 @@ function ExpensesTable({ onEdit, onDeleted }) {
         </button>
       </div>
 
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-5 py-4">
-              <div className="text-sm font-semibold text-gray-900">Delete Expense</div>
-            </div>
-            <div className="px-5 py-4 text-sm text-gray-700">Are you sure you want to delete this record?</div>
-            <div className="flex items-center justify-end gap-3 px-5 py-4">
-              <button
-                type="button"
-                onClick={closeConfirmDelete}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        title="Delete Expense"
+        onCancel={closeConfirmDelete}
+        onConfirm={confirmDelete}
+      />
 
       {viewRow ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>

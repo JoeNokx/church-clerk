@@ -77,8 +77,8 @@ function TabNav({ items, activeKey, getTo, variant = "pill" }) {
 
             if (variant === "underline") {
               return active
-                ? "roundedrodd-md bo border-blue-200 bg-blue-50 bx-b py-2lue-50 px-3 py-2 text-sm font-semibold text-blue-800"
-                : "doun pd-mt pxt3miyo2d text-gray-500 hover:bg-gray-50 h0o hover:bg-gray-5ver:text-gray-900";
+                ? "rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800"
+                : "rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900";
             }
 
             return active

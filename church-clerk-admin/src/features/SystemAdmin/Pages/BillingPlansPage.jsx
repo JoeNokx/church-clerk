@@ -7,12 +7,11 @@ import {
   adminUpdatePlan,
   getPublicExchangeRate
 } from "../Services/adminBilling.api.js";
-import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
-import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -92,6 +91,7 @@ function BillingPlansPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [deletePlan, setDeletePlan] = useState(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -328,14 +328,15 @@ function BillingPlansPage() {
     }
   };
 
-  const onDelete = async (id) => {
+  const onDelete = async () => {
+    const id = deletePlan?._id;
     if (!id) return;
-    if (!window.confirm("Delete this plan? This cannot be undone.")) return;
 
     setLoading(true);
     setError("");
     try {
       await adminDeletePlan(id);
+      setDeletePlan(null);
       await load();
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to delete plan");
@@ -392,104 +393,119 @@ function BillingPlansPage() {
         )}
       </div>
 
-      <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="text-xs uppercase text-gray-400">
-            <tr className="border-b">
-              <th className="py-3 text-left font-semibold">Name</th>
-              <th className="py-3 text-left font-semibold">GHS (Hr / Day / Wk / Mo / Qtr / 6M / Yr)</th>
-              {usdToGhsRate > 0 && (
-                <th className="py-3 text-left font-semibold text-blue-700">USD equiv. (Hr / Day / Wk / Mo / Qtr / 6M / Yr)</th>
-              )}
-              <th className="py-3 text-left font-semibold">Monthly SMS Credits</th>
-              <th className="py-3 text-left font-semibold">Status</th>
-              <th className="py-3 text-right font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <>
-                {[0, 1, 2, 3].map((i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                  </tr>
-                ))}
-              </>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={usdToGhsRate > 0 ? 6 : 5}>
-                  <EmptyState
-                    compact
-                    illustration="billing"
-                    title="No plans found"
-                    description="Try adjusting your search or filters, or create a new plan."
-                  />
-                </td>
-              </tr>
-            ) : (
-              filtered.map((p) => {
-                const INTERVALS = ["hourly","daily","weekly","monthly","quarterly","halfYear","yearly"];
-                const by = p?.priceByCurrency || p?.pricing || {};
-                const ghs = by?.GHS || {};
+      {loading ? (
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gray-200" />
+                <div className="flex-1">
+                  <div className="h-4 w-3/4 rounded bg-gray-200 mb-2" />
+                  <div className="h-3 w-1/3 rounded bg-gray-200" />
+                </div>
+              </div>
+              <div className="h-3 w-2/3 rounded bg-gray-200" />
+              <div className="h-3 w-1/2 rounded bg-gray-200" />
+              <div className="mt-auto pt-2 border-t border-gray-100">
+                <div className="flex justify-end">
+                  <div className="h-7 w-24 rounded-lg bg-gray-200" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="mt-4">
+          <EmptyState
+            illustration="billing"
+            title="No plans found"
+            description="Try adjusting your search or filters, or create a new plan."
+          />
+        </div>
+      ) : (
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((p) => {
+            const INTERVALS = ["hourly","daily","weekly","monthly","quarterly","halfYear","yearly"];
+            const by = p?.priceByCurrency || p?.pricing || {};
+            const ghs = by?.GHS || {};
 
-                const fmtGhs = () => {
-                  const show = (v) => (v === undefined || v === null || v === "" ? "—" : v);
-                  return INTERVALS.map((k) => show(ghs?.[k])).join(" / ");
-                };
+            const fmtGhs = () => {
+              const show = (v) => (v === undefined || v === null || v === "" ? "—" : v);
+              return INTERVALS.map((k) => show(ghs?.[k])).join(" / ");
+            };
 
-                const fmtUsd = () => {
-                  if (!usdToGhsRate) return null;
-                  return INTERVALS.map((k) => {
-                    const g = Number(ghs?.[k]);
-                    if (!g || !Number.isFinite(g)) return "—";
-                    return "$" + (g / usdToGhsRate).toFixed(2);
-                  }).join(" / ");
-                };
+            const fmtUsd = () => {
+              if (!usdToGhsRate) return null;
+              return INTERVALS.map((k) => {
+                const g = Number(ghs?.[k]);
+                if (!g || !Number.isFinite(g)) return "—";
+                return "$" + (g / usdToGhsRate).toFixed(2);
+              }).join(" / ");
+            };
 
-                return (
-                  <tr key={p?._id} className="border-b last:border-b-0">
-                    <td className="py-3 text-gray-900" title={p?.name || ""}>
-                      <span className="sm:hidden">{truncateMobileName(p?.name)}</span>
-                      <span className="hidden sm:inline">{truncateDesktopName(p?.name)}</span>
-                    </td>
-                    <td className="py-3 text-gray-700">{fmtGhs()}</td>
-                    {usdToGhsRate > 0 && (
-                      <td className="py-3 text-blue-700 font-medium">{fmtUsd()}</td>
-                    )}
-                    <td className="py-3 text-gray-900 font-semibold">
-                      {Number(p?.monthlySmsCredits || 0).toLocaleString()}
-                    </td>
-                    <td className="py-3">
-                      <StatusChip value={p?.isActive ? "active" : "inactive"} />
-                    </td>
-                    <td className="py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => openEdit(p)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => onDelete(p?._id)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+            const planName = safeString(p?.name).replace(/\b\w/g, (c) => c.toUpperCase());
+            const active = p?.isActive !== false;
+
+            return (
+              <Card key={p?._id}>
+                <Card.Header
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+                  }
+                  title={planName || "Plan"}
+                  badge={active ? "Active" : "Inactive"}
+                  badgeClass={active ? "border border-green-200 bg-green-50 text-green-700" : "border border-gray-200 bg-gray-50 text-gray-700"}
+                  actions={
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(p)}
+                        className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                        title="Edit plan"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletePlan(p)}
+                        className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50"
+                        title="Delete plan"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </button>
+                    </>
+                  }
+                />
+                {safeString(p?.description) ? (
+                  <div className="text-sm text-gray-600">{p.description}</div>
+                ) : null}
+                <div>
+                  <div className="text-[11px] font-semibold text-gray-500">GHS · Hr / Day / Wk / Mo / Qtr / 6M / Yr</div>
+                  <div className="mt-0.5 text-sm font-medium text-gray-900">{fmtGhs()}</div>
+                </div>
+                {usdToGhsRate > 0 ? (
+                  <div>
+                    <div className="text-[11px] font-semibold text-blue-700">USD equivalent</div>
+                    <div className="mt-0.5 text-sm font-medium text-blue-700">{fmtUsd()}</div>
+                  </div>
+                ) : null}
+                <Card.Meta
+                  items={[
+                    {
+                      icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>,
+                      label: `${Number(p?.monthlySmsCredits || 0).toLocaleString()} SMS credits/mo`,
+                    },
+                    {
+                      icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+                      label: `${p?.memberLimit === null || p?.memberLimit === undefined ? "Unlimited" : Number(p.memberLimit).toLocaleString()} members`,
+                    },
+                  ]}
+                />
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {formOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -688,6 +704,15 @@ function BillingPlansPage() {
           </div>
         </div>
       ) : null}
+
+      <ConfirmDeleteModal
+        open={!!deletePlan}
+        title="Delete Plan"
+        message={`Are you sure you want to delete the plan "${deletePlan?.name || "this plan"}"? This cannot be undone.`}
+        onCancel={() => setDeletePlan(null)}
+        onConfirm={onDelete}
+        loading={loading}
+      />
     </Card>
   );
 }

@@ -812,18 +812,23 @@ function SettingsPage() {
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Users</div>
+                <div className="mt-1 text-xs text-gray-500">Manage users and their roles</div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                 <input
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   placeholder="Search user name, email or phone…"
-                  className="w-full sm:max-w-sm rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                  className="h-9 w-full sm:w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                 />
 
                 <select
                   value={userRoleFilter}
                   onChange={(e) => setUserRoleFilter(e.target.value)}
-                  className="w-full sm:max-w-xs rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                  className="h-9 w-full sm:w-44 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                 >
                   <option value="">All roles</option>
                   {churchRoles.map((r) => (
@@ -832,14 +837,12 @@ function SettingsPage() {
                     </option>
                   ))}
                 </select>
-              </div>
 
-              <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={openAdd}
                   disabled={!canWrite}
-                  className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                  className="h-9 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
                 >
                   Add User
                 </button>
@@ -913,33 +916,33 @@ function SettingsPage() {
             ) : (
               <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-600">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold">Name</th>
-                      <th className="px-4 py-3 text-left font-semibold">Email</th>
-                      <th className="px-4 py-3 text-left font-semibold">Phone</th>
-                      <th className="px-4 py-3 text-left font-semibold">Role</th>
-                      <th className="px-4 py-3 text-left font-semibold">Status</th>
-                      <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                  <thead className="bg-slate-100">
+                    <tr className="text-left font-semibold text-gray-500 text-xs">
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-200 max-md:text-xs text-sm">
                     {users.length ? (
                       users.map((row) => {
                         const isActive = row?.isActive !== false;
                         return (
                           <tr key={row?._id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-semibold text-gray-900" title={row?.fullName || ""}>
+                            <td className="max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.fullName || ""}>
                               <span className="sm:hidden">{truncateMobileName(row?.fullName)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(row?.fullName)}</span>
                             </td>
-                            <td className="px-4 py-3 text-gray-700" title={row?.email || ""}>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={row?.email || ""}>
                               <span className="sm:hidden">{truncateMobileName(row?.email)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(row?.email)}</span>
                             </td>
-                            <td className="px-4 py-3 text-gray-700">{row?.phoneNumber || "—"}</td>
-                            <td className="px-4 py-3 text-gray-700">{row?.role || "—"}</td>
-                            <td className="px-4 py-3">
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.phoneNumber || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.role || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <span
                                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                                   isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
@@ -948,7 +951,7 @@ function SettingsPage() {
                                 {isActive ? "Active" : "Deactivated"}
                               </span>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
@@ -1051,12 +1054,13 @@ function SettingsPage() {
       {tab === "audit" ? (
         <div className="mt-6">
           <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="text-sm font-semibold text-gray-900">Audit Log</div>
-            <div className="mt-1 text-xs text-gray-500">Search and filter user activity within your current church context.</div>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Audit Log</div>
+                <div className="mt-1 text-xs text-gray-500">Search and filter user activity within your current church context.</div>
+              </div>
 
-            {auditError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{auditError}</div> : null}
-
-            <div className="mt-4 flex flex-wrap items-end gap-3">
+              <div className="flex flex-wrap items-end gap-3">
               <div>
                 <div className="text-xs font-semibold text-gray-500">Search</div>
                 <input
@@ -1119,21 +1123,24 @@ function SettingsPage() {
                   className="mt-2 h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                 />
               </div>
+              </div>
             </div>
+
+            {auditError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{auditError}</div> : null}
 
             <div className="mt-4 rounded-xl border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-700">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold">Timestamp</th>
-                      <th className="px-4 py-3 text-left font-semibold">User</th>
-                      <th className="px-4 py-3 text-left font-semibold">Action</th>
-                      <th className="px-4 py-3 text-left font-semibold">Module</th>
-                      <th className="px-4 py-3 text-left font-semibold">Status</th>
+                  <thead className="bg-slate-100">
+                    <tr className="text-left font-semibold text-gray-500 text-xs">
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Timestamp</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">User</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Action</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Module</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-200 max-md:text-xs text-sm">
                     {auditLoading ? (
                       <tr>
                         <td colSpan={5} className="px-4 py-6 text-center text-gray-600">
@@ -1148,17 +1155,17 @@ function SettingsPage() {
                         const ok = String(row?.status || "").toLowerCase() === "success";
                         return (
                           <tr key={row?._id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{timestamp}</td>
-                            <td className="px-4 py-3">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{timestamp}</td>
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <div className="font-semibold text-gray-900" title={userName}>
                                 <span className="sm:hidden">{truncateMobileName(userName)}</span>
                                 <span className="hidden sm:inline">{truncateDesktopName(userName)}</span>
                               </div>
                               {userRole ? <div className="text-xs text-gray-500">{userRole}</div> : null}
                             </td>
-                            <td className="px-4 py-3 text-gray-700">{row?.action || "—"}</td>
-                            <td className="px-4 py-3 text-gray-700">{row?.module || "—"}</td>
-                            <td className="px-4 py-3">
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.action || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.module || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <span
                                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                                   ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"

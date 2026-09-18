@@ -18,6 +18,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
@@ -378,40 +379,40 @@ function SystemSettingsPage() {
               <EmptyState compact illustration="users" title="No admin users found" />
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="text-xs uppercase text-gray-400">
-                    <tr className="border-b">
-                      <th className="py-3 pr-4 text-left font-semibold">Name</th>
-                      <th className="py-3 pr-4 text-left font-semibold">Email</th>
-                      <th className="py-3 pr-4 text-left font-semibold">Phone</th>
-                      <th className="py-3 pr-4 text-left font-semibold">Role</th>
-                      <th className="py-3 pr-4 text-left font-semibold">Status</th>
-                      <th className="py-3 text-right font-semibold">Actions</th>
+                <table className="min-w-full">
+                  <thead className="bg-slate-100">
+                    <tr className="text-left font-semibold text-gray-500 text-xs">
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200 max-md:text-xs text-sm">
                     {adminList.filter(u => u?.role === "superadmin" || u?.role === "supportadmin").map((u) => (
-                      <tr key={u._id} className="border-b last:border-0">
-                        <td className="py-3 pr-4 text-xs font-medium text-gray-900" title={u.fullName || ""}>
+                      <tr key={u._id}>
+                        <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-medium text-gray-900 whitespace-nowrap px-4 md:px-6" title={u.fullName || ""}>
                           <span className="sm:hidden">{truncateMobileName(u.fullName)}</span>
                           <span className="hidden sm:inline">{truncateDesktopName(u.fullName)}</span>
                         </td>
-                        <td className="py-3 pr-4 text-xs text-gray-600" title={u.email || ""}>
+                        <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={u.email || ""}>
                           <span className="sm:hidden">{truncateMobileName(u.email)}</span>
                           <span className="hidden sm:inline">{truncateDesktopName(u.email)}</span>
                         </td>
-                        <td className="py-3 pr-4 text-xs text-gray-600">{u.phoneNumber || "—"}</td>
-                        <td className="py-3 pr-4">
+                        <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{u.phoneNumber || "—"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                             u.role === "superadmin" ? "bg-purple-100 text-purple-700" : "bg-blue-50 text-blue-700"
                           }`}>{u.role}</span>
                         </td>
-                        <td className="py-3 pr-4">
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                             u.isActive === false ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
                           }`}>{u.isActive === false ? "Suspended" : "Active"}</span>
                         </td>
-                        <td className="py-3">
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <div className="inline-flex items-center gap-1 justify-end">
                             <button type="button"
                               onClick={() => { setAdminEditModal(u); setAdminEditRole(u.role); setAdminEditError(""); }}
@@ -498,39 +499,22 @@ function SystemSettingsPage() {
           )}
 
           {/* Delete Admin Modal */}
-          {adminDeleteModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-              <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
-                <div className="px-6 py-4 border-b border-gray-100">
-                  <div className="font-bold text-red-700 text-base">Delete Admin</div>
-                </div>
-                <div className="px-6 py-4 text-sm text-gray-700">
-                  Are you sure you want to permanently delete <strong>{adminDeleteModal.fullName}</strong> ({adminDeleteModal.email})? This cannot be undone.
-                </div>
-                <div className="px-6 pb-4 flex justify-end gap-2">
-                  <Button variant="secondary" onClick={() => setAdminDeleteModal(null)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="danger"
-                    loading={adminDeleteLoading}
-                    loadingText="Deleting…"
-                    onClick={async () => {
-                      setAdminDeleteLoading(true);
-                      try {
-                        await deleteSystemUserApi(adminDeleteModal._id);
-                        setAdminDeleteModal(null);
-                        refreshAdminList();
-                      } catch { /* noop */ }
-                      finally { setAdminDeleteLoading(false); }
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          <ConfirmDeleteModal
+            open={!!adminDeleteModal}
+            title="Delete Admin"
+            message={adminDeleteModal ? `Are you sure you want to permanently delete ${adminDeleteModal.fullName} (${adminDeleteModal.email})? This cannot be undone.` : ""}
+            onCancel={() => setAdminDeleteModal(null)}
+            loading={adminDeleteLoading}
+            onConfirm={async () => {
+              setAdminDeleteLoading(true);
+              try {
+                await deleteSystemUserApi(adminDeleteModal._id);
+                setAdminDeleteModal(null);
+                refreshAdminList();
+              } catch { /* noop */ }
+              finally { setAdminDeleteLoading(false); }
+            }}
+          />
         </div>
       ) : tab === "billing" ? (
         <>
@@ -603,7 +587,7 @@ function SystemSettingsPage() {
                 value={trialDays}
                 onChange={(e) => setTrialDays(Number(e.target.value))}
                 disabled={!canSave || saving}
-                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm disabled:opacity-60"
+                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 disabled:opacity-60"
               >
                 {trialOptions.map((d) => (
                   <option key={d} value={d}>
@@ -632,7 +616,7 @@ function SystemSettingsPage() {
                 value={gracePeriodDays}
                 onChange={(e) => setGracePeriodDays(e.target.value)}
                 disabled={!canSave || saving}
-                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm disabled:opacity-60"
+                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 disabled:opacity-60"
               />
             </div>
             </Card.Body>
@@ -655,7 +639,7 @@ function SystemSettingsPage() {
                 value={referralBonusDays}
                 onChange={(e) => setReferralBonusDays(e.target.value)}
                 disabled={!canSave || saving}
-                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm disabled:opacity-60"
+                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 disabled:opacity-60"
               />
             </div>
             </Card.Body>
@@ -685,7 +669,7 @@ function SystemSettingsPage() {
                   value={usdToGhsRate}
                   onChange={(e) => setUsdToGhsRate(e.target.value)}
                   disabled={!canSave || saving}
-                  className="h-11 w-full rounded-lg border border-gray-300 bg-white pl-16 pr-12 text-sm text-gray-900 shadow-sm disabled:opacity-60"
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white pl-16 pr-12 text-sm text-gray-900 disabled:opacity-60"
                 />
                 <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-400">GHS</span>
               </div>
@@ -763,17 +747,17 @@ function SystemSettingsPage() {
             ) : null}
 
             <Card.Body className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="text-xs uppercase text-gray-400">
-                  <tr className="border-b">
-                    <th className="py-3 text-left font-semibold">Church</th>
-                    <th className="py-3 text-left font-semibold">Requested ID</th>
-                    <th className="py-3 text-left font-semibold">Status</th>
-                    <th className="py-3 text-left font-semibold">Requested At</th>
-                    <th className="py-3 text-right font-semibold">Actions</th>
+              <table className="min-w-full">
+                <thead className="bg-slate-100">
+                  <tr className="text-left font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Church</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Requested ID</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Requested At</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-200 max-md:text-xs text-sm">
                   {senderIdLoading ? (
                     <tr>
                       <td colSpan={5} className="py-6 text-center text-gray-500">
@@ -807,17 +791,17 @@ function SystemSettingsPage() {
                               : "—";
 
                       return (
-                        <tr key={row?._id} className="border-b last:border-b-0">
-                          <td className="py-3 text-gray-900" title={row?.name || ""}>
+                        <tr key={row?._id}>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-medium text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.name || ""}>
                             <span className="sm:hidden">{truncateMobileName(row?.name)}</span>
                             <span className="hidden sm:inline">{truncateDesktopName(row?.name)}</span>
                           </td>
-                          <td className="py-3 text-gray-700">{row?.sender_id || "—"}</td>
-                          <td className="py-3">
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.sender_id || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${pill}`}>{label}</span>
                           </td>
-                          <td className="py-3 text-gray-700">{fmtDateTime(row?.sender_id_requested_at)}</td>
-                          <td className="py-3 text-right">
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(row?.sender_id_requested_at)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6 text-right">
                             <button
                               type="button"
                               onClick={() => {

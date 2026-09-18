@@ -33,13 +33,13 @@ export default function FilterBar({
   className = "",
 }) {
   return (
-    <div className={`hidden md:flex md:flex-row md:flex-wrap md:items-end md:gap-3 ${className}`}>
+    <div className={`hidden md:flex md:flex-row md:flex-wrap md:items-end md:justify-end md:gap-3 ${className}`}>
       {onSearchChange !== undefined && (
         <input
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className={`h-10 w-full ${searchWidth} rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100`}
+          className={`h-9 w-full ${searchWidth} rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100`}
         />
       )}
 
@@ -48,7 +48,7 @@ export default function FilterBar({
           <select
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="h-10 w-full appearance-none rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer"
+            className="h-9 w-full appearance-none rounded-lg border border-gray-200 bg-white pl-3 pr-8 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer"
           >
             {placeholder !== undefined && (
               <option value="">{placeholder}</option>

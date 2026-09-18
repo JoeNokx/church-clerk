@@ -13,7 +13,6 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
-import Button from "../../../shared/components/Button/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 
 function ConfirmModal({ open, title, message, confirmLabel, confirmClass, onConfirm, onCancel, loading, children }) {
@@ -181,7 +180,7 @@ function ChurchesPage() {
         </div>
       </div>
 
-      <Card className="mt-6 hover:shadow-none hover:border-gray-200">
+      <Card className="mt-6">
         {/* Mobile filters (stacked) */}
         <div className="md:hidden flex flex-col gap-3">
           <input
@@ -218,88 +217,100 @@ function ChurchesPage() {
             { key: "status", value: statusFilter, onChange: setStatusFilter, options: statusOptions, placeholder: "All statuses" }
           ]}
         >
-          <div className="flex-1" />
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 self-center">
             {pagination?.totalResult !== undefined ? `Total: ${pagination.totalResult}` : ""}
           </div>
         </FilterBar>
 
         {error && <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>}
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="text-xs uppercase text-gray-400">
-              <tr className="border-b">
-                <th className="py-3 text-left font-semibold">Name</th>
-                <th className="py-3 text-left font-semibold">Type</th>
-                <th className="py-3 text-left font-semibold">Status</th>
-                <th className="py-3 text-left font-semibold">Pastor</th>
-                <th className="py-3 text-left font-semibold">Email</th>
-                <th className="py-3 text-left font-semibold">Country</th>
-                <th className="py-3 text-right font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <>
-                  {[0,1,2,3].map((i) => (
-                    <tr key={i} className="animate-pulse border-b">
-                      <td className="py-3 pr-4"><div className="h-4 w-32 rounded bg-gray-200" /></td>
-                      <td className="py-3 pr-4"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                      <td className="py-3 pr-4"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                      <td className="py-3 pr-4"><div className="h-4 w-24 rounded bg-gray-200" /></td>
-                      <td className="py-3 pr-4"><div className="h-4 w-28 rounded bg-gray-200" /></td>
-                      <td className="py-3 pr-4"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                      <td className="py-3"><div className="h-6 w-24 rounded bg-gray-200 ml-auto" /></td>
+        {loading ? (
+          <div className="mt-4 animate-pulse">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-slate-100">
+                  <tr className="text-left font-semibold text-gray-500 text-xs">
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <tr key={i} className="text-sm">
+                      <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-32 rounded bg-gray-200" /></td>
+                      <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                      <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                      <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                      <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                      <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                      <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                     </tr>
                   ))}
-                </>
-              ) : displayRows.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8">
-                    <EmptyState
-                      compact
-                      illustration="church"
-                      title="No churches found"
-                      description="No churches match your current filters."
-                    />
-                  </td>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : displayRows.length === 0 ? (
+          <EmptyState
+            compact
+            illustration="church"
+            title="No churches found"
+            description="No churches match your current filters."
+          />
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Pastor</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Country</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                 </tr>
-              ) : (
-                displayRows.map((c) => {
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {displayRows.map((c) => {
                   const isSuspended = c.isActive === false;
                   return (
-                    <tr key={c._id} className={`border-b last:border-b-0 ${isSuspended ? "bg-red-50/30" : ""}`}>
-                      <td className="py-3 pr-4">
-                        <div className="font-medium text-gray-900" title={c.name || ""}>
+                    <tr key={c._id} className={`max-md:text-xs text-gray-700 text-sm ${isSuspended ? "bg-red-50/30" : ""}`}>
+                      <td className={`sticky left-0 z-10 max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 ${isSuspended ? "bg-red-50" : "bg-white"}`} title={c.name || ""}>
+                        <div className="font-medium text-gray-900">
                           <span className="sm:hidden">{truncateMobileName(c.name)}</span>
                           <span className="hidden sm:inline">{truncateDesktopName(c.name)}</span>
                         </div>
                         {c.city && <div className="text-xs text-gray-400">{c.city}</div>}
                       </td>
-                      <td className="py-3 pr-4">
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                           c.type === "Headquarters" ? "bg-blue-100 text-blue-700" :
                           c.type === "Branch" ? "bg-purple-100 text-purple-700" :
                           "bg-gray-100 text-gray-600"
                         }`}>{c.type || "—"}</span>
                       </td>
-                      <td className="py-3 pr-4">
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                         <StatusChip value={isSuspended ? "suspended" : "active"} />
                       </td>
-                      <td className="py-3 pr-4 text-gray-700" title={c.pastor || ""}>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={c.pastor || ""}>
                         <span className="sm:hidden">{truncateMobileName(c.pastor)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(c.pastor)}</span>
                       </td>
-                      <td className="py-3 pr-4 text-gray-500 text-xs" title={c.email || ""}>
+                      <td className="max-md:px-4 py-1.5 text-gray-500 whitespace-nowrap px-4 md:px-6" title={c.email || ""}>
                         <span className="sm:hidden">{truncateMobileName(c.email)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(c.email)}</span>
                       </td>
-                      <td className="py-3 pr-4 text-gray-500 text-xs" title={c.country || ""}>
+                      <td className="max-md:px-4 py-1.5 text-gray-500 whitespace-nowrap px-4 md:px-6" title={c.country || ""}>
                         <span className="sm:hidden">{truncateMobileName(c.country)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(c.country)}</span>
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu
                           items={[
                             {
@@ -336,34 +347,32 @@ function ChurchesPage() {
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
+        <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
+          <button
+            type="button"
             onClick={() => load({ nextPage: Math.max(1, page - 1) })}
             disabled={loading || !(pagination?.hasPrev ?? page > 1)}
-            className="lg:h-8 lg:px-3 lg:text-xs"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
           >
             Prev
-          </Button>
-          <div className="text-xs text-gray-600">
+          </button>
+          <div className="text-gray-600 text-sm">
             Page {page}{pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
+          <button
+            type="button"
             onClick={() => load({ nextPage: page + 1 })}
             disabled={loading || !(pagination?.hasNext ?? false)}
-            className="lg:h-8 lg:px-3 lg:text-xs"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
           >
             Next
-          </Button>
+          </button>
         </div>
       </Card>
 

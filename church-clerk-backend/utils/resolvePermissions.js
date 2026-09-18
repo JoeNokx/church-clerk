@@ -1,4 +1,4 @@
-import { ROLE_PERMISSIONS } from "../config/roles.js";
+import { ROLE_PERMISSIONS, SYSTEM_ROLES, CHURCH_ROLES } from "../config/roles.js";
 import { MODULES } from "../config/permissions.js";
 import Role from "../models/roleModel.js";
 
@@ -134,11 +134,19 @@ export const resolvePermissions = async (role, roleRef = null, scope = "") => {
   const effectiveRole = normalizeRoleKey(role);
   if (!effectiveRole) return {};
 
+  // A role belonging to the other scope must never resolve permissions in
+  // this context — e.g. a "superadmin" assigned to a church user grants
+  // nothing inside the church app, and a church role grants nothing on
+  // the system admin side.
+  const effectiveScope = String(scope || "").trim().toLowerCase();
+  if (effectiveScope === "church" && SYSTEM_ROLES.includes(effectiveRole)) return {};
+  if (effectiveScope === "system" && CHURCH_ROLES.includes(effectiveRole)) return {};
+
   const roleDefaults = ROLE_PERMISSIONS?.[effectiveRole] && typeof ROLE_PERMISSIONS[effectiveRole] === "object" ? ROLE_PERMISSIONS[effectiveRole] : null;
 
   try {
     if (roleRef) {
-      const dbRole = await Role.findOne({ _id: roleRef }).select("permissions isActive").lean();
+      const dbRole = await Role.findOne({ _id: roleRef, ...(effectiveScope ? { scope: effectiveScope } : {}) }).select("permissions isActive").lean();
       if (dbRole?._id && dbRole?.isActive === false) return {};
       if (dbRole?.permissions && typeof dbRole.permissions === "object") {
         const merged = deepMergePermissions(roleDefaults, dbRole.permissions);

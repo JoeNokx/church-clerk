@@ -20,6 +20,7 @@ import {
   getBusinessExpenses,
   updateBusinessExpense
 } from "../expenses/services/businessExpenses.api.js";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -59,35 +60,6 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   );
 }
 
-function ConfirmModal({ open, title, message, confirmLabel, onCancel, onConfirm }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
-        </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function safePayload(res) {
   const payload = res?.data?.data ?? res?.data;
@@ -822,7 +794,7 @@ function BusinessVentureDetailsPage() {
                   setExpensePage(1);
                 }}
                 placeholder="Search..."
-                className="h-10 w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-9 w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               />
 
               {activeTab === "incomes" ? (
@@ -1056,7 +1028,7 @@ function BusinessVentureDetailsPage() {
         }}
       />
 
-      <ConfirmModal
+      <ConfirmDeleteModal
         open={deleteIncomeOpen}
         title="Delete Income"
         message="Are you sure you want to delete this income record?"
@@ -1110,7 +1082,7 @@ function BusinessVentureDetailsPage() {
         }}
       />
 
-      <ConfirmModal
+      <ConfirmDeleteModal
         open={deleteExpenseOpen}
         title="Delete Expense"
         message="Are you sure you want to delete this expense record?"

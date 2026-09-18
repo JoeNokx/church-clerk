@@ -18,6 +18,7 @@ import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/t
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -931,18 +932,18 @@ function AnnouncementsPage() {
               <div className="space-y-3">
                 {annError ? <div className="text-sm text-red-600">{annError}</div> : null}
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="text-xs uppercase text-gray-400">
-                      <tr className="border-b">
-                        <th className="py-3 text-left font-semibold">Title</th>
-                        <th className="py-3 text-left font-semibold">Target</th>
-                        <th className="py-3 text-left font-semibold">Display Type</th>
-                        <th className="py-3 text-left font-semibold">Scheduled</th>
-                        <th className="py-3 text-left font-semibold">Status</th>
-                        <th className="py-3 text-left font-semibold">Action</th>
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Target</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Display Type</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Action</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {annLoading ? (
                         <tr>
                           <td colSpan={6} className="py-6 text-center text-gray-500">
@@ -951,16 +952,16 @@ function AnnouncementsPage() {
                         </tr>
                       ) : annRows.length ? (
                         annRows.map((r) => (
-                          <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900" title={r?.title || ""}>
+                          <tr key={r?._id} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.title || ""}>
                               <span className="sm:hidden">{truncateMobileName(r?.title)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.title)}</span>
                             </td>
-                            <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
-                            <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
-                            <td className="py-3 text-gray-700">{fmtDateTime(r?.scheduledAt)}</td>
-                            <td className="py-3 text-gray-700">{r?.status || "—"}</td>
-                            <td className="py-3">
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtTarget(r?.target)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(r?.scheduledAt)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{r?.status || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
@@ -998,18 +999,18 @@ function AnnouncementsPage() {
               <div className="space-y-3">
                 {annError ? <div className="text-sm text-red-600">{annError}</div> : null}
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="text-xs uppercase text-gray-400">
-                      <tr className="border-b">
-                        <th className="py-3 text-left font-semibold">Title</th>
-                        <th className="py-3 text-left font-semibold">Target</th>
-                        <th className="py-3 text-left font-semibold">Display Type</th>
-                        <th className="py-3 text-left font-semibold">Updated</th>
-                        <th className="py-3 text-left font-semibold">Status</th>
-                        <th className="py-3 text-left font-semibold">Action</th>
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Target</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Display Type</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Updated</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Action</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {annLoading ? (
                         <tr>
                           <td colSpan={6} className="py-6 text-center text-gray-500">
@@ -1018,16 +1019,16 @@ function AnnouncementsPage() {
                         </tr>
                       ) : annRows.length ? (
                         annRows.map((r) => (
-                          <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900" title={r?.title || ""}>
+                          <tr key={r?._id} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.title || ""}>
                               <span className="sm:hidden">{truncateMobileName(r?.title)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.title)}</span>
                             </td>
-                            <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
-                            <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
-                            <td className="py-3 text-gray-700">{fmtDateTime(r?.updatedAt)}</td>
-                            <td className="py-3 text-gray-700">{r?.status || "—"}</td>
-                            <td className="py-3">
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtTarget(r?.target)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(r?.updatedAt)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{r?.status || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
@@ -1071,17 +1072,17 @@ function AnnouncementsPage() {
               <div className="space-y-3">
                 {annError ? <div className="text-sm text-red-600">{annError}</div> : null}
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="text-xs uppercase text-gray-400">
-                      <tr className="border-b">
-                        <th className="py-3 text-left font-semibold">Title</th>
-                        <th className="py-3 text-left font-semibold">Target</th>
-                        <th className="py-3 text-left font-semibold">Display Type</th>
-                        <th className="py-3 text-left font-semibold">Updated</th>
-                        <th className="py-3 text-left font-semibold">Action</th>
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Target</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Display Type</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Updated</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Action</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {annLoading ? (
                         <tr>
                           <td colSpan={5} className="py-6 text-center text-gray-500">
@@ -1090,15 +1091,15 @@ function AnnouncementsPage() {
                         </tr>
                       ) : annRows.length ? (
                         annRows.map((r) => (
-                          <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900" title={r?.title || ""}>
+                          <tr key={r?._id} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.title || ""}>
                               <span className="sm:hidden">{truncateMobileName(r?.title)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.title)}</span>
                             </td>
-                            <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
-                            <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
-                            <td className="py-3 text-gray-700">{fmtDateTime(r?.updatedAt)}</td>
-                            <td className="py-3">
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtTarget(r?.target)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(r?.updatedAt)}</td>
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
@@ -1140,18 +1141,18 @@ function AnnouncementsPage() {
               <div className="space-y-3">
                 {annError ? <div className="text-sm text-red-600">{annError}</div> : null}
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="text-xs uppercase text-gray-400">
-                      <tr className="border-b">
-                        <th className="py-3 text-left font-semibold">Title</th>
-                        <th className="py-3 text-left font-semibold">Target</th>
-                        <th className="py-3 text-left font-semibold">Display Type</th>
-                        <th className="py-3 text-left font-semibold">Sent</th>
-                        <th className="py-3 text-left font-semibold">Status</th>
-                        <th className="py-3 text-left font-semibold">Action</th>
+                  <table className="min-w-full">
+                    <thead className="bg-slate-100">
+                      <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Target</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Display Type</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Sent</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Action</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {annLoading ? (
                         <tr>
                           <td colSpan={6} className="py-6 text-center text-gray-500">
@@ -1160,16 +1161,16 @@ function AnnouncementsPage() {
                         </tr>
                       ) : annRows.length ? (
                         annRows.map((r) => (
-                          <tr key={r?._id} className="border-b last:border-b-0">
-                            <td className="py-3 text-gray-900" title={r?.title || ""}>
+                          <tr key={r?._id} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.title || ""}>
                               <span className="sm:hidden">{truncateMobileName(r?.title)}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.title)}</span>
                             </td>
-                            <td className="py-3 text-gray-700">{fmtTarget(r?.target)}</td>
-                            <td className="py-3 text-gray-700">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
-                            <td className="py-3 text-gray-700">{fmtDateTime(r?.sentAt)}</td>
-                            <td className="py-3 text-gray-700">{r?.status || "—"}</td>
-                            <td className="py-3">
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtTarget(r?.target)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{Array.isArray(r?.displayTypes) ? r.displayTypes.join(", ") : "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(r?.sentAt)}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{r?.status || "—"}</td>
+                            <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
@@ -1243,20 +1244,20 @@ function AnnouncementsPage() {
 
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr className="border-b text-xs font-semibold uppercase text-gray-400">
-                    <th className="py-3 px-4 text-left">Ticket #</th>
-                    <th className="py-3 px-4 text-left">Subject</th>
-                    <th className="py-3 px-4 text-left">Category</th>
-                    <th className="py-3 px-4 text-left">Name</th>
-                    <th className="py-3 px-4 text-left">Church</th>
-                    <th className="py-3 px-4 text-left">Submitted</th>
-                    <th className="py-3 px-4 text-left">Status</th>
-                    <th className="py-3 px-4 text-left">Actions</th>
+              <table className="min-w-full">
+                <thead className="bg-slate-100">
+                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ticket #</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Subject</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Church</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Submitted</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-200">
                   {srLoading ? (
                     <tr><td colSpan={8} className="py-8 text-center"><Spinner className="mx-auto text-gray-400" /></td></tr>
                   ) : srRows.length ? (
@@ -1268,27 +1269,27 @@ function AnnouncementsPage() {
                         closed: "bg-gray-100 text-gray-500 border-gray-200"
                       };
                       return (
-                        <tr key={r?._id} className="hover:bg-gray-50">
-                          <td className="py-3 px-4 whitespace-nowrap">
+                        <tr key={r?._id} className="group max-md:text-xs text-gray-700 text-sm hover:bg-gray-50">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6 group-hover:bg-gray-50">
                             <span className="font-mono text-xs bg-gray-100 rounded px-1.5 py-0.5 text-gray-600">{r?.ticketNumber || "—"}</span>
                           </td>
-                          <td className="py-3 px-4 text-gray-900 max-w-[200px] truncate">{r?.subject || "—"}</td>
-                          <td className="py-3 px-4 text-gray-600 whitespace-nowrap">{r?.category || "—"}</td>
-                          <td className="py-3 px-4 text-gray-700 whitespace-nowrap" title={r?.name || r?.submittedBy?.fullName || ""}>
+                          <td className="max-md:px-4 py-1.5 text-gray-900 max-w-[200px] truncate px-4 md:px-6">{r?.subject || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{r?.category || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={r?.name || r?.submittedBy?.fullName || ""}>
                             <span className="sm:hidden">{truncateMobileName(r?.name || r?.submittedBy?.fullName)}</span>
                             <span className="hidden sm:inline">{truncateDesktopName(r?.name || r?.submittedBy?.fullName)}</span>
                           </td>
-                          <td className="py-3 px-4 text-gray-700 whitespace-nowrap" title={r?.churchName || r?.church?.name || ""}>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={r?.churchName || r?.church?.name || ""}>
                             <span className="sm:hidden">{truncateMobileName(r?.churchName || r?.church?.name)}</span>
                             <span className="hidden sm:inline">{truncateDesktopName(r?.churchName || r?.church?.name)}</span>
                           </td>
-                          <td className="py-3 px-4 text-gray-500 whitespace-nowrap text-xs">{r?.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
-                          <td className="py-3 px-4">
+                          <td className="max-md:px-4 py-1.5 text-gray-500 whitespace-nowrap px-4 md:px-6 text-xs">{r?.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusColors[r?.status] || "bg-gray-100 text-gray-500 border-gray-200"}`}>
                               {r?.status === "in_progress" ? "In Progress" : r?.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : "—"}
                             </span>
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
@@ -1434,43 +1435,14 @@ function AnnouncementsPage() {
         </div>
       ) : null}
 
-      {deleteConfirmModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </div>
-            <div className="text-center">
-              <div className="font-semibold text-gray-900 text-base">Delete Announcement?</div>
-              <div className="mt-2 text-sm text-gray-600">
-                Are you sure you want to permanently delete{" "}
-                <span className="font-semibold text-gray-900">&ldquo;{deleteConfirmModal.row?.title || "this announcement"}&rdquo;</span>?
-                This cannot be undone.
-              </div>
-            </div>
-            <div className="mt-5 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmModal(null)}
-                disabled={deleteConfirmLoading}
-                className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteConfirmed}
-                disabled={deleteConfirmLoading}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteConfirmLoading ? "Deleting…" : "Yes, Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDeleteModal
+        open={!!deleteConfirmModal}
+        title="Delete Announcement"
+        message={`Are you sure you want to permanently delete "${deleteConfirmModal?.row?.title || "this announcement"}"? This cannot be undone.`}
+        onCancel={() => setDeleteConfirmModal(null)}
+        onConfirm={handleDeleteConfirmed}
+        loading={deleteConfirmLoading}
+      />
     </div>
   );
 }

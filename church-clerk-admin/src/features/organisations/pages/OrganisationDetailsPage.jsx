@@ -88,6 +88,7 @@ import {
   updateMinistryOffering,
   deleteMinistryOffering
 } from "../../ministry/services/ministry.api.js";
+import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 
 function useDebouncedValue(value, delayMs) {
   const [debounced, setDebounced] = useState(value);
@@ -170,35 +171,6 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
-        </div>
-        <div className="px-5 py-4 text-sm text-gray-700">{message}</div>
-        <div className="flex items-center justify-end gap-3 px-5 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function SimpleModal({ open, title, children, onClose }) {
   if (!open) return null;
@@ -919,7 +891,7 @@ function OrganisationDetailsPage() {
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
                 placeholder="Search members..."
-                className="h-10 w-full sm:w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                className="h-9 w-full sm:w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
               />
               <button
                 type="button"
@@ -1546,10 +1518,10 @@ function OrganisationDetailsPage() {
         </div>
       ) : null}
 
-      <ConfirmDialog
+      <ConfirmDeleteModal
         open={confirmOpen}
-        title="Confirm"
-        message="Are you sure you want to proceed?"
+        title={confirmMeta?.kind === "remove-member" ? "Remove Member" : "Delete Record"}
+        message={confirmMeta?.kind === "remove-member" ? "Are you sure you want to remove this member?" : "Are you sure you want to delete this record?"}
         onCancel={() => {
           setConfirmOpen(false);
           setConfirmMeta(null);

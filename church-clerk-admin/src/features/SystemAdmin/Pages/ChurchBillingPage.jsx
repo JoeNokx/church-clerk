@@ -337,22 +337,22 @@ function ChurchBillingPage() {
                 <div className="mt-4">
                   <div className="text-xs font-semibold text-gray-500">Plan pricing (approx.)</div>
                   <div className="mt-2 overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead className="text-xs uppercase text-gray-400">
-                        <tr className="border-b">
-                          <th className="py-2 text-left font-semibold">Currency</th>
-                          <th className="py-2 text-left font-semibold">Monthly</th>
-                          <th className="py-2 text-left font-semibold">6 months</th>
-                          <th className="py-2 text-left font-semibold">Yearly</th>
+                    <table className="min-w-full">
+                      <thead className="bg-slate-100">
+                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                          <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Currency</th>
+                          <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Monthly</th>
+                          <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">6 months</th>
+                          <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Yearly</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-gray-200">
                         {Object.entries(activePlan?.priceByCurrency || activePlan?.pricing || {}).map(([cur, row]) => (
-                          <tr key={cur} className="border-b last:border-b-0">
-                            <td className="py-2 text-gray-900">{String(cur || "").toUpperCase()}</td>
-                            <td className="py-2 text-gray-700">{row?.monthly !== undefined && row?.monthly !== null ? showMoney(row.monthly, cur) : "—"}</td>
-                            <td className="py-2 text-gray-700">{row?.halfYear !== undefined && row?.halfYear !== null ? showMoney(row.halfYear, cur) : "—"}</td>
-                            <td className="py-2 text-gray-700">{row?.yearly !== undefined && row?.yearly !== null ? showMoney(row.yearly, cur) : "—"}</td>
+                          <tr key={cur} className="max-md:text-xs text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{String(cur || "").toUpperCase()}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.monthly !== undefined && row?.monthly !== null ? showMoney(row.monthly, cur) : "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.halfYear !== undefined && row?.halfYear !== null ? showMoney(row.halfYear, cur) : "—"}</td>
+                            <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.yearly !== undefined && row?.yearly !== null ? showMoney(row.yearly, cur) : "—"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -369,24 +369,24 @@ function ChurchBillingPage() {
         <div className="mt-6">
           {invError ? <div className="text-sm text-red-600">{invError}</div> : null}
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-xs uppercase text-gray-400">
-                <tr className="border-b">
-                  <th className="py-3 text-left font-semibold">Invoice #</th>
-                  <th className="py-3 text-left font-semibold">Amount</th>
-                  <th className="py-3 text-left font-semibold">Due</th>
-                  <th className="py-3 text-left font-semibold">Status</th>
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Invoice #</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Due</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {invLoading ? (
                   <>
                     {[0, 1, 2, 3].map((i) => (
                       <tr key={i} className="animate-pulse">
-                        <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                       </tr>
                     ))}
                   </>
@@ -398,11 +398,11 @@ function ChurchBillingPage() {
                   </tr>
                 ) : (
                   invoices.map((i) => (
-                    <tr key={i?._id} className="border-b last:border-b-0">
-                      <td className="py-3 text-gray-900">{i?.invoiceNumber || "—"}</td>
-                      <td className="py-3 text-gray-700">{showMoney(i?.amount || 0, i?.currency || churchCurrency)}</td>
-                      <td className="py-3 text-gray-700">{fmtDate(i?.dueDate)}</td>
-                      <td className="py-3 text-gray-700">{i?.status || "—"}</td>
+                    <tr key={i?._id} className="max-md:text-xs text-gray-700 text-sm">
+                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{i?.invoiceNumber || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{showMoney(i?.amount || 0, i?.currency || churchCurrency)}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(i?.dueDate)}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{i?.status || "—"}</td>
                     </tr>
                   ))
                 )}
@@ -416,26 +416,26 @@ function ChurchBillingPage() {
         <div className="mt-6">
           {payError ? <div className="text-sm text-red-600">{payError}</div> : null}
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-xs uppercase text-gray-400">
-                <tr className="border-b">
-                  <th className="py-3 text-left font-semibold">Amount</th>
-                  <th className="py-3 text-left font-semibold">Provider</th>
-                  <th className="py-3 text-left font-semibold">Reference</th>
-                  <th className="py-3 text-left font-semibold">Status</th>
-                  <th className="py-3 text-left font-semibold">Date</th>
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Provider</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Reference</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {payLoading ? (
                   <>
                     {[0, 1, 2, 3].map((i) => (
                       <tr key={i} className="animate-pulse">
-                        <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                        <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
+                        <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                       </tr>
                     ))}
                   </>
@@ -447,12 +447,12 @@ function ChurchBillingPage() {
                   </tr>
                 ) : (
                   payments.map((p) => (
-                    <tr key={p?._id} className="border-b last:border-b-0">
-                      <td className="py-3 text-gray-700">{showMoney(p?.amount || 0, p?.currency || churchCurrency)}</td>
-                      <td className="py-3 text-gray-700">{p?.paymentProvider || "—"}</td>
-                      <td className="py-3 text-gray-700">{p?.providerReference || "—"}</td>
-                      <td className="py-3 text-gray-700">{p?.status || "—"}</td>
-                      <td className="py-3 text-gray-700">{fmtDateTime(p?.createdAt)}</td>
+                    <tr key={p?._id} className="max-md:text-xs text-gray-700 text-sm">
+                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{showMoney(p?.amount || 0, p?.currency || churchCurrency)}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p?.paymentProvider || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p?.providerReference || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p?.status || "—"}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDateTime(p?.createdAt)}</td>
                     </tr>
                   ))
                 )}

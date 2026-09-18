@@ -88,7 +88,7 @@ function DashboardLayout() {
 
       {/* sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:static md:z-auto md:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:static md:z-auto md:translate-x-0 md:shrink-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <Sidebar
           onNavigate={() => setIsSidebarOpen(false)}

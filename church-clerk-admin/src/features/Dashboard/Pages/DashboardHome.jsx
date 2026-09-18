@@ -8,7 +8,7 @@ import {
 import { useAuth } from "../../Auth/useAuth.js";
 import { getAdminDashboardStats, getSystemAuditLogs } from "../../SystemAdmin/Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
-import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -143,45 +143,37 @@ function DashboardHome() {
         <>
           {/* KPI Cards */}
           <KpiGrid className="lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <KpiCard
-              icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9.5L12 4l9 5.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/></svg>}
-              title="Total Churches"
+            <KpiStatCard
+              label="Total Churches"
               value={fmt(churches.total)}
-              subtitle={`${fmt(churches.hq)} HQ · ${fmt(churches.branches)} Branches`}
+              subLabel={`${fmt(churches.hq)} HQ · ${fmt(churches.branches)} Branches`}
               change={trendPct(churches.thisMonth, churches.prevMonth)}
-              compareLabel="vs last month"
             />
-            <KpiCard
-              icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
-              title="Active Subscriptions"
+            <KpiStatCard
+              label="Active Subscriptions"
               value={fmt(subs.active)}
-              subtitle={`${fmt(subs.trial)} on trial`}
+              subLabel={`${fmt(subs.trial)} on trial`}
             />
-            <KpiCard
-              icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
-              title="Revenue (This Month)"
+            <KpiStatCard
+              label="Revenue (This Month)"
               value={fmtGhs(rev.thisMonth)}
-              subtitle={`Prev: ${fmtGhs(rev.prevMonth)}`}
+              subLabel={`Prev: ${fmtGhs(rev.prevMonth)}`}
               change={trendPct(rev.thisMonth, rev.prevMonth)}
-              compareLabel="vs last month"
             />
-            <KpiCard
-              icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>}
-              title="Total Members"
+            <KpiStatCard
+              label="Total Members"
               value={fmt(d.members?.total)}
-              subtitle="Across all churches"
+              subLabel="Across all churches"
             />
-            <KpiCard
-              icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>}
-              title="New Churches (30d)"
+            <KpiStatCard
+              label="New Churches (30d)"
               value={fmt(churches.thisMonth)}
-              subtitle="Registered this month"
+              subLabel="Registered this month"
             />
-            <KpiCard
-              icon={<svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
-              title="Total Users"
+            <KpiStatCard
+              label="Total Users"
               value={fmt(d.users?.total)}
-              subtitle="Admin + church users"
+              subLabel="Admin + church users"
             />
           </KpiGrid>
 
@@ -292,17 +284,17 @@ function DashboardHome() {
                 }
               />
               <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="pb-2 text-left text-xs font-semibold text-gray-400 uppercase">Name</th>
-                      <th className="pb-2 text-left text-xs font-semibold text-gray-400 uppercase">Type</th>
-                      <th className="pb-2 text-left text-xs font-semibold text-gray-400 uppercase">Country</th>
-                      <th className="pb-2 text-left text-xs font-semibold text-gray-400 uppercase">Joined</th>
-                      <th className="pb-2 text-right text-xs font-semibold text-gray-400 uppercase"></th>
+                <table className="min-w-full">
+                  <thead className="bg-slate-100">
+                    <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Country</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Joined</th>
+                      <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6"></th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     {(d.recentChurches || []).length === 0 ? (
                       <tr>
                         <td colSpan={5}>
@@ -310,22 +302,22 @@ function DashboardHome() {
                         </td>
                       </tr>
                     ) : (d.recentChurches || []).map((c) => (
-                      <tr key={c?._id} className="border-b border-gray-50 last:border-b-0">
-                        <td className="py-2.5 text-gray-900 font-medium" title={c?.name || ""}>
+                      <tr key={c?._id} className="max-md:text-xs text-gray-700 text-sm">
+                        <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 font-medium whitespace-nowrap px-4 md:px-6" title={c?.name || ""}>
                           <span className="sm:hidden">{truncateMobileName(c?.name)}</span>
                           <span className="hidden sm:inline">{truncateDesktopName(c?.name)}</span>
                         </td>
-                        <td className="py-2.5">
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${c?.type === "Headquarters" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                             {c?.type || "—"}
                           </span>
                         </td>
-                        <td className="py-2.5 text-gray-500 text-xs" title={c?.country || ""}>
+                        <td className="max-md:px-4 py-1.5 text-gray-500 whitespace-nowrap px-4 md:px-6" title={c?.country || ""}>
                           <span className="sm:hidden">{truncateMobileName(c?.country)}</span>
                           <span className="hidden sm:inline">{truncateDesktopName(c?.country)}</span>
                         </td>
-                        <td className="py-2.5 text-gray-400 text-xs">{c?.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}</td>
-                        <td className="py-2.5 text-right">
+                        <td className="max-md:px-4 py-1.5 text-gray-400 whitespace-nowrap px-4 md:px-6">{c?.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-right whitespace-nowrap px-4 md:px-6">
                           <button
                             type="button"
                             onClick={() => navigate(`/admin/churches/${c._id}`)}
