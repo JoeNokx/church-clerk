@@ -26,6 +26,10 @@ export const exportReportsAnalyticsReport = async (params) => {
   });
 };
 
+export const getReportEntities = async (params) => {
+  return await http.get("/reports-analytics/report/entities", { params });
+};
+
 export const createSavedReport = async (payload) => {
   return await http.post("/reports-analytics/report/saved", payload);
 };

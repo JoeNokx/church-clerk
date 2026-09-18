@@ -103,6 +103,9 @@ export default function SharedReportPage() {
           <div className="border-b border-gray-200 p-4 md:p-6 flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="font-bold text-gray-900 text-lg">{report?.name || "Report"}</div>
+              {report?.description ? (
+                <div className="mt-0.5 text-gray-600 text-sm">{report.description}</div>
+              ) : null}
               <div className="mt-1 text-gray-500 text-xs">
                 {report?.moduleLabel || "—"} · {formatPeriod(report?.dateFrom, report?.dateTo)} · {Number(report?.rowCount || rows.length)} rows · Generated {formatDateTime(report?.createdAt)}
               </div>

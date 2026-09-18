@@ -197,6 +197,26 @@ const MODULES = [
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M4 9v6h3l8 5V4L7 9H4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="M18 8.5a5 5 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
     )
+  },
+  {
+    value: "billing",
+    label: "Billing",
+    description: "Subscription payments and invoice history.",
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-700",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M3 10h18M7 15h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+    )
+  },
+  {
+    value: "audit",
+    label: "Audit",
+    description: "Activity logs of actions performed in the system.",
+    iconBg: "bg-gray-200",
+    iconColor: "text-gray-700",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="M9.5 12l2 2 3.5-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    )
   }
 ];
 
@@ -681,6 +701,9 @@ function ReportsAnalyticsPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-gray-900 truncate text-xs">{row?.name || "Untitled Report"}</div>
+                          {row?.description ? (
+                            <div className="text-gray-500 truncate text-xs">{row.description}</div>
+                          ) : null}
                           <div className="text-gray-500 text-xs">
                             {row?.moduleLabel || row?.module || "—"} · {formatDateTime(row?.createdAt)} · {Number(row?.rowCount || 0)} rows
                           </div>
@@ -781,6 +804,9 @@ function ReportsAnalyticsPage() {
             <div className="shrink-0 border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="font-semibold text-gray-900 text-sm truncate">{previewDoc?.name || "Report"}</div>
+                {previewDoc?.description ? (
+                  <div className="mt-0.5 text-gray-500 text-xs truncate">{previewDoc.description}</div>
+                ) : null}
                 <div className="mt-0.5 text-gray-500 text-xs">
                   {previewDoc?.moduleLabel || "—"} · {formatPeriod(previewDoc?.dateFrom, previewDoc?.dateTo)} · Generated {formatDateTime(previewDoc?.createdAt)}
                 </div>

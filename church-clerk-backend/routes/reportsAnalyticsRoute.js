@@ -7,6 +7,7 @@ import {
   exportReportsAnalytics,
   getReportsAnalyticsReport,
   exportReportsAnalyticsReport,
+  getReportEntities,
   createSavedReport,
   getSavedReports,
   getSavedReport,
@@ -65,6 +66,17 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
   requirePermission("reportsAnalytics", "generate"),
   getReportsAnalyticsReport
+);
+
+router.get(
+  "/report/entities",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "leader"),
+  requirePermission("reportsAnalytics", "generate"),
+  getReportEntities
 );
 
 router.get(

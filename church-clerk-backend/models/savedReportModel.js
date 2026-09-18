@@ -24,6 +24,11 @@ const savedReportSchema = new mongoose.Schema(
       trim: true,
       default: ""
     },
+    description: {
+      type: String,
+      trim: true,
+      default: ""
+    },
     columns: {
       type: [{ key: String, label: String }],
       default: []
