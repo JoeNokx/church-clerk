@@ -18,6 +18,7 @@ import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
@@ -228,6 +229,7 @@ function PledgeDetailsPageInner() {
   const canRead = useMemo(() => (typeof can === "function" ? can("pledge", "read") : true), [can]);
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const pledgeId = params.get("id");
@@ -416,7 +418,7 @@ function PledgeDetailsPageInner() {
         {canCreatePayment ? (
           <button
             type="button"
-            onClick={() => setNewPaymentOpen(true)}
+            onClick={() => guarded(() => setNewPaymentOpen(true))}
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
           >
             <span className="leading-none text-lg">+</span>
@@ -541,7 +543,7 @@ function PledgeDetailsPageInner() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             { label: "View", onClick: () => setViewRow(p) },
-                            canEditPayment && { label: "Edit", onClick: () => openEdit(p) }
+                            canEditPayment && { label: "Edit", onClick: () => guarded(() => openEdit(p)) }
                           ]} />
                         </td>
                       </tr>

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApprovals, approveRequest, rejectRequest } from "../services/governance.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const STATUS_LABELS = {
   PENDING_APPROVAL: { label: "Pending", className: "bg-amber-100 text-amber-700" },
@@ -164,6 +165,7 @@ function PayloadPreview({ payload, actionType }) {
 
 export default function ApprovalsPage() {
   const queryClient = useQueryClient();
+  const guarded = useGuardedAction();
   const [statusFilter, setStatusFilter] = useState("PENDING_APPROVAL");
   const [page, setPage] = useState(1);
   const [rejectTarget, setRejectTarget] = useState(null);
@@ -271,7 +273,7 @@ export default function ApprovalsPage() {
                     <div className="flex shrink-0 gap-2">
                       <button
                         type="button"
-                        onClick={() => handleApprove(row._id)}
+                        onClick={() => guarded(() => handleApprove(row._id))}
                         disabled={isActing || approveMutation.isPending}
                         className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                       >
@@ -279,7 +281,7 @@ export default function ApprovalsPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setRejectTarget(row._id)}
+                        onClick={() => guarded(() => setRejectTarget(row._id))}
                         disabled={isActing || rejectMutation.isPending}
                         className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                       >

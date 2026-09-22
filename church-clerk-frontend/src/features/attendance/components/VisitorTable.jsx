@@ -7,6 +7,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -36,6 +37,7 @@ function VisitorTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -263,12 +265,12 @@ function VisitorTable({ onEdit, onDeleted }) {
                     canView && { label: "View", onClick: () => openDetails(row) },
                     canConvert && {
                       label: row?.status === "converted" ? "Converted" : "Convert",
-                      onClick: () => { if (row?.status === "converted") return; openConvert(row); },
+                      onClick: () => guarded(() => { if (row?.status === "converted") return; openConvert(row); }),
                       disabled: row?.status === "converted",
                       desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
                     },
-                    canEdit && { label: "Edit", onClick: () => { const id = row?._id ?? row?.id; if (!id) return; onEdit?.(row); } },
-                    canDelete && row?.canDelete !== false && { label: "Delete", onClick: () => { const id = row?._id ?? row?.id; if (!id) return; openConfirmDelete(id); }, danger: true }
+                    canEdit && { label: "Edit", onClick: () => guarded(() => { const id = row?._id ?? row?.id; if (!id) return; onEdit?.(row); }) },
+                    canDelete && row?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => { const id = row?._id ?? row?.id; if (!id) return; openConfirmDelete(id); }), danger: true }
                   ]} />
                 </td>
               </tr>

@@ -8,6 +8,7 @@ import { deleteEvent as apiDeleteEvent } from "../services/event.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -47,6 +48,7 @@ function ProgramsEventsTable({ status, onEdit, onCreate }) {
   const store = useContext(EventContext);
   const { can } = useContext(PermissionContext) || {};
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const [deletingId, setDeletingId] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -167,7 +169,7 @@ function ProgramsEventsTable({ status, onEdit, onCreate }) {
 
     const showAdd = isZero && canCreate && onCreate;
     const actionLabel = showAdd ? "Create Program" : recovery?.actionLabel;
-    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -217,12 +219,12 @@ function ProgramsEventsTable({ status, onEdit, onCreate }) {
                 actions={
                   <>
                     {canEdit ? (
-                      <button onClick={() => { if (row?._id) onEdit?.(row); }} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                      <button onClick={() => guarded(() => { if (row?._id) onEdit?.(row); })} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
                         <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                       </button>
                     ) : null}
                     {canDelete && row?.canDelete !== false ? (
-                      <button onClick={() => openConfirmDelete(row)} disabled={deletingId === row?._id} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50 disabled:opacity-50">
+                      <button onClick={() => guarded(() => openConfirmDelete(row))} disabled={deletingId === row?._id} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50 disabled:opacity-50">
                         <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       </button>
                     ) : null}

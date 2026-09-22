@@ -10,6 +10,7 @@ import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../../shared/components/Card/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
+import { useGuardedAction } from "../../../../shared/context/SubscriptionLockContext.jsx";
 
 function fmtDate(v) {
   if (!v) return "Not Specified";
@@ -373,6 +374,7 @@ export default function OutreachesTab({ setHeaderAction }) {
   const canUpdate = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const [events, setEvents] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
@@ -408,7 +410,7 @@ export default function OutreachesTab({ setHeaderAction }) {
     if (!setHeaderAction) return;
     if (!canCreate) { setHeaderAction(null); return; }
     setHeaderAction(
-      <button onClick={() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+      <button onClick={() => guarded(() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); })} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         New Outreach
       </button>
@@ -518,7 +520,7 @@ export default function OutreachesTab({ setHeaderAction }) {
               title={filters.search || filters.status || filters.type ? "No outreaches found" : "No outreaches yet"}
               description={filters.search || filters.status || filters.type ? "We couldn't find any outreaches matching your filters." : "Plan your first outreach to start reaching your community."}
               actionLabel={filters.search || filters.status || filters.type ? "Clear Filters" : (canCreate ? "New Outreach" : null)}
-              onAction={filters.search || filters.status || filters.type ? () => { setFilters({ search: "", status: "", type: "" }); fetchEvents(1, { search: "", status: "", type: "" }); } : (canCreate ? () => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); } : undefined)}
+              onAction={filters.search || filters.status || filters.type ? () => { setFilters({ search: "", status: "", type: "" }); fetchEvents(1, { search: "", status: "", type: "" }); } : (canCreate ? () => guarded(() => { setEditingEvent(null); setFormMode("create"); setFormOpen(true); }) : undefined)}
             />
           </div>
         ) : (
@@ -528,8 +530,8 @@ export default function OutreachesTab({ setHeaderAction }) {
                 <EventCard
                   key={event._id}
                   event={event}
-                  onEdit={(e) => { setEditingEvent(e); setFormMode("edit"); setFormOpen(true); }}
-                  onDelete={(e) => setDeleteTarget(e)}
+                  onEdit={(e) => guarded(() => { setEditingEvent(e); setFormMode("edit"); setFormOpen(true); })}
+                  onDelete={(e) => guarded(() => setDeleteTarget(e))}
                   onView={(e) => toPage("outreach-event-details", { id: e._id })}
                   canWrite={canUpdate}
                   canDelete={canDelete}

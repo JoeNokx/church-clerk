@@ -299,7 +299,7 @@ function MembersPageInner() {
                   {isChurchAdmin ? (
                     <button
                       type="button"
-                      onClick={() => { setMobileAddOpen(false); openRegLink(); }}
+                      onClick={() => guarded(() => { setMobileAddOpen(false); openRegLink(); })}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
                       className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
                     >
@@ -309,7 +309,7 @@ function MembersPageInner() {
                   {canImport ? (
                     <button
                       type="button"
-                      onClick={() => { setMobileAddOpen(false); openImport(); }}
+                      onClick={() => guarded(() => { setMobileAddOpen(false); openImport(); })}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
                       className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                     >
@@ -325,7 +325,7 @@ function MembersPageInner() {
           {isChurchAdmin && (
             <button
               type="button"
-              onClick={openRegLink}
+              onClick={() => guarded(openRegLink)}
               className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
             >
               Registration Link
@@ -334,7 +334,7 @@ function MembersPageInner() {
           {canImport && (
             <button
               type="button"
-              onClick={openImport}
+              onClick={() => guarded(openImport)}
               className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
             >
               Import Members

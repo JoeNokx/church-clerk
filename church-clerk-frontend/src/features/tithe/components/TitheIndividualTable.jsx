@@ -9,6 +9,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -31,6 +32,7 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("tithe", "create") : false), [can]);
@@ -114,7 +116,7 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
 
     const showAdd = isZero && canCreate && onCreate;
     const actionLabel = showAdd ? "Record Tithe" : recovery?.actionLabel;
-    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -180,7 +182,7 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
                   <TableKebabMenu items={[
                     canEdit && {
                       label: "Edit",
-                      onClick: () => { if (!row?._id) return; onEdit?.(row); }
+                      onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); })
                     }
                   ]} />
                 </td>

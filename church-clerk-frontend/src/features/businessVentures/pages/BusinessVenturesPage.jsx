@@ -585,7 +585,7 @@ function BusinessVenturesPage() {
               ? "We couldn't find any ventures matching your search."
               : "Add your first venture to start tracking income and expenses."}
             actionLabel={searchValue ? "Clear Search" : (canEdit ? "Add Business" : null)}
-            onAction={searchValue ? () => setSearchValue("") : (canEdit ? () => setAddOpen(true) : undefined)}
+            onAction={searchValue ? () => setSearchValue("") : (canEdit ? () => guarded(() => setAddOpen(true)) : undefined)}
           />
         ) : (
           <div className="p-4 md:p-6 lg:p-8">

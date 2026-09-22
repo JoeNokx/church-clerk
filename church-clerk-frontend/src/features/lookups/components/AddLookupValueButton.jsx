@@ -1,13 +1,15 @@
 import { useState } from "react";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function AddLookupValueButton({ label, kind, onCreated }) {
   const [open, setOpen] = useState(false);
+  const guarded = useGuardedAction();
 
   if (!open) {
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => guarded(() => setOpen(true))}
         className="font-semibold text-blue-700 hover:underline text-xs"
       >
         {label}

@@ -1177,7 +1177,7 @@ function OrganisationDetailsPage() {
             {/* Edit button: absolute top-right on mobile, hidden on desktop (rendered in sidebar) */}
             <button
               type="button"
-              onClick={openEdit}
+              onClick={() => guarded(() => openEdit())}
               className="absolute top-0 right-0 lg:hidden rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
             >
               Edit
@@ -1711,7 +1711,7 @@ function OrganisationDetailsPage() {
               </div>
               <button
                 type="button"
-                onClick={attendanceView === "individual" ? () => void openIndividualAttendanceForm("create", null) : () => openAttendanceForm("create", null)}
+                onClick={() => guarded(() => { if (attendanceView === "individual") { void openIndividualAttendanceForm("create", null); } else { openAttendanceForm("create", null); } })}
                 className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
               >
                 <span className="leading-none text-lg">+</span>

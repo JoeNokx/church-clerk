@@ -548,20 +548,20 @@ function TithePageInner() {
               <ModeSelectCard
                 kind="individual"
                 disabled={!canUpdateMode || store?.loading}
-                onSelect={async () => {
+                onSelect={() => guarded(async () => {
                   localStorage.setItem("tithe_default_mode", "individual");
                   await store?.setRecordingMode?.("individual");
                   setView("individual");
-                }}
+                })}
               />
               <ModeSelectCard
                 kind="aggregate"
                 disabled={!canUpdateMode || store?.loading}
-                onSelect={async () => {
+                onSelect={() => guarded(async () => {
                   localStorage.setItem("tithe_default_mode", "aggregate");
                   await store?.setRecordingMode?.("aggregate");
                   setView("aggregate");
-                }}
+                })}
               />
             </div>
           </div>

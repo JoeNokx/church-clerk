@@ -1380,7 +1380,7 @@ function SettingsPage() {
                   <button
                     type="button"
                     aria-label="Edit profile photo"
-                    onClick={handlePickAvatar}
+                    onClick={() => guarded(handlePickAvatar)}
                     disabled={!isUserActive}
                     className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
                     title="Change photo"
@@ -1395,7 +1395,7 @@ function SettingsPage() {
                     <button
                       type="button"
                       aria-label="Remove profile photo"
-                      onClick={() => setRemoveAvatarConfirmOpen(true)}
+                      onClick={() => guarded(() => setRemoveAvatarConfirmOpen(true))}
                       disabled={!isUserActive}
                       className="absolute -top-1 -left-1 h-7 w-7 rounded-full bg-red-600 text-white border-2 border-white flex items-center justify-center hover:bg-red-700 disabled:opacity-50"
                       title="Remove photo"
@@ -1470,7 +1470,7 @@ function SettingsPage() {
                 </div>
               ) : null}
 
-              <form onSubmit={handleSaveMyProfile} className="flex-1 min-w-[260px] space-y-4">
+              <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleSaveMyProfile(e)); }} className="flex-1 min-w-[260px] space-y-4">
                 <div>
                   <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                   <input
@@ -1544,7 +1544,7 @@ function SettingsPage() {
             {pwError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{pwError}</div> : null}
             {pwSuccess ? <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-green-700 text-sm">{pwSuccess}</div> : null}
 
-            <form onSubmit={handleUpdateMyPassword} className="mt-4 space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleUpdateMyPassword(e)); }} className="mt-4 space-y-4">
               <div>
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Old Password</label>
                 <div className="relative">
@@ -1720,7 +1720,7 @@ function SettingsPage() {
           {profileSuccess ? <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{profileSuccess}</div> : null}
 
           <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <form onSubmit={handleSaveProfile} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleSaveProfile(e)); }} className="space-y-4">
               <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
                 <div className="relative h-20 w-20 shrink-0">
                   {logoPreviewUrl ? (
@@ -1730,7 +1730,7 @@ function SettingsPage() {
                       <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-blue-300"><path d="M12 3L4 8V21H20V8L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>
                     </div>
                   )}
-                  <button type="button" onClick={() => logoInputRef.current?.click()} disabled={!canWrite} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50" title="Change logo">
+                  <button type="button" onClick={() => guarded(() => logoInputRef.current?.click())} disabled={!canWrite} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50" title="Change logo">
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-700"><path d="M4 20h4l10.5-10.5a2 2 0 10-4-4L4 16v4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M13.5 6.5l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
                   </button>
                   <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 2 * 1024 * 1024) { setProfileError("Logo must be under 2 MB"); return; } setProfileError(""); const url = URL.createObjectURL(f); setLogoPreviewUrl(url); setLogoFile(f); }} />
@@ -2137,7 +2137,7 @@ function SettingsPage() {
                     <div className="mt-3 flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={handleRequestSenderId}
+                        onClick={() => guarded(handleRequestSenderId)}
                         disabled={!canWrite || senderIdLoading || !String(senderIdInput || "").trim()}
                         className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                       >
@@ -2187,7 +2187,7 @@ function SettingsPage() {
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <button
                 type="button"
-                onClick={() => handleSwitchTitheMode("individual")}
+                onClick={() => guarded(() => handleSwitchTitheMode("individual"))}
                 disabled={titheModeSwitching || activeChurch?.titheRecordingMode === "individual"}
                 className={`cck-allow-icons rounded-2xl border p-4 md:p-6 text-left transition ${activeChurch?.titheRecordingMode === "individual" ? "border-blue-500 bg-blue-50 pointer-events-none" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
               >
@@ -2209,7 +2209,7 @@ function SettingsPage() {
 
               <button
                 type="button"
-                onClick={() => handleSwitchTitheMode("aggregate")}
+                onClick={() => guarded(() => handleSwitchTitheMode("aggregate"))}
                 disabled={titheModeSwitching || activeChurch?.titheRecordingMode === "aggregate"}
                 className={`cck-allow-icons rounded-2xl border p-4 md:p-6 text-left transition ${activeChurch?.titheRecordingMode === "aggregate" ? "border-green-500 bg-green-50 pointer-events-none" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
               >
@@ -2760,7 +2760,7 @@ function SettingsPage() {
 
             {addError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{addError}</div> : null}
 
-            <form onSubmit={handleCreateUser} className="mt-4 space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleCreateUser(e)); }} className="mt-4 space-y-4">
               <div>
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                 <input
@@ -2865,7 +2865,7 @@ function SettingsPage() {
 
             {editError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{editError}</div> : null}
 
-            <form onSubmit={handleSaveEdit} className="mt-4 space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleSaveEdit(e)); }} className="mt-4 space-y-4">
               <div>
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                 <input

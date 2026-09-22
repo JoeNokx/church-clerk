@@ -31,6 +31,7 @@ import {
   updateMessageTemplate
 } from "../services/communication.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction, useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function InfoTooltip({ text }) {
   const [open, setOpen] = useState(false);
@@ -543,6 +544,8 @@ function TemplatesTab({ open, onUseTemplate }) {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
   const canWrite = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
+  const { isLocked } = useSubscriptionLock();
+  const guarded = useGuardedAction();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -634,7 +637,7 @@ function TemplatesTab({ open, onUseTemplate }) {
 
         {error ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-        <div className="mt-4 grid grid-cols-1 gap-3">
+        <fieldset disabled={isLocked} className="m-0 mt-4 grid min-w-0 grid-cols-1 gap-3 border-0 p-0">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -650,25 +653,25 @@ function TemplatesTab({ open, onUseTemplate }) {
             disabled={loading || !canWrite}
             className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
           />
+        </fieldset>
 
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={resetForm}
-              disabled={loading || !canWrite}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={loading || !canWrite}
-              className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
-            >
-              {loading ? "Saving..." : editId ? "Update Template" : "Create Template"}
-            </button>
-          </div>
+        <div className="mt-3 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={resetForm}
+            disabled={loading || !canWrite}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={() => guarded(onSave)}
+            disabled={loading || !canWrite}
+            className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
+          >
+            {loading ? "Saving..." : editId ? "Update Template" : "Create Template"}
+          </button>
         </div>
       </div>
 
@@ -715,8 +718,8 @@ function TemplatesTab({ open, onUseTemplate }) {
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => setViewRow(t) },
                         { label: "Use", onClick: () => onUseTemplate?.(t), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                        { label: "Edit", onClick: () => onEdit(t) },
-                        { label: "Delete", onClick: () => onDelete(t?._id), danger: true }
+                        { label: "Edit", onClick: () => guarded(() => onEdit(t)) },
+                        { label: "Delete", onClick: () => guarded(() => onDelete(t?._id)), danger: true }
                       ]} />
                     </td>
                   </tr>
@@ -774,6 +777,7 @@ function formatAudienceLabel(audience) {
 }
 
 function DraftsTable({ open, onUseDraft, onWalletUpdated }) {
+  const guarded = useGuardedAction();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -877,7 +881,7 @@ function DraftsTable({ open, onUseDraft, onWalletUpdated }) {
                   <td className="py-2">
                     <TableKebabMenu items={[
                       { label: "Continue Editing", onClick: () => onUseDraft?.(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                      canDelete && m?.canDelete !== false && { label: "Delete", onClick: () => onDeleteRow(m), danger: true, disabled: actionLoadingId === m?._id }
+                      canDelete && m?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDeleteRow(m)), danger: true, disabled: actionLoadingId === m?._id }
                     ]} />
                   </td>
                 </tr>
@@ -906,6 +910,7 @@ function statusBadge(status) {
 }
 
 function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdated, variant = "sent" }) {
+  const guarded = useGuardedAction();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -1090,8 +1095,8 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
                     <td className="py-2">
                       <TableKebabMenu items={[
                         canView && { label: "View", onClick: () => onOpenDeliveryReport(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                        canEdit && { label: "Edit", onClick: () => openEdit(m), disabled: actionLoadingId === m?._id },
-                        canCancel && { label: "Cancel", onClick: () => onCancelRow(m), danger: true, disabled: actionLoadingId === m?._id }
+                        canEdit && { label: "Edit", onClick: () => guarded(() => openEdit(m)), disabled: actionLoadingId === m?._id },
+                        canCancel && { label: "Cancel", onClick: () => guarded(() => onCancelRow(m)), danger: true, disabled: actionLoadingId === m?._id }
                       ]} />
                     </td>
                   </tr>
@@ -1291,6 +1296,7 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
 }
 
 function DeliveryReportModal({ open, onClose, message }) {
+  const guarded = useGuardedAction();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -1519,7 +1525,7 @@ function DeliveryReportModal({ open, onClose, message }) {
                             {isFailed ? (
                               <button
                                 type="button"
-                                onClick={() => onResend(d?._id)}
+                                onClick={() => guarded(() => onResend(d?._id))}
                                 disabled={resendingId === d?._id}
                                 className="rounded-md border border-blue-200 bg-blue-50 px-3 py-1 font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-60 text-xs"
                               >
@@ -1566,6 +1572,8 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
   const canWrite = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
+  const { isLocked } = useSubscriptionLock();
+  const guarded = useGuardedAction();
 
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
@@ -1683,6 +1691,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
 
   useEffect(() => {
     if (!open) return;
+    if (isLocked) return;
 
     const selectedChannels = Object.entries(channels)
       .filter(([, v]) => v)
@@ -1759,7 +1768,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     return () => {
       cancelled = true;
     };
-  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, memberIds, open]);
+  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, isLocked, memberIds, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -2057,7 +2066,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
         open={senderWarnOpen}
         onClose={closeSenderWarn}
         onContinue={continueWithDefaultSender}
-        onRequest={requestSenderIdFromModal}
+        onRequest={() => guarded(requestSenderIdFromModal)}
         loading={senderWarnLoading}
         error={senderWarnError}
         senderIdCurrent={activeChurch?.sender_id}
@@ -2074,6 +2083,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           </div>
         </div>
 
+        <fieldset disabled={isLocked} className="m-0 min-w-0 border-0 p-0">
         <div className="mt-4 grid grid-cols-1 gap-3">
           <input
             value={title}
@@ -2357,6 +2367,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             </div>
           ) : null}
         </div>
+          </fieldset>
 
         <div className="mt-6 flex items-center justify-end gap-2">
           <button
@@ -2369,7 +2380,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           </button>
           <button
             type="button"
-            onClick={() => onSend({ draft: true })}
+            onClick={() => guarded(() => onSend({ draft: true }))}
             disabled={loading}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
@@ -2377,7 +2388,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           </button>
           <button
             type="button"
-            onClick={() => onSend({ draft: false })}
+            onClick={() => guarded(() => onSend({ draft: false }))}
             disabled={loading || (!hasEnoughCredits && estimatedTotalCost > 0)}
             className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
           >
@@ -2392,6 +2403,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
 function AnnouncementPage() {
   const { can } = useContext(PermissionContext) || {};
   const { user } = useAuth();
+  const guarded = useGuardedAction();
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
@@ -2584,7 +2596,7 @@ function AnnouncementPage() {
     setDeliveryRow(null);
   };
 
-  const useTemplate = (t) => {
+  const applyTemplatePrefill = (t) => {
     setCommunicationPrefill({
       title: "",
       content: String(t?.message || ""),
@@ -2596,7 +2608,7 @@ function AnnouncementPage() {
     setTab("communication");
   };
 
-  const useDraft = (m) => {
+  const applyDraftPrefill = (m) => {
     const channels = Array.isArray(m?.channels) ? m.channels.map((c) => String(c)) : [];
     setCommunicationPrefill({
       title: String(m?.title || ""),
@@ -2629,7 +2641,7 @@ function AnnouncementPage() {
         <WalletCard
           wallet={wallet}
           allowance={allowance}
-          onFund={openFund}
+          onFund={() => guarded(openFund)}
           onViewHistory={() => setTab("wallet-history")}
           isGhana={isGhana}
           usdToGhs={usdToGhs}
@@ -2679,8 +2691,8 @@ function AnnouncementPage() {
 
       <TemplatesAndDraftsTab
         open={tab === "templates"}
-        onUseTemplate={useTemplate}
-        onUseDraft={useDraft}
+        onUseTemplate={(t) => guarded(() => applyTemplatePrefill(t))}
+        onUseDraft={(m) => guarded(() => applyDraftPrefill(m))}
         onOpenDeliveryReport={openDelivery}
         onWalletUpdated={loadWallet}
       />

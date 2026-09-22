@@ -5,6 +5,7 @@ import ProgramsEventsTable from "../components/ProgramsEventsTable.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import EventCreatePage from "./EventCreatePage.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function ProgramsEventsPageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -16,6 +17,7 @@ function ProgramsEventsPageInner() {
   const [editingEventId, setEditingEventId] = useState(null);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("events", "create") : false), [can]);
+  const guarded = useGuardedAction();
 
   const refreshLists = async () => {
     await store?.fetchEventStats?.({ force: true });
@@ -46,7 +48,7 @@ function ProgramsEventsPageInner() {
             {canCreate ? (
               <button
                 type="button"
-                onClick={() => setCreateOpen(true)}
+                onClick={() => guarded(() => setCreateOpen(true))}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>

@@ -31,6 +31,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -114,6 +115,7 @@ function EventDetailsPage() {
   const navigate = useNavigate();
   const { toPage } = useDashboardNavigator();
   const { can } = useContext(PermissionContext) || {};
+  const guarded = useGuardedAction();
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const eventId = params.get("id");
@@ -826,7 +828,7 @@ function EventDetailsPage() {
             {canEdit ? (
               <button
                 type="button"
-                onClick={() => setEditOpen(true)}
+                onClick={() => guarded(() => setEditOpen(true))}
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -969,7 +971,7 @@ function EventDetailsPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => { setRegisterError(null); setRegisterOpen(true); }}
+                      onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); })}
                       className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
                     >
                       Register
@@ -987,7 +989,7 @@ function EventDetailsPage() {
                   >
                     <button
                       type="button"
-                      onClick={() => { setRegisterError(null); setRegisterOpen(true); }}
+                      onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); })}
                       className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -1100,8 +1102,8 @@ function EventDetailsPage() {
                             </td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <TableKebabMenu items={[
-                                canEdit && { label: "Edit", onClick: () => openEditAttendee(r) },
-                                canDelete && { label: "Delete", onClick: () => onDeleteAttendee(r), danger: true }
+                                canEdit && { label: "Edit", onClick: () => guarded(() => openEditAttendee(r)) },
+                                canDelete && { label: "Delete", onClick: () => guarded(() => onDeleteAttendee(r)), danger: true }
                               ]} />
                             </td>
                           </tr>
@@ -1121,7 +1123,7 @@ function EventDetailsPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => { setRecordError(null); setRecordOpen(true); }}
+                      onClick={() => guarded(() => { setRecordError(null); setRecordOpen(true); })}
                       className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
                     >
                       <span className="leading-none text-lg">+</span>
@@ -1140,7 +1142,7 @@ function EventDetailsPage() {
                   >
                     <button
                       type="button"
-                      onClick={() => { setRecordError(null); setRecordOpen(true); }}
+                      onClick={() => guarded(() => { setRecordError(null); setRecordOpen(true); })}
                       className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
                     >
                       <span className="leading-none text-lg">+</span>
@@ -1230,8 +1232,8 @@ function EventDetailsPage() {
                             </td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <TableKebabMenu items={[
-                                canEdit && { label: "Edit", onClick: () => openEditTotal(r) },
-                                canDelete && { label: "Delete", onClick: () => onDeleteTotal(r), danger: true }
+                                canEdit && { label: "Edit", onClick: () => guarded(() => openEditTotal(r)) },
+                                canDelete && { label: "Delete", onClick: () => guarded(() => onDeleteTotal(r)), danger: true }
                               ]} />
                             </td>
                           </tr>
@@ -1253,6 +1255,7 @@ function EventDetailsPage() {
                       accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
                       disabled={fileUploading}
                       onFile={onUploadFile}
+                      onClickIntercept={(open) => guarded(open)}
                       className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm h-10"
                     >
                       {fileUploading ? "Uploading..." : "Upload File"}
@@ -1272,6 +1275,7 @@ function EventDetailsPage() {
                       accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
                       disabled={fileUploading}
                       onFile={onUploadFile}
+                      onClickIntercept={(open) => guarded(open)}
                       className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60 text-sm h-10"
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -1368,9 +1372,9 @@ function EventDetailsPage() {
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <TableKebabMenu items={[
                                 { label: "View", onClick: () => { if (!f?.url) return; window.open(f.url, "_blank", "noopener,noreferrer"); }, desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                                canEdit && { label: "Edit", onClick: () => openEditFile(f) },
+                                canEdit && { label: "Edit", onClick: () => guarded(() => openEditFile(f)) },
                                 { label: "Download", onClick: () => { if (!f?._id) return; const a = document.createElement("a"); a.href = getEventAttendanceFileDownloadUrl(eventId, f._id); a.download = f.originalName || "attendance_file"; a.target = "_blank"; a.rel = "noopener noreferrer"; a.click(); } },
-                                canDelete && { label: "Delete", onClick: () => onDeleteFile(f), danger: true }
+                                canDelete && { label: "Delete", onClick: () => guarded(() => onDeleteFile(f)), danger: true }
                               ]} />
                             </td>
                           </tr>

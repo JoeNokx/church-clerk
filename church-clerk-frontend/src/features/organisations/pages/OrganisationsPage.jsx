@@ -17,6 +17,7 @@ import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.js
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function safeText(value) {
   return typeof value === "string" ? value : "";
@@ -499,6 +500,7 @@ function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {
 
 function OrganisationsPage() {
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const { can } = useContext(PermissionContext) || {};
   const canView = useMemo(() => (typeof can === "function" ? can("organisation", "view") : false), [can]);
@@ -701,7 +703,7 @@ function OrganisationsPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={openCreate}
+            onClick={() => guarded(openCreate)}
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
           >
             <span className="leading-none text-lg">+</span>
@@ -764,7 +766,7 @@ function OrganisationsPage() {
                   ? `Create your first ${String(tabLabel).slice(0, -1)} to start organizing your church.`
                   : "We couldn't find any matching your search."}
                 actionLabel={isZero && canCreate ? "Add" : (isZero ? null : "Clear Search")}
-                onAction={isZero && canCreate ? openCreate : (isZero ? undefined : () => setSearch(""))}
+                onAction={isZero && canCreate ? () => guarded(openCreate) : (isZero ? undefined : () => setSearch(""))}
               />
             );
           })()
@@ -784,8 +786,8 @@ function OrganisationsPage() {
 
                       toPage("organisation-details", { type: ministryType, id: row._id });
                     }}
-                    onEdit={() => openEdit(row)}
-                    onDelete={() => openDelete(row)}
+                    onEdit={() => guarded(() => openEdit(row))}
+                    onDelete={() => guarded(() => openDelete(row))}
                   />
                 );
               })}

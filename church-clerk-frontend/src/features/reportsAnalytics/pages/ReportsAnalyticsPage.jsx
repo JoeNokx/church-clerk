@@ -16,6 +16,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import debounce from "../../../shared/utils/debounce.js";
 import { showSuccess, showError } from "../../../utils/toast.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const MODULES = [
   {
@@ -382,6 +383,7 @@ function ReportsAnalyticsPage() {
     () => (typeof can === "function" ? can("reportsAnalytics", "export") : false),
     [can]
   );
+  const guarded = useGuardedAction();
 
   const [genModule, setGenModule] = useState(null);
 
@@ -610,7 +612,7 @@ function ReportsAnalyticsPage() {
                   <button
                     type="button"
                     disabled={!canGenerate}
-                    onClick={() => setGenModule(m)}
+                    onClick={() => guarded(() => setGenModule(m))}
                     className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-xs"
                   >
                     Generate Report
@@ -743,7 +745,7 @@ function ReportsAnalyticsPage() {
                               type="button"
                               title="Delete"
                               disabled={deletingId === row?._id}
-                              onClick={() => setConfirmDelete(row)}
+                              onClick={() => guarded(() => setConfirmDelete(row))}
                               className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50 disabled:opacity-50"
                             >
                               <TrashIcon />

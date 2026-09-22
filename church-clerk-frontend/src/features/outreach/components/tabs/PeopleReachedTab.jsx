@@ -6,6 +6,7 @@ import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
 import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../../shared/context/SubscriptionLockContext.jsx";
 import {
   getAllProspects, createProspect, createProspectDirect, updateProspectDirect, deleteProspectDirect,
   checkDuplicate, getOutreachEvents,
@@ -586,6 +587,7 @@ export default function PeopleReachedTab({ setHeaderAction }) {
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
   const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
   const { toPage } = useDashboardNavigator();
+  const guarded = useGuardedAction();
 
   const [prospects, setProspects] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
@@ -620,7 +622,7 @@ export default function PeopleReachedTab({ setHeaderAction }) {
     if (!setHeaderAction) return;
     if (!canCreate) { setHeaderAction(null); return; }
     setHeaderAction(
-      <button onClick={() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
+      <button onClick={() => guarded(() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); })} className="cck-allow-icons h-9 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0">
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         Record Person
       </button>
@@ -729,7 +731,7 @@ export default function PeopleReachedTab({ setHeaderAction }) {
                   ? "We couldn't find anyone matching your filters."
                   : "Record the first person reached during an outreach."}
                 actionLabel={hasFilters ? "Clear Filters" : (canWrite ? "Add Person" : null)}
-                onAction={hasFilters ? () => setFilters({ search: "", stage: "", dateFrom: "", dateTo: "" }) : (canWrite ? () => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); } : undefined)}
+                onAction={hasFilters ? () => setFilters({ search: "", stage: "", dateFrom: "", dateTo: "" }) : (canWrite ? () => guarded(() => { setEditingPerson(null); setFormMode("create"); setFormOpen(true); }) : undefined)}
               />
             );
           })()
@@ -751,9 +753,9 @@ export default function PeopleReachedTab({ setHeaderAction }) {
                   <PersonRow
                     key={p._id} person={p}
                     onView={(x) => toPage("prospect-details", { id: x._id, from: "people" })}
-                    onEdit={(x) => { setEditingPerson(x); setFormMode("edit"); setFormOpen(true); }}
-                    onConvert={(x) => setConvertTarget(x)}
-                    onDelete={(x) => setDeleteTarget(x)}
+                    onEdit={(x) => guarded(() => { setEditingPerson(x); setFormMode("edit"); setFormOpen(true); })}
+                    onConvert={(x) => guarded(() => setConvertTarget(x))}
+                    onDelete={(x) => guarded(() => setDeleteTarget(x))}
                     canWrite={canWrite} canDelete={canDelete}
                   />
                 ))}

@@ -40,6 +40,7 @@ const CHIP_LABELS = {
 };
 
 function InlineStatusPicker({ row, onUpdate, updating }) {
+  const guarded = useGuardedAction();
   const [open, setOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: null, bottom: null, left: 0 });
@@ -50,6 +51,7 @@ function InlineStatusPicker({ row, onUpdate, updating }) {
   const isUpdating = updating === row?._id;
 
   const handleOpen = () => {
+    if (!guarded(() => {})) return;
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const estimatedHeight = STATUS_OPTIONS.length * 32 + 8;

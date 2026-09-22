@@ -6,6 +6,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -26,6 +27,7 @@ function formatDateWithDay(value) {
 function AttendanceTable({ onEdit, onDeleted }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
+  const guarded = useGuardedAction();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -161,8 +163,8 @@ function AttendanceTable({ onEdit, onDeleted }) {
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{Number(row?.totalNumber || 0).toLocaleString()}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
-                    canEdit && { label: "Edit", onClick: () => { if (!row?._id) return; onEdit?.(row); } },
-                    canDelete && { label: "Delete", onClick: () => { if (!row?._id) return; openConfirmDelete(row._id); }, danger: true }
+                    canEdit && { label: "Edit", onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); }) },
+                    canDelete && { label: "Delete", onClick: () => guarded(() => { if (!row?._id) return; openConfirmDelete(row._id); }), danger: true }
                   ]} />
                 </td>
               </tr>

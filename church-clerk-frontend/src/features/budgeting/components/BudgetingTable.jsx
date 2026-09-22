@@ -8,6 +8,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -58,6 +59,7 @@ function BudgetingTable({ onEdit, onCreate }) {
   const store = useContext(BudgetingContext);
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const guarded = useGuardedAction();
   const { toPage } = useDashboardNavigator();
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("budgeting", "update") : false), [can]);
@@ -158,7 +160,7 @@ function BudgetingTable({ onEdit, onCreate }) {
 
     const showAdd = isZero && canCreate && onCreate;
     const actionLabel = showAdd ? "Create Budget" : recovery?.actionLabel;
-    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -201,7 +203,7 @@ function BudgetingTable({ onEdit, onCreate }) {
                       {canEdit ? (
                         <button
                           type="button"
-                          onClick={() => row?._id && onEdit?.(row)}
+                          onClick={() => guarded(() => { if (row?._id) onEdit?.(row); })}
                           className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
                           aria-label="Edit"
                         >

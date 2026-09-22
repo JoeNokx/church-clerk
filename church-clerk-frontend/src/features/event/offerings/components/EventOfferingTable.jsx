@@ -123,7 +123,7 @@ function EventOfferingTable({ onEdit, onCreate }) {
           ? "Record the first offering collected for this event."
           : "We couldn't find any offerings matching your search or filters."}
         actionLabel={showAdd ? "Add Offering" : recovery?.actionLabel}
-        onAction={showAdd ? onCreate : recovery?.onAction}
+        onAction={showAdd ? () => guarded(onCreate) : recovery?.onAction}
         secondaryLabel={showAdd ? null : recovery?.secondaryLabel}
         onSecondary={showAdd ? null : recovery?.onSecondary}
       />

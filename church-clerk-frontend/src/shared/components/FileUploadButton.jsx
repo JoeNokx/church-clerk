@@ -5,6 +5,7 @@ function FileUploadButton({
   accept,
   disabled,
   className,
+  onClickIntercept,
   children
 }) {
   const inputRef = useRef(null);
@@ -26,7 +27,14 @@ function FileUploadButton({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => {
+          const openPicker = () => inputRef.current?.click();
+          if (typeof onClickIntercept === "function") {
+            onClickIntercept(openPicker);
+            return;
+          }
+          openPicker();
+        }}
         className={className}
       >
         {children}

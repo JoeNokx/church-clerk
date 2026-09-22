@@ -14,6 +14,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function WelfarePageInner() {
   const { can } = useContext(PermissionContext) || {};
@@ -38,6 +39,7 @@ function WelfarePageInner() {
   });
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
+  const guarded = useGuardedAction();
 
   const refreshKpi = useCallback(async () => {
     if (!store?.activeChurchId) return;
@@ -117,7 +119,7 @@ function WelfarePageInner() {
           {canCreate && (
             <button
               type="button"
-              onClick={openCreate}
+              onClick={() => guarded(openCreate)}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
             >
               <span className="leading-none text-lg">+</span>

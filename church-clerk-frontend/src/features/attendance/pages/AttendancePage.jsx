@@ -902,7 +902,7 @@ function AttendancePageInner() {
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 type="button"
-                                onClick={() => { setIndivLinkError(""); setIndivLinkModalOpen(true); }}
+                                onClick={() => guarded(() => { setIndivLinkError(""); setIndivLinkModalOpen(true); })}
                                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
                               >
                                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1172,14 +1172,14 @@ function AttendancePageInner() {
                       </div>
                       <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">Link is <span className="font-semibold">active</span>. Members can use this link to mark themselves as present.</div>
                       <div className="flex flex-col gap-2 md:flex-row">
-                        <button type="button" onClick={async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { const r = await generateAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(r?.data?.token || null); setIndivLinkActive(true); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to generate link."); } finally { setIndivLinkLoading(false); } }} disabled={indivLinkLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New Link</button>
-                        <button type="button" onClick={async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { await revokeAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(null); setIndivLinkActive(false); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to revoke link."); } finally { setIndivLinkLoading(false); } }} disabled={indivLinkLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke Link</button>
+                        <button type="button" onClick={() => guarded(async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { const r = await generateAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(r?.data?.token || null); setIndivLinkActive(true); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to generate link."); } finally { setIndivLinkLoading(false); } })} disabled={indivLinkLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New Link</button>
+                        <button type="button" onClick={() => guarded(async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { await revokeAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(null); setIndivLinkActive(false); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to revoke link."); } finally { setIndivLinkLoading(false); } })} disabled={indivLinkLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke Link</button>
                       </div>
                     </>
                   ) : (
                     <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center">
                       <div className="text-gray-500 text-sm mb-3">No active check-in link. Generate one to share with members.</div>
-                      <button type="button" onClick={async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { const r = await generateAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(r?.data?.token || null); setIndivLinkActive(true); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to generate link."); } finally { setIndivLinkLoading(false); } }} disabled={indivLinkLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate Link</button>
+                      <button type="button" onClick={() => guarded(async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { const r = await generateAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(r?.data?.token || null); setIndivLinkActive(true); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to generate link."); } finally { setIndivLinkLoading(false); } })} disabled={indivLinkLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate Link</button>
                     </div>
                   )}
                 </div>

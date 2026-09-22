@@ -8,6 +8,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -21,6 +22,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
   const store = useContext(TitheContext);
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const guarded = useGuardedAction();
 
   const [viewRow, setViewRow] = useState(null);
 
@@ -102,7 +104,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
 
     const showAdd = isZero && canCreate && onCreate;
     const actionLabel = showAdd ? "Record Aggregate Tithe" : recovery?.actionLabel;
-    const onAction = showAdd ? onCreate : recovery?.onAction;
+    const onAction = showAdd ? () => guarded(onCreate) : recovery?.onAction;
     const secondaryLabel = showAdd ? null : recovery?.secondaryLabel;
     const onSecondary = showAdd ? null : recovery?.onSecondary;
 
@@ -150,7 +152,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
                     { label: "View", onClick: () => setViewRow(row) },
                     canEdit && {
                       label: "Edit",
-                      onClick: () => { if (!row?._id) return; onEdit?.(row); },
+                      onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); }),
                       desktopClassName: "h-11 inline-flex items-center justify-center rounded-lg bg-white text-blue-700 hover:bg-blue-50 md:h-12 md:w-11 w-11 md:w-12",
                       desktopContent: (
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
