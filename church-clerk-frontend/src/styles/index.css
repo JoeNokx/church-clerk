@@ -37,10 +37,31 @@
   cursor: pointer;
  }
 
- input,
+ input:not([type="checkbox"]):not([type="radio"]),
  textarea,
  [contenteditable="true"] {
   cursor: text;
+ }
+
+ input[type="checkbox"],
+ input[type="radio"],
+ [role="checkbox"],
+ [role="radio"],
+ [role="switch"],
+ label:has(input[type="checkbox"]),
+ label:has(input[type="radio"]),
+ label[for] {
+  cursor: pointer;
+ }
+
+ input[type="checkbox"]:disabled,
+ input[type="radio"]:disabled,
+ [role="checkbox"][aria-disabled="true"],
+ [role="radio"][aria-disabled="true"],
+ [role="switch"][aria-disabled="true"],
+ label:has(input[type="checkbox"]:disabled),
+ label:has(input[type="radio"]:disabled) {
+  cursor: not-allowed;
  }
 
 /* Mobile UX improvements */
