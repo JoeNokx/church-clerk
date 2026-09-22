@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getMyNotifications,
+  getUnreadNotificationsCount,
   markAllNotificationsRead,
   markNotificationRead
 } from "../services/notifications.api.js";
@@ -43,7 +44,7 @@ function NotificationRow({ n, onMarkRead, onNavigate }) {
           )}
           <div className="mt-1.5 text-gray-400 text-xs">{formatDateTime(n?.createdAt)}</div>
         </div>
-        {!n?.readStatus && !isSupportTicket && (
+        {!n?.readStatus && (
           <button
             type="button"
             onClick={async (e) => { e.stopPropagation(); await onMarkRead(); }}
@@ -66,7 +67,8 @@ function NotificationsDrawer({ open, onClose }) {
     total: 0, totalPages: 1, currentPage: 1, limit: 20, nextPage: null, prevPage: null
   });
   const [unreadOnly, setUnreadOnly] = useState(false);
-  const [cachedCounts, setCachedCounts] = useState({ all: 0, unread: 0 });
+  const [cachedCounts, setCachedCounts] = useState({ all: 0 });
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const query = useMemo(() => ({
     page: pagination.currentPage,
@@ -92,32 +94,30 @@ function NotificationsDrawer({ open, onClose }) {
         nextPage: p?.nextPage ?? null,
         prevPage: p?.prevPage ?? null
       }));
-      setCachedCounts((prev) => unreadOnly ? { ...prev, unread: total } : { ...prev, all: total });
+      if (unreadOnly) setUnreadCount(total);
+      else setCachedCounts((prev) => ({ ...prev, all: total }));
     } catch (e) {
       setNotifications([]);
       setError(e?.response?.data?.message || e?.message || "Failed to load notifications");
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [query, unreadOnly]);
+
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const res = await getUnreadNotificationsCount();
+      const count = Number(res?.data?.unreadCount || 0);
+      setUnreadCount(Number.isFinite(count) ? count : 0);
+    } catch { void 0; }
+  }, []);
 
   useEffect(() => {
-    if (open) void load();
-  }, [open, load]);
-
-  const unreadCountLocal = useMemo(
-    () => notifications.reduce((acc, n) => acc + (n?.readStatus ? 0 : 1), 0),
-    [notifications]
-  );
-
-  const displayedNotifications = useMemo(() => {
-    return notifications.filter((n) => {
-      const type = String(n?.type || "").toLowerCase();
-      const title = String(n?.title || "").toLowerCase();
-      return !type.includes("tithe") && !type.includes("offering") &&
-             !title.includes("tithe recorded") && !title.includes("offering recorded");
-    });
-  }, [notifications]);
+    if (open) {
+      void load();
+      void loadUnreadCount();
+    }
+  }, [open, load, loadUnreadCount]);
 
   const emitUnreadChanged = useCallback(() => {
     try { window.dispatchEvent(new Event("cck:notifications:unread-changed")); } catch { void 0; }
@@ -164,7 +164,7 @@ function NotificationsDrawer({ open, onClose }) {
                   onClick={() => { setUnreadOnly(true); setPagination((p) => ({ ...p, currentPage: 1 })); }}
                   className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
                 >
-                  Unread{cachedCounts.unread > 0 ? ` (${cachedCounts.unread})` : ""}
+                  Unread{unreadCount > 0 ? ` (${unreadCount})` : ""}
                 </button>
               </div>
               {/* Mark all read — desktop only in this row */}
@@ -174,6 +174,7 @@ function NotificationsDrawer({ open, onClose }) {
                   try {
                     await markAllNotificationsRead();
                     setNotifications((prev) => prev.map((n) => ({ ...n, readStatus: true })));
+                    setUnreadCount(0);
                     emitUnreadChanged();
                   } catch { void 0; }
                 }}
@@ -209,7 +210,7 @@ function NotificationsDrawer({ open, onClose }) {
                 onClick={() => { setUnreadOnly(true); setPagination((p) => ({ ...p, currentPage: 1 })); }}
                 className={`rounded-md px-2 py-0.5 text-xs font-medium transition-colors ${unreadOnly ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
               >
-                Unread{cachedCounts.unread > 0 ? ` (${cachedCounts.unread})` : ""}
+                Unread{unreadCount > 0 ? ` (${unreadCount})` : ""}
               </button>
             </div>
             <button
@@ -218,6 +219,7 @@ function NotificationsDrawer({ open, onClose }) {
                 try {
                   await markAllNotificationsRead();
                   setNotifications((prev) => prev.map((n) => ({ ...n, readStatus: true })));
+                  setUnreadCount(0);
                   emitUnreadChanged();
                 } catch { void 0; }
               }}
@@ -247,9 +249,9 @@ function NotificationsDrawer({ open, onClose }) {
                 </div>
               ))}
             </div>
-          ) : displayedNotifications.length ? (
+          ) : notifications.length ? (
             <div className="divide-y divide-gray-100">
-              {displayedNotifications.map((n) => (
+              {notifications.map((n) => (
                 <NotificationRow
                   key={n?._id}
                   n={n}
@@ -260,6 +262,7 @@ function NotificationsDrawer({ open, onClose }) {
                       setNotifications((prev) =>
                         prev.map((x) => (String(x?._id) === String(n._id) ? { ...x, readStatus: true } : x))
                       );
+                      setUnreadCount((c) => Math.max(0, c - 1));
                       emitUnreadChanged();
                     } catch { void 0; }
                   }}

@@ -7,10 +7,6 @@ import BillingHistory from "../models/billingModel/billingHistoryModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 
-import Offering from "../models/financeModel/offeringModel.js";
-import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
-import TitheAggregate from "../models/financeModel/tithesModel/titheAggregateModel.js";
-
 import Church from "../models/churchModel.js";
 import User from "../models/userModel.js";
 import ActivityLog from "../models/activityLogModel.js";
@@ -130,78 +126,6 @@ async function scanBillingHistoryPayments() {
 
   const last = rows[rows.length - 1];
   await updateCursor("billingHistory", { createdAt: last.createdAt });
-}
-
-async function scanTitheAndOfferingPayments() {
-  const scan = async ({ name, Model, titlePrefix, buildMessage }) => {
-    const cursorDoc = await getOrCreateCursor(name);
-    const cursor = cursorDoc?.cursor?.createdAt ? new Date(cursorDoc.cursor.createdAt) : null;
-
-    const query = cursor ? { createdAt: { $gt: cursor } } : {};
-
-    const rows = await Model.find(query)
-      .sort({ createdAt: 1 })
-      .limit(250)
-      .lean();
-
-    if (!rows.length) return;
-
-    for (const row of rows) {
-      if (!row?.church) continue;
-
-      const recipients = await getChurchRecipients(row.church);
-      if (!recipients.length) continue;
-
-      const title = `${titlePrefix} recorded`;
-      const message = buildMessage(row);
-
-      for (const uid of recipients) {
-        await createNotificationOnce({
-          userId: uid,
-          type: "payment",
-          title,
-          message,
-          dedupeKey: `${name}:${String(row._id)}:${String(uid)}`
-        });
-      }
-    }
-
-    const last = rows[rows.length - 1];
-    await updateCursor(name, { createdAt: last.createdAt });
-  };
-
-  await scan({
-    name: "offering",
-    Model: Offering,
-    titlePrefix: "Offering",
-    buildMessage: (o) => {
-      const amount = typeof o.amount === "number" ? o.amount : 0;
-      const serviceDate = o.serviceDate ? new Date(o.serviceDate).toLocaleDateString() : "";
-      return `An offering was recorded${serviceDate ? ` for ${serviceDate}` : ""}. Amount: ${amount}.`;
-    }
-  });
-
-  await scan({
-    name: "titheIndividual",
-    Model: TitheIndividual,
-    titlePrefix: "Tithe",
-    buildMessage: (t) => {
-      const amount = typeof t.amount === "number" ? t.amount : 0;
-      const date = t.date ? new Date(t.date).toLocaleDateString() : "";
-      return `A tithe payment was recorded${date ? ` for ${date}` : ""}. Amount: ${amount}.`;
-    }
-  });
-
-  await scan({
-    name: "titheAggregate",
-    Model: TitheAggregate,
-    titlePrefix: "Tithe",
-    buildMessage: (t) => {
-      const amount = typeof t.amount === "number" ? t.amount : 0;
-      const date = t.date ? new Date(t.date).toLocaleDateString() : "";
-      return `A tithe payment was recorded${date ? ` for ${date}` : ""}. Amount: ${amount}.`;
-    }
-  });
 }
 
 async function scanChurchWelcome() {
@@ -352,7 +276,6 @@ async function runSweepOnce() {
   if (mongoose.connection?.readyState !== 1) return;
 
   await scanBillingHistoryPayments();
-  await scanTitheAndOfferingPayments();
   await scanChurchWelcome();
   await scanSubscriptionDueAndTrial();
   await scanPlanChangesFromActivityLog();
@@ -362,6 +285,13 @@ let workerInterval = null;
 
 export function startNotificationWorker({ intervalMs = 60_000 } = {}) {
   if (workerInterval) return;
+
+  // One-time cleanup: tithe/offering "recorded" notifications are no longer
+  // generated — purge the ones already stored (dedupeKey prefixes match the
+  // old scanner names).
+  Notification.deleteMany({
+    dedupeKey: { $regex: /^(offering|titheIndividual|titheAggregate):/ }
+  }).catch(() => {});
 
   const tick = async () => {
     try {
