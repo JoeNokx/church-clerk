@@ -19,13 +19,13 @@ export function truncateMobileName(text) {
 
 /**
  * Truncate a name/title for DESKTOP table display.
- * If text is long (>40 chars): truncate to 40 chars + "…"
+ * If text is long (>25 chars): truncate to 25 chars + "…"
  * Otherwise return full text.
  */
 export function truncateDesktopName(text) {
   if (!text) return "—";
   const str = String(text).trim();
   if (!str) return "—";
-  if (str.length <= 40) return str;
-  return str.slice(0, 40) + "…";
+  if (str.length <= 25) return str;
+  return str.slice(0, 25) + "…";
 }
