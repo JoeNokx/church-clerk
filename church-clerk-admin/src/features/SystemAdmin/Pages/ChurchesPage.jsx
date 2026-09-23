@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import {
   getSystemChurches,
@@ -39,7 +38,6 @@ function ConfirmModal({ open, title, message, confirmLabel, confirmClass, onConf
 }
 
 function ChurchesPage() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [error, setError] = useState("");
@@ -313,11 +311,6 @@ function ChurchesPage() {
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu
                           items={[
-                            {
-                              label: "View",
-                              onClick: () => navigate(`/admin/churches/${c._id}`),
-                              desktopClassName: "rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                            },
                             {
                               label: "View as Church",
                               onClick: () => setDelegateModal(c),

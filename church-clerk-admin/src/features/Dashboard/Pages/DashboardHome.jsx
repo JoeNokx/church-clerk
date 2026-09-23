@@ -320,7 +320,7 @@ function DashboardHome() {
                         <td className="max-md:px-4 py-1.5 text-right whitespace-nowrap px-4 md:px-6">
                           <button
                             type="button"
-                            onClick={() => navigate(`/admin/churches/${c._id}`)}
+                            onClick={() => navigate("/admin/churches")}
                             className="text-xs font-semibold text-blue-600 hover:underline"
                           >
                             View

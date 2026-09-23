@@ -5,7 +5,6 @@ import Login from "../../features/Auth/pages/Login.jsx";
 import DashboardHome from "../../features/Dashboard/Pages/DashboardHome.jsx";
 import ProtectedRoute from "../../shared/components/ProtectedRoute.jsx";
 import ChurchesPage from "../../features/SystemAdmin/Pages/ChurchesPage.jsx";
-import ChurchDetailPage from "../../features/SystemAdmin/Pages/ChurchDetailPage.jsx";
 import UsersRolesPage from "../../features/SystemAdmin/Pages/UsersRolesPage.jsx";
 import BillingLayout from "../../features/SystemAdmin/Pages/BillingLayout.jsx";
 import BillingPlansPage from "../../features/SystemAdmin/Pages/BillingPlansPage.jsx";
@@ -37,7 +36,6 @@ function AppRoutes() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DashboardHome />} />
         <Route path="churches" element={<ChurchesPage />} />
-        <Route path="churches/:id" element={<ChurchDetailPage />} />
         <Route path="users" element={<UsersRolesPage />} />
         <Route path="billing" element={<BillingLayout />}>
           <Route index element={<Navigate to="plans" replace />} />

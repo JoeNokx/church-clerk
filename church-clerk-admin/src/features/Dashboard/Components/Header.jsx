@@ -1,21 +1,12 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../Auth/useAuth.js";
-import { useContext } from "react";
-import ChurchContext from "../../Church/church.store.js";
 
 function DashboardHeader() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const churchCtx = useContext(ChurchContext);
 
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const viewingChurchName = useMemo(() => {
-    const inViewMode = typeof window !== "undefined" && localStorage.getItem("systemAdminViewChurch") === "1";
-    if (!inViewMode) return "";
-    return churchCtx?.activeChurch?.name || "";
-  }, [churchCtx?.activeChurch?.name]);
 
   const handleLogout = async () => {
     await logout();
@@ -26,9 +17,6 @@ function DashboardHeader() {
     <header className="h-16 bg-white border-b border-gray-200 px-4 md:px-8 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="text-sm font-semibold text-blue-900">System Admin</div>
-        {viewingChurchName ? (
-          <div className="text-xs text-gray-500">Viewing: {viewingChurchName}</div>
-        ) : null}
       </div>
 
       <div className="relative">
