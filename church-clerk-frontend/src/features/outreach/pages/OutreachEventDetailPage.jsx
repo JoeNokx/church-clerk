@@ -616,10 +616,10 @@ export default function OutreachEventDetailPage() {
                   <thead className="bg-slate-100">
                     <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                       <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled Date</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Method</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outcome</th>
-                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Next Date</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Next Follow-Up</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
                   </thead>

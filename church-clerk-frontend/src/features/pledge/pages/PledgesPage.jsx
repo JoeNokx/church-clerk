@@ -434,7 +434,7 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
           </div>
 
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Pledge Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date Pledged</label>
             <input
               value={pledgeDate}
               onChange={(e) => setPledgeDate(e.target.value)}
@@ -444,7 +444,7 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
           </div>
 
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Deadline</label>
+            <label className="block font-semibold text-gray-500 text-xs">Pledge Deadline</label>
             <input
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}

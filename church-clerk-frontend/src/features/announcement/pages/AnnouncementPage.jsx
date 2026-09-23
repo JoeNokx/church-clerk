@@ -439,7 +439,7 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
           <table className="min-w-full">
             <thead>
               <tr className="text-left font-semibold text-gray-500 text-xs">
-                <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Date</th>
+                <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Transaction Date</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Type</th>
                 <th className="py-2 pr-4 whitespace-nowrap">Amount</th>
                 <th className="py-2 whitespace-nowrap">Balance After</th>
@@ -501,7 +501,7 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
             </div>
             <div className="px-4 md:px-5 lg:px-6 py-4 space-y-3 text-sm">
               <div>
-                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="font-semibold text-gray-500 text-xs">Transaction Date</div>
                 <div className="mt-0.5 text-gray-800">{viewTx?.createdAt ? new Date(viewTx.createdAt).toLocaleString() : "—"}</div>
               </div>
               <div>
@@ -2352,18 +2352,24 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
 
           {sendMode === "schedule" ? (
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input
-                type="date"
-                value={scheduleDate}
-                onChange={(e) => setScheduleDate(e.target.value)}
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              />
-              <input
-                type="time"
-                value={scheduleTime}
-                onChange={(e) => setScheduleTime(e.target.value)}
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              />
+              <div>
+                <label className="block font-semibold text-gray-500 text-xs">Send Date</label>
+                <input
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-gray-500 text-xs">Send Time</label>
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                />
+              </div>
             </div>
           ) : null}
         </div>

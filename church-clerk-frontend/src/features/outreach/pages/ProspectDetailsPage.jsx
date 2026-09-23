@@ -351,7 +351,7 @@ export default function ProspectDetailsPage() {
             <table className="min-w-full">
               <thead className="bg-slate-100">
                 <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled Date</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Assigned To</th>
@@ -416,7 +416,7 @@ export default function ProspectDetailsPage() {
             </div>
             <div className="px-5 py-4 space-y-3 text-sm">
               <div>
-                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="font-semibold text-gray-500 text-xs">Scheduled Date</div>
                 <div className="mt-0.5 text-gray-800">{fmtDate(viewRow?.scheduledDate || viewRow?.followUpDate)}</div>
               </div>
               <div>

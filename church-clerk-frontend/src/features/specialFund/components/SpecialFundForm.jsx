@@ -201,7 +201,7 @@ function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Date</label>
+              <label className="block font-semibold text-gray-500 text-xs">Date Received</label>
               <input
                 value={givingDate}
                 onChange={(e) => setGivingDate(e.target.value)}

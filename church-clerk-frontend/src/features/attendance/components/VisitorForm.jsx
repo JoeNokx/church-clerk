@@ -260,7 +260,7 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Date</label>
+              <label className="block font-semibold text-gray-500 text-xs">Visit Date</label>
               <input
                 value={serviceDate}
                 onChange={(e) => setServiceDate(e.target.value)}

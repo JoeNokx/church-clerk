@@ -240,7 +240,7 @@ function VisitorTable({ onEdit, onDeleted }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Source</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Service Type</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Visit Date</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>

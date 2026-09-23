@@ -157,7 +157,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Start Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Venture Start Date</label>
             <input
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}

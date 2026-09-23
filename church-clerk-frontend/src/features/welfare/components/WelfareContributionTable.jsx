@@ -148,7 +148,7 @@ function WelfareContributionTable({ onEdit, onDeleted, onCreate }) {
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Member</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Payment Method</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
@@ -216,7 +216,7 @@ function WelfareContributionTable({ onEdit, onDeleted, onCreate }) {
               <div className="grid grid-cols-2 gap-3">
                 {(() => { const memberName = `${viewRow?.member?.firstName || ""} ${viewRow?.member?.lastName || ""}`.trim(); return <div><div className="font-semibold text-gray-500 text-xs">Member</div><div className="mt-1 text-gray-900">{memberName || "-"}</div></div>; })()}
                 <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-green-700 font-semibold">{formatMoney(viewRow?.amount || 0, currency)}</div></div>
-                <div><div className="font-semibold text-gray-500 text-xs">Date</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.date)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date Received</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.date)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Payment Method</div><div className="mt-1 text-gray-900">{viewRow?.paymentMethod || "-"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewRow?.createdBy?.fullName || "-"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewRow?.referenceId || "-"}</div></div>

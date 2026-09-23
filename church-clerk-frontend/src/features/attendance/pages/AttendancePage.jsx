@@ -1094,7 +1094,7 @@ function AttendancePageInner() {
               ) : null}
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                  <label className="block font-semibold text-gray-500 text-xs">Service Date</label>
                   <input
                     value={indivFormDate}
                     onChange={(e) => setIndivFormDate(e.target.value)}

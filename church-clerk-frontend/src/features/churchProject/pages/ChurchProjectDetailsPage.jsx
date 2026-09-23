@@ -292,7 +292,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
             />
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date Received</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -438,7 +438,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
             />
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date Spent</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -860,7 +860,7 @@ function ChurchProjectDetailsPage() {
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Contributor</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -935,7 +935,7 @@ function ChurchProjectDetailsPage() {
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Spent On</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Spent</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -1003,7 +1003,7 @@ function ChurchProjectDetailsPage() {
             </div>
             <div className="grid grid-cols-2 gap-3 px-4 md:px-5 lg:px-6 py-4">
               <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="font-semibold text-gray-500 text-xs">Date Spent</div>
                 <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(expenseViewRow?.date)}</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -1055,7 +1055,7 @@ function ChurchProjectDetailsPage() {
                 <div className="mt-0.5 text-gray-800 font-semibold text-green-700">{formatCurrency(viewRow?.amount || 0, currency)}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="font-semibold text-gray-500 text-xs">Date Received</div>
                 <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.date)}</div>
               </div>
               <div>

@@ -218,7 +218,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Date</label>
+              <label className="block font-semibold text-gray-500 text-xs">Date Collected</label>
               <input
                 value={serviceDate}
                 onChange={(e) => setServiceDate(e.target.value)}

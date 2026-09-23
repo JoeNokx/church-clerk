@@ -1791,7 +1791,7 @@ function OrganisationDetailsPage() {
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Meeting Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Day</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Speaker</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Present</th>
@@ -1838,7 +1838,7 @@ function OrganisationDetailsPage() {
                     <div className="grid grid-cols-1 gap-4">
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
-                          <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                          <label className="block font-semibold text-gray-500 text-xs">Meeting Date</label>
                           <input
                             value={individualAttendanceDate}
                             onChange={(e) => setIndividualAttendanceDate(e.target.value)}
@@ -1963,7 +1963,7 @@ function OrganisationDetailsPage() {
                     <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                         <div>
-                          <div className="font-semibold text-gray-500 text-xs">Date</div>
+                          <div className="font-semibold text-gray-500 text-xs">Meeting Date</div>
                           <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(individualViewing?.date)}</div>
                         </div>
                         <div>
@@ -2109,7 +2109,7 @@ function OrganisationDetailsPage() {
                   <table className="min-w-full">
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Meeting Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Attendees</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Speaker</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Activity</th>
@@ -2154,7 +2154,7 @@ function OrganisationDetailsPage() {
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                      <label className="block font-semibold text-gray-500 text-xs">Meeting Date</label>
                       <input
                         value={attendanceDate}
                         onChange={(e) => setAttendanceDate(e.target.value)}
@@ -2281,7 +2281,7 @@ function OrganisationDetailsPage() {
               <table className="min-w-full">
                 <thead className="bg-slate-100">
                   <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Collected</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
@@ -2326,7 +2326,7 @@ function OrganisationDetailsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 px-4 md:px-5 lg:px-6 py-4">
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Date</div>
+                    <div className="font-semibold text-gray-500 text-xs">Date Collected</div>
                     <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(offeringViewRow?.date)}</div>
                   </div>
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -2367,7 +2367,7 @@ function OrganisationDetailsPage() {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                  <label className="block font-semibold text-gray-500 text-xs">Date Collected</label>
                   <input
                     value={offeringDate}
                     onChange={(e) => setOfferingDate(e.target.value)}

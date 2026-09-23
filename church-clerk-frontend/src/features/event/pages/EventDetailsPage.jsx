@@ -873,7 +873,7 @@ function EventDetailsPage() {
                 </svg>
               </div>
               <div>
-                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="font-semibold text-gray-500 text-xs">Event Date</div>
                 <div className="mt-1 font-semibold text-blue-900 text-sm">{formatRange(event?.dateFrom, event?.dateTo)}</div>
               </div>
             </div>
@@ -1165,7 +1165,7 @@ function EventDetailsPage() {
                     <table className="min-w-full">
                       <thead className="bg-white">
                         <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Date</th>
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Attendance Date</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
                           <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -1211,7 +1211,7 @@ function EventDetailsPage() {
                     <table className="min-w-full">
                       <thead className="bg-white">
                         <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Date</th>
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Attendance Date</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
                           <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -1457,12 +1457,15 @@ function EventDetailsPage() {
           <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{editTotalError}</div>
         ) : null}
         <div className="grid grid-cols-1 gap-3">
-          <input
-            type="date"
-            value={editTotalDate}
-            onChange={(e) => setEditTotalDate(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          />
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Attendance Date</label>
+            <input
+              type="date"
+              value={editTotalDate}
+              onChange={(e) => setEditTotalDate(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            />
+          </div>
           <input
             value={editTotalNumber}
             onChange={(e) => setEditTotalNumber(e.target.value)}
@@ -1668,12 +1671,15 @@ function EventDetailsPage() {
           <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{recordError}</div>
         ) : null}
         <div className="grid grid-cols-1 gap-3">
-          <input
-            type="date"
-            value={recordDate}
-            onChange={(e) => setRecordDate(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          />
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Attendance Date</label>
+            <input
+              type="date"
+              value={recordDate}
+              onChange={(e) => setRecordDate(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            />
+          </div>
           <input
             value={recordNumber}
             onChange={(e) => setRecordNumber(e.target.value)}

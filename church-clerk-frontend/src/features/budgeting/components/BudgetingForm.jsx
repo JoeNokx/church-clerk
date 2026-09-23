@@ -232,7 +232,7 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Period from</label>
+              <label className="block font-semibold text-gray-500 text-xs">Budget Period Start</label>
               <input
                 value={periodFrom}
                 onChange={(e) => setPeriodFrom(e.target.value)}
@@ -242,7 +242,7 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Period to</label>
+              <label className="block font-semibold text-gray-500 text-xs">Budget Period End</label>
               <input
                 value={periodTo}
                 onChange={(e) => setPeriodTo(e.target.value)}
@@ -288,8 +288,8 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                     <th className="px-4 py-2 whitespace-nowrap">Category</th>
                     <th className="px-4 py-2 whitespace-nowrap">Allocated To</th>
                     <th className="px-4 py-2 whitespace-nowrap">Amount</th>
-                    <th className="px-4 py-2 whitespace-nowrap">Date From</th>
-                    <th className="px-4 py-2 whitespace-nowrap">Date To</th>
+                    <th className="px-4 py-2 whitespace-nowrap">Start Date</th>
+                    <th className="px-4 py-2 whitespace-nowrap">End Date</th>
                     <th className="px-4 py-2 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>

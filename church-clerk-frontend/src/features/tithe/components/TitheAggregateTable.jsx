@@ -128,7 +128,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Total Amount</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -204,7 +204,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
                 <div className="mt-0.5 text-gray-800 font-semibold">{formatMoney(viewRow?.amount || 0, currency)}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="font-semibold text-gray-500 text-xs">Date Received</div>
                 <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.date)}</div>
               </div>
               <div>

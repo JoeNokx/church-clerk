@@ -309,7 +309,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-500 text-xs">Date</label>
+              <label className="block font-semibold text-gray-500 text-xs">Date Received</label>
               <input
                 value={date}
                 onChange={(e) => setDate(e.target.value)}

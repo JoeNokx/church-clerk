@@ -185,7 +185,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Start Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Project Start Date</label>
             <input
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -314,7 +314,7 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
             />
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date Received</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -454,7 +454,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
             />
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date Spent</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}

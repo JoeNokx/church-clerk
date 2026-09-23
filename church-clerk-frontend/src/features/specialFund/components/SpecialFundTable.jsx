@@ -144,7 +144,7 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Giver Name</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
@@ -214,7 +214,7 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
                 <div><div className="font-semibold text-gray-500 text-xs">Giver Name</div><div className="mt-1 text-gray-900">{viewRow?.giverName || "-"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Category</div><div className="mt-1 text-gray-900">{viewRow?.category || "-"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-gray-700 font-semibold">{formatMoney(viewRow?.totalAmount || 0, currency)}</div></div>
-                <div><div className="font-semibold text-gray-500 text-xs">Date</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.givingDate)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date Received</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.givingDate)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewRow?.createdBy?.fullName || "-"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewRow?.referenceId || "-"}</div></div>
               </div>

@@ -152,7 +152,7 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Payment Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date Received</label>
             <input
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
@@ -520,7 +520,7 @@ function PledgeDetailsPageInner() {
                 <table className="min-w-full">
                   <thead className="bg-slate-100">
                     <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                      <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Method</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
@@ -621,7 +621,7 @@ function PledgeDetailsPageInner() {
             </div>
             <div className="px-5 py-4 space-y-3 text-sm">
               <div>
-                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="font-semibold text-gray-500 text-xs">Date Received</div>
                 <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.paymentDate)}</div>
               </div>
               <div>

@@ -296,14 +296,14 @@ function AddItemModal({ onAdd, onClose, expenseCategoryOptions, reloadExpenseCat
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">
-                Date From <span className="font-normal text-gray-400">(optional)</span>
+                Start Date <span className="font-normal text-gray-400">(optional)</span>
               </label>
               <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">
-                Date To <span className="font-normal text-gray-400">(optional)</span>
+                End Date <span className="font-normal text-gray-400">(optional)</span>
               </label>
               <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700" />

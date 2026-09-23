@@ -346,7 +346,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
             />
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date Received</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -523,7 +523,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
             </select>
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Date Spent</label>
             <input
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -1034,7 +1034,7 @@ function BusinessVentureDetailsPage() {
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Received From</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
@@ -1097,7 +1097,7 @@ function BusinessVentureDetailsPage() {
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Spent By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Spent</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
@@ -1169,7 +1169,7 @@ function BusinessVentureDetailsPage() {
             <div className="p-4 md:p-6 space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><div className="font-semibold text-gray-500 text-xs">Received From</div><div className="mt-1 text-gray-900">{viewIncomeRow?.recievedFrom || "—"}</div></div>
-                <div><div className="font-semibold text-gray-500 text-xs">Date</div><div className="mt-1 text-gray-900">{formatDate(viewIncomeRow?.date)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date Received</div><div className="mt-1 text-gray-900">{formatDate(viewIncomeRow?.date)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-green-700 font-semibold">{formatCurrency(viewIncomeRow?.amount, currency)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewIncomeRow?.createdBy?.fullName || "—"}</div></div>
                 <div className="col-span-2"><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewIncomeRow?.referenceId || "—"}</div></div>
@@ -1193,7 +1193,7 @@ function BusinessVentureDetailsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div><div className="font-semibold text-gray-500 text-xs">Spent By</div><div className="mt-1 text-gray-900">{viewExpenseRow?.spentBy || "—"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Category</div><div className="mt-1 text-gray-900">{viewExpenseRow?.category || "—"}</div></div>
-                <div><div className="font-semibold text-gray-500 text-xs">Date</div><div className="mt-1 text-gray-900">{formatDate(viewExpenseRow?.date)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date Spent</div><div className="mt-1 text-gray-900">{formatDate(viewExpenseRow?.date)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-orange-600 font-semibold">{formatCurrency(viewExpenseRow?.amount, currency)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewExpenseRow?.createdBy?.fullName || "—"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewExpenseRow?.referenceId || "—"}</div></div>

@@ -233,7 +233,7 @@ function EventEditPage() {
                 </select>
               </Field>
 
-              <Field label="Date From">
+              <Field label="Start Date">
                 <input
                   type="date"
                   value={dateFrom}
@@ -242,7 +242,7 @@ function EventEditPage() {
                 />
               </Field>
 
-              <Field label="Date To">
+              <Field label="End Date">
                 <input
                   type="date"
                   value={dateTo}

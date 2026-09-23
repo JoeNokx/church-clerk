@@ -183,7 +183,7 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={LBL}>Date <span className="text-red-500">*</span></label>
+              <label className={LBL}>Start Date <span className="text-red-500">*</span></label>
               <input type="date" value={form.date} onChange={(e) => set("date", e.target.value)} className={INP} />
             </div>
             <div>

@@ -141,7 +141,7 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Member Name</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Payment Method</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>

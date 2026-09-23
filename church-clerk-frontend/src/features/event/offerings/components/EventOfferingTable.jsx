@@ -138,7 +138,7 @@ function EventOfferingTable({ onEdit, onCreate }) {
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
               <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Offering Type</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Collected</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -207,7 +207,7 @@ function EventOfferingTable({ onEdit, onCreate }) {
                 <div className="mt-1 font-semibold text-blue-700 text-sm">{_fm(viewRow?.amount || 0, currency)}</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date</div>
+                <div className="font-semibold text-gray-500 text-xs">Date Collected</div>
                 <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.offeringDate)}</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
