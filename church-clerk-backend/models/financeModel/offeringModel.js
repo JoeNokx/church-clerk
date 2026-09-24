@@ -29,6 +29,10 @@ const offeringSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  note: {
+    type: String,
+    trim: true
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

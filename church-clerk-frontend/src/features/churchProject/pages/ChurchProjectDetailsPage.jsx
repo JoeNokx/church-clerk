@@ -303,7 +303,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Notes</label>
+          <label className="block font-semibold text-gray-500 text-xs">Notes (optional)</label>
           <input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -449,7 +449,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}

@@ -32,8 +32,8 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
   const canCreate = useMemo(() => (typeof can === "function" ? can("expenses", "create") : false), [can]);
 
   const clearFilters = () => {
-    store?.setFilters?.({ category: "", recordedBy: "", page: 1 });
-    store?.fetchGeneralExpenses?.({ category: "", recordedBy: "", page: 1 });
+    store?.setFilters?.({ category: "", search: "", page: 1 });
+    store?.fetchGeneralExpenses?.({ category: "", search: "", page: 1 });
   };
   const clearDate = () => {
     store?.setFilters?.({ dateFrom: "", dateTo: "", page: 1 });
@@ -99,7 +99,7 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
     const filters = store?.filters || {};
     const reason = resolveEmptyReason({
       filters,
-      filterDefaults: { category: "", recordedBy: "" },
+      filterDefaults: { category: "", search: "" },
       dateFrom: filters.dateFrom,
       dateTo: filters.dateTo,
     });
@@ -140,11 +140,11 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Spent</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Payment Method</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
@@ -152,11 +152,11 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => (
               <tr key={row?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.category || "-"}><span className="sm:hidden">{truncateMobileName(row?.category || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.category || "-")}</span></td>
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.title || "-"}><span className="sm:hidden">{truncateMobileName(row?.title || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.title || "-")}</span></td>
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={row?.category || "-"}><span className="sm:hidden">{truncateMobileName(row?.category || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.category || "-")}</span></td>
                 <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatMoney(row?.amount || 0, currency)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.paymentMethod || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "-"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "-")}</span></td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   {row?.referenceId ? (
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -198,7 +198,10 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Expense Details</div>
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">{viewRow?.title || "Expense"}</div>
+                <div className="mt-0.5 font-mono text-xs text-gray-500">{viewRow?.referenceId || ""}</div>
+              </div>
               <button type="button" onClick={() => setViewOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
@@ -208,9 +211,9 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
                 <div><div className="font-semibold text-gray-500 text-xs">Category</div><div className="mt-1 text-gray-900">{viewRow?.category || "-"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-orange-600 font-semibold">{formatMoney(viewRow?.amount || 0, currency)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Date Spent</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.date)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date Recorded</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.createdAt)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Payment Method</div><div className="mt-1 text-gray-900">{viewRow?.paymentMethod || "-"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewRow?.createdBy?.fullName || "-"}</div></div>
-                <div><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewRow?.referenceId || "-"}</div></div>
               </div>
               <div><div className="font-semibold text-gray-500 text-xs">Description</div><div className="mt-1 text-gray-700">{viewRow?.description || "-"}</div></div>
             </div>

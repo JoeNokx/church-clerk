@@ -39,7 +39,7 @@ const createTitheIndividual = async (req, res) => {
             const searchMember = (req.body.searchMember || "").trim();
             const memberId = (req.body.memberId || "").trim();
             const memberIds = Array.isArray(req.body.memberIds) ? req.body.memberIds : [];
-            const {amount, paymentMethod, date} = req.body;
+            const {amount, paymentMethod, date, note} = req.body;
 
             if (!amount || !paymentMethod || !date) {
               return res.status(400).json({ message: "amount, paymentMethod and date are required" });
@@ -60,6 +60,7 @@ const createTitheIndividual = async (req, res) => {
                   amount,
                   paymentMethod,
                   date,
+                  note: typeof note === "string" ? note.trim() : note,
                   member: m._id,
                   church: req.activeChurch._id,
                   createdBy: req.user._id,
@@ -87,6 +88,7 @@ const createTitheIndividual = async (req, res) => {
                 amount,
                 paymentMethod,
                 date,
+                note: typeof note === "string" ? note.trim() : note,
                 member: member._id,
                 church: req.activeChurch._id,
                 createdBy: req.user._id
@@ -118,6 +120,7 @@ const createTitheIndividual = async (req, res) => {
               amount,
               paymentMethod,
               date,
+              note: typeof note === "string" ? note.trim() : note,
               member: member._id,
               church: req.activeChurch._id,
               createdBy: req.user._id
@@ -146,28 +149,18 @@ const getAllTitheIndividual = async (req, res) => {
           query.church = req.activeChurch._id;
       
       
-    // Search by member name or recordedBy (createdBy.fullName)
+    // Search by member name
     if (search) {
-      const User = (await import('../../../models/userModel.js')).default;
-      const [members, users] = await Promise.all([
-        Member.find({
-          church: req.activeChurch._id,
-          $or: [
-            { firstName: { $regex: search, $options: "i" } },
-            { lastName: { $regex: search, $options: "i" } }
-          ]
-        }).select("_id"),
-        User.find({ fullName: { $regex: search, $options: "i" } }, "_id").lean()
-      ]);
+      const members = await Member.find({
+        church: req.activeChurch._id,
+        $or: [
+          { firstName: { $regex: search, $options: "i" } },
+          { lastName: { $regex: search, $options: "i" } }
+        ]
+      }).select("_id");
 
       const memberIds = members.map(m => m._id);
-      const userIds = users.map(u => u._id);
-
-      const orClauses = [
-        { member: { $in: memberIds.length ? memberIds : [null] } }
-      ];
-      if (userIds.length) orClauses.push({ createdBy: { $in: userIds } });
-      query.$or = orClauses;
+      query.member = { $in: memberIds.length ? memberIds : [null] };
     }
 
         // Filter by date range

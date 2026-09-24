@@ -10,7 +10,8 @@ const createWelfareContribution = async (req, res) => {
           const {
                 amount,
                 date,
-                paymentMethod
+                paymentMethod,
+                note
                 } = req.body;
                 
                 if (!amount || !date) {
@@ -49,6 +50,7 @@ const createWelfareContribution = async (req, res) => {
                 amount,
                 date,
                 paymentMethod,
+                note: typeof note === "string" ? note.trim() : note,
                 church: req.activeChurch._id,
                 createdBy: req.user._id
                 });
@@ -109,27 +111,17 @@ const getAllWelfareContribution = async (req, res) => {
             
                 query.church = req.activeChurch._id;
             
-                // Search by member name or recordedBy
+                // Search by member name
                 if (search) {
-                  const [members, matchingUsers] = await Promise.all([
-                    Member.find({
-                      church: req.activeChurch._id,
-                      $or: [
-                        { firstName: { $regex: search, $options: "i" } },
-                        { lastName: { $regex: search, $options: "i" } }
-                      ]
-                    }).select("_id"),
-                    (await import("../../../models/userModel.js")).default.find({
-                      fullName: { $regex: search, $options: "i" }
-                    }).select("_id")
-                  ]);
+                  const members = await Member.find({
+                    church: req.activeChurch._id,
+                    $or: [
+                      { firstName: { $regex: search, $options: "i" } },
+                      { lastName: { $regex: search, $options: "i" } }
+                    ]
+                  }).select("_id");
                   const memberIds = members.map(m => m._id);
-                  const createdByIds = matchingUsers.map(u => u._id);
-                  const orClauses = [];
-                  if (memberIds.length) orClauses.push({ member: { $in: memberIds } });
-                  if (createdByIds.length) orClauses.push({ createdBy: { $in: createdByIds } });
-                  if (orClauses.length) query.$or = orClauses;
-                  else query.member = { $in: [null] };
+                  query.member = { $in: memberIds.length ? memberIds : [null] };
                 }
 
                 // Filter by recordedBy (via createdBy user fullName)
@@ -164,7 +156,7 @@ const getAllWelfareContribution = async (req, res) => {
              
                 // FETCH welfare Disbursement
                 const welfareContribution = await WelfareContributions.find(query)
-                .select("member amount date paymentMethod createdBy referenceId")
+                .select("member amount date paymentMethod note createdBy referenceId createdAt")
                 .populate("member", "firstName lastName email phoneNumber")
                 .populate("createdBy", "fullName")
                     .sort({ createdAt: -1 })

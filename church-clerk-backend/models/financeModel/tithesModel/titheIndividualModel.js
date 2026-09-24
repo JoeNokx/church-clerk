@@ -15,6 +15,8 @@ const titheIndividualSchema = new mongoose.Schema({
     enum: ['Cash', 'Mobile Money', 'Bank Transfer', 'Cheque', 'Card'],
     required: 'true'
   },
+
+  note: { type: String, trim: true },
   referenceId: { type: String, unique: true, sparse: true, index: true },
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

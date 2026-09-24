@@ -450,7 +450,7 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
                           {notesIdx === idx ? (
                             <tr key={`item-notes-${idx}`}>
                               <td colSpan={7} className="px-4 py-3 bg-gray-50">
-                                <label className="block font-semibold text-gray-500 text-xs mb-1">Notes</label>
+                                <label className="block font-semibold text-gray-500 text-xs mb-1">Notes (optional)</label>
                                 <textarea
                                   value={row?.notes || ""}
                                   onChange={(e) => updateItem(idx, { notes: e.target.value.slice(0, 500) })}

@@ -3,7 +3,7 @@ import Offering from "../../models/financeModel/offeringModel.js";
 const createOffering = async (req, res) => {
     
     try {
-          const {serviceType, offeringType, serviceDate, amount} = req.body;
+          const {serviceType, offeringType, serviceDate, amount, note} = req.body;
         
                 if (!serviceType || !offeringType || !serviceDate || !amount) {
                     return res.status(400).json({ message: "All fields for offering are required" });
@@ -14,6 +14,7 @@ const createOffering = async (req, res) => {
                     offeringType,
                     serviceDate,
                     amount,
+                    note: typeof note === "string" ? note.trim() : note,
                     church: req.activeChurch._id,
                     createdBy: req.user._id
                   })

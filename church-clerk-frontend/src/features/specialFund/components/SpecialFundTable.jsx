@@ -147,7 +147,6 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
@@ -162,7 +161,6 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(fund?.givingDate)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{fund?.category || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{formatMoney(fund?.totalAmount || 0, currency)}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{fund?.createdBy?.fullName || "-"}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   {fund?.referenceId ? (
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{fund.referenceId}</span>
@@ -204,7 +202,7 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Special Fund Details</div>
+              <div className="font-semibold text-gray-900 text-sm">{viewRow?.referenceId || "Special Fund Details"}</div>
               <button type="button" onClick={() => setViewOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
@@ -215,8 +213,8 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
                 <div><div className="font-semibold text-gray-500 text-xs">Category</div><div className="mt-1 text-gray-900">{viewRow?.category || "-"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-gray-700 font-semibold">{formatMoney(viewRow?.totalAmount || 0, currency)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Date Received</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.givingDate)}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date Recorded</div><div className="mt-1 text-gray-900">{formatDate(viewRow?.createdAt)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewRow?.createdBy?.fullName || "-"}</div></div>
-                <div><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewRow?.referenceId || "-"}</div></div>
               </div>
               <div><div className="font-semibold text-gray-500 text-xs">Description</div><div className="mt-1 text-gray-700">{viewRow?.description || "-"}</div></div>
             </div>

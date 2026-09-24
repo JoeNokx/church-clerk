@@ -152,14 +152,7 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
                     { label: "View", onClick: () => setViewRow(row) },
                     canEdit && {
                       label: "Edit",
-                      onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); }),
-                      desktopClassName: "h-11 inline-flex items-center justify-center rounded-lg bg-white text-blue-700 hover:bg-blue-50 md:h-12 md:w-11 w-11 md:w-12",
-                      desktopContent: (
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                          <path d="M4 20h4l10.5-10.5a2 2 0 0 0 0-3L16.5 4a2 2 0 0 0-3 0L3 14.5V20Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                          <path d="M13.5 6.5 17.5 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                      )
+                      onClick: () => guarded(() => { if (!row?._id) return; onEdit?.(row); })
                     }
                   ]} />
                 </td>
@@ -193,31 +186,33 @@ function TitheAggregateTable({ onEdit, onDeleted, onCreate }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
+              <div className="font-semibold text-gray-900 text-sm">{viewRow?.referenceId || "Record Details"}</div>
               <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
             <div className="px-5 py-4 space-y-3 text-sm">
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Total Amount</div>
-                <div className="mt-0.5 text-gray-800 font-semibold">{formatMoney(viewRow?.amount || 0, currency)}</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Total Amount</div>
+                  <div className="mt-0.5 text-gray-800 font-semibold">{formatMoney(viewRow?.amount || 0, currency)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Date Received</div>
+                  <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.date)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
+                  <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.createdAt)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                  <div className="mt-0.5 text-gray-800">{viewRow?.createdBy?.fullName || viewRow?.createdBy?.email || "—"}</div>
+                </div>
               </div>
               <div>
-                <div className="font-semibold text-gray-500 text-xs">Date Received</div>
-                <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.date)}</div>
-              </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Notes</div>
+                <div className="font-semibold text-gray-500 text-xs">Note</div>
                 <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.description || "—"}</div>
-              </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.createdBy?.fullName || viewRow?.createdBy?.email || "—"}</div>
-              </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.referenceId || "—"}</div>
               </div>
             </div>
           </div>

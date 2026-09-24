@@ -24,6 +24,7 @@ import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { showSuccess } from "../../../utils/toast.js";
 import ApprovalsTab from "../../governance/pages/ApprovalsPage.jsx";
 import { getApprovals } from "../../governance/services/governance.api.js";
 import {
@@ -456,11 +457,12 @@ function SettingsPage() {
     setTitheModeError("");
     setTitheModeSuccess("");
     try {
-      await updateChurchProfile(activeChurch._id, { titheRecordingMode: next });
+      await updateChurchProfile(activeChurch._id, { titheRecordingMode: next }, { toastSuccess: false });
       if (typeof switchChurch === "function") {
         await switchChurch(activeChurch._id);
       }
       localStorage.setItem("tithe_default_mode", next);
+      showSuccess("Church tithe mode updated");
       setTitheModeSuccess("Tithe recording mode updated. Your previous records remain safe.");
     } catch (e) {
       setTitheModeError(e?.response?.data?.message || e?.message || "Failed to update tithe recording mode");

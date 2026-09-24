@@ -58,14 +58,7 @@ const getAllSpecialFunds = async (req, res) => {
       };
 
       if (search) {
-          const User = (await import("../../models/userModel.js")).default;
-          const matchingUsers = await User.find({
-              fullName: { $regex: search, $options: "i" }
-          }).select("_id");
-          const createdByIds = matchingUsers.map(u => u._id);
-          const orClauses = [{ giverName: { $regex: search, $options: "i" } }];
-          if (createdByIds.length) orClauses.push({ createdBy: { $in: createdByIds } });
-          query.$or = orClauses;
+          query.giverName = { $regex: search, $options: "i" };
       }
 
       // Filter by recordedBy (via createdBy user fullName)

@@ -174,7 +174,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -325,7 +325,7 @@ function ContributionModal({ open, onClose, project, disabled, onSuccess, curren
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Notes</label>
+          <label className="block font-semibold text-gray-500 text-xs">Notes (optional)</label>
           <input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -465,7 +465,7 @@ function ExpenseModal({ open, onClose, project, disabled, onSuccess, currency })
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -1016,7 +1016,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}

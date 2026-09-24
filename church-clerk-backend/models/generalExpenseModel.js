@@ -8,6 +8,11 @@ const generalExpenseSchema = new mongoose.Schema(
       ref: "Church",
       required: true,
     },
+    title: {
+      type: String,
+      required: true,
+      trim: true
+    },
     category: {
       type: String,
       required: true,

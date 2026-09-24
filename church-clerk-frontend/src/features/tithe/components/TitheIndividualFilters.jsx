@@ -45,7 +45,7 @@ function TitheIndividualFilters() {
       <FilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search member or recorded by"
+        searchPlaceholder="Search member name"
         searchWidth="md:w-[320px]"
         selects={[]}
         dateFrom={filters.dateFrom || ""}
@@ -55,7 +55,7 @@ function TitheIndividualFilters() {
       <MobileFilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search member or recorded by"
+        searchPlaceholder="Search member name"
         dateFrom={filters.dateFrom || ""}
         dateTo={filters.dateTo || ""}
         onDateApply={applyDates}

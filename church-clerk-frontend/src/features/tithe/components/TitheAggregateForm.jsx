@@ -3,7 +3,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
 import Button from "../../../shared/components/Button/index.jsx";
 
-const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_DESCRIPTION_LENGTH = 500;
 
 function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
@@ -125,7 +125,7 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block font-semibold text-gray-500 text-xs">Description</label>
+              <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value.slice(0, MAX_DESCRIPTION_LENGTH))}

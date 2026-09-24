@@ -517,10 +517,11 @@ function TithePageInner() {
   const kpiThisMonth = kpi?.thisMonth || 0;
   const kpiThisYear = kpi?.thisYear || 0;
 
-  const thirdLabel = mode === "aggregate" ? "Total Records" : "Members Paid";
-  const thirdValue = mode === "aggregate" ? Number(kpi?.thisMonthRecords || 0) : Number(kpi?.membersPaidThisMonth || 0);
-  const thirdChange = mode === "aggregate" ? kpi?.change?.thisMonthRecords : kpi?.change?.membersPaidThisMonth;
-  const thirdDiff = mode === "aggregate" ? kpi?.diff?.thisMonthRecords : kpi?.diff?.membersPaidThisMonth;
+  const thirdLabel = mode === "aggregate" ? "Total Records (This Year)" : "Members Paid This Month";
+  const thirdValue = mode === "aggregate" ? Number(kpi?.thisYearRecords || 0) : Number(kpi?.membersPaidThisMonth || 0);
+  const thirdChange = mode === "aggregate" ? kpi?.change?.thisYearRecords : kpi?.change?.membersPaidThisMonth;
+  const thirdDiff = mode === "aggregate" ? kpi?.diff?.thisYearRecords : kpi?.diff?.membersPaidThisMonth;
+  const thirdCompareLabel = mode === "aggregate" ? "last year" : "last month";
 
   return (
     <div className="max-w-6xl">
@@ -602,7 +603,7 @@ function TithePageInner() {
           </div>
 
           {kpi ? (
-            <KpiGrid className="mt-4 gap-3 lg:grid-cols-3">
+            <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
               <KpiCard
                 title="This Month"
                 value={formatCurrency(kpiThisMonth, currency)}
@@ -632,11 +633,24 @@ function TithePageInner() {
                 }
               />
               <KpiCard
+                title="Last Month"
+                value={formatCurrency(Number(kpi?.lastMonth || 0), currency)}
+                iconBg="bg-amber-50"
+                iconColor="text-amber-500"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                    <path d="M12 8v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M12 21a9 9 0 1 0-9-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M3 12h2M3 12l2-2M3 12l2 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                }
+              />
+              <KpiCard
                 title={thirdLabel}
                 value={Number(thirdValue || 0).toLocaleString()}
                 change={thirdChange}
                 diff={thirdDiff}
-                compareLabel="last month"
+                compareLabel={thirdCompareLabel}
                 iconBg="bg-violet-50"
                 iconColor="text-violet-500"
                 icon={

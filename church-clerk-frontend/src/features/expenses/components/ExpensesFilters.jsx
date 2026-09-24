@@ -22,29 +22,29 @@ const CATEGORY_OPTIONS = [
 function ExpensesFilters() {
   const store = useContext(ExpensesContext);
 
-  const [recordedByValue, setRecordedByValue] = useState(store?.filters?.recordedBy || "");
+  const [searchValue, setSearchValue] = useState(store?.filters?.search || "");
 
   const fetchRef = useRef(store?.fetchGeneralExpenses);
   useEffect(() => { fetchRef.current = store?.fetchGeneralExpenses; });
 
-  const debouncedRecordedBy = useMemo(() => {
+  const debouncedSearch = useMemo(() => {
     return debounce((next) => {
-      fetchRef.current?.({ recordedBy: next, page: 1 });
+      fetchRef.current?.({ search: next, page: 1 });
     }, 400);
   }, []);
 
   useEffect(() => {
-    setRecordedByValue(store?.filters?.recordedBy || "");
-  }, [store?.filters?.recordedBy]);
+    setSearchValue(store?.filters?.search || "");
+  }, [store?.filters?.search]);
 
   useEffect(() => {
-    return () => { debouncedRecordedBy.cancel(); };
-  }, [debouncedRecordedBy]);
+    return () => { debouncedSearch.cancel(); };
+  }, [debouncedSearch]);
 
-  const onRecordedByChange = (next) => {
-    setRecordedByValue(next);
-    store?.setFilters?.({ recordedBy: next, page: 1 });
-    debouncedRecordedBy(next);
+  const onSearchChange = (next) => {
+    setSearchValue(next);
+    store?.setFilters?.({ search: next, page: 1 });
+    debouncedSearch(next);
   };
 
   const { values: lookupCategories } = useLookupValues("generalExpenseCategory");
@@ -87,7 +87,7 @@ function ExpensesFilters() {
     try {
       const params = { page: 1, limit: 1 };
       if (f?.category && f.category !== "") params.category = f.category;
-      if (recordedByValue) params.recordedBy = recordedByValue;
+      if (searchValue) params.search = searchValue;
       if (dFrom) params.dateFrom = dFrom;
       if (dTo) params.dateTo = dTo;
       const res = await getGeneralExpenses(params);
@@ -96,14 +96,14 @@ function ExpensesFilters() {
     } catch {
       return null;
     }
-  }, [recordedByValue]);
+  }, [searchValue]);
 
   return (
     <>
       <FilterBar
-        searchValue={recordedByValue}
-        onSearchChange={onRecordedByChange}
-        searchPlaceholder="Search recorded by"
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search title or category"
         searchWidth="md:w-[320px]"
         selects={[
           {
@@ -119,9 +119,9 @@ function ExpensesFilters() {
         onDateApply={applyDates}
       />
       <MobileFilterBar
-        searchValue={recordedByValue}
-        onSearchChange={onRecordedByChange}
-        searchPlaceholder="Search recorded by"
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search title or category"
         dateFrom={appliedDateFrom}
         dateTo={appliedDateTo}
         onDateApply={applyDates}

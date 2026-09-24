@@ -16,6 +16,8 @@ const welfareContributionSchema = new mongoose.Schema({
     default: 'Cash'
   }, 
 
+  note: { type: String, trim: true },
+
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   referenceId: { type: String, unique: true, sparse: true, index: true },
 }, { timestamps: true });

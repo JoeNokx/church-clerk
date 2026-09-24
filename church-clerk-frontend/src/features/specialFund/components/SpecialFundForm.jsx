@@ -213,7 +213,7 @@ function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
 
           <div className="mt-4">
             <div className="flex items-center justify-between">
-              <label className="block font-semibold text-gray-500 text-xs">Description</label>
+              <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
               <div className="font-semibold text-gray-400 text-xs">
                 {(description || "").length}/{MAX_DESCRIPTION_LENGTH}
               </div>

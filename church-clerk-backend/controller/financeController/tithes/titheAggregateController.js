@@ -6,13 +6,13 @@ const createTitheAggregate = async (req, res) => {
     try {
           const {date, amount, description} = req.body;
         
-                if (!date || !amount || !description) {
-                    return res.status(400).json({ message: "All fields for TitheAggregate are required" });
+                if (!date || !amount) {
+                    return res.status(400).json({ message: "Date and amount are required" });
                   }
-        
+
                   const titheAggregate = await TitheAggregate.create({
                     date,
-                    description,
+                    description: typeof description === "string" ? description.trim() : description,
                     amount,
                     church: req.activeChurch._id,
                     createdBy: req.user._id
@@ -225,7 +225,7 @@ const getTitheAggregateKPI = async (req, res) => {
     };
 
     // ---- Aggregations ----
-    const [week, month, lastMonth, year, lastYear, thisMonthCount, lastMonthCount] = await Promise.all([
+    const [week, month, lastMonth, year, lastYear, thisMonthCount, lastMonthCount, thisYearCount, lastYearCount] = await Promise.all([
       TitheAggregate.aggregate([
         { $match: { ...query, date: { $gte: startOfWeek } } },
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
@@ -247,7 +247,9 @@ const getTitheAggregateKPI = async (req, res) => {
         { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
       ]),
       TitheAggregate.countDocuments({ ...query, date: { $gte: startOfMonth } }),
-      TitheAggregate.countDocuments({ ...query, date: { $gte: startOfLastMonth, $lte: endOfLastMonth } })
+      TitheAggregate.countDocuments({ ...query, date: { $gte: startOfLastMonth, $lte: endOfLastMonth } }),
+      TitheAggregate.countDocuments({ ...query, date: { $gte: startOfYear } }),
+      TitheAggregate.countDocuments({ ...query, date: { $gte: startOfLastYear, $lte: endOfLastYear } })
     ]);
 
     const thisMonth = month[0]?.totalAmount || 0;
@@ -256,16 +258,20 @@ const getTitheAggregateKPI = async (req, res) => {
     const lastYearVal = lastYear[0]?.totalAmount || 0;
     const thisMonthRecords = thisMonthCount || 0;
     const lastMonthRecords = lastMonthCount || 0;
+    const thisYearRecords = thisYearCount || 0;
+    const lastYearRecords = lastYearCount || 0;
 
     const change = {
       thisWeek: pctChange(week[0]?.totalAmount || 0, 0),
       thisMonth: pctChange(thisMonth, lastMonthVal),
       thisYear: pctChange(thisYear, lastYearVal),
-      thisMonthRecords: pctChange(thisMonthRecords, lastMonthRecords)
+      thisMonthRecords: pctChange(thisMonthRecords, lastMonthRecords),
+      thisYearRecords: pctChange(thisYearRecords, lastYearRecords)
     };
 
     const diff = {
-      thisMonthRecords: thisMonthRecords - lastMonthRecords
+      thisMonthRecords: thisMonthRecords - lastMonthRecords,
+      thisYearRecords: thisYearRecords - lastYearRecords
     };
 
     return res.status(200).json({
@@ -276,6 +282,7 @@ const getTitheAggregateKPI = async (req, res) => {
         thisMonthRecords,
         lastMonth: lastMonthVal,
         thisYear,
+        thisYearRecords,
         change,
         diff
       }

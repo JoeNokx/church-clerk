@@ -23,7 +23,7 @@ const emptyFilters = {
   category: "",
   dateFrom: "",
   dateTo: "",
-  recordedBy: ""
+  search: ""
 };
 
 export function ExpensesProvider({ children }) {
@@ -63,7 +63,7 @@ export function ExpensesProvider({ children }) {
       if (nextFilters.category) params.category = nextFilters.category;
       if (nextFilters.dateFrom) params.dateFrom = nextFilters.dateFrom;
       if (nextFilters.dateTo) params.dateTo = nextFilters.dateTo;
-      if (nextFilters.recordedBy) params.recordedBy = nextFilters.recordedBy;
+      if (nextFilters.search) params.search = nextFilters.search;
 
       setFiltersState(nextFilters);
       setLoading(true);

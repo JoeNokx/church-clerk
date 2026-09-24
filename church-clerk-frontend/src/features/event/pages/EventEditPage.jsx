@@ -281,7 +281,7 @@ function EventEditPage() {
               </div>
 
               <div className="md:col-span-2">
-                <Field label="Description">
+                <Field label="Description (optional)">
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}

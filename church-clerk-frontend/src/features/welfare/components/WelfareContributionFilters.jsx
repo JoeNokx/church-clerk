@@ -60,7 +60,7 @@ function WelfareContributionFilters() {
       <FilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search member name or recorded by"
+        searchPlaceholder="Search member name"
         searchWidth="md:w-[320px]"
         selects={[]}
         dateFrom={appliedDateFrom}
@@ -70,7 +70,7 @@ function WelfareContributionFilters() {
       <MobileFilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search member name or recorded by"
+        searchPlaceholder="Search member name"
         dateFrom={appliedDateFrom}
         dateTo={appliedDateTo}
         onDateApply={applyDates}

@@ -435,7 +435,7 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
           </div>
 
           <div>
-            <label className={LBL}>Notes</label>
+            <label className={LBL}>Notes (optional)</label>
             <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} placeholder="Additional notes about this person…" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
 

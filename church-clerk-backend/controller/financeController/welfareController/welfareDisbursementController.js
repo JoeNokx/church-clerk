@@ -51,16 +51,9 @@ const getAllWelfareDisbursement = async (req, res) => {
                             query.church = req.activeChurch._id;
                         }
                     
-                        //search by beneficiary name or recordedBy
+                        //search by beneficiary name
                         if (search) {
-                            const User = (await import("../../../models/userModel.js")).default;
-                            const matchingUsers = await User.find({
-                                fullName: { $regex: search, $options: "i" }
-                            }).select("_id");
-                            const createdByIds = matchingUsers.map(u => u._id);
-                            const orClauses = [{ beneficiaryName: { $regex: search, $options: "i" } }];
-                            if (createdByIds.length) orClauses.push({ createdBy: { $in: createdByIds } });
-                            query.$or = orClauses;
+                            query.$or = [{ beneficiaryName: { $regex: search, $options: "i" } }];
                         }
 
                         // Filter by recordedBy (via createdBy user fullName)
@@ -99,7 +92,7 @@ const getAllWelfareDisbursement = async (req, res) => {
                     
                         // FETCH welfare Disbursement 
                         const welfareDisbursement = await WelfareDisbursements.find(query)
-                        .select("beneficiaryName category amount date description paymentMethod createdBy referenceId")
+                        .select("beneficiaryName category amount date description paymentMethod createdBy referenceId createdAt")
                         .populate("createdBy", "fullName")
                             .sort({ createdAt: -1 })
                             .skip(skip)

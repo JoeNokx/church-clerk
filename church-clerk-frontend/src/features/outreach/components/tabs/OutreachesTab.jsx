@@ -257,7 +257,7 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
             <textarea value={form.objective} onChange={(e) => set("objective", e.target.value)} rows={2} placeholder="What do you aim to achieve?" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
           <div>
-            <label className={LBL}>Description</label>
+            <label className={LBL}>Description (optional)</label>
             <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={2} placeholder="Brief description of the outreach" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
           <div>

@@ -92,7 +92,7 @@ function WelfareDisbursementFilters() {
       <FilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search name or recorded by"
+        searchPlaceholder="Search beneficiary name"
         searchWidth="md:w-[320px]"
         selects={[
           {
@@ -110,7 +110,7 @@ function WelfareDisbursementFilters() {
       <MobileFilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search name or recorded by"
+        searchPlaceholder="Search beneficiary name"
         dateFrom={appliedDateFrom}
         dateTo={appliedDateTo}
         onDateApply={applyDates}

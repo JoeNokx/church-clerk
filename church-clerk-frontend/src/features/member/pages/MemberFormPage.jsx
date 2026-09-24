@@ -578,6 +578,7 @@ function MemberFormPageInner() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="e.g. Kwame"
                   />
                 </Field>
 
@@ -586,6 +587,7 @@ function MemberFormPageInner() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="e.g. Mensah"
                   />
                 </Field>
 
@@ -598,6 +600,7 @@ function MemberFormPageInner() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="e.g. kwame.mensah@example.com"
                   />
                 </Field>
 
@@ -630,6 +633,7 @@ function MemberFormPageInner() {
                     value={occupation}
                     onChange={(e) => setOccupation(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="e.g. Teacher"
                   />
                 </Field>
 
@@ -638,6 +642,7 @@ function MemberFormPageInner() {
                     value={nationality}
                     onChange={(e) => setNationality(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="e.g. Ghanaian"
                   />
                 </Field>
 
@@ -734,6 +739,7 @@ function MemberFormPageInner() {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="e.g. Accra"
                   />
                 </Field>
 
@@ -742,6 +748,7 @@ function MemberFormPageInner() {
                     value={streetAddress}
                     onChange={(e) => setStreetAddress(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="e.g. House No. 12, Osu Street"
                   />
                 </Field>
               </div>
@@ -755,6 +762,7 @@ function MemberFormPageInner() {
                       value={churchRole}
                       onChange={(e) => setChurchRole(e.target.value)}
                       className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                      placeholder="e.g. Usher"
                     />
                   </Field>
                   <Field label="Date Joined">
@@ -766,12 +774,13 @@ function MemberFormPageInner() {
                     />
                   </Field>
                 </div>
-                <Field label="Note">
+                <Field label="Note (optional)">
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     className="w-full h-full min-h-[5.5rem] rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                     rows={3}
+                    placeholder="e.g. Any extra information about the member"
                   />
                 </Field>
               </div>
@@ -1016,6 +1025,7 @@ function MemberFormPageInner() {
               value={addGroupName}
               onChange={(e) => setAddGroupName(e.target.value)}
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="e.g. Youth Fellowship"
             />
           </Field>
 
@@ -1047,12 +1057,13 @@ function MemberFormPageInner() {
           </Field>
 
           <div className="md:col-span-2">
-            <Field label="Description">
+            <Field label="Description (optional)">
               <textarea
                 value={addGroupDescription}
                 onChange={(e) => setAddGroupDescription(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                 rows={3}
+                placeholder="e.g. Brief description of the group"
               />
             </Field>
           </div>

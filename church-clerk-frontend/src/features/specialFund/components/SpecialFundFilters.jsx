@@ -101,7 +101,7 @@ function SpecialFundFilters() {
       <FilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search giver name or recorded by"
+        searchPlaceholder="Search giver name"
         searchWidth="md:w-[320px]"
         selects={[
           {
@@ -119,7 +119,7 @@ function SpecialFundFilters() {
       <MobileFilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search giver name or recorded by"
+        searchPlaceholder="Search giver name"
         dateFrom={appliedDateFrom}
         dateTo={appliedDateTo}
         onDateApply={applyDates}

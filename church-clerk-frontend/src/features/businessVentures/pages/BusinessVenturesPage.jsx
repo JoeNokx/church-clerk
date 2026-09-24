@@ -128,7 +128,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -266,7 +266,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Description</label>
+          <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}

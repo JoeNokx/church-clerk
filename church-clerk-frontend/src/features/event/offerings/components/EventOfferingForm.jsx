@@ -176,7 +176,7 @@ function EventOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="block font-semibold text-gray-500 text-xs">Note</label>
+                <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
                 <span className="text-xs text-gray-400">{note.length}/500</span>
               </div>
               <input

@@ -46,6 +46,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [date, setDate] = useState("");
+  const [note, setNote] = useState("");
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -73,6 +74,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
       setAmount(initialData.amount ?? "");
       setPaymentMethod(initialData.paymentMethod || "Cash");
       setDate((initialData.date || "").slice(0, 10));
+      setNote(initialData.note || "");
       if (initialData?.member?._id) setSelectedMemberId(initialData.member._id);
       return;
     }
@@ -80,6 +82,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     setAmount("");
     setPaymentMethod("Cash");
     setDate("");
+    setNote("");
   }, [open, mode, initialData]);
 
   useEffect(() => {
@@ -111,6 +114,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     setAmount("");
     setPaymentMethod("Cash");
     setDate("");
+    setNote("");
     setQuery("");
     setOptions([]);
     setSelectedMemberId("");
@@ -141,6 +145,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
       amount: Number(amount),
       paymentMethod,
       date,
+      note: String(note || "").trim(),
       memberIds: [selectedMemberId]
     };
   };
@@ -188,7 +193,8 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
       const payload = {
         amount: Number(amount),
         paymentMethod,
-        date
+        date,
+        note: String(note || "").trim()
       };
 
       try {
@@ -315,6 +321,17 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
                 onChange={(e) => setDate(e.target.value)}
                 type="date"
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+              />
+            </div>
+
+            <div className="md:col-span-3">
+              <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                type="text"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+                placeholder="e.g. Paid for two weeks"
               />
             </div>
           </div>

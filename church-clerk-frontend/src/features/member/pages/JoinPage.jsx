@@ -353,7 +353,7 @@ export default function JoinPage() {
                   <input type="date" value={dateJoined} onChange={(e) => setDateJoined(e.target.value)} className={INPUT_CLS} />
                 </Field>
               </div>
-              <Field label="Note">
+              <Field label="Note (optional)">
                 <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
                   placeholder="Any additional information..." />

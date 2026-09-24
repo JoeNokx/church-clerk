@@ -454,7 +454,7 @@ function PledgeFormModal({ open, mode, initialData, onClose, onSubmit, currency 
           </div>
 
           <div className="md:col-span-2">
-            <label className="block font-semibold text-gray-500 text-xs">Note</label>
+            <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
             <input
               value={note}
               onChange={(e) => setNote(e.target.value.slice(0, 500))}

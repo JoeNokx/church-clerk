@@ -1566,7 +1566,7 @@ function OrganisationDetailsPage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block font-semibold text-gray-500 text-xs">Description</label>
+              <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
@@ -2386,7 +2386,7 @@ function OrganisationDetailsPage() {
                 </div>
                 <div className="md:col-span-2">
                   <div className="flex items-center justify-between">
-                    <label className="block font-semibold text-gray-500 text-xs">Note</label>
+                    <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
                     <span className="text-xs text-gray-400">{offeringNote.trim().split(/\s+/).filter(Boolean).length}/5 words</span>
                   </div>
                   <textarea

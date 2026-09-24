@@ -46,6 +46,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
   const [offeringType, setOfferingType] = useState("first offering");
   const [serviceDate, setServiceDate] = useState("");
   const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,6 +61,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
       setOfferingType(initialData.offeringType || "first offering");
       setServiceDate((initialData.serviceDate || "").slice(0, 10));
       setAmount(initialData.amount ?? "");
+      setNote(initialData.note || "");
       return;
     }
 
@@ -67,6 +69,7 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
     setOfferingType("first offering");
     setServiceDate("");
     setAmount("");
+    setNote("");
   }, [open, mode, initialData]);
 
   const submit = async (e) => {
@@ -103,7 +106,8 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
       serviceType,
       offeringType,
       serviceDate,
-      amount: Number(amount)
+      amount: Number(amount),
+      note: String(note || "").trim()
     };
 
     try {
@@ -224,6 +228,17 @@ function OfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                 onChange={(e) => setServiceDate(e.target.value)}
                 type="date"
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                type="text"
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+                placeholder="e.g. Thanksgiving offering"
               />
             </div>
           </div>

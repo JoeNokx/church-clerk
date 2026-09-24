@@ -357,7 +357,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Note</label>
+          <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -545,7 +545,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
             />
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Description</label>
+            <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}

@@ -31,6 +31,7 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("expenseCategory");
   const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
 
+  const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
@@ -46,6 +47,7 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
     setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
+      setTitle(String(initialData.title || ""));
       setCategory(String(initialData.category || ""));
       setAmount(initialData.amount ?? "");
       setDate(String(initialData.date || "").slice(0, 10));
@@ -54,6 +56,7 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
       return;
     }
 
+    setTitle("");
     setCategory("");
     setAmount("");
     setDate("");
@@ -66,6 +69,12 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setFormError(null);
+
+    if (!title.trim()) {
+      setFormError("Title is required.");
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!category) {
       setFormError("Please select a category.");
@@ -86,6 +95,7 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
     }
 
     const payload = {
+      title: title.trim(),
       category,
       amount: Number(amount),
       date,
@@ -143,6 +153,16 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
           )}
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Title</label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+                placeholder="e.g. Generator fuel for Sunday service"
+              />
+            </div>
+
             <div>
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-gray-500 text-xs">Category</label>
@@ -208,13 +228,13 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block font-semibold text-gray-500 text-xs">Description</label>
+              <label className="block font-semibold text-gray-500 text-xs">Description (optional)</label>
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value.slice(0, 500))}
                 maxLength={500}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder="Optional (max 500 chars)"
+                placeholder="e.g. Extra details about this expense (max 500 chars)"
               />
               <div className="mt-1 text-right text-gray-400 text-xs">
                 {description.length}/500 chars

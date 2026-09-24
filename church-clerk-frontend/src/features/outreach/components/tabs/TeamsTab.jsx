@@ -202,7 +202,7 @@ function TeamFormModal({ open, mode, initialData, allMembers, onClose, onSaved }
           </div>
           {/* Description */}
           <div>
-            <label className={LBL}>Description</label>
+            <label className={LBL}>Description (optional)</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Brief description of this team's focus or territory" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
           {/* Date Created */}

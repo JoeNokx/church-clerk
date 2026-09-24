@@ -2,13 +2,18 @@ import GeneralExpenses from "../models/generalExpenseModel.js";
 
 const createGeneralExpenses = async (req, res) => {
     try {
-        const { category, amount, description, date, paymentMethod} = req.body;
+        const { title, category, amount, description, date, paymentMethod} = req.body;
+
+        if (!title || !String(title).trim()) {
+            return res.status(400).json({ message: "Title is required." });
+        }
 
         if (!amount || !date) {
             return res.status(400).json({ message: "Amount and date are required." });
         }
 
         const generalExpenses = await GeneralExpenses.create({
+            title: String(title).trim(),
             category,
             amount,
             description,
@@ -27,7 +32,7 @@ const createGeneralExpenses = async (req, res) => {
 const getAllGeneralExpenses = async (req, res) => {
     try {
 
-        const { page = 1, limit = 10, category, dateFrom, dateTo, recordedBy } = req.query;
+        const { page = 1, limit = 10, category, dateFrom, dateTo, recordedBy, search } = req.query;
                                 
                 const pageNum = Math.max(1, parseInt(page, 10) || 1);
                 const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -43,6 +48,15 @@ const getAllGeneralExpenses = async (req, res) => {
                 // Filter by serviceType
                 if (category) {
                     query.category = category;
+                }
+
+                // Search by title, category or description
+                if (search) {
+                    query.$or = [
+                        { title: { $regex: search, $options: "i" } },
+                        { category: { $regex: search, $options: "i" } },
+                        { description: { $regex: search, $options: "i" } }
+                    ];
                 }
 
                 // Filter by recordedBy (via createdBy user fullName)
@@ -76,7 +90,7 @@ const getAllGeneralExpenses = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const generalExpenses = await GeneralExpenses.find(query)
-                .select("category amount description date paymentMethod status createdBy referenceId")
+                .select("title category amount description date paymentMethod status createdBy referenceId createdAt")
                 .populate("createdBy", "fullName")
                     .sort({ createdAt: -1 })
                     .skip(skip)

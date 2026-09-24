@@ -302,7 +302,7 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block font-semibold text-gray-500 text-xs">Note</label>
+              <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
