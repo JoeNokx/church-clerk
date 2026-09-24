@@ -6,6 +6,7 @@ const businessExpensesSchema = new mongoose.Schema({
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     businessVentures: { type: mongoose.Schema.Types.ObjectId, ref: "BusinessVentures", required: true },
     spentBy: { type: String, required: true },
+    name: { type: String, trim: true },
     category: { type: String, trim: true },
     date: { type: Date, required: true },
     description: { type: String, trim: true },

@@ -66,7 +66,7 @@ const defaultValuesByKind = {
     "Transportation",
     "Pastor Support",
     "Charity",
-    "Church Project",
+    "Fundraising",
     "Program",
     "Building materials",
     "Salary"
@@ -83,7 +83,7 @@ const defaultValuesByKind = {
     "Event Offering",
     "Pledge",
     "Welfare Contribution",
-    "Church Project Contribution",
+    "Fundraising Contribution",
     "Business Ventures Income",
     "Other"
   ]
@@ -159,7 +159,7 @@ const INCOME_CATEGORY_STATIC = [
   "Ministry Offering",
   "Pledge",
   "Welfare Contribution",
-  "Church Project Contribution",
+  "Fundraising Contribution",
 ];
 
 const collectIncomeCategoriesFromRecords = async (churchId) => {

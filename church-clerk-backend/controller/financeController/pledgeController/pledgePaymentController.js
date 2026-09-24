@@ -5,7 +5,7 @@ const syncPledgeStatus = async ({ pledgeId, churchId }) => {
   const pledgeQuery = { _id: pledgeId };
   if (churchId) pledgeQuery.church = churchId;
 
-  const pledge = await Pledge.findOne(pledgeQuery).select("amount status");
+  const pledge = await Pledge.findOne(pledgeQuery).select("amount status deadline");
   if (!pledge) return;
 
   const match = { pledge: pledge._id };
@@ -17,7 +17,23 @@ const syncPledgeStatus = async ({ pledgeId, churchId }) => {
   ]);
 
   const totalPaid = Number(totals?.[0]?.totalPaid || 0);
-  const nextStatus = totalPaid >= Number(pledge.amount || 0) ? "Completed" : "In Progress";
+  const pledgeAmount = Number(pledge.amount || 0);
+
+  // A deadline counts as missed only once the deadline day itself has fully passed.
+  let pastDeadline = false;
+  if (pledge.deadline) {
+    const d = new Date(pledge.deadline);
+    if (!Number.isNaN(d.getTime())) {
+      d.setHours(23, 59, 59, 999);
+      pastDeadline = d.getTime() < Date.now();
+    }
+  }
+
+  const nextStatus =
+    pledgeAmount > 0 && totalPaid >= pledgeAmount ? "Completed"
+    : pastDeadline ? "Overdue"
+    : totalPaid <= 0 ? "Not Started"
+    : "In Progress";
 
   if (pledge.status !== nextStatus) {
     pledge.status = nextStatus;
@@ -92,8 +108,8 @@ const getAllPledgePayments = async (req, res) => {
       return res.status(404).json({ message: "Pledge not found" });
     }
 
-    // MAIN QUERY
-    const query = { pledge: pledgeId };
+    // MAIN QUERY (use the ObjectId so aggregation $match works — mongoose does not cast strings in aggregate pipelines)
+    const query = { pledge: pledge._id };
 
     // Restrict by church for non-admins
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
@@ -102,7 +118,7 @@ const getAllPledgePayments = async (req, res) => {
 
     // FETCH ATTENDANCES
     const pledgePayments = await PledgePayment.find(query)
-      .select("paymentDate amount paymentMethod note createdBy referenceId")
+      .select("paymentDate amount paymentMethod note createdBy referenceId createdAt")
       .populate("createdBy", "fullName")
       .sort({ createdAt: -1 })
       .skip(skip)

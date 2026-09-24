@@ -41,11 +41,10 @@ const FEATURE_GROUPS = [
       { key: "specialFund", label: "Special fund" },
       { key: "offerings", label: "Offerings" },
       { key: "welfare", label: "Welfare" },
-      { key: "pledges", label: "Pledges" },
+      { key: "fundraising", label: "Fundraising" },
       { key: "businessVentures", label: "Business Ventures" },
       { key: "expenses", label: "Expenses" },
       { key: "financialStatement", label: "Financial statement" },
-      { key: "churchProjects", label: "Church Projects" },
       { key: "specialFunds", label: "Special funds" }
     ]
   },
@@ -216,7 +215,7 @@ function BillingPlansPage() {
 
     nextFeatures.announcements = Boolean(savedFeatures?.announcements || savedFeatures?.announcement);
     nextFeatures.specialFunds = Boolean(savedFeatures?.specialFunds || savedFeatures?.specialFund);
-    nextFeatures.churchProjects = Boolean(savedFeatures?.churchProjects);
+    nextFeatures.fundraising = Boolean(savedFeatures?.fundraising || savedFeatures?.churchProjects || savedFeatures?.pledges);
     nextFeatures.dashboard = savedFeatures?.dashboard !== undefined ? Boolean(savedFeatures.dashboard) : true;
     nextFeatures.branchesOverview = Boolean(savedFeatures?.branchesOverview);
     setFeatures(nextFeatures);
@@ -282,6 +281,9 @@ function BillingPlansPage() {
     featuresPayload.announcement = Boolean(featuresPayload.announcements);
     featuresPayload.specialFunds = Boolean(featuresPayload.specialFunds);
     featuresPayload.specialFund = Boolean(featuresPayload.specialFunds || featuresPayload.specialFund);
+    featuresPayload.fundraising = Boolean(featuresPayload.fundraising);
+    featuresPayload.churchProjects = Boolean(featuresPayload.fundraising);
+    featuresPayload.pledges = Boolean(featuresPayload.fundraising);
     featuresPayload.financeModule = financeEnabled;
 
     const featureCategories = {

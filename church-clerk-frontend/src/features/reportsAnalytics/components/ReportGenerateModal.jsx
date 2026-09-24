@@ -199,20 +199,20 @@ const MODULE_OPTIONS = {
     controls: [
       {
         key: "type", kind: "radio", label: "Report on", default: "all",
-        options: [RADIO("all", "All church projects"), RADIO("contributions", "Contributions"), RADIO("expenses", "Expenses")]
+        options: [RADIO("all", "All fundraisers"), RADIO("contributions", "Contributions"), RADIO("expenses", "Expenses")]
       },
       {
-        key: "entity", kind: "entity", label: "Project",
+        key: "entity", kind: "entity", label: "Fundraiser",
         entityModule: "church-projects",
-        allLabel: "All projects",
+        allLabel: "All fundraisers",
         showIf: (o) => o.type !== "all"
       }
     ],
     describe: (v, L) => {
-      const n = L("entity") ? ` the "${L("entity")}" project` : " all church projects";
+      const n = L("entity") ? ` the "${L("entity")}" fundraiser` : " all fundraisers";
       if (v.type === "contributions") return `Report on contributions to${n}.`;
       if (v.type === "expenses") return `Report on expenses for${n}.`;
-      return "Report on all church projects.";
+      return "Report on all fundraisers.";
     }
   },
   "business-ventures": {

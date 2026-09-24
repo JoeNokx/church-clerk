@@ -6,6 +6,12 @@ const businessIncomeSchema = new mongoose.Schema({
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     businessVentures: { type: mongoose.Schema.Types.ObjectId, ref: "BusinessVentures", required: true },
     recievedFrom: { type: String, required: true },
+    category: { type: String, trim: true },
+    paymentMethod: {
+      type: String,
+      enum: ["Cash", "Mobile Money", "Bank Transfer", "Cheque", "Card"],
+      default: "Cash"
+    },
     date: { type: Date, required: true },
     note: { type: String, trim: true },
     amount: { type: Number, required: true },

@@ -116,17 +116,17 @@ const INCOME_KEY_PAGE = {
   cellOfferings: "offerings",
   groupOfferings: "offerings",
   departmentOfferings: "offerings",
-  projectContributions: "church-projects",
+  projectContributions: "fundraising",
   welfareContributions: "welfare",
   specialFunds: "special-funds",
   businessIncome: "business-ventures",
-  pledgesPaid: "pledges"
+  pledgesPaid: "fundraising"
 };
 
 const EXPENSE_KEY_PAGE = {
   generalExpenses: "expenses",
   welfareDisbursements: "welfare",
-  projectExpenses: "church-projects",
+  projectExpenses: "fundraising",
   businessExpenses: "business-ventures"
 };
 

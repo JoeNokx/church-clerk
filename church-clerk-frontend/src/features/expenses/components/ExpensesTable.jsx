@@ -140,7 +140,7 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Expense Name</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Spent</th>

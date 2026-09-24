@@ -2401,7 +2401,7 @@ async function buildChurchProjectsReport({ churchId, from, to, options, rangeMat
     ];
 
     return {
-      title: `Church Projects — ${isContrib ? "Contributions" : "Expenses"}`,
+      title: `Fundraising — ${isContrib ? "Contributions" : "Expenses"}`,
       columns: availableColumns,
       availableColumns,
       rows: rows.map((r) => ({
@@ -2429,7 +2429,7 @@ async function buildChurchProjectsReport({ churchId, from, to, options, rangeMat
 
   const availableColumns = [
     { key: "referenceId", label: "Reference ID" },
-    { key: "name", label: "Project" },
+    { key: "name", label: "Fundraiser" },
     { key: "targetAmount", label: "Target" },
     { key: "startDate", label: "Start Date" },
     { key: "status", label: "Status" },
@@ -2440,7 +2440,7 @@ async function buildChurchProjectsReport({ churchId, from, to, options, rangeMat
   ];
 
   return {
-    title: "Church Projects",
+    title: "Fundraising",
     columns: availableColumns,
     availableColumns,
     rows: rows.map((r) => ({
@@ -2759,10 +2759,10 @@ const REPORT_MODULE_LABELS = {
   "special-funds": "Special Fund",
   expenses: "Expenses",
   budgeting: "Budgeting",
-  pledges: "Pledges",
+  pledges: "Fundraising — Pledges",
   welfare: "Welfare",
   "business-ventures": "Business Ventures",
-  "church-projects": "Church Projects",
+  "church-projects": "Fundraising",
   "programs-events": "Programs & Events",
   organisations: "Organisations",
   "outreach-followup": "Outreach & Follow-Up",

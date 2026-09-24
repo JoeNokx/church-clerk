@@ -138,7 +138,7 @@ const getSingleMember = async (req, res) => {
     }));
 
     churchProjects.forEach(c => contributions.push({
-      type: "Church Project",
+      type: "Fundraising",
       amount: c.amount,
       date: c.date,
       paymentMethod: c.paymentMethod

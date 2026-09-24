@@ -251,14 +251,34 @@ function DateRangeFilter({ appliedFrom, appliedTo, onApply, onClear }) {
   );
 }
 
+const INCOME_PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque", "Card"];
+
+const INCOME_CATEGORY_OPTIONS = ["Sales", "Books", "Pens", "Services", "Other"];
+
+const EXPENSE_CATEGORY_OPTIONS = [
+  "Salary",
+  "Marketing",
+  "Utility",
+  "Inventory",
+  "Equipment",
+  "Transportation",
+  "Maintenance",
+  "Other"
+];
+
 function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, currency }) {
   const [recievedFrom, setRecievedFrom] = useState("");
+  const [category, setCategory] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { values: lookupCategories, reload: reloadCategories } = useLookupValues("businessIncomeCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : INCOME_CATEGORY_OPTIONS;
 
   useEffect(() => {
     if (!open) return;
@@ -268,6 +288,8 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
 
     if (mode === "edit" && initialData) {
       setRecievedFrom(String(initialData?.recievedFrom || ""));
+      setCategory(String(initialData?.category || ""));
+      setPaymentMethod(String(initialData?.paymentMethod || "Cash"));
       setDate(String(initialData?.date || "").slice(0, 10));
       setAmount(initialData?.amount ?? "");
       setNote(String(initialData?.note || ""));
@@ -275,6 +297,8 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
     }
 
     setRecievedFrom("");
+    setCategory("");
+    setPaymentMethod("Cash");
     setDate("");
     setAmount("");
     setNote("");
@@ -308,6 +332,8 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
     try {
       await onSubmit?.({
         recievedFrom: String(recievedFrom).trim(),
+        category: String(category || "").trim(),
+        paymentMethod,
         date,
         amount: Number(amount),
         note: String(note || "").trim()
@@ -331,7 +357,50 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
             value={recievedFrom}
             onChange={(e) => setRecievedFrom(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            placeholder="e.g. Sunday book sales"
           />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="block font-semibold text-gray-500 text-xs">Category (optional)</label>
+              <AddLookupValueButton
+                label="Add category"
+                kind="businessIncomeCategory"
+                onCreated={async (value) => {
+                  await reloadCategories();
+                  setCategory(value);
+                }}
+              />
+            </div>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            >
+              <option value="">Select category</option>
+              {categoryOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Payment Method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            >
+              {INCOME_PAYMENT_METHODS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -362,7 +431,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Optional"
+            placeholder="e.g. Extra details about this income"
           />
         </div>
 
@@ -391,6 +460,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
 
 function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, currency }) {
   const [spentBy, setSpentBy] = useState("");
+  const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
@@ -407,6 +477,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
 
     if (mode === "edit" && initialData) {
       setSpentBy(String(initialData?.spentBy || ""));
+      setName(String(initialData?.name || ""));
       setCategory(String(initialData?.category || ""));
       setDate(String(initialData?.date || "").slice(0, 10));
       setAmount(initialData?.amount ?? "");
@@ -415,6 +486,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
     }
 
     setSpentBy("");
+    setName("");
     setCategory("");
     setDate("");
     setAmount("");
@@ -429,6 +501,12 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
 
     if (!String(spentBy || "").trim()) {
       setError("Spent by is required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!String(name || "").trim()) {
+      setError("Expense name is required.");
       setIsSubmitting(false);
       return;
     }
@@ -455,6 +533,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
     try {
       await onSubmit?.({
         spentBy: String(spentBy).trim(),
+        name: String(name).trim(),
         category: String(category).trim(),
         date,
         amount: Number(amount),
@@ -468,32 +547,33 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
     }
   };
 
-  const categories = [
-    "Salary",
-    "Marketing",
-    "Utility",
-    "Inventory",
-    "Equipment",
-    "Transportation",
-    "Maintenance",
-    "Other"
-  ];
-
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("businessExpenseCategory");
-  const categoryOptions = lookupCategories?.length ? lookupCategories : categories;
+  const categoryOptions = lookupCategories?.length ? lookupCategories : EXPENSE_CATEGORY_OPTIONS;
 
   return (
     <BaseModal open={open} title={title} subtitle="Business expenses" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-        <div>
-          <label className="block font-semibold text-gray-500 text-xs">Spent By</label>
-          <input
-            value={spentBy}
-            onChange={(e) => setSpentBy(e.target.value)}
-            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Spent By</label>
+            <input
+              value={spentBy}
+              onChange={(e) => setSpentBy(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="e.g. John Doe"
+            />
+          </div>
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Expense Name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="e.g. Books, Pens"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -550,7 +630,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="Optional"
+              placeholder="e.g. Extra details about this expense"
             />
           </div>
         </div>
@@ -595,7 +675,7 @@ function SearchInput({ activeTab, incomeSearch, expenseSearch, incomeSearchRef, 
   useEffect(() => () => { debouncedIncome.cancel(); debouncedExpense.cancel(); }, [debouncedIncome, debouncedExpense]);
 
   const value = activeTab === "incomes" ? incomeSearch : expenseSearch;
-  const placeholder = activeTab === "incomes" ? "Search received from or recorded by" : "Search spent on or recorded by";
+  const placeholder = activeTab === "incomes" ? "Search received from or category" : "Search spent by, name or category";
 
   const onChange = (e) => {
     const val = e.target.value;
@@ -650,6 +730,7 @@ function BusinessVentureDetailsPage() {
   const [incomeSearch, setIncomeSearch] = useState("");
   const [incomeDateFrom, setIncomeDateFrom] = useState("");
   const [incomeDateTo, setIncomeDateTo] = useState("");
+  const [incomeCategory, setIncomeCategory] = useState("");
 
   const [expenseRows, setExpenseRows] = useState([]);
   const [expensePagination, setExpensePagination] = useState(null);
@@ -657,6 +738,17 @@ function BusinessVentureDetailsPage() {
   const [expenseSearch, setExpenseSearch] = useState("");
   const [expenseDateFrom, setExpenseDateFrom] = useState("");
   const [expenseDateTo, setExpenseDateTo] = useState("");
+  const [expenseCategory, setExpenseCategory] = useState("");
+
+  const { values: incomeLookupCategories } = useLookupValues("businessIncomeCategory");
+  const { values: expenseLookupCategories } = useLookupValues("businessExpenseCategory");
+  const incomeCategoryOptions = incomeLookupCategories?.length ? incomeLookupCategories : INCOME_CATEGORY_OPTIONS;
+  const expenseCategoryOptions = expenseLookupCategories?.length ? expenseLookupCategories : EXPENSE_CATEGORY_OPTIONS;
+  const activeCategoryOptions = activeTab === "incomes" ? incomeCategoryOptions : expenseCategoryOptions;
+  const categorySelectOptions = useMemo(
+    () => activeCategoryOptions.map((c) => ({ label: c, value: c })),
+    [activeCategoryOptions]
+  );
 
   const [viewIncomeOpen, setViewIncomeOpen] = useState(false);
   const [viewIncomeRow, setViewIncomeRow] = useState(null);
@@ -702,12 +794,13 @@ function BusinessVentureDetailsPage() {
       page,
       limit: 10,
       search,
+      category: incomeCategory,
       dateFrom: incomeDateFrom,
       dateTo: incomeDateTo
     });
     setIncomeRows(safeList(res, "businessIncome"));
     setIncomePagination(safePagination(res));
-  }, [businessId, incomeDateFrom, incomeDateTo]);
+  }, [businessId, incomeDateFrom, incomeDateTo, incomeCategory]);
 
   const loadExpenses = useCallback(async (page, searchOverride) => {
     if (!businessId) return;
@@ -716,12 +809,13 @@ function BusinessVentureDetailsPage() {
       page,
       limit: 10,
       search,
+      category: expenseCategory,
       dateFrom: expenseDateFrom,
       dateTo: expenseDateTo
     });
     setExpenseRows(safeList(res, "businessExpenses"));
     setExpensePagination(safePagination(res));
-  }, [businessId, expenseDateFrom, expenseDateTo]);
+  }, [businessId, expenseDateFrom, expenseDateTo, expenseCategory]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -801,7 +895,7 @@ function BusinessVentureDetailsPage() {
           <BackButton onClick={() => toPage("business-ventures")} />
           <div className="mt-2 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{business?.businessName || "Business Venture"}</div>
           <div className="mt-2 text-gray-600 text-sm">{business?.description || "—"}</div>
-          <div className="mt-2 text-gray-500 text-xs">Manager: {business?.manager || "—"} | Phone: {business?.phoneNumber || "—"}</div>
+          <div className="mt-2 text-gray-500 text-xs">Manager: {business?.manager || "—"} | Phone: {business?.phoneNumber || "—"} | Location: {business?.location || "—"}</div>
         </div>
       </div>
 
@@ -943,9 +1037,23 @@ function BusinessVentureDetailsPage() {
                   loadExpenses(1, v);
                 }
               }}
-              searchPlaceholder={activeTab === "incomes" ? "Search received from or recorded by" : "Search spent on or recorded by"}
+              searchPlaceholder={activeTab === "incomes" ? "Search received from or category" : "Search spent by, name or category"}
               searchWidth="md:w-[320px]"
-              selects={[]}
+              selects={[
+                {
+                  key: "category",
+                  value: activeTab === "incomes" ? incomeCategory : expenseCategory,
+                  onChange: (v) => {
+                    if (activeTab === "incomes") {
+                      setIncomeCategory(v); setIncomePage(1);
+                    } else {
+                      setExpenseCategory(v); setExpensePage(1);
+                    }
+                  },
+                  options: categorySelectOptions,
+                  placeholder: "All Categories",
+                },
+              ]}
               dateFrom={activeTab === "incomes" ? incomeDateFrom : expenseDateFrom}
               dateTo={activeTab === "incomes" ? incomeDateTo : expenseDateTo}
               onDateApply={(from, to) => {
@@ -989,7 +1097,7 @@ function BusinessVentureDetailsPage() {
                   expenseSearchRef.current = v; setExpenseSearch(v); setExpensePage(1); loadExpenses(1, v);
                 }
               }}
-              searchPlaceholder={activeTab === "incomes" ? "Search received from or recorded by" : "Search spent on or recorded by"}
+              searchPlaceholder={activeTab === "incomes" ? "Search received from or category" : "Search spent by, name or category"}
               dateFrom={activeTab === "incomes" ? incomeDateFrom : expenseDateFrom}
               dateTo={activeTab === "incomes" ? incomeDateTo : expenseDateTo}
               onDateApply={(from, to) => {
@@ -999,12 +1107,30 @@ function BusinessVentureDetailsPage() {
                   setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1);
                 }
               }}
+              filters={[
+                {
+                  key: "category",
+                  label: "Category",
+                  value: activeTab === "incomes" ? incomeCategory : expenseCategory,
+                  defaultValue: "",
+                  options: [{ label: "All Categories", value: "" }, ...categorySelectOptions],
+                },
+              ]}
+              onApply={(pending) => {
+                const v = pending?.category || "";
+                if (activeTab === "incomes") {
+                  setIncomeCategory(v); setIncomePage(1);
+                } else {
+                  setExpenseCategory(v); setExpensePage(1);
+                }
+              }}
               resultCount={activeTab === "incomes" ? (incomePagination?.totalResult ?? null) : (expensePagination?.totalResult ?? null)}
-              getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
+              getLiveCount={async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
                 try {
                   if (activeTab === "incomes") {
                     const params = { page: 1, limit: 1 };
                     if (incomeSearch) params.search = incomeSearch;
+                    if (f?.category) params.category = f.category;
                     if (dFrom) params.dateFrom = dFrom;
                     if (dTo) params.dateTo = dTo;
                     const res = await getBusinessIncomes(businessId, params);
@@ -1013,6 +1139,7 @@ function BusinessVentureDetailsPage() {
                   } else {
                     const params = { page: 1, limit: 1 };
                     if (expenseSearch) params.search = expenseSearch;
+                    if (f?.category) params.category = f.category;
                     if (dFrom) params.dateFrom = dFrom;
                     if (dTo) params.dateTo = dTo;
                     const res = await getBusinessExpenses(businessId, params);
@@ -1034,9 +1161,10 @@ function BusinessVentureDetailsPage() {
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Received From</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Payment Method</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
@@ -1045,9 +1173,10 @@ function BusinessVentureDetailsPage() {
                       {incomeRows.map((row, idx) => (
                         <tr key={row?._id ?? `i-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.recievedFrom || "—"}><span className="sm:hidden">{truncateMobileName(row?.recievedFrom || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.recievedFrom || "—")}</span></td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.category || "—"}><span className="sm:hidden">{truncateMobileName(row?.category || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.category || "—")}</span></td>
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{row?.paymentMethod || "—"}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount, currency)}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
                               <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -1096,10 +1225,10 @@ function BusinessVentureDetailsPage() {
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Spent By</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Expense Name</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Spent</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
@@ -1108,10 +1237,10 @@ function BusinessVentureDetailsPage() {
                       {expenseRows.map((row, idx) => (
                         <tr key={row?._id ?? `e-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.spentBy || "—"}><span className="sm:hidden">{truncateMobileName(row?.spentBy || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.spentBy || "—")}</span></td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={row?.name || "—"}><span className="sm:hidden">{truncateMobileName(row?.name || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.name || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.category || "—"}><span className="sm:hidden">{truncateMobileName(row?.category || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.category || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount, currency)}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
                               <span className="font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{row.referenceId}</span>
@@ -1161,18 +1290,22 @@ function BusinessVentureDetailsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Income Details</div>
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">{viewIncomeRow?.recievedFrom || "Income Details"}</div>
+                <div className="mt-0.5 font-mono text-xs text-gray-500">{viewIncomeRow?.referenceId || ""}</div>
+              </div>
               <button type="button" onClick={() => setViewIncomeOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
             <div className="p-4 md:p-6 space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><div className="font-semibold text-gray-500 text-xs">Received From</div><div className="mt-1 text-gray-900">{viewIncomeRow?.recievedFrom || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Category</div><div className="mt-1 text-gray-900">{viewIncomeRow?.category || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Payment Method</div><div className="mt-1 text-gray-900">{viewIncomeRow?.paymentMethod || "—"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Date Received</div><div className="mt-1 text-gray-900">{formatDate(viewIncomeRow?.date)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-green-700 font-semibold">{formatCurrency(viewIncomeRow?.amount, currency)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewIncomeRow?.createdBy?.fullName || "—"}</div></div>
-                <div className="col-span-2"><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewIncomeRow?.referenceId || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date Recorded</div><div className="mt-1 text-gray-900">{formatDate(viewIncomeRow?.createdAt)}</div></div>
               </div>
               <div><div className="font-semibold text-gray-500 text-xs">Note</div><div className="mt-1 text-gray-700">{viewIncomeRow?.note || "—"}</div></div>
             </div>
@@ -1184,19 +1317,22 @@ function BusinessVentureDetailsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Expense Details</div>
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">{viewExpenseRow?.spentBy || "Expense Details"}</div>
+                <div className="mt-0.5 font-mono text-xs text-gray-500">{viewExpenseRow?.referenceId || ""}</div>
+              </div>
               <button type="button" onClick={() => setViewExpenseOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
             <div className="p-4 md:p-6 space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><div className="font-semibold text-gray-500 text-xs">Spent By</div><div className="mt-1 text-gray-900">{viewExpenseRow?.spentBy || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Expense Name</div><div className="mt-1 text-gray-900">{viewExpenseRow?.name || "—"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Category</div><div className="mt-1 text-gray-900">{viewExpenseRow?.category || "—"}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Date Spent</div><div className="mt-1 text-gray-900">{formatDate(viewExpenseRow?.date)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Amount</div><div className="mt-1 text-orange-600 font-semibold">{formatCurrency(viewExpenseRow?.amount, currency)}</div></div>
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewExpenseRow?.createdBy?.fullName || "—"}</div></div>
-                <div><div className="font-semibold text-gray-500 text-xs">Ref ID</div><div className="mt-1 font-mono text-xs text-gray-500">{viewExpenseRow?.referenceId || "—"}</div></div>
+                <div><div className="font-semibold text-gray-500 text-xs">Date Recorded</div><div className="mt-1 text-gray-900">{formatDate(viewExpenseRow?.createdAt)}</div></div>
               </div>
               <div><div className="font-semibold text-gray-500 text-xs">Description</div><div className="mt-1 text-gray-700">{viewExpenseRow?.description || "—"}</div></div>
             </div>
@@ -1244,7 +1380,6 @@ function BusinessVentureDetailsPage() {
         initialData={null}
         onClose={() => {
           setAddExpenseOpen(false);
-          setAddExpenseError("");
         }}
         onSubmit={async (payload) => {
           await createBusinessExpense(businessId, payload);

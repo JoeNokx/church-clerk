@@ -13,6 +13,7 @@ const createBusinessVentures = async (req, res) => {
                 description,
                 manager,
                 phoneNumber,
+                location,
                 startDate
                 } = req.body;
                 
@@ -40,6 +41,7 @@ const createBusinessVentures = async (req, res) => {
                 description,
                 manager,
                 phoneNumber: validatedPhoneNumber,
+                location,
                 startDate: startDate ? new Date(startDate) : new Date(),
                 church: req.activeChurch._id,
                 createdBy: req.user._id
@@ -87,7 +89,7 @@ const getAllBusinessVentures = async (req, res) => {
     
         // FETCH ALL  BUSINESS VENTURES
         const businessVentures = await BusinessVentures.find(query)
-        .select("businessName description manager phoneNumber createdBy referenceId startDate")
+        .select("businessName description manager phoneNumber location createdBy referenceId startDate")
         .populate("createdBy", "fullName")
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -178,7 +180,7 @@ const getSingleBusinessVentures = async (req, res) => {
                 query.church = req.activeChurch._id
             }
           const businessVentures = await BusinessVentures.findOne(query)
-                .select("businessName description manager phoneNumber createdBy")
+                .select("businessName description manager phoneNumber location createdBy")
 
                 if(!businessVentures) {
                     return res.status(404).json({message: "business Venture not found"})

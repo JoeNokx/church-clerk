@@ -13,7 +13,7 @@ const CATEGORY_OPTIONS = [
   "Transportation",
   "Pastor Support",
   "Charity",
-  "Church Project",
+  "Fundraising",
   "Program",
   "Building materials",
   "Salary"
@@ -103,7 +103,7 @@ function ExpensesFilters() {
       <FilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search title or category"
+        searchPlaceholder="Search name or category"
         searchWidth="md:w-[320px]"
         selects={[
           {
@@ -121,7 +121,7 @@ function ExpensesFilters() {
       <MobileFilterBar
         searchValue={searchValue}
         onSearchChange={onSearchChange}
-        searchPlaceholder="Search title or category"
+        searchPlaceholder="Search name or category"
         dateFrom={appliedDateFrom}
         dateTo={appliedDateTo}
         onDateApply={applyDates}

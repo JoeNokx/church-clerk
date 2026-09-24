@@ -88,9 +88,12 @@ function CardViewDetailsLink({ onClick, label = "View Details" }) {
       <button
         type="button"
         onClick={onClick}
-        className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
+        className="cck-allow-icons group inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors text-xs"
       >
         {label}
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5">
+          <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+        </svg>
       </button>
     </div>
   );

@@ -53,6 +53,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
   const [description, setDescription] = useState("");
   const [manager, setManager] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [location, setLocation] = useState("");
   const [startDate, setStartDate] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -64,6 +65,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
     setDescription("");
     setManager("");
     setPhoneNumber("");
+    setLocation("");
     setStartDate("");
     setError("");
     setSaving(false);
@@ -101,6 +103,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
         description: String(description).trim(),
         manager: String(manager || "").trim(),
         phoneNumber: String(phoneNumber || "").trim(),
+        location: String(location || "").trim(),
         ...(startDate ? { startDate } : {})
       });
       onSuccess?.();
@@ -139,12 +142,12 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Manager</label>
+            <label className="block font-semibold text-gray-500 text-xs">Manager (optional)</label>
             <input
               value={manager}
               onChange={(e) => setManager(e.target.value)}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="Optional"
+              placeholder="e.g. John Doe"
             />
           </div>
           <div>
@@ -156,6 +159,15 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Location (optional)</label>
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="e.g. Accra, Osu"
+            />
+          </div>
           <div>
             <label className="block font-semibold text-gray-500 text-xs">Venture Start Date</label>
             <input
@@ -195,6 +207,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
   const [description, setDescription] = useState("");
   const [manager, setManager] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [location, setLocation] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -205,6 +218,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
     setDescription(String(initialData?.description || ""));
     setManager(String(initialData?.manager || ""));
     setPhoneNumber(String(initialData?.phoneNumber || ""));
+    setLocation(String(initialData?.location || ""));
     setError("");
     setSaving(false);
     setIsSubmitting(false);
@@ -240,7 +254,8 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
         businessName: String(businessName).trim(),
         description: String(description).trim(),
         manager: String(manager || "").trim(),
-        phoneNumber: String(phoneNumber || "").trim()
+        phoneNumber: String(phoneNumber || "").trim(),
+        location: String(location || "").trim()
       });
       onSuccess?.();
     } catch (e2) {
@@ -262,6 +277,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            placeholder="e.g., Bookshop"
           />
         </div>
 
@@ -271,16 +287,18 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
+            placeholder="What does this venture do?"
           />
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Manager</label>
+            <label className="block font-semibold text-gray-500 text-xs">Manager (optional)</label>
             <input
               value={manager}
               onChange={(e) => setManager(e.target.value)}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="e.g. John Doe"
             />
           </div>
           <div>
@@ -289,6 +307,16 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
               <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
             </div>
           </div>
+        </div>
+
+        <div>
+          <label className="block font-semibold text-gray-500 text-xs">Location (optional)</label>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            placeholder="e.g. Accra, Osu"
+          />
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
@@ -424,16 +452,6 @@ function BusinessVenturesPage() {
   const viewDetails = (row) => {
     if (!row?._id) return;
     toPage("business-venture-details", { id: row._id });
-  };
-
-  const viewIncome = (row) => {
-    if (!row?._id) return;
-    toPage("business-venture-details", { id: row._id, tab: "incomes" });
-  };
-
-  const viewExpenses = (row) => {
-    if (!row?._id) return;
-    toPage("business-venture-details", { id: row._id, tab: "expenses" });
   };
 
   const openEdit = (row) => {
@@ -604,6 +622,12 @@ function BusinessVenturesPage() {
                 label: v.phoneNumber,
               });
             }
+            if (v?.location) {
+              metaItems.push({
+                icon: <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1116 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="10" r="3" stroke="currentColor" strokeWidth="2" /></svg>,
+                label: v.location,
+              });
+            }
 
             return (
               <Card key={v?._id ?? `v-${idx}`}>
@@ -635,17 +659,7 @@ function BusinessVenturesPage() {
                   </div>
                 </div>
                 <Card.Footer>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {canView ? (
-                        <>
-                          <button type="button" onClick={() => viewIncome(v)} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-green-700 hover:bg-gray-50 text-xs">Income</button>
-                          <button type="button" onClick={() => viewExpenses(v)} className="cck-allow-icons inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-orange-600 hover:bg-gray-50 text-xs">Expenses</button>
-                        </>
-                      ) : null}
-                    </div>
-                    {canView ? <Card.ViewDetailsLink onClick={() => viewDetails(v)} /> : null}
-                  </div>
+                  {canView ? <Card.ViewDetailsLink onClick={() => viewDetails(v)} /> : null}
                 </Card.Footer>
               </Card>
             );

@@ -9,6 +9,7 @@ const createBusinessExpenses = async (req, res) => {
 
           const {
                 spentBy,
+                name,
                 date,
                 amount,
                 category,
@@ -34,6 +35,7 @@ const createBusinessExpenses = async (req, res) => {
                 const businessExpenses = await BusinessExpenses.create({
                 businessVentures: businessId,
                 spentBy,
+                name,
                 date,
                 amount,
                 description,
@@ -84,7 +86,11 @@ const getAllBusinessExpenses = async (req, res) => {
                             const users = await (await import("../../../models/userModel.js")).default
                                 .find({ fullName: { $regex: search, $options: "i" } }, "_id").lean();
                             const userIds = users.map(u => u._id);
-                            const orClauses = [{ spentBy: { $regex: search, $options: "i" } }];
+                            const orClauses = [
+                                { spentBy: { $regex: search, $options: "i" } },
+                                { name: { $regex: search, $options: "i" } },
+                                { category: { $regex: search, $options: "i" } }
+                            ];
                             if (userIds.length) orClauses.push({ createdBy: { $in: userIds } });
                             query.$or = orClauses;
                         }
@@ -120,7 +126,7 @@ const getAllBusinessExpenses = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const businessExpenses = await BusinessExpenses.find(query)
-                .select("spentBy category date amount description createdBy referenceId")
+                .select("spentBy name category date amount description createdBy referenceId createdAt")
                 .populate("createdBy", "fullName")
                 .populate("businessVentures", "businessName")
                     .sort({ createdAt: -1 })

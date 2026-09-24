@@ -204,6 +204,9 @@ const INCOME_CATEGORY_SOURCES = {
   "Welfare Contribution": [
     { Model: WelfareContribution, dateField: "date",         entityType: null },
   ],
+  "Fundraising Contribution": [
+    { Model: ProjectContribution, dateField: "date",         entityType: null },
+  ],
   "Church Project Contribution": [
     { Model: ProjectContribution, dateField: "date",         entityType: null },
   ],

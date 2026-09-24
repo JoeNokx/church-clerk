@@ -107,7 +107,7 @@ const getAllProjectExpenses = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const projectExpenses = await ProjectExpenses.find(query)
-                .select("spentOn date amount description createdBy referenceId")
+                .select("spentOn date amount description createdBy referenceId createdAt")
                 .populate("createdBy", "fullName")
                 .populate("churchProject", "name")
                     .sort({ createdAt: -1 })

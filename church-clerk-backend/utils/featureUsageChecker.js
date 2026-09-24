@@ -99,11 +99,11 @@ export const isFeatureEnabledInPlan = (planFeatures, moduleKey) => {
     case "Announcements":    return Boolean(f.announcements || f.announcement);
     case "Tithe":            return Boolean(f.tithes);
     case "Budgeting":        return Boolean(f.budgeting || f.financeModule);
-    case "ChurchProjects":   return Boolean(f.churchProjects);
+    case "ChurchProjects":   return Boolean(f.churchProjects || f.fundraising);
     case "SpecialFunds":     return Boolean(f.specialFunds || f.specialFund);
     case "Offerings":        return Boolean(f.offerings);
     case "Welfare":          return Boolean(f.welfare);
-    case "Pledges":          return Boolean(f.pledges);
+    case "Pledges":          return Boolean(f.pledges || f.fundraising);
     case "BusinessVentures": return Boolean(f.businessVentures);
     case "Expenses":         return Boolean(f.expenses);
     case "FinancialStatement": return Boolean(f.financialStatement);

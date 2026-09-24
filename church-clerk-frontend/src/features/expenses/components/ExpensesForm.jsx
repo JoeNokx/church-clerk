@@ -13,7 +13,7 @@ const CATEGORY_OPTIONS = [
   "Transportation",
   "Pastor Support",
   "Charity",
-  "Church Project",
+  "Fundraising",
   "Program",
   "Building materials",
   "Salary"
@@ -71,7 +71,7 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
     setFormError(null);
 
     if (!title.trim()) {
-      setFormError("Title is required.");
+      setFormError("Expense name is required.");
       setIsSubmitting(false);
       return;
     }
@@ -154,7 +154,7 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
             <div className="md:col-span-2">
-              <label className="block font-semibold text-gray-500 text-xs">Title</label>
+              <label className="block font-semibold text-gray-500 text-xs">Expense Name</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

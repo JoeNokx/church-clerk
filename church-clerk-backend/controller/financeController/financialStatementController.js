@@ -207,7 +207,7 @@ async function buildStatement({ churchId, periodStart, periodEnd, prevStart, pre
     { key: "groupOfferings", label: "Group Offering", Model: GroupOffering, dateField: "date", amountField: "amount" },
     { key: "departmentOfferings", label: "Department Offering", Model: DepartmentOffering, dateField: "date", amountField: "amount" },
     { key: "ministryOfferings", label: "Ministry Offering", Model: MinistryOffering, dateField: "date", amountField: "amount" },
-    { key: "projectContributions", label: "Church Project Contributions", Model: ProjectContribution, dateField: "date", amountField: "amount" },
+    { key: "projectContributions", label: "Fundraising Contributions", Model: ProjectContribution, dateField: "date", amountField: "amount" },
     { key: "welfareContributions", label: "Welfare Contributions", Model: WelfareContributions, dateField: "date", amountField: "amount" },
     { key: "specialFunds", label: "Special Funds", Model: SpecialFund, dateField: "givingDate", amountField: "totalAmount" },
     { key: "businessIncome", label: "Business Ventures Income", Model: BusinessIncome, dateField: "date", amountField: "amount" },
@@ -218,7 +218,7 @@ async function buildStatement({ churchId, periodStart, periodEnd, prevStart, pre
   const expenseSources = [
     { key: "generalExpenses", label: "General Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount" },
     { key: "welfareDisbursements", label: "Welfare Disbursements", Model: WelfareDisbursements, dateField: "date", amountField: "amount" },
-    { key: "projectExpenses", label: "Church Project Expenses", Model: ProjectExpense, dateField: "date", amountField: "amount" },
+    { key: "projectExpenses", label: "Fundraising Expenses", Model: ProjectExpense, dateField: "date", amountField: "amount" },
     { key: "businessExpenses", label: "Business Ventures Expenses", Model: BusinessExpenses, dateField: "date", amountField: "amount" },
     { key: "otherExpenses", label: "Other Expenses", Model: Expense, dateField: "dateSpent", amountField: "amount" }
   ];

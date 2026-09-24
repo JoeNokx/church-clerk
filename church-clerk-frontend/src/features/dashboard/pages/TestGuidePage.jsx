@@ -80,18 +80,19 @@ const AREAS = [
   },
   
   {
-    id: "projects",
+    id: "fundraising",
     number: "07",
-    title: "Church Projects",
+    title: "Fundraising",
     color: "bg-orange-50 border-orange-100",
     badge: "bg-orange-100 text-orange-700",
     steps: [
-      "In the sidebar, click 'Church Projects'.",
-      "Create at least two project and check details",
-      "Record a contribution and expenses in the project.",
-      "Make sure one project is fully paid out and other incomplete and observe their progress status.",
+      "In the sidebar, click 'Fundraising'.",
+      "Create at least two fundraisers and check details",
+      "Open a fundraiser and use 'Add Contributor' to record both a pledge and a contribution.",
+      "Record an expense in the fundraiser.",
+      "Make sure one fundraiser is fully paid out and other incomplete and observe their progress status.",
     ],
-    note: "Confirm the progress amount updates after recording a contribution.",
+    note: "Confirm the progress amount updates after recording a contribution, and that pledges appear in the Pledges tab.",
   },
   {
     id: "funds",
@@ -117,19 +118,6 @@ const AREAS = [
       "Record contributions and disbursement",
     ],
     note: "Welfare records track money given to members in need. Confirm the calculations at the KPI is correct.",
-  },
-  {
-    id: "pledges",
-    number: "10",
-    title: "Pledges",
-    color: "bg-rose-50 border-rose-100",
-    badge: "bg-rose-100 text-rose-700",
-    steps: [
-      "In the sidebar, click 'Pledges'.",
-      "Create at least two Pledges and check it details.",
-      "Record a pledge payment against it. Make sure one pledge is fully paid out and other incomplete and observe their status.",
-    ],
-    note: "A pledge is a promise to give. Payments should reduce the outstanding balance — verify this works.",
   },
   {
     id: "ventures",

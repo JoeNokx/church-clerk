@@ -16,7 +16,7 @@ const STATUS_OPTIONS = [
 ];
 
 const INCOME_CATEGORY_OPTIONS = [
-  "Tithe", "Offering", "Special Fund", "Church Project", "Other"
+  "Tithe", "Offering", "Special Fund", "Fundraising Contribution", "Other"
 ];
 
 const CATEGORY_OPTIONS = [
@@ -26,7 +26,7 @@ const CATEGORY_OPTIONS = [
   "Transportation",
   "Pastor Support",
   "Charity",
-  "Church Project",
+  "Fundraising",
   "Program",
   "Building materials",
   "Salary"

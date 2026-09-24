@@ -9,6 +9,8 @@ const createBusinessIncome = async (req, res) => {
 
           const {
                 recievedFrom,
+                category,
+                paymentMethod,
                 date,
                 amount,
                 note
@@ -33,6 +35,8 @@ const createBusinessIncome = async (req, res) => {
                 const businessIncome = await BusinessIncome.create({
                 businessVentures: businessId,
                 recievedFrom,
+                category,
+                paymentMethod,
                 date,
                 amount,
                 note,
@@ -56,7 +60,7 @@ const createBusinessIncome = async (req, res) => {
 const getAllBusinessIncome = async (req, res) => {
     
     try {
-           const { page = 1, limit = 10, search = "", recordedBy, dateFrom, dateTo } = req.query;
+           const { page = 1, limit = 10, search = "", recordedBy, category, dateFrom, dateTo } = req.query;
                                                 
                 const pageNum = Math.max(1, parseInt(page, 10) || 1);
                 const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -81,7 +85,10 @@ const getAllBusinessIncome = async (req, res) => {
                             const users = await (await import("../../../models/userModel.js")).default
                                 .find({ fullName: { $regex: search, $options: "i" } }, "_id").lean();
                             const userIds = users.map(u => u._id);
-                            const orClauses = [{ recievedFrom: { $regex: search, $options: "i" } }];
+                            const orClauses = [
+                                { recievedFrom: { $regex: search, $options: "i" } },
+                                { category: { $regex: search, $options: "i" } }
+                            ];
                             if (userIds.length) orClauses.push({ createdBy: { $in: userIds } });
                             query.$or = orClauses;
                         }
@@ -90,6 +97,10 @@ const getAllBusinessIncome = async (req, res) => {
                             const users = await (await import("../../../models/userModel.js")).default
                                 .find({ fullName: { $regex: recordedBy, $options: "i" } }, "_id").lean();
                             query.createdBy = { $in: users.map(u => u._id) };
+                        }
+
+                        if (category) {
+                            query.category = category;
                         }
 
                 // Filter by date range
@@ -113,7 +124,7 @@ const getAllBusinessIncome = async (req, res) => {
             
                 // FETCH BUSINESS INCOME
                 const businessIncome = await BusinessIncome.find(query)
-                .select("recievedFrom date amount note createdBy referenceId")
+                .select("recievedFrom category paymentMethod date amount note createdBy referenceId createdAt")
                 .populate("createdBy", "fullName")
                 .populate("businessVentures", "businessName")
                     .sort({ createdAt: -1 })

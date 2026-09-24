@@ -1,7 +1,27 @@
 import Pledge from "../../../models/financeModel/pledgeModel/pledgeModel.js"
 import PledgePayment from "../../../models/financeModel/pledgeModel/pledgePaymentModel.js";
+import ChurchProject from "../../../models/financeModel/projectModel/churchProjectModel.js";
 
 import { validatePhoneNumber } from "../../../utils/validatePhoneNumber.js";
+
+// A deadline counts as missed only once the deadline day itself has fully passed.
+const isPastDeadline = (deadline) => {
+  if (!deadline) return false;
+  const d = new Date(deadline);
+  if (Number.isNaN(d.getTime())) return false;
+  d.setHours(23, 59, 59, 999);
+  return d.getTime() < Date.now();
+};
+
+// Status is always derived from payments — never set by users.
+const derivePledgeStatus = (totalPaid, amount, deadline) => {
+  const paid = Number(totalPaid || 0);
+  const target = Number(amount || 0);
+  if (target > 0 && paid >= target) return "Completed";
+  if (isPastDeadline(deadline)) return "Overdue";
+  if (paid <= 0) return "Not Started";
+  return "In Progress";
+};
 
 
 const createPledge = async (req, res) => {
@@ -15,11 +35,19 @@ const createPledge = async (req, res) => {
                 pledgeDate,
                 deadline,
                 note,
-                status 
+                churchProject
                 } = req.body;
-                    
-             
-            
+
+                  if (churchProject) {
+                    const fundraiser = await ChurchProject.findOne({
+                      _id: churchProject,
+                      church: req.activeChurch._id
+                    });
+                    if (!fundraiser) {
+                      return res.status(404).json({ message: "Fundraiser not found" });
+                    }
+                  }
+
 
                   if (!name || !phoneNumber || !amount || !pledgeDate) {
                     return res.status(400).json({ message: "name, phoneNumber, amount and pledgeDate are required." }, { message: "Amount and date are required." });
@@ -41,7 +69,8 @@ const createPledge = async (req, res) => {
                     pledgeDate,
                     deadline,
                     note,
-                    status,
+                    status: "Not Started",
+                    churchProject: churchProject || undefined,
                     createdBy: req.user._id
                     });
 
@@ -58,7 +87,7 @@ const createPledge = async (req, res) => {
 const getAllPledge = async (req, res) => {
     
     try {
-          const { page = 1, limit = 10, search = "", serviceType, status, dateFrom, dateTo, recordedBy } = req.query;
+          const { page = 1, limit = 10, search = "", serviceType, status, dateFrom, dateTo, recordedBy, churchProject } = req.query;
                 
                     const pageNum = Math.max(1, parseInt(page, 10) || 1);
                     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -77,6 +106,11 @@ const getAllPledge = async (req, res) => {
                     // Filter by status
                     if (status) {
                       query.status = status;
+                    }
+
+                    // Filter by linked fundraiser
+                    if (churchProject) {
+                      query.churchProject = churchProject;
                     }
 
                     // search by name, phone, or recordedBy
@@ -124,8 +158,9 @@ const getAllPledge = async (req, res) => {
                 
                     // FETCH ATTENDANCES
                     const pledges = await Pledge.find(query)
-                    .select("name phoneNumber serviceType amount pledgeDate deadline status createdBy")
+                    .select("name phoneNumber serviceType amount pledgeDate deadline status createdBy churchProject referenceId createdAt")
                     .populate("createdBy", "fullName")
+                    .populate("churchProject", "name")
                       .sort({ createdAt: -1 })
                       .skip(skip)
                       .limit(limitNum)
@@ -134,14 +169,20 @@ const getAllPledge = async (req, res) => {
                     // COUNT TOTAL ATTENDANCES
                     const totalPledges = await Pledge.countDocuments(query);
                 
-                     // Compute totalPaid and remainingBalance for each pledge
+                     // Compute totalPaid, remainingBalance and derived status for each pledge
     const pledgesWithBalance = await Promise.all(
       pledges.map(async (pledge) => {
         const payments = await PledgePayment.find({ pledge: pledge._id }).lean();
         const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
         const remainingBalance = pledge.amount - totalPaid;
+        const status = derivePledgeStatus(totalPaid, pledge.amount, pledge.deadline);
+        // Keep stored status in sync for filtering (auto-derived, not user-set)
+        if (pledge.status !== status) {
+          await Pledge.updateOne({ _id: pledge._id }, { status });
+        }
         return {
           ...pledge,
+          status,
           totalPaid,
           remainingBalance
         };
@@ -196,7 +237,7 @@ const getSinglePledge = async (req, res) => {
         const {id} = req.params;
         const query = { _id: id, church: req.activeChurch._id }
 
-        const pledges = await Pledge.findOne(query)
+        const pledges = await Pledge.findOne(query).populate("churchProject", "name")
 
         if(!pledges) {
             return res.status(404).json({message: "Pledge not found"})
@@ -220,11 +261,26 @@ const getSinglePledge = async (req, res) => {
       if (daysUntilDeadline < 0) daysUntilDeadline = 0;
     }
 
+    // Derived status + totals (auto-computed from payments)
+    const paymentTotals = await PledgePayment.aggregate([
+      { $match: { pledge: pledges._id } },
+      { $group: { _id: null, totalPaid: { $sum: "$amount" } } }
+    ]);
+    const totalPaid = Number(paymentTotals?.[0]?.totalPaid || 0);
+    const derivedStatus = derivePledgeStatus(totalPaid, pledges.amount, pledges.deadline);
+    if (pledges.status !== derivedStatus) {
+      pledges.status = derivedStatus;
+      await pledges.save();
+    }
+
 
         return res.status(200).json({
           message: "Pledge found successfully",
           pledges,
-          daysUntilDeadline
+          daysUntilDeadline,
+          totalPaid,
+          remainingBalance: Number(pledges.amount || 0) - totalPaid,
+          status: derivedStatus
 
         })
     } catch (error) {
@@ -238,6 +294,9 @@ const updatePledge = async (req, res) => {
     try {
          const {id} = req.params;
                         const query = { _id: id, church: req.activeChurch._id }
+
+                        // Status is auto-derived from payments — never user-set
+                        delete req.body.status;
 
                         if (req.body?.phoneNumber !== undefined) {
                           const rawPhone = String(req.body.phoneNumber || "").trim();
@@ -260,8 +319,20 @@ const updatePledge = async (req, res) => {
                         if(!pledges) {
                             return res.status(404).json({message: "Pledges not found"})
                         }
-                
-                        return res.status(200).json({message: "Pledges updated successfully", pledges})
+
+                        // Recompute auto status (amount may have changed)
+                        const paymentTotals = await PledgePayment.aggregate([
+                          { $match: { pledge: pledges._id } },
+                          { $group: { _id: null, totalPaid: { $sum: "$amount" } } }
+                        ]);
+                        const totalPaid = Number(paymentTotals?.[0]?.totalPaid || 0);
+                        const derivedStatus = derivePledgeStatus(totalPaid, pledges.amount, pledges.deadline);
+                        if (pledges.status !== derivedStatus) {
+                          pledges.status = derivedStatus;
+                          await pledges.save();
+                        }
+
+                        return res.status(200).json({message: "Pledges updated successfully", pledges, totalPaid, status: derivedStatus})
     } catch (error) {
         return res.status(400).json({message: "Pledges could not be updated", error: error.message})
     }

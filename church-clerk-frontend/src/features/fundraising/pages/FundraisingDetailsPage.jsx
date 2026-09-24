@@ -2,12 +2,10 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
-import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
-import { getProjectContributionExpensesKPI } from "../services/churchProject.api.js";
+import { getProjectContributionExpensesKPI, getProjectTransactions } from "../services/fundraising.api.js";
 import {
   createProjectContribution,
-  getProjectContributions,
   updateProjectContribution
 } from "../contributions/services/projectContributions.api.js";
 import {
@@ -16,6 +14,9 @@ import {
   updateProjectExpense
 } from "../expenses/services/projectExpenses.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import AddContributorModal from "../components/AddContributorModal.jsx";
+import EditPledgeModal from "../../pledge/components/EditPledgeModal.jsx";
+import { updatePledge } from "../../pledge/services/pledge.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -50,8 +51,10 @@ function formatDate(value) {
 
 function statusBadge(status) {
   const s = String(status || "").toLowerCase();
-  if (s === "completed") return { label: "completed", cls: "bg-green-100 text-green-700" };
-  return { label: "active", cls: "bg-blue-100 text-blue-700" };
+  if (s === "completed") return { label: "Completed", cls: "bg-green-100 text-green-700" };
+  if (s === "overdue") return { label: "Overdue", cls: "bg-red-100 text-red-700" };
+  if (s === "in progress" || s === "active") return { label: "In Progress", cls: "bg-blue-100 text-blue-700" };
+  return { label: "Not Started", cls: "bg-gray-100 text-gray-600" };
 }
 
 function percentToNumber(value) {
@@ -197,13 +200,11 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
   const [date, setDate] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
-    setSaving(false);
     setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
@@ -244,7 +245,6 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
       return;
     }
 
-    setSaving(true);
     try {
       await onSubmit?.({
         contributorName: String(contributorName).trim(),
@@ -255,8 +255,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
-      setSaving(false);
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   };
 
@@ -264,7 +263,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
     <BaseModal
       open={open}
       title={mode === "edit" ? "Edit Contribution" : "Add Contribution"}
-      subtitle={projectName ? `Project: ${projectName}` : ""}
+      subtitle={projectName ? `Fundraiser: ${projectName}` : ""}
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
@@ -343,13 +342,11 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
-    setSaving(false);
     setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
@@ -390,7 +387,6 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
       return;
     }
 
-    setSaving(true);
     try {
       await onSubmit?.({
         spentOn: String(spentOn).trim(),
@@ -401,8 +397,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
-      setSaving(false);
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   };
 
@@ -410,7 +405,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
     <BaseModal
       open={open}
       title={mode === "edit" ? "Edit Expense" : "Record Expense"}
-      subtitle={projectName ? `Project: ${projectName}` : ""}
+      subtitle={projectName ? `Fundraiser: ${projectName}` : ""}
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
@@ -483,19 +478,16 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
   );
 }
 
-function ChurchProjectDetailsPage() {
+function FundraisingDetailsPage() {
   const guarded = useGuardedAction();
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
   const canWrite = churchStore?.activeChurch?._id ? churchStore?.activeChurch?.canEdit !== false : true;
-  const { can } = useContext(PermissionContext) || {};
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
 
   const projectId = useMemo(() => new URLSearchParams(location.search).get("id"), [location.search]);
 
-  const canCreate = useMemo(() => (typeof can === "function" ? can("churchProjects", "create") : false), [can]);
-  const canEdit = useMemo(() => (typeof can === "function" ? can("churchProjects", "update") : false), [can]);
 
   const [tab, setTab] = useState("contributions");
 
@@ -522,6 +514,7 @@ function ChurchProjectDetailsPage() {
   const [expenseDateTo, setExpenseDateTo] = useState("");
 
   const [contributionModalOpen, setContributionModalOpen] = useState(false);
+  const [contributorModalOpen, setContributorModalOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [editingContribution, setEditingContribution] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -530,6 +523,7 @@ function ChurchProjectDetailsPage() {
   const [expenseViewRow, setExpenseViewRow] = useState(null);
 
   const [viewRow, setViewRow] = useState(null);
+  const [editPledgeRow, setEditPledgeRow] = useState(null);
 
   const debouncedContribSearch = useDebouncedValue(contribSearch, 300);
   const debouncedExpenseSearch = useDebouncedValue(expenseSearch, 300);
@@ -542,7 +536,7 @@ function ChurchProjectDetailsPage() {
       const res = await getProjectContributionExpensesKPI(projectId);
       setKpi(safeKpiPayload(res));
     } catch (e) {
-      setKpiError(e?.response?.data?.message || e?.message || "Failed to load project");
+      setKpiError(e?.response?.data?.message || e?.message || "Failed to load fundraiser");
       setKpi(null);
     } finally {
       setKpiLoading(false);
@@ -554,14 +548,14 @@ function ChurchProjectDetailsPage() {
     setContribLoading(true);
     setContribError("");
     try {
-      const res = await getProjectContributions(projectId, {
+      const res = await getProjectTransactions(projectId, {
         page: nextPage,
         limit: 10,
         search: String(debouncedContribSearch || "").trim(),
         dateFrom: contribDateFrom || undefined,
         dateTo: contribDateTo || undefined
       });
-      setContribRows(safeListPayload(res, "projectContribution"));
+      setContribRows(safeListPayload(res, "transactions"));
       setContribPagination(safePagination(res));
     } catch (e) {
       setContribError(e?.response?.data?.message || e?.message || "Failed to load contributions");
@@ -612,8 +606,7 @@ function ChurchProjectDetailsPage() {
   const progressValue = percentToNumber(kpi?.progressPercentage);
 
   const openCreateContribution = () => {
-    setEditingContribution(null);
-    setContributionModalOpen(true);
+    setContributorModalOpen(true);
   };
 
   const openCreateExpense = () => {
@@ -634,21 +627,24 @@ function ChurchProjectDetailsPage() {
   if (!projectId) {
     return (
       <div className="max-w-6xl">
-        <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Project Details</div>
-        <div className="mt-2 text-gray-600 text-sm">No project selected.</div>
+        <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Fundraiser Details</div>
+        <div className="mt-2 text-gray-600 text-sm">No fundraiser selected.</div>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl">
-      <BackButton onClick={() => toPage("church-projects")} />
+      <BackButton onClick={() => toPage("fundraising")} />
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="mt-3 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">
-            {kpiLoading ? <Skeleton height={26} width={220} /> : projectName || "Project"}
+            {kpiLoading ? <Skeleton height={26} width={220} /> : projectName || "Fundraiser"}
           </div>
           <div className="mt-2 text-gray-600 text-sm">{kpi?.description || ""}</div>
+          {kpi?.deadlineDate ? (
+            <div className="mt-1 text-xs text-gray-500">Deadline: {formatDate(kpi.deadlineDate)}</div>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-3">
@@ -720,10 +716,10 @@ function ChurchProjectDetailsPage() {
       <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
         <div className="flex items-center justify-between text-gray-500 text-xs">
           <div>Fundraising Progress</div>
-          <div className="text-blue-700 font-semibold">{kpi?.progressPercentage || "0%"}</div>
+          <div className={`font-semibold ${progressValue >= 100 ? "text-green-700" : "text-blue-700"}`}>{kpi?.progressPercentage || "0%"}</div>
         </div>
         <div className="mt-2 h-2 rounded-full bg-gray-200 overflow-hidden">
-          <div className="h-full bg-blue-700" style={{ width: `${progressValue}%` }} />
+          <div className={`h-full ${progressValue >= 100 ? "bg-green-600" : "bg-blue-700"}`} style={{ width: `${progressValue}%` }} />
         </div>
       </div>
 
@@ -745,12 +741,12 @@ function ChurchProjectDetailsPage() {
             {tab === "contributions" ? (
               <>
                 <div className="font-semibold text-gray-900 text-sm">Contributions</div>
-                <div className="text-gray-500 text-xs">All project contributions</div>
+                <div className="text-gray-500 text-xs">Instant pay and pledges for this fundraiser</div>
               </>
             ) : (
               <>
                 <div className="font-semibold text-gray-900 text-sm">Expenses</div>
-                <div className="text-gray-500 text-xs">All project expenses</div>
+                <div className="text-gray-500 text-xs">All expenses for this fundraiser</div>
               </>
             )}
           </div>
@@ -761,7 +757,7 @@ function ChurchProjectDetailsPage() {
               <FilterBar
                 searchValue={contribSearch}
                 onSearchChange={(v) => { setContribSearch(v); setContribPage(1); }}
-                searchPlaceholder="Search contributor or recorded by"
+                searchPlaceholder="Search name or contributor"
                 searchWidth="md:w-[320px]"
                 selects={[]}
                 dateFrom={contribDateFrom}
@@ -775,21 +771,21 @@ function ChurchProjectDetailsPage() {
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm h-10"
                   >
                     <span className="leading-none text-lg">+</span>
-                    Add Contribution
+                    Add Contributor
                   </button>
                 ) : null}
               </FilterBar>
               <MobileFilterBar
                 searchValue={contribSearch}
                 onSearchChange={(v) => { setContribSearch(v); setContribPage(1); }}
-                searchPlaceholder="Search contributor or recorded by"
+                searchPlaceholder="Search name or contributor"
                 dateFrom={contribDateFrom}
                 dateTo={contribDateTo}
                 onDateApply={(from, to) => { setContribDateFrom(from); setContribDateTo(to); setContribPage(1); }}
                 resultCount={contribPagination?.totalResult ?? null}
                 getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
                   try {
-                    const res = await getProjectContributions(projectId, { page: 1, limit: 1, search: contribSearch, dateFrom: dFrom || undefined, dateTo: dTo || undefined });
+                    const res = await getProjectTransactions(projectId, { page: 1, limit: 1, search: contribSearch, dateFrom: dFrom || undefined, dateTo: dTo || undefined });
                     const payload = res?.data?.data ?? res?.data;
                     return payload?.pagination?.totalResult ?? null;
                   } catch { return null; }
@@ -859,19 +855,35 @@ function ChurchProjectDetailsPage() {
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Contributor</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Received</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
                         <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {contribRows.map((row, idx) => (
+                      {contribRows.map((row, idx) => {
+                        const isPledge = row?.kind === "pledge";
+                        const name = row?.displayName || row?.contributorName || row?.name || "—";
+                        return (
                         <tr key={row?._id ?? `c-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.contributorName || "—"}><span className="sm:hidden">{truncateMobileName(row?.contributorName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.contributorName || "—")}</span></td>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={name}><span className="sm:hidden">{truncateMobileName(name)}</span><span className="hidden sm:inline">{truncateDesktopName(name)}</span></td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            {isPledge ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 px-2 py-0.5 font-semibold text-xs">Pledge</span>
+                                {row?.status ? (
+                                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold text-xs ${statusBadge(row.status).cls}`}>{statusBadge(row.status).label}</span>
+                                ) : null}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 font-semibold text-xs">Instant Pay</span>
+                            )}
+                          </td>
                           <td className="max-md:px-4 py-1.5 text-green-700 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
-                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.displayDate || row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "—")}</span></td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             {row?.referenceId ? (
@@ -879,18 +891,22 @@ function ChurchProjectDetailsPage() {
                             ) : <span className="text-gray-300 text-xs">—</span>}
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                            <TableKebabMenu items={[
+                            <TableKebabMenu items={isPledge ? [
+                              { label: "View", onClick: () => toPage("pledge-details", { id: row._id }), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                            ] : [
                               { label: "View", onClick: () => setViewRow(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
                               { label: "Edit", onClick: () => guarded(() => openEditContribution(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <EmptyState compact illustration="contributions" title="No contributions yet" description="Contributions to this project will appear here." />
+                <EmptyState compact illustration="contributions" title="No contributions yet" description="Instant pay and pledges for this fundraiser will appear here." />
               )
             ) : null}
 
@@ -965,7 +981,7 @@ function ChurchProjectDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <EmptyState compact illustration="expenses" title="No expenses yet" description="Expenses for this project will appear here." />
+                <EmptyState compact illustration="expenses" title="No expenses yet" description="Expenses for this fundraiser will appear here." />
               )
             ) : null}
 
@@ -1018,6 +1034,10 @@ function ChurchProjectDetailsPage() {
                 <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
                 <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.createdBy?.fullName || "—"}</div>
               </div>
+              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(expenseViewRow?.createdAt)}</div>
+              </div>
               {expenseViewRow?.referenceId ? (
                 <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                   <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
@@ -1039,41 +1059,72 @@ function ChurchProjectDetailsPage() {
       {viewRow ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
-              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+            <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4">
+              <div className="min-w-0">
+                <div className="font-semibold text-gray-900 text-sm truncate">{viewRow?.contributorName || viewRow?.displayName || "Contribution"}</div>
+                {viewRow?.referenceId ? (
+                  <div className="mt-0.5 font-mono text-xs text-gray-500">{viewRow.referenceId}</div>
+                ) : null}
+              </div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
-            <div className="px-5 py-4 space-y-3 text-sm">
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Contributor</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.contributorName || "—"}</div>
-              </div>
-              <div>
+            <div className="grid grid-cols-2 gap-3 px-5 py-4">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="font-semibold text-gray-500 text-xs">Amount</div>
-                <div className="mt-0.5 text-gray-800 font-semibold text-green-700">{formatCurrency(viewRow?.amount || 0, currency)}</div>
+                <div className="mt-1 font-semibold text-green-700 text-sm">{formatCurrency(viewRow?.amount || 0, currency)}</div>
               </div>
-              <div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="font-semibold text-gray-500 text-xs">Date Received</div>
-                <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.date)}</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.date)}</div>
               </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Notes</div>
-                <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.notes || "—"}</div>
-              </div>
-              <div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.createdBy?.fullName || "—"}</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.createdBy?.fullName || "—"}</div>
               </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.referenceId || "—"}</div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.createdAt)}</div>
               </div>
+              {viewRow?.notes ? (
+                <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                  <div className="font-semibold text-gray-500 text-xs">Notes</div>
+                  <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{viewRow.notes}</div>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex justify-end px-5 py-4 border-t border-gray-200">
+              <button type="button" onClick={() => setViewRow(null)} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Close</button>
             </div>
           </div>
         </div>
       ) : null}
+
+      <AddContributorModal
+        open={contributorModalOpen}
+        disabled={!canWrite}
+        currency={currency}
+        project={{ _id: projectId, name: projectName }}
+        initialType="pledge"
+        onClose={() => setContributorModalOpen(false)}
+        onSuccess={async () => {
+          setContributorModalOpen(false);
+          await Promise.all([loadKpi(), loadContributions(contribPage)]);
+        }}
+      />
+
+      <EditPledgeModal
+        open={Boolean(editPledgeRow)}
+        initialData={editPledgeRow}
+        currency={currency}
+        onClose={() => setEditPledgeRow(null)}
+        onSubmit={async (payload) => {
+          if (!editPledgeRow?._id) return;
+          await updatePledge(editPledgeRow._id, payload);
+          await Promise.all([loadKpi(), loadContributions(contribPage)]);
+        }}
+      />
 
       <ContributionFormModal
         open={contributionModalOpen}
@@ -1127,4 +1178,4 @@ function ChurchProjectDetailsPage() {
   );
 }
 
-export default ChurchProjectDetailsPage;
+export default FundraisingDetailsPage;

@@ -121,7 +121,7 @@ const MODULES = [
   },
   {
     value: "pledges",
-    label: "Pledges",
+    label: "Fundraising — Pledges",
     description: "Member pledges, amounts, deadlines and status.",
     iconBg: "bg-cyan-100",
     iconColor: "text-cyan-700",
@@ -151,8 +151,8 @@ const MODULES = [
   },
   {
     value: "church-projects",
-    label: "Church Projects",
-    description: "Project targets, status and creation dates.",
+    label: "Fundraising",
+    description: "Fundraiser targets, status and creation dates.",
     iconBg: "bg-orange-100",
     iconColor: "text-orange-700",
     icon: (

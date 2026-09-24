@@ -39,9 +39,9 @@ const MemberFormPage = React.lazy(() => import("../../member/pages/MemberFormPag
 
 const MemberDetailsPage = React.lazy(() => import("../../member/pages/MemberDetailsPage.jsx"));
 
-const ChurchProjectsPage = React.lazy(() => import("../../churchProject/pages/ChurchProjectsPage.jsx"));
+const FundraisingPage = React.lazy(() => import("../../fundraising/pages/FundraisingPage.jsx"));
 
-const ChurchProjectDetailsPage = React.lazy(() => import("../../churchProject/pages/ChurchProjectDetailsPage.jsx"));
+const FundraisingDetailsPage = React.lazy(() => import("../../fundraising/pages/FundraisingDetailsPage.jsx"));
 
 const BusinessVenturesPage = React.lazy(() => import("../../businessVentures/pages/BusinessVenturesPage.jsx"));
 
@@ -64,8 +64,6 @@ const ExpensesPage = React.lazy(() => import("../../expenses/pages/ExpensesPage.
 const BudgetingPage = React.lazy(() => import("../../budgeting/pages/BudgetingPage.jsx"));
 
 const BudgetDetailPage = React.lazy(() => import("../../budgeting/pages/BudgetDetailPage.jsx"));
-
-const PledgesPage = React.lazy(() => import("../../pledge/pages/PledgesPage.jsx"));
 
 const PledgeDetailsPage = React.lazy(() => import("../../pledge/pages/PledgeDetailsPage.jsx"));
 
@@ -1499,9 +1497,9 @@ function DashboardHome() {
 
   if (page === "member-details") PageComponent = MemberDetailsPage;
 
-  if (page === "church-projects") PageComponent = ChurchProjectsPage;
+  if (page === "fundraising" || page === "church-projects" || page === "pledges") PageComponent = FundraisingPage;
 
-  if (page === "church-project-details") PageComponent = ChurchProjectDetailsPage;
+  if (page === "fundraising-details" || page === "church-project-details") PageComponent = FundraisingDetailsPage;
 
   if (page === "business-ventures") PageComponent = BusinessVenturesPage;
 
@@ -1518,8 +1516,6 @@ function DashboardHome() {
   if (page === "branches-overview") PageComponent = BranchesOverviewPage;
 
   if (page === "welfare") PageComponent = WelfarePage;
-
-  if (page === "pledges") PageComponent = PledgesPage;
 
   if (page === "pledge-details") PageComponent = PledgeDetailsPage;
 

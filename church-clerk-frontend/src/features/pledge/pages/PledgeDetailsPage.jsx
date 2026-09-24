@@ -11,8 +11,11 @@ import {
   getPledgePayments,
   updatePledgePayment
 } from "../payments/services/pledgePayments.api.js";
+import { updatePledge } from "../services/pledge.api.js";
+import EditPledgeModal from "../components/EditPledgeModal.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
@@ -34,7 +37,10 @@ function formatDate(value) {
 function StatusChip({ value }) {
   const v = String(value || "").toLowerCase();
   const styles =
-    v === "completed" ? "border-green-200 bg-green-50 text-green-700" : "border-yellow-200 bg-yellow-50 text-yellow-700";
+    v === "completed" ? "border-green-200 bg-green-50 text-green-700"
+    : v === "overdue" ? "border-red-200 bg-red-50 text-red-700"
+    : v === "in progress" ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+    : "border-gray-200 bg-gray-50 text-gray-600";
 
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold ${styles} text-xs`}>{value || "—"}</span>
@@ -74,13 +80,11 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError("");
-    setSaving(false);
     setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
@@ -123,7 +127,6 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
       return;
     }
 
-    setSaving(true);
     try {
       await onSubmit?.({
         paymentDate,
@@ -135,7 +138,6 @@ function PaymentFormModal({ open, mode, initialData, onClose, onSubmit, currency
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
     } finally {
-      setSaving(false);
       setIsSubmitting(false);
     }
   };
@@ -226,7 +228,6 @@ function PledgeDetailsPageInner() {
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "";
   const { can } = useContext(PermissionContext) || {};
-  const canRead = useMemo(() => (typeof can === "function" ? can("pledge", "read") : true), [can]);
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
   const guarded = useGuardedAction();
@@ -236,6 +237,7 @@ function PledgeDetailsPageInner() {
 
   const canCreatePayment = useMemo(() => (typeof can === "function" ? can("pledges", "create") : false), [can]);
   const canEditPayment = useMemo(() => (typeof can === "function" ? can("pledges", "update") : false), [can]);
+  const canEditPledge = canEditPayment;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -254,9 +256,15 @@ function PledgeDetailsPageInner() {
   const [editingPayment, setEditingPayment] = useState(null);
 
   const [viewRow, setViewRow] = useState(null);
+  const [editPledgeOpen, setEditPledgeOpen] = useState(false);
 
   const goBack = () => {
-    toPage("pledges");
+    const fundraiserId = pledge?.churchProject?._id || pledge?.churchProject;
+    if (fundraiserId) {
+      toPage("fundraising-details", { id: fundraiserId });
+      return;
+    }
+    toPage("fundraising");
   };
 
   const loadPledge = useCallback(async () => {
@@ -324,18 +332,20 @@ function PledgeDetailsPageInner() {
     const pledgedAmount = Number(pledge?.amount || paymentsSummary?.amountPledged || 0);
     const paidAmount = Number(paymentsSummary?.totalPaid || 0);
     if (pledgedAmount > 0 && paidAmount >= pledgedAmount) return "Completed";
+    if (pledge?.deadline) {
+      const d = new Date(pledge.deadline);
+      if (!Number.isNaN(d.getTime())) {
+        d.setHours(23, 59, 59, 999);
+        if (d.getTime() < Date.now()) return "Overdue";
+      }
+    }
+    if (paidAmount <= 0) return "Not Started";
     return "In Progress";
-  }, [pledge?.amount, paymentsSummary?.amountPledged, paymentsSummary?.totalPaid]);
+  }, [pledge?.amount, pledge?.deadline, paymentsSummary?.amountPledged, paymentsSummary?.totalPaid]);
 
   const openEdit = (payment) => {
     setEditingPayment(payment || null);
     setEditPaymentOpen(true);
-  };
-
-  const closePaymentForms = () => {
-    setNewPaymentOpen(false);
-    setEditPaymentOpen(false);
-    setEditingPayment(null);
   };
 
   const onPrev = async () => {
@@ -414,17 +424,6 @@ function PledgeDetailsPageInner() {
             Back
           </button>
         </div>
-
-        {canCreatePayment ? (
-          <button
-            type="button"
-            onClick={() => guarded(() => setNewPaymentOpen(true))}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-          >
-            <span className="leading-none text-lg">+</span>
-            Add Payment
-          </button>
-        ) : null}
       </div>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
@@ -435,38 +434,56 @@ function PledgeDetailsPageInner() {
               <StatusChip value={derivedStatus} />
             </div>
             <div className="mt-1 text-gray-600 text-sm">Pledge information</div>
+            {pledge?.referenceId ? (
+              <div className="mt-1 font-mono text-xs text-gray-500">{pledge.referenceId}</div>
+            ) : null}
           </div>
+
+          {canEditPledge ? (
+            <button
+              type="button"
+              onClick={() => guarded(() => setEditPledgeOpen(true))}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+            >
+              Edit Pledge
+            </button>
+          ) : null}
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+        <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-3">
+          <div>
             <div className="font-semibold text-gray-500 text-xs">Phone Number</div>
             <div className="mt-1 font-semibold text-gray-900 text-sm">{pledge?.phoneNumber || "—"}</div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <div>
             <div className="font-semibold text-gray-500 text-xs">Pledge Date</div>
             <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(pledge?.pledgeDate)}</div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <div>
             <div className="font-semibold text-gray-500 text-xs">Days Until Deadline</div>
             <div className="mt-1 font-semibold text-gray-900 text-sm">{daysUntilDeadline ?? "—"}</div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <div>
             <div className="font-semibold text-gray-500 text-xs">Service Type</div>
             <div className="mt-1 font-semibold text-gray-900 text-sm">{pledge?.serviceType || "—"}</div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <div>
             <div className="font-semibold text-gray-500 text-xs">Deadline</div>
             <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(pledge?.deadline)}</div>
+          </div>
+
+          <div>
+            <div className="font-semibold text-gray-500 text-xs">Fundraiser</div>
+            <div className="mt-1 font-semibold text-gray-900 text-sm">{pledge?.churchProject?.name || "—"}</div>
           </div>
         </div>
 
         {pledge?.note ? (
-          <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <div className="mt-4">
             <div className="font-semibold text-gray-500 text-xs">Note</div>
             <div className="mt-1 text-gray-900 break-words text-sm">{pledge.note}</div>
           </div>
@@ -474,20 +491,39 @@ function PledgeDetailsPageInner() {
       </div>
 
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Amount Pledged</div>
-          <div className="mt-2 font-semibold text-purple-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(pledge?.amount || paymentsSummary?.amountPledged || 0, currency)}</div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Total Paid</div>
-          <div className="mt-2 font-semibold text-green-700 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(paymentsSummary?.totalPaid || 0, currency)}</div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-          <div className="font-semibold text-gray-500 text-xs">Balance</div>
-          <div className="mt-2 font-semibold text-red-600 md:text-3xl lg:text-4xl text-xl md:text-2xl">{formatCurrency(paymentsSummary?.remainingBalance || 0, currency)}</div>
-        </div>
+        <KpiCard
+          title="Amount Pledged"
+          value={formatCurrency(pledge?.amount || paymentsSummary?.amountPledged || 0, currency)}
+          iconBg="bg-violet-50"
+          iconColor="text-violet-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Total Paid"
+          value={formatCurrency(paymentsSummary?.totalPaid || 0, currency)}
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Balance"
+          value={formatCurrency(paymentsSummary?.remainingBalance || 0, currency)}
+          iconBg="bg-orange-50"
+          iconColor="text-orange-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 8h18M3 8a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2v-8a2 2 0 00-2-2M3 8V6a2 2 0 012-2h14a2 2 0 012 2v2M12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3Z" />
+            </svg>
+          }
+        />
       </KpiGrid>
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
@@ -496,6 +532,17 @@ function PledgeDetailsPageInner() {
             <div className="font-semibold text-gray-900 text-sm">Payment History</div>
             <div className="mt-1 text-gray-500 text-xs">Payments recorded for this pledge</div>
           </div>
+
+          {canCreatePayment ? (
+            <button
+              type="button"
+              onClick={() => guarded(() => setNewPaymentOpen(true))}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+            >
+              <span className="leading-none text-lg">+</span>
+              Add Payment
+            </button>
+          ) : null}
         </div>
 
           {paymentsLoading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
@@ -579,10 +626,7 @@ function PledgeDetailsPageInner() {
         open={newPaymentOpen}
         mode="create"
         initialData={null}
-        onClose={() => {
-          setNewPaymentOpen(false);
-          setPaymentError("");
-        }}
+        onClose={() => setNewPaymentOpen(false)}
         onSubmit={async (payload) => {
           if (!pledgeId) return;
           await createPledgePayment(pledgeId, payload);
@@ -599,7 +643,6 @@ function PledgeDetailsPageInner() {
         onClose={() => {
           setEditPaymentOpen(false);
           setEditingPayment(null);
-          setPaymentError("");
         }}
         onSubmit={async (payload) => {
           if (!pledgeId || !editingPayment?._id) return;
@@ -610,40 +653,63 @@ function PledgeDetailsPageInner() {
         currency={currency}
       />
 
+      <EditPledgeModal
+        open={editPledgeOpen}
+        initialData={pledge}
+        onClose={() => setEditPledgeOpen(false)}
+        onSubmit={async (payload) => {
+          if (!pledgeId) return;
+          await updatePledge(pledgeId, payload);
+          await loadPledge();
+          await loadPayments({ page: 1 });
+        }}
+        currency={currency}
+      />
+
       {viewRow ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Record Details</div>
-              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" aria-label="Close">
+            <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4">
+              <div className="min-w-0">
+                <div className="font-semibold text-gray-900 text-sm truncate">{pledge?.name || "Pledge Payment"}</div>
+                {viewRow?.referenceId ? (
+                  <div className="mt-0.5 font-mono text-xs text-gray-500">{viewRow.referenceId}</div>
+                ) : null}
+              </div>
+              <button type="button" onClick={() => setViewRow(null)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
-            <div className="px-5 py-4 space-y-3 text-sm">
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Date Received</div>
-                <div className="mt-0.5 text-gray-800">{formatDate(viewRow?.paymentDate)}</div>
-              </div>
-              <div>
+            <div className="grid grid-cols-2 gap-3 px-5 py-4">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="font-semibold text-gray-500 text-xs">Amount</div>
-                <div className="mt-0.5 text-gray-800 font-semibold text-green-700">{formatCurrency(viewRow?.amount || 0, currency)}</div>
+                <div className="mt-1 font-semibold text-green-700 text-sm">{formatCurrency(viewRow?.amount || 0, currency)}</div>
               </div>
-              <div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Date Received</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.paymentDate)}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="font-semibold text-gray-500 text-xs">Method</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.paymentMethod || "—"}</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.paymentMethod || "—"}</div>
               </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Note</div>
-                <div className="mt-0.5 text-gray-800 whitespace-pre-wrap">{viewRow?.note || "—"}</div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.createdAt)}</div>
               </div>
-              <div>
+              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.createdBy?.fullName || "—"}</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.createdBy?.fullName || "—"}</div>
               </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.referenceId || "—"}</div>
-              </div>
+              {viewRow?.note ? (
+                <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                  <div className="font-semibold text-gray-500 text-xs">Note</div>
+                  <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{viewRow.note}</div>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex justify-end px-5 py-4 border-t border-gray-200">
+              <button type="button" onClick={() => setViewRow(null)} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Close</button>
             </div>
           </div>
         </div>

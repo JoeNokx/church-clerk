@@ -16,10 +16,10 @@ const MODULE_META = {
   announcements:    { label: "Announcements",        page: "announcements",     detailPage: null },
   tithe:            { label: "Tithe",                page: "tithe",             detailPage: null },
   budgeting:        { label: "Budgeting",            page: "budgeting",         detailPage: null },
-  churchProjects:   { label: "Church Projects",      page: "church-projects",   detailPage: null },
+  churchProjects:   { label: "Fundraising",          page: "fundraising",       detailPage: "fundraising-details" },
   offerings:        { label: "Offerings & Funds",    page: "offering-funds",    detailPage: null },
   welfare:          { label: "Welfare",              page: "welfare",           detailPage: null },
-  pledges:          { label: "Pledges",              page: "pledges",           detailPage: null },
+  pledges:          { label: "Fundraising",          page: "fundraising",       detailPage: "pledge-details" },
   businessVentures: { label: "Business Ventures",   page: "business-ventures", detailPage: null },
   expenses:         { label: "General Expenses",     page: "expenses",          detailPage: null },
 };

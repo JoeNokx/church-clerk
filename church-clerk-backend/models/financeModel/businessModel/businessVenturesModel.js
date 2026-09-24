@@ -8,6 +8,7 @@ const businessVenturesSchema = new mongoose.Schema({
     description: { type: String, trim: true },
     manager: { type: String, trim: true },
     phoneNumber: { type: String, trim: true },
+    location: { type: String, trim: true },
 
     startDate: { type: Date, required: true, default: Date.now },
     referenceId: { type: String, unique: true, sparse: true, index: true }

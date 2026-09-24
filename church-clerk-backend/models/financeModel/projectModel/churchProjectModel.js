@@ -9,6 +9,7 @@ const churchProjectSchema = new mongoose.Schema({
   description: { type: String },
 
   startDate: { type: Date, required: true, default: Date.now },
+  deadlineDate: { type: Date },
 
   status: { 
     type: String, 

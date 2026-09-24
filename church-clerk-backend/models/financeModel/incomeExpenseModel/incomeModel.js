@@ -9,7 +9,7 @@ const incomeSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ["Tithe", "Offering", "Special Fund", "Church Project", "Other"],
+      enum: ["Tithe", "Offering", "Special Fund", "Church Project", "Fundraising", "Other"],
       required: true,
     },
     amount: {

@@ -3,15 +3,16 @@ import { generateReferenceId } from "../../../utils/generateReferenceId.js";
 
 const pledgeSchema = new mongoose.Schema({
   church: { type: mongoose.Schema.Types.ObjectId, ref: 'Church', required: true },
+  churchProject: { type: mongoose.Schema.Types.ObjectId, ref: 'ChurchProject' },
 
-  name: { type: String }, 
+  name: { type: String },
   phoneNumber: { type: String, trim: true },
   serviceType: { type: String, trim: true },
   amount: { type: Number, required: true },
   pledgeDate: { type: Date, required: true },
   deadline: { type: Date },
   note: { type: String, trim: true },
-  status: { type: String, enum: ['In Progress', 'Completed'], default: 'In Progress' },
+  status: { type: String, enum: ['Not Started', 'In Progress', 'Completed', 'Overdue'], default: 'Not Started' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   referenceId: { type: String, unique: true, sparse: true, index: true },
 }, { timestamps: true });

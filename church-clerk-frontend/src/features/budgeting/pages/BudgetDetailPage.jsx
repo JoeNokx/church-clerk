@@ -15,12 +15,12 @@ import { useGuardedAction } from "../../../shared/context/SubscriptionLockContex
 
 const EXPENSE_CATEGORY_DEFAULTS = [
   "Maintenance", "Equipment", "Utilities", "Transportation",
-  "Pastor Support", "Charity", "Church Project", "Program",
+  "Pastor Support", "Charity", "Fundraising", "Program",
   "Building materials", "Salary"
 ];
 
 const INCOME_CATEGORY_OPTIONS = [
-  "Tithe", "Offering", "Special Fund", "Church Project", "Other"
+  "Tithe", "Offering", "Special Fund", "Fundraising Contribution", "Other"
 ];
 
 function formatDate(value) {

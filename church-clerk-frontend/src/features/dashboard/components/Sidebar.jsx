@@ -225,8 +225,11 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
     "ministry-details": "organisations",
     "organisation-details": "organisations",
     "business-venture-details": "business-ventures",
-    "church-project-details": "church-projects",
-    "pledge-details": "pledges",
+    "fundraising-details": "fundraising",
+    "church-project-details": "fundraising",
+    "church-projects": "fundraising",
+    "pledges": "fundraising",
+    "pledge-details": "fundraising",
     "outreach-event-details": "outreach",
     "team-details": "outreach",
     "prospect-details": "outreach",
@@ -598,9 +601,9 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-                {planAllows("ChurchProjects") && canRead("churchProjects") ? (
+                {((planAllows("ChurchProjects") && canRead("churchProjects")) || (planAllows("Pledges") && canRead("pledges"))) ? (
 
-                  <NavLink to={toPage("church-projects")} className={itemClass("church-projects")}>
+                  <NavLink to={toPage("fundraising")} className={itemClass("fundraising")}>
 
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
@@ -616,9 +619,9 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     </span>
 
-                    Church Projects
+                    Fundraising
 
-                    {isReadOnly("ChurchProjects") ? <LockBadge /> : null}
+                    {((!planAllows("ChurchProjects") || !canRead("churchProjects") || isReadOnly("ChurchProjects")) && (!planAllows("Pledges") || !canRead("pledges") || isReadOnly("Pledges"))) ? <LockBadge /> : null}
 
                   </NavLink>
 
@@ -679,31 +682,6 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     Welfare
 
                     {isReadOnly("Welfare") ? <LockBadge /> : null}
-
-                  </NavLink>
-
-                ) : null}
-
-
-
-                {planAllows("Pledges") && canRead("pledges") ? (
-
-                  <NavLink to={toPage("pledges")} className={itemClass("pledges")}>
-
-                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
-
-                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-
-                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
-                        <path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 010 3h-3a1.5 1.5 0 000 3H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-
-                      </svg>
-
-                    </span>
-
-                    Pledges
-
-                    {isReadOnly("Pledges") ? <LockBadge /> : null}
 
                   </NavLink>
 

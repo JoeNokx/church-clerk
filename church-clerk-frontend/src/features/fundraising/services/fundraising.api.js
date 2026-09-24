@@ -19,3 +19,7 @@ export const getProjectContributionExpensesKPI = async (projectId) => {
 export const getChurchProjectsKPI = async () => {
   return await http.get("/church-project/church-projects/stats/kpi");
 };
+
+export const getProjectTransactions = async (projectId, params) => {
+  return await http.get(`/church-project/church-projects/${projectId}/transactions`, { params });
+};

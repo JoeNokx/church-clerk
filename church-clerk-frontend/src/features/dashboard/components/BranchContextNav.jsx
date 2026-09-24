@@ -20,8 +20,7 @@ const FINANCE_ITEMS = [
   { key: "budgeting",          label: "Budgeting",           mod: "Budgeting",         perm: "budgeting" },
   { key: "special-funds",      label: "Special Funds",       mod: "SpecialFunds",      perm: "specialFunds" },
   { key: "welfare",            label: "Welfare",             mod: "Welfare",           perm: "welfare" },
-  { key: "pledges",            label: "Pledges",             mod: "Pledges",           perm: "pledges" },
-  { key: "church-projects",    label: "Church Projects",     mod: "ChurchProjects",    perm: "churchProjects" },
+  { key: "fundraising",       label: "Fundraising",        mod: ["ChurchProjects", "Pledges"], perm: ["churchProjects", "pledges"] },
   { key: "business-ventures",  label: "Business Ventures",   mod: "BusinessVentures",  perm: "businessVentures" },
   { key: "financial-statement",label: "Financial Overview", mod: "FinancialStatement",perm: "financialStatement" },
 ];
@@ -77,7 +76,9 @@ function BranchContextNav({ homeChurchName, homeChurchId }) {
   // ── Current page ──────────────────────────────────────────────────────────
   const currentPage = useMemo(() => {
     if (location.pathname === "/dashboard/billing") return "billing";
-    return new URLSearchParams(location.search).get("page") || "dashboard";
+    const raw = new URLSearchParams(location.search).get("page") || "dashboard";
+    if (["church-projects", "church-project-details", "pledges", "pledge-details", "fundraising-details"].includes(raw)) return "fundraising";
+    return raw;
   }, [location]);
 
   // ── Module + permission helpers (always against branch church) ────────────
@@ -86,6 +87,7 @@ function BranchContextNav({ homeChurchName, homeChurchId }) {
       if (!mod) return true;
       const modules = branchChurch?.modules;
       if (!modules || Object.keys(modules).length === 0) return true;
+      if (Array.isArray(mod)) return mod.some((m) => Boolean(modules[m]));
       return Boolean(modules[mod]);
     },
     [branchChurch]
@@ -95,6 +97,7 @@ function BranchContextNav({ homeChurchName, homeChurchId }) {
     (perm) => {
       if (!perm) return true;
       if (typeof can !== "function") return true;
+      if (Array.isArray(perm)) return perm.some((p) => can(p, "read"));
       return can(perm, "read");
     },
     [can]

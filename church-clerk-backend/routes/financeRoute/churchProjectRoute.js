@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import {createChurchProjects, getAllChurchProjects, updateChurchProjects, deleteChurchProjects, getSingleChurchProjects, getChurchProjectsKPI } from "../../controller/financeController/projectController/churchProjectController.js";
+import {createChurchProjects, getAllChurchProjects, updateChurchProjects, deleteChurchProjects, getSingleChurchProjects, getChurchProjectsKPI, getChurchProjectTransactions } from "../../controller/financeController/projectController/churchProjectController.js";
 import  {createProjectContributions, getAllProjectContributions, updateProjectContributions, deleteProjectContributions } from "../../controller/financeController/projectController/projectContribution.js"
 import{ createProjectExpenses, getAllProjectExpenses, updateProjectExpenses, deleteProjectExpenses } from "../../controller/financeController/projectController/projectExpense.js"
 import getProjectContributionExpensesKPI from "../../controller/financeController/projectController/projectContributionExpensesKPI.js"
@@ -237,6 +237,17 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("churchProjects", "view"),
   getChurchProjectsKPI
+);
+
+router.get(
+  "/church-projects/:projectId/transactions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("churchProjects", "view"),
+  getChurchProjectTransactions
 );
 
 router.get(
