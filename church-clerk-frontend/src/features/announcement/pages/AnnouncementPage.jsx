@@ -8,6 +8,10 @@ import { requestMyChurchSenderId } from "../../church/services/church.api.js";
 import { getGroups } from "../../group/services/group.api.js";
 import { getCells } from "../../cell/services/cell.api.js";
 import { getDepartments } from "../../department/services/department.api.js";
+import { getMinistries } from "../../ministry/services/ministry.api.js";
+import { getPrograms } from "../../program/services/program.api.js";
+import { getOutreachEvents } from "../../outreach/services/outreach.api.js";
+import Select from "react-select";
 import { getMembers } from "../../member/services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
@@ -763,11 +767,30 @@ function formatAudienceLabel(audience) {
     const g = Array.isArray(audience?.groupIds) ? audience.groupIds.length : 0;
     const c = Array.isArray(audience?.cellIds) ? audience.cellIds.length : 0;
     const d = Array.isArray(audience?.departmentIds) ? audience.departmentIds.length : 0;
+    const m = Array.isArray(audience?.ministryIds) ? audience.ministryIds.length : 0;
     const parts = [];
     if (g) parts.push(`${g} group${g > 1 ? "s" : ""}`);
     if (c) parts.push(`${c} cell${c > 1 ? "s" : ""}`);
     if (d) parts.push(`${d} dept${d > 1 ? "s" : ""}`);
-    return parts.length ? parts.join(", ") : "Groups / Cells / Depts";
+    if (m) parts.push(`${m} ministr${m > 1 ? "ies" : "y"}`);
+    return parts.length ? parts.join(", ") : "Groups / Cells / Depts / Ministries";
+  }
+  if (type === "programs" || type === "events") {
+    const ids = audience?.programIds ?? audience?.eventIds;
+    const n = Array.isArray(ids) ? ids.length : 0;
+    return n ? `${n} program${n > 1 ? "s" : ""}` : "Programs";
+  }
+  if (type === "outreach") {
+    const n = Array.isArray(audience?.outreachIds) ? audience.outreachIds.length : 0;
+    return n ? `${n} outreach event${n > 1 ? "s" : ""}` : "Outreach Prospects";
+  }
+  if (type === "segment") {
+    const parts = [];
+    if (Array.isArray(audience?.statuses) && audience.statuses.length) parts.push(`${audience.statuses.length} status${audience.statuses.length > 1 ? "es" : ""}`);
+    if (Array.isArray(audience?.genders) && audience.genders.length) parts.push(`${audience.genders.length} gender${audience.genders.length > 1 ? "s" : ""}`);
+    if (Array.isArray(audience?.ageGroups) && audience.ageGroups.length) parts.push(`${audience.ageGroups.length} age group${audience.ageGroups.length > 1 ? "s" : ""}`);
+    if (Array.isArray(audience?.maritalStatuses) && audience.maritalStatuses.length) parts.push(`${audience.maritalStatuses.length} marital status${audience.maritalStatuses.length > 1 ? "es" : ""}`);
+    return parts.length ? `Members: ${parts.join(", ")}` : "Member Segment";
   }
   if (type === "members") {
     const n = Array.isArray(audience?.memberIds) ? audience.memberIds.length : 0;
@@ -1568,6 +1591,120 @@ function DeliveryReportModal({ open, onClose, message }) {
   );
 }
 
+const AUDIENCE_SELECT_STYLES = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 42,
+    borderRadius: "0.5rem",
+    borderColor: state.isFocused ? "#93c5fd" : "#e5e7eb",
+    boxShadow: state.isFocused ? "0 0 0 3px rgba(59,130,246,0.12)" : "none",
+    ":hover": { borderColor: state.isFocused ? "#93c5fd" : "#d1d5db" },
+    fontSize: "0.875rem"
+  }),
+  multiValue: (base) => ({ ...base, backgroundColor: "#eff6ff", borderRadius: "0.375rem" }),
+  multiValueLabel: (base) => ({ ...base, color: "#1d4ed8", fontWeight: 600 }),
+  multiValueRemove: (base) => ({ ...base, color: "#1d4ed8", ":hover": { backgroundColor: "#dbeafe", color: "#1e40af" } }),
+  menuPortal: (base) => ({ ...base, zIndex: 9999 })
+};
+
+function toAudienceOptions(list, labelFor) {
+  return (Array.isArray(list) ? list : [])
+    .map((x) => ({ value: String(x?._id || ""), label: labelFor(x) }))
+    .filter((o) => o.value);
+}
+
+function AudienceMultiSelect({ label, options, values, onChange, placeholder }) {
+  const selected = useMemo(() => (options || []).filter((o) => (values || []).includes(o.value)), [options, values]);
+  const allValues = useMemo(() => (options || []).map((o) => o.value), [options]);
+  const allSelected = allValues.length > 0 && allValues.every((v) => (values || []).includes(v));
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-semibold text-gray-500 text-xs">{label}</div>
+        {allValues.length ? (
+          <button
+            type="button"
+            onClick={() => onChange(allSelected ? [] : allValues)}
+            className="font-semibold text-blue-700 hover:text-blue-800 text-xs"
+          >
+            {allSelected ? "Clear all" : "Select all"}
+          </button>
+        ) : null}
+      </div>
+      <Select
+        isMulti
+        closeMenuOnSelect={false}
+        className="mt-2 text-sm"
+        options={options}
+        value={selected}
+        onChange={(sel) => onChange((sel || []).map((o) => o.value))}
+        placeholder={placeholder || "Select..."}
+        styles={AUDIENCE_SELECT_STYLES}
+        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+        noOptionsMessage={() => "Nothing to select"}
+      />
+    </div>
+  );
+}
+
+const AUDIENCE_OPTIONS = [
+  {
+    value: "all",
+    label: "All Members",
+    hint: "Everyone in the member directory",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="2" /><path d="M3 20a6 6 0 0112 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M16 5.5a3 3 0 010 5.5M17.8 14.4A6 6 0 0121 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+  },
+  {
+    value: "groups",
+    label: "Organisations",
+    hint: "Groups, cells, departments or ministries",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2" /><rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M11 7h6a2 2 0 012 2v4M13 17H7a2 2 0 01-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+  },
+  {
+    value: "segment",
+    label: "Member Details",
+    hint: "Filter by status, gender, age or marital status",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+  },
+  {
+    value: "programs",
+    label: "Programs",
+    hint: "People registered for selected programs",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+  },
+  {
+    value: "outreach",
+    label: "Outreach Prospects",
+    hint: "Prospects reached through outreach events",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M3 11l14-6v14L3 13v-2z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="M17 8a4 4 0 010 8M7 13v5a1 1 0 001 1h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+  },
+  {
+    value: "members",
+    label: "Specific Members",
+    hint: "Search and pick individual members",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><circle cx="10" cy="8" r="3" stroke="currentColor" strokeWidth="2" /><path d="M4 20a6 6 0 0112 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M16.5 12.5l2 2 3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  }
+];
+
+const SEGMENT_SECTIONS = [
+  {
+    label: "Membership Status",
+    options: [{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }, { value: "dormant", label: "Dormant" }, { value: "visitor", label: "Visitor" }, { value: "transferred", label: "Transferred" }, { value: "temporarily_away", label: "Temporarily Away" }, { value: "former", label: "Former" }]
+  },
+  {
+    label: "Gender",
+    options: [{ value: "male", label: "Male" }, { value: "female", label: "Female" }]
+  },
+  {
+    label: "Age Group",
+    options: [{ value: "children", label: "Children" }, { value: "teenagers", label: "Teenagers" }, { value: "youth", label: "Youth" }, { value: "adult", label: "Adult" }, { value: "elderly", label: "Elderly" }]
+  },
+  {
+    label: "Marital Status",
+    options: [{ value: "single", label: "Single" }, { value: "married", label: "Married" }, { value: "divorced", label: "Divorced" }, { value: "widowed", label: "Widowed" }, { value: "other", label: "Other" }]
+  }
+];
+
 function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey }) {
   const { can } = useContext(PermissionContext) || {};
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
@@ -1598,16 +1735,34 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
   const [groups, setGroups] = useState([]);
   const [cells, setCells] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [ministries, setMinistries] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [outreachEvents, setOutreachEvents] = useState([]);
 
   const [groupIds, setGroupIds] = useState([]);
   const [cellIds, setCellIds] = useState([]);
   const [departmentIds, setDepartmentIds] = useState([]);
+  const [ministryIds, setMinistryIds] = useState([]);
+  const [programIds, setProgramIds] = useState([]);
+  const [outreachIds, setOutreachIds] = useState([]);
+
+  const [segStatuses, setSegStatuses] = useState([]);
+  const [segGenders, setSegGenders] = useState([]);
+  const [segAgeGroups, setSegAgeGroups] = useState([]);
+  const [segMaritalStatuses, setSegMaritalStatuses] = useState([]);
 
   const [memberSearch, setMemberSearch] = useState("");
   const [memberResults, setMemberResults] = useState([]);
   const [memberSearchLoading, setMemberSearchLoading] = useState(false);
   const [memberIds, setMemberIds] = useState([]);
   const [memberNameById, setMemberNameById] = useState({});
+
+  const groupOptions = useMemo(() => toAudienceOptions(groups, (x) => x?.name || "—"), [groups]);
+  const cellOptions = useMemo(() => toAudienceOptions(cells, (x) => x?.name || "—"), [cells]);
+  const departmentOptions = useMemo(() => toAudienceOptions(departments, (x) => x?.name || "—"), [departments]);
+  const ministryOptions = useMemo(() => toAudienceOptions(ministries, (x) => x?.name || "—"), [ministries]);
+  const programOptions = useMemo(() => toAudienceOptions(programs, (x) => x?.name || x?.title || "—"), [programs]);
+  const outreachOptions = useMemo(() => toAudienceOptions(outreachEvents, (x) => x?.title || x?.name || "—"), [outreachEvents]);
 
   const [channels, setChannels] = useState({ sms: true });
 
@@ -1669,11 +1824,19 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     setTitle(String(prefill?.title || ""));
     setContent(String(prefill?.content || prefill?.message || ""));
 
-    const nextAudienceType = String(prefill?.audience?.type || "all");
+    const nextAudienceType = String(prefill?.audience?.type || "all") === "events" ? "programs" : String(prefill?.audience?.type || "all");
     setAudienceType(nextAudienceType);
     setGroupIds(Array.isArray(prefill?.audience?.groupIds) ? prefill.audience.groupIds.map(String) : []);
     setCellIds(Array.isArray(prefill?.audience?.cellIds) ? prefill.audience.cellIds.map(String) : []);
     setDepartmentIds(Array.isArray(prefill?.audience?.departmentIds) ? prefill.audience.departmentIds.map(String) : []);
+    setMinistryIds(Array.isArray(prefill?.audience?.ministryIds) ? prefill.audience.ministryIds.map(String) : []);
+    const prefillProgramIds = prefill?.audience?.programIds ?? prefill?.audience?.eventIds;
+    setProgramIds(Array.isArray(prefillProgramIds) ? prefillProgramIds.map(String) : []);
+    setOutreachIds(Array.isArray(prefill?.audience?.outreachIds) ? prefill.audience.outreachIds.map(String) : []);
+    setSegStatuses(Array.isArray(prefill?.audience?.statuses) ? prefill.audience.statuses.map(String) : []);
+    setSegGenders(Array.isArray(prefill?.audience?.genders) ? prefill.audience.genders.map(String) : []);
+    setSegAgeGroups(Array.isArray(prefill?.audience?.ageGroups) ? prefill.audience.ageGroups.map(String) : []);
+    setSegMaritalStatuses(Array.isArray(prefill?.audience?.maritalStatuses) ? prefill.audience.maritalStatuses.map(String) : []);
     setMemberSearch("");
     setMemberResults([]);
     setMemberIds(Array.isArray(prefill?.audience?.memberIds) ? prefill.audience.memberIds.map(String) : []);
@@ -1713,7 +1876,23 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
       return;
     }
 
-    if (audienceType === "groups" && !groupIds.length && !cellIds.length && !departmentIds.length) {
+    if (audienceType === "groups" && !groupIds.length && !cellIds.length && !departmentIds.length && !ministryIds.length) {
+      setEstimateError("");
+      setEstimatedRecipients(0);
+      setEstimatedCostPerRecipient(0);
+      setEstimatedTotalCostServer(0);
+      return;
+    }
+
+    if (audienceType === "segment" && !segStatuses.length && !segGenders.length && !segAgeGroups.length && !segMaritalStatuses.length) {
+      setEstimateError("");
+      setEstimatedRecipients(0);
+      setEstimatedCostPerRecipient(0);
+      setEstimatedTotalCostServer(0);
+      return;
+    }
+
+    if ((audienceType === "programs" && !programIds.length) || (audienceType === "outreach" && !outreachIds.length)) {
       setEstimateError("");
       setEstimatedRecipients(0);
       setEstimatedCostPerRecipient(0);
@@ -1733,7 +1912,14 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             groupIds,
             cellIds,
             departmentIds,
-            memberIds
+            ministryIds,
+            memberIds,
+            programIds,
+            outreachIds,
+            statuses: segStatuses,
+            genders: segGenders,
+            ageGroups: segAgeGroups,
+            maritalStatuses: segMaritalStatuses
           },
           channels: selectedChannels,
           content
@@ -1768,7 +1954,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     return () => {
       cancelled = true;
     };
-  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, isLocked, memberIds, open]);
+  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, ministryIds, programIds, outreachIds, memberIds, segStatuses, segGenders, segAgeGroups, segMaritalStatuses, isLocked, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -1778,10 +1964,13 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
 
     const load = async () => {
       try {
-        const [g, c, d] = await Promise.allSettled([
+        const [g, c, d, mn, ev, or] = await Promise.allSettled([
           getGroups({ page: 1, limit: 200 }),
           getCells({ page: 1, limit: 200 }),
-          getDepartments({ page: 1, limit: 200 })
+          getDepartments({ page: 1, limit: 200 }),
+          getMinistries({ page: 1, limit: 200 }),
+          getPrograms({ page: 1, limit: 200 }),
+          getOutreachEvents({ page: 1, limit: 200 })
         ]);
 
         if (cancelled) return;
@@ -1789,15 +1978,35 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
         const groupsRows = g.status === "fulfilled" ? (Array.isArray(g.value?.data?.groups) ? g.value.data.groups : []) : [];
         const cellsRows = c.status === "fulfilled" ? (Array.isArray(c.value?.data?.cells) ? c.value.data.cells : []) : [];
         const departmentsRows = d.status === "fulfilled" ? (Array.isArray(d.value?.data?.departments) ? d.value.data.departments : []) : [];
+        const ministriesRows = mn.status === "fulfilled"
+          ? (Array.isArray(mn.value?.data?.ministries) ? mn.value.data.ministries
+            : Array.isArray(mn.value?.data?.data?.ministries) ? mn.value.data.data.ministries : [])
+          : [];
+        const programsRows = ev.status === "fulfilled"
+          ? (Array.isArray(ev.value?.data?.programs) ? ev.value.data.programs
+            : Array.isArray(ev.value?.data?.data?.programs) ? ev.value.data.data.programs
+            : Array.isArray(ev.value?.data?.data) ? ev.value.data.data : [])
+          : [];
+        const outreachRows = or.status === "fulfilled"
+          ? (Array.isArray(or.value?.data?.data) ? or.value.data.data
+            : Array.isArray(or.value?.data?.events) ? or.value.data.events
+            : Array.isArray(or.value?.data?.data?.events) ? or.value.data.data.events : [])
+          : [];
 
         setGroups(groupsRows);
         setCells(cellsRows);
         setDepartments(departmentsRows);
+        setMinistries(ministriesRows);
+        setEvents(programsRows);
+        setOutreachEvents(outreachRows);
       } catch {
         if (cancelled) return;
         setGroups([]);
         setCells([]);
         setDepartments([]);
+        setMinistries([]);
+        setPrograms([]);
+        setOutreachEvents([]);
       }
     };
 
@@ -1888,6 +2097,13 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     setGroupIds([]);
     setCellIds([]);
     setDepartmentIds([]);
+    setMinistryIds([]);
+    setProgramIds([]);
+    setOutreachIds([]);
+    setSegStatuses([]);
+    setSegGenders([]);
+    setSegAgeGroups([]);
+    setSegMaritalStatuses([]);
     setMemberSearch("");
     setMemberResults([]);
     setMemberIds([]);
@@ -1966,7 +2182,14 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           groupIds,
           cellIds,
           departmentIds,
-          memberIds
+          ministryIds,
+          memberIds,
+          programIds,
+          outreachIds,
+          statuses: segStatuses,
+          genders: segGenders,
+          ageGroups: segAgeGroups,
+          maritalStatuses: segMaritalStatuses
         },
         channels: selectedChannels,
         sendMode: draft ? "draft" : sendMode,
@@ -2105,122 +2328,87 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
 
         <div className="mt-6 border-t border-gray-100 pt-5">
           <div className="font-semibold text-gray-900 text-sm">Select Audience</div>
+          <div className="mt-0.5 text-gray-500 text-xs">Pick who should receive this message, then fill in the matching section below.</div>
 
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
-            <label className="flex items-center gap-2 text-gray-700 text-sm">
-              <input type="radio" checked={audienceType === "all"} onChange={() => setAudienceType("all")} />
-              All Members
-            </label>
-            <label className="flex items-center gap-2 text-gray-700 text-sm">
-              <input type="radio" checked={audienceType === "groups"} onChange={() => setAudienceType("groups")} />
-              Specific Groups / Cells / Departments
-            </label>
-            <label className="flex items-center gap-2 text-gray-700 text-sm">
-              <input type="radio" checked={audienceType === "members"} onChange={() => setAudienceType("members")} />
-              Specific Members
-            </label>
+          <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2">
+            {AUDIENCE_OPTIONS.map((o) => {
+              const active = audienceType === o.value;
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => setAudienceType(o.value)}
+                  className={`relative flex items-start gap-3 rounded-xl border p-3 text-left transition ${
+                    active ? "border-blue-500 bg-blue-50 ring-1 ring-blue-300" : "border-gray-200 bg-white hover:bg-gray-50"
+                  }`}
+                >
+                  <span className={`h-9 w-9 shrink-0 rounded-lg flex items-center justify-center ${active ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                    {o.icon}
+                  </span>
+                  <span className="min-w-0">
+                    <span className={`block font-semibold text-sm ${active ? "text-blue-800" : "text-gray-800"}`}>{o.label}</span>
+                    <span className="mt-0.5 block text-gray-500 leading-snug text-xs">{o.hint}</span>
+                  </span>
+                  {active ? (
+                    <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M5 12l4 4 10-10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
 
+          {audienceType === "all" ? (
+            <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800 text-xs">
+              This message will be sent to every member in your member directory.
+            </div>
+          ) : null}
+
           {audienceType === "groups" ? (
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div>
-                <div className="font-semibold text-gray-600 text-xs">Groups</div>
-                <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
-                  {groups.length ? (
-                    <label className="flex items-center gap-2 py-1 font-semibold text-gray-700 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={groups.every((g) => groupIds.includes(String(g?._id || "")))}
-                        onChange={() =>
-                          setGroupIds((prev) => {
-                            const allIds = groups.map((g) => String(g?._id || "")).filter(Boolean);
-                            const allSelected = allIds.length > 0 && allIds.every((id) => prev.includes(id));
-                            return allSelected ? [] : allIds;
-                          })
-                        }
-                      />
-                      Select all groups
-                    </label>
-                  ) : null}
-                  {!groups.length ? <div className="text-gray-600 text-sm">No groups found.</div> : null}
-                  {groups.map((g) => (
-                    <label key={g?._id} className="flex items-center gap-2 py-1 text-gray-700 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={groupIds.includes(String(g?._id || ""))}
-                        onChange={() => setGroupIds((prev) => toggleId(prev, g?._id))}
-                      />
-                      {g?.name || "—"}
-                    </label>
-                  ))}
-                </div>
+            <div className="mt-4">
+              <div className="text-gray-500 text-xs">Members in any of the selections below will receive the message. You can pick from multiple lists.</div>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <AudienceMultiSelect label="Groups" options={groupOptions} values={groupIds} onChange={setGroupIds} placeholder="Select groups..." />
+                <AudienceMultiSelect label="Cells" options={cellOptions} values={cellIds} onChange={setCellIds} placeholder="Select cells..." />
+                <AudienceMultiSelect label="Departments" options={departmentOptions} values={departmentIds} onChange={setDepartmentIds} placeholder="Select departments..." />
+                <AudienceMultiSelect label="Ministries" options={ministryOptions} values={ministryIds} onChange={setMinistryIds} placeholder="Select ministries..." />
               </div>
+            </div>
+          ) : null}
 
-              <div>
-                <div className="font-semibold text-gray-600 text-xs">Cells</div>
-                <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
-                  {cells.length ? (
-                    <label className="flex items-center gap-2 py-1 font-semibold text-gray-700 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={cells.every((c) => cellIds.includes(String(c?._id || "")))}
-                        onChange={() =>
-                          setCellIds((prev) => {
-                            const allIds = cells.map((c) => String(c?._id || "")).filter(Boolean);
-                            const allSelected = allIds.length > 0 && allIds.every((id) => prev.includes(id));
-                            return allSelected ? [] : allIds;
-                          })
-                        }
-                      />
-                      Select all cells
-                    </label>
-                  ) : null}
-                  {!cells.length ? <div className="text-gray-600 text-sm">No cells found.</div> : null}
-                  {cells.map((c) => (
-                    <label key={c?._id} className="flex items-center gap-2 py-1 text-gray-700 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={cellIds.includes(String(c?._id || ""))}
-                        onChange={() => setCellIds((prev) => toggleId(prev, c?._id))}
-                      />
-                      {c?.name || "—"}
-                    </label>
-                  ))}
-                </div>
+          {audienceType === "programs" ? (
+            <div className="mt-4">
+              <div className="text-gray-500 text-xs">Registered attendees of the selected programs will receive the message.</div>
+              <div className="mt-3">
+                <AudienceMultiSelect label="Programs" options={programOptions} values={programIds} onChange={setProgramIds} placeholder="Select programs..." />
               </div>
+              {!programs.length ? <div className="mt-2 text-gray-500 text-xs">No programs found.</div> : null}
+            </div>
+          ) : null}
 
-              <div>
-                <div className="font-semibold text-gray-600 text-xs">Departments</div>
-                <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
-                  {departments.length ? (
-                    <label className="flex items-center gap-2 py-1 font-semibold text-gray-700 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={departments.every((d) => departmentIds.includes(String(d?._id || "")))}
-                        onChange={() =>
-                          setDepartmentIds((prev) => {
-                            const allIds = departments.map((d) => String(d?._id || "")).filter(Boolean);
-                            const allSelected = allIds.length > 0 && allIds.every((id) => prev.includes(id));
-                            return allSelected ? [] : allIds;
-                          })
-                        }
-                      />
-                      Select all departments
-                    </label>
-                  ) : null}
-                  {!departments.length ? <div className="text-gray-600 text-sm">No departments found.</div> : null}
-                  {departments.map((d) => (
-                    <label key={d?._id} className="flex items-center gap-2 py-1 text-gray-700 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={departmentIds.includes(String(d?._id || ""))}
-                        onChange={() => setDepartmentIds((prev) => toggleId(prev, d?._id))}
-                      />
-                      {d?.name || "—"}
-                    </label>
-                  ))}
-                </div>
+          {audienceType === "outreach" ? (
+            <div className="mt-4">
+              <div className="text-gray-500 text-xs">Prospects recorded under the selected outreach events will receive the message.</div>
+              <div className="mt-3">
+                <AudienceMultiSelect label="Outreach Events" options={outreachOptions} values={outreachIds} onChange={setOutreachIds} placeholder="Select outreach events..." />
               </div>
+              {!outreachEvents.length ? <div className="mt-2 text-gray-500 text-xs">No outreach events found.</div> : null}
+            </div>
+          ) : null}
+
+          {audienceType === "segment" ? (
+            <div className="mt-4">
+              <div className="text-gray-500 text-xs">Pick any combination — members matching all selected filters will receive the message.</div>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <AudienceMultiSelect label="Membership Status" options={SEGMENT_SECTIONS[0].options} values={segStatuses} onChange={setSegStatuses} placeholder="Select statuses..." />
+                <AudienceMultiSelect label="Gender" options={SEGMENT_SECTIONS[1].options} values={segGenders} onChange={setSegGenders} placeholder="Select genders..." />
+                <AudienceMultiSelect label="Age Group" options={SEGMENT_SECTIONS[2].options} values={segAgeGroups} onChange={setSegAgeGroups} placeholder="Select age groups..." />
+                <AudienceMultiSelect label="Marital Status" options={SEGMENT_SECTIONS[3].options} values={segMaritalStatuses} onChange={setSegMaritalStatuses} placeholder="Select marital statuses..." />
+              </div>
+              {!segStatuses.length && !segGenders.length && !segAgeGroups.length && !segMaritalStatuses.length ? (
+                <div className="mt-2 text-gray-500 text-xs">Select at least one filter to target members.</div>
+              ) : null}
             </div>
           ) : null}
 
@@ -2332,7 +2520,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           ) : null}
 
           {audienceType !== "members" ? (
-            <div className="mt-2 text-gray-500 text-xs">Recipient counts and costs for All Members and Groups/Cells/Departments are computed accurately on the server.</div>
+            <div className="mt-2 text-gray-500 text-xs">Recipient counts and costs for all audiences except Specific Members are computed accurately on the server.</div>
           ) : null}
         </div>
 
@@ -2608,7 +2796,7 @@ function AnnouncementPage() {
       content: String(t?.message || ""),
       channel: String(t?.channel || "sms"),
       channels: [String(t?.channel || "sms")],
-      audience: { type: "all", groupIds: [], cellIds: [], departmentIds: [], memberIds: [] }
+      audience: { type: "all", groupIds: [], cellIds: [], departmentIds: [], ministryIds: [], memberIds: [], programIds: [], outreachIds: [], statuses: [], genders: [], ageGroups: [], maritalStatuses: [] }
     });
     setCommunicationPrefillKey((k) => k + 1);
     setTab("communication");
@@ -2621,11 +2809,18 @@ function AnnouncementPage() {
       content: String(m?.content || ""),
       channels,
       audience: {
-        type: String(m?.audience?.type || "all"),
+        type: String(m?.audience?.type || "all") === "events" ? "programs" : String(m?.audience?.type || "all"),
         groupIds: Array.isArray(m?.audience?.groupIds) ? m.audience.groupIds : [],
         cellIds: Array.isArray(m?.audience?.cellIds) ? m.audience.cellIds : [],
         departmentIds: Array.isArray(m?.audience?.departmentIds) ? m.audience.departmentIds : [],
-        memberIds: Array.isArray(m?.audience?.memberIds) ? m.audience.memberIds : []
+        ministryIds: Array.isArray(m?.audience?.ministryIds) ? m.audience.ministryIds : [],
+        memberIds: Array.isArray(m?.audience?.memberIds) ? m.audience.memberIds : [],
+        programIds: Array.isArray(m?.audience?.programIds ?? m?.audience?.eventIds) ? (m.audience.programIds ?? m.audience.eventIds) : [],
+        outreachIds: Array.isArray(m?.audience?.outreachIds) ? m.audience.outreachIds : [],
+        statuses: Array.isArray(m?.audience?.statuses) ? m.audience.statuses : [],
+        genders: Array.isArray(m?.audience?.genders) ? m.audience.genders : [],
+        ageGroups: Array.isArray(m?.audience?.ageGroups) ? m.audience.ageGroups : [],
+        maritalStatuses: Array.isArray(m?.audience?.maritalStatuses) ? m.audience.maritalStatuses : []
       }
     });
     setCommunicationPrefillKey((k) => k + 1);

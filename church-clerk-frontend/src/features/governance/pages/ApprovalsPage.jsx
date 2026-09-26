@@ -24,6 +24,35 @@ function StatusBadge({ status }) {
   );
 }
 
+function ApproveModal({ open, onClose, onConfirm, loading }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="mb-1 font-semibold text-gray-900 text-base">Approve Request</div>
+        <div className="mb-4 text-sm text-gray-500">Are you sure you want to approve this request? This action cannot be undone.</div>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? "Approving..." : "Approve"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RejectModal({ open, onClose, onConfirm, loading }) {
   const [reason, setReason] = useState("");
 
@@ -136,13 +165,18 @@ function PayloadPreview({ payload, actionType }) {
             <div className="text-[10px] font-bold uppercase tracking-wide text-red-400">Before</div>
             <div className="text-[10px] font-bold uppercase tracking-wide text-green-600">After</div>
           </div>
-          {keys.map((k) => (
-            <div key={k} className="grid grid-cols-3 gap-x-3 py-1 border-b border-amber-100 last:border-0">
-              <div className="font-semibold text-gray-600">{formatFieldName(k)}</div>
-              <div className="text-red-500 line-through">{formatValue(original[k])}</div>
-              <div className="text-green-700 font-bold">{formatValue(patch[k])}</div>
-            </div>
-          ))}
+          {keys.map((k) => {
+            const before = formatValue(original[k]);
+            const after = formatValue(patch[k]);
+            const changed = before !== after;
+            return (
+              <div key={k} className="grid grid-cols-3 gap-x-3 py-1 border-b border-amber-100 last:border-0">
+                <div className="font-semibold text-gray-600">{formatFieldName(k)}</div>
+                <div className={changed ? "text-red-500 line-through" : "text-gray-500"}>{before}</div>
+                <div className={changed ? "text-green-700 font-bold" : "text-gray-500"}>{after}</div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -168,6 +202,7 @@ export default function ApprovalsPage() {
   const guarded = useGuardedAction();
   const [statusFilter, setStatusFilter] = useState("PENDING_APPROVAL");
   const [page, setPage] = useState(1);
+  const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
 
   const approvalsQuery = useQuery({
@@ -179,6 +214,7 @@ export default function ApprovalsPage() {
   const approveMutation = useMutation({
     mutationFn: (id) => approveRequest(id),
     onSuccess: () => {
+      setApproveTarget(null);
       queryClient.invalidateQueries({ queryKey: ["church-governance"] });
     }
   });
@@ -194,9 +230,10 @@ export default function ApprovalsPage() {
   const rows = approvalsQuery.data?.approvals || [];
   const pagination = approvalsQuery.data?.pagination || {};
 
-  const handleApprove = useCallback((id) => {
-    approveMutation.mutate(id);
-  }, [approveMutation]);
+  const handleApproveConfirm = useCallback(() => {
+    if (!approveTarget) return;
+    approveMutation.mutate(approveTarget);
+  }, [approveTarget, approveMutation]);
 
   const handleRejectConfirm = useCallback((reason) => {
     if (!rejectTarget) return;
@@ -273,7 +310,7 @@ export default function ApprovalsPage() {
                     <div className="flex shrink-0 gap-2">
                       <button
                         type="button"
-                        onClick={() => guarded(() => handleApprove(row._id))}
+                        onClick={() => guarded(() => setApproveTarget(row._id))}
                         disabled={isActing || approveMutation.isPending}
                         className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                       >
@@ -367,6 +404,12 @@ export default function ApprovalsPage() {
         </div>
       ) : null}
 
+      <ApproveModal
+        open={!!approveTarget}
+        onClose={() => setApproveTarget(null)}
+        onConfirm={handleApproveConfirm}
+        loading={approveMutation.isPending}
+      />
       <RejectModal
         open={!!rejectTarget}
         onClose={() => setRejectTarget(null)}

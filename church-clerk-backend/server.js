@@ -350,7 +350,7 @@ app.use("/api/v1/notifications", Routes.notificationRoute);
 app.use("/api/v1/in-app-announcements", Routes.inAppAnnouncementRoute);
 app.use("/api/v1/lookups", Routes.lookupRoute);
 app.use("/api/v1/member", Routes.memberRoute);
-app.use("/api/v1/event", Routes.eventRoute);
+app.use("/api/v1/program", Routes.programRoute);
 app.use("/api/v1/attendance", Routes.attendanceRoute);
 app.use("/api/v1/announcement", Routes.announcementRoute);
 app.use("/api/v1/activity-log", Routes.activityLogRoute);

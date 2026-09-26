@@ -8,7 +8,7 @@ export const MODULES = {
   branches: CRUD_VIEW,
   members: [...CRUD_VIEW, "import"],
   organisation: CRUD_VIEW,
-  events: CRUD_VIEW,
+  programs: CRUD_VIEW,
   visitors: [...CRUD_VIEW, "convert"],
   attendance: CRUD_VIEW,
   announcements: CRUD_VIEW,

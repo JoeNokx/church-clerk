@@ -55,8 +55,6 @@ function BudgetingFilters() {
   const STATUS_OPTIONS = [
     { label: "All Statuses",    value: "" },
     { label: "Draft",           value: "draft" },
-    { label: "Pending Approval",value: "pending_approval" },
-    { label: "Approved",        value: "approved" },
     { label: "Active",          value: "active" },
     { label: "Closed",          value: "closed" },
   ];

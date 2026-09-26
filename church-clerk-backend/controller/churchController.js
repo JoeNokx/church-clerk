@@ -10,7 +10,7 @@ import { getWelcomeEmailTemplate } from "../utils/emailTemplates.js";
 import { buildPaginationParams, buildPaginationResponse } from "../utils/paginationHelper.js";
 import { buildSearchQuery } from "../utils/searchHelper.js";
 import { handleReferralCode, assignUserRole, createReferralCodeForChurch } from "../services/church/churchCreationService.js";
-import { getBranchesPaginated, getBranchKPIs, getBranchesConsolidated } from "../services/church/branchService.js";
+import { getBranchesPaginated, getBranchKPIs, getBranchesConsolidated, getBranchMembers, getBranchAttendanceRecords, getBranchFinances } from "../services/church/branchService.js";
 
 const createMyChurch = async (req, res) => {
   try {
@@ -411,7 +411,7 @@ const updateMyChurchProfile = async (req, res) => {
 
 const getMyBranches = async (req, res) => {
   try {
-    const { page, limit } = req.query;
+    const { page, limit, status } = req.query;
     const { search = "" } = req.query;
 
     const headquarters = req.activeChurch;
@@ -425,81 +425,22 @@ const getMyBranches = async (req, res) => {
     const { branches, totalBranches, pagination } = await getBranchesPaginated({
       churchId: req.activeChurch._id,
       search,
+      status,
       page,
       limit
     });
 
     const kpi = await getBranchKPIs({ churchId: req.activeChurch._id });
 
-    const branchIds = await Church.find({ parentChurch: req.activeChurch._id }).select("_id").lean();
-    const branchIdList = branchIds.map((b) => b._id);
-
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const activeBranches = branchIdList.length
-      ? await Subscription.countDocuments({
-          church: { $in: branchIdList },
-          status: { $in: ["free trial", "active", "past_due"] }
-        })
-      : 0;
-
-    // Active branches that existed before this month (for change/diff)
-    const branchIdsBeforeThisMonth = await Church.find({
-      parentChurch: req.activeChurch._id,
-      createdAt: { $lt: startOfMonth }
-    }).select("_id").lean();
-    const branchIdListBefore = branchIdsBeforeThisMonth.map((b) => b._id);
-
-    const activeBranchesPrev = branchIdListBefore.length
-      ? await Subscription.countDocuments({
-          church: { $in: branchIdListBefore },
-          status: { $in: ["free trial", "active", "past_due"] }
-        })
-      : 0;
-
-    const pctChange = (current, previous) => {
-      const c = Number(current || 0);
-      const p = Number(previous || 0);
-      if (!p) return c ? 100 : 0;
-      return ((c - p) / p) * 100;
-    };
-
-    const activeChange = pctChange(activeBranches, activeBranchesPrev);
-    const activeDiff = activeBranches - activeBranchesPrev;
-
-    if (!branches || branches.length === 0) {
-      return res.status(200).json({
-        message: "No branches church found.",
-        kpis: {
-          totalBranches: kpi.totalBranches,
-          totalMembers: kpi.totalMembers,
-          activeBranches,
-          change: { ...kpi.change, activeBranches: activeChange },
-          diff: { ...kpi.diff, activeBranches: activeDiff },
-        },
-        pagination: {
-          totalResult: 0,
-          totalPages: 0,
-          currentPage: page,
-          hasPrev: false,
-          hasNext: false,
-          prevPage: null,
-          nextPage: null,
-        },
-        count: 0,
-        branches: [],
-      });
-    }
-
     return res.status(200).json({
-      message: "branches fetched successfully",
+      message: branches.length ? "branches fetched successfully" : "No branches church found.",
       kpis: {
         totalBranches: kpi.totalBranches,
         totalMembers: kpi.totalMembers,
-        activeBranches,
-        change: { ...kpi.change, activeBranches: activeChange },
-        diff: { ...kpi.diff, activeBranches: activeDiff },
+        activeBranches: kpi.activeBranches,
+        newMembersThisMonth: kpi.newMembersThisMonth,
+        change: kpi.change || {},
+        diff: kpi.diff || {},
       },
       pagination: {
         ...pagination,
@@ -675,6 +616,72 @@ const getMyRegistrationToken = async (req, res) => {
   }
 };
 
+function requireHeadquarters(req, res) {
+  const headquarters = req.activeChurch;
+  if (String(headquarters?.type || "").toLowerCase() !== "headquarters") {
+    res.status(403).json({ message: "Only headquarters churches can view branches" });
+    return false;
+  }
+  return true;
+}
+
+//member-level listing across headquarters + branches
+const getMyBranchMembers = async (req, res) => {
+  try {
+    if (!requireHeadquarters(req, res)) return;
+
+    const { page, limit, search, status, branchId } = req.query;
+    const data = await getBranchMembers({
+      churchId: req.activeChurch._id,
+      page,
+      limit,
+      search,
+      status,
+      branchId
+    });
+
+    return res.status(200).json({ message: "Branch members fetched successfully", ...data });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+//attendance records across headquarters + branches
+const getMyBranchAttendance = async (req, res) => {
+  try {
+    if (!requireHeadquarters(req, res)) return;
+
+    const { page, limit, search, branchId } = req.query;
+    const data = await getBranchAttendanceRecords({
+      churchId: req.activeChurch._id,
+      page,
+      limit,
+      search,
+      branchId
+    });
+
+    return res.status(200).json({ message: "Branch attendance fetched successfully", ...data });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+//per-church income/expense breakdown across all money modules (HQ + branches)
+const getMyBranchFinances = async (req, res) => {
+  try {
+    if (!requireHeadquarters(req, res)) return;
+
+    const data = await getBranchFinances({
+      churchId: req.activeChurch._id,
+      period: req.query.period
+    });
+
+    return res.status(200).json({ message: "Branch finances fetched successfully", ...data });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   createMyChurch,
   searchHeadquartersChurches,
@@ -683,6 +690,9 @@ export {
   updateMyChurchProfile,
   getMyBranches,
   getMyBranchesConsolidated,
+  getMyBranchMembers,
+  getMyBranchAttendance,
+  getMyBranchFinances,
   getActiveChurchContext,
   requestMyChurchSenderId,
   generateRegistrationToken,

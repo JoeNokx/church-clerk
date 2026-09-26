@@ -5,6 +5,7 @@ import { CHURCH_ROLES, SYSTEM_ROLES } from "../config/roles.js";
 import Role from "../models/roleModel.js";
 import ActivityLog from "../models/activityLogModel.js";
 import { generateDelegateToken } from "../utils/generateToken.js";
+import { getRequestLocation } from "../utils/requestHelpers.js";
 import ReferralHistory from "../models/referralModel/referralHistoryModel.js";
 import ReferralCode from "../models/referralModel/referralCodeModel.js";
 import AnnouncementWallet from "../models/announcementWalletModel.js";
@@ -937,6 +938,7 @@ const delegateChurchSession = async (req, res) => {
         path: `/system-admin/churches/${id}/delegate`,
         description: `System admin ${adminUser.fullName || adminUser.email} opened a delegated session for church "${church.name}"`,
         ipAddress: req.ip || "",
+        location: getRequestLocation(req),
         userAgent: String(req.headers["user-agent"] || ""),
         status: "Success"
       });

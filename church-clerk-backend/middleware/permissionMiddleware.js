@@ -40,7 +40,7 @@ export const requirePermission = (moduleKey, actionKey) => {
 
     // Aliases / legacy
     if (m === "organisation") return "organisations";
-    if (m === "events") return "programsEvents";
+    if (m === "programs" || m === "events") return "programsEvents";
     if (m === "tithe") return "tithes";
     if (m === "branches") return "branchesOverview";
     if (m === "support") return "supportHelp";

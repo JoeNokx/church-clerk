@@ -11,11 +11,11 @@
 //
 import Member from "../models/memberModel.js";
 import Visitor from "../models/visitorsModel.js";
-import Event from "../models/eventModel.js";
-import EventAttendees from "../models/eventModel/eventAttendeesModel.js";
-import TotalEventAttendance from "../models/eventModel/totalEventAttendance.js";
-import EventAttendanceFile from "../models/eventModel/eventAttendanceFileModel.js";
-import EventOffering from "../models/eventModel/eventOfferingModel.js";
+import Program from "../models/programModel.js";
+import ProgramAttendees from "../models/programModel/programAttendeesModel.js";
+import TotalProgramAttendance from "../models/programModel/totalProgramAttendance.js";
+import ProgramAttendanceFile from "../models/programModel/programAttendanceFileModel.js";
+import ProgramOffering from "../models/programModel/programOfferingModel.js";
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
 import WelfareContribution from "../models/financeModel/welfareModel/welfareContributionModel.js";
 import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
@@ -58,7 +58,7 @@ const orgLinks = (field, Members, Attendance, IndividualAttendance, Offering, me
     { model: Offering, field, label: "offerings" },
     { model: Member, field: memberField, label: "member organisation lists" },
   ];
-  if (eventField) links.push({ model: Event, field: eventField, label: "events" });
+  if (eventField) links.push({ model: Program, field: eventField, label: "programs" });
   return links;
 };
 
@@ -110,15 +110,15 @@ const ENTITY = {
     ],
   },
 
-  event: {
-    model: Event,
-    label: "event",
+  program: {
+    model: Program,
+    label: "program",
     self: () => [],
     links: [
-      { model: EventAttendees, field: "event", label: "attendees" },
-      { model: TotalEventAttendance, field: "event", label: "attendance records" },
-      { model: EventAttendanceFile, field: "event", label: "attendance files" },
-      { model: EventOffering, field: "event", label: "offerings" },
+      { model: ProgramAttendees, field: "event", label: "attendees" },
+      { model: TotalProgramAttendance, field: "event", label: "attendance records" },
+      { model: ProgramAttendanceFile, field: "event", label: "attendance files" },
+      { model: ProgramOffering, field: "event", label: "offerings" },
     ],
   },
 

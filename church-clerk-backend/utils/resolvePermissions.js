@@ -9,6 +9,10 @@ const normalizeRoleKey = (role) => {
   return normalizedRole;
 };
 
+// Role docs saved before the rename store permissions under "events" — map
+// them onto the current "programs" module key.
+const LEGACY_MODULE_KEYS = { programs: ["events"] };
+
 const resolveFromPermissionObject = (permissionObject) => {
   if (!permissionObject || typeof permissionObject !== "object") return {};
 
@@ -31,9 +35,10 @@ const resolveFromPermissionObject = (permissionObject) => {
   for (const moduleName of Object.keys(MODULES)) {
     resolved[moduleName] = {};
 
-    const allowed =
-      permissionObject[moduleName] ??
-      permissionObject[moduleKeyLookup[normalizeModuleKey(moduleName)]];
+    const aliases = [moduleName, ...(LEGACY_MODULE_KEYS[moduleName] || [])];
+    const allowed = aliases
+      .map((k) => permissionObject[k] ?? permissionObject[moduleKeyLookup[normalizeModuleKey(k)]])
+      .find((v) => v !== undefined);
     for (const action of MODULES[moduleName]) {
       if (Array.isArray(allowed)) {
         resolved[moduleName][action] = allowed.includes(action);
@@ -118,7 +123,10 @@ const deepMergePermissions = (configDefaults, dbPermissions) => {
   const result = { ...configDefaults };
 
   for (const moduleKey of Object.keys(MODULES)) {
-    const dbModule = dbPermissions[moduleKey];
+    const dbModule =
+      [moduleKey, ...(LEGACY_MODULE_KEYS[moduleKey] || [])]
+        .map((k) => dbPermissions[k])
+        .find((v) => v && typeof v === "object");
     if (!dbModule || typeof dbModule !== "object") continue;
 
     const hasAnyTrue = Object.values(dbModule).some(Boolean);

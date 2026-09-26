@@ -31,25 +31,22 @@ function sumPlanned(items, type) {
 }
 
 const STATUS_LABEL_MAP = {
-  draft:            "Draft",
-  pending_approval: "Pending Approval",
-  approved:         "Approved",
-  active:           "Active",
-  closed:           "Closed"
+  draft:  "Draft",
+  active: "Active",
+  closed: "Closed"
 };
 
 function statusLabel(status) {
-  return STATUS_LABEL_MAP[String(status || "").toLowerCase()] || String(status || "Draft");
+  const raw = String(status || "").trim();
+  return STATUS_LABEL_MAP[raw.toLowerCase()] || (raw ? raw.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "Draft");
 }
 
 function statusBadge(status) {
   const s = String(status || "draft").toLowerCase();
   const map = {
-    draft:            "bg-gray-100 text-gray-700",
-    pending_approval: "bg-yellow-100 text-yellow-700",
-    approved:         "bg-blue-100 text-blue-700",
-    active:           "bg-green-100 text-green-700",
-    closed:           "bg-slate-100 text-slate-700"
+    draft:  "bg-gray-100 text-gray-700",
+    active: "bg-green-100 text-green-700",
+    closed: "bg-slate-100 text-slate-700"
   };
   return map[s] || map.draft;
 }

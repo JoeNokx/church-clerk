@@ -1,4 +1,5 @@
 import ActivityLog from "../models/activityLogModel.js";
+import { getRequestLocation } from "../utils/requestHelpers.js";
 
 function parseUserAgentMeta(uaRaw) {
   const ua = String(uaRaw || "");
@@ -59,7 +60,7 @@ function inferModule(req) {
   const mappings = [
     ["/api/v1/member", "Members"],
     ["/api/v1/attendance", "Attendance"],
-    ["/api/v1/event", "Events"],
+    ["/api/v1/program", "Programs"],
     ["/api/v1/announcement", "Announcements"],
     ["/api/v1/tithe", "Tithe"],
     ["/api/v1/income", "Income"],
@@ -124,6 +125,7 @@ function inferResource(req) {
   return (
     params.id ||
     params._id ||
+    params.programId ||
     params.eventId ||
     params.memberId ||
     params.fileId ||
@@ -173,6 +175,7 @@ export function activityLogMiddleware(req, res, next) {
           httpMethod: String(req.method || ""),
           path: String(req.originalUrl || ""),
           ipAddress,
+          location: getRequestLocation(req),
           browser: meta.browser,
           os: meta.os,
           deviceType: meta.deviceType,

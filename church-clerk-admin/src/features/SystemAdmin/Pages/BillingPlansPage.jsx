@@ -28,7 +28,7 @@ const FEATURE_GROUPS = [
     items: [
       { key: "members", label: "Members" },
       { key: "attendance", label: "Attendance" },
-      { key: "programsEvents", label: "Programs & Events" },
+      { key: "programsEvents", label: "Programs" },
       { key: "organisations", label: "Organisations" },
       { key: "announcements", label: "Announcements" }
     ]

@@ -112,7 +112,7 @@ const INCOME_KEY_PAGE = {
   tithes: "tithe",
   tithesAggregate: "tithe",
   offerings: "offerings",
-  eventOfferings: "offerings",
+  programOfferings: "offerings",
   cellOfferings: "offerings",
   groupOfferings: "offerings",
   departmentOfferings: "offerings",

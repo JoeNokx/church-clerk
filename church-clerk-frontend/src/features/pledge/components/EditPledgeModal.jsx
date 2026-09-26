@@ -22,7 +22,7 @@ const SERVICE_TYPES = [
 
 // Fields initialise from initialData via lazy useState — the component remounts
 // on every open (returns null while closed), so values are always fresh.
-function EditPledgeModal({ open, initialData, onClose, onSubmit, currency }) {
+function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
   const [name, setName] = useState(() => String(initialData?.name || ""));
   const [phoneNumber, setPhoneNumber] = useState(() => String(initialData?.phoneNumber || ""));
   const [serviceType, setServiceType] = useState(() => String(initialData?.serviceType || ""));
@@ -157,7 +157,7 @@ function EditPledgeModal({ open, initialData, onClose, onSubmit, currency }) {
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
+                <label className="block font-semibold text-gray-500 text-xs">Amount</label>
                 <input
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}

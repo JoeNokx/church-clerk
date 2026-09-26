@@ -46,7 +46,7 @@ const binnah =  {
 
 
 // {
-//     "message": "Event created successfully.",
+//     "message": "Program created successfully.",
 //     "event": {
 //         "church": "6918a14719640edd8f724a32",
 //         "title": "Grace Life Musice",

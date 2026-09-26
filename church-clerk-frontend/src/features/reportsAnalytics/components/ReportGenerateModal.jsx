@@ -26,7 +26,7 @@ const RADIO = (value, label) => ({ value, label });
 const EMPTY_MODULE_CONFIG = { controls: [] };
 
 const MODULE_OPTIONS = {
-  "programs-events": {
+  "programs": {
     controls: [
       {
         key: "status", kind: "radio", label: "Program status", default: "all",
@@ -38,7 +38,7 @@ const MODULE_OPTIONS = {
       },
       {
         key: "entity", kind: "entity", label: "Program",
-        entityModule: "programs-events",
+        entityModule: "programs",
         entityParams: (o) => ({ status: o.status }),
         allLabel: "Select a program",
         showIf: (o) => o.scope === "single"
@@ -63,7 +63,7 @@ const MODULE_OPTIONS = {
         return `Offerings report for the program ${n}.`;
       }
       const st = v.status && v.status !== "all" ? `${v.status} ` : "";
-      return `Report on all ${st}programs and events.`;
+      return `Report on all ${st}programs.`;
     }
   },
   announcements: {
@@ -199,20 +199,20 @@ const MODULE_OPTIONS = {
     controls: [
       {
         key: "type", kind: "radio", label: "Report on", default: "all",
-        options: [RADIO("all", "All fundraisers"), RADIO("contributions", "Contributions"), RADIO("expenses", "Expenses")]
+        options: [RADIO("all", "All fundraising"), RADIO("contributions", "Contributions"), RADIO("expenses", "Expenses")]
       },
       {
-        key: "entity", kind: "entity", label: "Fundraiser",
+        key: "entity", kind: "entity", label: "Fundraising",
         entityModule: "church-projects",
-        allLabel: "All fundraisers",
+        allLabel: "All fundraising",
         showIf: (o) => o.type !== "all"
       }
     ],
     describe: (v, L) => {
-      const n = L("entity") ? ` the "${L("entity")}" fundraiser` : " all fundraisers";
+      const n = L("entity") ? ` the "${L("entity")}" fundraising` : " all fundraising";
       if (v.type === "contributions") return `Report on contributions to${n}.`;
       if (v.type === "expenses") return `Report on expenses for${n}.`;
-      return "Report on all fundraisers.";
+      return "Report on all fundraising.";
     }
   },
   "business-ventures": {

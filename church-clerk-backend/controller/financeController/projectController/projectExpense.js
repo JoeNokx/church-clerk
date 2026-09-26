@@ -9,6 +9,7 @@ const createProjectExpenses = async (req, res) => {
 
           const {
                 spentOn,
+                category,
                 date,
                 amount,
                 description
@@ -33,6 +34,7 @@ const createProjectExpenses = async (req, res) => {
                 const projectExpenses = await ProjectExpenses.create({
                 churchProject: projectId,
                 spentOn,
+                category,
                 date,
                 amount,
                 description,
@@ -56,7 +58,7 @@ const createProjectExpenses = async (req, res) => {
 const getAllProjectExpenses = async (req, res) => {
     
     try {
-           const { page = 1, limit = 10, search = "", dateFrom, dateTo } = req.query;
+           const { page = 1, limit = 10, search = "", dateFrom, dateTo, category } = req.query;
                                                 
                 const pageNum = Math.max(1, parseInt(page, 10) || 1);
                 const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -85,7 +87,12 @@ const getAllProjectExpenses = async (req, res) => {
                     if (userIds.length) orClauses.push({ createdBy: { $in: userIds } });
                     query.$or = orClauses;
                 }
-                
+
+                // Filter by category
+                if (category) {
+                    query.category = String(category).trim();
+                }
+
                 // Filter by date range
             if (dateFrom || dateTo) {
                 query.date = {};
@@ -107,7 +114,7 @@ const getAllProjectExpenses = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const projectExpenses = await ProjectExpenses.find(query)
-                .select("spentOn date amount description createdBy referenceId createdAt")
+                .select("spentOn category date amount description createdBy referenceId createdAt")
                 .populate("createdBy", "fullName")
                 .populate("churchProject", "name")
                     .sort({ createdAt: -1 })

@@ -9,8 +9,6 @@ import EntityPicker, { ENTITY_TYPES } from "./EntityPicker.jsx";
 
 const STATUS_OPTIONS = [
   { value: "draft",            label: "Draft" },
-  { value: "pending_approval", label: "Pending Approval" },
-  { value: "approved",         label: "Approved" },
   { value: "active",           label: "Active" },
   { value: "closed",           label: "Closed" },
 ];
@@ -89,7 +87,7 @@ function BudgetingForm({ open, mode, initialData, onClose, onSuccess }) {
             notes: String(i?.notes || ""),
             dateFrom: i?.dateFrom ? new Date(i.dateFrom).toISOString().slice(0, 10) : "",
             dateTo: i?.dateTo ? new Date(i.dateTo).toISOString().slice(0, 10) : "",
-            allocatedType: String(i?.allocatedTo?.entityType || ""),
+            allocatedType: String(i?.allocatedTo?.entityType || "") === "event" ? "program" : String(i?.allocatedTo?.entityType || ""),
             allocatedId: i?.allocatedTo?.entityId || null,
             allocatedName: String(i?.allocatedTo?.entityName || "")
           }))

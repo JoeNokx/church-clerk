@@ -9,7 +9,7 @@ import ProjectExpense from "../../models/financeModel/projectModel/projectExpens
 import BusinessIncome from "../../models/financeModel/businessModel/businessIncomeModel.js";
 import BusinessExpenses from "../../models/financeModel/businessModel/businessExpensesModel.js";
 import GeneralExpenses from "../../models/generalExpenseModel.js";
-import EventOffering from "../../models/eventModel/eventOfferingModel.js";
+import ProgramOffering from "../../models/programModel/programOfferingModel.js";
 import CellOffering from "../../models/organisationModel/cellOfferingModel.js";
 import GroupOffering from "../../models/organisationModel/groupOfferingModel.js";
 import DepartmentOffering from "../../models/organisationModel/departmentOfferingModel.js";
@@ -202,7 +202,7 @@ async function buildStatement({ churchId, periodStart, periodEnd, prevStart, pre
     { key: "tithes", label: "Tithe (Individual)", Model: TitheIndividual, dateField: "date", amountField: "amount" },
     { key: "tithesAggregate", label: "Tithes (Aggregate)", Model: TitheAggregate, dateField: "date", amountField: "amount" },
     { key: "offerings", label: "Offerings", Model: Offering, dateField: "serviceDate", amountField: "amount" },
-    { key: "eventOfferings", label: "Events Offering", Model: EventOffering, dateField: "offeringDate", amountField: "amount" },
+    { key: "programOfferings", label: "Program Offerings", Model: ProgramOffering, dateField: "offeringDate", amountField: "amount" },
     { key: "cellOfferings", label: "Cell Offering", Model: CellOffering, dateField: "date", amountField: "amount" },
     { key: "groupOfferings", label: "Group Offering", Model: GroupOffering, dateField: "date", amountField: "amount" },
     { key: "departmentOfferings", label: "Department Offering", Model: DepartmentOffering, dateField: "date", amountField: "amount" },

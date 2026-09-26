@@ -22,7 +22,7 @@ function getWelcomeEmailTemplate(fullName, churchName) {
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
       <h2 style="margin: 0 0 12px;">Welcome to Church Clerk</h2>
       <p>Hello ${fullName || ""},</p>
-      <p>Your church <strong>${churchName || ""}</strong> has been set up successfully. You can now start managing members, events, finances, and more.</p>
+      <p>Your church <strong>${churchName || ""}</strong> has been set up successfully. You can now start managing members, programs, finances, and more.</p>
     </div>
   `;
 }

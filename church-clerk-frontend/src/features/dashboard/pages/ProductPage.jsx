@@ -13,7 +13,7 @@ const MODULES = [
   { title: "Reports & Analytics", desc: "Attendance trends, financial summaries, budget vs actuals, and member growth reports—visualized for leadership decisions." },
   { title: "HQ & Branch Management", desc: "One headquarters, multiple branches. Each branch manages its own records while the HQ sees consolidated reports." },
   { title: "Roles & Permissions", desc: "Control exactly what each team member can view or edit. Full audit logs so leadership always knows who changed what." },
-  { title: "Events & Programs", desc: "Plan services, special events, and ministry programs. Track attendance and engagement per activity." },
+  { title: "Programs", desc: "Plan services, special programs, and ministry activities. Track attendance and engagement per program." },
   { title: "Announcements", desc: "Send announcements and updates to your congregation. Keep everyone informed and engaged." }
 ];
 

@@ -1,41 +1,24 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../church.store.js";
-import { getMyBranches, getBranchesConsolidated } from "../services/church.api.js";
 import ConfirmChurchSwitchModal from "../../../shared/components/ConfirmChurchSwitchModal.jsx";
-import Skeleton from "react-loading-skeleton";
-import EmptyState from "../../../shared/components/EmptyState/index.jsx";
-import KpiCard from "../../../shared/components/KpiCard/index.jsx";
-import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
-import {
-  BranchOverviewTab,
-  BranchMembershipTab,
-  BranchAttendanceTab,
-  BranchFinancesTab,
-} from "../components/BranchInsights.jsx";
+import AllBranchesTab from "../components/AllBranchesTab.jsx";
+import BranchFinancesTab from "../components/BranchFinancesTab.jsx";
+import BranchMembershipTab from "../components/BranchMembershipTab.jsx";
+import BranchAttendanceTab from "../components/BranchAttendanceTab.jsx";
 
 function BranchesOverviewPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const churchStore = useContext(ChurchContext);
 
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [branches, setBranches] = useState([]);
-  const [pagination, setPagination] = useState(null);
-  const [kpis, setKpis] = useState({ totalBranches: 0, totalMembers: 0, activeBranches: 0, change: {}, diff: {} });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingSwitch, setPendingSwitch] = useState(null);
   const [switching, setSwitching] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [consolidated, setConsolidated] = useState(null);
-  const [consolidatedLoading, setConsolidatedLoading] = useState(false);
-  const [consolidatedError, setConsolidatedError] = useState("");
-  const limit = 10;
+  const [activeTab, setActiveTab] = useState("all");
 
   const activeChurch = churchStore?.activeChurch;
   const activeChurchName = activeChurch?.name || "";
@@ -79,8 +62,10 @@ function BranchesOverviewPage() {
   const openConfirmBranch = (church) => {
     if (!church?._id) return;
     const city = String(church?.city || "").trim();
-    const displayName = city ? `${church?.name || ""} - ${city}` : (church?.name || "");
-    openConfirm({ id: church._id, name: displayName, mode: "branch" });
+    const isHq = Boolean(church?.isHeadquarters);
+    const baseName = church?.name || "";
+    const displayName = isHq ? `${baseName} - headquarters` : city ? `${baseName} - ${city}` : baseName;
+    openConfirm({ id: church._id, name: displayName, mode: isHq ? "hq" : "branch" });
   };
 
   const openConfirmHq = (churchId) => {
@@ -108,107 +93,12 @@ function BranchesOverviewPage() {
     }
   };
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      setError("");
-
-      if (!canViewBranches) {
-        setBranches([]);
-        setError("");
-        setPagination(null);
-        setPage(1);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await getMyBranches({ page, limit, search });
-        const payload = res?.data?.data ?? res?.data;
-        const rows = Array.isArray(payload?.branches) ? payload.branches : Array.isArray(payload) ? payload : [];
-        const pg = payload?.pagination || null;
-        const nextKpis = payload?.kpis || null;
-        if (!cancelled) setBranches(rows);
-        if (!cancelled) setPagination(pg);
-        if (!cancelled && nextKpis) {
-          setKpis({
-            totalBranches: Number(nextKpis?.totalBranches || 0),
-            totalMembers: Number(nextKpis?.totalMembers || 0),
-            activeBranches: Number(nextKpis?.activeBranches || 0),
-            change: nextKpis?.change || {},
-            diff: nextKpis?.diff || {},
-          });
-        }
-      } catch (e) {
-        if (cancelled) return;
-        setBranches([]);
-        setError(e?.response?.data?.message || e?.message || "Failed to load branches");
-        setPagination(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [canViewBranches, page, search]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!canViewBranches) {
-      setConsolidated(null);
-      setConsolidatedError("");
-      return;
-    }
-
-    const load = async () => {
-      setConsolidatedLoading(true);
-      setConsolidatedError("");
-      try {
-        const res = await getBranchesConsolidated();
-        const payload = res?.data?.data ?? res?.data;
-        if (!cancelled) setConsolidated(payload || null);
-      } catch (e) {
-        if (!cancelled) {
-          setConsolidated(null);
-          setConsolidatedError(e?.response?.data?.message || e?.message || "Failed to load consolidated branch data");
-        }
-      } finally {
-        if (!cancelled) setConsolidatedLoading(false);
-      }
-    };
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [canViewBranches]);
-
-  const onPrev = () => {
-    const prev = pagination?.prevPage;
-    if (!prev) return;
-    setPage(prev);
-  };
-
-  const onNext = () => {
-    const next = pagination?.nextPage;
-    if (!next) return;
-    setPage(next);
-  };
-
   return (
     <div className="max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Branches Overview</div>
-          <div className="mt-1 text-gray-600 text-sm hidden md:block">View branches and switch your active context.</div>
+          <div className="mt-1 text-gray-600 text-sm hidden md:block">Compare branches and switch your active context.</div>
         </div>
 
         {homeChurchId && String(activeChurch?._id || "") !== String(homeChurchId) ? (
@@ -244,188 +134,28 @@ function BranchesOverviewPage() {
 
       {canViewBranches ? (
         <div className="mt-6">
-          <KpiGrid className="gap-3 lg:grid-cols-3">
-            <KpiCard
-              title="Total Branches"
-              value={Number(kpis.totalBranches || 0).toLocaleString()}
-              change={kpis?.change?.totalBranches}
-              diff={kpis?.diff?.totalBranches}
-              compareLabel="last month"
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 21h18M3 7l9-4 9 4M5 21V7M19 21V7M9 21v-6h6v6" />
-                </svg>
-              }
-              iconBg="bg-blue-100"
-              iconColor="text-blue-700"
-            />
-            <KpiCard
-              title="Total Members (All Branches)"
-              value={Number(kpis.totalMembers || 0).toLocaleString()}
-              change={kpis?.change?.totalMembers}
-              diff={kpis?.diff?.totalMembers}
-              compareLabel="last month"
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                </svg>
-              }
-              iconBg="bg-purple-100"
-              iconColor="text-purple-700"
-            />
-            <KpiCard
-              title="Active Branches"
-              value={Number(kpis.activeBranches || 0).toLocaleString()}
-              change={kpis?.change?.activeBranches}
-              diff={kpis?.diff?.activeBranches}
-              compareLabel="last month"
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 11l3 3L22 4" />
-                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                </svg>
-              }
-              iconBg="bg-green-100"
-              iconColor="text-green-700"
-            />
-          </KpiGrid>
-
           <PageTabs
             tabs={[
-              { key: "overview", label: "Overview" },
+              { key: "all", label: "All Branches" },
+              { key: "finances", label: "Branch Finances" },
               { key: "membership", label: "Membership" },
               { key: "attendance", label: "Attendance" },
-              { key: "finances", label: "Finances" },
-              { key: "directory", label: "All Branches", badge: Number(kpis.totalBranches || 0) || null, badgeColor: "bg-blue-600 text-white" },
             ]}
             activeTab={activeTab}
             onChange={setActiveTab}
             sticky={false}
-            className="mt-6"
           />
-        </div>
-      ) : null}
 
-      {canViewBranches && activeTab !== "directory" ? (
-        <div className="mt-4">
-          {consolidatedLoading ? (
-            <Skeleton height={14} count={6} />
-          ) : consolidatedError ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{consolidatedError}</div>
-          ) : activeTab === "overview" ? (
-            <BranchOverviewTab data={consolidated} currency={activeChurch?.currency || "GHS"} onViewBranch={openConfirmBranch} />
-          ) : activeTab === "membership" ? (
-            <BranchMembershipTab data={consolidated} onViewBranch={openConfirmBranch} />
-          ) : activeTab === "attendance" ? (
-            <BranchAttendanceTab data={consolidated} onViewBranch={openConfirmBranch} />
-          ) : activeTab === "finances" ? (
-            <BranchFinancesTab data={consolidated} currency={activeChurch?.currency || "GHS"} onViewBranch={openConfirmBranch} />
-          ) : null}
-        </div>
-      ) : null}
-
-      {canViewBranches && activeTab === "directory" ? (
-        <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="font-semibold text-gray-900 text-sm">Search</div>
-          <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search by church name, location, or pastor"
-              className="h-11 w-full md:w-[420px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            />
-            {search ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
-                  setPage(1);
-                }}
-                className="h-11 rounded-lg border border-gray-200 bg-white px-4 font-semibold text-gray-700 hover:bg-gray-50 md:h-12 text-sm"
-              >
-                Clear
-              </button>
+          <div className="mt-4">
+            {activeTab === "all" ? (
+              <AllBranchesTab onViewBranch={openConfirmBranch} />
+            ) : activeTab === "finances" ? (
+              <BranchFinancesTab currency={activeChurch?.currency || "GHS"} />
+            ) : activeTab === "membership" ? (
+              <BranchMembershipTab />
+            ) : activeTab === "attendance" ? (
+              <BranchAttendanceTab />
             ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {canViewBranches && activeTab === "directory" && loading ? (
-        <div className="mt-4">
-          <Skeleton height={14} count={4} />
-        </div>
-      ) : canViewBranches && activeTab === "directory" ? (
-        <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden">
-          {!branches.length ? (
-            <EmptyState
-              illustration={String(search || "").trim() ? "search" : "ministries"}
-              title={String(search || "").trim() ? "No branches found" : "No branches yet"}
-              description={String(search || "").trim()
-                ? "We couldn't find any branches matching your search."
-                : "Branches of your church will appear here once they're added."}
-              actionLabel={String(search || "").trim() ? "Clear Search" : null}
-              onAction={String(search || "").trim() ? () => setSearch("") : undefined}
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-slate-100">
-                  <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                    <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Branch</th>
-                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
-                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Pastor</th>
-                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Members</th>
-                    <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {branches.map((b, idx) => (
-                    <tr key={b?._id ?? `b-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{b?.name || "—"}</td>
-                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{`${b?.city || ""}${b?.region ? `, ${b.region}` : ""}`.trim() || "—"}</td>
-                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{b?.pastor || "—"}</td>
-                      <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{Number(b?.memberCount || 0).toLocaleString()}</td>
-                      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openConfirmBranch(b)}
-                            className="rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                          >
-                            View
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="flex items-center justify-end gap-3 max-md:px-4 py-2 px-4 md:px-6">
-            <button
-              type="button"
-              onClick={onPrev}
-              disabled={!pagination?.prevPage}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-            >
-              Prev
-            </button>
-            <div className="text-gray-600 text-sm">Page {pagination?.currentPage || 1}</div>
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!pagination?.nextPage}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-            >
-              Next
-            </button>
           </div>
         </div>
       ) : null}

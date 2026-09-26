@@ -1,0 +1,218 @@
+import { useContext, useEffect, useMemo, useState } from "react";
+import PermissionContext from "../../../permissions/permission.store.js";
+import ProgramOfferingContext from "../programOfferings.store.js";
+import AddLookupValueButton from "../../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../../lookups/hooks/useLookupValues.js";
+import Button from "../../../../shared/components/Button/index.jsx";
+
+const OFFERING_TYPES = [
+  "first offering",
+  "second offering",
+  "third offering",
+  "fourth offering",
+  "fifth offering"
+];
+
+function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
+  const { can } = useContext(PermissionContext) || {};
+  const store = useContext(ProgramOfferingContext);
+
+  const canCreate = useMemo(() => (typeof can === "function" ? can("programs", "create") : false), [can]);
+  const canEdit = useMemo(() => (typeof can === "function" ? can("programs", "update") : false), [can]);
+
+  const { values: lookupOfferingTypes, reload: reloadOfferingTypes } = useLookupValues("offeringType");
+  const offeringTypeOptions = lookupOfferingTypes?.length ? lookupOfferingTypes : OFFERING_TYPES;
+
+  const [offeringType, setOfferingType] = useState("first offering");
+  const [offeringDate, setOfferingDate] = useState("");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setFormError(null);
+    setIsSubmitting(false);
+
+    if (mode === "edit" && initialData) {
+      setOfferingType(initialData.offeringType || "first offering");
+      setOfferingDate((initialData.offeringDate || "").slice(0, 10));
+      setAmount(initialData.amount ?? "");
+      setNote(initialData.note || "");
+      return;
+    }
+
+    setOfferingType("first offering");
+    setOfferingDate("");
+    setAmount("");
+    setNote("");
+  }, [open, mode, initialData]);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setFormError(null);
+
+    if (!offeringType) {
+      setFormError("Please select an offering type.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!offeringDate) {
+      setFormError("Date is required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      setFormError("Amount is required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      offeringType,
+      offeringDate,
+      amount: Number(amount),
+      note: note ? note.trim() : undefined
+    };
+
+    try {
+      if (mode === "edit") {
+        if (!canEdit) return;
+        await store?.updateOffering?.(initialData?._id, payload);
+      } else {
+        if (!canCreate) return;
+        await store?.createOffering?.(payload);
+      }
+
+      onSuccess?.();
+    } catch (e2) {
+      const message = e2?.response?.data?.message || e2?.message || "Request failed";
+      setFormError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+          <div className="font-semibold text-gray-900 text-sm">{mode === "edit" ? "Edit Program Offering" : "Add Program Offering"}</div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12"
+            aria-label="Close"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="p-4 md:p-6 lg:p-8">
+          {formError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
+              {formError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="block font-semibold text-gray-500 text-xs">Offering Type</label>
+                {canCreate || canEdit ? (
+                  <AddLookupValueButton
+                    label="Add type"
+                    kind="offeringType"
+                    onCreated={async (value) => {
+                      await reloadOfferingTypes();
+                      setOfferingType(value);
+                    }}
+                  />
+                ) : null}
+              </div>
+              <select
+                value={offeringType}
+                onChange={(e) => setOfferingType(e.target.value)}
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              >
+                {offeringTypeOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-500 text-xs">Amount</label>
+              <input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                type="number"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-500 text-xs">Date Collected</label>
+              <input
+                value={offeringDate}
+                onChange={(e) => setOfferingDate(e.target.value)}
+                type="date"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
+                <span className="text-xs text-gray-400">{note.length}/500</span>
+              </div>
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                maxLength={500}
+                type="text"
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                placeholder="Optional (max 500 chars)"
+              />
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+            >
+              Cancel
+            </button>
+
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+              loadingText={mode === "edit" ? "Updating..." : "Saving..."}
+              className="rounded-lg px-4 py-2 text-sm"
+            >
+              {mode === "edit" ? "Update" : "Save"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default ProgramOfferingForm;

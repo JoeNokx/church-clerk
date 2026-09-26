@@ -415,7 +415,7 @@ const getChurchProjectsKPI = async (req, res) => {
 const getChurchProjectTransactions = async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { page = 1, limit = 10, search = "", dateFrom, dateTo, kind } = req.query;
+    const { page = 1, limit = 10, search = "", dateFrom, dateTo, kind, pledgeStatus } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -507,9 +507,15 @@ const getChurchProjectTransactions = async (req, res) => {
       return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
-    const totalResult = rows.length;
+    // Filter by derived pledge status (only pledge rows carry a status)
+    const statusFilter = String(pledgeStatus || "").trim().toLowerCase();
+    const filteredRows = statusFilter
+      ? rows.filter((r) => r.kind === "pledge" && String(r.status || "").toLowerCase() === statusFilter)
+      : rows;
+
+    const totalResult = filteredRows.length;
     const totalPages = Math.ceil(totalResult / limitNum);
-    const pageRows = rows.slice(skip, skip + limitNum);
+    const pageRows = filteredRows.slice(skip, skip + limitNum);
 
     return res.status(200).json({
       message: "Fundraising transactions fetched successfully",

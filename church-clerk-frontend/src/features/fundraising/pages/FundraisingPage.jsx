@@ -71,7 +71,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   );
 }
 
-function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
+function AddProjectModal({ open, onClose, onSuccess, disabled }) {
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -99,7 +99,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
 
     if (!String(name || "").trim()) {
       setIsSubmitting(false);
-      setError("Fundraiser name is required.");
+      setError("Fundraising name is required.");
       return;
     }
 
@@ -136,15 +136,15 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
   return (
     <BaseModal
       open={open}
-      title="New Fundraiser"
-      subtitle="Create a new fundraiser"
+      title="New Fundraising"
+      subtitle="Create a new fundraising campaign"
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Fundraiser Name</label>
+          <label className="block font-semibold text-gray-500 text-xs">Fundraising Name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -154,7 +154,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">{currency ? `Target Amount (${currency})` : "Target Amount"}</label>
+          <label className="block font-semibold text-gray-500 text-xs">Target Amount</label>
           <input
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
@@ -170,13 +170,13 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
-            placeholder="Fundraiser details"
+            placeholder="Fundraising details"
           />
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Fundraiser Start Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Fundraising Start Date</label>
             <input
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -185,7 +185,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
             />
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Fundraiser Deadline Date (optional)</label>
+            <label className="block font-semibold text-gray-500 text-xs">Fundraising Deadline Date (optional)</label>
             <input
               value={deadlineDate}
               onChange={(e) => setDeadlineDate(e.target.value)}
@@ -211,7 +211,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled, currency }) {
             disabled={disabled}
             className="rounded-lg bg-blue-700 py-2 font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm px-4 md:px-6"
           >
-            Create Fundraiser
+            Create Fundraising
           </Button>
         </div>
       </form>
@@ -261,7 +261,7 @@ function FundraisingPageInner() {
       setSearchValue("");
       setCurrentPage(1);
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Failed to load fundraisers");
+      setError(e?.response?.data?.message || e?.message || "Failed to load fundraising campaigns");
       setProjects([]);
     } finally {
       setLoading(false);
@@ -338,7 +338,7 @@ function FundraisingPageInner() {
               className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 md:px-5 lg:px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-800 text-sm"
             >
               <span className="leading-none text-lg">+</span>
-              New Fundraiser
+              New Fundraising
             </button>
           ) : null}
         </div>
@@ -348,12 +348,12 @@ function FundraisingPageInner() {
 
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
         <KpiCard
-          title="Total Fundraisers"
+          title="Total Fundraising"
           value={totals.totalProjects}
           change={projectsKpi?.change?.totalProjects}
           diff={projectsKpi?.diff?.totalProjects}
           compareLabel="last month"
-          tooltip={`${totals.activeCount} of ${totals.totalProjects} fundraiser${totals.totalProjects !== 1 ? "s" : ""} currently active`}
+          tooltip={`${totals.activeCount} of ${totals.totalProjects} fundraising campaign${totals.totalProjects !== 1 ? "s" : ""} currently active`}
           iconBg="bg-blue-50"
           iconColor="text-blue-500"
           icon={
@@ -408,13 +408,13 @@ function FundraisingPageInner() {
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="font-semibold text-gray-900 text-sm">Fundraisers</div>
+            <div className="font-semibold text-gray-900 text-sm">Fundraising</div>
             <div className="text-gray-500 text-xs">All fundraising campaigns</div>
           </div>
           <FilterBar
             searchValue={searchValue}
             onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
-            searchPlaceholder="Search fundraiser name..."
+            searchPlaceholder="Search fundraising name..."
             searchWidth="md:w-[320px]"
             selects={[]}
             dateFrom={dateFrom}
@@ -424,7 +424,7 @@ function FundraisingPageInner() {
           <MobileFilterBar
             searchValue={searchValue}
             onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
-            searchPlaceholder="Search fundraiser name..."
+            searchPlaceholder="Search fundraising name..."
             dateFrom={dateFrom}
             dateTo={dateTo}
             onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); setCurrentPage(1); }}
@@ -447,10 +447,10 @@ function FundraisingPageInner() {
         ) : filteredProjects.length === 0 ? (
           <EmptyState
             illustration={String(searchValue || "").trim() ? "search" : "projects"}
-            title={String(searchValue || "").trim() ? "No fundraisers found" : "No fundraisers yet"}
+            title={String(searchValue || "").trim() ? "No fundraising found" : "No fundraising yet"}
             description={String(searchValue || "").trim()
-              ? "We couldn't find any fundraisers matching your search."
-              : "Fundraisers will appear here once they're created."}
+              ? "We couldn't find any fundraising campaigns matching your search."
+              : "Fundraising campaigns will appear here once they're created."}
             actionLabel={String(searchValue || "").trim() ? "Clear Search" : null}
             onAction={String(searchValue || "").trim() ? () => { setSearchValue(""); setCurrentPage(1); } : undefined}
           />
@@ -539,7 +539,6 @@ function FundraisingPageInner() {
       <AddProjectModal
         open={addProjectOpen}
         disabled={!canEdit}
-        currency={currency}
         onClose={() => setAddProjectOpen(false)}
         onSuccess={() => {
           setAddProjectOpen(false);
@@ -550,7 +549,6 @@ function FundraisingPageInner() {
       <EditProjectModal
         open={editProjectOpen}
         initialData={editProjectRow}
-        currency={currency}
         onClose={() => {
           setEditProjectOpen(false);
           setEditProjectRow(null);
@@ -566,7 +564,7 @@ function FundraisingPageInner() {
   );
 }
 
-function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
+function EditProjectModal({ open, onClose, onSuccess, initialData }) {
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -597,7 +595,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
 
     if (!String(name || "").trim()) {
       setIsSubmitting(false);
-      setError("Fundraiser name is required.");
+      setError("Fundraising name is required.");
       return;
     }
 
@@ -632,14 +630,14 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
   };
 
   return (
-    <BaseModal open={open} title="Edit Fundraiser" subtitle="Update fundraiser details" onClose={onClose}>
+    <BaseModal open={open} title="Edit Fundraising" subtitle="Update fundraising details" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         {error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
         ) : null}
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">Fundraiser Name</label>
+          <label className="block font-semibold text-gray-500 text-xs">Fundraising Name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -649,7 +647,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">{currency ? `Target Amount (${currency})` : "Target Amount"}</label>
+          <label className="block font-semibold text-gray-500 text-xs">Target Amount</label>
           <input
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
@@ -665,13 +663,13 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
-            placeholder="Fundraiser details"
+            placeholder="Fundraising details"
           />
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Fundraiser Start Date</label>
+            <label className="block font-semibold text-gray-500 text-xs">Fundraising Start Date</label>
             <input
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -680,7 +678,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData, currency }) {
             />
           </div>
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">Fundraiser Deadline Date (optional)</label>
+            <label className="block font-semibold text-gray-500 text-xs">Fundraising Deadline Date (optional)</label>
             <input
               value={deadlineDate}
               onChange={(e) => setDeadlineDate(e.target.value)}

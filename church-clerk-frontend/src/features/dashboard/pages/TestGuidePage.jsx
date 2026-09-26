@@ -42,13 +42,13 @@ const AREAS = [
   {
     id: "programs",
     number: "04",
-    title: "Programs & Events",
+    title: "Programs",
     color: "bg-indigo-50 border-indigo-100",
     badge: "bg-indigo-100 text-indigo-700",
     steps: [
-      "In the sidebar, click 'Programs and Events'.",
-      "Create a progam or event and check its details. Consider creating for at least one each for ongoing and upcoming.",
-      "record offering and attendance of one program or event. Use all three modes of attendance record."
+      "In the sidebar, click 'Programs'.",
+      "Create a program and check its details. Consider creating for at least one each for ongoing and upcoming.",
+      "record offering and attendance of one program. Use all three modes of attendance record."
     ],
     note: "Programs have their own attendance and offering records separate from the main church ones.",
   },

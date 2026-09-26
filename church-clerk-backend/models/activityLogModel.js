@@ -53,6 +53,11 @@ const activityLogSchema = new mongoose.Schema(
     ipAddress: {
       type: String,
     },
+    location: {
+      type: String,
+      trim: true,
+      default: ""
+    },
     browser: {
       type: String,
       trim: true,

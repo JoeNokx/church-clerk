@@ -75,6 +75,81 @@ if (typeof window !== "undefined") {
   fetchCsrfToken().catch(() => {});
 }
 
+const GEO_CACHE_KEY = "cckClientLocation";
+const GEO_SRC_KEY = "cckClientLocationSrc";
+
+function getClientLocation() {
+  if (typeof window === "undefined") return "";
+  try {
+    return String(sessionStorage.getItem(GEO_CACHE_KEY) || "");
+  } catch {
+    return "";
+  }
+}
+
+// Resolve the user's real location once per session.
+// Prefers browser geolocation (GPS/WiFi — the user's actual position). When only an
+// IP-derived value is cached, geolocation is still attempted to upgrade accuracy.
+if (typeof window !== "undefined") {
+  try {
+    const save = (value, src) => {
+      if (!value) return;
+      sessionStorage.setItem(GEO_CACHE_KEY, value.slice(0, 120));
+      sessionStorage.setItem(GEO_SRC_KEY, src);
+    };
+    const tryIpwho = () =>
+      fetch("https://ipwho.is/", { credentials: "omit" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d?.success === false) return;
+          save([String(d?.city || "").trim(), String(d?.country || "").trim()].filter(Boolean).join(", "), "ip");
+        })
+        .catch(() => {});
+    const tryIpapi = () =>
+      fetch("https://ipapi.co/json/", { credentials: "omit" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          const value = [String(data?.city || "").trim(), String(data?.country_name || "").trim()].filter(Boolean).join(", ");
+          if (value) return save(value, "ip");
+          return tryIpwho();
+        })
+        .catch(() => tryIpwho());
+    const tryGeolocation = () =>
+      new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), { timeout: 5000, maximumAge: 86400000 });
+      });
+    const reverseGeocode = (pos) => {
+      const { latitude, longitude } = pos.coords;
+      return fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`, { credentials: "omit" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          const city = String(d?.city || d?.locality || "").trim();
+          const country = String(d?.countryName || "").trim();
+          return [city, country].filter(Boolean).join(", ");
+        })
+        .catch(() => "");
+    };
+
+    const cachedSrc = sessionStorage.getItem(GEO_SRC_KEY);
+    if (cachedSrc !== "gps") {
+      tryGeolocation()
+        .then((pos) => {
+          if (!pos) return sessionStorage.getItem(GEO_CACHE_KEY) ? null : tryIpapi();
+          return reverseGeocode(pos).then((value) => {
+            if (value) return save(value, "gps");
+            return sessionStorage.getItem(GEO_CACHE_KEY) ? null : tryIpapi();
+          });
+        })
+        .catch(() => {
+          if (!sessionStorage.getItem(GEO_CACHE_KEY)) tryIpapi();
+        });
+    }
+  } catch {
+    // sessionStorage unavailable — skip geo header
+  }
+}
+
 // Request interceptor: attach activeChurch if exists
 api.interceptors.request.use(
   async (config) => {
@@ -90,6 +165,11 @@ api.interceptors.request.use(
     const token = getStoredAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    const clientLocation = getClientLocation();
+    if (clientLocation && !config.headers["x-client-location"]) {
+      config.headers["x-client-location"] = clientLocation;
     }
 
     if (typeof FormData !== "undefined" && config?.data instanceof FormData) {

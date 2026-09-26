@@ -80,6 +80,7 @@ function activityTextFromLog(row) {
     Members: "Member",
     Attendance: "Attendance",
     Events: "Event",
+    Programs: "Program",
     Announcements: "Announcement",
     Tithe: "Tithe",
     Income: "Income",
@@ -100,6 +101,10 @@ function activityTextFromLog(row) {
 
   const verb = action.toLowerCase();
   return `${subject} ${verb}`;
+}
+
+function locationTextFromLog(row) {
+  return String(row?.location || "").trim() || "—";
 }
 
 function SettingsPage() {
@@ -1119,7 +1124,7 @@ function SettingsPage() {
       "Authentication",
       "Members",
       "Attendance",
-      "Events",
+      "Programs",
       "Announcements",
       "Tithe",
       "Income",
@@ -1518,16 +1523,18 @@ function SettingsPage() {
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  loading={isSubmittingProfile}
-                  loadingText="Saving..."
-                  disabled={!isUserActive}
-                  className="w-full bg-blue-900 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
-                >
-                  Save Profile
-                </Button>
+                <div className="flex justify-end">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    loading={isSubmittingProfile}
+                    loadingText="Saving..."
+                    disabled={!isUserActive}
+                    className="bg-blue-900 text-white px-5 py-2 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
+                  >
+                    Save Profile
+                  </Button>
+                </div>
               </form>
             </div>
           </div>
@@ -1599,16 +1606,18 @@ function SettingsPage() {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                variant="primary"
-                loading={isSubmittingPassword}
-                loadingText="Updating..."
-                disabled={!isUserActive}
-                className="w-full bg-blue-700 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
-              >
-                Update Password
-              </Button>
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={isSubmittingPassword}
+                  loadingText="Updating..."
+                  disabled={!isUserActive}
+                  className="bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
+                >
+                  Update Password
+                </Button>
+              </div>
             </form>
           </div>
         </div>
@@ -1688,7 +1697,11 @@ function SettingsPage() {
                     <div className="mt-1 text-gray-900">{auditDetailRow?.os || "—"}</div>
                   </div>
 
-                  <div className="md:col-span-2">
+                  <div>
+                    <div className="font-semibold text-gray-500 text-xs">Location</div>
+                    <div className="mt-1 text-gray-900">{locationTextFromLog(auditDetailRow)}</div>
+                  </div>
+                  <div>
                     <div className="font-semibold text-gray-500 text-xs">IP Address</div>
                     <div className="mt-1 text-gray-900">{auditDetailRow?.ipAddress || "—"}</div>
                   </div>
@@ -2072,7 +2085,7 @@ function SettingsPage() {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  <div>Currency can be updated, but it will be locked after you start making transactions.</div>
+                  <div>Currency can be updated, but it will be locked after you record transactions.</div>
                 </div>
               </div>
 
@@ -2099,79 +2112,18 @@ function SettingsPage() {
                 />
               </div>
 
-              <div className="border-t border-gray-100 pt-5">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div>
-                    <div className="font-semibold text-gray-900 text-sm">SMS Sender ID</div>
-                    <div className="mt-1 text-gray-500 text-xs">Request a custom sender ID for your church (requires manual approval).</div>
-                  </div>
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold ${senderStatusMeta.cls} text-xs`}>{senderStatusMeta.label}</span>
-                </div>
-
-                {senderIdError ? <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{senderIdError}</div> : null}
-                {senderIdSuccess ? <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">{senderIdSuccess}</div> : null}
-
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Requested Sender ID</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{senderIdCurrent || "Default (CHURCHCLERK)"}</div>
-                    <div className="mt-1 text-gray-500 text-xs">Requested: {formatDateTimeShort(senderIdRequestedAt)}</div>
-                    <div className="mt-1 text-gray-500 text-xs">Approved: {formatDateTimeShort(senderIdApprovedAt)}</div>
-                    <div className="mt-2 text-gray-600 text-xs">
-                      Your members will see your sender ID as: {senderStatusMeta.raw === "approved" ? (senderIdCurrent || "CHURCHCLERK") : "CHURCHCLERK"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-medium text-gray-700 mb-1 text-sm">New Sender ID</label>
-                    <input
-                      value={senderIdInput}
-                      onChange={(e) => setSenderIdInput(String(e.target.value || "").toUpperCase())}
-                      maxLength={11}
-                      placeholder="E.g. MYCHURCH"
-                      className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                      disabled={!canWrite || senderIdLoading}
-                    />
-                    <div className="mt-1 text-gray-500 text-xs">
-                      Max 11 characters. Letters and numbers only. {senderIdInputLen}/11 ({senderIdCharsLeft} left)
-                    </div>
-
-                    <div className="mt-3 flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => guarded(handleRequestSenderId)}
-                        disabled={!canWrite || senderIdLoading || !String(senderIdInput || "").trim()}
-                        className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
-                      >
-                        {senderIdLoading ? "Submitting..." : senderStatusMeta.raw === "pending" ? "Resubmit Request" : "Request Sender ID"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSenderIdError("");
-                          setSenderIdSuccess("");
-                          setSenderIdInput("");
-                        }}
-                        disabled={senderIdLoading}
-                        className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={isSubmittingChurchProfile}
+                  loadingText="Saving..."
+                  disabled={!canWrite || (type === "Branch" && !parentChurchId)}
+                  className="bg-blue-900 text-white px-5 py-2 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
+                >
+                  Update Church Profile
+                </Button>
               </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                loading={isSubmittingChurchProfile}
-                loadingText="Saving..."
-                disabled={!canWrite || (type === "Branch" && !parentChurchId)}
-                className="w-full bg-blue-900 text-white py-2.5 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
-              >
-                Update Church Profile
-              </Button>
             </form>
           </div>
         </div>
@@ -2182,9 +2134,10 @@ function SettingsPage() {
           {titheModeError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{titheModeError}</div> : null}
           {titheModeSuccess ? <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-700 text-sm">{titheModeSuccess}</div> : null}
 
-          <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="font-semibold text-gray-900 text-sm">Tithe Recording Mode</div>
-            <div className="mt-1 text-gray-500 text-xs">Choose how tithes are recorded. Your existing records will remain safe when switching.</div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+            <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+              <div className="font-semibold text-gray-900 text-sm">Tithe Recording Mode</div>
+              <div className="mt-1 text-gray-500 text-xs">Choose how tithes are recorded. Your existing records will remain safe when switching.</div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <button
@@ -2237,6 +2190,70 @@ function SettingsPage() {
                 No tithe recording mode has been set yet. Choose a mode above to get started.
               </div>
             ) : null}
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="font-semibold text-gray-900 text-sm">SMS Sender ID</div>
+                  <div className="mt-1 text-gray-500 text-xs">Request a custom sender ID for your church (requires manual approval).</div>
+                </div>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold ${senderStatusMeta.cls} text-xs`}>{senderStatusMeta.label}</span>
+              </div>
+
+              {senderIdError ? <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{senderIdError}</div> : null}
+              {senderIdSuccess ? <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">{senderIdSuccess}</div> : null}
+
+              <div className="mt-4 space-y-4">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="font-semibold text-gray-500 text-xs">Requested Sender ID</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{senderIdCurrent || "Default (CHURCHCLERK)"}</div>
+                  <div className="mt-1 text-gray-500 text-xs">Requested: {formatDateTimeShort(senderIdRequestedAt)}</div>
+                  <div className="mt-1 text-gray-500 text-xs">Approved: {formatDateTimeShort(senderIdApprovedAt)}</div>
+                  <div className="mt-2 text-gray-600 text-xs">
+                    Your members will see your sender ID as: {senderStatusMeta.raw === "approved" ? (senderIdCurrent || "CHURCHCLERK") : "CHURCHCLERK"}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">New Sender ID</label>
+                  <input
+                    value={senderIdInput}
+                    onChange={(e) => setSenderIdInput(String(e.target.value || "").toUpperCase())}
+                    maxLength={11}
+                    placeholder="E.g. MYCHURCH"
+                    className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                    disabled={!canWrite || senderIdLoading}
+                  />
+                  <div className="mt-1 text-gray-500 text-xs">
+                    Max 11 characters. Letters and numbers only. {senderIdInputLen}/11 ({senderIdCharsLeft} left)
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSenderIdError("");
+                        setSenderIdSuccess("");
+                        setSenderIdInput("");
+                      }}
+                      disabled={senderIdLoading}
+                      className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => guarded(handleRequestSenderId)}
+                      disabled={!canWrite || senderIdLoading || !String(senderIdInput || "").trim()}
+                      className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
+                    >
+                      {senderIdLoading ? "Submitting..." : senderStatusMeta.raw === "pending" ? "Resubmit Request" : "Request Sender ID"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}

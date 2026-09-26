@@ -41,24 +41,21 @@ function formatPeriod(from, to) {
 function statusBadgeClass(status) {
   const s = String(status || "draft").toLowerCase();
   const map = {
-    draft:            "bg-gray-100 text-gray-700",
-    pending_approval: "bg-yellow-100 text-yellow-700",
-    approved:         "bg-blue-100 text-blue-700",
-    active:           "bg-green-100 text-green-700",
-    closed:           "bg-slate-100 text-slate-700"
+    draft:  "bg-gray-100 text-gray-700",
+    active: "bg-green-100 text-green-700",
+    closed: "bg-slate-100 text-slate-700"
   };
   return map[s] || map.draft;
 }
 
 function statusLabel(status) {
   const map = {
-    draft:            "Draft",
-    pending_approval: "Pending Approval",
-    approved:         "Approved",
-    active:           "Active",
-    closed:           "Closed"
+    draft:  "Draft",
+    active: "Active",
+    closed: "Closed"
   };
-  return map[String(status || "").toLowerCase()] || String(status || "—");
+  const raw = String(status || "").trim();
+  return map[raw.toLowerCase()] || (raw ? raw.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—");
 }
 
 // ─── Item View Modal ─────────────────────────────────────────────────────────
@@ -492,77 +489,72 @@ function BudgetDetailPageInner() {
       ) : budget ? (
         <div className="mt-6 space-y-5">
 
-          {/* ── Income & Expense comparison table ── */}
-          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            <div className="px-4 md:px-6 lg:px-8 py-4 border-b border-gray-200">
-              <div className="font-semibold text-gray-900 text-sm">Financial Summary</div>
-              <div className="mt-0.5 text-gray-500 text-xs">Planned vs actual for the budget period</div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Category</th>
-                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Planned</th>
-                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Actual</th>
-                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Variance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  <tr>
-                    <td className="px-4 md:px-6 py-3 font-semibold text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
-                        Income
-                      </div>
-                    </td>
-                    <td className="px-4 md:px-6 py-3 text-gray-900 font-semibold">
-                      {formatMoney(summary?.plannedIncomeTotal || 0, currency)}
-                    </td>
-                    <td className="px-4 md:px-6 py-3 text-gray-900 font-semibold">
-                      {summary
-                        ? formatMoney(summary.actualIncomeTotal || 0, currency)
-                        : <span className="text-gray-300">—</span>}
-                    </td>
-                    <td className="px-4 md:px-6 py-3">
-                      {summary ? (
-                        <span className={`font-semibold ${summary.varianceIncome >= 0 ? "text-green-700" : "text-red-600"}`}>
-                          {summary.varianceIncome >= 0 ? "+" : ""}{formatMoney(summary.varianceIncome, currency)}
-                          <span className="ml-1.5 text-[11px] font-normal text-gray-400">
-                            {summary.varianceIncome >= 0 ? "above plan" : "below plan"}
-                          </span>
+          {/* ── Income & Expense summary cards ── */}
+          <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6">
+            <div className="font-semibold text-gray-900 text-sm">Financial Summary</div>
+            <div className="mt-0.5 text-gray-500 text-xs">Planned vs actual for the budget period</div>
+            <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* Income card */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 md:p-5">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-500 shrink-0" />
+                  <div className="font-semibold text-gray-900 text-sm">Income</div>
+                </div>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-gray-500 text-xs">Planned</div>
+                    <div className="font-semibold text-gray-900 text-sm">{formatMoney(summary?.plannedIncomeTotal || 0, currency)}</div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-gray-500 text-xs">Actual</div>
+                    <div className="font-semibold text-gray-900 text-sm">
+                      {summary ? formatMoney(summary.actualIncomeTotal || 0, currency) : <span className="text-gray-300">—</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                    <div className="text-gray-500 text-xs">Variance</div>
+                    {summary ? (
+                      <div className={`font-semibold text-sm ${summary.varianceIncome >= 0 ? "text-green-700" : "text-red-600"}`}>
+                        {summary.varianceIncome >= 0 ? "+" : ""}{formatMoney(summary.varianceIncome, currency)}
+                        <span className="ml-1.5 text-[11px] font-normal text-gray-400">
+                          {summary.varianceIncome >= 0 ? "above plan" : "below plan"}
                         </span>
-                      ) : <span className="text-gray-300 text-xs">—</span>}
-                    </td>
-                  </tr>
-                  <tr className="bg-gray-50/50">
-                    <td className="px-4 md:px-6 py-3 font-semibold text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-orange-500 shrink-0" />
-                        Expenses
                       </div>
-                    </td>
-                    <td className="px-4 md:px-6 py-3 text-gray-900 font-semibold">
-                      {formatMoney(summary?.plannedExpenseTotal || 0, currency)}
-                    </td>
-                    <td className="px-4 md:px-6 py-3 text-gray-900 font-semibold">
-                      {summary
-                        ? formatMoney(summary.actualExpenseTotal || 0, currency)
-                        : <span className="text-gray-300">—</span>}
-                    </td>
-                    <td className="px-4 md:px-6 py-3">
-                      {summary ? (
-                        <span className={`font-semibold ${summary.varianceExpense >= 0 ? "text-green-700" : "text-red-600"}`}>
-                          {summary.varianceExpense >= 0 ? "+" : ""}{formatMoney(summary.varianceExpense, currency)}
-                          <span className="ml-1.5 text-[11px] font-normal text-gray-400">
-                            {summary.varianceExpense >= 0 ? "under budget" : "over budget"}
-                          </span>
+                    ) : <div className="text-gray-300 text-xs">—</div>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Expenses card */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 md:p-5">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500 shrink-0" />
+                  <div className="font-semibold text-gray-900 text-sm">Expenses</div>
+                </div>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-gray-500 text-xs">Planned</div>
+                    <div className="font-semibold text-gray-900 text-sm">{formatMoney(summary?.plannedExpenseTotal || 0, currency)}</div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-gray-500 text-xs">Actual</div>
+                    <div className="font-semibold text-gray-900 text-sm">
+                      {summary ? formatMoney(summary.actualExpenseTotal || 0, currency) : <span className="text-gray-300">—</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                    <div className="text-gray-500 text-xs">Variance</div>
+                    {summary ? (
+                      <div className={`font-semibold text-sm ${summary.varianceExpense >= 0 ? "text-green-700" : "text-red-600"}`}>
+                        {summary.varianceExpense >= 0 ? "+" : ""}{formatMoney(summary.varianceExpense, currency)}
+                        <span className="ml-1.5 text-[11px] font-normal text-gray-400">
+                          {summary.varianceExpense >= 0 ? "under budget" : "over budget"}
                         </span>
-                      ) : <span className="text-gray-300 text-xs">—</span>}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                      </div>
+                    ) : <div className="text-gray-300 text-xs">—</div>}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

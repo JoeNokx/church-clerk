@@ -26,7 +26,7 @@ import adminBillingRoute from "./adminBillingRoute.js";
 // main module routes
 import subscriptionRoute from "./billingRoute/subscriptionRoute.js";
 import memberRoute from "./memberRoute.js";
-import eventRoute from "./eventRoute.js";
+import programRoute from "./programRoute.js";
 import attendanceRoute from "./attendanceRoute.js";
 import announcementRoute from "./announcementRoute.js";
 import activityLogRoute from "./activityLogRoute.js";
@@ -74,7 +74,7 @@ export {
   adminBillingRoute,
   subscriptionRoute,
   memberRoute,
-  eventRoute,
+  programRoute,
   attendanceRoute,
   announcementRoute,
   activityLogRoute,

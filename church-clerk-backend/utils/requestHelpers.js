@@ -1,3 +1,28 @@
+import geoip from "geoip-lite";
+
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+function locationFromIp(ip) {
+  if (!ip) return "";
+  const geo = geoip.lookup(ip);
+  if (!geo) return "";
+  let country = "";
+  try {
+    country = geo.country ? regionNames.of(geo.country) : "";
+  } catch {
+    country = geo.country || "";
+  }
+  return [geo.city, country].filter(Boolean).join(", ");
+}
+
+function getRequestLocation(req) {
+  const headerLocation = String(req?.headers?.["x-client-location"] || "")
+    .replace(/[\r\n\t]/g, " ")
+    .trim()
+    .slice(0, 120);
+  return headerLocation || locationFromIp(req ? getClientIp(req) : "");
+}
+
 function getClientIp(req) {
   const xf = req.headers["x-forwarded-for"];
   if (typeof xf === "string" && xf.trim()) {
@@ -47,4 +72,4 @@ function normalizeEmail(value) {
   return String(value || "").toLowerCase().trim();
 }
 
-export { getClientIp, parseUserAgentMeta, normalizeEmail };
+export { getClientIp, parseUserAgentMeta, normalizeEmail, getRequestLocation, locationFromIp };

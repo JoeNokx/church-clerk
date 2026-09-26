@@ -152,7 +152,7 @@ const MODULES = [
   {
     value: "church-projects",
     label: "Fundraising",
-    description: "Fundraiser targets, status and creation dates.",
+    description: "Fundraising targets, status and creation dates.",
     iconBg: "bg-orange-100",
     iconColor: "text-orange-700",
     icon: (
@@ -160,9 +160,9 @@ const MODULES = [
     )
   },
   {
-    value: "programs-events",
-    label: "Programs & Events",
-    description: "Programs and events with dates and venues.",
+    value: "programs",
+    label: "Programs",
+    description: "Programs with dates and venues.",
     iconBg: "bg-teal-100",
     iconColor: "text-teal-700",
     icon: (

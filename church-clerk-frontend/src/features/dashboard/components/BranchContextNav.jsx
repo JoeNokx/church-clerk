@@ -8,7 +8,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 const PEOPLE_ITEMS = [
   { key: "members",       label: "Members",          mod: "Members",          perm: "members" },
   { key: "attendance",    label: "Attendance",        mod: "Attendance",       perm: "attendance" },
-  { key: "programs-events", label: "Programs & Events", mod: "ProgramsEvents", perm: "events" },
+  { key: "programs", label: "Programs", mod: "ProgramsEvents", perm: "programs" },
   { key: "organisations", label: "Organisations",       mod: "Organisations",    perm: "organisation" },
   { key: "announcements", label: "Announcements",     mod: "Announcements",    perm: "announcements" },
 ];

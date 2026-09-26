@@ -13,7 +13,7 @@ import ProjectExpense from "../models/financeModel/projectModel/projectExpenseMo
 import BusinessIncome from "../models/financeModel/businessModel/businessIncomeModel.js";
 import BusinessExpenses from "../models/financeModel/businessModel/businessExpensesModel.js";
 import GeneralExpenses from "../models/generalExpenseModel.js";
-import EventOffering from "../models/eventModel/eventOfferingModel.js";
+import ProgramOffering from "../models/programModel/programOfferingModel.js";
 import CellOffering from "../models/organisationModel/cellOfferingModel.js";
 import GroupOffering from "../models/organisationModel/groupOfferingModel.js";
 import DepartmentOffering from "../models/organisationModel/departmentOfferingModel.js";
@@ -302,7 +302,7 @@ const INCOME_SOURCES = [
   { Model: WelfareContributions, dateField: "date", amountField: "amount" },
   { Model: ProjectContribution, dateField: "date", amountField: "amount" },
   { Model: BusinessIncome, dateField: "date", amountField: "amount" },
-  { Model: EventOffering, dateField: "offeringDate", amountField: "amount" },
+  { Model: ProgramOffering, dateField: "offeringDate", amountField: "amount" },
   { Model: CellOffering, dateField: "date", amountField: "amount" },
   { Model: GroupOffering, dateField: "date", amountField: "amount" },
   { Model: DepartmentOffering, dateField: "date", amountField: "amount" },
@@ -568,7 +568,7 @@ async function computeYearlyAnalytics({ churchId, year }) {
 
   const offeringSources = [
     { Model: Offering, dateField: "serviceDate", amountField: "amount" },
-    { Model: EventOffering, dateField: "offeringDate", amountField: "amount" },
+    { Model: ProgramOffering, dateField: "offeringDate", amountField: "amount" },
     { Model: CellOffering, dateField: "date", amountField: "amount" },
     { Model: GroupOffering, dateField: "date", amountField: "amount" },
     { Model: DepartmentOffering, dateField: "date", amountField: "amount" },
@@ -796,8 +796,8 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
     return { [field]: { $gte: from, $lte: to } };
   };
 
-  if (module === "programs-events") {
-    return await buildProgramsEventsReport({ churchId, from, to, options, rangeMatch });
+  if (module === "programs" || module === "programs-events") {
+    return await buildProgramsReport({ churchId, from, to, options, rangeMatch });
   }
   if (module === "announcements") {
     return await buildAnnouncementsReport({ churchId, from, to, options, rangeMatch });
@@ -1397,7 +1397,7 @@ function normOpt(v) {
   return String(v || "").trim().toLowerCase();
 }
 
-function eventStatusOf(e, now) {
+function programStatusOf(e, now) {
   const start = e?.dateFrom ? new Date(e.dateFrom) : null;
   const end = e?.dateTo ? new Date(e.dateTo) : (start ? endOfDay(new Date(start)) : null);
   if (start && start > now) return "upcoming";
@@ -1406,11 +1406,11 @@ function eventStatusOf(e, now) {
   return "past";
 }
 
-// ---------- Programs & Events ----------
-async function buildProgramsEventsReport({ churchId, from, to, options, rangeMatch }) {
-  const Event = (await import("../models/eventModel.js")).default;
-  const EventAttendees = (await import("../models/eventModel/eventAttendeesModel.js")).default;
-  const TotalEventAttendance = (await import("../models/eventModel/totalEventAttendance.js")).default;
+// ---------- Programs ----------
+async function buildProgramsReport({ churchId, from, to, options, rangeMatch }) {
+  const Program = (await import("../models/programModel.js")).default;
+  const ProgramAttendees = (await import("../models/programModel/programAttendeesModel.js")).default;
+  const TotalProgramAttendance = (await import("../models/programModel/totalProgramAttendance.js")).default;
 
   const status = normOpt(options?.status) || "all";
   const scope = normOpt(options?.scope) || "all";
@@ -1419,12 +1419,12 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
   const entity = String(options?.entity || "").trim();
 
   if (scope === "single" && entity) {
-    const eventDoc = await Event.findOne({ _id: entity, church: churchId }).select("title").lean();
-    if (!eventDoc) return { error: "Program not found" };
-    const eventTitle = eventDoc?.title || "Program";
+    const programDoc = await Program.findOne({ _id: entity, church: churchId }).select("title").lean();
+    if (!programDoc) return { error: "Program not found" };
+    const programTitle = programDoc?.title || "Program";
 
     if (sub === "attendance" && mode === "total") {
-      const rows = await TotalEventAttendance.find({ church: churchId, event: entity, ...rangeMatch("date") })
+      const rows = await TotalProgramAttendance.find({ church: churchId, event: entity, ...rangeMatch("date") })
         .select("date numberOfAttendees mainSpeaker createdBy createdAt updatedAt")
         .populate("createdBy", "fullName")
         .sort({ date: -1 })
@@ -1441,7 +1441,7 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
       ];
 
       return {
-        title: `${eventTitle} — Attendance (Total)`,
+        title: `${programTitle} — Attendance (Total)`,
         columns: availableColumns,
         availableColumns,
         rows: rows.map((r) => ({
@@ -1456,7 +1456,7 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
     }
 
     if (sub === "attendance") {
-      const rows = await EventAttendees.find({ church: churchId, event: entity, ...rangeMatch("createdAt") })
+      const rows = await ProgramAttendees.find({ church: churchId, event: entity, ...rangeMatch("createdAt") })
         .select("fullName email phoneNumber location createdBy createdAt updatedAt")
         .populate("createdBy", "fullName")
         .sort({ createdAt: -1 })
@@ -1473,7 +1473,7 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
       ];
 
       return {
-        title: `${eventTitle} — Attendance (Registration)`,
+        title: `${programTitle} — Attendance (Registration)`,
         columns: availableColumns,
         availableColumns,
         rows: rows.map((r) => ({
@@ -1487,7 +1487,7 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
       };
     }
 
-    const rows = await EventOffering.find({ church: churchId, event: entity, ...rangeMatch("offeringDate") })
+    const rows = await ProgramOffering.find({ church: churchId, event: entity, ...rangeMatch("offeringDate") })
       .select("offeringType offeringDate amount note referenceId createdBy createdAt updatedAt")
       .populate("createdBy", "fullName")
       .sort({ offeringDate: -1 })
@@ -1506,7 +1506,7 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
     ];
 
     return {
-      title: `${eventTitle} — Offerings`,
+      title: `${programTitle} — Offerings`,
       columns: availableColumns,
       availableColumns,
       rows: rows.map((r) => ({
@@ -1532,7 +1532,7 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
     ];
   }
 
-  const events = await Event.find(match)
+  const programs = await Program.find(match)
     .select("title category department cell group description dateFrom dateTo timeFrom timeTo time venue organizers createdBy createdAt updatedAt")
     .populate("department", "name")
     .populate("cell", "name")
@@ -1543,11 +1543,11 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
     .lean();
 
   const now = new Date();
-  const rows = (events || [])
-    .filter((e) => status === "all" || eventStatusOf(e, now) === status)
+  const rows = (programs || [])
+    .filter((e) => status === "all" || programStatusOf(e, now) === status)
     .map((r) => ({
       title: r?.title || "—",
-      status: eventStatusOf(r, now),
+      status: programStatusOf(r, now),
       category: r?.category || "—",
       department: r?.department?.name || "—",
       cell: r?.cell?.name || "—",
@@ -1587,7 +1587,7 @@ async function buildProgramsEventsReport({ churchId, from, to, options, rangeMat
 
   const statusLabel = status === "all" ? "" : ` (${status.charAt(0).toUpperCase()}${status.slice(1)})`;
   return {
-    title: `Programs & Events${statusLabel}`,
+    title: `Programs${statusLabel}`,
     columns: availableColumns,
     availableColumns,
     rows
@@ -2763,7 +2763,8 @@ const REPORT_MODULE_LABELS = {
   welfare: "Welfare",
   "business-ventures": "Business Ventures",
   "church-projects": "Fundraising",
-  "programs-events": "Programs & Events",
+  "programs": "Programs",
+  "programs-events": "Programs",
   organisations: "Organisations",
   "outreach-followup": "Outreach & Follow-Up",
   announcements: "Announcements",
@@ -3691,16 +3692,16 @@ const getReportEntities = async (req, res) => {
 
     let entities = [];
 
-    if (moduleKey === "programs-events") {
-      const Event = (await import("../models/eventModel.js")).default;
-      const docs = await Event.find({ church: churchId })
+    if (moduleKey === "programs" || moduleKey === "programs-events") {
+      const Program = (await import("../models/programModel.js")).default;
+      const docs = await Program.find({ church: churchId })
         .select("title dateFrom dateTo")
         .sort({ dateFrom: -1 })
         .limit(1000)
         .lean();
       const now = new Date();
       entities = (docs || [])
-        .filter((e) => status === "all" || eventStatusOf(e, now) === status)
+        .filter((e) => status === "all" || programStatusOf(e, now) === status)
         .map((e) => ({
           _id: e._id,
           label: e?.title || "Untitled",

@@ -111,35 +111,38 @@ function ReferralProgramPage() {
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/30 p-4 md:p-6 lg:p-8">
-        <div className="flex items-start gap-3">
-          <div className="h-11 w-11 rounded-xl bg-white ring-1 ring-blue-100 flex items-center justify-center md:h-12 md:w-12">
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-blue-700">
-              <path d="M12 3l8 4v10l-8 4-8-4V7l8-4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-              <path d="M9 12l2 2 4-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <div className="font-semibold text-blue-900 text-base">Simple and Rewarding</div>
-            <div className="mt-3 space-y-2 text-blue-900/80 text-sm">
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 h-5 w-5 inline-flex items-center justify-center rounded-full bg-white ring-1 ring-blue-100 text-green-600">
+      <div className="mt-6 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-700 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 p-4 md:p-5 lg:p-6">
+          <div className="flex-1 min-w-0">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-100 ring-1 ring-white/20">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
+                <path d="M20 12v10H4V12" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M2 7h20v5H2V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M12 22V7" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M12 7c-1.5 0-4.5-.5-4.5-2.75C7.5 2.4 9.3 2 10.4 2.6 11.9 3.4 12 7 12 7Zm0 0c1.5 0 4.5-.5 4.5-2.75C16.5 2.4 14.7 2 13.6 2.6 12.1 3.4 12 7 12 7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+              </svg>
+              Referral Rewards
+            </div>
+            <div className="mt-2 font-bold text-white text-lg md:text-xl lg:text-2xl">Simple and Rewarding</div>
+            <div className="mt-2.5 space-y-1.5 text-blue-50/90 text-sm">
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 h-5 w-5 shrink-0 inline-flex items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 text-emerald-300">
                   <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                     <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.2 7.2a1 1 0 01-1.415 0l-3.2-3.2a1 1 0 011.415-1.415l2.492 2.492 6.492-6.492a1 1 0 011.416 0z" clipRule="evenodd" />
                   </svg>
                 </span>
-                <div>Invite churches to use the platform.</div>
+                <div>Invite churches to use the platform by sharing your referral code with them.</div>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 h-5 w-5 inline-flex items-center justify-center rounded-full bg-white ring-1 ring-blue-100 text-green-600">
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 h-5 w-5 shrink-0 inline-flex items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 text-emerald-300">
                   <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                     <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.2 7.2a1 1 0 01-1.415 0l-3.2-3.2a1 1 0 011.415-1.415l2.492 2.492 6.492-6.492a1 1 0 011.416 0z" clipRule="evenodd" />
                   </svg>
                 </span>
-                <div>When a referred church subscribes, you earn {referralBonusDays} free subscription day{referralBonusDays === 1 ? "" : "s"}.</div>
+                <div>When a church subscribes with your referral code, you earn {referralBonusDays} free subscription day{referralBonusDays === 1 ? "" : "s"}.</div>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 h-5 w-5 inline-flex items-center justify-center rounded-full bg-white ring-1 ring-blue-100 text-green-600">
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 h-5 w-5 shrink-0 inline-flex items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 text-emerald-300">
                   <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                     <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.2 7.2a1 1 0 01-1.415 0l-3.2-3.2a1 1 0 011.415-1.415l2.492 2.492 6.492-6.492a1 1 0 011.416 0z" clipRule="evenodd" />
                   </svg>
@@ -147,6 +150,24 @@ function ReferralProgramPage() {
                 <div>Rewards accumulate automatically.</div>
               </div>
             </div>
+          </div>
+
+          <div className="shrink-0 hidden md:flex items-center justify-center" aria-hidden="true">
+            <svg viewBox="0 0 240 180" fill="none" className="h-24 w-32 lg:h-28 lg:w-40">
+              <circle cx="120" cy="90" r="70" fill="rgba(255,255,255,0.08)" />
+              <circle cx="120" cy="90" r="52" fill="rgba(255,255,255,0.06)" />
+              <path d="M85 130V90l25-16 25 16v40" stroke="rgba(255,255,255,0.9)" strokeWidth="3" strokeLinejoin="round" />
+              <path d="M104 130v-14h12v14" stroke="rgba(255,255,255,0.9)" strokeWidth="3" strokeLinejoin="round" />
+              <path d="M110 60v10M105 65h10" stroke="rgba(255,255,255,0.9)" strokeWidth="3" strokeLinecap="round" />
+              <path d="M145 138v-24l16-10 16 10v24" stroke="rgba(255,255,255,0.55)" strokeWidth="3" strokeLinejoin="round" />
+              <path d="M79 138v-24l-16-10-16 10v24" stroke="rgba(255,255,255,0.55)" strokeWidth="3" strokeLinejoin="round" />
+              <rect x="158" y="48" width="34" height="30" rx="4" stroke="#6ee7b7" strokeWidth="3" />
+              <path d="M175 48v30M158 61h34" stroke="#6ee7b7" strokeWidth="3" />
+              <path d="M175 48c-4 0-10-1.2-10-6.5 0-4 4-5.2 6.8-3.6C175.4 40 175 48 175 48Z" stroke="#6ee7b7" strokeWidth="3" strokeLinejoin="round" />
+              <path d="M175 48c4 0 10-1.2 10-6.5 0-4-4-5.2-6.8-3.6C174.6 40 175 48 175 48Z" stroke="#6ee7b7" strokeWidth="3" strokeLinejoin="round" />
+              <path d="M158 78c-8 10-18 14-26 16" stroke="rgba(110,231,183,0.6)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="2 6" />
+              <path d="M160 78c-4 14-12 26-20 34" stroke="rgba(110,231,183,0.4)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="2 6" />
+            </svg>
           </div>
         </div>
       </div>
@@ -185,7 +206,7 @@ function ReferralProgramPage() {
                 type="button"
                 onClick={onCopy}
                 disabled={!referralCode}
-                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-gray-800 disabled:opacity-60 text-sm"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
               >
                 <span>{copied ? "Copied" : "Copy"}</span>
               </button>

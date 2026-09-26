@@ -1,0 +1,662 @@
+import Program from "../../models/programModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
+
+const getScopedChurchId = (req) => {
+  if (req.user?.role === "superadmin" || req.user?.role === "supportadmin") {
+    return null;
+  }
+  return req.activeChurch?._id || null;
+};
+
+const buildProgramQuery = ({
+  status,
+  churchId,
+  search,
+  category,
+  department,
+  group,
+  cell,
+  month,
+  year,
+  dateFrom,
+  dateTo
+}) => {
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(todayStart.getDate() + 1);
+
+  const query = {};
+  if (churchId) query.church = churchId;
+
+  query.$and = query.$and || [];
+
+  const normalizedStatus = ["upcoming", "ongoing", "past"].includes(status)
+    ? status
+    : "upcoming";
+
+  if (normalizedStatus === "upcoming") {
+    query.$and.push({ dateFrom: { $gte: tomorrowStart } });
+  }
+
+  if (normalizedStatus === "ongoing") {
+    query.$and.push({
+      $or: [
+        {
+          dateFrom: { $gte: todayStart, $lt: tomorrowStart },
+          dateTo: { $exists: false }
+        },
+        {
+          dateFrom: { $lte: todayStart },
+          dateTo: { $gte: todayStart }
+        }
+      ]
+    });
+  }
+
+  if (normalizedStatus === "past") {
+    query.$and.push({
+      $or: [
+        {
+          dateTo: { $exists: false },
+          dateFrom: { $lt: todayStart }
+        },
+        {
+          dateTo: { $lt: todayStart }
+        }
+      ]
+    });
+  }
+
+  if (search) {
+    const regex = new RegExp(search, "i");
+    query.$and.push({
+      $or: [
+        { title: regex },
+        { description: regex },
+        { venue: regex }
+      ]
+    });
+  }
+
+  if (category) query.category = category;
+  if (department) query.department = department;
+  if (group) query.group = group;
+  if (cell) query.cell = cell;
+
+  if (dateFrom || dateTo) {
+    const dateFilter = {};
+    if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+    if (dateTo) {
+      const end = new Date(dateTo);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.$lte = end;
+    }
+    query.$and.push({ dateFrom: dateFilter });
+  }
+
+  if (month && year) {
+    const monthNum = parseInt(month, 10);
+    const yearNum = parseInt(year, 10);
+    if (!Number.isNaN(monthNum) && !Number.isNaN(yearNum)) {
+      const start = new Date(yearNum, monthNum - 1, 1);
+      const end = new Date(yearNum, monthNum, 0, 23, 59, 59, 999);
+
+      if (normalizedStatus === "ongoing") {
+        query.$and.push({
+          $or: [
+            { dateFrom: { $gte: start, $lte: end } },
+            { dateTo: { $gte: start, $lte: end } }
+          ]
+        });
+      } else if (normalizedStatus === "past") {
+        query.$and.push({
+          $or: [
+            { dateTo: { $gte: start, $lte: end } },
+            {
+              dateTo: { $exists: false },
+              dateFrom: { $gte: start, $lte: end }
+            }
+          ]
+        });
+      } else {
+        query.$and.push({ dateFrom: { $gte: start, $lte: end } });
+      }
+    }
+  }
+
+  if (!query.$and.length) {
+    delete query.$and;
+  }
+
+  return query;
+};
+
+const getPrograms = async (req, res) => {
+  try {
+    const {
+      status = "upcoming",
+      page = 1,
+      limit = 10,
+      search = "",
+      category,
+      department,
+      group,
+      cell,
+      month,
+      year,
+      dateFrom,
+      dateTo
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    const churchId = getScopedChurchId(req);
+
+    const query = buildProgramQuery({
+      status,
+      churchId,
+      search,
+      category,
+      department,
+      group,
+      cell,
+      month,
+      year,
+      dateFrom,
+      dateTo
+    });
+
+    const sort = status === "past" ? { dateTo: -1, dateFrom: -1 } : { dateFrom: 1 };
+
+    const programs = await Program.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    const totalPrograms = await Program.countDocuments(query);
+
+    if (!programs || programs.length === 0) {
+      return res.status(200).json({
+        message: "No programs found.",
+        pagination: {
+          totalResult: 0,
+          totalPages: 0,
+          currentPage: pageNum,
+          hasPrev: false,
+          hasNext: false,
+          prevPage: null,
+          nextPage: null,
+        },
+        count: 0,
+        programs: [],
+      });
+    }
+
+    const totalPages = Math.ceil(totalPrograms / limitNum);
+
+    const pagination = {
+      totalResult: totalPrograms,
+      totalPages,
+      currentPage: pageNum,
+      hasPrev: pageNum > 1,
+      hasNext: pageNum < totalPages,
+      prevPage: pageNum > 1 ? pageNum - 1 : null,
+      nextPage: pageNum < totalPages ? pageNum + 1 : null,
+    };
+
+    await annotateDeletable("program", programs, req.activeChurch?._id);
+
+    return res.status(200).json({
+      message: "Programs fetched successfully",
+      pagination,
+      count: programs.length,
+      programs
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch programs",
+      error: error.message
+    });
+  }
+};
+
+const getProgramStats = async (req, res) => {
+  try {
+    const {
+      search = "",
+      category,
+      department,
+      group,
+      cell,
+      month,
+      year,
+      dateFrom,
+      dateTo
+    } = req.query;
+
+    const churchId = getScopedChurchId(req);
+
+    const [upcomingPrograms, ongoingPrograms, pastPrograms] = await Promise.all([
+      Program.countDocuments(buildProgramQuery({ status: "upcoming", churchId, search, category, department, group, cell, month, year, dateFrom, dateTo })),
+      Program.countDocuments(buildProgramQuery({ status: "ongoing", churchId, search, category, department, group, cell, month, year, dateFrom, dateTo })),
+      Program.countDocuments(buildProgramQuery({ status: "past", churchId, search, category, department, group, cell, month, year, dateFrom, dateTo }))
+    ]);
+
+    return res.status(200).json({
+      message: "Program stats fetched successfully",
+      stats: {
+        upcomingPrograms,
+        ongoingPrograms,
+        pastPrograms
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch program stats",
+      error: error.message
+    });
+  }
+};
+
+
+const getUpcomingPrograms = async (req, res) => {
+   try {
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      category,
+      department,
+      group,
+      cell,
+      month,
+      year
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.max(1, parseInt(limit));
+    const skip = (pageNum - 1) * limitNum;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const query = {
+      dateFrom: { $gt: today }
+    };
+
+    // Church scoping
+    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+      query.church = req.activeChurch._id;
+    }
+
+    // Search
+    if (search) {
+      const regex = new RegExp(search, "i");
+      query.$or = [
+        { title: regex },
+        { description: regex },
+        { venue: regex }
+      ];
+    }
+
+    // Filters
+    if (category) query.category = category;
+    if (department) query.department = department;
+    if (group) query.group = group;
+    if (cell) query.cell = cell;
+
+    // Month + Year filter
+    if (month && year) {
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0, 23, 59, 59, 999);
+  query.dateFrom = { $gte: start, $lte: end };
+  }
+
+
+    const programs = await Program.find(query)
+      .sort({ dateFrom: 1 }) // nearest upcoming first
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    const totalPrograms = await Program.countDocuments(query);
+
+           // IF NO RESULTS
+        if (!programs || programs.length === 0) {
+          return res.status(200).json({
+            message: "No programs found.",
+            pagination: {
+              totalResult: 0,
+              totalPages: 0,
+              currentPage: pageNum,
+              hasPrev: false,
+              hasNext: false,
+              prevPage: null,
+              nextPage: null,
+            },
+            count: 0,
+            programs: [],
+          });
+        }
+
+         // PAGINATION DETAILS
+    const totalPages = Math.ceil(totalPrograms / limitNum);
+
+    const pagination = {
+      totalResult: totalPrograms,
+      totalPages,
+      currentPage: pageNum,
+      hasPrev: pageNum > 1,
+      hasNext: pageNum < totalPages,
+      prevPage: pageNum > 1 ? pageNum - 1 : null,
+      nextPage: pageNum < totalPages ? pageNum + 1 : null,
+    };
+
+    await annotateDeletable("program", programs, req.activeChurch?._id);
+
+    return res.status(200).json({
+      message: "Upcoming programs fetched successfully",
+      pagination,
+      count: programs.length,
+      programs
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch upcoming programs",
+      error: error.message
+    });
+  }
+};
+
+
+
+
+
+// GET ONGOING PROGRAMS
+const getOngoingPrograms = async (req, res) => {
+   try {
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      category,
+      department,
+      group,
+      cell,
+      month,
+      year
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.max(1, parseInt(limit));
+    const skip = (pageNum - 1) * limitNum;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Base ongoing logic
+    let query = {
+      $or: [
+        // Single-day program (no dateTo) → today === dateFrom
+        {
+          dateFrom: { $gte: today, $lt: tomorrow },
+          dateTo: { $exists: false }
+        },
+
+        // Multi-day program → today between dateFrom & dateTo (inclusive)
+        {
+          dateFrom: { $lte: today },
+          dateTo: { $gte: today }
+        }
+      ]
+    };
+
+// Church scope
+if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+  query.church = req.activeChurch._id;
+}
+
+    // Search
+   if (search) {
+  const regex = new RegExp(search, "i");
+  query.$and = query.$and || [];
+  query.$and.push({
+    $or: [
+      { title: regex },
+      { description: regex },
+      { venue: regex }
+    ]
+  });
+}
+
+
+    // Filters
+    if (category) query.category = category;
+    if (department) query.department = department;
+    if (group) query.group = group;
+    if (cell) query.cell = cell;
+
+    // Month + Year filter
+   if (month && year) {
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0, 23, 59, 59, 999);
+
+  query.$and = query.$and || [];
+  query.$and.push({
+    $or: [
+      { dateFrom: { $gte: start, $lte: end } },
+      { dateTo: { $gte: start, $lte: end } }
+    ]
+  });
+}
+
+
+
+    const programs = await Program.find(query)
+      .sort({ dateFrom: 1 }) // nearest upcoming first
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    const totalPrograms = await Program.countDocuments(query);
+
+           // IF NO RESULTS
+        if (!programs || programs.length === 0) {
+          return res.status(200).json({
+            message: "No ongoing programs found.",
+            pagination: {
+              totalResult: 0,
+              totalPages: 0,
+              currentPage: pageNum,
+              hasPrev: false,
+              hasNext: false,
+              prevPage: null,
+              nextPage: null,
+            },
+            count: 0,
+            programs: [],
+          });
+        }
+
+         // PAGINATION DETAILS
+    const totalPages = Math.ceil(totalPrograms / limitNum);
+
+    const pagination = {
+      totalResult: totalPrograms,
+      totalPages,
+      currentPage: pageNum,
+      hasPrev: pageNum > 1,
+      hasNext: pageNum < totalPages,
+      prevPage: pageNum > 1 ? pageNum - 1 : null,
+      nextPage: pageNum < totalPages ? pageNum + 1 : null,
+    };
+
+    await annotateDeletable("program", programs, req.activeChurch?._id);
+
+    return res.status(200).json({
+      message: "Ongoing programs fetched successfully",
+      pagination,
+      count: programs.length,
+      programs
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch ongoing programs",
+      error: error.message
+    });
+  }
+};
+
+
+
+// GET PAST PROGRAMS
+const getPastPrograms = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      category,
+      department,
+      group,
+      cell,
+      month,
+      year
+    } = req.query;
+
+    const today = new Date();
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.max(1, parseInt(limit));
+    const skip = (pageNum - 1) * limitNum;
+
+today.setHours(0, 0, 0, 0);
+
+let query = {
+  $or: [
+    // Single-day programs (no dateTo)
+    {
+      dateTo: { $exists: false },
+      dateFrom: { $lt: today }
+    },
+
+    // Multi-day programs → ended
+    {
+      dateTo: { $lt: today }
+    }
+  ]
+};
+
+
+    // Church scoping
+    if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+      query.church = req.activeChurch._id;
+    }
+
+    // Search
+    if (search) {
+  const regex = new RegExp(search, "i");
+  query.$and = query.$and || [];
+  query.$and.push({
+    $or: [
+      { title: regex },
+      { description: regex },
+      { venue: regex }
+    ]
+  });
+}
+
+    // Filters
+    if (category) query.category = category;
+    if (department) query.department = department;
+    if (group) query.group = group;
+    if (cell) query.cell = cell;
+
+    // Month + Year filter
+    if (month && year) {
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0, 23, 59, 59, 999);
+
+  query.$and = query.$and || [];
+  query.$and.push({
+    $or: [
+      { dateTo: { $gte: start, $lte: end } },
+      {
+        dateTo: { $exists: false },
+        dateFrom: { $gte: start, $lte: end }
+      }
+    ]
+  });
+}
+
+
+
+    const programs = await Program.find(query)
+      .sort({ dateTo: -1 }) // most recent past first
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    const totalPrograms = await Program.countDocuments(query);
+
+       // IF NO RESULTS
+        if (!programs || programs.length === 0) {
+          return res.status(200).json({
+            message: "No programs found.",
+            pagination: {
+              totalResult: 0,
+              totalPages: 0,
+              currentPage: pageNum,
+              hasPrev: false,
+              hasNext: false,
+              prevPage: null,
+              nextPage: null,
+            },
+            count: 0,
+            programs: [],
+          });
+        }
+
+         // PAGINATION DETAILS
+    const totalPages = Math.ceil(totalPrograms / limitNum);
+
+    const pagination = {
+      totalResult: totalPrograms,
+      totalPages,
+      currentPage: pageNum,
+      hasPrev: pageNum > 1,
+      hasNext: pageNum < totalPages,
+      prevPage: pageNum > 1 ? pageNum - 1 : null,
+      nextPage: pageNum < totalPages ? pageNum + 1 : null,
+    };
+
+    await annotateDeletable("program", programs, req.activeChurch?._id);
+
+    return res.status(200).json({
+      message: "Past programs fetched successfully",
+      pagination,
+      count: programs.length,
+      programs
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch past programs",
+      error: error.message
+    });
+  }
+};
+
+
+
+export {getPrograms, getProgramStats, getUpcomingPrograms, getOngoingPrograms, getPastPrograms};
+

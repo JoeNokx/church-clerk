@@ -16,7 +16,7 @@ import {
 } from "../utils/announcementHelpers.js";
 import {
   countUniqueMembersForAudience,
-  resolveAudienceMembers
+  resolveAudienceRecipients
 } from "../services/announcement/audienceService.js";
 import { sendSmsAndUpdateDeliveries } from "../services/announcement/smsService.js";
 import { getOrCreateWallet, getAvailableCredits, deductCreditsForMessage, refundCreditsForMessage } from "../services/announcement/walletService.js";
@@ -75,15 +75,15 @@ export const createMessage = async (req, res) => {
       ? segmentsPerMessage * smsCostCredits
       : 0;
 
-    const members = status === "draft"
+    const resolved = status === "draft"
       ? []
-      : await resolveAudienceMembers({ churchId: req.activeChurch._id, audience });
+      : await resolveAudienceRecipients({ churchId: req.activeChurch._id, audience });
 
     const unique = new Map();
-    for (const m of members) {
-      const id = String(m?._id || "");
+    for (const r of resolved) {
+      const id = String(r?.key || r?.member || r?.phone || "");
       if (!id) continue;
-      if (!unique.has(id)) unique.set(id, m);
+      if (!unique.has(id)) unique.set(id, r);
     }
 
     const recipients = Array.from(unique.values());
@@ -164,12 +164,12 @@ export const createMessage = async (req, res) => {
     let sendSummary = null;
 
     if (status !== "draft" && recipients.length) {
-      const deliveries = recipients.map((m) => ({
+      const deliveries = recipients.map((r) => ({
         church: req.activeChurch._id,
         message: createdMessage._id,
-        member: m._id,
-        memberName: String(m?.fullName || `${m?.firstName || ""} ${m?.lastName || ""}` || "").trim(),
-        phone: String(m?.phoneNumber || "").trim(),
+        member: r.member || null,
+        memberName: String(r?.memberName || "").trim(),
+        phone: String(r?.phone || "").trim(),
         channel: primaryChannel,
         status: primaryChannel === "sms" ? "pending" : "delivered",
         provider: primaryChannel === "sms" ? "africastalking" : null

@@ -277,6 +277,96 @@ function TicketDetailView({ ticket, onBack, onUpdate }) {
   );
 }
 
+function ContactUsPanel({ supportEmails, supportPhones, whatsappPhone }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+      <div className="font-semibold text-gray-900 text-sm">Contact Us</div>
+      <div className="mt-1 text-gray-500 text-xs">Choose the fastest way to reach our support team.</div>
+
+      <div className="mt-4 space-y-3">
+        <div className="w-full rounded-xl bg-blue-50/60 p-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white text-blue-900 shadow-sm md:h-12 md:w-12">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path d="M4 6h16v12H4V6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <div className="font-semibold text-gray-900 text-sm">Email</div>
+              <div className="mt-1 text-gray-500 text-xs">Best for screenshots and detailed issues.</div>
+              <div className="mt-2 space-y-1 text-sm">
+                {supportEmails.map((email) => (
+                  <div key={email} className="truncate">
+                    <a className="text-blue-800 hover:underline" href={`mailto:${email}`}>
+                      {email}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full rounded-xl bg-indigo-50/60 p-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white text-indigo-900 shadow-sm md:h-12 md:w-12">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path
+                  d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-gray-900 text-sm">Phone</div>
+              <div className="mt-1 text-gray-500 text-xs">Sunday - Saturday, 9am - 6pm</div>
+              <div className="mt-2 space-y-1 text-sm">
+                {supportPhones.map((phone) => (
+                  <div key={phone} className="truncate">
+                    <a className="text-blue-800 hover:underline" href={`tel:${phone}`}>
+                      {phone}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full rounded-xl bg-green-50/60 p-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white text-green-700 shadow-sm md:h-12 md:w-12">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+                <path d="M20.52 3.48A11.82 11.82 0 0 0 12 .02C5.37.02.02 5.37.02 12c0 2.11.55 4.16 1.6 5.98L0 24l6.19-1.62A11.9 11.9 0 0 0 12 23.98c6.63 0 11.98-5.35 11.98-11.98 0-3.2-1.25-6.21-3.46-8.52ZM12 21.9c-1.87 0-3.71-.5-5.32-1.44l-.38-.23-3.67.96.98-3.58-.25-.37A9.87 9.87 0 0 1 2.1 12C2.1 6.52 6.52 2.1 12 2.1c2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.91 7c0 5.48-4.42 9.9-9.9 9.9Zm5.73-7.42c-.31-.16-1.83-.9-2.12-1-.29-.1-.5-.16-.71.16-.21.31-.81 1-.99 1.2-.18.21-.36.23-.67.08-.31-.16-1.31-.48-2.5-1.54-.92-.82-1.54-1.83-1.72-2.14-.18-.31-.02-.48.13-.63.14-.14.31-.36.46-.54.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.54-.08-.16-.71-1.71-.97-2.34-.26-.62-.53-.54-.71-.55h-.61c-.21 0-.54.08-.82.39-.28.31-1.08 1.06-1.08 2.59s1.1 3.01 1.25 3.22c.16.21 2.16 3.29 5.23 4.61.73.31 1.3.5 1.74.64.73.23 1.4.2 1.93.12.59-.09 1.83-.75 2.09-1.48.26-.73.26-1.35.18-1.48-.08-.13-.29-.21-.6-.36Z" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-gray-900 text-sm">WhatsApp</div>
+              <div className="mt-1 text-gray-500 text-xs">Fastest response for quick questions.</div>
+              <a
+                className="mt-3 inline-flex w-full items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 font-semibold text-gray-800 shadow-sm hover:bg-gray-50 text-sm"
+                href={`https://wa.me/${String(whatsappPhone || "").replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span className="truncate">Chat on WhatsApp ({whatsappPhone})</span>
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-500">
+                  <path d="M7 17L17 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M10 7h7v7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MyTicketsTab({ onViewTicket, focusTicketId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -416,7 +506,7 @@ function SupportHelpPage() {
       "Organisations",
       "Outreach",
       "Announcements",
-      "Events and Programs",
+      "Programs",
       "Tithes",
       "Budgeting",
       "Fundraising",
@@ -540,7 +630,7 @@ function SupportHelpPage() {
     },
     {
       q: "How do I create an event or program?",
-      a: "Go to Programs & Events from the sidebar and click 'Create Event'. Fill in the title, category, date range, time, and venue, then save. The event will appear in the Upcoming tab."
+      a: "Go to Programs from the sidebar and click 'Create Program'. Fill in the title, category, date range, time, and venue, then save. The program will appear in the Upcoming tab."
     },
     {
       q: "How do I manage groups, departments, and cells (Ministries)?",
@@ -560,7 +650,7 @@ function SupportHelpPage() {
     },
     {
       q: "Can I recover deleted records?",
-      a: "Deleted records cannot be recovered from the system. Please exercise caution when deleting members, transactions, or events. Contact support immediately if a critical record was deleted by mistake."
+      a: "Deleted records cannot be recovered from the system. Please exercise caution when deleting members, transactions, or programs. Contact support immediately if a critical record was deleted by mistake."
     },
     {
       q: "How do I update church profile or settings?",
@@ -677,16 +767,24 @@ function SupportHelpPage() {
         </div>
 
         {pageTab === "tickets" && (
-          <div className="mt-6">
-            <MyTicketsTab
-              onViewTicket={handleViewTicket}
-              focusTicketId={focusTicketId}
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="lg:col-span-2">
+              <MyTicketsTab
+                onViewTicket={handleViewTicket}
+                focusTicketId={focusTicketId}
+              />
+            </div>
+            <ContactUsPanel
+              supportEmails={supportEmails}
+              supportPhones={supportPhones}
+              whatsappPhone={whatsappPhone}
             />
           </div>
         )}
 
         {pageTab === "faq" && (
-          <div id="faq" className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8 overflow-hidden">
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div id="faq" className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8 overflow-hidden">
             <div className="font-semibold text-gray-900 text-sm">Frequently Asked Questions</div>
             <div className="mt-1 text-gray-500 text-xs">Click a question to expand the answer.</div>
             <div className="mt-4 divide-y divide-gray-100">
@@ -714,6 +812,12 @@ function SupportHelpPage() {
                 </div>
               ))}
             </div>
+            </div>
+            <ContactUsPanel
+              supportEmails={supportEmails}
+              supportPhones={supportPhones}
+              whatsappPhone={whatsappPhone}
+            />
           </div>
         )}
 
@@ -813,95 +917,11 @@ function SupportHelpPage() {
             </form>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
-            <div className="font-semibold text-gray-900 text-sm">Contact Us</div>
-            <div className="mt-1 text-gray-500 text-xs">Choose the fastest way to reach our support team.</div>
-
-            <div className="mt-4 space-y-3">
-              <div className="rounded-xl border border-gray-200 p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-900 md:h-12 md:w-12">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                      <path d="M4 6h16v12H4V6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                      <path d="M4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-900 text-sm">Email</div>
-                    <div className="mt-1 text-gray-500 text-xs">Best for screenshots and detailed issues.</div>
-                    <div className="mt-2 space-y-1 text-sm">
-                      {supportEmails.map((email) => (
-                        <div key={email} className="truncate">
-                          <a className="text-blue-800 hover:underline" href={`mailto:${email}`}>
-                            {email}
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-50 text-indigo-900 md:h-12 md:w-12">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                      <path
-                        d="M8 3h8v4l-1 2v12H9V9L8 7V3Z"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinejoin="round"
-                      />
-                      <path d="M9 9h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold text-gray-900 text-sm">Phone</div>
-                        <div className="mt-1 text-gray-500 text-xs">Sunday - Saturday, 9am - 6pm</div>
-                      </div>
-                    </div>
-                    <div className="mt-2 space-y-1 text-sm">
-                      {supportPhones.map((phone) => (
-                        <div key={phone} className="truncate">
-                          <a className="text-blue-800 hover:underline" href={`tel:${phone}`}>
-                            {phone}
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-green-50 text-green-700 md:h-12 md:w-12">
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
-                      <path d="M20.52 3.48A11.82 11.82 0 0 0 12 .02C5.37.02.02 5.37.02 12c0 2.11.55 4.16 1.6 5.98L0 24l6.19-1.62A11.9 11.9 0 0 0 12 23.98c6.63 0 11.98-5.35 11.98-11.98 0-3.2-1.25-6.21-3.46-8.52ZM12 21.9c-1.87 0-3.71-.5-5.32-1.44l-.38-.23-3.67.96.98-3.58-.25-.37A9.87 9.87 0 0 1 2.1 12C2.1 6.52 6.52 2.1 12 2.1c2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.91 7c0 5.48-4.42 9.9-9.9 9.9Zm5.73-7.42c-.31-.16-1.83-.9-2.12-1-.29-.1-.5-.16-.71.16-.21.31-.81 1-.99 1.2-.18.21-.36.23-.67.08-.31-.16-1.31-.48-2.5-1.54-.92-.82-1.54-1.83-1.72-2.14-.18-.31-.02-.48.13-.63.14-.14.31-.36.46-.54.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.54-.08-.16-.71-1.71-.97-2.34-.26-.62-.53-.54-.71-.55h-.61c-.21 0-.54.08-.82.39-.28.31-1.08 1.06-1.08 2.59s1.1 3.01 1.25 3.22c.16.21 2.16 3.29 5.23 4.61.73.31 1.3.5 1.74.64.73.23 1.4.2 1.93.12.59-.09 1.83-.75 2.09-1.48.26-.73.26-1.35.18-1.48-.08-.13-.29-.21-.6-.36Z" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-gray-900 text-sm">WhatsApp</div>
-                    <div className="mt-1 text-gray-500 text-xs">Fastest response for quick questions.</div>
-                    <a
-                      className="mt-3 inline-flex w-full items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-800 hover:bg-gray-50 text-sm"
-                      href={`https://wa.me/${String(whatsappPhone || "").replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <span className="truncate">Chat on WhatsApp ({whatsappPhone})</span>
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-500">
-                        <path d="M7 17L17 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        <path d="M10 7h7v7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ContactUsPanel
+            supportEmails={supportEmails}
+            supportPhones={supportPhones}
+            whatsappPhone={whatsappPhone}
+          />
         </div>
         )}
 

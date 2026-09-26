@@ -16,7 +16,11 @@ import {
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import AddContributorModal from "../components/AddContributorModal.jsx";
 import EditPledgeModal from "../../pledge/components/EditPledgeModal.jsx";
+import PledgeDetailsModal, { PaymentFormModal } from "../../pledge/components/PledgeDetailsModal.jsx";
 import { updatePledge } from "../../pledge/services/pledge.api.js";
+import { createPledgePayment } from "../../pledge/payments/services/pledgePayments.api.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -77,6 +81,33 @@ function safeListPayload(res, key) {
   const list = data?.[key] ?? payload?.[key];
   return Array.isArray(list) ? list : [];
 }
+
+const EXPENSE_CATEGORY_OPTIONS = [
+  "Maintenance",
+  "Equipment",
+  "Utilities",
+  "Transportation",
+  "Pastor Support",
+  "Charity",
+  "Fundraising",
+  "Program",
+  "Building materials",
+  "Salary"
+];
+
+const CONTRIBUTION_TYPE_OPTIONS = [
+  { label: "All Types", value: "" },
+  { label: "Pledge", value: "pledge" },
+  { label: "Instant Pay", value: "contribution" }
+];
+
+const PLEDGE_STATUS_OPTIONS = [
+  { label: "All Statuses", value: "" },
+  { label: "Not Started", value: "not started" },
+  { label: "In Progress", value: "in progress" },
+  { label: "Completed", value: "completed" },
+  { label: "Overdue", value: "overdue" }
+];
 
 function safePagination(res) {
   const payload = res?.data?.data ?? res?.data;
@@ -194,7 +225,7 @@ function DateRangePopover({ dateFrom, dateTo, onChangeFrom, onChangeTo, onClear 
   );
 }
 
-function ContributionFormModal({ open, mode, initialData, projectName, disabled, onClose, onSubmit, currency }) {
+function ContributionFormModal({ open, mode, initialData, projectName, disabled, onClose, onSubmit }) {
   const [contributorName, setContributorName] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
@@ -263,7 +294,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
     <BaseModal
       open={open}
       title={mode === "edit" ? "Edit Contribution" : "Add Contribution"}
-      subtitle={projectName ? `Fundraiser: ${projectName}` : ""}
+      subtitle={projectName ? `Fundraising: ${projectName}` : ""}
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
@@ -281,7 +312,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">Amount</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -336,13 +367,17 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
   );
 }
 
-function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onClose, onSubmit, currency }) {
+function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onClose, onSubmit }) {
   const [spentOn, setSpentOn] = useState("");
+  const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { values: lookupCategories, reload: reloadCategories } = useLookupValues("expenseCategory");
+  const categoryOptions = lookupCategories?.length ? lookupCategories : EXPENSE_CATEGORY_OPTIONS;
 
   useEffect(() => {
     if (!open) return;
@@ -351,6 +386,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
 
     if (mode === "edit" && initialData) {
       setSpentOn(initialData?.spentOn || "");
+      setCategory(initialData?.category || "");
       setAmount(initialData?.amount ?? "");
       setDate((initialData?.date || "").slice(0, 10));
       setDescription(initialData?.description || "");
@@ -358,6 +394,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
     }
 
     setSpentOn("");
+    setCategory("");
     setAmount("");
     setDate("");
     setDescription("");
@@ -390,6 +427,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
     try {
       await onSubmit?.({
         spentOn: String(spentOn).trim(),
+        category: String(category || "").trim() || undefined,
         date,
         amount: Number(amount),
         description: String(description || "").trim().slice(0, 2000)
@@ -405,25 +443,52 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
     <BaseModal
       open={open}
       title={mode === "edit" ? "Edit Expense" : "Record Expense"}
-      subtitle={projectName ? `Fundraiser: ${projectName}` : ""}
+      subtitle={projectName ? `Fundraising: ${projectName}` : ""}
       onClose={onClose}
     >
       <form onSubmit={submit} className="space-y-4">
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
 
-        <div>
-          <label className="block font-semibold text-gray-500 text-xs">Spent On</label>
-          <input
-            value={spentOn}
-            onChange={(e) => setSpentOn(e.target.value)}
-            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g., Foundation materials"
-          />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Spent On</label>
+            <input
+              value={spentOn}
+              onChange={(e) => setSpentOn(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="e.g., Foundation materials"
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="block font-semibold text-gray-500 text-xs">Category</label>
+              {!disabled ? (
+                <AddLookupValueButton
+                  label="Add category"
+                  kind="expenseCategory"
+                  onCreated={async (value) => {
+                    await reloadCategories();
+                    setCategory(value);
+                  }}
+                />
+              ) : null}
+            </div>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+            >
+              <option value="">Select category</option>
+              {categoryOptions.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
+            <label className="block font-semibold text-gray-500 text-xs">Amount</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -503,6 +568,8 @@ function FundraisingDetailsPage() {
   const [contribSearch, setContribSearch] = useState("");
   const [contribDateFrom, setContribDateFrom] = useState("");
   const [contribDateTo, setContribDateTo] = useState("");
+  const [contribType, setContribType] = useState("");
+  const [contribPledgeStatus, setContribPledgeStatus] = useState("");
 
   const [expenseLoading, setExpenseLoading] = useState(true);
   const [expenseError, setExpenseError] = useState("");
@@ -512,6 +579,7 @@ function FundraisingDetailsPage() {
   const [expenseSearch, setExpenseSearch] = useState("");
   const [expenseDateFrom, setExpenseDateFrom] = useState("");
   const [expenseDateTo, setExpenseDateTo] = useState("");
+  const [expenseCategory, setExpenseCategory] = useState("");
 
   const [contributionModalOpen, setContributionModalOpen] = useState(false);
   const [contributorModalOpen, setContributorModalOpen] = useState(false);
@@ -524,9 +592,14 @@ function FundraisingDetailsPage() {
 
   const [viewRow, setViewRow] = useState(null);
   const [editPledgeRow, setEditPledgeRow] = useState(null);
+  const [pledgeModal, setPledgeModal] = useState(null); // { id, view: "details" | "payments" }
+  const [payPledge, setPayPledge] = useState(null);
 
   const debouncedContribSearch = useDebouncedValue(contribSearch, 300);
   const debouncedExpenseSearch = useDebouncedValue(expenseSearch, 300);
+
+  const { values: lookupExpenseCategories } = useLookupValues("expenseCategory");
+  const expenseCategoryOptions = lookupExpenseCategories?.length ? lookupExpenseCategories : EXPENSE_CATEGORY_OPTIONS;
 
   const loadKpi = async () => {
     if (!projectId) return;
@@ -536,7 +609,7 @@ function FundraisingDetailsPage() {
       const res = await getProjectContributionExpensesKPI(projectId);
       setKpi(safeKpiPayload(res));
     } catch (e) {
-      setKpiError(e?.response?.data?.message || e?.message || "Failed to load fundraiser");
+      setKpiError(e?.response?.data?.message || e?.message || "Failed to load fundraising");
       setKpi(null);
     } finally {
       setKpiLoading(false);
@@ -553,7 +626,9 @@ function FundraisingDetailsPage() {
         limit: 10,
         search: String(debouncedContribSearch || "").trim(),
         dateFrom: contribDateFrom || undefined,
-        dateTo: contribDateTo || undefined
+        dateTo: contribDateTo || undefined,
+        kind: contribType || undefined,
+        pledgeStatus: contribPledgeStatus || undefined
       });
       setContribRows(safeListPayload(res, "transactions"));
       setContribPagination(safePagination(res));
@@ -576,7 +651,8 @@ function FundraisingDetailsPage() {
         limit: 10,
         search: String(debouncedExpenseSearch || "").trim(),
         dateFrom: expenseDateFrom || undefined,
-        dateTo: expenseDateTo || undefined
+        dateTo: expenseDateTo || undefined,
+        category: expenseCategory || undefined
       });
       setExpenseRows(safeListPayload(res, "projectExpenses"));
       setExpensePagination(safePagination(res));
@@ -595,11 +671,11 @@ function FundraisingDetailsPage() {
 
   useEffect(() => {
     loadContributions(contribPage);
-  }, [projectId, contribPage, debouncedContribSearch, contribDateFrom, contribDateTo]);
+  }, [projectId, contribPage, debouncedContribSearch, contribDateFrom, contribDateTo, contribType, contribPledgeStatus]);
 
   useEffect(() => {
     loadExpenses(expensePage);
-  }, [projectId, expensePage, debouncedExpenseSearch, expenseDateFrom, expenseDateTo]);
+  }, [projectId, expensePage, debouncedExpenseSearch, expenseDateFrom, expenseDateTo, expenseCategory]);
 
   const projectName = kpi?.name || "";
   const badge = statusBadge(kpi?.status);
@@ -627,8 +703,8 @@ function FundraisingDetailsPage() {
   if (!projectId) {
     return (
       <div className="max-w-6xl">
-        <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Fundraiser Details</div>
-        <div className="mt-2 text-gray-600 text-sm">No fundraiser selected.</div>
+        <div className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Fundraising Details</div>
+        <div className="mt-2 text-gray-600 text-sm">No fundraising selected.</div>
       </div>
     );
   }
@@ -639,7 +715,7 @@ function FundraisingDetailsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="mt-3 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">
-            {kpiLoading ? <Skeleton height={26} width={220} /> : projectName || "Fundraiser"}
+            {kpiLoading ? <Skeleton height={26} width={220} /> : projectName || "Fundraising"}
           </div>
           <div className="mt-2 text-gray-600 text-sm">{kpi?.description || ""}</div>
           {kpi?.deadlineDate ? (
@@ -741,12 +817,12 @@ function FundraisingDetailsPage() {
             {tab === "contributions" ? (
               <>
                 <div className="font-semibold text-gray-900 text-sm">Contributions</div>
-                <div className="text-gray-500 text-xs">Instant pay and pledges for this fundraiser</div>
+                <div className="text-gray-500 text-xs">Instant pay and pledges for this fundraising</div>
               </>
             ) : (
               <>
                 <div className="font-semibold text-gray-900 text-sm">Expenses</div>
-                <div className="text-gray-500 text-xs">All expenses for this fundraiser</div>
+                <div className="text-gray-500 text-xs">All expenses for this fundraising</div>
               </>
             )}
           </div>
@@ -758,8 +834,23 @@ function FundraisingDetailsPage() {
                 searchValue={contribSearch}
                 onSearchChange={(v) => { setContribSearch(v); setContribPage(1); }}
                 searchPlaceholder="Search name or contributor"
-                searchWidth="md:w-[320px]"
-                selects={[]}
+                searchWidth="md:w-[160px]"
+                selects={[
+                  {
+                    key: "type",
+                    value: contribType,
+                    onChange: (v) => { setContribType(v); setContribPage(1); },
+                    options: CONTRIBUTION_TYPE_OPTIONS.filter((o) => o.value !== ""),
+                    placeholder: "All Types"
+                  },
+                  {
+                    key: "pledgeStatus",
+                    value: contribPledgeStatus,
+                    onChange: (v) => { setContribPledgeStatus(v); setContribPage(1); },
+                    options: PLEDGE_STATUS_OPTIONS.filter((o) => o.value !== ""),
+                    placeholder: "Pledge Status"
+                  }
+                ]}
                 dateFrom={contribDateFrom}
                 dateTo={contribDateTo}
                 onDateApply={(from, to) => { setContribDateFrom(from); setContribDateTo(to); setContribPage(1); }}
@@ -782,10 +873,27 @@ function FundraisingDetailsPage() {
                 dateFrom={contribDateFrom}
                 dateTo={contribDateTo}
                 onDateApply={(from, to) => { setContribDateFrom(from); setContribDateTo(to); setContribPage(1); }}
+                filters={[
+                  { key: "type", label: "Type", value: contribType, defaultValue: "", options: CONTRIBUTION_TYPE_OPTIONS },
+                  { key: "pledgeStatus", label: "Pledge Status", value: contribPledgeStatus, defaultValue: "", options: PLEDGE_STATUS_OPTIONS }
+                ]}
+                onApply={(pending) => {
+                  setContribType(pending?.type || "");
+                  setContribPledgeStatus(pending?.pledgeStatus || "");
+                  setContribPage(1);
+                }}
                 resultCount={contribPagination?.totalResult ?? null}
-                getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
+                getLiveCount={async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
                   try {
-                    const res = await getProjectTransactions(projectId, { page: 1, limit: 1, search: contribSearch, dateFrom: dFrom || undefined, dateTo: dTo || undefined });
+                    const res = await getProjectTransactions(projectId, {
+                      page: 1,
+                      limit: 1,
+                      search: contribSearch,
+                      dateFrom: dFrom || undefined,
+                      dateTo: dTo || undefined,
+                      kind: f?.type || undefined,
+                      pledgeStatus: f?.pledgeStatus || undefined
+                    });
                     const payload = res?.data?.data ?? res?.data;
                     return payload?.pagination?.totalResult ?? null;
                   } catch { return null; }
@@ -798,8 +906,16 @@ function FundraisingDetailsPage() {
                 searchValue={expenseSearch}
                 onSearchChange={(v) => { setExpenseSearch(v); setExpensePage(1); }}
                 searchPlaceholder="Search spent on or recorded by"
-                searchWidth="md:w-[320px]"
-                selects={[]}
+                searchWidth="md:w-[160px]"
+                selects={[
+                  {
+                    key: "category",
+                    value: expenseCategory,
+                    onChange: (v) => { setExpenseCategory(v); setExpensePage(1); },
+                    options: expenseCategoryOptions.map((c) => ({ label: c, value: c })),
+                    placeholder: "All Categories"
+                  }
+                ]}
                 dateFrom={expenseDateFrom}
                 dateTo={expenseDateTo}
                 onDateApply={(from, to) => { setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1); }}
@@ -822,10 +938,30 @@ function FundraisingDetailsPage() {
                 dateFrom={expenseDateFrom}
                 dateTo={expenseDateTo}
                 onDateApply={(from, to) => { setExpenseDateFrom(from); setExpenseDateTo(to); setExpensePage(1); }}
+                filters={[
+                  {
+                    key: "category",
+                    label: "Category",
+                    value: expenseCategory,
+                    defaultValue: "",
+                    options: [{ label: "All Categories", value: "" }, ...expenseCategoryOptions.map((c) => ({ label: c, value: c }))]
+                  }
+                ]}
+                onApply={(pending) => {
+                  setExpenseCategory(pending?.category || "");
+                  setExpensePage(1);
+                }}
                 resultCount={expensePagination?.totalResult ?? null}
-                getLiveCount={async ({ dateFrom: dFrom, dateTo: dTo }) => {
+                getLiveCount={async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
                   try {
-                    const res = await getProjectExpenses(projectId, { page: 1, limit: 1, search: expenseSearch, dateFrom: dFrom || undefined, dateTo: dTo || undefined });
+                    const res = await getProjectExpenses(projectId, {
+                      page: 1,
+                      limit: 1,
+                      search: expenseSearch,
+                      dateFrom: dFrom || undefined,
+                      dateTo: dTo || undefined,
+                      category: f?.category || undefined
+                    });
                     const payload = res?.data?.data ?? res?.data;
                     return payload?.pagination?.totalResult ?? null;
                   } catch { return null; }
@@ -892,7 +1028,8 @@ function FundraisingDetailsPage() {
                           </td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={isPledge ? [
-                              { label: "View", onClick: () => toPage("pledge-details", { id: row._id }), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              { label: "View", onClick: () => setPledgeModal({ id: row._id, view: "details" }), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              { label: "Pay", onClick: () => guarded(() => setPayPledge(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
                               { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                             ] : [
                               { label: "View", onClick: () => setViewRow(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
@@ -906,7 +1043,7 @@ function FundraisingDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <EmptyState compact illustration="contributions" title="No contributions yet" description="Instant pay and pledges for this fundraiser will appear here." />
+                <EmptyState compact illustration="contributions" title="No contributions yet" description="Instant pay and pledges for this fundraising will appear here." />
               )
             ) : null}
 
@@ -950,6 +1087,7 @@ function FundraisingDetailsPage() {
                     <thead className="bg-slate-100">
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Spent On</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Category</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Spent</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
@@ -961,6 +1099,11 @@ function FundraisingDetailsPage() {
                       {expenseRows.map((row, idx) => (
                         <tr key={row?._id ?? `e-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.spentOn || "—"}><span className="sm:hidden">{truncateMobileName(row?.spentOn || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.spentOn || "—")}</span></td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            {row?.category ? (
+                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600 text-xs">{row.category}</span>
+                            ) : <span className="text-gray-300 text-xs">—</span>}
+                          </td>
                           <td className="max-md:px-4 py-1.5 text-orange-600 whitespace-nowrap px-4 md:px-6">{formatCurrency(row?.amount || 0, currency)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.date)}</td>
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" title={row?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(row?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(row?.createdBy?.fullName || "—")}</span></td>
@@ -981,7 +1124,7 @@ function FundraisingDetailsPage() {
                   </table>
                 </div>
               ) : (
-                <EmptyState compact illustration="expenses" title="No expenses yet" description="Expenses for this fundraiser will appear here." />
+                <EmptyState compact illustration="expenses" title="No expenses yet" description="Expenses for this fundraising will appear here." />
               )
             ) : null}
 
@@ -1025,6 +1168,10 @@ function FundraisingDetailsPage() {
               <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="font-semibold text-gray-500 text-xs">Amount</div>
                 <div className="mt-1 font-semibold text-orange-600 text-sm">{formatCurrency(expenseViewRow?.amount || 0, currency)}</div>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="font-semibold text-gray-500 text-xs">Category</div>
+                <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.category || "—"}</div>
               </div>
               <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="font-semibold text-gray-500 text-xs">Spent On</div>
@@ -1117,7 +1264,6 @@ function FundraisingDetailsPage() {
       <EditPledgeModal
         open={Boolean(editPledgeRow)}
         initialData={editPledgeRow}
-        currency={currency}
         onClose={() => setEditPledgeRow(null)}
         onSubmit={async (payload) => {
           if (!editPledgeRow?._id) return;
@@ -1126,13 +1272,32 @@ function FundraisingDetailsPage() {
         }}
       />
 
+      <PaymentFormModal
+        open={Boolean(payPledge)}
+        mode="create"
+        initialData={null}
+        onClose={() => setPayPledge(null)}
+        onSubmit={async (payload) => {
+          if (!payPledge?._id) return;
+          await createPledgePayment(payPledge._id, payload);
+          await Promise.all([loadKpi(), loadContributions(contribPage)]);
+        }}
+      />
+
+      <PledgeDetailsModal
+        open={Boolean(pledgeModal)}
+        pledgeId={pledgeModal?.id}
+        view={pledgeModal?.view}
+        onClose={() => setPledgeModal(null)}
+        onChanged={async () => { await Promise.all([loadKpi(), loadContributions(contribPage)]); }}
+      />
+
       <ContributionFormModal
         open={contributionModalOpen}
         mode={editingContribution ? "edit" : "create"}
         initialData={editingContribution}
         projectName={projectName}
         disabled={!canWrite}
-        currency={currency}
         onClose={() => {
           setContributionModalOpen(false);
           setEditingContribution(null);
@@ -1156,7 +1321,6 @@ function FundraisingDetailsPage() {
         initialData={editingExpense}
         projectName={projectName}
         disabled={!canWrite}
-        currency={currency}
         onClose={() => {
           setExpenseModalOpen(false);
           setEditingExpense(null);

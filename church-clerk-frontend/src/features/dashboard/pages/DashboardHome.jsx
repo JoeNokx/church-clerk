@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getDashboardAnalytics, getDashboardKPI, getDashboardWidgets, getDashboardWidgetsWithParams } from "../services/dashboard.api.js";
 
-import { getUpcomingEvents } from "../../event/services/event.api.js";
+import { getUpcomingPrograms } from "../../program/services/program.api.js";
 
 import { getMyReferralCode, getMyReferralHistory } from "../../referral/services/referral.api.js";
 
@@ -47,9 +47,9 @@ const BusinessVenturesPage = React.lazy(() => import("../../businessVentures/pag
 
 const BusinessVentureDetailsPage = React.lazy(() => import("../../businessVentures/pages/BusinessVentureDetailsPage.jsx"));
 
-const ProgramsEventsPage = React.lazy(() => import("../../event/pages/ProgramsEventsPage.jsx"));
+const ProgramsPage = React.lazy(() => import("../../program/pages/ProgramsPage.jsx"));
 
-const EventDetailsPage = React.lazy(() => import("../../event/pages/EventDetailsPage.jsx"));
+const ProgramDetailsPage = React.lazy(() => import("../../program/pages/ProgramDetailsPage.jsx"));
 
 const OrganisationsPage = React.lazy(() => import("../../organisations/pages/OrganisationsPage.jsx"));
 
@@ -261,7 +261,7 @@ function birthdayNameMobile(firstName, lastName) {
   return [first, last].filter(Boolean).join(" ") || "—";
 }
 
-function truncateEventTitle(title, max) {
+function truncateProgramTitle(title, max) {
   const t = title || "";
   return t.length > max ? t.slice(0, max) + "\u2026" : t || "—";
 }
@@ -294,7 +294,7 @@ function DashboardOverview({ onNavigate }) {
 
   const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
 
-  const canViewEvents = useMemo(() => (typeof can === "function" ? can("events", "view") : false), [can]);
+  const canViewPrograms = useMemo(() => (typeof can === "function" ? can("programs", "view") : false), [can]);
 
   const year = useMemo(() => new Date().getFullYear(), []);
 
@@ -344,16 +344,16 @@ function DashboardOverview({ onNavigate }) {
     }
   });
 
-  const upcomingEventsQuery = useQuery({
-    queryKey: ["dashboard", "upcoming-events", activeChurchId],
+  const upcomingProgramsQuery = useQuery({
+    queryKey: ["dashboard", "upcoming-programs", activeChurchId],
     enabled: !!activeChurchId,
     staleTime: 0,
     queryFn: async () => {
-      const res = await getUpcomingEvents({ page: 1, limit: 6 });
+      const res = await getUpcomingPrograms({ page: 1, limit: 6 });
       const payload = res?.data?.data ?? res?.data;
       const data = payload?.data ?? payload;
-      const events = Array.isArray(data?.events) ? data.events : [];
-      return events.slice(0, 6);
+      const programs = Array.isArray(data?.programs) ? data.programs : [];
+      return programs.slice(0, 6);
     }
   });
 
@@ -377,13 +377,13 @@ function DashboardOverview({ onNavigate }) {
       queryFn: () => getDashboardWidgets({ churchId: cid }).then(r => r?.data?.dashboardWidget || null),
     });
     void queryClient.prefetchQuery({
-      queryKey: ["dashboard", "upcoming-events", cid],
+      queryKey: ["dashboard", "upcoming-programs", cid],
       staleTime: 2 * 60 * 1000,
-      queryFn: () => getUpcomingEvents({ page: 1, limit: 6 }, { churchId: cid }).then(r => {
+      queryFn: () => getUpcomingPrograms({ page: 1, limit: 6 }, { churchId: cid }).then(r => {
         const payload = r?.data?.data ?? r?.data;
         const data = payload?.data ?? payload;
-        const events = Array.isArray(data?.events) ? data.events : [];
-        return events.slice(0, 6);
+        const programs = Array.isArray(data?.programs) ? data.programs : [];
+        return programs.slice(0, 6);
       }),
     });
   }, [otherChurchId, queryClient, year]);
@@ -394,14 +394,14 @@ function DashboardOverview({ onNavigate }) {
     widgetsQuery.isLoading ||
     referralCodeQuery.isLoading ||
     referralHistoryQuery.isLoading ||
-    upcomingEventsQuery.isLoading;
+    upcomingProgramsQuery.isLoading;
   const error =
     (kpiQuery.error && (kpiQuery.error?.response?.data?.message || kpiQuery.error?.message)) ||
     (analyticsQuery.error && (analyticsQuery.error?.response?.data?.message || analyticsQuery.error?.message)) ||
     (widgetsQuery.error && (widgetsQuery.error?.response?.data?.message || widgetsQuery.error?.message)) ||
     (referralCodeQuery.error && (referralCodeQuery.error?.response?.data?.message || referralCodeQuery.error?.message)) ||
     (referralHistoryQuery.error && (referralHistoryQuery.error?.response?.data?.message || referralHistoryQuery.error?.message)) ||
-    (upcomingEventsQuery.error && (upcomingEventsQuery.error?.response?.data?.message || upcomingEventsQuery.error?.message)) ||
+    (upcomingProgramsQuery.error && (upcomingProgramsQuery.error?.response?.data?.message || upcomingProgramsQuery.error?.message)) ||
     "";
 
   const kpis = kpiQuery.data;
@@ -421,11 +421,11 @@ function DashboardOverview({ onNavigate }) {
     };
   }, [referralCodeQuery.data, referralHistoryQuery.data]);
 
-  const upcomingEvents = Array.isArray(upcomingEventsQuery.data) ? upcomingEventsQuery.data : [];
-  const upcomingEventsLoading = upcomingEventsQuery.isLoading;
-  const upcomingEventsError =
-    upcomingEventsQuery.error?.response?.data?.message ||
-    upcomingEventsQuery.error?.message ||
+  const upcomingPrograms = Array.isArray(upcomingProgramsQuery.data) ? upcomingProgramsQuery.data : [];
+  const upcomingProgramsLoading = upcomingProgramsQuery.isLoading;
+  const upcomingProgramsError =
+    upcomingProgramsQuery.error?.response?.data?.message ||
+    upcomingProgramsQuery.error?.message ||
     "";
 
   const [birthdaysModalOpen, setBirthdaysModalOpen] = useState(false);
@@ -618,13 +618,13 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-  const goToEventDetails = (id) => {
+  const goToProgramDetails = (id) => {
 
-    if (!canViewEvents) return;
+    if (!canViewPrograms) return;
 
     if (!id) return;
 
-    toPage("event-details", { id }, { state: { from: "dashboard" } });
+    toPage("program-details", { id }, { state: { from: "dashboard" } });
 
   };
 
@@ -1102,14 +1102,14 @@ function DashboardOverview({ onNavigate }) {
               <div className="font-semibold text-gray-900 text-sm">Upcoming Programs</div>
               <div className="text-gray-500 text-xs">Next scheduled programs</div>
             </div>
-            <button type="button" onClick={() => onNavigate("programs-events")} className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 text-[11px]">
+            <button type="button" onClick={() => onNavigate("programs")} className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 text-[11px]">
               View All
               <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2"><path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
           <div className="px-3 pb-3">
             <div className="mt-2">
-              {upcomingEventsLoading ? (
+              {upcomingProgramsLoading ? (
                 <div className="divide-y divide-gray-200 rounded-lg border border-gray-200 animate-pulse">
                   {[0, 1, 2, 3].map((i) => (
                     <div key={i} className="px-4 py-3 flex items-start justify-between gap-3">
@@ -1121,21 +1121,21 @@ function DashboardOverview({ onNavigate }) {
                     </div>
                   ))}
                 </div>
-              ) : upcomingEventsError ? (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{upcomingEventsError}</div>
-              ) : upcomingEvents.length ? (
+              ) : upcomingProgramsError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{upcomingProgramsError}</div>
+              ) : upcomingPrograms.length ? (
                 <div className="divide-y divide-gray-200">
-                  {upcomingEvents.map((ev, idx) => {
+                  {upcomingPrograms.map((ev, idx) => {
                     const evDate = ev?.dateFrom || ev?.startDate || ev?.date;
                     const daysLeft = getDaysUntil(evDate);
                     const daysLabel = daysLeft === null ? "" : daysLeft === 0 ? "Today" : daysLeft === 1 ? "1 day" : `${daysLeft} days`;
-                    return canViewEvents ? (
-                      <button key={`${ev?._id || "ev"}-${idx}`} type="button" onClick={() => goToEventDetails(ev?._id)} className="cck-allow-icons w-full text-left px-2 py-2 hover:bg-gray-50">
+                    return canViewPrograms ? (
+                      <button key={`${ev?._id || "ev"}-${idx}`} type="button" onClick={() => goToProgramDetails(ev?._id)} className="cck-allow-icons w-full text-left px-2 py-2 hover:bg-gray-50">
                         <div className="flex items-center" style={{gap:"8px"}}>
                           <CalendarAvatar dateStr={evDate} />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate text-xs">
-                              <span className="sm:hidden">{truncateEventTitle(ev?.title || ev?.name, 25)}</span>
+                              <span className="sm:hidden">{truncateProgramTitle(ev?.title || ev?.name, 25)}</span>
                               <span className="hidden sm:inline">{ev?.title || ev?.name || "—"}</span>
                             </div>
                             <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
@@ -1150,7 +1150,7 @@ function DashboardOverview({ onNavigate }) {
                           <CalendarAvatar dateStr={evDate} />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate text-xs">
-                              <span className="sm:hidden">{truncateEventTitle(ev?.title || ev?.name, 25)}</span>
+                              <span className="sm:hidden">{truncateProgramTitle(ev?.title || ev?.name, 25)}</span>
                               <span className="hidden sm:inline">{ev?.title || ev?.name || "—"}</span>
                             </div>
                             <div className="text-gray-500 text-xs">{formatRange(evDate, ev?.dateTo || ev?.endDate)}</div>
@@ -1163,7 +1163,7 @@ function DashboardOverview({ onNavigate }) {
                   })}
                 </div>
               ) : (
-                <EmptyState compact illustration="events" title="No upcoming events" description="Scheduled events will appear here." />
+                <EmptyState compact illustration="events" title="No upcoming programs" description="Scheduled programs will appear here." />
               )}
             </div>
           </div>
@@ -1505,9 +1505,9 @@ function DashboardHome() {
 
   if (page === "business-venture-details") PageComponent = BusinessVentureDetailsPage;
 
-  if (page === "programs-events") PageComponent = ProgramsEventsPage;
+  if (page === "programs" || page === "programs-events") PageComponent = ProgramsPage;
 
-  if (page === "event-details") PageComponent = EventDetailsPage;
+  if (page === "program-details" || page === "event-details") PageComponent = ProgramDetailsPage;
 
   if (page === "organisations") PageComponent = OrganisationsPage;
 

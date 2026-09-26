@@ -1,6 +1,6 @@
 import Member from "../models/memberModel.js";
 import Attendance from "../models/attendanceModel.js";
-import Event from "../models/eventModel.js";
+import Program from "../models/programModel.js";
 import GroupModel from "../models/organisationModel/groupModel.js";
 import DepartmentModel from "../models/organisationModel/departmentModel.js";
 import Announcement from "../models/announcementModel.js";
@@ -25,7 +25,7 @@ const hasData = async (Model, churchId) => {
 
 export const detectTrialFeatureUsage = async (churchId) => {
   const [
-    members, attendance, events,
+    members, attendance, programs,
     groups, departments,
     announcements, tithes, budgeting,
     projects, specialFunds, offerings,
@@ -34,7 +34,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
   ] = await Promise.all([
     hasData(Member, churchId),
     hasData(Attendance, churchId),
-    hasData(Event, churchId),
+    hasData(Program, churchId),
     hasData(GroupModel, churchId),
     hasData(DepartmentModel, churchId),
     hasData(Announcement, churchId),
@@ -53,7 +53,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
   const used = [];
   if (members) used.push("Members");
   if (attendance) used.push("Attendance");
-  if (events) used.push("ProgramsEvents");
+  if (programs) used.push("ProgramsEvents");
   if (groups || departments) used.push("Organisations");
   if (announcements) used.push("Announcements");
   if (tithes) used.push("Tithe");
@@ -73,7 +73,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
 export const FEATURE_ROUTE_MAP = [
   { feature: "Members",          prefixes: ["/api/v1/member"] },
   { feature: "Attendance",       prefixes: ["/api/v1/attendance"] },
-  { feature: "ProgramsEvents",   prefixes: ["/api/v1/event"] },
+  { feature: "ProgramsEvents",   prefixes: ["/api/v1/program"] },
   { feature: "Organisations",    prefixes: ["/api/v1/organisations"] },
   { feature: "Announcements",    prefixes: ["/api/v1/announcement"] },
   { feature: "Tithe",            prefixes: ["/api/v1/tithe"] },

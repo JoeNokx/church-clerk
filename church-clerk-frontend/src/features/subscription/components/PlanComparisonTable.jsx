@@ -37,7 +37,7 @@ function PlanComparisonTable({
     financeModule: "Finance Module",
     budgeting: "Budgeting",
     branchesOverview: "Branches Overview",
-    programsEvents: "Programs & Events",
+    programsEvents: "Programs",
     reportsAnalytics: "Reports & Analytics",
     supportHelp: "Support & Help"
   };

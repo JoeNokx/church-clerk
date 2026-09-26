@@ -12,7 +12,7 @@ const MODULE_META = {
   cells:            { label: "Cells",                page: "organisations",     detailPage: null },
   groups:           { label: "Groups",               page: "organisations",     detailPage: null },
   ministries:       { label: "Ministries",            page: "organisations",     detailPage: null },
-  events:           { label: "Events & Programs",    page: "programs-events",   detailPage: "event-details" },
+  programs:         { label: "Programs",    page: "programs",          detailPage: "program-details" },
   announcements:    { label: "Announcements",        page: "announcements",     detailPage: null },
   tithe:            { label: "Tithe",                page: "tithe",             detailPage: null },
   budgeting:        { label: "Budgeting",            page: "budgeting",         detailPage: null },
@@ -65,7 +65,7 @@ const MODULE_ICONS = {
       <path d="M3 20c0-3 2.7-5 6-5h6c3.3 0 6 2 6 5"/>
     </svg>
   ),
-  events: (
+  programs: (
     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="1.7">
       <rect x="3" y="4" width="18" height="18" rx="2"/>
       <path d="M16 2v4M8 2v4M3 10h18"/>
@@ -141,7 +141,7 @@ const MODULE_COLORS = {
   departments:      "text-gray-600 bg-gray-100",
   cells:            "text-gray-600 bg-gray-100",
   groups:           "text-gray-600 bg-gray-100",
-  events:           "text-gray-600 bg-gray-100",
+  programs:         "text-gray-600 bg-gray-100",
   announcements:    "text-gray-600 bg-gray-100",
   tithe:            "text-gray-600 bg-gray-100",
   budgeting:        "text-gray-600 bg-gray-100",
@@ -334,7 +334,7 @@ export default function GlobalSearch() {
 
   const moduleOrder = [
     "members","visitors","attendance","departments","cells","groups",
-    "events","announcements","tithe","budgeting","churchProjects",
+    "programs","announcements","tithe","budgeting","churchProjects",
     "offerings","welfare","pledges","businessVentures","expenses",
   ];
 

@@ -1,4 +1,5 @@
 import activityLogModel from "../models/activityLogModel.js";
+import { locationFromIp } from "../utils/requestHelpers.js";
 
 
 
@@ -84,6 +85,22 @@ const getAllActivityLogs = async (req, res) => {
             .populate("user", "fullName role")
             .lean();
 
+        const backfills = new Map();
+        for (const log of logs) {
+            if (!log.location && log.ipAddress) {
+                const resolved = locationFromIp(log.ipAddress);
+                if (resolved) {
+                    log.location = resolved;
+                    backfills.set(log._id, resolved);
+                }
+            }
+        }
+        if (backfills.size) {
+            backfills.forEach((resolved, id) => {
+                activityLogModel.updateOne({ _id: id }, { $set: { location: resolved } }).catch(() => {});
+            });
+        }
+
         return res.status(200).json({
             message: "Activity logs fetched",
             logs,
@@ -117,6 +134,14 @@ const getSingleActivityLog = async (req, res) => {
 
         if (!log) {
             return res.status(404).json({ message: "Activity log not found" });
+        }
+
+        if (!log.location && log.ipAddress) {
+            const resolved = locationFromIp(log.ipAddress);
+            if (resolved) {
+                log.location = resolved;
+                activityLogModel.updateOne({ _id: log._id }, { $set: { location: resolved } }).catch(() => {});
+            }
         }
 
         return res.status(200).json({ message: "Activity log fetched", log });

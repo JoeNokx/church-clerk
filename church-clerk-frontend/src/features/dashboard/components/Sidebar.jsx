@@ -147,7 +147,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
     (planAllows("Attendance") && canRead("attendance")) ||
 
-    (planAllows("ProgramsEvents") && canRead("events")) ||
+    (planAllows("ProgramsEvents") && canRead("programs")) ||
 
     (planAllows("Organisations") && canRead("organisation")) ||
 
@@ -219,9 +219,12 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
   const detailToParent = {
     "member-details": "members",
     "member-form": "members",
-    "event-details": "programs-events",
-    "event-edit": "programs-events",
-    "event-create": "programs-events",
+    "program-details": "programs",
+    "event-details": "programs",
+    "program-edit": "programs",
+    "event-edit": "programs",
+    "program-create": "programs",
+    "event-create": "programs",
     "ministry-details": "organisations",
     "organisation-details": "organisations",
     "business-venture-details": "business-ventures",
@@ -445,9 +448,9 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-                {planAllows("ProgramsEvents") && canRead("events") ? (
+                {planAllows("ProgramsEvents") && canRead("programs") ? (
 
-                  <NavLink to={toPage("programs-events")} className={itemClass("programs-events")}>
+                  <NavLink to={toPage("programs")} className={itemClass("programs")}>
 
                     <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
 
@@ -458,7 +461,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                     </span>
 
-                    Programs &amp; Events
+                    Programs
 
                     {isReadOnly("ProgramsEvents") ? <LockBadge /> : null}
 

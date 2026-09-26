@@ -19,8 +19,16 @@ export const getMyBranches = async (params) => {
   return await http.get("/church/branches", { params });
 };
 
-export const getBranchesConsolidated = async () => {
-  return await http.get("/church/branches/consolidated");
+export const getBranchMembers = async (params) => {
+  return await http.get("/church/branches/members", { params });
+};
+
+export const getBranchAttendance = async (params) => {
+  return await http.get("/church/branches/attendance", { params });
+};
+
+export const getBranchFinances = async (params) => {
+  return await http.get("/church/branches/finances", { params });
 };
 
 export const getActiveChurchContext = async () => {

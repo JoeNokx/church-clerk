@@ -5,7 +5,7 @@ import Department from "../models/organisationModel/departmentModel.js";
 import Cell from "../models/organisationModel/cellModel.js";
 import Group from "../models/organisationModel/groupModel.js";
 import Ministry from "../models/organisationModel/ministryModel.js";
-import Event from "../models/eventModel.js";
+import Program from "../models/programModel.js";
 import Announcement from "../models/announcementModel.js";
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
 import Budget from "../models/financeModel/budgetingModel.js";
@@ -216,10 +216,10 @@ export const globalSearch = async (req, res) => {
       );
     }
 
-    // Events
-    if (can(perms, "events")) {
+    // Programs
+    if (can(perms, "programs")) {
       tasks.push(
-        Event.find({
+        Program.find({
           ...base,
           $or: [
             { title: regex },
@@ -234,13 +234,13 @@ export const globalSearch = async (req, res) => {
           .lean()
           .then((rows) => {
             if (rows.length) {
-              results.events = rows.map((r) => ({
+              results.programs = rows.map((r) => ({
                 _id: r._id,
                 title: r.title || "—",
                 subtitle: r.venue || "",
                 badge: r.category || "",
                 date: r.dateFrom,
-                module: "events",
+                module: "programs",
               }));
             }
           })

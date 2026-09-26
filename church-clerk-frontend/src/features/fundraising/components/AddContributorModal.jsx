@@ -167,7 +167,7 @@ function PledgeForm({ project, currency, disabled, onDone, onCancel }) {
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
+          <label className="block font-semibold text-gray-500 text-xs">Amount</label>
           <input
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
@@ -297,7 +297,7 @@ function ContributionForm({ project, currency, disabled, onDone, onCancel }) {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className="block font-semibold text-gray-500 text-xs">{currency ? `Amount (${currency})` : "Amount"}</label>
+          <label className="block font-semibold text-gray-500 text-xs">Amount</label>
           <input
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
@@ -365,7 +365,7 @@ export default function AddContributorModal({ open, onClose, project, disabled, 
     <BaseModal
       open={open}
       title="Add Contributor"
-      subtitle={fundraiserName ? `Record a pledge or contribution for ${fundraiserName}` : "Record a pledge or contribution for this fundraiser"}
+      subtitle={fundraiserName ? `Record a pledge or contribution for ${fundraiserName}` : "Record a pledge or contribution for this fundraising"}
       onClose={onClose}
     >
       <div className="mb-5 flex items-center gap-6">

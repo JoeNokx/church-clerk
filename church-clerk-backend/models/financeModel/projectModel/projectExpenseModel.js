@@ -7,6 +7,7 @@ const projectExpenseSchema = new mongoose.Schema({
   church: { type: mongoose.Schema.Types.ObjectId, ref: 'Church', required: true },
 
  spentOn: { type: String, trim: true, required: true },
+  category: { type: String, trim: true },
   amount: { type: Number, required: true },
   description: { type: String, trim: true },
   date: { type: Date, required: true },

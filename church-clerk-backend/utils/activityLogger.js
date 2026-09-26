@@ -1,5 +1,5 @@
 import ActivityLog from "../models/activityLogModel.js";
-import { getClientIp, parseUserAgentMeta } from "./requestHelpers.js";
+import { getClientIp, parseUserAgentMeta, getRequestLocation, locationFromIp } from "./requestHelpers.js";
 
 async function logActivity({
   user,
@@ -26,6 +26,9 @@ async function logActivity({
     const ua = userAgent || (req ? String(req.headers["user-agent"] || "") : "");
     const meta = browser && os ? { browser, os, deviceType, model } : parseUserAgentMeta(ua);
 
+    const headerLocation = req ? String(getRequestLocation(req) || "") : "";
+    const location = headerLocation || locationFromIp(ip);
+
     await ActivityLog.create({
       user,
       module,
@@ -35,6 +38,7 @@ async function logActivity({
       userRole,
       church,
       ipAddress: ip,
+      location,
       browser: meta.browser,
       os: meta.os,
       deviceType: meta.deviceType,

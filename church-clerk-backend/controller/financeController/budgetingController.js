@@ -9,7 +9,7 @@ import TitheIndividual from "../../models/financeModel/tithesModel/titheIndividu
 import TitheAggregate from "../../models/financeModel/tithesModel/titheAggregateModel.js";
 import Offering from "../../models/financeModel/offeringModel.js";
 import BusinessIncome from "../../models/financeModel/businessModel/businessIncomeModel.js";
-import EventOffering from "../../models/eventModel/eventOfferingModel.js";
+import ProgramOffering from "../../models/programModel/programOfferingModel.js";
 import CellOffering from "../../models/organisationModel/cellOfferingModel.js";
 import GroupOffering from "../../models/organisationModel/groupOfferingModel.js";
 import DepartmentOffering from "../../models/organisationModel/departmentOfferingModel.js";
@@ -120,7 +120,7 @@ const INCOME_SOURCES = [
   { Model: TitheAggregate,    dateField: "date"         },
   { Model: Offering,          dateField: "serviceDate"  },
   { Model: BusinessIncome,    dateField: "date"         },
-  { Model: EventOffering,     dateField: "offeringDate" },
+  { Model: ProgramOffering,     dateField: "offeringDate" },
   { Model: CellOffering,      dateField: "date"         },
   { Model: GroupOffering,     dateField: "date"         },
   { Model: DepartmentOffering,dateField: "date"         },
@@ -174,7 +174,7 @@ const INCOME_CATEGORY_SOURCES = {
   ],
   Offering: [
     { Model: Offering,           dateField: "serviceDate",  entityType: null        },
-    { Model: EventOffering,      dateField: "offeringDate", entityType: "event",    entityField: "event"     },
+    { Model: ProgramOffering,      dateField: "offeringDate", entityType: "program",  entityField: "event"     },
     { Model: CellOffering,       dateField: "date",         entityType: "cell",     entityField: "cell"      },
     { Model: GroupOffering,      dateField: "date",         entityType: "group",     entityField: "group"     },
     { Model: DepartmentOffering, dateField: "date",         entityType: "department", entityField: "department" },
@@ -193,7 +193,10 @@ const INCOME_CATEGORY_SOURCES = {
     { Model: MinistryOffering,  dateField: "date",         entityType: "ministry",  entityField: "ministry"  },
   ],
   "Event Offering": [
-    { Model: EventOffering,      dateField: "offeringDate", entityType: "event",    entityField: "event"     },
+    { Model: ProgramOffering,      dateField: "offeringDate", entityType: "program",  entityField: "event"     },
+  ],
+  "Program Offering": [
+    { Model: ProgramOffering,      dateField: "offeringDate", entityType: "program",  entityField: "event"     },
   ],
   "Special Fund": [
     { Model: SpecialFund,        dateField: "givingDate",   entityType: null },
@@ -225,7 +228,9 @@ const INCOME_CATEGORY_SOURCES = {
  *     are filtered by `entityField = entityId`. General sources are skipped.
  */
 const buildEntityFilter = (allocatedTo, sourceEntityType, sourceEntityField) => {
-  const allocType = String(allocatedTo?.entityType || "").trim();
+  // "event" is the legacy persisted value for "program" allocations.
+  const rawType = String(allocatedTo?.entityType || "").trim();
+  const allocType = rawType === "event" ? "program" : rawType;
   const allocId = allocatedTo?.entityId || null;
 
   // No specific entity allocation → no filter

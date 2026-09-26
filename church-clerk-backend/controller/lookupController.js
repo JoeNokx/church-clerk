@@ -9,7 +9,7 @@ import Expense from "../models/financeModel/incomeExpenseModel/expenseModel.js";
 import Income from "../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Offering from "../models/financeModel/offeringModel.js";
 import SpecialFund from "../models/financeModel/specialFundModel.js";
-import EventOffering from "../models/eventModel/eventOfferingModel.js";
+import ProgramOffering from "../models/programModel/programOfferingModel.js";
 import CellOffering from "../models/organisationModel/cellOfferingModel.js";
 import GroupOffering from "../models/organisationModel/groupOfferingModel.js";
 import DepartmentOffering from "../models/organisationModel/departmentOfferingModel.js";
@@ -80,7 +80,7 @@ const defaultValuesByKind = {
     "Group Offering",
     "Department Offering",
     "Ministry Offering",
-    "Event Offering",
+    "Program Offering",
     "Pledge",
     "Welfare Contribution",
     "Fundraising Contribution",
@@ -143,7 +143,7 @@ const collectExpenseCategoriesFromRecords = async (churchId) => {
 const INCOME_CATEGORY_SOURCES = [
   // Sources with a category-like field → pull distinct values
   { Model: Offering,         field: "offeringType",  prefix: null },
-  { Model: EventOffering,    field: "offeringType",  prefix: null },
+  { Model: ProgramOffering,    field: "offeringType",  prefix: null },
   { Model: SpecialFund,      field: "category",      prefix: null },
   { Model: BusinessIncome,   field: "recievedFrom",  prefix: null },
   { Model: Income,           field: "category",       prefix: null },

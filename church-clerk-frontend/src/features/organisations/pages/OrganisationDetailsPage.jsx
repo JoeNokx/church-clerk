@@ -118,41 +118,6 @@ function safeText(value) {
   return typeof value === "string" ? value : "";
 }
 
-function MinistryTypeIcon({ type }) {
-  if (type === "cell") {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-        <path d="M12 21s7-4.5 7-10a7 7 0 10-14 0c0 5.5 7 10 7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-        <path d="M12 11a2 2 0 100-4 2 2 0 000 4Z" stroke="currentColor" strokeWidth="1.8" />
-      </svg>
-    );
-  }
-
-  if (type === "department") {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-        <path d="M4 20V8l8-4 8 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-        <path d="M9 20v-6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-
-  if (type === "ministry") {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-        <path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6L12 2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-      <path d="M8 12a4 4 0 108 0 4 4 0 00-8 0Z" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function Chip({ color = "gray", children }) {
   const styles =
     color === "blue"
@@ -1174,57 +1139,45 @@ function OrganisationDetailsPage() {
           <div className="text-gray-600 text-sm">No record found.</div>
         ) : (
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between md:gap-6">
-            {/* Edit button: absolute top-right on mobile, hidden on desktop (rendered in sidebar) */}
-            <button
-              type="button"
-              onClick={() => guarded(() => openEdit())}
-              className="absolute top-0 right-0 lg:hidden rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs"
-            >
-              Edit
-            </button>
+            {/* Total members: absolute top-right on mobile, hidden on desktop (rendered in sidebar) */}
+            <div className="absolute top-0 right-0 lg:hidden inline-flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-500">
+              <span>Total Members:</span>
+              <span className="font-semibold text-gray-900 text-sm">{totalMembersValue}</span>
+            </div>
 
             <div className="flex items-start gap-4 min-w-0 pr-16 lg:pr-0">
-              <div
-                className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ring-1 ${
-                  type === "group"
-                    ? "bg-blue-50 text-blue-700 ring-blue-100"
-                    : type === "cell"
-                      ? "bg-orange-50 text-orange-700 ring-orange-100"
-                      : type === "ministry"
-                        ? "bg-pink-50 text-pink-700 ring-pink-100"
-                        : "bg-purple-50 text-purple-700 ring-purple-100"
-                }`}
-              >
-                <MinistryTypeIcon type={type} />
-              </div>
-
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <Chip color={typeColor}>{title}</Chip>
                   {entity?.status ? <Chip>{entity.status}</Chip> : null}
                 </div>
 
-                {/* Total members: mobile inline, hidden on desktop (shown in sidebar) */}
-                <div className="lg:hidden mt-2 flex items-center gap-1.5 text-xs text-gray-500">
-                  <span>Total Members:</span>
-                  <span className="font-semibold text-gray-900 text-sm">{totalMembersValue}</span>
+                {/* Edit button: mobile inline, hidden on desktop (shown in sidebar) */}
+                <div className="lg:hidden mt-2">
+                  <button
+                    type="button"
+                    onClick={() => guarded(() => openEdit())}
+                    className="rounded-lg bg-blue-50 px-3 py-1.5 font-semibold text-blue-700 hover:bg-blue-100 text-xs"
+                  >
+                    Edit
+                  </button>
                 </div>
 
                 <div className="mt-2 font-semibold text-gray-900 truncate md:text-3xl lg:text-4xl text-xl md:text-2xl">{entity?.name || "—"}</div>
                 <div className="mt-2 text-gray-600 max-w-3xl whitespace-pre-wrap text-sm">{entity?.description || "—"}</div>
 
                 {meetingRows.length ? (
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-4 rounded-xl border border-gray-200 bg-white divide-y divide-gray-200">
                     {meetingRows.map((m, idx) => (
-                      <div key={m?._id || idx} className="rounded-lg border border-gray-200 bg-white px-4 py-2">
-                        <div className="grid grid-cols-1 gap-1 md:grid-cols-3 md:gap-3 text-xs">
+                      <div key={m?._id || idx} className="px-4 py-3">
+                        <div className="grid grid-cols-1 gap-1 md:grid-cols-3 md:gap-3 md:divide-x md:divide-gray-100 text-xs">
                           <div className="text-gray-600">
                             <span className="font-semibold text-gray-700">Day:</span> {m?.meetingDay || "—"}
                           </div>
-                          <div className="text-gray-600">
+                          <div className="text-gray-600 md:px-3">
                             <span className="font-semibold text-gray-700">Time:</span> {m?.meetingTime || "—"}
                           </div>
-                          <div className="text-gray-600 md:text-right">
+                          <div className="text-gray-600 md:px-3 md:text-right">
                             <span className="font-semibold text-gray-700">Venue:</span> {m?.meetingVenue || "—"}
                           </div>
                         </div>
@@ -1235,19 +1188,19 @@ function OrganisationDetailsPage() {
               </div>
             </div>
 
-            {/* Desktop sidebar: total members card + edit button */}
+            {/* Desktop sidebar: edit button + total members card */}
             <div className="hidden lg:flex flex-col gap-3 lg:w-auto lg:min-w-44">
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="font-semibold text-gray-500 text-xs">Total Members</div>
-                <div className="mt-1 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{totalMembersValue}</div>
-              </div>
               <button
                 type="button"
                 onClick={() => guarded(() => openEdit())}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+                className="rounded-lg bg-blue-50 px-4 py-2 font-semibold text-blue-700 hover:bg-blue-100 text-sm"
               >
                 Edit
               </button>
+              <div className="rounded-xl bg-gray-50 p-4">
+                <div className="font-semibold text-gray-500 text-xs">Total Members</div>
+                <div className="mt-1 font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">{totalMembersValue}</div>
+              </div>
             </div>
           </div>
         )}

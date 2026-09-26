@@ -1,6 +1,6 @@
 import Member from "../models/memberModel.js"
 import Attendance from "../models/attendanceModel.js"
-import Event from "../models/eventModel.js"; 
+import Program from "../models/programModel.js"; 
 import Offering from "../models/financeModel/offeringModel.js";
 import Visitor from "../models/visitorsModel.js";
 import { withCacheJson } from "../utils/cache.js";
@@ -326,17 +326,17 @@ const getDashboardWidget = async (req, res) => {
           .select("firstName lastName createdAt status phoneNumber ageGroup city profileImageUrl photoUrl")
           .lean();
 
-        // --- 3. Upcoming Events ---
-        const upcomingEvents = await Event.find({
+        // --- 3. Upcoming Programs ---
+        const upcomingPrograms = await Program.find({
           ...query,
           $or: [
-            // Single-day future events
+            // Single-day future programs
             {
               dateTo: { $exists: false },
               dateFrom: { $gt: today }
             },
 
-            // Multi-day events that start in the future
+            // Multi-day programs that start in the future
             {
               dateFrom: { $gt: today },
               dateTo: { $gt: today }
@@ -353,7 +353,7 @@ const getDashboardWidget = async (req, res) => {
           dashboardWidget: {
             upcomingBirthdays,
             recentMembers,
-            upcomingEvents
+            upcomingPrograms
           }
         };
       }
