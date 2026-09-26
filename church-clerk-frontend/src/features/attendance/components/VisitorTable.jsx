@@ -33,7 +33,7 @@ function StatusChip({ value }) {
   );
 }
 
-function VisitorTable({ onEdit, onDeleted }) {
+function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error, onPage, showLogColumn }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
   const { toPage } = useDashboardNavigator();
@@ -56,15 +56,19 @@ function VisitorTable({ onEdit, onDeleted }) {
   const canDelete = useMemo(() => (typeof can === "function" ? can("visitors", "delete") : false), [can]);
   const canConvert = useMemo(() => (typeof can === "function" ? can("visitors", "convert") : false), [can]);
 
+  const pg = pagination || store?.visitorPagination;
+
   const onPrev = async () => {
-    const prevPage = store?.visitorPagination?.prevPage;
+    const prevPage = pg?.prevPage;
     if (!prevPage) return;
+    if (onPage) return onPage(prevPage);
     await store?.fetchVisitors({ page: prevPage });
   };
 
   const onNext = async () => {
-    const nextPage = store?.visitorPagination?.nextPage;
+    const nextPage = pg?.nextPage;
     if (!nextPage) return;
+    if (onPage) return onPage(nextPage);
     await store?.fetchVisitors({ page: nextPage });
   };
 
@@ -156,7 +160,10 @@ function VisitorTable({ onEdit, onDeleted }) {
     );
   };
 
-  if (store?.visitorLoading) {
+  const isLoading = loading !== undefined ? loading : store?.visitorLoading;
+  const tableError = error !== undefined ? error : store?.visitorError;
+
+  if (isLoading) {
     return (
       <div className="overflow-x-auto animate-pulse">
         <table className="min-w-full">
@@ -187,17 +194,28 @@ function VisitorTable({ onEdit, onDeleted }) {
     );
   }
 
-  if (store?.visitorError) {
+  if (tableError) {
     return (
       <div className="p-4 md:p-6 lg:p-8">
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{store.visitorError}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{tableError}</div>
       </div>
     );
   }
 
-  const rows = Array.isArray(store?.visitors) ? store.visitors : [];
+  const rows = visitors !== undefined
+    ? (Array.isArray(visitors) ? visitors : [])
+    : (Array.isArray(store?.visitors) ? store.visitors : []);
 
   if (!rows.length) {
+    if (visitors !== undefined) {
+      return (
+        <EmptyState
+          illustration="visitors"
+          title="No visitors yet"
+          description="Add visitors to this log to start tracking them."
+        />
+      );
+    }
     const filters = store?.visitorFilters || {};
     const reason = resolveEmptyReason({
       search: filters.search,
@@ -239,6 +257,9 @@ function VisitorTable({ onEdit, onDeleted }) {
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Invited By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Source</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Service Type</th>
+              {showLogColumn ? (
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Log</th>
+              ) : null}
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Visit Date</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
@@ -256,6 +277,11 @@ function VisitorTable({ onEdit, onDeleted }) {
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.invitedBy || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.source || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.serviceType || "-"}</td>
+                {showLogColumn ? (
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
+                    {row?.visitorLog?.serviceType ? `${row.visitorLog.serviceType} — ${formatDate(row.visitorLog.serviceDate)}` : "-"}
+                  </td>
+                ) : null}
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                   <StatusChip value={row?.status} />
                 </td>
@@ -283,16 +309,16 @@ function VisitorTable({ onEdit, onDeleted }) {
         <button
           type="button"
           onClick={onPrev}
-          disabled={!store?.visitorPagination?.prevPage}
+          disabled={!pg?.prevPage}
           className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
         >
           Prev
         </button>
-        <div className="text-gray-600 text-sm">Page {store?.visitorPagination?.currentPage || 1}</div>
+        <div className="text-gray-600 text-sm">Page {pg?.currentPage || 1}</div>
         <button
           type="button"
           onClick={onNext}
-          disabled={!store?.visitorPagination?.nextPage}
+          disabled={!pg?.nextPage}
           className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
         >
           Next
@@ -416,6 +442,15 @@ function VisitorTable({ onEdit, onDeleted }) {
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                     <div className="font-semibold text-gray-500 text-xs">Service Date</div>
                     <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(detailsVisitor?.serviceDate)}</div>
+                  </div>
+
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Visitors Log</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">
+                      {detailsVisitor?.visitorLog?.serviceType
+                        ? `${detailsVisitor.visitorLog.serviceType} — ${formatDate(detailsVisitor.visitorLog.serviceDate)}`
+                        : "-"}
+                    </div>
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">

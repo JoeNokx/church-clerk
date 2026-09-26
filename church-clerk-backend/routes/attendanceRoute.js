@@ -4,6 +4,13 @@ import {getAllAttendances, createAttendance, updateAttendance, deleteAttendance,
     createVisitor, getSingleVisitor, getAllVisitors, updateVisitor, deleteVisitor
 } from "../controller/attendanceController.js"
 import {
+  createVisitorLog,
+  getAllVisitorLogs,
+  getSingleVisitorLog,
+  updateVisitorLog,
+  deleteVisitorLog
+} from "../controller/visitorLogController.js"
+import {
   createServiceIndividualAttendance,
   getAllServiceIndividualAttendances,
   getSingleServiceIndividualAttendance,
@@ -114,6 +121,59 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("visitors", "read"),
   getAllVisitors
+);
+
+
+// Visitors Logs
+router.get(
+  "/visitor-logs",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("visitors", "read"),
+  getAllVisitorLogs
+);
+router.post(
+  "/visitor-logs",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("visitors", "create"),
+  createVisitorLog
+);
+router.get(
+  "/visitor-logs/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("visitors", "read"),
+  getSingleVisitorLog
+);
+router.put(
+  "/visitor-logs/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("visitors", "update"),
+  updateVisitorLog
+);
+router.delete(
+  "/visitor-logs/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("visitors", "delete"),
+  deleteVisitorLog
 );
 
 

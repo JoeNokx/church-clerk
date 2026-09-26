@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Attendance from "../models/attendanceModel.js"
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import { buildPaginationParams, buildPaginationResponse } from "../utils/paginationHelper.js";
@@ -148,6 +149,7 @@ const deleteAttendance = async (req, res) => {
 
 // create visitor
 import Visitor from "../models/visitorsModel.js";
+import VisitorLog from "../models/visitorLogModel.js";
 
 const createVisitor = async (req, res) => {
   try {
@@ -161,10 +163,19 @@ const createVisitor = async (req, res) => {
       invitedBy,
       source,
       status,
-      note
+      note,
+      visitorLog
     } = req.body;
 
-    if (!fullName || !phoneNumber || !location || !serviceType) {
+    let log = null;
+    if (visitorLog) {
+      log = await VisitorLog.findOne({ _id: visitorLog, church: req.activeChurch._id });
+      if (!log) {
+        return res.status(404).json({ message: "visitors log not found" });
+      }
+    }
+
+    if (!fullName || !phoneNumber || !location || (!serviceType && !log)) {
       return res.status(400).json({
         message: "fullName, phoneNumber, location and serviceType are required",
       });
@@ -182,14 +193,18 @@ const createVisitor = async (req, res) => {
       phoneNumber: validatedPhoneNumber,
       email,
       location,
-      serviceType,
-      serviceDate,
+      serviceType: log ? log.serviceType : serviceType,
+      serviceDate: log ? log.serviceDate : serviceDate,
       invitedBy,
       source,
       note,
       church: req.activeChurch._id,
       createdBy: req.user._id
     };
+
+    if (log) {
+      data.visitorLog = log._id;
+    }
 
     if (status) {
       data.status = status;
@@ -218,7 +233,7 @@ const getSingleVisitor = async (req, res) => {
         const {id} = req.params;
         const query = { _id: id, church: req.activeChurch._id }
 
-        const visitor = await Visitor.findOne(query)
+        const visitor = await Visitor.findOne(query).populate("visitorLog", "serviceType serviceDate referenceId")
 
         if(!visitor) {
             return res.status(404).json({message: "visitor not found"})
@@ -239,7 +254,7 @@ import { annotateDeletable } from "../services/recordDependencyService.js";
 
 const getAllVisitors = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "", serviceType = "", source: sourceFilter = "", dateFrom = "", dateTo = "" } = req.query;
+    const { page = 1, limit = 10, search = "", serviceType = "", source: sourceFilter = "", dateFrom = "", dateTo = "", visitorLog = "" } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -261,6 +276,10 @@ const getAllVisitors = async (req, res) => {
 
     if (sourceFilter) {
       query.source = sourceFilter;
+    }
+
+    if (visitorLog && mongoose.Types.ObjectId.isValid(visitorLog)) {
+      query.visitorLog = visitorLog;
     }
 
     if (dateFrom || dateTo) {
@@ -305,7 +324,8 @@ const getAllVisitors = async (req, res) => {
       convertedVisitorsPrev
     ] = await Promise.all([
       Visitor.find(query)
-        .select("fullName phoneNumber email location serviceType serviceDate invitedBy source status church")
+        .select("fullName phoneNumber email location serviceType serviceDate invitedBy source status church visitorLog")
+        .populate("visitorLog", "serviceType serviceDate referenceId")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)
@@ -398,6 +418,15 @@ const updateVisitor = async (req, res) => {
     try {
         const {id} = req.params;
         const query = { _id: id, church: req.activeChurch._id }
+
+        if (req.body?.visitorLog !== undefined && req.body.visitorLog) {
+          const log = await VisitorLog.findOne({ _id: req.body.visitorLog, church: req.activeChurch._id });
+          if (!log) {
+            return res.status(404).json({ message: "visitors log not found" });
+          }
+          req.body.serviceType = log.serviceType;
+          req.body.serviceDate = log.serviceDate;
+        }
 
         if (req.body?.phoneNumber !== undefined) {
           const rawPhone = String(req.body.phoneNumber || "").trim();

@@ -23,7 +23,13 @@ import {
   deleteServiceIndividualAttendance,
   getAttendanceCheckInLink,
   generateAttendanceCheckInLink,
-  revokeAttendanceCheckInLink
+  revokeAttendanceCheckInLink,
+  getVisitorLogs,
+  createVisitorLog,
+  getVisitorLog,
+  updateVisitorLog,
+  deleteVisitorLog,
+  getVisitors
 } from "../services/attendance.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
@@ -31,6 +37,7 @@ import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import debounce from "../../../shared/utils/debounce.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
@@ -103,6 +110,41 @@ function AttendancePageInner() {
   // --- visitors tab ---
   const [isVisitorFormOpen, setIsVisitorFormOpen] = useState(false);
   const [editingVisitor, setEditingVisitor] = useState(null);
+  const [visitorViewAll, setVisitorViewAll] = useState(false);
+
+  // visitor logs (card list)
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState("");
+  const [visitorLogs, setVisitorLogs] = useState([]);
+  const [logsPagination, setLogsPagination] = useState({ currentPage: 1, prevPage: null, nextPage: null });
+  const [logServiceTypeFilter, setLogServiceTypeFilter] = useState("");
+  const [logDateFrom, setLogDateFrom] = useState("");
+  const [logDateTo, setLogDateTo] = useState("");
+  const [logSearch, setLogSearch] = useState("");
+  const [logSearchApplied, setLogSearchApplied] = useState("");
+
+  // selected log detail
+  const [logViewing, setLogViewing] = useState(null);
+  const [logViewError, setLogViewError] = useState("");
+  const [logVisitors, setLogVisitors] = useState([]);
+  const [logVisitorsLoading, setLogVisitorsLoading] = useState(false);
+  const [logVisitorsError, setLogVisitorsError] = useState("");
+  const [logVisitorsPagination, setLogVisitorsPagination] = useState({ currentPage: 1, prevPage: null, nextPage: null });
+
+  // log create/edit form
+  const [logFormModalOpen, setLogFormModalOpen] = useState(false);
+  const [logFormMode, setLogFormMode] = useState("create");
+  const [logFormEditing, setLogFormEditing] = useState(null);
+  const [logFormDate, setLogFormDate] = useState("");
+  const [logFormServiceType, setLogFormServiceType] = useState("");
+  const [logFormNote, setLogFormNote] = useState("");
+  const [logFormSaving, setLogFormSaving] = useState(false);
+  const [logFormError, setLogFormError] = useState("");
+
+  // log delete confirm
+  const [logConfirmOpen, setLogConfirmOpen] = useState(false);
+  const [logConfirmId, setLogConfirmId] = useState(null);
+  const [logConfirmLoading, setLogConfirmLoading] = useState(false);
 
   // --- individual attendance tab ---
   const [indivLoading, setIndivLoading] = useState(false);
@@ -123,7 +165,7 @@ function AttendancePageInner() {
   const [indivSpeakerSearch, setIndivSpeakerSearch] = useState("");
 
   const [indivMembersLoading, setIndivMembersLoading] = useState(false);
-  const [indivMembersError, setIndivMembersError] = useState("");
+  const [, setIndivMembersError] = useState("");
   const [indivMembers, setIndivMembers] = useState([]);
 
   const [indivViewLoading, setIndivViewLoading] = useState(false);
@@ -162,6 +204,8 @@ function AttendancePageInner() {
   const canUpdateAttendance = useMemo(() => (typeof can === "function" ? can("attendance", "update") : false), [can]);
   const canDeleteAttendance = useMemo(() => (typeof can === "function" ? can("attendance", "delete") : false), [can]);
   const canCreateVisitor = useMemo(() => (typeof can === "function" ? can("visitors", "create") : false), [can]);
+  const canUpdateVisitor = useMemo(() => (typeof can === "function" ? can("visitors", "update") : false), [can]);
+  const canDeleteVisitor = useMemo(() => (typeof can === "function" ? can("visitors", "delete") : false), [can]);
 
   const activeChurchId = churchStore?.activeChurch?._id || null;
   const { toPage } = useDashboardNavigator();
@@ -378,7 +422,7 @@ function AttendancePageInner() {
           const lRes = await getAttendanceCheckInLink(row._id);
           setIndivLinkToken(lRes?.data?.token || null);
           setIndivLinkActive(lRes?.data?.active || false);
-        } catch (_) {}
+        } catch { /* check-in link status is optional */ }
       }
     } catch (e) {
       setIndivViewError(e?.response?.data?.message || e?.message || "Failed to load attendance");
@@ -449,6 +493,147 @@ function AttendancePageInner() {
     await store?.fetchVisitors?.();
   }, [store]);
 
+  // --- visitor logs ---
+  const loadVisitorLogs = useCallback(async (page = 1) => {
+    if (!activeChurchId) return;
+    setLogsLoading(true);
+    setLogsError("");
+    try {
+      const params = { page, limit: 10 };
+      if (logSearchApplied) params.search = logSearchApplied;
+      if (logServiceTypeFilter) params.serviceType = logServiceTypeFilter;
+      if (logDateFrom) params.dateFrom = logDateFrom;
+      if (logDateTo) params.dateTo = logDateTo;
+      const res = await getVisitorLogs(params);
+      const payload = res?.data?.data ?? res?.data;
+      setVisitorLogs(Array.isArray(payload?.visitorLogs) ? payload.visitorLogs : []);
+      setLogsPagination(payload?.pagination || { currentPage: page, prevPage: null, nextPage: null });
+    } catch (e) {
+      setLogsError(e?.response?.data?.message || e?.message || "Failed to load visitors logs");
+      setVisitorLogs([]);
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [activeChurchId, logServiceTypeFilter, logDateFrom, logDateTo, logSearchApplied]);
+
+  const debouncedLogSearch = useMemo(() => debounce((v) => setLogSearchApplied(v), 400), []);
+
+  useEffect(() => () => debouncedLogSearch.cancel(), [debouncedLogSearch]);
+
+  const onLogSearchChange = (v) => {
+    setLogSearch(v);
+    debouncedLogSearch(v);
+  };
+
+  const loadLogVisitors = useCallback(async (logId, page = 1) => {
+    if (!logId) return;
+    setLogVisitorsLoading(true);
+    setLogVisitorsError("");
+    try {
+      const res = await getVisitors({ visitorLog: logId, page, limit: 10 });
+      const payload = res?.data?.data ?? res?.data;
+      setLogVisitors(Array.isArray(payload?.visitors) ? payload.visitors : []);
+      setLogVisitorsPagination(payload?.pagination || { currentPage: page, prevPage: null, nextPage: null });
+    } catch (e) {
+      setLogVisitorsError(e?.response?.data?.message || e?.message || "Failed to load visitors");
+      setLogVisitors([]);
+    } finally {
+      setLogVisitorsLoading(false);
+    }
+  }, []);
+
+  const openLogView = useCallback(async (log) => {
+    if (!log?._id) return;
+    setVisitorViewAll(false);
+    setLogViewError("");
+    setLogViewing(log);
+    setLogVisitors([]);
+    setLogVisitorsPagination({ currentPage: 1, prevPage: null, nextPage: null });
+    try {
+      const res = await getVisitorLog(log._id);
+      const payload = res?.data?.data ?? res?.data;
+      if (payload?.visitorLog) setLogViewing(payload.visitorLog);
+    } catch { /* keep the list row data if the detail fetch fails */ }
+    await loadLogVisitors(log._id, 1);
+  }, [loadLogVisitors]);
+
+  const openLogForm = (mode, row) => {
+    setLogFormError("");
+    setLogFormMode(mode);
+    setLogFormEditing(row || null);
+    setLogFormDate((row?.serviceDate || "").slice(0, 10));
+    setLogFormServiceType(row?.serviceType || "");
+    setLogFormNote(row?.note || "");
+    setLogFormModalOpen(true);
+  };
+
+  const submitLogForm = async (e) => {
+    e.preventDefault();
+    if (logFormSaving) return;
+    setLogFormError("");
+    if (!logFormDate) { setLogFormError("Date is required"); return; }
+    if (!logFormServiceType.trim()) { setLogFormError("Service type is required"); return; }
+
+    const payload = {
+      serviceType: logFormServiceType.trim(),
+      serviceDate: logFormDate,
+      note: logFormNote.trim()
+    };
+
+    setLogFormSaving(true);
+    try {
+      if (logFormMode === "edit") {
+        const logId = logFormEditing?._id;
+        if (!logId) return;
+        await updateVisitorLog(logId, payload);
+        setLogFormModalOpen(false);
+        setLogFormEditing(null);
+        await loadVisitorLogs(logsPagination?.currentPage || 1);
+        if (logViewing?._id === logId) {
+          await openLogView({ _id: logId });
+        }
+      } else {
+        const res = await createVisitorLog(payload);
+        const created = res?.data?.visitorLog ?? res?.data?.data?.visitorLog;
+        setLogFormModalOpen(false);
+        setLogFormEditing(null);
+        await loadVisitorLogs(1);
+        if (created?._id) {
+          await openLogView(created);
+        }
+      }
+    } catch (e2) {
+      setLogFormError(e2?.response?.data?.message || e2?.message || "Failed to save visitors log");
+    } finally {
+      setLogFormSaving(false);
+    }
+  };
+
+  const doDeleteLog = async () => {
+    if (!logConfirmId) return;
+    setLogConfirmLoading(true);
+    try {
+      await deleteVisitorLog(logConfirmId);
+      setLogConfirmOpen(false);
+      setLogConfirmId(null);
+      if (logViewing?._id === logConfirmId) setLogViewing(null);
+      await loadVisitorLogs(1);
+      await refreshVisitors();
+    } catch (e) {
+      setLogsError(e?.response?.data?.message || e?.message || "Delete failed");
+      setLogConfirmOpen(false);
+    } finally {
+      setLogConfirmLoading(false);
+    }
+  };
+
+  const openViewAll = () => {
+    setLogViewing(null);
+    setLogViewError("");
+    setVisitorViewAll(true);
+    refreshVisitors();
+  };
+
   useEffect(() => {
     if (!activeChurchId) return;
     refreshAttendances();
@@ -458,8 +643,12 @@ function AttendancePageInner() {
   useEffect(() => {
     if (!activeChurchId) return;
     if (activeTab === "individual") loadIndivRecords(1);
-    if (activeTab === "visitors") refreshVisitors();
   }, [activeTab, activeChurchId]);
+
+  useEffect(() => {
+    if (!activeChurchId || activeTab !== "visitors") return;
+    loadVisitorLogs(1);
+  }, [activeTab, activeChurchId, loadVisitorLogs]);
 
   const closeAttendanceForm = () => { setIsAttendanceFormOpen(false); setEditingAttendance(null); };
   const closeVisitorForm = () => { setIsVisitorFormOpen(false); setEditingVisitor(null); };
@@ -494,11 +683,11 @@ function AttendancePageInner() {
               <button
                 type="button"
                 data-hq-action="true"
-                onClick={() => guarded(() => { setEditingVisitor(null); setIsVisitorFormOpen(true); })}
+                onClick={() => guarded(() => openLogForm("create", null))}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
-                Add Visitor
+                New Log
               </button>
             ) : null}
           </div>
@@ -512,7 +701,7 @@ function AttendancePageInner() {
             { key: "visitors", label: "Visitors" },
           ]}
           activeTab={activeTab}
-          onChange={(key) => { setActiveTab(key); setIndivViewing(null); }}
+          onChange={(key) => { setActiveTab(key); setIndivViewing(null); setLogViewing(null); setVisitorViewAll(false); }}
           sticky={false}
           className="mt-4"
         />
@@ -1077,7 +1266,6 @@ function AttendancePageInner() {
                 )}
               </div>
             </div>
-          )}
 
           {/* Start / Edit Attendance modal */}
           <SimpleModal
@@ -1297,23 +1485,324 @@ function AttendancePageInner() {
             />
           </KpiGrid>
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-            <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
-              <div>
-                <div className="font-semibold text-gray-900 text-sm">Visitors Records</div>
-                <div className="text-gray-500 text-xs hidden md:block">All visitors and their details</div>
+          {/* Master-detail layout: log cards on left, log visitors on right */}
+          <div className="mt-6 flex flex-col lg:flex-row gap-4">
+            {/* LEFT: visitor log cards */}
+            <div className={`lg:w-[380px] lg:shrink-0 ${visitorViewAll ? "hidden" : logViewing ? "hidden lg:block" : "block"}`}>
+              <div className="rounded-xl border border-gray-200 bg-white">
+                {/* Header with filters */}
+                <div className="flex flex-col gap-2 border-b border-gray-200 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">Visitor Logs</div>
+                      <div className="text-gray-500 text-xs hidden md:block">Group visitors by service</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={openViewAll}
+                      className="inline-flex shrink-0 items-center gap-0.5 font-semibold text-blue-600 hover:text-blue-700 text-xs"
+                    >
+                      View All
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </button>
+                  </div>
+                  {/* Desktop filters */}
+                  <div className="hidden md:flex items-center gap-2">
+                    <input
+                      value={logSearch}
+                      onChange={(e) => onLogSearchChange(e.target.value)}
+                      placeholder="Search logs..."
+                      className="h-9 flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-2.5 text-gray-700 text-xs outline-none focus:ring-2 focus:ring-blue-100"
+                    />
+                    <div className="relative shrink-0 w-[110px]">
+                      <select
+                        value={logServiceTypeFilter}
+                        onChange={(e) => setLogServiceTypeFilter(e.target.value)}
+                        className="h-9 w-full appearance-none rounded-lg border border-gray-200 bg-white pl-2.5 pr-6 text-gray-700 text-xs outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer truncate"
+                      >
+                        <option value="">Services</option>
+                        {serviceTypeOptions.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute inset-y-0 right-[4px] flex items-center">
+                        <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 text-gray-400"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </span>
+                    </div>
+                    <DateRangeFilter appliedFrom={logDateFrom} appliedTo={logDateTo} onApply={(from, to) => { setLogDateFrom(from); setLogDateTo(to); }} />
+                  </div>
+                  {/* Mobile: filter bar */}
+                  <MobileFilterBar
+                    searchValue={logSearch}
+                    onSearchChange={onLogSearchChange}
+                    searchPlaceholder="Search logs..."
+                    dateFrom={logDateFrom}
+                    dateTo={logDateTo}
+                    onDateApply={(from, to) => { setLogDateFrom(from); setLogDateTo(to); }}
+                    filters={[{
+                      key: "serviceType",
+                      label: "Service Type",
+                      value: logServiceTypeFilter,
+                      defaultValue: "",
+                      options: [{ label: "All Services", value: "" }, ...serviceTypeOptions.map((c) => ({ label: c, value: c }))],
+                    }]}
+                    onApply={(pending) => setLogServiceTypeFilter(pending.serviceType || "")}
+                    resultCount={visitorLogs.length}
+                    className="md:hidden"
+                  />
+                </div>
+
+                {/* Log card list */}
+                {logsError ? (
+                  <div className="p-4 text-red-700 text-sm">{logsError}</div>
+                ) : logsLoading ? (
+                  <div className="p-4 space-y-2 animate-pulse">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-14 rounded-lg bg-gray-100" />
+                    ))}
+                  </div>
+                ) : visitorLogs.length === 0 ? (
+                  <EmptyState compact illustration="visitors" title="No visitor logs yet" description="Create a visitors log to start recording visitors for a service." />
+                ) : (
+                  <div className="p-2 space-y-1.5 max-h-[600px] overflow-y-auto">
+                    {visitorLogs.map((log, idx) => {
+                      const isSelected = !visitorViewAll && logViewing?._id === log?._id;
+                      return (
+                        <div
+                          key={log?._id || idx}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => void openLogView(log)}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void openLogView(log); } }}
+                          className={`cck-allow-icons w-full text-left rounded-lg border p-2.5 transition-colors flex items-center gap-2.5 cursor-pointer ${isSelected ? "border-blue-400 bg-blue-50" : "border-gray-100 bg-white hover:bg-gray-50 hover:border-gray-200"}`}
+                        >
+                          <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="1.8" /><path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="1.8" /><path d="M3 20c0-3 2-5 5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M21 20c0-3-2-5-5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M8 20c0-3 1.8-5 4-5s4 2 4 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="font-semibold text-gray-900 text-xs truncate">{formatDay(log?.serviceDate) || "-"}, {formatDate(log?.serviceDate)}</div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {canUpdateVisitor ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); guarded(() => openLogForm("edit", log)); }}
+                                    className="cck-allow-icons h-6 w-6 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                                  </button>
+                                ) : null}
+                                {canDeleteVisitor ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); guarded(() => { setLogConfirmId(log?._id); setLogConfirmOpen(true); }); }}
+                                    className="cck-allow-icons h-6 w-6 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50"
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
+                            <div className="text-gray-500 text-[11px] truncate">{log?.serviceType || "Service"}</div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="inline-flex items-center gap-0.5 text-blue-600 text-[10px] font-semibold">
+                                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="2" /><path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="2" /><path d="M8 20c0-3 1.8-5 4-5s4 2 4 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                                {Number(log?.visitorCount ?? 0)} visitor{Number(log?.visitorCount ?? 0) === 1 ? "" : "s"}
+                              </span>
+                            </div>
+                          </div>
+                          <svg viewBox="0 0 24 24" fill="none" className={`h-4 w-4 shrink-0 transition-colors ${isSelected ? "text-blue-500" : "text-gray-300"}`}><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {!logsLoading && visitorLogs.length > 0 ? (
+                  <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-gray-200">
+                    <button type="button" onClick={() => loadVisitorLogs(logsPagination?.prevPage)} disabled={!logsPagination?.prevPage} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
+                    <div className="text-gray-600 text-sm">Page {logsPagination?.currentPage || 1}</div>
+                    <button type="button" onClick={() => loadVisitorLogs(logsPagination?.nextPage)} disabled={!logsPagination?.nextPage} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                  </div>
+                ) : null}
               </div>
-              <VisitorFilters />
             </div>
-            <VisitorTable onEdit={(row) => guarded(() => { setEditingVisitor(row); setIsVisitorFormOpen(true); })} onDeleted={refreshVisitors} />
+
+            {/* RIGHT: details outlet */}
+            <div className={visitorViewAll ? "w-full min-w-0" : "flex-1 min-w-0"}>
+              {/* Back button */}
+              {logViewing || visitorViewAll ? (
+                <button
+                  type="button"
+                  onClick={() => { setLogViewing(null); setLogViewError(""); setVisitorViewAll(false); }}
+                  className={`${visitorViewAll ? "" : "lg:hidden"} mb-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm`}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  Back to list
+                </button>
+              ) : null}
+
+              {visitorViewAll ? (
+                <div className="rounded-xl border border-gray-200 bg-white">
+                  <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">All Visitors</div>
+                      <div className="text-gray-500 text-xs">Every visitor across all logs</div>
+                    </div>
+                    <VisitorFilters />
+                  </div>
+                  <VisitorTable
+                    showLogColumn
+                    onEdit={(row) => guarded(() => { setEditingVisitor(row); setIsVisitorFormOpen(true); })}
+                    onDeleted={refreshVisitors}
+                  />
+                </div>
+              ) : !logViewing || logViewError ? (
+                <div className="hidden lg:flex rounded-xl border border-gray-200 bg-white p-8 h-full flex-col items-center justify-center text-center min-h-[400px]">
+                  <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7"><path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="1.8" /><path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="1.8" /><path d="M3 20c0-3 2-5 5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M21 20c0-3-2-5-5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M8 20c0-3 1.8-5 4-5s4 2 4 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  </div>
+                  <div className="mt-4 font-semibold text-gray-900 text-sm">Select a visitors log</div>
+                  <div className="mt-1 text-gray-500 text-xs max-w-xs">Create a log for a service, then click its card to add and manage visitors.</div>
+                  {logViewError ? (
+                    <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{logViewError}</div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-white">
+                  {/* Log details header */}
+                  <div className="border-b border-gray-200 p-4 md:p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-sm">{formatDay(logViewing?.serviceDate) || "-"}, {formatDate(logViewing?.serviceDate)}</h3>
+                        <div className="text-gray-500 text-xs mt-0.5">{logViewing?.serviceType || "-"}{logViewing?.referenceId ? ` · ${logViewing.referenceId}` : ""}</div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {canCreateVisitor ? (
+                          <button
+                            type="button"
+                            onClick={() => guarded(() => { setEditingVisitor(null); setIsVisitorFormOpen(true); })}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                            Add Visitor
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="2" /><path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="2" /><path d="M8 20c0-3 1.8-5 4-5s4 2 4 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                        {Number(logViewing?.visitorCount ?? logVisitorsPagination?.totalResult ?? logVisitors.length)} Visitors
+                      </span>
+                    </div>
+                    {logViewing?.note ? (
+                      <div className="mt-2 text-gray-500 text-xs">{logViewing.note}</div>
+                    ) : null}
+                  </div>
+
+                  {/* Visitors in this log */}
+                  <VisitorTable
+                    visitors={logVisitors}
+                    pagination={logVisitorsPagination}
+                    loading={logVisitorsLoading}
+                    error={logVisitorsError}
+                    onPage={(p) => loadLogVisitors(logViewing?._id, p)}
+                    onEdit={(row) => guarded(() => { setEditingVisitor(row); setIsVisitorFormOpen(true); })}
+                    onDeleted={() => { loadLogVisitors(logViewing?._id, logVisitorsPagination?.currentPage || 1); loadVisitorLogs(logsPagination?.currentPage || 1); refreshVisitors(); }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Create / Edit log modal */}
+          <SimpleModal
+            open={logFormModalOpen}
+            title={logFormMode === "edit" ? "Edit Visitors Log" : "Create Visitors Log"}
+            onClose={() => { if (!logFormSaving) { setLogFormModalOpen(false); setLogFormError(""); } }}
+          >
+            <form onSubmit={submitLogForm}>
+              {logFormError ? (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{logFormError}</div>
+              ) : null}
+              {logFormMode === "create" ? (
+                <p className="mb-5 text-gray-500 text-sm">Create a visitors log for a service. Visitors you add will be grouped under this log.</p>
+              ) : null}
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Service Date</label>
+                  <input
+                    value={logFormDate}
+                    onChange={(e) => setLogFormDate(e.target.value)}
+                    type="date"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
+                    {(canCreateVisitor || canUpdateVisitor) ? (
+                      <AddLookupValueButton label="+ Add" kind="serviceType" onCreated={async (value) => { await reloadServiceTypes(); setLogFormServiceType(value); }} />
+                    ) : null}
+                  </div>
+                  <select
+                    value={logFormServiceType}
+                    onChange={(e) => setLogFormServiceType(e.target.value)}
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  >
+                    <option value="">Select service type</option>
+                    {serviceTypeOptions.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block font-semibold text-gray-500 text-xs">Note (optional)</label>
+                  <textarea
+                    value={logFormNote}
+                    onChange={(e) => setLogFormNote(e.target.value)}
+                    rows={2}
+                    placeholder="e.g. Easter Sunday special program"
+                    className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
+                <button type="button" onClick={() => { setLogFormModalOpen(false); setLogFormError(""); }} disabled={logFormSaving} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm">Cancel</button>
+                <Button type="submit" variant="primary" loading={logFormSaving} loadingText={logFormMode === "edit" ? "Updating..." : "Creating..."} className="rounded-lg px-4 py-2 text-sm">
+                  {logFormMode === "edit" ? "Update" : "Create Log"}
+                </Button>
+              </div>
+            </form>
+          </SimpleModal>
+
+          {/* Delete log confirm modal */}
+          <SimpleModal open={logConfirmOpen} title="Delete Visitors Log" onClose={() => { setLogConfirmOpen(false); setLogConfirmId(null); }}>
+            <div className="text-gray-700 text-sm">Delete this visitors log? Its visitors will be kept and can still be seen under View All.</div>
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button type="button" onClick={() => { setLogConfirmOpen(false); setLogConfirmId(null); }} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm">Cancel</button>
+              <button type="button" onClick={doDeleteLog} disabled={logConfirmLoading} className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:opacity-50 text-sm">
+                {logConfirmLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </SimpleModal>
 
           <VisitorForm
             open={isVisitorFormOpen}
             mode={editingVisitor?._id ? "edit" : "create"}
             initialData={editingVisitor}
+            log={editingVisitor ? null : logViewing}
             onClose={closeVisitorForm}
-            onSuccess={() => { closeVisitorForm(); refreshVisitors(); }}
+            onSuccess={() => {
+              closeVisitorForm();
+              refreshVisitors();
+              if (logViewing?._id) {
+                loadLogVisitors(logViewing._id, logVisitorsPagination?.currentPage || 1);
+                loadVisitorLogs(logsPagination?.currentPage || 1);
+              }
+            }}
           />
         </>
       ) : null}

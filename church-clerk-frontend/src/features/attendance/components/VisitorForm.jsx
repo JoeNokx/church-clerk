@@ -19,9 +19,11 @@ const SERVICE_TYPES = [
   "Prayer Meeting"
 ];
 
-function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
+function VisitorForm({ open, mode, initialData, log, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
+
+  const logContext = log || (initialData?.visitorLog && typeof initialData.visitorLog === "object" ? initialData.visitorLog : null);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("visitors", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("visitors", "update") : false), [can]);
@@ -83,7 +85,13 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
     setInvitedBy("");
     setSource("");
     setNote("");
-  }, [open, mode, initialData]);
+  }, [open, mode, initialData, log]);
+
+  useEffect(() => {
+    if (!open || !logContext) return;
+    setServiceType(logContext.serviceType || "");
+    setServiceDate((logContext.serviceDate || "").slice(0, 10));
+  }, [open, logContext]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -139,6 +147,11 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
       note
     };
 
+    const logId = logContext?._id || (typeof initialData?.visitorLog === "string" ? initialData.visitorLog : "");
+    if (logId) {
+      payload.visitorLog = logId;
+    }
+
     try {
       if (mode === "edit") {
         if (!canEdit) {
@@ -187,6 +200,12 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{formError}</div>
           )}
 
+          {logContext ? (
+            <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800 text-sm">
+              {mode === "edit" ? "This visitor belongs to the log" : "Adding to visitors log"}: <span className="font-semibold">{logContext.serviceType || "-"}</span> — {logContext.serviceDate ? new Date(logContext.serviceDate).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "-"}
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="block font-semibold text-gray-500 text-xs">Full Name</label>
@@ -231,43 +250,47 @@ function VisitorForm({ open, mode, initialData, onClose, onSuccess }) {
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
-                {canCreate || canEdit ? (
-                  <AddLookupValueButton
-                    label="Add service"
-                    kind="serviceType"
-                    onCreated={async (value) => {
-                      await reloadServiceTypes();
-                      setServiceType(value);
-                    }}
-                  />
-                ) : null}
-              </div>
-              <select
-                value={serviceType}
-                onChange={(e) => setServiceType(e.target.value)}
-                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              >
-                <option value="">Select service</option>
-                {serviceTypeOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!logContext ? (
+              <>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
+                    {canCreate || canEdit ? (
+                      <AddLookupValueButton
+                        label="Add service"
+                        kind="serviceType"
+                        onCreated={async (value) => {
+                          await reloadServiceTypes();
+                          setServiceType(value);
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                  <select
+                    value={serviceType}
+                    onChange={(e) => setServiceType(e.target.value)}
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  >
+                    <option value="">Select service</option>
+                    {serviceTypeOptions.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <label className="block font-semibold text-gray-500 text-xs">Visit Date</label>
-              <input
-                value={serviceDate}
-                onChange={(e) => setServiceDate(e.target.value)}
-                type="date"
-                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              />
-            </div>
+                <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Visit Date</label>
+                  <input
+                    value={serviceDate}
+                    onChange={(e) => setServiceDate(e.target.value)}
+                    type="date"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
+                </div>
+              </>
+            ) : null}
 
             <div>
               <label className="block font-semibold text-gray-500 text-xs">Invited By</label>

@@ -36,6 +36,26 @@ export const getVisitors = async (params, config = {}) => {
   return await http.get("/attendance/visitors", { params, ...(config || {}) });
 };
 
+export const getVisitorLogs = async (params, config = {}) => {
+  return await http.get("/attendance/visitor-logs", { params, ...(config || {}) });
+};
+
+export const createVisitorLog = async (payload, config = {}) => {
+  return await http.post("/attendance/visitor-logs", payload, config || {});
+};
+
+export const getVisitorLog = async (id, config = {}) => {
+  return await http.get(`/attendance/visitor-logs/${id}`, config || {});
+};
+
+export const updateVisitorLog = async (id, payload, config = {}) => {
+  return await http.put(`/attendance/visitor-logs/${id}`, payload, config || {});
+};
+
+export const deleteVisitorLog = async (id, config = {}) => {
+  return await http.delete(`/attendance/visitor-logs/${id}`, config || {});
+};
+
 export const getServiceIndividualAttendances = async (params, config = {}) => {
   return await http.get("/attendance/individual-attendances", { params, ...(config || {}) });
 };

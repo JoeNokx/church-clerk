@@ -14,6 +14,12 @@ const visitorSchema = new mongoose.Schema(
       required: true,
     },
 
+    visitorLog: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "VisitorLog",
+      default: null,
+    },
+
     fullName: {
       type: String,
       required: true,
