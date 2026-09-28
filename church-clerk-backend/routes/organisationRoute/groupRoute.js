@@ -11,6 +11,7 @@ import {
   deleteGroupIndividualAttendance
 } from "../../controller/organisationController/groupIndividualAttendanceController.js";
 import  {createGroupOffering, updateGroupOffering, deleteGroupOffering, getAllGroupOfferings} from "../../controller/organisationController/groupOfferingController.js"
+import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense } from "../../controller/scopedExpensesController.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
 
 import { protect } from "../../middleware/authMiddleware.js";
@@ -305,6 +306,50 @@ router.put(
   requirePermission("organisation", "update"),
   conditionalImmutableGuard(),
   updateGroupOffering
+);
+
+router.post(
+  "/groups/:groupId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("organisation", "create"),
+  backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
+  createScopedExpense("group")
+);
+router.get(
+  "/groups/:groupId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("organisation", "read"),
+  getScopedExpenses("group")
+);
+router.put(
+  "/groups/:groupId/expenses/:expenseId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("organisation", "update"),
+  conditionalImmutableGuard(),
+  updateScopedExpense("group")
+);
+router.delete(
+  "/groups/:groupId/expenses/:expenseId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("organisation", "delete"),
+  conditionalImmutableGuard(),
+  deleteScopedExpense("group")
 );
 
 export default router

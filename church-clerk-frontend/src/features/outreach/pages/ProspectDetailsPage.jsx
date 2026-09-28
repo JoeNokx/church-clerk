@@ -92,6 +92,8 @@ export default function ProspectDetailsPage() {
   const location = useLocation();
   const prospectId = useMemo(() => new URLSearchParams(location.search).get("id"), [location.search]);
   const fromTab = useMemo(() => new URLSearchParams(location.search).get("from") || "people", [location.search]);
+  const fromEventId = useMemo(() => new URLSearchParams(location.search).get("eventId"), [location.search]);
+  const fromEventTab = useMemo(() => new URLSearchParams(location.search).get("eventTab") || "prospects", [location.search]);
 
   const [prospect, setProspect] = useState(null);
   const [followUps, setFollowUps] = useState([]);
@@ -118,6 +120,15 @@ export default function ProspectDetailsPage() {
     return params;
   }, [fromTab]);
 
+  // When opened from an outreach event card, Back returns to that event's exact tab
+  const goBack = useCallback(() => {
+    if (fromEventId) {
+      toPage("outreach-event-details", { id: fromEventId, from: fromTab, tab: fromEventTab });
+      return;
+    }
+    toPage("outreach", backParams);
+  }, [fromEventId, fromEventTab, fromTab, backParams, toPage]);
+
   const fetchAll = useCallback(async () => {
     if (!prospectId) return;
     setLoading(true);
@@ -143,7 +154,7 @@ export default function ProspectDetailsPage() {
     setDeleting(true);
     try {
       await deleteProspectDirect(prospect._id);
-      toPage("outreach", backParams);
+      goBack();
     } catch { } finally { setDeleting(false); }
   };
 
@@ -160,7 +171,7 @@ export default function ProspectDetailsPage() {
   if (!prospectId) return (
     <div className="text-center py-20 text-gray-500">
       <p>No person selected.</p>
-      <BackButton onClick={() => toPage("outreach", backParams)} className="mt-4 mb-0" />
+      <BackButton onClick={goBack} className="mt-4 mb-0" />
     </div>
   );
 
@@ -175,7 +186,7 @@ export default function ProspectDetailsPage() {
   if (!prospect) return (
     <div className="text-center py-20 text-gray-500">
       <p>Person not found.</p>
-      <BackButton onClick={() => toPage("outreach", backParams)} className="mt-4 mb-0" />
+      <BackButton onClick={goBack} className="mt-4 mb-0" />
     </div>
   );
 
@@ -187,7 +198,7 @@ export default function ProspectDetailsPage() {
   return (
     <div className="max-w-4xl">
       {/* Back */}
-      <BackButton onClick={() => toPage("outreach", backParams)} />
+      <BackButton onClick={goBack} />
 
       {/* Header Card */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">

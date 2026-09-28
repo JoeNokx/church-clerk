@@ -126,6 +126,16 @@ function SubscriptionStatusBanner() {
     if (isFreeTrial) {
       const remaining = trialDaysRemaining;
       const safeRemaining = remaining === null ? null : Math.max(0, remaining);
+
+      if (safeRemaining === 0) {
+        return {
+          variant: "danger",
+          title: "Free trial ended",
+          message: "Your free trial has expired. Upgrade to a paid plan to restore full access.",
+          showUpgrade: true
+        };
+      }
+
       return {
         variant: "info",
         title: "Free trial",

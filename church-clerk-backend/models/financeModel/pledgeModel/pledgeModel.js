@@ -4,6 +4,7 @@ import { generateReferenceId } from "../../../utils/generateReferenceId.js";
 const pledgeSchema = new mongoose.Schema({
   church: { type: mongoose.Schema.Types.ObjectId, ref: 'Church', required: true },
   churchProject: { type: mongoose.Schema.Types.ObjectId, ref: 'ChurchProject' },
+  event: { type: mongoose.Schema.Types.ObjectId, ref: 'Program' },
 
   name: { type: String },
   phoneNumber: { type: String, trim: true },

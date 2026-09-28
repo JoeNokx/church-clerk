@@ -64,9 +64,12 @@ const subscriptionSchema = new mongoose.Schema(
       default: "monthly"
     },
 
+    // Not required: free-tier plans have no billing cycle and carry no
+    // due date. Paid plans always set this explicitly.
     nextBillingDate: {
       type: Date,
-      required: true
+      required: false,
+      default: null
     },
 
     currency: {

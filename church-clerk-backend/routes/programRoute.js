@@ -31,6 +31,8 @@ import {
   deleteProgramOffering
 } from "../controller/programController/programOfferingController.js";
 
+import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense } from "../controller/scopedExpensesController.js";
+
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../middleware/financialGovernance.js";
 
@@ -321,6 +323,50 @@ router.put(
   requirePermission("programs", "update"),
   conditionalImmutableGuard(),
   updateProgramOffering
+);
+
+router.post(
+  "/programs/:programId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("programs", "create"),
+  backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
+  createScopedExpense("program")
+);
+router.get(
+  "/programs/:programId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("programs", "view"),
+  getScopedExpenses("program")
+);
+router.put(
+  "/programs/:programId/expenses/:expenseId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("programs", "update"),
+  conditionalImmutableGuard(),
+  updateScopedExpense("program")
+);
+router.delete(
+  "/programs/:programId/expenses/:expenseId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("programs", "delete"),
+  conditionalImmutableGuard(),
+  deleteScopedExpense("program")
 );
 
 export default router

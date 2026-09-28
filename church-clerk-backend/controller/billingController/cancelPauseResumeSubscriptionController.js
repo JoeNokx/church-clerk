@@ -2,6 +2,8 @@ import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
 import { validatePlanForChurch } from "../../utils/headquartersPremiumUtils.js";
+import { findFreeLitePlan } from "../../utils/planHelpers.js";
+import { addInterval } from "../../utils/dateBillingUtils.js";
 import {
   sendCancellationScheduledEmail,
   sendDowngradeScheduledEmail
@@ -11,7 +13,7 @@ const planRank = (name) => {
   const n = String(name || "")
     .trim()
     .toLowerCase();
-  if (n === "free lite") return 0;
+  if (n === "free lite" || n === "free" || n === "light") return 0;
   if (n === "basic") return 1;
   if (n === "standard") return 2;
   if (n === "premium") return 3;
@@ -34,14 +36,15 @@ export const cancelSubscription = async (req, res) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    const freeLite = await Plan.findOne({ name: { $regex: /^free\s*lite$/i } }).lean();
+    const freeLite = await findFreeLitePlan();
 
     if (!freeLite?._id) {
       return res.status(404).json({ message: "Free Lite plan not found" });
     }
 
     subscription.pendingPlan = freeLite._id;
-    subscription.pendingPlanEffectiveDate = subscription.nextBillingDate;
+    // Free-tier subscriptions have no nextBillingDate — apply immediately.
+    subscription.pendingPlanEffectiveDate = subscription.nextBillingDate || new Date();
     subscription.pendingPlanAction = "cancel";
 
     await subscription.save();
@@ -151,7 +154,10 @@ export const changePlan = async (req, res) => {
       graceEndsAt: null
     };
 
-    const currentName = (subscription?.status === "free trial" || subscription?.status === "trialing")
+    const isActiveTrial =
+      (subscription?.status === "free trial" || subscription?.status === "trialing") &&
+      (!subscription?.trialEnd || new Date() <= new Date(subscription.trialEnd));
+    const currentName = isActiveTrial
       ? "premium"
       : (subscription?.plan?.name || "free lite");
     const isUpgrade = planRank(newPlan?.name) > planRank(currentName);
@@ -170,10 +176,14 @@ export const changePlan = async (req, res) => {
       subscription.pendingPlanAction = null;
       subscription.status = "active";
       subscription.expiryWarning.shown = false;
+      // Upgrading from a free-tier plan (no billing date) starts a cycle.
+      if (!subscription.nextBillingDate) {
+        subscription.nextBillingDate = addInterval(new Date(), subscription.billingInterval);
+      }
     } else {
       // DOWNGRADE AT NEXT CYCLE
       subscription.pendingPlan = newPlan._id;
-      subscription.pendingPlanEffectiveDate = subscription.nextBillingDate;
+      subscription.pendingPlanEffectiveDate = subscription.nextBillingDate || new Date();
       subscription.pendingPlanAction = "downgrade";
     }
 

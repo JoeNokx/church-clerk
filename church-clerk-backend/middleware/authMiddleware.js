@@ -5,8 +5,8 @@ import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 import Church from "../models/churchModel.js";
 import { FEATURE_ROUTE_MAP, isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
-import { getSystemSettingsSnapshot } from "../controller/systemSettingsController.js";
 import { releaseExpiredTrialForChurch } from "../controller/billingController/subscriptionService.js";
+import { isFreeTierPlanName } from "../utils/planHelpers.js";
 
 
 
@@ -164,6 +164,12 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
       req.subscription = subscription || null;
 
       if (subscription) {
+        const now = new Date();
+        const isTrialStatus =
+          subscription.status === "free trial" || subscription.status === "trialing";
+        const isActiveTrial =
+          isTrialStatus &&
+          (!subscription.trialEnd || now <= new Date(subscription.trialEnd));
         if (effectiveRole === "superadmin" || effectiveRole === "supportadmin") {
           return next();
         }
@@ -188,7 +194,7 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
 
           if (isFinanceRoute) {
             let planName = "basic";
-            if (subscription.status === "free trial" || subscription.status === "trialing") {
+            if (isActiveTrial) {
               planName = "premium";
             } else if (subscription.plan) {
               const _pk = `p:${String(subscription.plan)}`;
@@ -208,33 +214,22 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
           }
         }
 
-        // --- Grace period handling: on-the-fly Free Lite assignment ---
-        const now = new Date();
+        // --- Trial expiry: trials end at trialEnd — no grace period.
+        // Grace applies to paid (past_due) subscriptions only. An expired
+        // trial is released to Free Lite immediately on the first request
+        // past trialEnd (the daily cron also does this for inactive churches).
         let effectiveSub = subscription;
-        let inTrialGracePeriod = false;
 
-        if (
-          (subscription.status === "free trial" || subscription.status === "trialing") &&
-          subscription.trialEnd &&
-          now > new Date(subscription.trialEnd)
-        ) {
+        if (isTrialStatus && subscription.trialEnd && now > new Date(subscription.trialEnd)) {
           try {
-            const { gracePeriodDays } = await getSystemSettingsSnapshot();
-            const graceMs = Number(gracePeriodDays ?? 0) * 24 * 60 * 60 * 1000;
-            const gracePassed = now.getTime() > new Date(subscription.trialEnd).getTime() + graceMs;
-
-            if (gracePassed) {
-              const updated = await releaseExpiredTrialForChurch(req.activeChurch._id);
-              if (updated) {
-                effectiveSub = updated;
-                req.subscription = updated;
-                _ac.delete(`s:${String(req.activeChurch._id)}`);
-              }
-            } else {
-              inTrialGracePeriod = true;
+            const updated = await releaseExpiredTrialForChurch(req.activeChurch._id);
+            if (updated) {
+              effectiveSub = updated;
+              req.subscription = updated;
+              _ac.delete(`s:${String(req.activeChurch._id)}`);
             }
           } catch {
-            inTrialGracePeriod = true;
+            // Release failed — isTrialExpired below still blocks writes.
           }
         }
 
@@ -244,7 +239,7 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
           const _fpk = `p:${String(effectiveSub.plan)}`;
           let freeLitePlan = _acGet(_fpk);
           if (!freeLitePlan) { freeLitePlan = await Plan.findById(effectiveSub.plan).lean(); if (freeLitePlan) _acSet(_fpk, freeLitePlan, _AC_TTL.p); }
-          const isFreeLite = String(freeLitePlan?.name || "").trim().toLowerCase() === "free lite";
+          const isFreeLite = isFreeTierPlanName(freeLitePlan?.name);
 
           if (isFreeLite && freeLitePlan) {
             const trialUsedSet = new Set(
@@ -280,7 +275,6 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
 
         // --- Block writes for fully expired/suspended subscriptions ---
         const isTrialExpired =
-          !inTrialGracePeriod &&
           (effectiveSub.status === "free trial" || effectiveSub.status === "trialing") &&
           effectiveSub.trialEnd &&
           now > new Date(effectiveSub.trialEnd);

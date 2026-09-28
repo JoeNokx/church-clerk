@@ -142,6 +142,16 @@ function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <span className="text-xs text-gray-600 capitalize">{FOLLOWUP_TYPE_LABELS[followUp.type] || followUp.type}</span>
       </td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={followUp.assignedTo ? `${followUp.assignedTo.firstName || ""} ${followUp.assignedTo.lastName || ""}`.trim() : "Unassigned"}>
+        {followUp.assignedTo ? (
+          <>
+            <span className="sm:hidden">{truncateMobileName(`${followUp.assignedTo.firstName || ""} ${followUp.assignedTo.lastName || ""}`.trim())}</span>
+            <span className="hidden sm:inline">{truncateDesktopName(`${followUp.assignedTo.firstName || ""} ${followUp.assignedTo.lastName || ""}`.trim())}</span>
+          </>
+        ) : (
+          <span className="text-xs text-gray-400">Unassigned</span>
+        )}
+      </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <Badge label={STATUS_OUTCOME_LABELS[statusKey] || statusKey?.replace(/-/g, " ") || "Not Specified"} className={STATUS_OUTCOME_STYLES[statusKey] || "bg-gray-100 text-gray-500"} />
       </td>
@@ -206,7 +216,18 @@ export default function OutreachEventDetailPage() {
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("prospects");
+  const [activeTab, setActiveTab] = useState(() => {
+    const t = new URLSearchParams(location.search).get("tab");
+    return ["prospects", "followups"].includes(t) ? t : "prospects";
+  });
+
+  // Sync tab when URL tab param changes (e.g. navigating back from prospect details)
+  useEffect(() => {
+    const t = new URLSearchParams(location.search).get("tab");
+    if (["prospects", "followups"].includes(t) && t !== activeTab) {
+      setActiveTab(t);
+    }
+  }, [location.search]);
 
   const eventTeams = useMemo(() => (Array.isArray(event?.teams) ? event.teams : []), [event]);
 
@@ -231,6 +252,7 @@ export default function OutreachEventDetailPage() {
   const [fuSearch, setFuSearch] = useState("");
   const [fuDateFrom, setFuDateFrom] = useState("");
   const [fuDateTo, setFuDateTo] = useState("");
+  const [fuAssigned, setFuAssigned] = useState(""); // "" | "assigned" | "unassigned"
 
   const [prospectsPage, setProspectsPage] = useState(1);
   const [followUpsPage, setFollowUpsPage] = useState(1);
@@ -328,8 +350,13 @@ export default function OutreachEventDetailPage() {
         return true;
       });
     }
+    if (fuAssigned === "assigned") {
+      list = list.filter((f) => Boolean(f.assignedTo));
+    } else if (fuAssigned === "unassigned") {
+      list = list.filter((f) => !f.assignedTo);
+    }
     return list;
-  }, [followUps, fuSearch, fuDateFrom, fuDateTo]);
+  }, [followUps, fuSearch, fuDateFrom, fuDateTo, fuAssigned]);
 
   const followUpsTotalPages = Math.ceil(filteredFollowUps.length / PAGE_SIZE);
   const paginatedFollowUps = filteredFollowUps.slice((followUpsPage - 1) * PAGE_SIZE, followUpsPage * PAGE_SIZE);
@@ -508,7 +535,7 @@ export default function OutreachEventDetailPage() {
 
             {prospectsLoading ? (
               <div className="p-6 space-y-3">{[0,1,2].map(i => <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />)}</div>
-            ) : prospects.length === 0 ? (
+            ) : filteredProspects.length === 0 ? (
               <div className="p-4 md:p-6 lg:p-8">
                 <EmptyState
                   compact
@@ -537,7 +564,7 @@ export default function OutreachEventDetailPage() {
                       <ProspectRow
                         key={p._id}
                         prospect={p}
-                        onView={(prospect) => toPage("prospect-details", { id: prospect._id, from: fromTab })}
+                        onView={(prospect) => toPage("prospect-details", { id: prospect._id, from: fromTab, eventId, eventTab: "prospects" })}
                         onEdit={(prospect) => guarded(() => setProspectForm({ open: true, mode: "edit", data: prospect }))}
                         onDelete={(prospect) => guarded(() => setDeleteModal({ open: true, type: "prospect", id: prospect._id, name: `${prospect.firstName} ${prospect.lastName || ""}` }))}
                         onAddFollowUp={(prospect) => guarded(() => setFollowUpForm({ open: true, mode: "create", data: null, prospectId: prospect._id }))}
@@ -583,6 +610,18 @@ export default function OutreachEventDetailPage() {
                 searchValue={fuSearch}
                 onSearchChange={(v) => { setFuSearch(v); setFollowUpsPage(1); }}
                 searchPlaceholder="Search prospect or assigned to…"
+                selects={[
+                  {
+                    key: "assigned",
+                    value: fuAssigned,
+                    onChange: (v) => { setFuAssigned(v); setFollowUpsPage(1); },
+                    placeholder: "All Follow-ups",
+                    options: [
+                      { label: "Assigned", value: "assigned" },
+                      { label: "Unassigned", value: "unassigned" },
+                    ],
+                  },
+                ]}
                 dateFrom={fuDateFrom}
                 dateTo={fuDateTo}
                 onDateApply={(from, to) => { setFuDateFrom(from); setFuDateTo(to); setFollowUpsPage(1); }}
@@ -594,20 +633,34 @@ export default function OutreachEventDetailPage() {
                 dateFrom={fuDateFrom}
                 dateTo={fuDateTo}
                 onDateApply={(from, to) => { setFuDateFrom(from); setFuDateTo(to); setFollowUpsPage(1); }}
+                filters={[
+                  {
+                    key: "assigned",
+                    label: "Assignment",
+                    value: fuAssigned,
+                    defaultValue: "",
+                    options: [
+                      { label: "All Follow-ups", value: "" },
+                      { label: "Assigned", value: "assigned" },
+                      { label: "Unassigned", value: "unassigned" },
+                    ],
+                  },
+                ]}
+                onApply={(pending) => { setFuAssigned(pending?.assigned || ""); setFollowUpsPage(1); }}
               />
             </div>
 
             {followUpsLoading ? (
               <div className="p-6 space-y-3">{[0,1,2].map(i => <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />)}</div>
-            ) : followUps.length === 0 ? (
+            ) : filteredFollowUps.length === 0 ? (
               <div className="p-4 md:p-6 lg:p-8">
                 <EmptyState
                   compact
-                  illustration={fuSearch || fuDateFrom || fuDateTo ? "search" : "followUps"}
-                  title={fuSearch || fuDateFrom || fuDateTo ? "No follow-ups found" : "No follow-ups recorded yet"}
-                  description={fuSearch || fuDateFrom || fuDateTo ? "We couldn't find any follow-ups matching your filters." : "Schedule follow-ups from the Prospects tab to stay connected with people."}
-                  actionLabel={fuSearch || fuDateFrom || fuDateTo ? "Clear Filters" : null}
-                  onAction={fuSearch || fuDateFrom || fuDateTo ? () => { setFuSearch(""); setFuDateFrom(""); setFuDateTo(""); } : undefined}
+                  illustration={fuSearch || fuDateFrom || fuDateTo || fuAssigned ? "search" : "followUps"}
+                  title={fuSearch || fuDateFrom || fuDateTo || fuAssigned ? "No follow-ups found" : "No follow-ups recorded yet"}
+                  description={fuSearch || fuDateFrom || fuDateTo || fuAssigned ? "We couldn't find any follow-ups matching your filters." : "Schedule follow-ups from the Prospects tab to stay connected with people."}
+                  actionLabel={fuSearch || fuDateFrom || fuDateTo || fuAssigned ? "Clear Filters" : null}
+                  onAction={fuSearch || fuDateFrom || fuDateTo || fuAssigned ? () => { setFuSearch(""); setFuDateFrom(""); setFuDateTo(""); setFuAssigned(""); } : undefined}
                 />
               </div>
             ) : (
@@ -618,6 +671,7 @@ export default function OutreachEventDetailPage() {
                       <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled Date</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Method</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Assigned To</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outcome</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Next Follow-Up</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>

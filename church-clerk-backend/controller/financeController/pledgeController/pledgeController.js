@@ -1,6 +1,7 @@
 import Pledge from "../../../models/financeModel/pledgeModel/pledgeModel.js"
 import PledgePayment from "../../../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import ChurchProject from "../../../models/financeModel/projectModel/churchProjectModel.js";
+import Program from "../../../models/programModel.js";
 
 import { validatePhoneNumber } from "../../../utils/validatePhoneNumber.js";
 
@@ -35,7 +36,8 @@ const createPledge = async (req, res) => {
                 pledgeDate,
                 deadline,
                 note,
-                churchProject
+                churchProject,
+                event
                 } = req.body;
 
                   if (churchProject) {
@@ -45,6 +47,16 @@ const createPledge = async (req, res) => {
                     });
                     if (!fundraiser) {
                       return res.status(404).json({ message: "Fundraiser not found" });
+                    }
+                  }
+
+                  if (event) {
+                    const program = await Program.findOne({
+                      _id: event,
+                      church: req.activeChurch._id
+                    });
+                    if (!program) {
+                      return res.status(404).json({ message: "Program not found" });
                     }
                   }
 
@@ -71,6 +83,7 @@ const createPledge = async (req, res) => {
                     note,
                     status: "Not Started",
                     churchProject: churchProject || undefined,
+                    event: event || undefined,
                     createdBy: req.user._id
                     });
 
@@ -87,7 +100,7 @@ const createPledge = async (req, res) => {
 const getAllPledge = async (req, res) => {
     
     try {
-          const { page = 1, limit = 10, search = "", serviceType, status, dateFrom, dateTo, recordedBy, churchProject } = req.query;
+          const { page = 1, limit = 10, search = "", serviceType, status, dateFrom, dateTo, recordedBy, churchProject, event } = req.query;
                 
                     const pageNum = Math.max(1, parseInt(page, 10) || 1);
                     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -111,6 +124,11 @@ const getAllPledge = async (req, res) => {
                     // Filter by linked fundraiser
                     if (churchProject) {
                       query.churchProject = churchProject;
+                    }
+
+                    // Filter by linked program
+                    if (event) {
+                      query.event = event;
                     }
 
                     // search by name, phone, or recordedBy
@@ -158,9 +176,10 @@ const getAllPledge = async (req, res) => {
                 
                     // FETCH ATTENDANCES
                     const pledges = await Pledge.find(query)
-                    .select("name phoneNumber serviceType amount pledgeDate deadline status createdBy churchProject referenceId createdAt")
+                    .select("name phoneNumber serviceType amount pledgeDate deadline status createdBy churchProject event referenceId createdAt")
                     .populate("createdBy", "fullName")
                     .populate("churchProject", "name")
+                    .populate("event", "title date")
                       .sort({ createdAt: -1 })
                       .skip(skip)
                       .limit(limitNum)
@@ -237,7 +256,7 @@ const getSinglePledge = async (req, res) => {
         const {id} = req.params;
         const query = { _id: id, church: req.activeChurch._id }
 
-        const pledges = await Pledge.findOne(query).populate("churchProject", "name")
+        const pledges = await Pledge.findOne(query).populate("churchProject", "name").populate("event", "title date")
 
         if(!pledges) {
             return res.status(404).json({message: "Pledge not found"})

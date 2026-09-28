@@ -40,8 +40,8 @@ export function ProgramOfferingPageInner() {
     <div className="w-full">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">Program Offerings</h2>
-          <p className="mt-1 text-gray-600 text-sm">Record and manage offerings collected for this program.</p>
+          <h2 className="font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">Offerings & Seeds</h2>
+          <p className="mt-1 text-gray-600 text-sm">Record and manage offerings and seeds collected for this program.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -61,8 +61,8 @@ export function ProgramOfferingPageInner() {
       <div className="mt-4 rounded-xl border border-gray-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
           <div>
-            <div className="font-semibold text-gray-900 text-sm">Offerings Records</div>
-            <div className="text-gray-500 text-xs">All offerings and their details</div>
+            <div className="font-semibold text-gray-900 text-sm">Offerings & Seeds Records</div>
+            <div className="text-gray-500 text-xs">All offerings, seeds and their details</div>
           </div>
 
           <ProgramOfferingFilters />

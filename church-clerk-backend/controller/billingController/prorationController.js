@@ -22,7 +22,7 @@ export const normalizeBillingIntervalKey = (v) => {
 
 const planRank = (name) => {
   const n = String(name || "").trim().toLowerCase();
-  if (n === "free lite") return 0;
+  if (n === "free lite" || n === "free" || n === "light") return 0;
   if (n === "basic") return 1;
   if (n === "standard") return 2;
   if (n === "premium" || n.includes("premium")) return 3;

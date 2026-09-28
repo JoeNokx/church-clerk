@@ -4,10 +4,13 @@ import Department from "../../models/organisationModel/departmentModel.js";
 const createDepartmentOffering = async (req, res) => {
   try {
     const { departmentId } = req.params;
-    const { date, amount, note } = req.body;
+    const { date, amount, note, offeringType } = req.body;
 
     if (!date || !amount) {
       return res.status(400).json({ message: "date and amount are required" });
+    }
+    if (!offeringType || !String(offeringType).trim()) {
+      return res.status(400).json({ message: "offeringType is required" });
     }
 
     const churchId = req.activeChurch?._id || req.user?.church;
@@ -21,6 +24,7 @@ const createDepartmentOffering = async (req, res) => {
       department: departmentId,
       church: churchId,
       createdBy: req.user._id,
+      offeringType: String(offeringType).trim(),
       date,
       amount,
       note
@@ -52,7 +56,7 @@ const getAllDepartmentOfferings = async (req, res) => {
     }
 
     const offerings = await Offering.find(query)
-      .select("date amount note department createdBy referenceId")
+      .select("date amount note offeringType department createdBy referenceId")
       .populate("department", "name")
       .populate("createdBy", "fullName")
       .sort({ createdAt: -1 })

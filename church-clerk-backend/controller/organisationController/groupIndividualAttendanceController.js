@@ -52,9 +52,11 @@ const getAllGroupIndividualAttendances = async (req, res) => {
 
     const { groupId } = req.params;
 
+    const churchId = req.activeChurch?._id || req.user?.church;
+
     const query = { group: groupId };
     if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
-      query.church = req.activeChurch._id;
+      query.church = churchId;
     }
 
     if (search) {

@@ -151,6 +151,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
     (planAllows("Organisations") && canRead("organisation")) ||
 
+    (planAllows("Outreach") && canRead("outreach")) ||
+
     (planAllows("Announcements") && canRead("announcements"));
 
 
@@ -520,7 +522,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                 ) : null}
 
-                {canRead("outreach") ? (
+                {planAllows("Outreach") && canRead("outreach") ? (
 
                   <NavLink to={toPage("outreach")} className={itemClass("outreach")}>
 
@@ -534,6 +536,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     </span>
 
                     Outreach & Follow-up
+
+                    {isReadOnly("Outreach") ? <LockBadge /> : null}
 
                   </NavLink>
 

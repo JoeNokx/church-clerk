@@ -173,8 +173,11 @@ async function scanSubscriptionDueAndTrial() {
     const recipients = await getChurchRecipients(s.church);
     if (!recipients.length) continue;
 
-    // Subscription due warnings
-    if (s.nextBillingDate) {
+    const isTrial = s.status === "free trial" || s.status === "trialing";
+
+    // Subscription due warnings (paid subscriptions only — trial subs get the
+    // dedicated trial-expiry messages below, and free-tier subs have no due date)
+    if (s.nextBillingDate && !isTrial) {
       const diff = daysBetween(new Date(), new Date(s.nextBillingDate));
 
       if (diff === 3 || diff === 0) {
@@ -194,7 +197,6 @@ async function scanSubscriptionDueAndTrial() {
     }
 
     // Trial expiry warnings
-    const isTrial = s.status === "free trial" || s.status === "trialing";
     if (isTrial && s.trialEnd) {
       const diff = daysBetween(new Date(), new Date(s.trialEnd));
       if (diff === 3 || diff === 0) {

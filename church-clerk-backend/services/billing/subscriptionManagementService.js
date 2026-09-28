@@ -2,12 +2,13 @@ import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Plan from "../../models/billingModel/planModel.js";
 import Church from "../../models/churchModel.js";
 import { createSubscriptionForChurch, upgradeTrialToPlans, runBillingCycles, runBillingCycleForChurch, releaseExpiredTrials } from "../../controller/billingController/subscriptionService.js";
+import { findPremiumPlan } from "../../utils/planHelpers.js";
 
 const planRank = (plan) => {
   const n = String(plan?.name || "")
     .trim()
     .toLowerCase();
-  if (n === "free lite") return 0;
+  if (n === "free lite" || n === "free" || n === "light") return 0;
   if (n === "basic") return 1;
   if (n === "standard") return 2;
   if (n === "premium") return 3;
@@ -84,9 +85,14 @@ async function getEffectivePlan(subscription) {
     subscription.gracePeriodEnd &&
     now > new Date(subscription.gracePeriodEnd);
 
-  let effectivePlan = (subscription.status === "free trial" || subscription.status === "trialing")
-    ? await Plan.findOne({ name: { $regex: /^premium$/i }, isActive: true }).lean()
-    : subscription.plan;
+  // An active (unexpired) trial grants Premium-level access. Once trialEnd
+  // has passed there is no grace period — the church falls back to whatever
+  // plan is on the subscription (Free Lite after release).
+  let effectivePlan =
+    (subscription.status === "free trial" || subscription.status === "trialing") &&
+    !isTrialExpired
+      ? await findPremiumPlan()
+      : subscription.plan;
 
   if (subscription?.pendingPlan) {
     const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;

@@ -21,6 +21,7 @@ import {
 } from "../../utils/subscriptionEmails.js";
 
 import { detectTrialFeatureUsage } from "../../utils/featureUsageChecker.js";
+import { findFreeLitePlan, isFreeTierPlanName } from "../../utils/planHelpers.js";
 import { resetAllowanceForPeriod } from "../../services/announcement/allowanceService.js";
 
 const validatePlanForChurch = (church, plan) => {
@@ -111,7 +112,10 @@ export const createSubscriptionForChurch = async ({
 
     subscriptionData.status = "active";
 
-    subscriptionData.nextBillingDate = addInterval(new Date(), billingInterval);
+    // Free-tier plans have no billing cycle — no due date.
+    subscriptionData.nextBillingDate = isFreeTierPlanName(plan?.name)
+      ? null
+      : addInterval(new Date(), billingInterval);
 
   }
 
@@ -169,7 +173,10 @@ export const upgradeTrialToPlans = async (church, planId) => {
 
   subscription.trialEnd = null;
 
-  subscription.nextBillingDate = addInterval(new Date(), subscription.billingInterval);
+  // Free-tier plans have no billing cycle — no due date.
+  subscription.nextBillingDate = isFreeTierPlanName(plan?.name)
+    ? null
+    : addInterval(new Date(), subscription.billingInterval);
 
   subscription.gracePeriodEnd = null;
 
@@ -209,7 +216,40 @@ export const processSubscriptionBillings = async (subscription) => {
 
   // -----------------------------
 
-  // Free months
+  // Resolve the plan first — free-tier / zero-priced plans have no billing
+  // cycle at all, and their banked referral free months must be preserved.
+
+  // -----------------------------
+
+  const plan = await Plan.findById(subscription.plan);
+
+  if (!plan) throw new Error("Plan not found");
+
+  const billingCurrency = "GHS";
+
+  if (billingCurrency !== subscription.currency) {
+    subscription.currency = billingCurrency;
+    await subscription.save();
+  }
+
+  const price = plan.pricing?.[billingCurrency]?.[subscription.billingInterval];
+
+  // Free plan: clear the due date so the subscription leaves the billing
+  // loop entirely (self-heals subscriptions released before this existed).
+  if (isFreeTierPlanName(plan?.name) || (price != null && Number(price) <= 0)) {
+    subscription.nextBillingDate = null;
+    subscription.status = "active";
+    subscription.gracePeriodEnd = null;
+    if (subscription.expiryWarning) subscription.expiryWarning.shown = false;
+    await subscription.save();
+    return { charged: false, reason: "free_plan" };
+  }
+
+  if (price == null) throw new Error("Pricing not configured");
+
+  // -----------------------------
+
+  // Free months (paid plans only)
 
   // -----------------------------
 
@@ -291,23 +331,6 @@ export const processSubscriptionBillings = async (subscription) => {
 
   // -----------------------------
 
-  const plan = await Plan.findById(subscription.plan);
-
-  if (!plan) throw new Error("Plan not found");
-
-  const billingCurrency = "GHS";
-
-  if (billingCurrency !== subscription.currency) {
-    subscription.currency = billingCurrency;
-    await subscription.save();
-  }
-
-  const price = plan.pricing[billingCurrency]?.[subscription.billingInterval];
-
-  if (!price) throw new Error("Pricing not configured");
-
-
-
   await BillingHistory.create({
 
     church: subscription.church,
@@ -378,6 +401,8 @@ export const runBillingCycleForChurch = async (churchId) => {
         subscription.pendingPlanEffectiveDate = null;
         subscription.pendingPlanAction = null;
         pendingActionApplied = true;
+        // Landing on a free-tier plan ends the billing relationship entirely.
+        if (isFreeTierPlanName(newPlan?.name)) subscription.nextBillingDate = null;
         await subscription.save();
         try {
           const church = await Church.findById(subscription.church).lean();
@@ -439,6 +464,9 @@ export const runBillingCycles = async () => {
         subscription.pendingPlanAction = null;
         pendingActionApplied = true;
 
+        // Landing on a free-tier plan ends the billing relationship entirely.
+        if (isFreeTierPlanName(newPlan?.name)) subscription.nextBillingDate = null;
+
         await subscription.save();
 
         // Notify church
@@ -484,10 +512,7 @@ export const runBillingCycles = async () => {
 // =============================
 
 export const releaseExpiredTrialForChurch = async (churchId) => {
-  const freeLitePlan = await Plan.findOne({
-    name: { $regex: /^free\s*lite$/i },
-    isActive: true
-  }).lean();
+  const freeLitePlan = await findFreeLitePlan();
   if (!freeLitePlan) return null;
 
   const subscription = await Subscription.findOne({ church: churchId });
@@ -504,7 +529,10 @@ export const releaseExpiredTrialForChurch = async (churchId) => {
   subscription.trialEnd = null;
   subscription.gracePeriodEnd = null;
   subscription.trialFeaturesUsed = usedFeatures;
-  subscription.nextBillingDate = addInterval(new Date(), subscription.billingInterval);
+  // Free Lite has no billing cycle — no due date, so the subscription never
+  // enters the billing job, never gets due-date notifications, and banked
+  // referral free months stay preserved until the church upgrades.
+  subscription.nextBillingDate = null;
   if (subscription.expiryWarning) subscription.expiryWarning.shown = false;
   await subscription.save();
 
@@ -528,21 +556,16 @@ export const releaseExpiredTrialForChurch = async (churchId) => {
 // =============================
 
 export const releaseExpiredTrials = async () => {
-  const { gracePeriodDays } = await getSystemSettingsSnapshot();
-  const graceMs = Number(gracePeriodDays ?? 0) * 24 * 60 * 60 * 1000;
-  const cutoff = new Date(Date.now() - graceMs);
-
+  // Trials do not get a grace period — grace applies to paid plans only.
+  // Any trial whose trialEnd has passed is released to Free Lite immediately.
   const expiredTrials = await Subscription.find({
     status: { $in: ["free trial", "trialing"] },
-    trialEnd: { $lt: cutoff }
+    trialEnd: { $lte: new Date() }
   });
 
   if (!expiredTrials.length) return;
 
-  const freeLitePlan = await Plan.findOne({
-    name: { $regex: /^free\s*lite$/i },
-    isActive: true
-  }).lean();
+  const freeLitePlan = await findFreeLitePlan();
 
   if (!freeLitePlan) return;
 
@@ -556,7 +579,8 @@ export const releaseExpiredTrials = async () => {
       subscription.trialEnd = null;
       subscription.gracePeriodEnd = null;
       subscription.trialFeaturesUsed = usedFeatures;
-      subscription.nextBillingDate = addInterval(new Date(), subscription.billingInterval);
+      // Free Lite has no billing cycle — clear the due date entirely.
+      subscription.nextBillingDate = null;
       subscription.expiryWarning.shown = false;
 
       await subscription.save();

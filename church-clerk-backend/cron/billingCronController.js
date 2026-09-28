@@ -9,8 +9,20 @@ import {
   sendCancellationAppliedEmail,
   sendDowngradeAppliedEmail
 } from "../utils/subscriptionEmails.js";
+import { releaseExpiredTrials } from "../controller/billingController/subscriptionService.js";
+import { isFreeTierPlanName } from "../utils/planHelpers.js";
 
 export const runDailyBillingJob = async () => {
+  // Expire free trials first — a trial ends at trialEnd regardless of whether
+  // the church ever logs in. Release happens before billing so released
+  // subscriptions (Free Lite, nextBillingDate pushed forward) are not charged.
+  try {
+    await releaseExpiredTrials();
+  } catch (e) {
+    console.error("[BillingCron] trial release error:", e?.message || e);
+  }
+
+
   const today = new Date();
 
   const subscriptions = await Subscription.find({
@@ -37,6 +49,9 @@ export const runDailyBillingJob = async () => {
         subscription.pendingPlanEffectiveDate = null;
         subscription.pendingPlanAction = null;
         pendingActionApplied = true;
+
+        // Landing on a free-tier plan ends the billing relationship entirely.
+        if (isFreeTierPlanName(newPlan?.name)) subscription.nextBillingDate = null;
 
         await subscription.save();
 

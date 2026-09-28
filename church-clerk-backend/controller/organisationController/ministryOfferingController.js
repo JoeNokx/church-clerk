@@ -4,10 +4,13 @@ import Ministry from "../../models/organisationModel/ministryModel.js";
 const createMinistryOffering = async (req, res) => {
   try {
     const { ministryId } = req.params;
-    const { date, amount, note } = req.body;
+    const { date, amount, note, offeringType } = req.body;
 
     if (!date || !amount) {
       return res.status(400).json({ message: "date and amount are required" });
+    }
+    if (!offeringType || !String(offeringType).trim()) {
+      return res.status(400).json({ message: "offeringType is required" });
     }
 
     const churchId = req.activeChurch?._id || req.user?.church;
@@ -21,6 +24,7 @@ const createMinistryOffering = async (req, res) => {
       ministry: ministryId,
       church: churchId,
       createdBy: req.user._id,
+      offeringType: String(offeringType).trim(),
       date,
       amount,
       note
@@ -52,7 +56,7 @@ const getAllMinistryOfferings = async (req, res) => {
     }
 
     const offerings = await Offering.find(query)
-      .select("date amount note ministry createdBy referenceId")
+      .select("date amount note offeringType ministry createdBy referenceId")
       .populate("ministry", "name")
       .populate("createdBy", "fullName")
       .sort({ createdAt: -1 })

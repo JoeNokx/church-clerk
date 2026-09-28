@@ -10,6 +10,7 @@ import {
   deleteCellIndividualAttendance
 } from "../../controller/organisationController/cellIndividualAttendanceController.js";
 import { createCellOffering, updateCellOffering, deleteCellOffering, getAllCellOfferings } from "../../controller/organisationController/cellOfferingController.js";
+import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense } from "../../controller/scopedExpensesController.js";
 import { getOrganisationKPI } from "../../controller/organisationController/groupController.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
 import { protect } from "../../middleware/authMiddleware.js";
@@ -294,6 +295,51 @@ router.put(
   requirePermission("organisation", "update"),
   conditionalImmutableGuard(),
   updateCellOffering
+);
+
+
+router.post(
+  "/cells/:cellId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "create"),
+  backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
+  createScopedExpense("cell")
+);
+router.get(
+  "/cells/:cellId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  getScopedExpenses("cell")
+);
+router.put(
+  "/cells/:cellId/expenses/:expenseId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  conditionalImmutableGuard(),
+  updateScopedExpense("cell")
+);
+router.delete(
+  "/cells/:cellId/expenses/:expenseId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "delete"),
+  conditionalImmutableGuard(),
+  deleteScopedExpense("cell")
 );
 
 

@@ -33,7 +33,8 @@ export const requirePermission = (moduleKey, actionKey) => {
       m === "billing" ||
       m === "referrals" ||
       m === "settings" ||
-      m === "supportHelp"
+      m === "supportHelp" ||
+      m === "outreach"
     ) {
       return m;
     }
@@ -57,7 +58,11 @@ export const requirePermission = (moduleKey, actionKey) => {
     if (!plan) return true;
 
     const subscription = req?.subscription;
-    const isTrial = subscription?.status === "free trial" || subscription?.status === "trialing";
+    // Expiry-aware: a trial only bypasses plan checks while still within its
+    // window. Expired trials get no grace period (grace is for paid plans).
+    const isTrial =
+      (subscription?.status === "free trial" || subscription?.status === "trialing") &&
+      (!subscription?.trialEnd || new Date() <= new Date(subscription.trialEnd));
     if (isTrial) return true;
 
     const featureKey = planFeatureForModule(moduleName);
@@ -76,6 +81,9 @@ export const requirePermission = (moduleKey, actionKey) => {
     }
 
     if (featureKey === "dashboard") return features?.dashboard !== false;
+    // Legacy plans lack the outreach flag — default to allowed so existing
+    // plans are unaffected; only an explicit false gates the module.
+    if (featureKey === "outreach") return features?.outreach !== false;
     if (featureKey === "announcements") return Boolean(features?.announcements || features?.announcement);
     if (featureKey === "specialFunds") return Boolean(features?.specialFunds || features?.specialFund);
 

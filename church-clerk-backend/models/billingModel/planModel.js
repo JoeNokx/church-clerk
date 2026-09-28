@@ -50,6 +50,7 @@ const planSchema = new mongoose.Schema(
       attendance: { type: Boolean, default: false },
       programsEvents: { type: Boolean, default: false },
       organisations: { type: Boolean, default: false },
+      outreach: { type: Boolean, default: false },
       announcement: { type: Boolean, default: false },
 
       // FINANCE

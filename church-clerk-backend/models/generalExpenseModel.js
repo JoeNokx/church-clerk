@@ -44,6 +44,12 @@ const generalExpenseSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    // Optional scope — expenses recorded under an organisation unit or program
+    group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
+    cell: { type: mongoose.Schema.Types.ObjectId, ref: "Cell" },
+    department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
+    ministry: { type: mongoose.Schema.Types.ObjectId, ref: "Ministry" },
+    event: { type: mongoose.Schema.Types.ObjectId, ref: "Program" },
     referenceId: { type: String, unique: true, sparse: true, index: true }
   },
   {

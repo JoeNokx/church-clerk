@@ -23,6 +23,8 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import ProgramCreatePage from "./ProgramCreatePage.jsx";
 import ProgramOfferingPage from "../offerings/pages/ProgramOfferingPage.jsx";
+import ScopedExpensesTab from "../../../shared/components/ScopedExpensesTab/index.jsx";
+import ProgramPledgesTab from "../pledges/ProgramPledgesTab.jsx";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
@@ -153,6 +155,7 @@ function ProgramDetailsPage() {
   const [editAttendeeEmail, setEditAttendeeEmail] = useState("");
   const [editAttendeePhone, setEditAttendeePhone] = useState("");
   const [editAttendeeLocation, setEditAttendeeLocation] = useState("");
+  const [editAttendeeRegDate, setEditAttendeeRegDate] = useState("");
 
   const [editTotalOpen, setEditTotalOpen] = useState(false);
   const [editTotalSaving, setEditTotalSaving] = useState(false);
@@ -189,6 +192,7 @@ function ProgramDetailsPage() {
   const [regEmail, setRegEmail] = useState("");
   const [regPhone, setRegPhone] = useState("");
   const [regLocation, setRegLocation] = useState("");
+  const [regDate, setRegDate] = useState("");
   const [registerQueue, setRegisterQueue] = useState([]);
 
   const [recordOpen, setRecordOpen] = useState(false);
@@ -283,6 +287,7 @@ function ProgramDetailsPage() {
     setEditAttendeeEmail(row?.email || "");
     setEditAttendeePhone(row?.phoneNumber || "");
     setEditAttendeeLocation(row?.location || "");
+    setEditAttendeeRegDate(String(row?.registrationDate || row?.createdAt || "").slice(0, 10));
     setEditAttendeeOpen(true);
   };
 
@@ -315,7 +320,8 @@ function ProgramDetailsPage() {
         fullName: String(editAttendeeFullName || "").trim(),
         email: String(editAttendeeEmail || "").trim() || undefined,
         phoneNumber: String(editAttendeePhone || "").trim(),
-        location: String(editAttendeeLocation || "").trim() || undefined
+        location: String(editAttendeeLocation || "").trim() || undefined,
+        registrationDate: editAttendeeRegDate || undefined
       });
       setEditAttendeeOpen(false);
       setEditAttendeeRow(null);
@@ -485,7 +491,8 @@ function ProgramDetailsPage() {
         fullName: regFullName,
         email: regEmail || "",
         phoneNumber: regPhone,
-        location: regLocation || ""
+        location: regLocation || "",
+        registrationDate: regDate || ""
       }
     ]);
     setRegFullName("");
@@ -514,7 +521,8 @@ function ProgramDetailsPage() {
         fullName: regFullName,
         email: regEmail || "",
         phoneNumber: regPhone,
-        location: regLocation || ""
+        location: regLocation || "",
+        registrationDate: regDate || ""
       });
     }
 
@@ -531,7 +539,8 @@ function ProgramDetailsPage() {
           fullName: item.fullName,
           email: item.email || undefined,
           phoneNumber: item.phoneNumber,
-          location: item.location || undefined
+          location: item.location || undefined,
+          registrationDate: item.registrationDate || undefined
         });
       }
       setRegisterOpen(false);
@@ -539,6 +548,7 @@ function ProgramDetailsPage() {
       setRegEmail("");
       setRegPhone("");
       setRegLocation("");
+      setRegDate("");
       setRegisterQueue([]);
       await loadAttendees();
     } catch (err) {
@@ -622,13 +632,15 @@ function ProgramDetailsPage() {
         fullName: regFullName,
         email: regEmail || undefined,
         phoneNumber: regPhone,
-        location: regLocation || undefined
+        location: regLocation || undefined,
+        registrationDate: regDate || undefined
       });
       setRegisterOpen(false);
       setRegFullName("");
       setRegEmail("");
       setRegPhone("");
       setRegLocation("");
+      setRegDate("");
       await loadAttendees();
     } catch (err) {
       setRegisterError(err?.response?.data?.message || err?.message || "Failed to register attendee");
@@ -698,7 +710,7 @@ function ProgramDetailsPage() {
         (r?.fullName || "").toLowerCase().includes(q) ||
         (r?.email || "").toLowerCase().includes(q) ||
         (r?.phoneNumber || "").toLowerCase().includes(q);
-      const matchDate = filterByDateRange(r?.createdAt, regDateFrom, regDateTo);
+      const matchDate = filterByDateRange(String(r?.registrationDate || r?.createdAt || ""), regDateFrom, regDateTo);
       return matchSearch && matchDate;
     });
   }, [attendees, regSearch, regDateFrom, regDateTo]);
@@ -877,8 +889,10 @@ function ProgramDetailsPage() {
       {!loading && !error && program ? (
         <PageTabs
           tabs={[
-            { key: "offering", label: "Offering" },
+            { key: "offering", label: "Offerings & Seeds" },
             { key: "attendance", label: "Record Attendance" },
+            { key: "expenses", label: "Expenses" },
+            { key: "pledge", label: "Pledges" },
           ]}
           activeTab={activeMainTab}
           onChange={setActiveMainTab}
@@ -890,6 +904,18 @@ function ProgramDetailsPage() {
       {!loading && !error && program && activeMainTab === "offering" ? (
         <div className="mt-6">
           <ProgramOfferingPage programId={programId} />
+        </div>
+      ) : null}
+
+      {!loading && !error && program && activeMainTab === "expenses" ? (
+        <div className="mt-6">
+          <ScopedExpensesTab scope="program" entityId={programId} entityLabel="program" />
+        </div>
+      ) : null}
+
+      {!loading && !error && program && activeMainTab === "pledge" ? (
+        <div className="mt-6">
+          <ProgramPledgesTab programId={programId} programTitle={program?.title} />
         </div>
       ) : null}
 
@@ -977,6 +1003,7 @@ function ProgramDetailsPage() {
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Registration Date</th>
                           <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                         </tr>
                       </thead>
@@ -987,6 +1014,7 @@ function ProgramDetailsPage() {
                             <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
                             <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                             <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
                             <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                           </tr>
                         ))}
@@ -1025,6 +1053,7 @@ function ProgramDetailsPage() {
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Registration Date</th>
                           <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                         </tr>
                       </thead>
@@ -1046,6 +1075,7 @@ function ProgramDetailsPage() {
                               <span className="sm:hidden">{truncateMobileName(r?.location || "—")}</span>
                               <span className="hidden sm:inline">{truncateDesktopName(r?.location || "—")}</span>
                             </td>
+                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(r?.registrationDate || r?.createdAt)}</td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <TableKebabMenu items={[
                                 canEdit && { label: "Edit", onClick: () => guarded(() => openEditAttendee(r)) },
@@ -1424,6 +1454,15 @@ function ProgramDetailsPage() {
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Location (optional)"
               />
+              <div>
+                <label className="block font-semibold text-gray-500 text-xs">Registration Date</label>
+                <input
+                  type="date"
+                  value={editAttendeeRegDate}
+                  onChange={(e) => setEditAttendeeRegDate(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                />
+              </div>
             </div>
           </div>
 
@@ -1598,6 +1637,15 @@ function ProgramDetailsPage() {
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Location (optional)"
               />
+              <div>
+                <label className="block font-semibold text-gray-500 text-xs">Registration Date</label>
+                <input
+                  type="date"
+                  value={regDate}
+                  onChange={(e) => setRegDate(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                />
+              </div>
             </div>
 
             {registerQueue?.length ? (

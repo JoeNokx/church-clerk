@@ -25,12 +25,14 @@ export const getAllFollowUps = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, parseInt(req.query.limit) || 25);
     const skip = (page - 1) * limit;
-    const { status, eventId, assignedTo, dateFrom, dateTo } = req.query;
+    const { status, eventId, assignedTo, assigned, dateFrom, dateTo } = req.query;
 
     const filter = { church: churchId };
     if (status) filter.status = status;
     if (eventId) filter.outreachEvent = eventId;
     if (assignedTo) filter.assignedTo = assignedTo;
+    if (assigned === "assigned") filter.assignedTo = { $exists: true, $ne: null };
+    else if (assigned === "unassigned") filter.assignedTo = null;
     if (dateFrom || dateTo) {
       filter.scheduledDate = {};
       if (dateFrom) filter.scheduledDate.$gte = new Date(dateFrom);

@@ -510,7 +510,9 @@ const requestMyChurchSenderId = async (req, res) => {
 
     const planName = String(req.plan?.name || "").trim().toLowerCase();
     const subscriptionStatus = String(req.subscription?.status || "").trim().toLowerCase();
-    const isTrial = subscriptionStatus === "free trial" || subscriptionStatus === "trialing";
+    const isTrial =
+      (subscriptionStatus === "free trial" || subscriptionStatus === "trialing") &&
+      (!req.subscription?.trialEnd || new Date() <= new Date(req.subscription.trialEnd));
     const allowedByPlan = isTrial || planName === "standard" || planName === "premium";
 
     if (!allowedByPlan) {

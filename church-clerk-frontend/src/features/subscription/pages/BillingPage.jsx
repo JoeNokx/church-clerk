@@ -99,6 +99,10 @@ function computeNextBillingDate(sub) {
   const direct = sub?.nextBillingDate || sub?.trialEnd || null;
   if (direct) return new Date(direct);
 
+  // Free-tier plans have no billing cycle — don't fabricate a due date.
+  const planName = String(sub?.plan?.name || "").trim().toLowerCase();
+  if (planName === "free lite" || planName === "free" || planName === "light") return null;
+
   const base = sub?.updatedAt || sub?.createdAt || null;
   if (!base) return null;
 
@@ -318,8 +322,12 @@ function BillingPage() {
       .trim()
       .toLowerCase()
       .replace(/[\s-]+/g, "_");
-    return normalized === "free_trial" || normalized === "trialing";
-  }, [subscription?.status]);
+    const trialStatus = normalized === "free_trial" || normalized === "trialing";
+    // Expiry-aware: no grace period on trials — an expired trial is not a trial.
+    if (!trialStatus) return false;
+    if (!subscription?.trialEnd) return true;
+    return new Date() <= new Date(subscription.trialEnd);
+  }, [subscription?.status, subscription?.trialEnd]);
 
   const currentPlan = effectivePlan || subscription?.plan || null;
   const currentPlanId = currentPlan?._id || null;
@@ -1122,7 +1130,7 @@ function BillingPage() {
         </div>
 
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-600 text-xs">
-          <span className="font-semibold">How it works:</span> Each successful subscribed church you refer earns you {referralBonusDays} free day{referralBonusDays === 1 ? "" : "s"}. Free days are cumulative with no limit and apply automatically.
+          <span className="font-semibold">How it works:</span> Each successful subscribed church you refer earns you {referralBonusDays} free day{referralBonusDays === 1 ? "" : "s"}. Free days are cumulative with no limit and apply automatically. Free days earned on a free plan stay banked and activate when you upgrade to a paid plan.
         </div>
       </div>
 

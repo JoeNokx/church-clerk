@@ -196,6 +196,7 @@ const addMemberToDepartment = async (req, res) => {
     const memberId = (req.body.memberId || "").trim();
     const memberIds = Array.isArray(req.body.memberIds) ? req.body.memberIds : [];
     const role = req.body.role || "member";
+    const joinedAt = req.body.joinedAt || undefined;
 
     const churchId = req.activeChurch?._id || req.user?.church;
 
@@ -227,6 +228,7 @@ const addMemberToDepartment = async (req, res) => {
         department: departmentId,
         member: m._id,
         role,
+        joinedAt,
         church: churchId,
         createdBy: req.user._id
       }));
@@ -279,6 +281,7 @@ const addMemberToDepartment = async (req, res) => {
       department: departmentId,
       member: member._id,
       role,
+      joinedAt,
       church: churchId,
       createdBy: req.user._id
     });

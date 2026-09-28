@@ -6,6 +6,8 @@ import Plan from "../models/billingModel/planModel.js";
 
 import { isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
 
+import { isFreeTierPlanName } from "../utils/planHelpers.js";
+
 
 
 export const setActiveChurch = async (req, res, next) => {
@@ -186,7 +188,12 @@ export const setActiveChurch = async (req, res, next) => {
 
     const now = new Date();
 
-    const isTrial = subscription?.status === "free trial" || subscription?.status === "trialing";
+    // A trial only grants trial-level access while it is still within its
+    // window — once trialEnd passes it is expired (no grace period; grace
+    // applies to paid past_due subscriptions only).
+    const isTrial =
+      (subscription?.status === "free trial" || subscription?.status === "trialing") &&
+      (!subscription?.trialEnd || now <= new Date(subscription.trialEnd));
 
 
 
@@ -242,8 +249,7 @@ export const setActiveChurch = async (req, res, next) => {
 
 
 
-    const isFreeLitePlan = effectivePlan &&
-      String(effectivePlan.name || "").trim().toLowerCase() === "free lite";
+    const isFreeLitePlan = effectivePlan && isFreeTierPlanName(effectivePlan.name);
 
     const trialUsedSet = new Set(
       Array.isArray(subscription?.trialFeaturesUsed) ? subscription.trialFeaturesUsed : []
@@ -270,6 +276,8 @@ export const setActiveChurch = async (req, res, next) => {
       ProgramsEvents: computeModule("ProgramsEvents"),
 
       Organisations: computeModule("Organisations"),
+
+      Outreach: computeModule("Outreach"),
 
       Announcements: computeModule("Announcements"),
 

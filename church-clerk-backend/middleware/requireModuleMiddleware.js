@@ -4,7 +4,11 @@ import Plan from "../models/billingModel/planModel.js";
 const isPlanAllowedForModule = ({ moduleKey, subscription, plan }) => {
   const normalizedModule = String(moduleKey || "").trim().toLowerCase();
   const status = String(subscription?.status || "").trim().toLowerCase();
-  const isTrial = status === "free trial" || status === "trialing";
+  // Expiry-aware: a trial only bypasses plan checks within its window —
+  // no grace period on trials (grace applies to paid past_due plans only).
+  const isTrial =
+    (status === "free trial" || status === "trialing") &&
+    (!subscription?.trialEnd || new Date() <= new Date(subscription.trialEnd));
   if (isTrial) return true;
 
   const features = plan?.features || {};

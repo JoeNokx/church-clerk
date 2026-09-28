@@ -4,10 +4,13 @@ import Group from "../../models/organisationModel/groupModel.js";
 const createGroupOffering = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const { date, amount, note } = req.body;
+    const { date, amount, note, offeringType } = req.body;
 
     if(!date || !amount) {
         return res.status(400).json({message: "date and amount are required"})
+    }
+    if (!offeringType || !String(offeringType).trim()) {
+        return res.status(400).json({message: "offeringType is required"})
     }
 
       // 1. Validate group exists and belongs to this church
@@ -25,6 +28,7 @@ const createGroupOffering = async (req, res) => {
       group: groupId,
       church: group.church,
       createdBy: req.user._id, 
+      offeringType: String(offeringType).trim(),
       date,
       amount,
       note
@@ -64,7 +68,7 @@ const getAllGroupOfferings = async(req, res) => {
     }
 
     const offerings = await Offering.find(query)
-      .select("date amount note group createdBy referenceId")
+      .select("date amount note offeringType group createdBy referenceId")
           .populate("group", "name")
           .populate("createdBy", "fullName")
           .sort({ createdAt: -1 })

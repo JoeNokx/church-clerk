@@ -29,10 +29,10 @@ function LandingFooter() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Product</p>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#how" className="hover:text-white transition-colors">How it Works</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
+                <li><Link to="/product" className="hover:text-white transition-colors">Overview</Link></li>
+                <li><Link to="/features" className="hover:text-white transition-colors">Features</Link></li>
+                <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               </ul>
             </div>
             <div>

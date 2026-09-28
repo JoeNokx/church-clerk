@@ -8,6 +8,7 @@ const programAttendeesSchema = new mongoose.Schema({
   email: { type: String, trim: true },
   phoneNumber: { type: String, trim: true, required: true },
   location: { type: String, trim: true },
+  registrationDate: { type: Date, default: Date.now },
 }, { timestamps: true });
 
 export default mongoose.model("ProgramAttendees", programAttendeesSchema, "eventattendees");

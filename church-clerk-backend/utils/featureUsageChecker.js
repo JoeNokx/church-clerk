@@ -3,6 +3,13 @@ import Attendance from "../models/attendanceModel.js";
 import Program from "../models/programModel.js";
 import GroupModel from "../models/organisationModel/groupModel.js";
 import DepartmentModel from "../models/organisationModel/departmentModel.js";
+import MinistryModel from "../models/organisationModel/ministryModel.js";
+import CellModel from "../models/organisationModel/cellModel.js";
+import Visitor from "../models/visitorsModel.js";
+import OutreachEvent from "../models/outreachModel/outreachEventModel.js";
+import OutreachProspect from "../models/outreachModel/outreachProspectModel.js";
+import OutreachFollowUp from "../models/outreachModel/outreachFollowUpModel.js";
+import OutreachTeam from "../models/outreachModel/outreachTeamModel.js";
 import Announcement from "../models/announcementModel.js";
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
 import Budget from "../models/financeModel/budgetingModel.js";
@@ -25,8 +32,9 @@ const hasData = async (Model, churchId) => {
 
 export const detectTrialFeatureUsage = async (churchId) => {
   const [
-    members, attendance, programs,
-    groups, departments,
+    members, attendance, visitors, programs,
+    groups, departments, ministries, cells,
+    outreachEvents, outreachProspects, outreachFollowUps, outreachTeams,
     announcements, tithes, budgeting,
     projects, specialFunds, offerings,
     welfare, pledges, businessVentures,
@@ -34,9 +42,16 @@ export const detectTrialFeatureUsage = async (churchId) => {
   ] = await Promise.all([
     hasData(Member, churchId),
     hasData(Attendance, churchId),
+    hasData(Visitor, churchId),
     hasData(Program, churchId),
     hasData(GroupModel, churchId),
     hasData(DepartmentModel, churchId),
+    hasData(MinistryModel, churchId),
+    hasData(CellModel, churchId),
+    hasData(OutreachEvent, churchId),
+    hasData(OutreachProspect, churchId),
+    hasData(OutreachFollowUp, churchId),
+    hasData(OutreachTeam, churchId),
     hasData(Announcement, churchId),
     hasData(TitheIndividual, churchId),
     hasData(Budget, churchId),
@@ -52,9 +67,10 @@ export const detectTrialFeatureUsage = async (churchId) => {
 
   const used = [];
   if (members) used.push("Members");
-  if (attendance) used.push("Attendance");
+  if (attendance || visitors) used.push("Attendance");
   if (programs) used.push("ProgramsEvents");
-  if (groups || departments) used.push("Organisations");
+  if (groups || departments || ministries || cells) used.push("Organisations");
+  if (outreachEvents || outreachProspects || outreachFollowUps || outreachTeams) used.push("Outreach");
   if (announcements) used.push("Announcements");
   if (tithes) used.push("Tithe");
   if (budgeting) used.push("Budgeting");
@@ -75,6 +91,7 @@ export const FEATURE_ROUTE_MAP = [
   { feature: "Attendance",       prefixes: ["/api/v1/attendance"] },
   { feature: "ProgramsEvents",   prefixes: ["/api/v1/program"] },
   { feature: "Organisations",    prefixes: ["/api/v1/organisations"] },
+  { feature: "Outreach",         prefixes: ["/api/v1/outreach"] },
   { feature: "Announcements",    prefixes: ["/api/v1/announcement"] },
   { feature: "Tithe",            prefixes: ["/api/v1/tithe"] },
   { feature: "Budgeting",        prefixes: ["/api/v1/budgeting"] },
@@ -96,6 +113,10 @@ export const isFeatureEnabledInPlan = (planFeatures, moduleKey) => {
     case "Attendance":       return Boolean(f.attendance);
     case "ProgramsEvents":   return Boolean(f.programsEvents);
     case "Organisations":    return Boolean(f.organisations || f.ministries);
+    // Plans created before the outreach feature existed have no `outreach`
+    // key — treat undefined as allowed so existing plans are unaffected.
+    // Admins can explicitly set it to false to gate the module.
+    case "Outreach":         return f.outreach !== false;
     case "Announcements":    return Boolean(f.announcements || f.announcement);
     case "Tithe":            return Boolean(f.tithes);
     case "Budgeting":        return Boolean(f.budgeting || f.financeModule);

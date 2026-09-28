@@ -10,6 +10,7 @@ import {
   deleteDepartmentIndividualAttendance
 } from "../../controller/organisationController/departmentIndividualAttendanceController.js";
 import { createDepartmentOffering, updateDepartmentOffering, deleteDepartmentOffering, getAllDepartmentOfferings } from "../../controller/organisationController/departmentOfferingController.js";
+import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense } from "../../controller/scopedExpensesController.js";
 import { getOrganisationKPI } from "../../controller/organisationController/groupController.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
 import { protect } from "../../middleware/authMiddleware.js";
@@ -293,6 +294,51 @@ router.put(
   requirePermission("organisation", "update"),
   conditionalImmutableGuard(),
   updateDepartmentOffering
+);
+
+
+router.post(
+  "/departments/:departmentId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "create"),
+  backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
+  createScopedExpense("department")
+);
+router.get(
+  "/departments/:departmentId/expenses",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  getScopedExpenses("department")
+);
+router.put(
+  "/departments/:departmentId/expenses/:expenseId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  conditionalImmutableGuard(),
+  updateScopedExpense("department")
+);
+router.delete(
+  "/departments/:departmentId/expenses/:expenseId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "delete"),
+  conditionalImmutableGuard(),
+  deleteScopedExpense("department")
 );
 
 

@@ -56,6 +56,71 @@ const validatePlanName = (name) => {
   }
 };
 
+// ---- Robust plan resolution ---------------------------------------------
+// Several flows (trial release, trial display, cancellation fallback) need
+// the "Free Lite" and "Premium" plans. Name-regex lookups alone are fragile —
+// if a plan is renamed or removed the lookup silently returns null. These
+// resolvers prefer the canonical names but fall back to tier/price ordering
+// so the system keeps working even if plan names change.
+
+const PLAN_TIER = {
+  free: 0,
+  "free lite": 0,
+  light: 0,
+  basic: 1,
+  standard: 2,
+  premium: 3
+};
+
+const planTier = (plan) => {
+  const t = PLAN_TIER[String(plan?.name || "").trim().toLowerCase()];
+  return t === undefined ? 99 : t;
+};
+
+const planMonthlyPrice = (plan) =>
+  Number(plan?.priceByCurrency?.GHS?.monthly ?? plan?.pricing?.GHS?.monthly) || 0;
+
+// Free-tier plan names — matches every name findFreeLitePlan() can resolve,
+// so Free Lite feature gating keeps working even if the plan is renamed
+// to "free" or "light".
+const isFreeTierPlanName = (name) =>
+  ["free", "free lite", "light"].includes(
+    String(name || "").trim().toLowerCase()
+  );
+
+const findFreeLitePlan = async () => {
+  const Plan = (await import("../models/billingModel/planModel.js")).default;
+
+  // 1. Canonical name
+  let plan = await Plan.findOne({ isActive: true, name: { $regex: /^free\s*lite$/i } }).lean();
+  if (plan) return plan;
+
+  // 2. Any other free-tier name
+  plan = await Plan.findOne({ isActive: true, name: { $regex: /^(free|light)$/i } }).lean();
+  if (plan) return plan;
+
+  // 3. Cheapest active plan (tier first, then monthly price)
+  const plans = await Plan.find({ isActive: true }).lean();
+  if (!plans.length) return null;
+  plans.sort((a, b) => (planTier(a) - planTier(b)) || (planMonthlyPrice(a) - planMonthlyPrice(b)));
+  return plans[0] || null;
+};
+
+const findPremiumPlan = async () => {
+  const Plan = (await import("../models/billingModel/planModel.js")).default;
+
+  // 1. Canonical name
+  let plan = await Plan.findOne({ isActive: true, name: { $regex: /^premium$/i } }).lean();
+  if (plan) return plan;
+
+  // 2. Highest-tier active paid plan
+  const plans = await Plan.find({ isActive: true }).lean();
+  if (!plans.length) return null;
+  plans.sort((a, b) => (planTier(b) - planTier(a)) || (planMonthlyPrice(b) - planMonthlyPrice(a)));
+  const top = plans[0];
+  return planTier(top) >= 99 ? null : top;
+};
+
 export {
   normalizeBillingIntervalKey,
   clamp,
@@ -63,5 +128,8 @@ export {
   sanitizePriceByCurrency,
   sanitizePlanCurrencies,
   normalizePlanName,
-  validatePlanName
+  validatePlanName,
+  findFreeLitePlan,
+  findPremiumPlan,
+  isFreeTierPlanName
 };

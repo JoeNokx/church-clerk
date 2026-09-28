@@ -6,7 +6,7 @@ import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 // POST: register attendee to program
 const createProgramAttendee = async (req, res) => {
   try {
-    const { fullName, email, phoneNumber, location } = req.body;
+    const { fullName, email, phoneNumber, location, registrationDate } = req.body;
     const { programId } = req.params;
 
     if (!fullName) {
@@ -42,6 +42,7 @@ const createProgramAttendee = async (req, res) => {
        email,
         phoneNumber: validatedPhoneNumber, 
        location,
+       registrationDate: registrationDate || undefined,
        event: programId,
       church: program.church,
       createdBy: req.user._id
@@ -82,7 +83,7 @@ const getProgramAttendees = async(req, res) => {
     const query = { church: program.church, event: programId };
 
     const attendees = await ProgramAttendees.find(query)
-      .select("fullName email phoneNumber location")
+      .select("fullName email phoneNumber location registrationDate createdAt")
           .populate("event", "name")
           .sort({ createdAt: -1 })
           .skip(skip)

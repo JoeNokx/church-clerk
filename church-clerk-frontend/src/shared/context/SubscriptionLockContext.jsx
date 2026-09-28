@@ -72,16 +72,18 @@ function deriveLockState(subscription, readOnly) {
     };
   }
 
-  // Trial expired (after grace) — released to Free Lite, readOnly flag is set by backend
+  // Trial expired — no grace period on trials (grace applies to paid plans
+  // only). The backend releases expired trials to Free Lite at trialEnd; if
+  // the subscription is still in trial status here, the release hasn't
+  // happened yet (or failed) and writes are blocked.
   const isTrial = status === "free_trial" || status === "trialing";
   if (isTrial && trialEnd && now > trialEnd) {
-    // Within grace period — not locked yet
     return {
-      isLocked: false,
-      lockReason: "trial_grace",
+      isLocked: true,
+      lockReason: "trial_expired",
       lockTitle: "Trial Ended",
       lockMessage:
-        "Your free trial has ended. You are now on the Free Lite plan. Upgrade to continue using premium features."
+        "Your free trial has ended. Upgrade to a paid plan to continue using premium features."
     };
   }
 

@@ -15,6 +15,9 @@ import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
+import ScopedExpensesTab from "../../../shared/components/ScopedExpensesTab/index.jsx";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 
 import {
   getGroup,
@@ -246,6 +249,7 @@ function OrganisationDetailsPage() {
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [addMemberValue, setAddMemberValue] = useState("");
   const [addMemberRole, setAddMemberRole] = useState("member");
+  const [addMemberJoinedAt, setAddMemberJoinedAt] = useState("");
   const [addMemberSaving, setAddMemberSaving] = useState(false);
   const [isSubmittingAddMember, setIsSubmittingAddMember] = useState(false);
   const [addMemberError, setAddMemberError] = useState("");
@@ -331,6 +335,7 @@ function OrganisationDetailsPage() {
   const [offeringMode, setOfferingMode] = useState("create");
   const [offeringEditing, setOfferingEditing] = useState(null);
   const [offeringDate, setOfferingDate] = useState("");
+  const [offeringType, setOfferingType] = useState("");
   const [offeringAmount, setOfferingAmount] = useState("");
   const [offeringNote, setOfferingNote] = useState("");
   const [offeringSaving, setOfferingSaving] = useState(false);
@@ -352,6 +357,11 @@ function OrganisationDetailsPage() {
   const [indivDateTo, setIndivDateTo] = useState("");
   const [offeringDateFrom, setOfferingDateFrom] = useState("");
   const [offeringDateTo, setOfferingDateTo] = useState("");
+
+  const { values: lookupOfferingTypes, reload: reloadOfferingTypes } = useLookupValues("offeringType");
+  const offeringTypeOptions = lookupOfferingTypes?.length
+    ? lookupOfferingTypes
+    : ["first offering", "second offering", "third offering", "fourth offering", "fifth offering"];
 
   const title = type === "cell" ? "Cell" : type === "department" ? "Department" : type === "ministry" ? "Ministry" : "Group";
 
@@ -620,6 +630,7 @@ function OrganisationDetailsPage() {
     setAddMemberSaving(true);
     try {
       const payload = { memberIds: addMemberSelectedIds, role: addMemberRole };
+    if (addMemberJoinedAt) payload.joinedAt = addMemberJoinedAt;
 
       if (type === "department") {
         await addDepartmentMember(id, payload);
@@ -634,6 +645,7 @@ function OrganisationDetailsPage() {
       setAddMemberOpen(false);
       setAddMemberValue("");
       setAddMemberRole("member");
+      setAddMemberJoinedAt("");
       setAddMemberCandidates([]);
       setAddMemberCandidatesError("");
       setAddMemberSelectedIds([]);
@@ -1044,6 +1056,7 @@ function OrganisationDetailsPage() {
     setOfferingMode(mode);
     setOfferingEditing(row || null);
     setOfferingDate((row?.date || "").slice(0, 10));
+    setOfferingType(safeText(row?.offeringType));
     setOfferingAmount(row?.amount ?? "");
     setOfferingNote(safeText(row?.note));
     setOfferingOpen(true);
@@ -1054,6 +1067,12 @@ function OrganisationDetailsPage() {
     if (isSubmittingOffering) return;
     setIsSubmittingOffering(true);
     setOfferingFormError("");
+
+    if (!offeringType) {
+      setIsSubmittingOffering(false);
+      setOfferingFormError("offering type is required");
+      return;
+    }
 
     if (!offeringDate) {
       setIsSubmittingOffering(false);
@@ -1069,6 +1088,7 @@ function OrganisationDetailsPage() {
 
     const payload = {
       date: offeringDate,
+      offeringType,
       amount: Number(offeringAmount),
       note: offeringNote
     };
@@ -1210,7 +1230,8 @@ function OrganisationDetailsPage() {
         tabs={[
           { key: "members", label: "Members" },
           { key: "attendance", label: "Attendance" },
-          { key: "offerings", label: "Offerings" },
+          { key: "offerings", label: "Offerings & Seeds" },
+          { key: "expenses", label: "Expenses" },
         ]}
         activeTab={activeTab}
         onChange={setActiveTab}
@@ -1312,6 +1333,7 @@ function OrganisationDetailsPage() {
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Role</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Joined Date</th>
                     <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
                   </tr>
                 </thead>
@@ -1328,6 +1350,7 @@ function OrganisationDetailsPage() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.phoneNumber || "-"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{member?.email || "-"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{m?.role || "member"}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(m?.joinedAt || m?.createdAt) || "-"}</td>
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             canViewMembers && { label: "View", onClick: () => { const memberId = member?._id; if (!memberId) return; toPage("member-details", { id: memberId }); } },
@@ -1431,14 +1454,25 @@ function OrganisationDetailsPage() {
                 <div className="mt-2 text-gray-500 text-xs">Selected: {addMemberSelectedIds.length}</div>
               </div>
 
-              <div className="mt-4">
-                <label className="block font-semibold text-gray-500 text-xs">Role</label>
-                <input
-                  value={addMemberRole}
-                  onChange={(e) => setAddMemberRole(e.target.value)}
-                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  placeholder="e.g. leader"
-                />
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Role</label>
+                  <input
+                    value={addMemberRole}
+                    onChange={(e) => setAddMemberRole(e.target.value)}
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="e.g. leader"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Date</label>
+                  <input
+                    value={addMemberJoinedAt}
+                    onChange={(e) => setAddMemberJoinedAt(e.target.value)}
+                    type="date"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  />
+                </div>
               </div>
 
               <div className="mt-5 flex items-center justify-end gap-3">
@@ -2172,8 +2206,8 @@ function OrganisationDetailsPage() {
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
             <div className="flex items-center gap-3 justify-between w-full md:w-auto md:block">
               <div>
-                <div className="font-semibold text-gray-900 text-sm">Offerings</div>
-                <div className="text-gray-500 text-xs">Record ministry offerings</div>
+                <div className="font-semibold text-gray-900 text-sm">Offerings & Seeds</div>
+                <div className="text-gray-500 text-xs">Record {title.toLowerCase()} offerings</div>
               </div>
               <button
                 type="button"
@@ -2235,6 +2269,7 @@ function OrganisationDetailsPage() {
                 <thead className="bg-slate-100">
                   <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                     <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date Collected</th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
@@ -2245,6 +2280,7 @@ function OrganisationDetailsPage() {
                   {filteredOfferings.map((r, idx) => (
                     <tr key={r?._id || idx} className="max-md:text-xs text-gray-700 text-sm">
                       <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6">{formatDate(r?.date)}</td>
+                      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{r?.offeringType || "-"}</td>
                       <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{formatMoney(r?.amount || 0, currency)}</td>
                       <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.createdBy?.fullName || "—"}>
                         <span className="sm:hidden">{truncateMobileName(r?.createdBy?.fullName || "—")}</span>
@@ -2283,6 +2319,10 @@ function OrganisationDetailsPage() {
                     <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(offeringViewRow?.date)}</div>
                   </div>
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div className="font-semibold text-gray-500 text-xs">Offering Type</div>
+                    <div className="mt-1 font-semibold text-gray-900 text-sm">{offeringViewRow?.offeringType || "—"}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                     <div className="font-semibold text-gray-500 text-xs">Amount</div>
                     <div className="mt-1 font-semibold text-blue-700 text-sm">{formatMoney(offeringViewRow?.amount || 0, currency)}</div>
                   </div>
@@ -2319,6 +2359,31 @@ function OrganisationDetailsPage() {
               ) : null}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-gray-500 text-xs">Offering Type</label>
+                    <AddLookupValueButton
+                      label="Add offering type"
+                      kind="offeringType"
+                      onCreated={async (value) => {
+                        await reloadOfferingTypes();
+                        setOfferingType(value);
+                      }}
+                    />
+                  </div>
+                  <select
+                    value={offeringType}
+                    onChange={(e) => setOfferingType(e.target.value)}
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  >
+                    <option value="">Select offering type</option>
+                    {offeringTypeOptions.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block font-semibold text-gray-500 text-xs">Date Collected</label>
                   <input
@@ -2378,6 +2443,10 @@ function OrganisationDetailsPage() {
             </form>
           </SimpleModal>
         </div>
+      ) : null}
+
+      {activeTab === "expenses" ? (
+        <ScopedExpensesTab scope={type} entityId={id} entityLabel={title.toLowerCase()} />
       ) : null}
 
       <ConfirmDialog

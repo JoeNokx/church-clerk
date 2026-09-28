@@ -292,6 +292,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("today"); // "today" | "overdue" | "upcoming" | "all"
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterAssigned, setFilterAssigned] = useState(""); // "" | "assigned" | "unassigned"
   const [filterSearch, setFilterSearch] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
@@ -317,13 +318,13 @@ export default function FollowUpsTab({ setHeaderAction }) {
   const fetchFollowUps = useCallback(async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
-      const params = { page, limit: 25, status: filterStatus || undefined, search: filterSearch || undefined, dateFrom: filterDateFrom || undefined, dateTo: filterDateTo || undefined, ...overrides };
+      const params = { page, limit: 25, status: filterStatus || undefined, search: filterSearch || undefined, dateFrom: filterDateFrom || undefined, dateTo: filterDateTo || undefined, assigned: filterAssigned || undefined, ...overrides };
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const res = await getAllFollowUps(params);
       setFollowUps(res.data?.data || []);
       setPagination(res.data?.pagination || { page: 1, total: 0, pages: 1 });
     } catch { setFollowUps([]); } finally { setLoading(false); }
-  }, [filterStatus, filterSearch, filterDateFrom, filterDateTo]);
+  }, [filterStatus, filterSearch, filterDateFrom, filterDateTo, filterAssigned]);
 
   useEffect(() => {
     loadStats();
@@ -365,6 +366,11 @@ export default function FollowUpsTab({ setHeaderAction }) {
     if (filterStatus) {
       list = list.filter((fu) => fu.status === filterStatus);
     }
+    if (filterAssigned === "assigned") {
+      list = list.filter((fu) => Boolean(fu.assignedTo));
+    } else if (filterAssigned === "unassigned") {
+      list = list.filter((fu) => !fu.assignedTo);
+    }
     if (filterDateFrom || filterDateTo) {
       list = list.filter((fu) => {
         const d = (fu.scheduledDate || fu.followUpDate || "").slice(0, 10);
@@ -375,7 +381,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
       });
     }
     return list;
-  }, [view, rawItems, filterSearch, filterStatus, filterDateFrom, filterDateTo]);
+  }, [view, rawItems, filterSearch, filterStatus, filterAssigned, filterDateFrom, filterDateTo]);
   const overdueItems = filteredStatsItems;
 
   // Client-side pagination for today/overdue/upcoming views
@@ -447,6 +453,16 @@ export default function FollowUpsTab({ setHeaderAction }) {
                     { label: "Connected to Church", value: "connected-to-church" },
                   ],
                 },
+                {
+                  key: "assigned",
+                  value: filterAssigned,
+                  onChange: (v) => { setFilterAssigned(v); setClientPage(1); fetchFollowUps(1, { assigned: v || undefined }); },
+                  placeholder: "All",
+                  options: [
+                    { label: "Assigned", value: "assigned" },
+                    { label: "Unassigned", value: "unassigned" },
+                  ],
+                },
               ]}
               dateFrom={filterDateFrom}
               dateTo={filterDateTo}
@@ -477,12 +493,25 @@ export default function FollowUpsTab({ setHeaderAction }) {
                     { label: "Connected to Church", value: "connected-to-church" },
                   ],
                 },
+                {
+                  key: "assigned",
+                  label: "Assignment",
+                  value: filterAssigned,
+                  defaultValue: "",
+                  options: [
+                    { label: "All", value: "" },
+                    { label: "Assigned", value: "assigned" },
+                    { label: "Unassigned", value: "unassigned" },
+                  ],
+                },
               ]}
               onApply={(pending) => {
                 const v = pending.status || "";
+                const a = pending.assigned || "";
                 setFilterStatus(v);
+                setFilterAssigned(a);
                 setClientPage(1);
-                fetchFollowUps(1, { status: v || undefined });
+                fetchFollowUps(1, { status: v || undefined, assigned: a || undefined });
               }}
             />
         </div>
@@ -508,16 +537,16 @@ export default function FollowUpsTab({ setHeaderAction }) {
         ) : overdueItems.length === 0 ? (
           <EmptyState
             compact
-            illustration={filterSearch || filterStatus || filterDateFrom || filterDateTo ? "search" : "followUps"}
-            title={filterSearch || filterStatus || filterDateFrom || filterDateTo
+            illustration={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo ? "search" : "followUps"}
+            title={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo
               ? "No follow-ups found"
               : view === "today" ? "No follow-ups today" : view === "overdue" ? "No overdue follow-ups" : view === "upcoming" ? "No upcoming follow-ups" : "No follow-ups yet"}
-            description={filterSearch || filterStatus || filterDateFrom || filterDateTo
+            description={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo
               ? "We couldn't find any follow-ups matching your filters."
               : view === "overdue" ? "You're all caught up." : "Schedule follow-ups to stay connected with prospects."}
-            actionLabel={filterSearch || filterStatus || filterDateFrom || filterDateTo ? "Clear Filters" : null}
-            onAction={filterSearch || filterStatus || filterDateFrom || filterDateTo
-              ? () => { setFilterSearch(""); setFilterStatus(""); setFilterDateFrom(""); setFilterDateTo(""); }
+            actionLabel={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo ? "Clear Filters" : null}
+            onAction={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo
+              ? () => { setFilterSearch(""); setFilterStatus(""); setFilterAssigned(""); setFilterDateFrom(""); setFilterDateTo(""); }
               : undefined}
           />
         ) : (
