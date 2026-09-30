@@ -1,5 +1,5 @@
 import Member from "../models/memberModel.js";
-import Attendance from "../models/attendanceModel.js";
+import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Program from "../models/programModel.js";
 import GroupModel from "../models/organisationModel/groupModel.js";
 import DepartmentModel from "../models/organisationModel/departmentModel.js";
@@ -41,7 +41,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
     expenses, financialStatement
   ] = await Promise.all([
     hasData(Member, churchId),
-    hasData(Attendance, churchId),
+    hasData(ServiceIndividualAttendance, churchId),
     hasData(Visitor, churchId),
     hasData(Program, churchId),
     hasData(GroupModel, churchId),

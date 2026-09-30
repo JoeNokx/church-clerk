@@ -1,29 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  createAttendance as apiCreateAttendance,
   createVisitor as apiCreateVisitor,
-  deleteAttendance as apiDeleteAttendance,
   deleteVisitor as apiDeleteVisitor,
-  getAttendances,
   getVisitors,
-  updateAttendance as apiUpdateAttendance,
   updateVisitor as apiUpdateVisitor
 } from "../services/attendance.api.js";
 
 export const attendanceQueryKeys = {
-  attendancesPrefix: (churchId) => ["attendance", String(churchId || ""), "attendances"],
-  attendances: (churchId, filters) => [
-    "attendance",
-    String(churchId || ""),
-    "attendances",
-    Number(filters?.page || 1),
-    Number(filters?.limit || 10),
-    String(filters?.serviceType || ""),
-    String(filters?.dateFrom || ""),
-    String(filters?.dateTo || ""),
-    String(filters?.mainSpeaker || "")
-  ],
   visitorsPrefix: (churchId) => ["attendance", String(churchId || ""), "visitors"],
   visitors: (churchId, filters) => [
     "attendance",
@@ -33,9 +17,10 @@ export const attendanceQueryKeys = {
     Number(filters?.page || 1),
     Number(filters?.limit || 10),
     String(filters?.search || ""),
-    String(filters?.serviceType || ""),
+    String(filters?.source || ""),
     String(filters?.dateFrom || ""),
-    String(filters?.dateTo || "")
+    String(filters?.dateTo || ""),
+    String(filters?.attendance || "")
   ],
   visitorStats: (churchId) => [
     "attendance",
@@ -44,22 +29,6 @@ export const attendanceQueryKeys = {
     "stats"
   ]
 };
-
-function buildAttendanceParams(filters) {
-  const next = filters || {};
-
-  const params = {
-    page: next.page,
-    limit: next.limit
-  };
-
-  if (next.serviceType) params.serviceType = next.serviceType;
-  if (next.dateFrom) params.dateFrom = next.dateFrom;
-  if (next.dateTo) params.dateTo = next.dateTo;
-  if (next.mainSpeaker) params.mainSpeaker = next.mainSpeaker;
-
-  return params;
-}
 
 function buildVisitorParams(filters) {
   const next = filters || {};
@@ -70,30 +39,12 @@ function buildVisitorParams(filters) {
   };
 
   if (next.search) params.search = next.search;
-  if (next.serviceType) params.serviceType = next.serviceType;
+  if (next.source) params.source = next.source;
   if (next.dateFrom) params.dateFrom = next.dateFrom;
   if (next.dateTo) params.dateTo = next.dateTo;
+  if (next.attendance) params.attendance = next.attendance;
 
   return params;
-}
-
-export function useAttendancesQuery({ activeChurchId, filters, enabled }) {
-  const churchId = activeChurchId || "";
-
-  return useQuery({
-    queryKey: attendanceQueryKeys.attendances(churchId, filters),
-    enabled: Boolean(enabled && churchId),
-    queryFn: async ({ signal }) => {
-      const params = buildAttendanceParams(filters);
-      const res = await getAttendances(params, { signal });
-      const payload = res?.data?.data ?? res?.data;
-
-      return {
-        attendances: Array.isArray(payload?.attendances) ? payload.attendances : [],
-        pagination: payload?.pagination || null
-      };
-    }
-  });
 }
 
 export function useVisitorsQuery({ activeChurchId, filters, enabled }) {
@@ -133,47 +84,6 @@ export function useVisitorStatsQuery({ activeChurchId, filters, enabled }) {
       return payload?.stats || null;
     }
   });
-}
-
-export function useAttendanceMutations(activeChurchId) {
-  const queryClient = useQueryClient();
-  const churchId = activeChurchId || "";
-
-  const invalidateAttendances = async () => {
-    if (!churchId) return;
-    await queryClient.invalidateQueries({
-      queryKey: attendanceQueryKeys.attendancesPrefix(churchId),
-      exact: false
-    });
-  };
-
-  const createAttendance = useMutation({
-    mutationFn: async (payload) => {
-      return await apiCreateAttendance(payload);
-    },
-    onSuccess: invalidateAttendances
-  });
-
-  const updateAttendance = useMutation({
-    mutationFn: async ({ id, payload }) => {
-      return await apiUpdateAttendance(id, payload);
-    },
-    onSuccess: invalidateAttendances
-  });
-
-  const deleteAttendance = useMutation({
-    mutationFn: async (id) => {
-      return await apiDeleteAttendance(id);
-    },
-    onSuccess: invalidateAttendances
-  });
-
-  return {
-    createAttendance,
-    updateAttendance,
-    deleteAttendance,
-    invalidateAttendances
-  };
 }
 
 export function useVisitorMutations(activeChurchId) {

@@ -1,6 +1,6 @@
 import Member from "../models/memberModel.js";
 import Visitor from "../models/visitorsModel.js";
-import Attendance from "../models/attendanceModel.js";
+import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Department from "../models/organisationModel/departmentModel.js";
 import Cell from "../models/organisationModel/cellModel.js";
 import Group from "../models/organisationModel/groupModel.js";
@@ -86,7 +86,7 @@ export const globalSearch = async (req, res) => {
           ...base,
           $or: [{ fullName: regex }, { phoneNumber: regex }, { email: regex }],
         })
-          .select("_id fullName phoneNumber status serviceDate")
+          .select("_id fullName phoneNumber status")
           .limit(LIMIT)
           .lean()
           .then((rows) => {
@@ -106,9 +106,9 @@ export const globalSearch = async (req, res) => {
     // Attendance
     if (can(perms, "attendance")) {
       tasks.push(
-        Attendance.find({ ...base, serviceType: regex })
-          .select("_id serviceType serviceDate totalNumber")
-          .sort({ serviceDate: -1 })
+        ServiceIndividualAttendance.find({ ...base, serviceType: regex })
+          .select("_id serviceType date presentMembers")
+          .sort({ date: -1 })
           .limit(LIMIT)
           .lean()
           .then((rows) => {
@@ -116,10 +116,10 @@ export const globalSearch = async (req, res) => {
               results.attendance = rows.map((r) => ({
                 _id: r._id,
                 title: r.serviceType || "—",
-                subtitle: r.serviceDate
-                  ? new Date(r.serviceDate).toLocaleDateString()
+                subtitle: r.date
+                  ? new Date(r.date).toLocaleDateString()
                   : "",
-                badge: r.totalNumber != null ? `${r.totalNumber} attendees` : "",
+                badge: `${(r.presentMembers || []).length} attendees`,
                 module: "attendance",
               }));
             }

@@ -1,29 +1,13 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import debounce from "../../../shared/utils/debounce.js";
 import AttendanceContext from "../attendance.store.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
-import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { getVisitors } from "../services/attendance.api.js";
-
-const SERVICE_TYPES = [
-  "Sunday Service",
-  "Sunday First Service",
-  "Sunday Second Service",
-  "Sunday Third Service",
-  "Sunday Fourth Service",
-  "Sunday Fifth Service",
-  "Children Service",
-  "Midweek Service",
-  "Prayer Meeting"
-];
 
 function VisitorFilters() {
   const store = useContext(AttendanceContext);
   const [value, setValue] = useState(store?.visitorFilters?.search || "");
-
-  const { values: lookupServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
 
   const appliedDateFrom = store?.visitorFilters?.dateFrom || "";
   const appliedDateTo = store?.visitorFilters?.dateTo || "";
@@ -31,33 +15,26 @@ function VisitorFilters() {
   const fetchRef = useRef(store?.fetchVisitors);
   useEffect(() => { fetchRef.current = store?.fetchVisitors; });
 
-  const debouncedSearch = useMemo(() => {
-    return debounce((next) => {
+  const debouncedSearch = useRef(null);
+  useEffect(() => {
+    debouncedSearch.current = debounce((next) => {
       fetchRef.current?.({ search: next, page: 1 });
     }, 400);
+    return () => debouncedSearch.current?.cancel();
   }, []);
 
-  useEffect(() => {
-    setValue(store?.visitorFilters?.search || "");
-  }, [store?.visitorFilters?.search]);
-
-  useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [debouncedSearch]);
+  const storeSearch = store?.visitorFilters?.search || "";
+  const [prevStoreSearch, setPrevStoreSearch] = useState(storeSearch);
+  if (storeSearch !== prevStoreSearch) {
+    setPrevStoreSearch(storeSearch);
+    setValue(storeSearch);
+  }
 
   const onChange = (e) => {
     const next = e.target.value;
     setValue(next);
     store?.setVisitorFilters({ search: next, page: 1 });
-    debouncedSearch(next);
-  };
-
-  const onServiceTypeChange = (e) => {
-    const next = e.target.value;
-    store?.setVisitorFilters({ serviceType: next, page: 1 });
-    store?.fetchVisitors({ serviceType: next, page: 1 });
+    debouncedSearch.current?.(next);
   };
 
   const onSourceChange = (e) => {
@@ -70,11 +47,6 @@ function VisitorFilters() {
     store?.setVisitorFilters({ dateFrom: from, dateTo: to, page: 1 });
     store?.fetchVisitors({ dateFrom: from, dateTo: to, page: 1 });
   };
-
-  const serviceOptions = useMemo(
-    () => serviceTypeOptions.map((t) => ({ label: t, value: t })),
-    [serviceTypeOptions]
-  );
 
   const SOURCE_OPTIONS = [
     { label: "Church member", value: "Church member" },
@@ -92,13 +64,6 @@ function VisitorFilters() {
 
   const selectConfigs = [
     {
-      key: "serviceType",
-      value: store?.visitorFilters?.serviceType || "",
-      onChange: (v) => onServiceTypeChange({ target: { value: v } }),
-      options: serviceOptions,
-      placeholder: "All Services",
-    },
-    {
       key: "source",
       value: store?.visitorFilters?.source || "",
       onChange: (v) => onSourceChange({ target: { value: v } }),
@@ -108,13 +73,6 @@ function VisitorFilters() {
   ];
 
   const mobileFilters = [
-    {
-      key: "serviceType",
-      label: "Service Type",
-      value: store?.visitorFilters?.serviceType || "",
-      defaultValue: "",
-      options: [{ label: "All Services", value: "" }, ...serviceOptions],
-    },
     {
       key: "source",
       label: "Source",
@@ -127,7 +85,6 @@ function VisitorFilters() {
   const getLiveCount = useCallback(async ({ filters: f, dateFrom: dFrom, dateTo: dTo }) => {
     try {
       const params = { page: 1, limit: 1 };
-      if (f?.serviceType && f.serviceType !== "") params.serviceType = f.serviceType;
       if (f?.source && f.source !== "") params.source = f.source;
       if (value) params.search = value;
       if (dFrom) params.dateFrom = dFrom;
@@ -141,8 +98,8 @@ function VisitorFilters() {
   }, [value]);
 
   const onMobileApply = (pending) => {
-    store?.setVisitorFilters({ serviceType: pending.serviceType, source: pending.source, page: 1 });
-    store?.fetchVisitors({ serviceType: pending.serviceType, source: pending.source, page: 1 });
+    store?.setVisitorFilters({ source: pending.source, page: 1 });
+    store?.fetchVisitors({ source: pending.source, page: 1 });
   };
 
   return (

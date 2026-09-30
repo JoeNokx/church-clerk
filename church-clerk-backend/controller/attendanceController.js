@@ -1,155 +1,12 @@
 import mongoose from "mongoose";
-import Attendance from "../models/attendanceModel.js"
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
-import { buildPaginationParams, buildPaginationResponse } from "../utils/paginationHelper.js";
-import { buildDateRangeQuery } from "../utils/searchHelper.js";
-
-
-const createAttendance = async (req, res) => {
-    
-    try {
-        
-        const {serviceType, serviceDate, serviceTime, totalNumber, mainSpeaker} = req.body;
-
-        if (!serviceType || !serviceDate || !totalNumber) {
-            return res.status(400).json({ message: "service type, service date and total number are required" });
-          }
-
-          const attendance = await Attendance.create({
-            serviceType,
-            serviceDate,
-            serviceTime,
-            totalNumber,
-            mainSpeaker,
-            church: req.activeChurch._id,
-            createdBy: req.user._id
-          })
-
-          return res.status(201).json({message: "attendance created successfully", attendance})
-
-
-    } catch (error) {
-        return res.status(400).json({message: "attendance could not be created", error: error.message})
-    }
-}
-
-
-
-//get all attendance
-
-const getAllAttendances = async (req, res) => {
-  try {
-    const { page, limit, skip } = buildPaginationParams(req.query);
-    const { serviceType, dateFrom, dateTo, mainSpeaker } = req.query;
-
-    const query = { church: req.activeChurch._id };
-
-    if (serviceType) {
-      query.serviceType = serviceType;
-    }
-
-    if (mainSpeaker) {
-      query.mainSpeaker = { $regex: mainSpeaker, $options: "i" };
-    }
-
-    if (dateFrom || dateTo) {
-      Object.assign(query, buildDateRangeQuery(dateFrom, dateTo, "serviceDate"));
-    }
-
-    const attendances = await Attendance.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const totalAttendances = await Attendance.countDocuments(query);
-    const pagination = buildPaginationResponse(totalAttendances, page, limit);
-
-    if (!attendances || attendances.length === 0) {
-      return res.status(200).json({
-        message: "No attendance found.",
-        pagination: {
-          totalResult: 0,
-          totalPages: 0,
-          currentPage: page,
-          hasPrev: false,
-          hasNext: false,
-          prevPage: null,
-          nextPage: null,
-        },
-        count: 0,
-        attendances: [],
-      });
-    }
-
-   
-    // SUCCESS RESPONSE
-    return res.status(200).json({
-      pagination,
-      count: attendances.length,
-      attendances,
-    });
-
-  } catch (error) {
-    return res.status(400).json({
-      message: "Could not fetch attendance",
-      error: error.message,
-    });
-  }
-};
-
-
-
-//update attendance
-const updateAttendance = async (req, res) => {
-    
-    try {
-        const {id} = req.params;
-        const query = {_id: id}
-
-        query.church = req.activeChurch._id
-
-        const attendance = await Attendance.findOneAndUpdate(query, req.body, {
-            new: true,
-            runValidators: true
-        })
-
-        if(!attendance) {
-            return res.status(404).json({message: "attendance not found"})
-        }
-
-        return res.status(200).json({message: "attendance updated successfully", attendance})
-    } catch (error) {
-        return res.status(400).json({message: "attendance could not be updated", error: error.message})
-    }
-}
-
-
-const deleteAttendance = async (req, res) => {
-    
-    try {
-         const {id} = req.params;
-        const query = { _id: id, church: req.activeChurch._id }
-        
-        const attendance = await Attendance.findOneAndDelete(query)
-
-        if(!attendance) {
-            return res.status(404).json({message: "attendance not found"})
-        }
-
-        return res.status(200).json({message: "attendance deleted successfully", attendance})
-    } catch (error) {
-        return res.status(400).json({message: "attendance could not be deleted", error: error.message})
-    }
-}
-
-
-
-//VISITORS
-
-// create visitor
 import Visitor from "../models/visitorsModel.js";
 import VisitorLog from "../models/visitorLogModel.js";
+import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
+import Member from "../models/memberModel.js";
+import { annotateDeletable } from "../services/recordDependencyService.js";
+
+// create visitor
 
 const createVisitor = async (req, res) => {
   try {
@@ -158,27 +15,28 @@ const createVisitor = async (req, res) => {
       phoneNumber,
       email,
       location,
-      serviceType,
-      serviceDate,
       invitedBy,
       source,
       status,
       note,
-      visitorLog
+      attendance
     } = req.body;
 
-    let log = null;
-    if (visitorLog) {
-      log = await VisitorLog.findOne({ _id: visitorLog, church: req.activeChurch._id });
-      if (!log) {
-        return res.status(404).json({ message: "visitors log not found" });
-      }
+    if (!fullName || !phoneNumber || !location) {
+      return res.status(400).json({
+        message: "fullName, phoneNumber and location are required",
+      });
     }
 
-    if (!fullName || !phoneNumber || !location || (!serviceType && !log)) {
-      return res.status(400).json({
-        message: "fullName, phoneNumber, location and serviceType are required",
-      });
+    let session = null;
+    if (attendance) {
+      if (!mongoose.Types.ObjectId.isValid(attendance)) {
+        return res.status(400).json({ message: "invalid attendance session" });
+      }
+      session = await ServiceIndividualAttendance.findOne({ _id: attendance, church: req.activeChurch._id }).select("_id");
+      if (!session) {
+        return res.status(404).json({ message: "attendance session not found" });
+      }
     }
 
     let validatedPhoneNumber;
@@ -188,13 +46,37 @@ const createVisitor = async (req, res) => {
       return res.status(400).json({ message: e?.message || "Invalid phone number" });
     }
 
+    const existingVisitor = await Visitor.findOne({
+      church: req.activeChurch._id,
+      phoneNumber: validatedPhoneNumber
+    });
+
+    if (existingVisitor) {
+      if (session) {
+        await Visitor.updateOne(
+          { _id: existingVisitor._id },
+          { $addToSet: { attendance: session._id } }
+        );
+        const updated = await Visitor.findById(existingVisitor._id)
+          .populate({ path: "attendance", select: "date serviceType mainSpeaker", options: { sort: { date: -1 } } });
+        return res.status(200).json({
+          message: "Visitor already exists — added to this session",
+          visitor: updated,
+          existing: true
+        });
+      }
+      return res.status(409).json({
+        message: "A visitor with this phone number already exists.",
+        visitor: existingVisitor,
+        existing: true
+      });
+    }
+
     const data = {
       fullName,
       phoneNumber: validatedPhoneNumber,
       email,
       location,
-      serviceType: log ? log.serviceType : serviceType,
-      serviceDate: log ? log.serviceDate : serviceDate,
       invitedBy,
       source,
       note,
@@ -202,8 +84,8 @@ const createVisitor = async (req, res) => {
       createdBy: req.user._id
     };
 
-    if (log) {
-      data.visitorLog = log._id;
+    if (session) {
+      data.attendance = [session._id];
     }
 
     if (status) {
@@ -228,16 +110,21 @@ const createVisitor = async (req, res) => {
 //get single visitor
 
 const getSingleVisitor = async (req, res) => {
-    
+
     try {
         const {id} = req.params;
         const query = { _id: id, church: req.activeChurch._id }
 
-        const visitor = await Visitor.findOne(query).populate("visitorLog", "serviceType serviceDate referenceId")
+        const visitor = await Visitor.findOne(query)
+          .populate("visitorLog", "serviceType serviceDate referenceId")
+          .populate({ path: "attendance", select: "date serviceType mainSpeaker", options: { sort: { date: -1 } } })
+          .lean();
 
         if(!visitor) {
             return res.status(404).json({message: "visitor not found"})
         }
+
+        visitor.attendanceCount = Array.isArray(visitor.attendance) ? visitor.attendance.length : 0;
 
         return res.status(200).json({message: "visitor found successfully", visitor})
 
@@ -249,12 +136,9 @@ const getSingleVisitor = async (req, res) => {
 
 //get all visitors
 
-import Member from "../models/memberModel.js";
-import { annotateDeletable } from "../services/recordDependencyService.js";
-
 const getAllVisitors = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "", serviceType = "", source: sourceFilter = "", dateFrom = "", dateTo = "", visitorLog = "" } = req.query;
+    const { page = 1, limit = 10, search = "", source: sourceFilter = "", dateFrom = "", dateTo = "", attendance = "" } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -270,25 +154,21 @@ const getAllVisitors = async (req, res) => {
       ];
     }
 
-    if (serviceType) {
-      query.serviceType = serviceType;
-    }
-
     if (sourceFilter) {
       query.source = sourceFilter;
     }
 
-    if (visitorLog && mongoose.Types.ObjectId.isValid(visitorLog)) {
-      query.visitorLog = visitorLog;
+    if (attendance && mongoose.Types.ObjectId.isValid(attendance)) {
+      query.attendance = attendance;
     }
 
     if (dateFrom || dateTo) {
-      query.serviceDate = {};
-      if (dateFrom) query.serviceDate.$gte = new Date(dateFrom);
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
       if (dateTo) {
         const end = new Date(dateTo);
         end.setHours(23, 59, 59, 999);
-        query.serviceDate.$lte = end;
+        query.createdAt.$lte = end;
       }
     }
 
@@ -324,8 +204,9 @@ const getAllVisitors = async (req, res) => {
       convertedVisitorsPrev
     ] = await Promise.all([
       Visitor.find(query)
-        .select("fullName phoneNumber email location serviceType serviceDate invitedBy source status church visitorLog")
+        .select("fullName phoneNumber email location invitedBy source status church visitorLog attendance createdAt")
         .populate("visitorLog", "serviceType serviceDate referenceId")
+        .populate({ path: "attendance", select: "date serviceType", options: { sort: { date: -1 } } })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)
@@ -393,6 +274,10 @@ const getAllVisitors = async (req, res) => {
       nextPage: pageNum < totalPages ? pageNum + 1 : null,
     };
 
+    visitors.forEach((v) => {
+      v.attendanceCount = Array.isArray(v?.attendance) ? v.attendance.length : 0;
+    });
+
     await annotateDeletable("visitor", visitors, req.activeChurch._id);
 
     return res.status(200).json({
@@ -414,18 +299,28 @@ const getAllVisitors = async (req, res) => {
 
 //update visitor
 const updateVisitor = async (req, res) => {
-    
+
     try {
         const {id} = req.params;
         const query = { _id: id, church: req.activeChurch._id }
 
-        if (req.body?.visitorLog !== undefined && req.body.visitorLog) {
-          const log = await VisitorLog.findOne({ _id: req.body.visitorLog, church: req.activeChurch._id });
-          if (!log) {
-            return res.status(404).json({ message: "visitors log not found" });
+        delete req.body.visitorLog;
+        delete req.body.serviceType;
+        delete req.body.serviceDate;
+
+        let sessionToAdd = null;
+        if (req.body?.attendance !== undefined) {
+          const attendanceRef = req.body.attendance;
+          delete req.body.attendance;
+          if (attendanceRef) {
+            if (!mongoose.Types.ObjectId.isValid(attendanceRef)) {
+              return res.status(400).json({ message: "invalid attendance session" });
+            }
+            sessionToAdd = await ServiceIndividualAttendance.findOne({ _id: attendanceRef, church: req.activeChurch._id }).select("_id");
+            if (!sessionToAdd) {
+              return res.status(404).json({ message: "attendance session not found" });
+            }
           }
-          req.body.serviceType = log.serviceType;
-          req.body.serviceDate = log.serviceDate;
         }
 
         if (req.body?.phoneNumber !== undefined) {
@@ -441,7 +336,12 @@ const updateVisitor = async (req, res) => {
           }
         }
 
-        const attendance = await Visitor.findOneAndUpdate(query, req.body, {
+        const updateOp = { $set: req.body };
+        if (sessionToAdd) {
+          updateOp.$addToSet = { attendance: sessionToAdd._id };
+        }
+
+        const attendance = await Visitor.findOneAndUpdate(query, updateOp, {
             new: true,
             runValidators: true
         })
@@ -458,11 +358,11 @@ const updateVisitor = async (req, res) => {
 
 
 const deleteVisitor = async (req, res) => {
-    
+
     try {
          const {id} = req.params;
         const query = { _id: id, church: req.activeChurch._id }
-        
+
         const attendance = await Visitor.findOneAndDelete(query)
 
         if(!attendance) {
@@ -476,8 +376,6 @@ const deleteVisitor = async (req, res) => {
 }
 
 
-export {createAttendance, getAllAttendances, updateAttendance, deleteAttendance,
+export {
     createVisitor, getSingleVisitor, getAllVisitors, updateVisitor, deleteVisitor
 }
-
-

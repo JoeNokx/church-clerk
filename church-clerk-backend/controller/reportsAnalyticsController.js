@@ -1,5 +1,5 @@
 import Member from "../models/memberModel.js";
-import Attendance from "../models/attendanceModel.js";
+import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Visitor from "../models/visitorsModel.js";
 
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
@@ -224,6 +224,33 @@ async function aggregateMonthlySum({ Model, churchId, dateField, amountField, pe
   return map;
 }
 
+// Monthly sum of recorded attendees (presentMembers count per attendance session)
+async function aggregateMonthlyAttendance({ churchId, periodStart, periodEnd }) {
+  const rows = await ServiceIndividualAttendance.aggregate([
+    {
+      $match: {
+        church: churchId,
+        date: { $gte: periodStart, $lte: periodEnd }
+      }
+    },
+    {
+      $group: {
+        _id: { y: { $year: "$date" }, m: { $month: "$date" } },
+        total: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } }
+      }
+    },
+    { $sort: { "_id.y": 1, "_id.m": 1 } }
+  ]);
+
+  const map = new Map();
+  rows.forEach((r) => {
+    const key = `${r?._id?.y}-${String(r?._id?.m || 0).padStart(2, "0")}`;
+    map.set(key, clampToNumber(r?.total));
+  });
+
+  return map;
+}
+
 async function aggregateMonthlyCount({ Model, churchId, dateField, periodStart, periodEnd, extraMatch = {} }) {
   const match = {
     church: churchId,
@@ -396,24 +423,24 @@ async function computeKpis({ churchId, periodStart, periodEnd, prevStart, prevEn
     periodEnd: prevEnd
   });
 
-  const attendanceTotal = await Attendance.aggregate([
+  const attendanceTotal = await ServiceIndividualAttendance.aggregate([
     {
       $match: {
         church: churchId,
-        serviceDate: { $gte: periodStart, $lte: periodEnd }
+        date: { $gte: periodStart, $lte: periodEnd }
       }
     },
-    { $group: { _id: null, total: { $sum: "$totalNumber" } } }
+    { $group: { _id: null, total: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } } } }
   ]);
 
-  const prevAttendanceTotal = await Attendance.aggregate([
+  const prevAttendanceTotal = await ServiceIndividualAttendance.aggregate([
     {
       $match: {
         church: churchId,
-        serviceDate: { $gte: prevStart, $lte: prevEnd }
+        date: { $gte: prevStart, $lte: prevEnd }
       }
     },
-    { $group: { _id: null, total: { $sum: "$totalNumber" } } }
+    { $group: { _id: null, total: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } } } }
   ]);
 
   const totalAttendance = clampToNumber(attendanceTotal?.[0]?.total);
@@ -607,19 +634,16 @@ async function computeYearlyAnalytics({ churchId, year }) {
     )
   ]);
 
-  const attendanceMap = await aggregateMonthlySum({
-    Model: Attendance,
+  const attendanceMap = await aggregateMonthlyAttendance({
     churchId,
-    dateField: "serviceDate",
-    amountField: "totalNumber",
     periodStart,
     periodEnd
   });
 
-  const visitorsMap = await aggregateMonthlyCountFlexible({
+  const visitorsMap = await aggregateMonthlyCount({
     Model: Visitor,
     churchId,
-    dateExpr: { $ifNull: ["$serviceDate", "$createdAt"] },
+    dateField: "createdAt",
     periodStart,
     periodEnd
   });
@@ -889,43 +913,6 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
         ministries: joinNames(r?.ministry),
         dateJoined: toDateStr(r?.dateJoined),
         note: r?.note || "—",
-        recordedBy: userName(r?.createdBy),
-        createdAt: toDateTimeStr(r?.createdAt),
-        updatedAt: toDateTimeStr(r?.updatedAt)
-      }))
-    };
-  }
-
-  if (module === "attendance" || module === "attendance-total") {
-    const match = { church: churchId, ...rangeMatch("serviceDate") };
-    const rows = await Attendance.find(match)
-      .select("serviceType serviceDate serviceTime totalNumber mainSpeaker createdBy createdAt updatedAt")
-      .populate("createdBy", "fullName")
-      .sort({ serviceDate: -1 })
-      .limit(2000)
-      .lean();
-
-    const availableColumns = [
-      { key: "serviceDate", label: "Date" },
-      { key: "serviceType", label: "Service Type" },
-      { key: "serviceTime", label: "Service Time" },
-      { key: "totalNumber", label: "Total" },
-      { key: "mainSpeaker", label: "Speaker" },
-      { key: "recordedBy", label: "Recorded By" },
-      { key: "createdAt", label: "Created At" },
-      { key: "updatedAt", label: "Updated At" }
-    ];
-
-    return {
-      title: module === "attendance-total" ? "Attendance (Total)" : "Attendance",
-      columns: availableColumns,
-      availableColumns,
-      rows: rows.map((r) => ({
-        serviceDate: toDateStr(r?.serviceDate),
-        serviceType: r?.serviceType || "—",
-        serviceTime: r?.serviceTime || "—",
-        totalNumber: clampToNumber(r?.totalNumber),
-        mainSpeaker: r?.mainSpeaker || "—",
         recordedBy: userName(r?.createdBy),
         createdAt: toDateTimeStr(r?.createdAt),
         updatedAt: toDateTimeStr(r?.updatedAt)
@@ -1207,11 +1194,10 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
 
 
 
-  if (module === "attendance-individual") {
-    const ServiceIndividualAttendance = (await import("../models/serviceIndividualAttendanceModel.js")).default;
+  if (module === "attendance" || module === "attendance-total" || module === "attendance-individual") {
     const match = { church: churchId, ...rangeMatch("date") };
     const rows = await ServiceIndividualAttendance.find(match)
-      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot selfCheckInActive createdBy createdAt updatedAt")
+      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot expectedCount selfCheckInActive createdBy createdAt updatedAt")
       .populate("presentMembers", "firstName lastName")
       .populate("absentMembers", "firstName lastName")
       .populate("createdBy", "fullName")
@@ -1224,6 +1210,7 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
       { key: "serviceType", label: "Service Type" },
       { key: "present", label: "Present" },
       { key: "absent", label: "Absent" },
+      { key: "expected", label: "Expected" },
       { key: "total", label: "Total Members" },
       { key: "presentMembers", label: "Present Members" },
       { key: "absentMembers", label: "Absent Members" },
@@ -1235,7 +1222,7 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
     ];
 
     return {
-      title: "Attendance (Individual)",
+      title: "Attendance",
       columns: availableColumns,
       availableColumns,
       rows: rows.map((r) => ({
@@ -1243,6 +1230,7 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
         serviceType: r?.serviceType || "—",
         present: Array.isArray(r?.presentMembers) ? r.presentMembers.length : 0,
         absent: Array.isArray(r?.absentMembers) ? r.absentMembers.length : 0,
+        expected: clampToNumber(r?.expectedCount),
         total: clampToNumber(r?.totalMembersSnapshot),
         presentMembers: joinNames(r?.presentMembers),
         absentMembers: joinNames(r?.absentMembers),
@@ -1256,16 +1244,17 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
   }
 
   if (module === "visitors") {
-    const match = { church: churchId, ...rangeMatch("serviceDate") };
+    const match = { church: churchId, ...rangeMatch("createdAt") };
     const rows = await Visitor.find(match)
-      .select("fullName phoneNumber email location serviceType serviceDate invitedBy source status note createdBy createdAt updatedAt")
+      .select("fullName phoneNumber email location invitedBy source status note attendance createdBy createdAt updatedAt")
+      .populate({ path: "attendance", select: "date serviceType", options: { sort: { date: -1 } } })
       .populate("createdBy", "fullName")
-      .sort({ serviceDate: -1 })
+      .sort({ createdAt: -1 })
       .limit(2000)
       .lean();
 
     const availableColumns = [
-      { key: "serviceDate", label: "Date" },
+      { key: "visitDate", label: "Visit Date" },
       { key: "fullName", label: "Name" },
       { key: "phoneNumber", label: "Phone" },
       { key: "email", label: "Email" },
@@ -1285,12 +1274,12 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
       columns: availableColumns,
       availableColumns,
       rows: rows.map((r) => ({
-        serviceDate: toDateStr(r?.serviceDate),
+        visitDate: toDateStr(r?.attendance?.[0]?.date || r?.createdAt),
         fullName: r?.fullName || "—",
         phoneNumber: r?.phoneNumber || "—",
         email: r?.email || "—",
         location: r?.location || "—",
-        serviceType: r?.serviceType || "—",
+        serviceType: r?.attendance?.[0]?.serviceType || "—",
         invitedBy: r?.invitedBy || "—",
         source: r?.source || "—",
         status: r?.status || "—",
@@ -2749,8 +2738,8 @@ async function buildAuditReport({ churchId, from, to, options, rangeMatch }) {
 const REPORT_MODULE_LABELS = {
   members: "Members",
   attendance: "Attendance",
-  "attendance-total": "Attendance (Total)",
-  "attendance-individual": "Attendance (Individual)",
+  "attendance-total": "Attendance",
+  "attendance-individual": "Attendance",
   visitors: "Visitors",
   tithe: "Tithe",
   "tithe-individual": "Tithe (Individual)",
@@ -3048,11 +3037,8 @@ async function computeAnalytics({ churchId, periodStart, periodEnd }) {
     )
   );
 
-  const attendanceMap = await aggregateMonthlySum({
-    Model: Attendance,
+  const attendanceMap = await aggregateMonthlyAttendance({
     churchId,
-    dateField: "serviceDate",
-    amountField: "totalNumber",
     periodStart,
     periodEnd
   });

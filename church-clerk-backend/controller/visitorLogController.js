@@ -118,12 +118,6 @@ const updateVisitorLog = async (req, res) => {
       return res.status(404).json({ message: "visitors log not found" });
     }
 
-    // keep linked visitors' service details in sync with the log
-    await Visitor.updateMany(
-      { church: req.activeChurch._id, visitorLog: visitorLog._id },
-      { $set: { serviceType: visitorLog.serviceType, serviceDate: visitorLog.serviceDate } }
-    );
-
     return res.status(200).json({ message: "visitors log updated successfully", visitorLog });
   } catch (error) {
     return res.status(400).json({ message: "visitors log could not be updated", error: error.message });

@@ -1,5 +1,5 @@
 import Member from "../models/memberModel.js"
-import Attendance from "../models/attendanceModel.js"
+import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js"
 import Program from "../models/programModel.js"; 
 import Offering from "../models/financeModel/offeringModel.js";
 import Visitor from "../models/visitorsModel.js";
@@ -76,22 +76,22 @@ const getDashboardKPI = async (req, res) => {
         lastSundayNextDay.setDate(lastSunday.getDate() + 1);
 
         const [thisSundayServices, lastSundayServices] = await Promise.all([
-          Attendance.find({
+          ServiceIndividualAttendance.find({
             church: query.church,
-            serviceDate: { $gte: thisSunday, $lt: thisSundayNextDay }
+            date: { $gte: thisSunday, $lt: thisSundayNextDay }
           })
-            .select("totalNumber")
+            .select("presentMembers")
             .lean(),
-          Attendance.find({
+          ServiceIndividualAttendance.find({
             church: query.church,
-            serviceDate: { $gte: lastSunday, $lt: lastSundayNextDay }
+            date: { $gte: lastSunday, $lt: lastSundayNextDay }
           })
-            .select("totalNumber")
+            .select("presentMembers")
             .lean()
         ]);
 
-        const thisSundayAttendance = thisSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
-        const lastSundayAttendancePrevWeek = lastSundayServices.reduce((total, service) => total + (service.totalNumber || 0), 0);
+        const thisSundayAttendance = thisSundayServices.reduce((total, service) => total + (service.presentMembers?.length || 0), 0);
+        const lastSundayAttendancePrevWeek = lastSundayServices.reduce((total, service) => total + (service.presentMembers?.length || 0), 0);
 
         const serviceCount = thisSundayServices.length;
         const thisSundayDate = thisSunday.toISOString().split("T")[0]; // YYYY-MM-DD
@@ -179,9 +179,9 @@ const getDashboardAnalytics = async (req, res) => {
         };
 
         // --- Last 10 Sundays Attendance (across all time) ---
-        const last10SundaysAgg = await Attendance.aggregate([
-          { $match: { church: query.church, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$serviceDate" }, 1] } }] } },
-          { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$serviceDate" } }, totalAttendance: { $sum: "$totalNumber" }, records: { $push: { serviceType: "$serviceType", totalNumber: "$totalNumber" } } } },
+        const last10SundaysAgg = await ServiceIndividualAttendance.aggregate([
+          { $match: { church: query.church, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$date" }, 1] } }] } },
+          { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, totalAttendance: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } }, records: { $push: { serviceType: "$serviceType", totalNumber: { $size: { $ifNull: ["$presentMembers", []] } } } } } },
           { $sort: { "_id": -1 } },
           { $limit: 10 },
           { $sort: { "_id": 1 } }
@@ -192,10 +192,10 @@ const getDashboardAnalytics = async (req, res) => {
         });
 
         // --- Monthly Attendance Graph (Sundays, for selected year) ---
-        const monthlyAttAgg = await Attendance.aggregate([
-          { $match: { church: query.church, serviceDate: { $gte: startOfYear, $lte: endOfYear }, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$serviceDate" }, 1] } }] } },
-          { $addFields: { month: { $month: "$serviceDate" } } },
-          { $group: { _id: "$month", totalAttendance: { $sum: "$totalNumber" } } },
+        const monthlyAttAgg = await ServiceIndividualAttendance.aggregate([
+          { $match: { church: query.church, date: { $gte: startOfYear, $lte: endOfYear }, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$date" }, 1] } }] } },
+          { $addFields: { month: { $month: "$date" } } },
+          { $group: { _id: "$month", totalAttendance: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } } } },
           { $sort: { "_id": 1 } }
         ]);
         const attendanceGraph = [];

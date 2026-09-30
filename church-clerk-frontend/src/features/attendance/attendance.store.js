@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -7,8 +7,6 @@ import {
 import ChurchContext from "../church/church.store.js";
 import {
   attendanceQueryKeys,
-  useAttendanceMutations,
-  useAttendancesQuery,
   useVisitorMutations,
   useVisitorStatsQuery,
   useVisitorsQuery
@@ -23,51 +21,26 @@ const emptyPagination = {
   prevPage: null
 };
 
-const emptyAttendanceFilters = {
-  page: 1,
-  limit: 10,
-  serviceType: "",
-  dateFrom: "",
-  dateTo: "",
-  mainSpeaker: ""
-};
-
 const emptyVisitorFilters = {
   page: 1,
   limit: 10,
   search: "",
-  serviceType: "",
   source: "",
   dateFrom: "",
-  dateTo: ""
+  dateTo: "",
+  attendance: ""
 };
 
 export function AttendanceProvider({ children }) {
-  const [attendanceFilters, setAttendanceFiltersState] = useState(emptyAttendanceFilters);
   const [visitorFilters, setVisitorFiltersState] = useState(emptyVisitorFilters);
   const queryClient = useQueryClient();
 
   const churchStore = useContext(ChurchContext);
-  const [activeChurch, setActiveChurch] = useState(null);
-
-  useEffect(() => {
-    const churchId = churchStore?.activeChurch?._id || null;
-    setActiveChurch(churchId);
-  }, [churchStore?.activeChurch]);
-
-  const setAttendanceFilters = useCallback((partial) => {
-    setAttendanceFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
-  }, []);
+  const activeChurch = churchStore?.activeChurch?._id || null;
 
   const setVisitorFilters = useCallback((partial) => {
     setVisitorFiltersState((prev) => ({ ...prev, ...(partial || {}) }));
   }, []);
-
-  const attendancesQuery = useAttendancesQuery({
-    activeChurchId: activeChurch,
-    filters: attendanceFilters,
-    enabled: true
-  });
 
   const visitorsQuery = useVisitorsQuery({
     activeChurchId: activeChurch,
@@ -81,15 +54,10 @@ export function AttendanceProvider({ children }) {
     enabled: true
   });
 
-  const attendances = Array.isArray(attendancesQuery?.data?.attendances) ? attendancesQuery.data.attendances : [];
-  const attendancePagination = attendancesQuery?.data?.pagination || emptyPagination;
-  const attendanceLoading = Boolean(attendancesQuery?.isLoading);
-  const attendanceError =
-    attendancesQuery?.error?.response?.data?.message ||
-    attendancesQuery?.error?.message ||
-    null;
-
-  const visitors = Array.isArray(visitorsQuery?.data?.visitors) ? visitorsQuery.data.visitors : [];
+  const visitors = useMemo(
+    () => (Array.isArray(visitorsQuery?.data?.visitors) ? visitorsQuery.data.visitors : []),
+    [visitorsQuery]
+  );
   const visitorPagination = visitorsQuery?.data?.pagination || emptyPagination;
   const visitorLoading = Boolean(visitorsQuery?.isLoading);
   const visitorError =
@@ -97,33 +65,19 @@ export function AttendanceProvider({ children }) {
     visitorsQuery?.error?.message ||
     null;
 
-  const visitorStatsPayload = visitorStatsQuery?.data || visitorsQuery?.data?.stats || null;
-  const visitorStats = {
-    totalVisitors: Number(visitorStatsPayload?.totalVisitors || 0),
-    thisWeekVisitors: Number(visitorStatsPayload?.thisWeekVisitors || 0),
-    thisMonthVisitors: Number(visitorStatsPayload?.thisMonthVisitors || 0),
-    convertedVisitors: Number(visitorStatsPayload?.convertedVisitors || 0),
-    change: visitorStatsPayload?.change || null,
-    diff: visitorStatsPayload?.diff || null
-  };
+  const visitorStats = useMemo(() => {
+    const payload = visitorStatsQuery?.data || visitorsQuery?.data?.stats || null;
+    return {
+      totalVisitors: Number(payload?.totalVisitors || 0),
+      thisWeekVisitors: Number(payload?.thisWeekVisitors || 0),
+      thisMonthVisitors: Number(payload?.thisMonthVisitors || 0),
+      convertedVisitors: Number(payload?.convertedVisitors || 0),
+      change: payload?.change || null,
+      diff: payload?.diff || null
+    };
+  }, [visitorStatsQuery, visitorsQuery]);
 
-  const attendanceMutations = useAttendanceMutations(activeChurch);
   const visitorMutations = useVisitorMutations(activeChurch);
-
-  const fetchAttendances = useCallback(
-    async (partial) => {
-      if (!activeChurch) return;
-      const patch = partial || {};
-      if (Object.keys(patch).length) {
-        setAttendanceFiltersState((prev) => ({ ...prev, ...patch }));
-      }
-      await queryClient.invalidateQueries({
-        queryKey: attendanceQueryKeys.attendancesPrefix(activeChurch),
-        exact: false
-      });
-    },
-    [activeChurch, queryClient]
-  );
 
   const fetchVisitors = useCallback(
     async (partial) => {
@@ -150,30 +104,6 @@ export function AttendanceProvider({ children }) {
       });
     },
     [activeChurch, queryClient, visitorStatsQuery?.data]
-  );
-
-  const createAttendance = useCallback(
-    async (payload) => {
-      if (!activeChurch) throw new Error("Active church not selected");
-      await attendanceMutations.createAttendance.mutateAsync(payload);
-    },
-    [activeChurch, attendanceMutations.createAttendance]
-  );
-
-  const updateAttendance = useCallback(
-    async (id, payload) => {
-      if (!activeChurch) throw new Error("Active church not selected");
-      await attendanceMutations.updateAttendance.mutateAsync({ id, payload });
-    },
-    [activeChurch, attendanceMutations.updateAttendance]
-  );
-
-  const deleteAttendance = useCallback(
-    async (id) => {
-      if (!activeChurch) throw new Error("Active church not selected");
-      await attendanceMutations.deleteAttendance.mutateAsync(id);
-    },
-    [activeChurch, attendanceMutations.deleteAttendance]
   );
 
   const createVisitor = useCallback(
@@ -210,24 +140,14 @@ export function AttendanceProvider({ children }) {
 
   const value = useMemo(() => {
     return {
-      attendances,
-      attendancePagination,
-      attendanceFilters,
       visitors,
       visitorPagination,
       visitorFilters,
       visitorStats,
-      attendanceLoading,
-      attendanceError,
       visitorLoading,
       visitorError,
       activeChurch,
-      setAttendanceFilters,
       setVisitorFilters,
-      fetchAttendances,
-      createAttendance,
-      updateAttendance,
-      deleteAttendance,
       fetchVisitors,
       fetchVisitorStats,
       getVisitor,
@@ -236,11 +156,6 @@ export function AttendanceProvider({ children }) {
       deleteVisitor
     };
   }, [
-    attendances,
-    attendancePagination,
-    attendanceFilters,
-    attendanceLoading,
-    attendanceError,
     visitors,
     visitorPagination,
     visitorFilters,
@@ -248,12 +163,7 @@ export function AttendanceProvider({ children }) {
     visitorLoading,
     visitorError,
     activeChurch,
-    setAttendanceFilters,
     setVisitorFilters,
-    fetchAttendances,
-    createAttendance,
-    updateAttendance,
-    deleteAttendance,
     fetchVisitors,
     fetchVisitorStats,
     getVisitor,

@@ -33,7 +33,7 @@ function StatusChip({ value }) {
   );
 }
 
-function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error, onPage, showLogColumn }) {
+function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error, onPage, showSessionColumn }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
   const { toPage } = useDashboardNavigator();
@@ -220,13 +220,13 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
     const reason = resolveEmptyReason({
       search: filters.search,
       filters,
-      filterDefaults: { serviceType: "", source: "" },
+      filterDefaults: { source: "" },
       dateFrom: filters.dateFrom,
       dateTo: filters.dateTo,
     });
     const recovery = buildRecoveryActions(reason, {
       onClearSearch: () => { store?.setVisitorFilters?.({ search: "", page: 1 }); store?.fetchVisitors?.({ search: "", page: 1 }); },
-      onClearFilters: () => { store?.setVisitorFilters?.({ serviceType: "", source: "", page: 1 }); store?.fetchVisitors?.({ serviceType: "", source: "", page: 1 }); },
+      onClearFilters: () => { store?.setVisitorFilters?.({ source: "", page: 1 }); store?.fetchVisitors?.({ source: "", page: 1 }); },
       onClearDate: () => { store?.setVisitorFilters?.({ dateFrom: "", dateTo: "", page: 1 }); store?.fetchVisitors?.({ dateFrom: "", dateTo: "", page: 1 }); },
     });
     const isZero = reason === "zero";
@@ -256,17 +256,22 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Invited By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Source</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Service Type</th>
-              {showLogColumn ? (
-                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Log</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Service</th>
+              {showSessionColumn ? (
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Session</th>
               ) : null}
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Times Attended</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Visit Date</th>
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {rows.map((row, index) => (
+            {rows.map((row, index) => {
+              const sessions = Array.isArray(row?.attendance) ? row.attendance : [];
+              const latestSession = sessions[0] || null;
+              const attendanceCount = Number(row?.attendanceCount ?? sessions.length ?? 0);
+              return (
               <tr key={String(row?._id ?? row?.id ?? `row-${index}`)} className="max-md:text-xs text-gray-700 text-sm">
                 <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={row?.fullName || "-"}>
                   <span className="sm:hidden">{truncateMobileName(row?.fullName)}</span>
@@ -276,16 +281,17 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.location || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.invitedBy || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.source || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.serviceType || "-"}</td>
-                {showLogColumn ? (
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{latestSession?.serviceType || "-"}</td>
+                {showSessionColumn ? (
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-                    {row?.visitorLog?.serviceType ? `${row.visitorLog.serviceType} — ${formatDate(row.visitorLog.serviceDate)}` : "-"}
+                    {latestSession?.serviceType ? `${latestSession.serviceType} — ${formatDate(latestSession.date)}` : "-"}
                   </td>
                 ) : null}
+                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{attendanceCount}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                   <StatusChip value={row?.status} />
                 </td>
-                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(row?.serviceDate)}</td>
+                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(latestSession?.date || row?.createdAt)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu items={[
                     canView && { label: "View", onClick: () => openDetails(row) },
@@ -300,7 +306,7 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                   ]} />
                 </td>
               </tr>
-            ))}
+            );})}
           </tbody>
         </table>
       </div>
@@ -435,21 +441,9 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Service</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.serviceType || "-"}</div>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Service Date</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(detailsVisitor?.serviceDate)}</div>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Visitors Log</div>
+                    <div className="font-semibold text-gray-500 text-xs">Times Attended</div>
                     <div className="mt-1 font-semibold text-gray-900 text-sm">
-                      {detailsVisitor?.visitorLog?.serviceType
-                        ? `${detailsVisitor.visitorLog.serviceType} — ${formatDate(detailsVisitor.visitorLog.serviceDate)}`
-                        : "-"}
+                      {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0))}
                     </div>
                   </div>
 
@@ -466,6 +460,39 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                   <div className="md:col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
                     <div className="font-semibold text-gray-500 text-xs">Note</div>
                     <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{detailsVisitor?.note || "-"}</div>
+                  </div>
+
+                  <div className="md:col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold text-gray-500 text-xs">Attendance History</div>
+                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 font-semibold text-blue-700 text-xs">
+                        {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0))} {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0)) === 1 ? "visit" : "visits"}
+                      </span>
+                    </div>
+                    {Array.isArray(detailsVisitor?.attendance) && detailsVisitor.attendance.length > 0 ? (
+                      <div className="mt-2 overflow-x-auto">
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className="text-left font-semibold text-gray-500 text-xs border-b border-gray-200">
+                              <th className="py-2 pr-4 whitespace-nowrap">Date</th>
+                              <th className="py-2 pr-4 whitespace-nowrap">Service</th>
+                              <th className="py-2 whitespace-nowrap">Speaker</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {detailsVisitor.attendance.map((s, i) => (
+                              <tr key={String(s?._id || i)} className="text-gray-700 text-sm">
+                                <td className="py-2 pr-4 whitespace-nowrap">{formatDate(s?.date)}</td>
+                                <td className="py-2 pr-4 whitespace-nowrap">{s?.serviceType || "-"}</td>
+                                <td className="py-2 whitespace-nowrap">{s?.mainSpeaker || "-"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-gray-500 text-sm">No attendance sessions recorded yet.</div>
+                    )}
                   </div>
                 </div>
               )}

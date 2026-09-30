@@ -273,9 +273,7 @@ const MODULE_OPTIONS = {
       : "Report on audit activity across all modules."
   },
   members: { controls: [], describe: () => "Report on all registered church members." },
-  attendance: { controls: [], describe: () => "Report on church attendance records." },
-  "attendance-total": { controls: [], describe: () => "Report on total attendance head-counts per service." },
-  "attendance-individual": { controls: [], describe: () => "Report on individual member attendance per service." },
+  attendance: { controls: [], describe: () => "Report on member-level attendance records per service." },
   visitors: { controls: [], describe: () => "Report on first-time and returning visitors." },
   tithe: { controls: [], describe: () => "Report on tithe records." },
   "tithe-individual": { controls: [], describe: () => "Report on tithe payments made by individual members." },

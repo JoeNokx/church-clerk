@@ -30,23 +30,13 @@ const MODULES = [
     )
   },
   {
-    value: "attendance-total",
-    label: "Attendance (Total)",
-    description: "Head-count totals recorded per service.",
+    value: "attendance",
+    label: "Attendance",
+    description: "Member-level attendance records per service.",
     iconBg: "bg-emerald-100",
     iconColor: "text-emerald-700",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M9 2h6v3H9z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="M9.5 13.5l2 2 3.5-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-    )
-  },
-  {
-    value: "attendance-individual",
-    label: "Attendance (Individual)",
-    description: "Member-level present and absent records per service.",
-    iconBg: "bg-green-100",
-    iconColor: "text-green-700",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="2" /><path d="M3 20a6 6 0 0112 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M15.5 12.5l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
     )
   },
   {

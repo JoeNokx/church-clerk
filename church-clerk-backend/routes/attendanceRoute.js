@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import {getAllAttendances, createAttendance, updateAttendance, deleteAttendance,
+import {
     createVisitor, getSingleVisitor, getAllVisitors, updateVisitor, deleteVisitor
 } from "../controller/attendanceController.js"
 import {
@@ -27,48 +27,6 @@ import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js
 import { attachPermissions } from "../middleware/attachPermissionsMiddleware.js";
 import { requirePermission } from "../middleware/permissionMiddleware.js";
 import { deletionGuard } from "../services/recordDependencyService.js";
-
-
-router.get(
-  "/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
-  requirePermission("attendance", "read"),
-  getAllAttendances
-);
-router.post(
-  "/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("attendance", "create"),
-  createAttendance
-);
-router.put(
-  "/attendances/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("attendance", "update"),
-  updateAttendance
-);
-router.delete(
-  "/attendances/:id",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("attendance", "delete"),
-  deleteAttendance
-);
 
 
 router.post(

@@ -1,6 +1,6 @@
 import Church from "../../models/churchModel.js";
 import Member from "../../models/memberModel.js";
-import Attendance from "../../models/attendanceModel.js";
+import ServiceIndividualAttendance from "../../models/serviceIndividualAttendanceModel.js";
 import Program from "../../models/programModel.js";
 import Income from "../../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Expense from "../../models/financeModel/incomeExpenseModel/expenseModel.js";
@@ -228,26 +228,26 @@ async function getBranchesConsolidated({ churchId }) {
         },
       },
     ]),
-    Attendance.aggregate([
+    ServiceIndividualAttendance.aggregate([
       { $match: { church: { $in: ids } } },
-      { $sort: { serviceDate: -1 } },
+      { $sort: { date: -1 } },
       {
         $group: {
           _id: "$church",
-          lastServiceDate: { $first: "$serviceDate" },
+          lastServiceDate: { $first: "$date" },
           lastServiceType: { $first: "$serviceType" },
-          lastServiceTotal: { $first: "$totalNumber" },
-          recordsLast30d: { $sum: { $cond: [{ $gte: ["$serviceDate", thirtyDaysAgo] }, 1, 0] } },
-          attendanceLast30d: { $sum: { $cond: [{ $gte: ["$serviceDate", thirtyDaysAgo] }, "$totalNumber", 0] } },
+          lastServiceTotal: { $first: { $size: { $ifNull: ["$presentMembers", []] } } },
+          recordsLast30d: { $sum: { $cond: [{ $gte: ["$date", thirtyDaysAgo] }, 1, 0] } },
+          attendanceLast30d: { $sum: { $cond: [{ $gte: ["$date", thirtyDaysAgo] }, { $size: { $ifNull: ["$presentMembers", []] } }, 0] } },
         },
       },
     ]),
-    Attendance.aggregate([
-      { $match: { church: { $in: ids }, serviceDate: { $gte: sixMonthsAgo } } },
+    ServiceIndividualAttendance.aggregate([
+      { $match: { church: { $in: ids }, date: { $gte: sixMonthsAgo } } },
       {
         $group: {
-          _id: { y: { $year: "$serviceDate" }, m: { $month: "$serviceDate" } },
-          total: { $sum: "$totalNumber" },
+          _id: { y: { $year: "$date" }, m: { $month: "$date" } },
+          total: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } },
           services: { $sum: 1 },
         },
       },
@@ -584,14 +584,14 @@ async function getBranchAttendanceRecords({ churchId, page, limit, search, branc
 
   const [sundayAgg, visitorAgg, convertedAgg, outreachAgg, followUpAgg] = await Promise.all([
     allIds.length
-      ? Attendance.aggregate([
-          { $match: { church: { $in: allIds }, serviceDate: { $gte: sundayStart, $lte: sundayEnd } } },
-          { $group: { _id: "$church", total: { $sum: "$totalNumber" } } },
+      ? ServiceIndividualAttendance.aggregate([
+          { $match: { church: { $in: allIds }, date: { $gte: sundayStart, $lte: sundayEnd } } },
+          { $group: { _id: "$church", total: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } } } },
         ])
       : [],
     allIds.length
       ? Visitor.aggregate([
-          { $match: monthMatch("serviceDate") },
+          { $match: { church: { $in: allIds }, createdAt: { $gte: startOfMonth } } },
           { $group: { _id: "$church", visitors: { $sum: 1 } } },
         ])
       : [],

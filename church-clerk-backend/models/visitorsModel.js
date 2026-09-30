@@ -20,6 +20,13 @@ const visitorSchema = new mongoose.Schema(
       default: null,
     },
 
+    attendance: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ServiceIndividualAttendance",
+      },
+    ],
+
     fullName: {
       type: String,
       required: true,
@@ -43,17 +50,6 @@ const visitorSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-    },
-
-    serviceType: {
-      type: String,
-      required: true,
-      trim: true
-    },
-
-    serviceDate: {
-      type: Date,
-      default: null,
     },
 
     invitedBy: {

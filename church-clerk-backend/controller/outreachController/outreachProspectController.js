@@ -289,7 +289,7 @@ export const markAsVisitor = async (req, res) => {
     if (!prospect) return res.status(404).json({ message: "Prospect not found" });
     if (prospect.markedAsVisitor) return res.status(400).json({ message: "Already marked as visitor" });
 
-    const { serviceDate, serviceType, invitedBy } = req.body;
+    const { invitedBy } = req.body;
 
     const newVisitor = await Visitor.create({
       church: churchId,
@@ -297,8 +297,6 @@ export const markAsVisitor = async (req, res) => {
       phoneNumber: prospect.phone || "0000000000",
       email: prospect.email || "",
       location: prospect.community || prospect.address || "Unknown",
-      serviceType: serviceType || "Sunday Service",
-      serviceDate: serviceDate ? new Date(serviceDate) : new Date(),
       invitedBy: invitedBy || "",
       note: `From outreach. ${prospect.notes || ""}`.trim(),
       createdBy: req.user._id,

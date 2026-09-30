@@ -1,11 +1,12 @@
 import crypto from "crypto";
 import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Member from "../models/memberModel.js";
+import Visitor from "../models/visitorsModel.js";
 import { annotateDeletable } from "../services/recordDependencyService.js";
 
 const createServiceIndividualAttendance = async (req, res) => {
   try {
-    const { date, serviceType, mainSpeaker, presentMembers, absentMembers } = req.body;
+    const { date, serviceType, mainSpeaker, presentMembers, absentMembers, expectedCount } = req.body;
 
     if (!date) return res.status(400).json({ message: "date is required" });
     if (!serviceType) return res.status(400).json({ message: "serviceType is required" });
@@ -28,7 +29,8 @@ const createServiceIndividualAttendance = async (req, res) => {
       mainSpeaker: mainSpeaker || "",
       presentMembers: cleanPresentIds,
       absentMembers: absentIds,
-      totalMembersSnapshot
+      totalMembersSnapshot,
+      expectedCount: Math.max(0, Number(expectedCount) || 0)
     });
 
     return res.status(201).json({ message: "Attendance recorded successfully", attendance });
@@ -61,7 +63,7 @@ const getAllServiceIndividualAttendances = async (req, res) => {
     }
 
     const attendances = await ServiceIndividualAttendance.find(query)
-      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot")
+      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot expectedCount")
       .sort({ createdAt: -1, date: -1 })
       .skip(skip)
       .limit(limitNum)
@@ -100,7 +102,7 @@ const getSingleServiceIndividualAttendance = async (req, res) => {
     const { id } = req.params;
 
     const attendance = await ServiceIndividualAttendance.findOne({ _id: id, church: req.activeChurch._id })
-      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot")
+      .select("date serviceType mainSpeaker presentMembers absentMembers totalMembersSnapshot expectedCount")
       .populate("presentMembers", "firstName lastName phoneNumber email streetAddress city")
       .populate("absentMembers", "firstName lastName phoneNumber email streetAddress city")
       .lean();
@@ -111,8 +113,9 @@ const getSingleServiceIndividualAttendance = async (req, res) => {
     const absentCount = Array.isArray(attendance?.absentMembers) ? attendance.absentMembers.length : 0;
     const totalSnap = Number(attendance?.totalMembersSnapshot || 0);
     const unmarkedCount = Math.max(0, totalSnap - presentCount - absentCount);
+    const visitorCount = await Visitor.countDocuments({ church: req.activeChurch._id, attendance: attendance._id });
 
-    return res.status(200).json({ message: "Attendance fetched", attendance: { ...attendance, presentCount, absentCount, unmarkedCount } });
+    return res.status(200).json({ message: "Attendance fetched", attendance: { ...attendance, presentCount, absentCount, unmarkedCount, visitorCount, actualCount: presentCount + visitorCount } });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -121,7 +124,7 @@ const getSingleServiceIndividualAttendance = async (req, res) => {
 const updateServiceIndividualAttendance = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, serviceType, mainSpeaker, presentMembers, absentMembers } = req.body;
+    const { date, serviceType, mainSpeaker, presentMembers, absentMembers, expectedCount } = req.body;
 
     const churchId = req.activeChurch._id;
 
@@ -135,7 +138,7 @@ const updateServiceIndividualAttendance = async (req, res) => {
 
     const attendance = await ServiceIndividualAttendance.findOneAndUpdate(
       { _id: id, church: churchId },
-      { date, serviceType, mainSpeaker: mainSpeaker || "", presentMembers: cleanPresentIds, absentMembers: absentIds, totalMembersSnapshot },
+      { date, serviceType, mainSpeaker: mainSpeaker || "", presentMembers: cleanPresentIds, absentMembers: absentIds, totalMembersSnapshot, ...(expectedCount !== undefined ? { expectedCount: Math.max(0, Number(expectedCount) || 0) } : {}) },
       { new: true, runValidators: true }
     );
 

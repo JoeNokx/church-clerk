@@ -1,21 +1,5 @@
 import http from "../../../shared/services/http.js";
 
-export const getAttendances = async (params, config = {}) => {
-  return await http.get("/attendance/attendances", { params, ...(config || {}) });
-};
-
-export const createAttendance = async (payload, config = {}) => {
-  return await http.post("/attendance/attendances", payload, config || {});
-};
-
-export const updateAttendance = async (id, payload, config = {}) => {
-  return await http.put(`/attendance/attendances/${id}`, payload, config || {});
-};
-
-export const deleteAttendance = async (id, config = {}) => {
-  return await http.delete(`/attendance/attendances/${id}`, config || {});
-};
-
 export const createVisitor = async (payload, config = {}) => {
   return await http.post("/attendance/visitors", payload, config || {});
 };
@@ -34,26 +18,6 @@ export const getVisitor = async (id, config = {}) => {
 
 export const getVisitors = async (params, config = {}) => {
   return await http.get("/attendance/visitors", { params, ...(config || {}) });
-};
-
-export const getVisitorLogs = async (params, config = {}) => {
-  return await http.get("/attendance/visitor-logs", { params, ...(config || {}) });
-};
-
-export const createVisitorLog = async (payload, config = {}) => {
-  return await http.post("/attendance/visitor-logs", payload, config || {});
-};
-
-export const getVisitorLog = async (id, config = {}) => {
-  return await http.get(`/attendance/visitor-logs/${id}`, config || {});
-};
-
-export const updateVisitorLog = async (id, payload, config = {}) => {
-  return await http.put(`/attendance/visitor-logs/${id}`, payload, config || {});
-};
-
-export const deleteVisitorLog = async (id, config = {}) => {
-  return await http.delete(`/attendance/visitor-logs/${id}`, config || {});
 };
 
 export const getServiceIndividualAttendances = async (params, config = {}) => {

@@ -1,75 +1,90 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
-import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
-import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import { getVisitors } from "../services/attendance.api.js";
+import debounce from "../../../shared/utils/debounce.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import Button from "../../../shared/components/Button/index.jsx";
 
-const SERVICE_TYPES = [
-  "Sunday Service",
-  "Sunday First Service",
-  "Sunday Second Service",
-  "Sunday Third Service",
-  "Sunday Fourth Service",
-  "Sunday Fifth Service",
-  "Children Service",
-  "Midweek Service",
-  "Prayer Meeting"
-];
+function formatSessionDate(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
 
-function VisitorForm({ open, mode, initialData, log, onClose, onSuccess }) {
+function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
 
-  const logContext = log || (initialData?.visitorLog && typeof initialData.visitorLog === "object" ? initialData.visitorLog : null);
+  const sessionContext = session
+    || (Array.isArray(initialData?.attendance) ? initialData.attendance[0] : null)
+    || (initialData?.attendance && typeof initialData.attendance === "object" ? initialData.attendance : null);
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("visitors", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("visitors", "update") : false), [can]);
-
-  const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
-  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
 
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [location, setLocation] = useState("");
-  const [serviceType, setServiceType] = useState("");
-  const [serviceDate, setServiceDate] = useState("");
   const [invitedBy, setInvitedBy] = useState("");
   const [source, setSource] = useState("");
   const [note, setNote] = useState("");
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedExisting, setSelectedExisting] = useState(null);
+
+  const debouncedSearch = useMemo(
+    () =>
+      debounce(async (q) => {
+        if (!q || q.trim().length < 2) {
+          setSearchResults([]);
+          setSearchLoading(false);
+          return;
+        }
+        try {
+          const res = await getVisitors({ search: q.trim(), page: 1, limit: 5 });
+          const payload = res?.data?.data ?? res?.data;
+          setSearchResults(Array.isArray(payload?.visitors) ? payload.visitors : []);
+        } catch {
+          setSearchResults([]);
+        } finally {
+          setSearchLoading(false);
+        }
+      }, 350),
+    []
+  );
+
+  useEffect(() => () => debouncedSearch.cancel?.(), [debouncedSearch]);
+
+  const onSearchChange = (e) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    if (q.trim().length >= 2) setSearchLoading(true);
+    debouncedSearch(q);
+  };
+
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
     setIsSubmitting(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchLoading(false);
+    setSelectedExisting(null);
 
-    if (mode === "edit" && initialData) {
+    if (initialData) {
       setFullName(initialData.fullName || "");
       setPhoneNumber(initialData.phoneNumber || "");
       setEmail(initialData.email || "");
       setLocation(initialData.location || "");
-      setServiceType(initialData.serviceType || "");
-      setServiceDate((initialData.serviceDate || "").slice(0, 10));
-      setInvitedBy(initialData.invitedBy || "");
-      setSource(initialData.source || "");
-      setNote(initialData.note || "");
-      return;
-    }
-
-    // Prefill mode (from outreach Connect flow) — initialData without _id
-    if (mode === "create" && initialData) {
-      setFullName(initialData.fullName || "");
-      setPhoneNumber(initialData.phoneNumber || "");
-      setEmail(initialData.email || "");
-      setLocation(initialData.location || "");
-      setServiceType(initialData.serviceType || "");
-      setServiceDate((initialData.serviceDate || "").slice(0, 10));
       setInvitedBy(initialData.invitedBy || "");
       setSource(initialData.source || "");
       setNote(initialData.note || "");
@@ -80,24 +95,38 @@ function VisitorForm({ open, mode, initialData, log, onClose, onSuccess }) {
     setPhoneNumber("");
     setEmail("");
     setLocation("");
-    setServiceType("");
-    setServiceDate("");
     setInvitedBy("");
     setSource("");
     setNote("");
-  }, [open, mode, initialData, log]);
-
-  useEffect(() => {
-    if (!open || !logContext) return;
-    setServiceType(logContext.serviceType || "");
-    setServiceDate((logContext.serviceDate || "").slice(0, 10));
-  }, [open, logContext]);
+  }, [open, mode, initialData, session]);
 
   const submit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
     setFormError(null);
+
+    if (selectedExisting) {
+      if (!sessionContext?._id) {
+        setFormError("This visitor already exists in the system.");
+        setIsSubmitting(false);
+        return;
+      }
+      try {
+        if (!canEdit) {
+          setIsSubmitting(false);
+          return;
+        }
+        await store?.updateVisitor(selectedExisting._id, { attendance: sessionContext._id });
+        onSuccess?.();
+      } catch (e2) {
+        const message = e2?.response?.data?.error || e2?.response?.data?.message || e2?.message || "Request failed";
+        setFormError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     if (!fullName?.trim()) {
       setFormError("Full name is required.");
@@ -123,33 +152,19 @@ function VisitorForm({ open, mode, initialData, log, onClose, onSuccess }) {
       return;
     }
 
-    if (!serviceType) {
-      setFormError("Please select a service type.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!serviceDate) {
-      setFormError("Date is required.");
-      setIsSubmitting(false);
-      return;
-    }
-
     const payload = {
       fullName,
       phoneNumber,
       email,
       location,
-      serviceType,
-      serviceDate,
       invitedBy,
       source,
       note
     };
 
-    const logId = logContext?._id || (typeof initialData?.visitorLog === "string" ? initialData.visitorLog : "");
-    if (logId) {
-      payload.visitorLog = logId;
+    const sessionId = sessionContext?._id || (typeof initialData?.attendance === "string" ? initialData.attendance : "");
+    if (sessionId) {
+      payload.attendance = sessionId;
     }
 
     try {
@@ -200,12 +215,68 @@ function VisitorForm({ open, mode, initialData, log, onClose, onSuccess }) {
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{formError}</div>
           )}
 
-          {logContext ? (
+          {sessionContext ? (
             <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800 text-sm">
-              {mode === "edit" ? "This visitor belongs to the log" : "Adding to visitors log"}: <span className="font-semibold">{logContext.serviceType || "-"}</span> — {logContext.serviceDate ? new Date(logContext.serviceDate).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "-"}
+              {mode === "edit" ? "This visitor belongs to the session" : "Adding to session"}: <span className="font-semibold">{sessionContext.serviceType || "-"}</span> — {formatSessionDate(sessionContext.date)}
             </div>
           ) : null}
 
+          {mode !== "edit" ? (
+            <div className="mb-4">
+              <label className="block font-semibold text-gray-500 text-xs">Search existing visitor first</label>
+              <input
+                value={searchQuery}
+                onChange={onSearchChange}
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                placeholder="Search by name or phone number"
+              />
+              {searchLoading ? (
+                <div className="mt-2 text-gray-500 text-xs">Searching…</div>
+              ) : null}
+              {!searchLoading && searchResults.length > 0 ? (
+                <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
+                  {searchResults.map((v) => (
+                    <button
+                      key={v._id}
+                      type="button"
+                      onClick={() => setSelectedExisting(v)}
+                      className="flex w-full items-center justify-between gap-3 border-b border-gray-100 px-3 py-2 text-left hover:bg-gray-50 last:border-b-0"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold text-gray-900 text-sm">{v.fullName}</span>
+                        <span className="block truncate text-gray-500 text-xs">{v.phoneNumber || "-"}</span>
+                      </span>
+                      <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700 text-xs">
+                        Select
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {!searchLoading && searchQuery.trim().length >= 2 && searchResults.length === 0 ? (
+                <div className="mt-2 text-gray-500 text-xs">No existing visitor found — fill the details below to add a new one.</div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {selectedExisting ? (
+            <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-green-900 text-sm">{selectedExisting.fullName}</div>
+                  <div className="text-green-700 text-xs">{selectedExisting.phoneNumber || "-"}</div>
+                  <div className="mt-1 text-green-700 text-xs">This visitor already exists. Saving will add them to this session.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedExisting(null)}
+                  className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
+                >
+                  Change
+                </button>
+              </div>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="block font-semibold text-gray-500 text-xs">Full Name</label>
@@ -250,48 +321,6 @@ function VisitorForm({ open, mode, initialData, log, onClose, onSuccess }) {
               />
             </div>
 
-            {!logContext ? (
-              <>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
-                    {canCreate || canEdit ? (
-                      <AddLookupValueButton
-                        label="Add service"
-                        kind="serviceType"
-                        onCreated={async (value) => {
-                          await reloadServiceTypes();
-                          setServiceType(value);
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                  <select
-                    value={serviceType}
-                    onChange={(e) => setServiceType(e.target.value)}
-                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  >
-                    <option value="">Select service</option>
-                    {serviceTypeOptions.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-gray-500 text-xs">Visit Date</label>
-                  <input
-                    value={serviceDate}
-                    onChange={(e) => setServiceDate(e.target.value)}
-                    type="date"
-                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  />
-                </div>
-              </>
-            ) : null}
-
             <div>
               <label className="block font-semibold text-gray-500 text-xs">Invited By</label>
               <input
@@ -334,6 +363,7 @@ function VisitorForm({ open, mode, initialData, log, onClose, onSuccess }) {
               />
             </div>
           </div>
+          )}
 
           <div className="mt-5 flex items-center justify-end gap-3">
             <button
@@ -351,7 +381,7 @@ function VisitorForm({ open, mode, initialData, log, onClose, onSuccess }) {
               loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {mode === "edit" ? "Update" : "Save"}
+              {mode === "edit" ? "Update" : selectedExisting ? "Add to Session" : "Save"}
             </Button>
           </div>
         </form>

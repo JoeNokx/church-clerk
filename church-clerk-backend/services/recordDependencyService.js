@@ -204,7 +204,9 @@ const ENTITY = {
       if (doc.selfCheckInActive) reasons.push("an active self check-in link");
       return reasons;
     },
-    links: [],
+    links: [
+      { model: Visitor, field: "attendance", label: "visitor records" },
+    ],
   },
   ministryIndividualAttendance: {
     model: MinistryIndividualAttendance,
