@@ -509,17 +509,7 @@ function AttendancePageInner() {
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
               >
                 <span className="leading-none text-lg">+</span>
-                Create Session
-              </button>
-            ) : activeTab === "visitors" && canCreateVisitor ? (
-              <button
-                type="button"
-                data-hq-action="true"
-                onClick={() => guarded(() => { setEditingVisitor(null); setVisitorFormSession(null); setIsVisitorFormOpen(true); })}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-              >
-                <span className="leading-none text-lg">+</span>
-                Add Visitor
+                Create Attendance
               </button>
             ) : null}
           </div>
@@ -835,17 +825,14 @@ function AttendancePageInner() {
                               </div>
                               <div className="text-gray-500 text-[11px] truncate">{r?.serviceType || "Service"} · {r?.mainSpeaker || "No speaker"}</div>
                               <div className="flex items-center gap-2 mt-0.5">
+                                <span className="inline-flex items-center gap-0.5 text-blue-600 text-[10px] font-semibold">
+                                  Actual {Number(r?.actualCount ?? (Number(r?.presentCount ?? 0) + Number(r?.visitorCount ?? 0)))}
+                                </span>
                                 <span className="inline-flex items-center gap-0.5 text-green-600 text-[10px] font-semibold">
-                                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                  {Number(r?.presentCount ?? 0)}
+                                  Members {Number(r?.presentCount ?? 0)}
                                 </span>
-                                <span className="inline-flex items-center gap-0.5 text-red-500 text-[10px] font-semibold">
-                                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
-                                  {Number(r?.absentCount ?? 0)}
-                                </span>
-                                <span className="inline-flex items-center gap-0.5 text-gray-400 text-[10px] font-semibold">
-                                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                  {Number(r?.unmarkedCount ?? 0)}
+                                <span className="inline-flex items-center gap-0.5 text-amber-600 text-[10px] font-semibold">
+                                  Visitors {Number(r?.visitorCount ?? 0)}
                                 </span>
                               </div>
                             </div>
@@ -943,7 +930,7 @@ function AttendancePageInner() {
                           {/* Counts summary - separate row for breathing room */}
                           <div className="flex flex-wrap items-center gap-2 mt-3">
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M12 4v16m8-8H4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /></svg>
                               {Number(indivViewing?.expectedCount ?? 0)} Expected
                             </span>
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -1153,7 +1140,7 @@ function AttendancePageInner() {
           {/* Start / Edit Attendance modal */}
           <SimpleModal
             open={indivFormModalOpen}
-            title={indivFormMode === "edit" ? "Edit Attendance" : "Create Session"}
+            title={indivFormMode === "edit" ? "Edit Attendance" : "Create Attendance"}
             onClose={() => { if (!indivFormSaving) { setIndivFormModalOpen(false); setIndivFormError(""); } }}
           >
             <form onSubmit={submitIndivForm}>
@@ -1215,7 +1202,7 @@ function AttendancePageInner() {
               <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-5">
                 <button type="button" onClick={() => { setIndivFormModalOpen(false); setIndivFormError(""); }} disabled={indivFormSaving} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Cancel</button>
                 <Button type="submit" variant="primary" loading={indivFormSaving} loadingText={indivFormMode === "edit" ? "Updating..." : "Creating..."} className="rounded-lg px-4 py-2 text-sm">
-                  {indivFormMode === "edit" ? "Update" : "Create Session"}
+                  {indivFormMode === "edit" ? "Update" : "Create Attendance"}
                 </Button>
               </div>
             </form>

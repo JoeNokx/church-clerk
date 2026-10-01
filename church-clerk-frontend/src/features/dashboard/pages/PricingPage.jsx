@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
@@ -11,6 +11,66 @@ import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrenc
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
 
 const fade = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
+
+const COMPARISON_GROUPS = [
+  {
+    title: "Core",
+    rows: [
+      { label: "Members", render: (p) => (p?.memberLimit === null || p?.memberLimit === undefined ? "Unlimited" : `Up to ${Number(p.memberLimit).toLocaleString()}`) },
+      { label: "Admin accounts", render: (p) => (p?.userLimit === null || p?.userLimit === undefined ? "—" : `Up to ${Number(p.userLimit).toLocaleString()}`) },
+      { label: "Monthly SMS credits", render: (p) => (Number(p?.monthlySmsCredits) > 0 ? Number(p.monthlySmsCredits).toLocaleString() : "—") },
+    ],
+  },
+  {
+    title: "People & ministries",
+    rows: [
+      { label: "Members", keys: ["members"] },
+      { label: "Attendance", keys: ["attendance"] },
+      { label: "Programs", keys: ["programsEvents"] },
+      { label: "Organisations", keys: ["organisations"] },
+      { label: "Outreach & Follow-up", keys: ["outreach"] },
+      { label: "Announcements", keys: ["announcements", "announcement"] },
+      { label: "Branches overview", keys: ["branchesOverview"] },
+    ],
+  },
+  {
+    title: "Finance",
+    rows: [
+      { label: "Tithe", keys: ["tithes"] },
+      { label: "Offering & Funds", keys: ["offerings", "specialFund", "specialFunds"] },
+      { label: "Welfare", keys: ["welfare"] },
+      { label: "Fundraising", keys: ["churchProjects", "pledges"] },
+      { label: "Budgeting", keys: ["budgeting"] },
+      { label: "General Expenses", keys: ["expenses"] },
+      { label: "Business Ventures", keys: ["businessVentures"] },
+      { label: "Financial Overview", keys: ["financialStatement"] },
+    ],
+  },
+  {
+    title: "Administration",
+    rows: [
+      { label: "Reports", keys: ["reportsAnalytics"] },
+      { label: "Billing", keys: ["billing"] },
+      { label: "Referrals", keys: ["referrals"] },
+      { label: "Settings", keys: ["settings"] },
+      { label: "Support & Help", keys: ["supportHelp"] },
+    ],
+  },
+];
+
+function planHas(plan, keys) {
+  return keys.some((k) => Boolean(plan?.features?.[k]));
+}
+
+function CheckCell() {
+  return (
+    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-100 text-green-600">
+      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
+        <path d="M6 12.5l3.2 3.2L18 7.8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
 
 function PricingPage() {
   const [plans, setPlans] = useState([]);
@@ -101,8 +161,7 @@ function PricingPage() {
           <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-blue-50 blur-3xl pointer-events-none" />
           <div className="relative z-10 mx-auto w-full max-w-4xl px-4 pt-24 pb-16 text-center md:px-6">
             <motion.div initial="hidden" animate="show" variants={fade} transition={{ duration: 0.55 }}>
-              <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">Pricing</span>
-              <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl lg:text-6xl">
+              <h1 className="text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl lg:text-6xl">
                 Plans that grow{" "}
                 <span className="text-blue-600">with your church.</span>
               </h1>
@@ -133,7 +192,7 @@ function PricingPage() {
               {loadingPlans && <div className="py-16 flex items-center justify-center"><Spinner className="text-slate-400" /></div>}
               {!loadingPlans && plansSorted.length === 0 && <div className="py-16 text-center text-sm text-slate-500">No plans available right now.</div>}
               {!loadingPlans && plansSorted.length > 0 && (
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
                   {plansSorted.map((p, idx) => {
                     const id = p?._id;
                     const name = String(p?.name || "");
@@ -146,7 +205,7 @@ function PricingPage() {
                     const descriptionFeatures = getPlanDescriptionFeatures(p, { max: 5 });
                     const highlights = [memberLine, ...descriptionFeatures];
                     return (
-                      <motion.div key={id} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.4, delay: idx * 0.04 }}>
+                      <motion.div key={id} className="h-full" initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.4, delay: idx * 0.04 }}>
                         <PriceCard id={id} name={name} price={displayPrice} currency={displayCurrency} per={per} isMostPopular={isMostPopular} memberLimit={memberLimit} features={highlights} actionLabel="Get started" actionHref="/register" variant="landing" />
                       </motion.div>
                     );
@@ -155,17 +214,67 @@ function PricingPage() {
               )}
             </div>
 
-            <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-6 md:p-8">
+            <div className="mx-auto mt-10 max-w-5xl rounded-2xl border border-slate-200 bg-slate-50 p-6 md:p-8">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h3 className="text-base font-semibold text-slate-900">Need a fully customized solution?</h3>
                   <p className="mt-1 text-sm text-slate-500">Ministry Plus is built around your church's specific workflows, scale, and integration needs.</p>
                 </div>
-                <Link to="/contact" className="shrink-0 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors">
+                <Link to="/contact" className="shrink-0 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800 transition-colors">
                   Contact us for Ministry Plus
                 </Link>
               </div>
             </div>
+
+            {!loadingPlans && plansSorted.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.45 }} className="mx-auto mt-14 max-w-5xl">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold tracking-tight text-slate-900">Compare plans in detail</h3>
+                  <p className="mx-auto mt-2 max-w-xl text-sm text-slate-500">Every row below reflects the actual plan configuration — nothing hidden, nothing inflated.</p>
+                </div>
+                <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                  <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th scope="col" className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Features</th>
+                        {plansSorted.map((p) => (
+                          <th key={p?._id || p?.name} scope="col" className="px-4 py-4 text-center">
+                            <div className="text-sm font-bold text-slate-900">{p?.name || "—"}</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {COMPARISON_GROUPS.map((group) => (
+                        <Fragment key={group.title}>
+                          <tr className="bg-slate-50">
+                            <td colSpan={plansSorted.length + 1} className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                              {group.title}
+                            </td>
+                          </tr>
+                          {group.rows.map((row) => (
+                            <tr key={row.label} className="border-t border-slate-100">
+                              <td className="px-5 py-3 text-[13px] font-medium text-slate-700">{row.label}</td>
+                              {plansSorted.map((p) => (
+                                <td key={`${p?._id || p?.name}-${row.label}`} className="px-4 py-3 text-center">
+                                  {row.render ? (
+                                    <span className="text-xs font-semibold text-slate-800">{row.render(p)}</span>
+                                  ) : planHas(p, row.keys) ? (
+                                    <CheckCell />
+                                  ) : (
+                                    <span className="text-slate-300">—</span>
+                                  )}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            )}
           </div>
         </section>
 

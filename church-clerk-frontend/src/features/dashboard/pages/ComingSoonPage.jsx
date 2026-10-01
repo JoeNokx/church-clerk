@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
+import { ModuleGrid } from "../components/landing/modules.jsx";
 import http from "../../../shared/services/http.js";
 import PriceCard from "../../../shared/components/PriceCard/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
@@ -370,6 +371,9 @@ function ComingSoonPage() {
               </div>
             </Reveal>
           </div>
+          <Reveal className="mx-auto mt-12 w-full max-w-7xl px-4 md:px-6">
+            <ModuleGrid title="Member & ministry modules" names={["Members", "Organisations", "Outreach & Follow-up"]} />
+          </Reveal>
         </section>
 
         {/* ── FEATURE STORY: BRANCHES / MULTI-BRANCH ── */}
@@ -407,6 +411,9 @@ function ComingSoonPage() {
               </p>
             </Reveal>
           </div>
+          <Reveal className="mx-auto mt-12 w-full max-w-7xl px-4 md:px-6">
+            <ModuleGrid title="Branch administration modules" names={["HQ & Branches", "Settings", "Reports"]} />
+          </Reveal>
         </section>
 
         {/* ── FEATURE STORY: COMMUNICATION ── */}
@@ -442,6 +449,9 @@ function ComingSoonPage() {
               </div>
             </Reveal>
           </div>
+          <Reveal className="mx-auto mt-12 w-full max-w-7xl px-4 md:px-6">
+            <ModuleGrid title="Communication modules" names={["Announcements", "SMS Messaging", "Message Targeting", "Delivery Tracking"]} />
+          </Reveal>
         </section>
 
         {/* ── FEATURE STORY: ATTENDANCE ── */}
@@ -477,6 +487,9 @@ function ComingSoonPage() {
               </p>
             </Reveal>
           </div>
+          <Reveal className="mx-auto mt-12 w-full max-w-7xl px-4 md:px-6">
+            <ModuleGrid title="Attendance modules" names={["Attendance", "Programs"]} />
+          </Reveal>
         </section>
 
         {/* ── FEATURE STORY: GIVING (full-width ledger) ── */}
@@ -515,6 +528,9 @@ function ComingSoonPage() {
                 </table>
               </div>
             </Reveal>
+            <Reveal className="mt-12">
+              <ModuleGrid title="Finance modules" names={["Tithe", "Offering & Funds", "Welfare", "Fundraising", "Budgeting", "General Expenses", "Business Ventures", "Financial Overview"]} />
+            </Reveal>
           </div>
         </section>
 
@@ -552,6 +568,9 @@ function ComingSoonPage() {
               </div>
             </Reveal>
           </div>
+          <Reveal className="mx-auto mt-12 w-full max-w-7xl px-4 md:px-6">
+            <ModuleGrid title="Reporting modules" names={["Reports", "Financial Overview", "Budgeting"]} />
+          </Reveal>
         </section>
 
         {/* ── TRUST / SECURITY ── */}
@@ -579,6 +598,9 @@ function ComingSoonPage() {
               </div>
             </div>
           </div>
+          <Reveal className="mx-auto mt-12 w-full max-w-7xl px-4 md:px-6">
+            <ModuleGrid title="Administration modules" names={["Settings", "Billing", "Referrals", "Support & Help"]} />
+          </Reveal>
         </section>
 
         {/* ── PRICING ── */}
@@ -625,7 +647,7 @@ function ComingSoonPage() {
                     const descriptionFeatures = getPlanDescriptionFeatures(p, { max: 5 });
                     const highlights = [memberLine, ...descriptionFeatures];
                     return (
-                      <Reveal key={id} delay={idx * 0.04}>
+                      <Reveal key={id} className="h-full" delay={idx * 0.04}>
                         <PriceCard id={id} name={name} price={displayPrice} currency={displayCurrency} per={per} isMostPopular={isMostPopular} memberLimit={memberLimit} features={highlights} actionLabel="Get started" actionHref="/register" variant="landing" />
                       </Reveal>
                     );

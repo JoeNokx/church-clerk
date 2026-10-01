@@ -71,12 +71,24 @@ const getAllServiceIndividualAttendances = async (req, res) => {
 
     const total = await ServiceIndividualAttendance.countDocuments(query);
 
+    const attendanceIds = attendances.map((a) => a._id);
+    const visitorCounts = attendanceIds.length
+      ? await Visitor.aggregate([
+          { $match: { church: req.activeChurch._id } },
+          { $unwind: "$attendance" },
+          { $match: { attendance: { $in: attendanceIds } } },
+          { $group: { _id: "$attendance", count: { $sum: 1 } } }
+        ])
+      : [];
+    const visitorCountMap = new Map(visitorCounts.map((v) => [String(v._id), v.count]));
+
     let rows = attendances.map((a) => {
       const presentCount = Array.isArray(a?.presentMembers) ? a.presentMembers.length : 0;
       const absentCount = Array.isArray(a?.absentMembers) ? a.absentMembers.length : 0;
       const totalSnap = Number(a?.totalMembersSnapshot || 0);
       const unmarkedCount = Math.max(0, totalSnap - presentCount - absentCount);
-      return { ...a, presentCount, absentCount, unmarkedCount, mainSpeaker: a.mainSpeaker || "" };
+      const visitorCount = visitorCountMap.get(String(a._id)) || 0;
+      return { ...a, presentCount, absentCount, unmarkedCount, visitorCount, actualCount: presentCount + visitorCount, mainSpeaker: a.mainSpeaker || "" };
     });
     rows = await annotateDeletable("serviceIndividualAttendance", rows, req.activeChurch._id);
 
