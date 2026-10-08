@@ -41,7 +41,7 @@ app.use(
 
       const isLocal = origin.includes("localhost");
       const isMainApp = origin === "https://app.churchclerkapp.com";
-      const isAdmin = origin === "https://admin.churchclerkapp.com";
+      const isAdmin = origin === "https://admin.churchclerkapp.com" || origin === "https://churchclerk-admin.onrender.com";
       const isSubdomain = /^https:\/\/.*\.churchclerkapp\.com$/.test(origin);
 
       if (isLocal || isMainApp || isAdmin || isSubdomain) {
