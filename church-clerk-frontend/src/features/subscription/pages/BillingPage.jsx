@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import Skeleton from "react-loading-skeleton";
@@ -165,18 +166,62 @@ function BillingPage() {
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
 
-  const [subscription, setSubscription] = useState(null);
-  const [effectivePlan, setEffectivePlan] = useState(null);
-  const [readOnly, setReadOnly] = useState(false);
-  const [plans, setPlans] = useState([]);
-  const [billingInterval, setBillingInterval] = useState("monthly");
-  const [planId, setPlanId] = useState("");
-  const [history, setHistory] = useState([]);
-  const [historyPagination, setHistoryPagination] = useState({ currentPage: 1, nextPage: null, prevPage: null });
+  const queryClient = useQueryClient();
+  const activeChurchId = activeChurch?._id;
+  const billingQueryKey = useMemo(() => ["billing", "data", activeChurchId], [activeChurchId]);
+
+  // Fetch subscription, plans, initial history and referral data — cached for 2 minutes.
+  // Subsequent visits within that window skip the network round-trip entirely.
+  const billingQuery = useQuery({
+    queryKey: billingQueryKey,
+    queryFn: async () => {
+      const [subRes, plansRes, historyRes, referralCodeRes] = await Promise.all([
+        getMySubscription(),
+        getAvailablePlans(),
+        getMyBillingHistory({ page: 1, limit: 8 }),
+        getMyReferralCode().catch(() => null)
+      ]);
+      const sub = subRes?.data?.subscription || null;
+      const eff = subRes?.data?.effectivePlan || null;
+      const ro = Boolean(subRes?.data?.readOnly);
+      const plansPayload = plansRes?.data?.data ?? plansRes?.data;
+      const fetchedPlans = Array.isArray(plansPayload?.plans) ? plansPayload.plans : [];
+      const fetchedHistory = Array.isArray(historyRes?.data?.history) ? historyRes.data.history : [];
+      const fetchedPagination = historyRes?.data?.pagination || { currentPage: 1 };
+      const bonusDays = Number(referralCodeRes?.data?.referralBonusDays || 30);
+      return { sub, eff, ro, fetchedPlans, fetchedHistory, fetchedPagination, bonusDays };
+    },
+    staleTime: 2 * 60 * 1000,
+    throwOnError: false
+  });
+
+  // Derive server data directly from the query cache — no local state for these.
+  const subscription = billingQuery.data?.sub ?? null;
+  const effectivePlan = billingQuery.data?.eff ?? null;
+  const readOnly = Boolean(billingQuery.data?.ro);
+  const plans = billingQuery.data?.fetchedPlans ?? [];
+  const referralBonusDays = Number(billingQuery.data?.bonusDays || 30);
+
+  // UI-only state — initialized from cache when available so revisits feel instant.
+  const cachedBillingData = queryClient.getQueryData(billingQueryKey);
+  const [billingInterval, setBillingInterval] = useState(
+    cachedBillingData?.sub?.billingInterval || "monthly"
+  );
+  const [planId, setPlanId] = useState(() => {
+    const d = cachedBillingData;
+    if (!d) return "";
+    if (d.sub?.plan?._id) return d.sub.plan._id;
+    if (d.eff?._id) return d.eff._id;
+    if (d.fetchedPlans?.[0]?._id) return d.fetchedPlans[0]._id;
+    return "";
+  });
+  const [history, setHistory] = useState(cachedBillingData?.fetchedHistory || []);
+  const [historyPagination, setHistoryPagination] = useState(
+    cachedBillingData?.fetchedPagination || { currentPage: 1, nextPage: null, prevPage: null }
+  );
 
   const plansRef = useRef(null);
 
-  const [loading, setLoading] = useState(true);
   const [payLoading, setPayLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [manageLoading, setManageLoading] = useState(false);
@@ -204,7 +249,6 @@ function BillingPage() {
   const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
   const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
-  const [referralBonusDays, setReferralBonusDays] = useState(30);
 
   // System admin settings (configuration durations + governance toggles)
   // Hidden for delegated sessions — those are scoped to a single church view.
@@ -408,53 +452,17 @@ function BillingPage() {
     return withoutFreeLite.slice(0, 3);
   }, [plansSorted]);
 
-  const load = useCallback(async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const [subRes, plansRes, historyRes, referralCodeRes] = await Promise.all([
-        getMySubscription(),
-        getAvailablePlans(),
-        getMyBillingHistory({ page: 1, limit: 8 }),
-        getMyReferralCode().catch(() => null)
-      ]);
-
-      const sub = subRes?.data?.subscription;
-      const eff = subRes?.data?.effectivePlan;
-      const ro = Boolean(subRes?.data?.readOnly);
-      const plansPayload = plansRes?.data?.data ?? plansRes?.data;
-      const fetchedPlans = plansPayload?.plans || [];
-      const fetchedHistory = historyRes?.data?.history || [];
-      const fetchedPagination = historyRes?.data?.pagination || { currentPage: 1 };
-
-      setSubscription(sub);
-      setEffectivePlan(eff || null);
-      setReadOnly(Boolean(subRes?.data?.readOnly));
-      if (referralCodeRes?.data?.referralBonusDays) {
-        setReferralBonusDays(Number(referralCodeRes.data.referralBonusDays || 30));
-      }
-      setHistory(Array.isArray(fetchedHistory) ? fetchedHistory : []);
-      setHistoryPagination(fetchedPagination);
-
-      setPlans(Array.isArray(fetchedPlans) ? fetchedPlans : []);
-
-      if (sub?.billingInterval) {
-        setBillingInterval(sub.billingInterval);
-      }
-
-      if (sub?.plan?._id) {
-        setPlanId(sub.plan._id);
-      } else if (eff?._id) {
-        setPlanId(eff._id);
-      } else if (Array.isArray(fetchedPlans) && fetchedPlans[0]?._id) {
-        setPlanId(fetchedPlans[0]._id);
-      }
-    } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Failed to load billing data");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Sync UI-only state and history when query data arrives or refreshes after a mutation.
+  useEffect(() => {
+    const d = billingQuery.data;
+    if (!d) return;
+    setHistory(d.fetchedHistory);
+    setHistoryPagination(d.fetchedPagination);
+    if (d.sub?.billingInterval) setBillingInterval(d.sub.billingInterval);
+    if (d.sub?.plan?._id) setPlanId(d.sub.plan._id);
+    else if (d.eff?._id) setPlanId(d.eff._id);
+    else if (d.fetchedPlans?.[0]?._id) setPlanId(d.fetchedPlans[0]._id);
+  }, [billingQuery.data]);
 
   const loadHistoryPage = useCallback(async (page) => {
     setError("");
@@ -466,10 +474,6 @@ function BillingPage() {
       setError(e?.response?.data?.message || e?.message || "Failed to load billing history");
     }
   }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -489,7 +493,7 @@ function BillingPage() {
           setPaymentResult({ status: "failed" });
           setShowPaymentResult(true);
         }
-        await load();
+        await queryClient.refetchQueries({ queryKey: billingQueryKey });
       } catch (e) {
         if (cancelled) return;
         setError(e?.response?.data?.message || e?.message || "Failed to verify payment");
@@ -505,7 +509,7 @@ function BillingPage() {
     return () => {
       cancelled = true;
     };
-  }, [load, location.pathname, location.search]);
+  }, [queryClient, billingQueryKey, location.pathname, location.search]);
 
   const onPay = async () => {
     if (!planId) {
@@ -525,7 +529,7 @@ function BillingPage() {
     setShowPaymentSummary(true);
   };
 
-  if (loading) {
+  if (billingQuery.isLoading) {
     return (
       <div className="max-w-6xl animate-pulse">
         <div className="font-semibold text-gray-900 text-lg">Billing & Subscription</div>
@@ -1180,8 +1184,8 @@ function BillingPage() {
                           setMethodsLoading(true);
                           setError("");
                           try {
-                            const res = await removePaymentMethod(m._id);
-                            setSubscription(res?.data?.subscription || subscription);
+                            await removePaymentMethod(m._id);
+                            await queryClient.refetchQueries({ queryKey: billingQueryKey });
                           } catch (e) {
                             setError(e?.response?.data?.message || e?.message || "Failed to remove payment method");
                           } finally {
@@ -1322,7 +1326,7 @@ function BillingPage() {
               try {
                 await cancelMySubscription();
                 setShowCancelConfirm(false);
-                await load();
+                await queryClient.refetchQueries({ queryKey: billingQueryKey });
               } catch (e) {
                 setError(e?.response?.data?.message || e?.message || "Failed to cancel subscription");
               } finally {
@@ -1365,7 +1369,7 @@ function BillingPage() {
               try {
                 await undoMyCancellation();
                 setShowResumeConfirm(false);
-                await load();
+                await queryClient.refetchQueries({ queryKey: billingQueryKey });
               } catch (e) {
                 setError(e?.response?.data?.message || e?.message || "Failed to resume subscription");
               } finally {
@@ -1417,7 +1421,7 @@ function BillingPage() {
                 setPendingDowngradePlan(null);
                 setToastMessage("Plan downgrade scheduled.");
                 setTimeout(() => setToastMessage(""), 4000);
-                await load();
+                await queryClient.refetchQueries({ queryKey: billingQueryKey });
               } catch (e) {
                 setError(e?.response?.data?.message || e?.message || "Failed to change plan");
               } finally {
@@ -1857,17 +1861,17 @@ function BillingPage() {
                     setShowPaymentResult(true);
                     setToastMessage("Payment successful! Your subscription has been activated.");
                     setTimeout(() => setToastMessage(""), 4000);
-                    await load();
+                    await queryClient.refetchQueries({ queryKey: billingQueryKey });
                   } else if (st === "failed") {
                     setPaymentResult({ status: "failed", amount });
                     setShowPaymentMethod(false);
                     setShowPaymentResult(true);
-                    await load();
+                    await queryClient.refetchQueries({ queryKey: billingQueryKey });
                   } else {
                     setPaymentResult({ status: "pending", amount });
                     setShowPaymentMethod(false);
                     setShowPaymentResult(true);
-                    await load();
+                    await queryClient.refetchQueries({ queryKey: billingQueryKey });
                   }
                 } catch (e) {
                   setCheckoutError(e?.response?.data?.message || e?.message || "Failed to start payment");

@@ -258,7 +258,11 @@ api.interceptors.response.use(
     const isNotFound =
       error?.response?.status === 404 &&
       backendMsg.toLowerCase().endsWith("not found");
-    if (error?.config?.toastError !== false && !isNotFound) {
+    // 401 is always handled by AuthContext + ProtectedRoute (redirect to login).
+    // Never toast it — it creates confusing "Not authorized" flashes on page load
+    // when a session simply doesn't exist yet.
+    const is401 = error?.response?.status === 401;
+    if (error?.config?.toastError !== false && !isNotFound && !is401) {
       showError(backendMsg);
     }
 

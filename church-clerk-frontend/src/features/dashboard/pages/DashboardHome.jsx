@@ -301,7 +301,6 @@ function DashboardOverview({ onNavigate }) {
   const kpiQuery = useQuery({
     queryKey: ["dashboard", "kpi", activeChurchId],
     enabled: !!activeChurchId,
-    staleTime: 0,
     queryFn: async () => {
       const res = await getDashboardKPI();
       return res?.data?.kpis || null;
@@ -311,7 +310,6 @@ function DashboardOverview({ onNavigate }) {
   const analyticsQuery = useQuery({
     queryKey: ["dashboard", "analytics", activeChurchId, year],
     enabled: !!activeChurchId,
-    staleTime: 0,
     queryFn: async () => {
       const res = await getDashboardAnalytics({ year });
       return res?.data?.analyticsDashboard || null;
@@ -321,7 +319,6 @@ function DashboardOverview({ onNavigate }) {
   const widgetsQuery = useQuery({
     queryKey: ["dashboard", "widgets", activeChurchId],
     enabled: !!activeChurchId,
-    staleTime: 0,
     queryFn: async () => {
       const res = await getDashboardWidgets();
       return res?.data?.dashboardWidget || null;
@@ -347,7 +344,6 @@ function DashboardOverview({ onNavigate }) {
   const upcomingProgramsQuery = useQuery({
     queryKey: ["dashboard", "upcoming-programs", activeChurchId],
     enabled: !!activeChurchId,
-    staleTime: 0,
     queryFn: async () => {
       const res = await getUpcomingPrograms({ page: 1, limit: 6 });
       const payload = res?.data?.data ?? res?.data;

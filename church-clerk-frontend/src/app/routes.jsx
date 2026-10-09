@@ -25,6 +25,8 @@ import FeaturesPage from "../features/dashboard/pages/FeaturesPage.jsx";
 import PricingPage from "../features/dashboard/pages/PricingPage.jsx";
 import AboutPage from "../features/dashboard/pages/AboutPage.jsx";
 import ContactPage from "../features/dashboard/pages/ContactPage.jsx";
+import PrivacyPolicyPage from "../features/legal/pages/PrivacyPolicyPage.jsx";
+import TermsOfServicePage from "../features/legal/pages/TermsOfServicePage.jsx";
 
 const BillingPage = lazy(() => import("../features/subscription/pages/BillingPage.jsx"));
 const OfferingPage = lazy(() => import("../features/offering/pages/OfferingPage.jsx"));
@@ -58,6 +60,8 @@ function AppRoutes() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms-of-service" element={<TermsOfServicePage />} />
 
       <Route element={<AuthLayout />}>
         <Route path="/register" element={<Register />} />

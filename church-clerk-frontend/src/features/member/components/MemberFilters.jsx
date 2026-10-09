@@ -50,8 +50,10 @@ function MemberFilters() {
 
   const onSearchChange = (e) => {
     const next = e.target.value;
+    // Only update the visible input immediately; let debouncedSearch
+    // update the shared filter (which triggers the query) after 400 ms.
+    // Calling store.setFilters here too would fire a query on every keystroke.
     setSearchValue(next);
-    store?.setFilters({ search: next, page: 1 });
     debouncedSearch(next);
   };
 
@@ -74,7 +76,6 @@ function MemberFilters() {
 
   const onMobileSearchChange = (val) => {
     setSearchValue(val);
-    store?.setFilters({ search: val, page: 1 });
     debouncedSearch(val);
   };
 
