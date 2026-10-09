@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout.jsx";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
 import Login from "../../features/Auth/pages/Login.jsx";
+import ForgotPassword from "../../features/Auth/pages/ForgotPassword.jsx";
+import ResetPassword from "../../features/Auth/pages/ResetPassword.jsx";
 import DashboardHome from "../../features/Dashboard/Pages/DashboardHome.jsx";
 import ProtectedRoute from "../../shared/components/ProtectedRoute.jsx";
 import ChurchesPage from "../../features/SystemAdmin/Pages/ChurchesPage.jsx";
@@ -23,6 +25,8 @@ function AppRoutes() {
     <Routes>
       <Route element={<AuthLayout />}>
         <Route path="/admin/login" element={<Login />} />
+        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin/reset-password" element={<ResetPassword />} />
       </Route>
 
       <Route

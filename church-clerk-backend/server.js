@@ -265,7 +265,10 @@ function csrfProtection(req, res, next) {
     res.cookie(_CSRF_COOKIE, secret, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      // "none" is required in production so cross-origin frontends (admin on a
+      // different domain) can include this cookie in credentialed Axios requests.
+      // sameSite:"none" requires Secure:true, which is already enforced above.
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/"
     });
   }
@@ -340,8 +343,6 @@ app.use("/api/v1/admin", Routes.adminAuthRoute);
 app.use("/api/v1/user", Routes.userRoutes);
 app.use("/api/v1/system-admin", Routes.systemAdminRoute);
 app.use("/api/v1/church", Routes.churchRoute);
-
-app.use("/api/admin/billing", Routes.adminBillingRoute);
 
 app.use("/api/v1/admin/billing", Routes.adminBillingRoute);
 

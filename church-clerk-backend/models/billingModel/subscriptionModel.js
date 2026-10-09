@@ -81,7 +81,7 @@ const subscriptionSchema = new mongoose.Schema(
 
     paymentProvider: {
       type: String,
-      enum: ["paystack", "stripe"],
+      enum: ["paystack"],
       required: true
     },
 

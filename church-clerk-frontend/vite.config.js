@@ -9,7 +9,6 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     cacheDir: ".vite",
     define: {
-      "import.meta.env.TEST_PUBLC_KEY": JSON.stringify(env.TEST_PUBLC_KEY || ""),
       "import.meta.env.TEST_PUBLIC_KEY": JSON.stringify(env.TEST_PUBLIC_KEY || "")
     },
     esbuild: {

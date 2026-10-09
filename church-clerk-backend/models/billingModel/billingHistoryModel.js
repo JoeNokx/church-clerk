@@ -39,7 +39,7 @@ const billingHistorySchema = new mongoose.Schema(
 
     paymentProvider: {
       type: String,
-      enum: ["paystack", "stripe"],
+      enum: ["paystack"],
       default: null
     },
 

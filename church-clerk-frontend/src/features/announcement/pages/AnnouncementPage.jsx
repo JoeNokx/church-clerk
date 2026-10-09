@@ -2703,15 +2703,13 @@ function AnnouncementPage() {
       }
 
       const key =
-        import.meta.env.TEST_PUBLC_KEY ||
-        import.meta.env.TEST_PUBLIC_KEY ||
-        import.meta.env.VITE_TEST_PUBLC_KEY ||
         import.meta.env.VITE_TEST_PUBLIC_KEY ||
+        import.meta.env.TEST_PUBLIC_KEY ||
         import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ||
         "";
       if (!key) {
         setFundError(
-          "Paystack public key is not configured. Set VITE_TEST_PUBLC_KEY=pk_test_... (or TEST_PUBLC_KEY=pk_test_...) in frontend .env, then restart the frontend."
+          "Paystack public key is not configured. Set VITE_TEST_PUBLIC_KEY=pk_test_... in frontend .env, then restart the frontend."
         );
         return;
       }

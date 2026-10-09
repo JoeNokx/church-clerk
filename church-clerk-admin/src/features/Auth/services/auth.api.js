@@ -23,3 +23,15 @@ export const updateMyPassword = async (payload) => {
 export const registerSystemAdmin = async (payload) => {
   return await http.post("/admin/register", payload);
 };
+
+export const changeAdminEmail = async (payload) => {
+  return await http.put("/admin/me/email", payload);
+};
+
+export const forgotAdminPassword = async (email) => {
+  return await http.post("/admin/forgot-password", { email });
+};
+
+export const resetAdminPassword = async (payload) => {
+  return await http.post("/admin/reset-password", payload);
+};

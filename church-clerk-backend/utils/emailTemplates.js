@@ -55,10 +55,31 @@ function getPasswordResetEmailTemplate(fullName, token) {
   `;
 }
 
+function getAdminBaseUrl() {
+  const raw = process.env.ADMIN_URL || "http://localhost:5174";
+  return String(raw || "").replace(/\/$/, "");
+}
+
+function getAdminPasswordResetEmailTemplate(fullName, token) {
+  const baseUrl = getAdminBaseUrl();
+  const link = `${baseUrl}/admin/reset-password?token=${token}`;
+  return `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <h2 style="margin: 0 0 12px;">Admin password reset — Church Clerk</h2>
+      <p>Hello ${fullName || ""},</p>
+      <p>A password reset was requested for your <strong>admin account</strong>. Click the button below to set a new password. This link expires in 1 hour.</p>
+      <p><a href="${link}" style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 10px 14px; border-radius: 8px; text-decoration: none;">Reset Admin Password</a></p>
+      <p style="color: #6b7280; font-size: 12px;">If you did not request this, you can safely ignore this email.<br/>If the button doesn't work, copy and paste this link into your browser:<br/>${link}</p>
+    </div>
+  `;
+}
+
 export {
   getFrontendBaseUrl,
+  getAdminBaseUrl,
   getVerificationEmailTemplate,
   getWelcomeEmailTemplate,
   getRegistrationEmailTemplate,
-  getPasswordResetEmailTemplate
+  getPasswordResetEmailTemplate,
+  getAdminPasswordResetEmailTemplate
 };

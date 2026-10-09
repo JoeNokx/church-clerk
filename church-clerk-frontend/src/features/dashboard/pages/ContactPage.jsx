@@ -3,20 +3,32 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
+import publicHttp from "../../../shared/services/publicHttp.js";
 
 const fade = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
 function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", email: "", church: "", message: "" });
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setError("");
+    setLoading(true);
+    try {
+      await publicHttp.post("/public/contact", form);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to send message. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -79,8 +91,9 @@ function ContactPage() {
                       <label className="block text-sm font-semibold text-slate-700">Message</label>
                       <textarea name="message" required rows={5} value={form.message} onChange={handleChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors resize-none" placeholder="How can we help?" />
                     </div>
-                    <button type="submit" className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">
-                      Send Message
+                    {error && <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{error}</p>}
+                    <button type="submit" disabled={loading} className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                      {loading ? "Sending…" : "Send Message"}
                     </button>
                   </form>
                 )}
@@ -106,14 +119,12 @@ function ContactPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="text-base font-semibold text-white">Email</h3>
-                          {["support@churchclerk.com", "sales@churchclerk.com"].map((email) => (
-                            <a key={email} href={`mailto:${email}`} className="group mt-1.5 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 -mx-2 text-sm text-slate-200 transition-colors hover:bg-white/10 hover:text-white">
-                              {email}
-                              <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-colors group-hover:text-white">
-                                <path d="M6 14L14 6M8 6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </a>
-                          ))}
+                          <a href="mailto:support@churchclerkapp.com" className="group mt-1.5 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 -mx-2 text-sm text-slate-200 transition-colors hover:bg-white/10 hover:text-white">
+                            support@churchclerkapp.com
+                            <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-colors group-hover:text-white">
+                              <path d="M6 14L14 6M8 6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -127,8 +138,8 @@ function ContactPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="text-base font-semibold text-white">Phone</h3>
-                          <a href="tel:+233000000000" className="group mt-1.5 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 -mx-2 text-sm text-slate-200 transition-colors hover:bg-white/10 hover:text-white">
-                            +233 00 000 0000
+                          <a href="tel:+233546022758" className="group mt-1.5 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 -mx-2 text-sm text-slate-200 transition-colors hover:bg-white/10 hover:text-white">
+                            +233 0546022758 / 0548592769
                             <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-colors group-hover:text-white">
                               <path d="M6 14L14 6M8 6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
@@ -146,8 +157,8 @@ function ContactPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="text-base font-semibold text-white">WhatsApp</h3>
-                          <a href="https://wa.me/233000000000" target="_blank" rel="noreferrer" className="group mt-1.5 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 -mx-2 text-sm text-slate-200 transition-colors hover:bg-white/10 hover:text-white">
-                            +233 00 000 0000
+                          <a href="https://wa.me/233546022758" target="_blank" rel="noreferrer" className="group mt-1.5 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 -mx-2 text-sm text-slate-200 transition-colors hover:bg-white/10 hover:text-white">
+                            +233 0546022758 / 0548592769
                             <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-colors group-hover:text-white">
                               <path d="M6 14L14 6M8 6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>

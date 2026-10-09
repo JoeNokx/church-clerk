@@ -12,7 +12,7 @@ import {
   getGovernanceFlagsSnapshot,
   toggleGovernanceFlags
 } from "../Services/systemAdmin.api.js";
-import { updateMyPassword, updateMyProfile, registerSystemAdmin } from "../../Auth/services/auth.api.js";
+import { updateMyPassword, updateMyProfile, registerSystemAdmin, changeAdminEmail } from "../../Auth/services/auth.api.js";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
@@ -87,6 +87,13 @@ function SystemSettingsPage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
+  const [emailChangeSaving, setEmailChangeSaving] = useState(false);
+  const [emailChangeError, setEmailChangeError] = useState("");
+  const [emailChangeSuccess, setEmailChangeSuccess] = useState("");
 
   const [adminForm, setAdminForm] = useState({ fullName: "", email: "", phoneNumber: "", password: "", role: "supportadmin" });
   const [adminFormLoading, setAdminFormLoading] = useState(false);
@@ -990,10 +997,11 @@ function SystemSettingsPage() {
                 <div className="text-xs font-semibold text-gray-600">Email</div>
                 <input
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={profileSaving}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
+                  readOnly
+                  disabled
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 outline-none cursor-not-allowed"
                 />
+                <p className="mt-1 text-xs text-gray-400">Use the <strong>Change Email</strong> card below to update your email address.</p>
               </div>
 
               <div>
@@ -1032,7 +1040,6 @@ function SystemSettingsPage() {
                     try {
                       const fd = new FormData();
                       fd.append("fullName", String(fullName || "").trim());
-                      fd.append("email", String(email || "").trim());
                       fd.append("phoneNumber", String(phoneNumber || "").trim());
                       if (avatarFile) fd.append("avatar", avatarFile);
 
@@ -1048,6 +1055,105 @@ function SystemSettingsPage() {
                   }}
                 >
                   Save profile
+                </Button>
+              </div>
+            </div>
+            </Card.Body>
+          </Card>
+
+          <Card>
+            <Card.Header title="Change Email" />
+            <div className="text-xs text-gray-500">Enter your new email address and confirm with your current password.</div>
+
+            <Card.Body>
+            {emailChangeError ? (
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{emailChangeError}</div>
+            ) : null}
+            {emailChangeSuccess ? (
+              <div className="mb-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">{emailChangeSuccess}</div>
+            ) : null}
+            <div className="grid gap-3">
+              <div>
+                <div className="text-xs font-semibold text-gray-600">Current email</div>
+                <input
+                  value={email}
+                  readOnly
+                  disabled
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 outline-none cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-600">New email</div>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  disabled={emailChangeSaving}
+                  placeholder="new@example.com"
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
+                />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-gray-600">Current password (to confirm)</div>
+                <div className="relative mt-1">
+                  <input
+                    type={showEmailPassword ? "text" : "password"}
+                    value={emailPassword}
+                    onChange={(e) => setEmailPassword(e.target.value)}
+                    disabled={emailChangeSaving}
+                    placeholder="Enter your current password"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 pr-10 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={showEmailPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowEmailPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showEmailPassword ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                        <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="primary"
+                  loading={emailChangeSaving}
+                  loadingText="Saving…"
+                  onClick={async () => {
+                    setEmailChangeError("");
+                    setEmailChangeSuccess("");
+                    if (!newEmail.trim() || !emailPassword) {
+                      setEmailChangeError("New email and current password are required.");
+                      return;
+                    }
+                    setEmailChangeSaving(true);
+                    try {
+                      await changeAdminEmail({ newEmail: newEmail.trim(), currentPassword: emailPassword });
+                      await refreshUser?.();
+                      setEmailChangeSuccess("Email updated successfully.");
+                      setNewEmail("");
+                      setEmailPassword("");
+                      setShowEmailPassword(false);
+                    } catch (e) {
+                      setEmailChangeError(e?.response?.data?.message || e?.message || "Failed to update email.");
+                    } finally {
+                      setEmailChangeSaving(false);
+                    }
+                  }}
+                >
+                  Update email
                 </Button>
               </div>
             </div>
