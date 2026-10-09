@@ -9,7 +9,7 @@ export const logoutUser = async () => {
 };
 
 export const getMyProfile = async () => {
-  return await http.get("/admin/me");
+  return await http.get("/admin/me", { toastError: false });
 };
 
 export const updateMyProfile = async (payload) => {
