@@ -1,16 +1,66 @@
 import generateToken from "../utils/generateToken.js";
-import { verifyEmailToken, resendVerificationEmail } from "../services/auth/emailVerificationService.js";
+import { verifyEmailToken, resendVerificationEmail, getVerificationSessionStatus } from "../services/auth/emailVerificationService.js";
 import { initiatePasswordReset, resetPasswordWithToken, updatePassword as updatePasswordService } from "../services/auth/passwordResetService.js";
 import { registerUser, loginUser, logoutUser } from "../services/auth/authService.js";
 
 const verifyEmail = async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token, email } = req.body;
     if (!token) {
       return res.status(400).json({ message: "Verification token is required" });
     }
 
-    const user = await verifyEmailToken(token);
+    const { user, alreadyVerified } = await verifyEmailToken(token, email);
+
+    if (user) {
+      user.password = undefined;
+    }
+
+    if (alreadyVerified) {
+      return res.status(200).json({
+        status: "success",
+        message: "Email already verified",
+        data: { user, alreadyVerified: true }
+      });
+    }
+
+    const jwtToken = generateToken(user._id, "1d");
+
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Email verified successfully",
+      data: { user },
+      token: jwtToken
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const verificationStatus = async (req, res) => {
+  try {
+    const { session } = req.body;
+    if (!session) {
+      return res.status(400).json({ message: "Verification session is required" });
+    }
+
+    const result = await getVerificationSessionStatus(session);
+
+    if (!result.verified) {
+      return res.status(200).json({
+        status: "success",
+        data: { verified: false }
+      });
+    }
+
+    const { user } = result;
     const jwtToken = generateToken(user._id, "1d");
 
     res.cookie("token", jwtToken, {
@@ -24,12 +74,12 @@ const verifyEmail = async (req, res) => {
 
     return res.status(200).json({
       status: "success",
-      message: "Email verified successfully",
-      data: { user },
+      message: "Email verified",
+      data: { verified: true, user },
       token: jwtToken
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(400).json({ message: error.message });
   }
 };
 
@@ -81,7 +131,7 @@ const resetPassword = async (req, res) => {
 
 const registerUserController = async (req, res) => {
   try {
-    const { user, token, emailSent } = await registerUser(req.body, req);
+    const { user, token, emailSent, verificationSession } = await registerUser(req.body, req);
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -96,7 +146,8 @@ const registerUserController = async (req, res) => {
       data: {
         user,
         nextStep: "email-verification",
-        verificationEmailSent: emailSent
+        verificationEmailSent: emailSent,
+        verificationSession
       }
     });
   } catch (error) {
@@ -136,7 +187,8 @@ const loginUserController = async (req, res) => {
       return res.status(401).json({
         status: "error",
         message: error.message,
-        needsEmailVerification: true
+        needsEmailVerification: true,
+        verificationSession: error.verificationSession || null
       });
     }
     return res.status(500).json({
@@ -199,7 +251,8 @@ export {
   loginUserController as loginUser, 
   logoutUserController as logoutUser, 
   updatePasswordController as updatePassword, 
-  verifyEmail, 
+  verifyEmail,
+  verificationStatus,
   forgotPassword, 
   resetPassword, 
   resendEmailVerification 

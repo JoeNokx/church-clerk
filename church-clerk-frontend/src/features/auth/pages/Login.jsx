@@ -15,6 +15,7 @@ function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [verifySession, setVerifySession] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +47,7 @@ function Login() {
       }
     } catch (err) {
       if (err?.response?.data?.needsEmailVerification) {
+        setVerifySession(String(err?.response?.data?.verificationSession || ""));
         setError(`verify:${email}`);
         return;
       }
@@ -82,7 +84,7 @@ function Login() {
           <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
             Your email address is not yet verified.{" "}
             <Link
-              to={`/verify-email?email=${encodeURIComponent(error.slice(7))}`}
+              to={`/verify-email?email=${encodeURIComponent(error.slice(7))}${verifySession ? `&session=${encodeURIComponent(verifySession)}` : ""}`}
               className="font-semibold underline hover:text-amber-900"
             >
               Click here to verify your email
@@ -102,7 +104,7 @@ function Login() {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
-            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
+            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
               fieldErrors.email
                 ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                 : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
@@ -119,7 +121,7 @@ function Login() {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
-              className={`w-full rounded-xl border px-4 pr-11 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
+              className={`w-full rounded-xl border px-4 pr-11 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
                 fieldErrors.password
                   ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                   : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"

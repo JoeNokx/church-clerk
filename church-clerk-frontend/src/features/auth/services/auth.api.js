@@ -14,6 +14,10 @@ export const verifyEmail = async (payload) => {
   return await http.post("/auth/verify-email", payload);
 };
 
+export const checkVerificationStatus = async (payload) => {
+  return await http.post("/auth/verification-status", payload, { toastError: false, toastSuccess: false });
+};
+
 export const resendEmailVerification = async (payload) => {
   return await http.post("/auth/resend-verification", payload);
 };

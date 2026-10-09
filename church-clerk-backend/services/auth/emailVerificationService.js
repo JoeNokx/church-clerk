@@ -5,17 +5,46 @@ import { getVerificationEmailTemplate, getRegistrationEmailTemplate, getFrontend
 import { logActivity } from "../../utils/activityLogger.js";
 import { getClientIp, parseUserAgentMeta } from "../../utils/requestHelpers.js";
 
-async function verifyEmailToken(token) {
+async function verifyEmailToken(token, email) {
   const user = await User.findOne({ emailVerificationToken: String(token).trim() }).populate("church", "name");
-  if (!user) {
-    throw new Error("Invalid or expired verification token");
+  if (user) {
+    if (user.isEmailVerified === true) {
+      return { user, alreadyVerified: true };
+    }
+
+    user.isEmailVerified = true;
+    await user.save();
+
+    return { user, alreadyVerified: false };
   }
 
-  user.isEmailVerified = true;
-  user.emailVerificationToken = null;
+  // The token may have been rotated (resend) or cleared while the account
+  // itself is already verified — fall back to the email hint from the link.
+  const normalizedEmail = String(email || "").toLowerCase().trim();
+  if (normalizedEmail) {
+    const emailUser = await User.findOne({ email: normalizedEmail }).select("isEmailVerified").lean();
+    if (emailUser?.isEmailVerified === true) {
+      return { user: null, alreadyVerified: true };
+    }
+  }
+
+  throw new Error("Invalid or expired verification token");
+}
+
+async function getVerificationSessionStatus(sessionToken) {
+  const user = await User.findOne({ pendingVerificationToken: String(sessionToken || "").trim() }).populate("church", "name");
+  if (!user) {
+    throw new Error("Invalid or expired verification session");
+  }
+
+  if (user.isEmailVerified !== true) {
+    return { verified: false };
+  }
+
+  user.pendingVerificationToken = null;
   await user.save();
 
-  return user;
+  return { verified: true, user };
 }
 
 async function resendVerificationEmail(email, req) {
@@ -37,11 +66,11 @@ async function resendVerificationEmail(email, req) {
   user.emailVerificationToken = verificationToken;
   await user.save();
 
-  const link = `${getFrontendBaseUrl()}/verify-email?token=${verificationToken}`;
+  const link = `${getFrontendBaseUrl()}/verify-email?token=${verificationToken}&email=${encodeURIComponent(user.email)}`;
   await sendEmail({
     to: user.email,
     subject: "Verify your email - Church Clerk",
-    html: getVerificationEmailTemplate(user.fullName, verificationToken)
+    html: getVerificationEmailTemplate(user.fullName, verificationToken, user.email)
   });
 
   return { success: true, message: "Verification email sent." };
@@ -52,14 +81,14 @@ async function sendRegistrationVerificationEmail(user) {
   user.emailVerificationToken = verificationToken;
   await User.findByIdAndUpdate(user._id, { emailVerificationToken: verificationToken });
 
-  const link = `${getFrontendBaseUrl()}/verify-email?token=${verificationToken}`;
+  const link = `${getFrontendBaseUrl()}/verify-email?token=${verificationToken}&email=${encodeURIComponent(user.email)}`;
   let emailSent = false;
 
   try {
     await sendEmail({
       to: user.email,
       subject: "Verify your email - Church Clerk",
-      html: getRegistrationEmailTemplate(user.fullName, verificationToken)
+      html: getRegistrationEmailTemplate(user.fullName, verificationToken, user.email)
     });
     emailSent = true;
   } catch (err) {
@@ -72,4 +101,4 @@ async function sendRegistrationVerificationEmail(user) {
   return { emailSent, link };
 }
 
-export { verifyEmailToken, resendVerificationEmail, sendRegistrationVerificationEmail };
+export { verifyEmailToken, resendVerificationEmail, sendRegistrationVerificationEmail, getVerificationSessionStatus };

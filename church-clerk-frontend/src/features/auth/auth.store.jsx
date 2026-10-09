@@ -54,9 +54,11 @@ export function AuthProvider({ children }) {
         permissionCtx?.setPermissions?.(payload?.permissions);
         churchCtx?.setActiveChurch?.(payload?.activeChurch);
 
-        if (nextUser) {
+        const prefetchChurchId =
+          payload?.activeChurch?._id || nextUser?.church?._id || (typeof nextUser?.church === "string" ? nextUser.church : null);
+        if (nextUser && prefetchChurchId) {
           const year = new Date().getFullYear();
-          const churchId = payload?.activeChurch?._id || null;
+          const churchId = prefetchChurchId;
           void Promise.allSettled([
             queryClient.prefetchQuery({
               queryKey: ["dashboard", "kpi", churchId],
@@ -149,9 +151,9 @@ export function AuthProvider({ children }) {
 
     const userData = await refreshUser();
 
-    if (userData) {
+    const churchId = userData?.church?._id || (typeof userData?.church === "string" ? userData.church : null);
+    if (userData && churchId) {
       const year = new Date().getFullYear();
-      const churchId = userData?.church?._id || (typeof userData?.church === "string" ? userData.church : null);
       await Promise.allSettled([
         queryClient.prefetchQuery({
           queryKey: ["dashboard", "kpi", churchId],

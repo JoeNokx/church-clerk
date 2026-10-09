@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthCard from "../components/AuthCard.jsx";
-import { resendEmailVerification, verifyEmail } from "../services/auth.api.js";
+import { checkVerificationStatus, resendEmailVerification, verifyEmail } from "../services/auth.api.js";
 import { useAuth } from "../useAuth.js";
 
 const AUTH_TOKEN_KEY = "cckAuthToken";
@@ -13,10 +13,14 @@ function VerifyEmail() {
 
   const token = useMemo(() => String(searchParams.get("token") || "").trim(), [searchParams]);
   const email = useMemo(() => String(searchParams.get("email") || "").trim(), [searchParams]);
+  const session = useMemo(() => String(searchParams.get("session") || "").trim(), [searchParams]);
+
+  const verifyStarted = useRef(false);
 
   const [loading, setLoading] = useState(Boolean(token));
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState("");
 
   const [resendEmail, setResendEmail] = useState(email);
   const [resendLoading, setResendLoading] = useState(false);
@@ -38,28 +42,37 @@ function VerifyEmail() {
 
   useEffect(() => {
     const run = async () => {
-      if (!token) return;
+      if (!token || verifyStarted.current) return;
+      verifyStarted.current = true;
 
       setLoading(true);
       setMessage("");
 
       try {
-        const res = await verifyEmail({ token });
+        const res = await verifyEmail(email ? { token, email } : { token });
         const jwt = res?.data?.token;
         if (jwt) {
           sessionStorage.setItem(AUTH_TOKEN_KEY, String(jwt));
         }
 
-        const userData = await refreshUser();
+        const alreadyVerified = res?.data?.data?.alreadyVerified === true;
+        const userData = await refreshUser().catch(() => null);
         setSuccess(true);
 
-        const needsChurch = userData && !userData.church;
-        if (needsChurch) {
+        if (alreadyVerified && !userData) {
+          setNotice("Your email address is already verified. Please sign in to continue.");
+          return;
+        }
+
+        if (userData && !userData.church) {
           navigate("/register-church", { replace: true });
-        } else {
+        } else if (userData) {
           navigate("/dashboard", { replace: true });
+        } else {
+          navigate("/login", { replace: true });
         }
       } catch (err) {
+        verifyStarted.current = false;
         setSuccess(false);
         setMessage(err?.response?.data?.message || "Email verification failed");
       } finally {
@@ -68,7 +81,55 @@ function VerifyEmail() {
     };
 
     run();
-  }, [navigate, refreshUser, token]);
+  }, [navigate, refreshUser, token, email]);
+
+  // Poll while waiting so that verifying on another device (e.g. phone)
+  // automatically continues the flow on this device too.
+  useEffect(() => {
+    if (token || !session) return undefined;
+
+    let cancelled = false;
+    let claiming = false;
+
+    const claim = async () => {
+      if (cancelled || claiming) return;
+      claiming = true;
+      try {
+        const res = await checkVerificationStatus({ session });
+        if (cancelled || !res?.data?.data?.verified) return;
+
+        const jwt = res?.data?.token;
+        if (jwt) {
+          sessionStorage.setItem(AUTH_TOKEN_KEY, String(jwt));
+        }
+
+        const userData = await refreshUser().catch(() => null);
+        if (cancelled) return;
+        setSuccess(true);
+
+        if (userData && !userData.church) {
+          navigate("/register-church", { replace: true });
+        } else if (userData) {
+          navigate("/dashboard", { replace: true });
+        } else {
+          navigate("/login", { replace: true });
+        }
+      } catch {
+        // Invalid/expired session — stop polling and keep the manual instructions.
+        cancelled = true;
+      } finally {
+        claiming = false;
+      }
+    };
+
+    const interval = setInterval(claim, 4000);
+    claim();
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [token, session, navigate, refreshUser]);
 
   const showInstructions = !token && !loading && !success;
 
@@ -118,6 +179,8 @@ function VerifyEmail() {
         <div className="text-gray-700 text-sm">Verifying your email…</div>
       ) : message ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-sm">{message}</div>
+      ) : notice ? (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700 text-sm">{notice}</div>
       ) : null}
 
       {showInstructions ? (
@@ -129,6 +192,12 @@ function VerifyEmail() {
           <p className="text-gray-600">
             If you don&apos;t see it, check your spam folder.
           </p>
+          {session ? (
+            <p className="text-gray-500 text-xs">
+              Waiting for verification… This page will continue automatically once your email is verified, even on
+              another device.
+            </p>
+          ) : null}
 
           <div className="pt-1">
             <label className="block font-semibold text-gray-600 mb-1 text-xs">Email address</label>

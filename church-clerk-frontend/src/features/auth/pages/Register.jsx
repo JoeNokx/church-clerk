@@ -59,7 +59,9 @@ function Register() {
       const needsChurch = effectiveUser && !effectiveUser.church;
 
       if (nextStep === "email-verification") {
-        navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
+        const session = res?.data?.data?.verificationSession;
+        const sessionParam = session ? `&session=${encodeURIComponent(session)}` : "";
+        navigate(`/verify-email?email=${encodeURIComponent(email)}${sessionParam}`, { replace: true });
         return;
       }
 
@@ -108,7 +110,7 @@ function Register() {
             placeholder="John Doe"
             value={fullName}
             onChange={(e) => { setFullName(e.target.value); setFieldErrors((p) => ({ ...p, fullName: undefined })); }}
-            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
+            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
               fieldErrors.fullName
                 ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                 : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
@@ -124,7 +126,7 @@ function Register() {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
-            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
+            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
               fieldErrors.email
                 ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                 : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
@@ -139,7 +141,7 @@ function Register() {
             value={phoneNumber}
             onChange={(v) => { setPhoneNumber(v); setFieldErrors((p) => ({ ...p, phoneNumber: undefined })); }}
             error={Boolean(fieldErrors.phoneNumber)}
-            inputClassName={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
+            inputClassName={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
               fieldErrors.phoneNumber
                 ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                 : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
@@ -156,7 +158,7 @@ function Register() {
               placeholder="Create a password (min. 8 characters)"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
-              className={`w-full rounded-xl border px-4 pr-11 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:outline-none focus:ring-2 ${
+              className={`w-full rounded-xl border px-4 pr-11 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
                 fieldErrors.password
                   ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                   : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"

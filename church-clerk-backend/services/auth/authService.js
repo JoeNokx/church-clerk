@@ -117,7 +117,8 @@ async function registerUser(data, req) {
     role: resolvedRole,
     church,
     isEmailVerified: false,
-    emailVerificationToken: crypto.randomBytes(32).toString("hex")
+    emailVerificationToken: crypto.randomBytes(32).toString("hex"),
+    pendingVerificationToken: crypto.randomBytes(32).toString("hex")
   });
 
   const token = generateToken(user._id);
@@ -146,7 +147,7 @@ async function registerUser(data, req) {
     req
   });
 
-  return { user, token, emailSent };
+  return { user, token, emailSent, verificationSession: user.pendingVerificationToken };
 }
 
 async function loginUser(email, password, rememberMe, req) {
@@ -200,12 +201,6 @@ async function loginUser(email, password, rememberMe, req) {
     throw new Error("Please log in via the admin portal");
   }
 
-  if (user.isEmailVerified === false) {
-    const err = new Error("Please verify your email before logging in.");
-    err.code = "EMAIL_NOT_VERIFIED";
-    throw err;
-  }
-
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
     await logActivity({
@@ -229,6 +224,17 @@ async function loginUser(email, password, rememberMe, req) {
       req
     });
     throw new Error("Email or password incorrect");
+  }
+
+  if (user.isEmailVerified === false) {
+    if (!user.pendingVerificationToken) {
+      user.pendingVerificationToken = crypto.randomBytes(32).toString("hex");
+      await user.save();
+    }
+    const err = new Error("Please verify your email before logging in.");
+    err.code = "EMAIL_NOT_VERIFIED";
+    err.verificationSession = user.pendingVerificationToken;
+    throw err;
   }
 
   const tokenExpiresIn = remember ? "30d" : "1d";

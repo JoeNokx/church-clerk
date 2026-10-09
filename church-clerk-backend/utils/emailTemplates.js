@@ -3,9 +3,10 @@ function getFrontendBaseUrl() {
   return String(raw || "").replace(/\/$/, "");
 }
 
-function getVerificationEmailTemplate(fullName, token) {
+function getVerificationEmailTemplate(fullName, token, email) {
   const baseUrl = getFrontendBaseUrl();
-  const link = `${baseUrl}/verify-email?token=${token}`;
+  const emailParam = email ? `&email=${encodeURIComponent(email)}` : "";
+  const link = `${baseUrl}/verify-email?token=${token}${emailParam}`;
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
       <h2 style="margin: 0 0 12px;">Verify your email</h2>
@@ -27,9 +28,10 @@ function getWelcomeEmailTemplate(fullName, churchName) {
   `;
 }
 
-function getRegistrationEmailTemplate(fullName, token) {
+function getRegistrationEmailTemplate(fullName, token, email) {
   const baseUrl = getFrontendBaseUrl();
-  const link = `${baseUrl}/verify-email?token=${token}`;
+  const emailParam = email ? `&email=${encodeURIComponent(email)}` : "";
+  const link = `${baseUrl}/verify-email?token=${token}${emailParam}`;
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
       <h2 style="margin: 0 0 12px;">Verify your email</h2>

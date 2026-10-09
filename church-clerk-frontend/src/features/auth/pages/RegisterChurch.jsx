@@ -350,7 +350,7 @@ function RegisterChurch() {
             placeholder="Your church name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
@@ -362,7 +362,7 @@ function RegisterChurch() {
             placeholder="Pastor's full name"
             value={pastor}
             onChange={(e) => setPastor(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
@@ -372,7 +372,7 @@ function RegisterChurch() {
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           >
             <option value="Headquarters">Headquarters</option>
             <option value="Branch">Branch</option>
@@ -399,7 +399,7 @@ function RegisterChurch() {
               value={branchSearch}
               onChange={(e) => { setBranchSearch(e.target.value); setBranchDropdownOpen(true); }}
               onFocus={() => setBranchDropdownOpen(true)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             />
             {branchDropdownOpen && (
               <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
@@ -453,7 +453,7 @@ function RegisterChurch() {
                 setHqDropdownOpen(true);
               }}
               onFocus={() => setHqDropdownOpen(true)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             />
 
             {selectedHqLabel && parentChurchId ? (
@@ -501,23 +501,23 @@ function RegisterChurch() {
         )}
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Phone Number</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Church Phone Number</label>
           <PhoneNumberInput
             value={phoneNumber}
             onChange={setPhoneNumber}
             error={Boolean(error && String(error).toLowerCase().includes("invalid phone"))}
-            inputClassName="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
+            inputClassName="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"
           />
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1 text-sm">Email (optional)</label>
+          <label className="block font-medium text-gray-700 mb-1 text-sm">Church Email (optional)</label>
           <input
             type="email"
-            placeholder="you@example.com"
+            placeholder="church@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 
@@ -584,7 +584,7 @@ function RegisterChurch() {
             placeholder="City"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
             required
           />
         </div>
@@ -596,7 +596,7 @@ function RegisterChurch() {
             placeholder="Street address"
             value={streetAddress}
             onChange={(e) => setStreetAddress(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 
@@ -634,7 +634,7 @@ function RegisterChurch() {
             type="date"
             value={foundedDate}
             onChange={(e) => setFoundedDate(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 
@@ -645,7 +645,7 @@ function RegisterChurch() {
             placeholder="Referral code"
             value={referralCodeInput}
             onChange={(e) => setReferralCodeInput(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
           />
         </div>
 

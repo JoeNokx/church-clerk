@@ -18,7 +18,12 @@ export const loginSchema = Joi.object({
 });
 
 export const verifyEmailSchema = Joi.object({
-  token: Joi.string().trim().min(10).required()
+  token: Joi.string().trim().min(10).required(),
+  email: Joi.string().trim().email().allow("").optional()
+});
+
+export const verificationStatusSchema = Joi.object({
+  session: Joi.string().trim().min(10).required()
 });
 
 export const resendVerificationSchema = Joi.object({

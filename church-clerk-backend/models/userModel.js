@@ -104,6 +104,14 @@ const userSchema = new mongoose.Schema({
 
     },
 
+    pendingVerificationToken: {
+
+        type: String,
+
+        default: null
+
+    },
+
     passwordResetToken: {
 
         type: String,

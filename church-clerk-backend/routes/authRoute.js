@@ -5,7 +5,7 @@ const router = express.Router();
 
 
 
-import {registerUser, loginUser, logoutUser, updatePassword, verifyEmail, resendEmailVerification, forgotPassword, resetPassword} from "../controller/authController.js"
+import {registerUser, loginUser, logoutUser, updatePassword, verifyEmail, verificationStatus, resendEmailVerification, forgotPassword, resetPassword} from "../controller/authController.js"
 
 
 
@@ -20,6 +20,7 @@ import {
   resendVerificationSchema,
   resetPasswordSchema,
   updatePasswordSchema,
+  verificationStatusSchema,
   verifyEmailSchema
 } from "../validators/auth.js";
 import { loginLimiter, passwordResetLimiter, registerLimiter } from "../middleware/rateLimiters.js";
@@ -39,6 +40,8 @@ router.post("/register", registerLimiter, validateRequest(registerSchema), regis
 router.post("/login", loginLimiter, validateRequest(loginSchema), loginUser);
 
 router.post("/verify-email", validateRequest(verifyEmailSchema), verifyEmail);
+
+router.post("/verification-status", validateRequest(verificationStatusSchema), verificationStatus);
 
 router.post("/resend-verification", validateRequest(resendVerificationSchema), resendEmailVerification);
 
