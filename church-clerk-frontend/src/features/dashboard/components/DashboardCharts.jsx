@@ -14,19 +14,28 @@ const LS = { fontWeight: 600, color: "#111827" };
 function SundayTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
+  const records = d?.records || [];
+  const total = Number(d?.totalAttendance || 0);
   return (
     <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.07)", padding: "10px 14px", minWidth: 160 }}>
       <div style={{ fontWeight: 700, color: "#111827", marginBottom: 6, fontSize: 12 }}>{d?.label}</div>
-      {(d?.records || []).map((r, i) => (
-        <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 11, color: "#6b7280", marginTop: 3 }}>
-          <span>{r.serviceType || "Service"}</span>
-          <span style={{ fontWeight: 600, color: "#374151" }}>{r.totalNumber}</span>
-        </div>
-      ))}
-      {(d?.records || []).length > 1 && (
-        <div style={{ marginTop: 6, paddingTop: 6, borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-          <span style={{ color: "#9ca3af" }}>Total</span>
-          <span style={{ fontWeight: 700, color: "#6366f1" }}>{d?.totalAttendance}</span>
+      {records.length > 1 ? (
+        <>
+          {records.map((r, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 11, color: "#6b7280", marginTop: 3 }}>
+              <span>{r.serviceType || "Service"}</span>
+              <span style={{ fontWeight: 600, color: "#374151" }}>{r.totalNumber}</span>
+            </div>
+          ))}
+          <div style={{ marginTop: 6, paddingTop: 6, borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+            <span style={{ color: "#9ca3af" }}>Total (incl. visitors)</span>
+            <span style={{ fontWeight: 700, color: "#6366f1" }}>{total}</span>
+          </div>
+        </>
+      ) : (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 11, marginTop: 3 }}>
+          <span style={{ color: "#6b7280" }}>{records[0]?.serviceType || "Service"}</span>
+          <span style={{ fontWeight: 700, color: "#6366f1" }}>{total}</span>
         </div>
       )}
     </div>

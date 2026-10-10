@@ -80,18 +80,42 @@ const getDashboardKPI = async (req, res) => {
             church: query.church,
             date: { $gte: thisSunday, $lt: thisSundayNextDay }
           })
-            .select("presentMembers")
+            .select("_id presentMembers")
             .lean(),
           ServiceIndividualAttendance.find({
             church: query.church,
             date: { $gte: lastSunday, $lt: lastSundayNextDay }
           })
-            .select("presentMembers")
+            .select("_id presentMembers")
             .lean()
         ]);
 
-        const thisSundayAttendance = thisSundayServices.reduce((total, service) => total + (service.presentMembers?.length || 0), 0);
-        const lastSundayAttendancePrevWeek = lastSundayServices.reduce((total, service) => total + (service.presentMembers?.length || 0), 0);
+        const thisSundayServiceIds = thisSundayServices.map(s => s._id);
+        const lastSundayServiceIds = lastSundayServices.map(s => s._id);
+
+        const [thisSundayVisitorAgg, lastSundayVisitorAgg] = await Promise.all([
+          thisSundayServiceIds.length
+            ? Visitor.aggregate([
+                { $match: { church: query.church } },
+                { $unwind: "$attendance" },
+                { $match: { attendance: { $in: thisSundayServiceIds } } },
+                { $count: "total" }
+              ])
+            : Promise.resolve([]),
+          lastSundayServiceIds.length
+            ? Visitor.aggregate([
+                { $match: { church: query.church } },
+                { $unwind: "$attendance" },
+                { $match: { attendance: { $in: lastSundayServiceIds } } },
+                { $count: "total" }
+              ])
+            : Promise.resolve([])
+        ]);
+
+        const thisSundayMemberCount = thisSundayServices.reduce((total, service) => total + (service.presentMembers?.length || 0), 0);
+        const lastSundayMemberCountPrev = lastSundayServices.reduce((total, service) => total + (service.presentMembers?.length || 0), 0);
+        const thisSundayAttendance = thisSundayMemberCount + (thisSundayVisitorAgg[0]?.total || 0);
+        const lastSundayAttendancePrevWeek = lastSundayMemberCountPrev + (lastSundayVisitorAgg[0]?.total || 0);
 
         const serviceCount = thisSundayServices.length;
         const thisSundayDate = thisSunday.toISOString().split("T")[0]; // YYYY-MM-DD
@@ -181,27 +205,60 @@ const getDashboardAnalytics = async (req, res) => {
         // --- Last 10 Sundays Attendance (across all time) ---
         const last10SundaysAgg = await ServiceIndividualAttendance.aggregate([
           { $match: { church: query.church, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$date" }, 1] } }] } },
-          { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, totalAttendance: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } }, records: { $push: { serviceType: "$serviceType", totalNumber: { $size: { $ifNull: ["$presentMembers", []] } } } } } },
+          { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, memberAttendance: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } }, serviceIds: { $push: "$_id" }, records: { $push: { serviceType: "$serviceType", totalNumber: { $size: { $ifNull: ["$presentMembers", []] } } } } } },
           { $sort: { "_id": -1 } },
           { $limit: 10 },
           { $sort: { "_id": 1 } }
         ]);
+
+        // Get visitor counts for those Sunday service sessions
+        const sundayAllServiceIds = last10SundaysAgg.flatMap(s => s.serviceIds);
+        const sundayVisitorAgg = sundayAllServiceIds.length
+          ? await Visitor.aggregate([
+              { $match: { church: query.church } },
+              { $unwind: "$attendance" },
+              { $match: { attendance: { $in: sundayAllServiceIds } } },
+              { $group: { _id: "$attendance", count: { $sum: 1 } } }
+            ])
+          : [];
+        const visitorByServiceId = {};
+        sundayVisitorAgg.forEach(v => { visitorByServiceId[String(v._id)] = v.count; });
+
         const last10SundaysGraph = last10SundaysAgg.map(s => {
           const d = new Date(s._id + "T00:00:00");
-          return { date: s._id, label: d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }), totalAttendance: s.totalAttendance, records: s.records };
+          const visitorCount = (s.serviceIds || []).reduce((sum, id) => sum + (visitorByServiceId[String(id)] || 0), 0);
+          // Distribute visitor counts across records proportionally (for multi-service tooltip breakdown)
+          const totalMemberCount = s.memberAttendance || 0;
+          const records = (s.records || []).map((r, i) => {
+            const serviceId = (s.serviceIds || [])[i];
+            const serviceVisitors = serviceId ? (visitorByServiceId[String(serviceId)] || 0) : 0;
+            return { ...r, totalNumber: r.totalNumber + serviceVisitors };
+          });
+          return { date: s._id, label: d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }), totalAttendance: totalMemberCount + visitorCount, records };
         });
 
         // --- Monthly Attendance Graph (Sundays, for selected year) ---
-        const monthlyAttAgg = await ServiceIndividualAttendance.aggregate([
-          { $match: { church: query.church, date: { $gte: startOfYear, $lte: endOfYear }, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$date" }, 1] } }] } },
-          { $addFields: { month: { $month: "$date" } } },
-          { $group: { _id: "$month", totalAttendance: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } } } },
-          { $sort: { "_id": 1 } }
+        const [monthlyAttAgg, monthlyVisitorAgg] = await Promise.all([
+          ServiceIndividualAttendance.aggregate([
+            { $match: { church: query.church, date: { $gte: startOfYear, $lte: endOfYear }, $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$date" }, 1] } }] } },
+            { $addFields: { month: { $month: "$date" } } },
+            { $group: { _id: "$month", memberAttendance: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } } } },
+            { $sort: { "_id": 1 } }
+          ]),
+          Visitor.aggregate([
+            { $match: { church: query.church } },
+            { $unwind: "$attendance" },
+            { $lookup: { from: "serviceindividualattendances", localField: "attendance", foreignField: "_id", as: "svc" } },
+            { $unwind: "$svc" },
+            { $match: { "svc.date": { $gte: startOfYear, $lte: endOfYear }, $or: [{ "svc.serviceType": { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$svc.date" }, 1] } }] } },
+            { $group: { _id: { $month: "$svc.date" }, count: { $sum: 1 } } }
+          ])
         ]);
         const attendanceGraph = [];
         for (let m = 1; m <= 12; m++) {
-          const rec = monthlyAttAgg.find(a => a._id === m);
-          attendanceGraph.push({ month: new Date(year, m - 1).toLocaleString("default", { month: "long" }), totalAttendance: rec ? rec.totalAttendance : 0 });
+          const mRec = monthlyAttAgg.find(a => a._id === m);
+          const vRec = monthlyVisitorAgg.find(a => a._id === m);
+          attendanceGraph.push({ month: new Date(year, m - 1).toLocaleString("default", { month: "long" }), totalAttendance: (mRec ? mRec.memberAttendance : 0) + (vRec ? vRec.count : 0) });
         }
 
         // --- Age Group Distribution (all members) ---

@@ -7,11 +7,18 @@ const programOfferingSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     event: { type: mongoose.Schema.Types.ObjectId, ref: "Program", required: true },
 
+    kind: {
+      type: String,
+      enum: ["offering", "seed"],
+      default: "offering"
+    },
+
     offeringType: {
       type: String,
-      required: true,
       trim: true
     },
+
+    seedName: { type: String, trim: true },
 
     offeringDate: { type: Date, required: true },
 

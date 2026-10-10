@@ -21,7 +21,8 @@ const createProgramOffering = async (req, res) => {
 
     const churchId = program?.church?._id || program?.church;
 
-    const { offeringType, offeringDate, amount, note } = req.body || {};
+    const { kind, offeringType, seedName, offeringDate, amount, note } = req.body || {};
+    const entryKind = kind === "seed" ? "seed" : "offering";
 
     if (!offeringDate || isNaN(Date.parse(offeringDate))) {
       return res.status(400).json({ message: "Valid offeringDate is required" });
@@ -31,7 +32,11 @@ const createProgramOffering = async (req, res) => {
       return res.status(400).json({ message: "Valid amount is required" });
     }
 
-    if (!offeringType) {
+    if (entryKind === "seed" && !String(seedName || "").trim()) {
+      return res.status(400).json({ message: "seedName is required" });
+    }
+
+    if (entryKind === "offering" && !offeringType) {
       return res.status(400).json({ message: "offeringType is required" });
     }
 
@@ -39,7 +44,9 @@ const createProgramOffering = async (req, res) => {
       church: churchId,
       createdBy: req.user._id,
       event: program._id,
-      offeringType,
+      kind: entryKind,
+      offeringType: entryKind === "offering" ? offeringType : undefined,
+      seedName: entryKind === "seed" ? String(seedName).trim() : undefined,
       offeringDate,
       amount: Number(amount),
       note: typeof note === "string" ? note.trim() : undefined
@@ -151,6 +158,24 @@ const updateProgramOffering = async (req, res) => {
     const query = { _id: offeringId, church: churchId, event: program._id };
 
     const body = { ...(req.body || {}) };
+
+    if (body.kind !== undefined && body.kind !== "offering" && body.kind !== "seed") {
+      return res.status(400).json({ message: "Invalid kind" });
+    }
+
+    if (body.offeringType !== undefined) {
+      body.offeringType = typeof body.offeringType === "string" ? body.offeringType.trim() : "";
+      if (body.kind !== "seed" && !body.offeringType) {
+        return res.status(400).json({ message: "offeringType is required" });
+      }
+    }
+
+    if (body.seedName !== undefined) {
+      body.seedName = typeof body.seedName === "string" ? body.seedName.trim() : "";
+      if (body.kind === "seed" && !body.seedName) {
+        return res.status(400).json({ message: "seedName is required" });
+      }
+    }
 
     if (body.offeringDate !== undefined) {
       if (!body.offeringDate || isNaN(Date.parse(body.offeringDate))) {

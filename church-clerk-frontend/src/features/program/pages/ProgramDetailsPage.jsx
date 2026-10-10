@@ -5,12 +5,8 @@ import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { createProgramAttendee, deleteProgramAttendee, getProgramAttendees, updateProgramAttendee } from "../attendees/services/programAttendees.api.js";
-import {
-  createTotalProgramAttendance,
-  deleteTotalProgramAttendance,
-  getAllTotalProgramAttendances,
-  updateTotalProgramAttendance
-} from "../attendances/services/programAttendances.api.js";
+import { getMembers } from "../../member/services/member.api.js";
+import { getVisitors } from "../../attendance/services/attendance.api.js";
 import {
   deleteProgramAttendanceFile,
   getProgramAttendanceFileDownloadUrl,
@@ -29,6 +25,7 @@ import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
@@ -78,6 +75,15 @@ function guessFileType(mimeType, name) {
   if (mt.startsWith("image/") || n.match(/\.(png|jpg|jpeg|webp|gif)$/)) return "Image";
   if (mt.includes("pdf") || n.endsWith(".pdf")) return "PDF";
   return "File";
+}
+
+function useDebouncedValue(value, delayMs) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs || 250);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+  return debounced;
 }
 
 function formatBytes(value) {
@@ -137,9 +143,6 @@ function ProgramDetailsPage() {
   const [attendeesError, setAttendeesError] = useState(null);
   const [attendees, setAttendees] = useState([]);
 
-  const [totalLoading, setTotalLoading] = useState(false);
-  const [totalError, setTotalError] = useState(null);
-  const [totals, setTotals] = useState([]);
 
   const [filesLoading, setFilesLoading] = useState(false);
   const [filesError, setFilesError] = useState(null);
@@ -158,13 +161,6 @@ function ProgramDetailsPage() {
   const [editAttendeeLocation, setEditAttendeeLocation] = useState("");
   const [editAttendeeRegDate, setEditAttendeeRegDate] = useState("");
 
-  const [editTotalOpen, setEditTotalOpen] = useState(false);
-  const [editTotalSaving, setEditTotalSaving] = useState(false);
-  const [editTotalError, setEditTotalError] = useState(null);
-  const [editTotalRow, setEditTotalRow] = useState(null);
-  const [editTotalDate, setEditTotalDate] = useState("");
-  const [editTotalNumber, setEditTotalNumber] = useState("");
-  const [editTotalSpeaker, setEditTotalSpeaker] = useState("");
 
   const [editFileOpen, setEditFileOpen] = useState(false);
   const [editFileSaving, setEditFileSaving] = useState(false);
@@ -177,13 +173,14 @@ function ProgramDetailsPage() {
   const [regDateFrom, setRegDateFrom] = useState("");
   const [regDateTo, setRegDateTo] = useState("");
 
-  const [totalSearch, setTotalSearch] = useState("");
-  const [totalDateFrom, setTotalDateFrom] = useState("");
-  const [totalDateTo, setTotalDateTo] = useState("");
 
   const [filesSearch, setFilesSearch] = useState("");
   const [filesDateFrom, setFilesDateFrom] = useState("");
   const [filesDateTo, setFilesDateTo] = useState("");
+  const [regPage, setRegPage] = useState(1);
+  const [regLimit, setRegLimit] = useState(20);
+  const [filesPage, setFilesPage] = useState(1);
+  const [filesLimit, setFilesLimit] = useState(20);
   const [previewFile, setPreviewFile] = useState(null);
 
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -195,13 +192,11 @@ function ProgramDetailsPage() {
   const [regLocation, setRegLocation] = useState("");
   const [regDate, setRegDate] = useState("");
   const [registerQueue, setRegisterQueue] = useState([]);
+  const [regMemberQuery, setRegMemberQuery] = useState("");
+  const [regMemberOptions, setRegMemberOptions] = useState([]);
+  const [regMemberSearching, setRegMemberSearching] = useState(false);
+  const [regSelectedMember, setRegSelectedMember] = useState(null);
 
-  const [recordOpen, setRecordOpen] = useState(false);
-  const [recordSaving, setRecordSaving] = useState(false);
-  const [recordError, setRecordError] = useState(null);
-  const [recordDate, setRecordDate] = useState("");
-  const [recordNumber, setRecordNumber] = useState("");
-  const [recordSpeaker, setRecordSpeaker] = useState("");
 
   useEffect(() => {
     if (!programId) {
@@ -241,8 +236,15 @@ function ProgramDetailsPage() {
     setAttendeesLoading(true);
     setAttendeesError(null);
     try {
-      const res = await getProgramAttendees(programId, { page: 1, limit: 50 });
-      setAttendees(Array.isArray(res?.data?.attendees) ? res.data.attendees : []);
+      const limit = 200;
+      const all = [];
+      for (let page = 1; page <= 50; page += 1) {
+        const res = await getProgramAttendees(programId, { page, limit });
+        const batch = Array.isArray(res?.data?.attendees) ? res.data.attendees : [];
+        all.push(...batch);
+        if (!res?.data?.pagination?.hasNext || batch.length < limit) break;
+      }
+      setAttendees(all);
     } catch (err) {
       setAttendees([]);
       setAttendeesError(err?.response?.data?.message || err?.message || "Failed to fetch attendees");
@@ -251,20 +253,6 @@ function ProgramDetailsPage() {
     }
   }, [programId]);
 
-  const loadTotals = useCallback(async () => {
-    if (!programId) return;
-    setTotalLoading(true);
-    setTotalError(null);
-    try {
-      const res = await getAllTotalProgramAttendances(programId, { page: 1, limit: 50 });
-      setTotals(Array.isArray(res?.data?.attendances) ? res.data.attendances : []);
-    } catch (err) {
-      setTotals([]);
-      setTotalError(err?.response?.data?.message || err?.message || "Failed to fetch attendance records");
-    } finally {
-      setTotalLoading(false);
-    }
-  }, [programId]);
 
   const loadFiles = useCallback(async () => {
     if (!programId) return;
@@ -352,67 +340,6 @@ function ProgramDetailsPage() {
     }
   };
 
-  const openEditTotal = (row) => {
-    setEditTotalRow(row || null);
-    setEditTotalError(null);
-    setEditTotalDate((row?.date || "").slice(0, 10));
-    setEditTotalNumber(String(row?.numberOfAttendees ?? ""));
-    setEditTotalSpeaker(row?.mainSpeaker || "");
-    setEditTotalOpen(true);
-  };
-
-  const closeEditTotal = () => {
-    if (editTotalSaving) return;
-    setEditTotalOpen(false);
-    setEditTotalRow(null);
-    setEditTotalError(null);
-  };
-
-  const onSaveEditTotal = async () => {
-    if (!programId) return;
-    if (!editTotalRow?._id) return;
-    if (!canEdit) return;
-
-    if (!editTotalDate || !String(editTotalNumber || "").trim()) {
-      setEditTotalError("Date and total attendees are required.");
-      return;
-    }
-
-    setEditTotalSaving(true);
-    setEditTotalError(null);
-    try {
-      await updateTotalProgramAttendance(programId, editTotalRow._id, {
-        date: editTotalDate,
-        numberOfAttendees: Number(editTotalNumber),
-        mainSpeaker: String(editTotalSpeaker || "").trim() || undefined
-      });
-      setEditTotalOpen(false);
-      setEditTotalRow(null);
-      await loadTotals();
-    } catch (err) {
-      setEditTotalError(err?.response?.data?.message || err?.message || "Failed to update attendance");
-    } finally {
-      setEditTotalSaving(false);
-    }
-  };
-
-  const onDeleteTotal = async (row) => {
-    if (!programId) return;
-    if (!row?._id) return;
-    if (!canDelete) return;
-    const ok = window.confirm(`Delete attendance record for ${formatDate(row?.date)}?`);
-    if (!ok) return;
-    setTotalLoading(true);
-    setTotalError(null);
-    try {
-      await deleteTotalProgramAttendance(programId, row._id);
-      await loadTotals();
-    } catch (err) {
-      setTotalError(err?.response?.data?.message || err?.message || "Failed to delete attendance");
-    } finally {
-      setTotalLoading(false);
-    }
-  };
 
   const openEditFile = (file) => {
     setEditFileRow(file || null);
@@ -473,6 +400,105 @@ function ProgramDetailsPage() {
     }
   };
 
+  const debouncedRegMemberQuery = useDebouncedValue(regMemberQuery, 300);
+
+  useEffect(() => {
+    if (!registerOpen || regSelectedMember) return;
+    const q = String(debouncedRegMemberQuery || "").trim();
+    if (!q) {
+      setRegMemberOptions([]);
+      return;
+    }
+
+    let cancelled = false;
+    setRegMemberSearching(true);
+    Promise.all([
+      getMembers({ search: q, page: 1, limit: 8 }).catch(() => null),
+      getVisitors({ search: q, page: 1, limit: 8 }).catch(() => null),
+    ])
+      .then(([membersRes, visitorsRes]) => {
+        if (cancelled) return;
+        const mPayload = membersRes?.data?.data ?? membersRes?.data;
+        const vPayload = visitorsRes?.data?.data ?? visitorsRes?.data;
+        const members = (Array.isArray(mPayload?.members) ? mPayload.members : []).map((m) => ({ ...m, _source: "member" }));
+        const visitors = (Array.isArray(vPayload?.visitors) ? vPayload.visitors : []).map((v) => ({ ...v, _source: "visitor" }));
+        setRegMemberOptions([...members, ...visitors].slice(0, 8));
+      })
+      .catch(() => {
+        if (!cancelled) setRegMemberOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setRegMemberSearching(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedRegMemberQuery, registerOpen, regSelectedMember]);
+
+  const selectRegisterMember = (m) => {
+    if (!m) return;
+    const isVisitor = m?._source === "visitor";
+    const fullName = isVisitor
+      ? (m?.fullName || "")
+      : (`${String(m?.firstName || "").trim()} ${String(m?.lastName || "").trim()}`.trim() || m?.fullName || "");
+    setRegSelectedMember(m);
+    setRegMemberQuery(fullName);
+    setRegMemberOptions([]);
+    setRegFullName(fullName);
+    setRegEmail(m?.email || "");
+    setRegPhone(m?.phoneNumber || "");
+    setRegLocation(isVisitor ? (m?.location || "") : [m?.streetAddress, m?.city].filter(Boolean).join(", "));
+    setRegisterError(null);
+  };
+
+  const clearRegisterMember = () => {
+    setRegSelectedMember(null);
+    setRegMemberQuery("");
+    setRegMemberOptions([]);
+  };
+
+  const onEditQueuedAttendee = (q) => {
+    if (!q) return;
+    setRegisterQueue((prev) => prev.filter((x) => x.id !== q.id));
+    setRegFullName(q.fullName || "");
+    setRegEmail(q.email || "");
+    setRegPhone(q.phoneNumber || "");
+    setRegLocation(q.location || "");
+    setRegDate(q.registrationDate || "");
+    clearRegisterMember();
+  };
+
+  const resetRegisterMemberSearch = () => {
+    setRegMemberQuery("");
+    setRegMemberOptions([]);
+    setRegMemberSearching(false);
+    setRegSelectedMember(null);
+  };
+
+  const regMemberKey = (m) => String(m?._id || "");
+  const phoneDigits = (v) => String(v || "").replace(/\D/g, "");
+
+  const takenMemberIds = useMemo(
+    () => new Set((registerQueue || []).map((q) => q?.memberId).filter(Boolean)),
+    [registerQueue]
+  );
+
+  const takenPhones = useMemo(
+    () => new Set([
+      ...(registerQueue || []).map((q) => phoneDigits(q?.phoneNumber)),
+      ...(attendees || []).map((a) => phoneDigits(a?.phoneNumber)),
+    ].filter(Boolean)),
+    [registerQueue, attendees]
+  );
+
+  const isMemberTaken = (m) => {
+    const mid = regMemberKey(m);
+    if (mid && takenMemberIds.has(mid)) return true;
+    const p = phoneDigits(m?.phoneNumber);
+    return Boolean(p && takenPhones.has(p));
+  };
+
   const onAddToRegisterQueue = () => {
     if (!regFullName || !regPhone) {
       setRegisterError("Name and phone number are required.");
@@ -484,11 +510,17 @@ function ProgramDetailsPage() {
       return;
     }
 
+    if (regSelectedMember && isMemberTaken(regSelectedMember)) {
+      setRegisterError("This member is already added or registered.");
+      return;
+    }
+
     setRegisterError(null);
     setRegisterQueue((prev) => [
       ...prev,
       {
         id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+        memberId: regSelectedMember?._id || null,
         fullName: regFullName,
         email: regEmail || "",
         phoneNumber: regPhone,
@@ -500,6 +532,7 @@ function ProgramDetailsPage() {
     setRegEmail("");
     setRegPhone("");
     setRegLocation("");
+    resetRegisterMemberSearch();
   };
 
   const onRegisterAll = async () => {
@@ -517,8 +550,13 @@ function ProgramDetailsPage() {
         setRegisterError("Invalid phone number");
         return;
       }
+      if (regSelectedMember && isMemberTaken(regSelectedMember)) {
+        setRegisterError("This member is already added or registered.");
+        return;
+      }
       queue.push({
         id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+        memberId: regSelectedMember?._id || null,
         fullName: regFullName,
         email: regEmail || "",
         phoneNumber: regPhone,
@@ -551,6 +589,7 @@ function ProgramDetailsPage() {
       setRegLocation("");
       setRegDate("");
       setRegisterQueue([]);
+      resetRegisterMemberSearch();
       await loadAttendees();
     } catch (err) {
       setRegisterError(err?.response?.data?.message || err?.message || "Failed to register attendee(s)");
@@ -566,14 +605,10 @@ function ProgramDetailsPage() {
       loadAttendees();
       return;
     }
-    if (activeTab === "total") {
-      loadTotals();
-      return;
-    }
     if (activeTab === "files") {
       loadFiles();
     }
-  }, [activeMainTab, activeTab, programId, loadAttendees, loadTotals, loadFiles]);
+  }, [activeMainTab, activeTab, programId, loadAttendees, loadFiles]);
 
   const goBack = () => {
     const from = location?.state?.from;
@@ -612,6 +647,11 @@ function ProgramDetailsPage() {
       return;
     }
 
+    if (regSelectedMember && isMemberTaken(regSelectedMember)) {
+      setRegisterError("This member is already added or registered.");
+      return;
+    }
+
     setRegisterSaving(true);
     setRegisterError(null);
     try {
@@ -628,6 +668,7 @@ function ProgramDetailsPage() {
       setRegPhone("");
       setRegLocation("");
       setRegDate("");
+      resetRegisterMemberSearch();
       await loadAttendees();
     } catch (err) {
       setRegisterError(err?.response?.data?.message || err?.message || "Failed to register attendee");
@@ -636,32 +677,6 @@ function ProgramDetailsPage() {
     }
   };
 
-  const onRecordTotal = async () => {
-    if (!programId) return;
-    if (!recordDate || !recordNumber) {
-      setRecordError("Date and total attendees are required.");
-      return;
-    }
-
-    setRecordSaving(true);
-    setRecordError(null);
-    try {
-      await createTotalProgramAttendance(programId, {
-        date: recordDate,
-        numberOfAttendees: Number(recordNumber),
-        mainSpeaker: recordSpeaker || undefined
-      });
-      setRecordOpen(false);
-      setRecordDate("");
-      setRecordNumber("");
-      setRecordSpeaker("");
-      await loadTotals();
-    } catch (err) {
-      setRecordError(err?.response?.data?.message || err?.message || "Failed to record attendance");
-    } finally {
-      setRecordSaving(false);
-    }
-  };
 
   const onUploadFile = async (file) => {
     if (!programId) return;
@@ -702,16 +717,6 @@ function ProgramDetailsPage() {
     });
   }, [attendees, regSearch, regDateFrom, regDateTo]);
 
-  const filteredTotals = useMemo(() => {
-    const q = totalSearch.toLowerCase();
-    return totals.filter((r) => {
-      const matchSearch = !q ||
-        (r?.mainSpeaker || "").toLowerCase().includes(q) ||
-        formatDate(r?.date).toLowerCase().includes(q);
-      const matchDate = filterByDateRange(r?.date, totalDateFrom, totalDateTo);
-      return matchSearch && matchDate;
-    });
-  }, [totals, totalSearch, totalDateFrom, totalDateTo]);
 
   const filteredFiles = useMemo(() => {
     const q = filesSearch.toLowerCase();
@@ -721,6 +726,41 @@ function ProgramDetailsPage() {
       return matchSearch && matchDate;
     });
   }, [files, filesSearch, filesDateFrom, filesDateTo]);
+
+  useEffect(() => { setRegPage(1); }, [regSearch, regDateFrom, regDateTo]);
+  useEffect(() => { setFilesPage(1); }, [filesSearch, filesDateFrom, filesDateTo]);
+
+  const attendeesTotalPages = Math.max(1, Math.ceil(filteredAttendees.length / regLimit));
+  const attendeesCurrentPage = Math.min(regPage, attendeesTotalPages);
+  const paginatedAttendees = useMemo(
+    () => filteredAttendees.slice((attendeesCurrentPage - 1) * regLimit, attendeesCurrentPage * regLimit),
+    [filteredAttendees, attendeesCurrentPage, regLimit]
+  );
+  const attendeesPagination = useMemo(() => ({
+    totalResult: filteredAttendees.length,
+    totalPages: attendeesTotalPages,
+    currentPage: attendeesCurrentPage,
+    hasPrev: attendeesCurrentPage > 1,
+    hasNext: attendeesCurrentPage < attendeesTotalPages,
+    prevPage: attendeesCurrentPage > 1 ? attendeesCurrentPage - 1 : null,
+    nextPage: attendeesCurrentPage < attendeesTotalPages ? attendeesCurrentPage + 1 : null
+  }), [filteredAttendees.length, attendeesTotalPages, attendeesCurrentPage]);
+
+  const filesTotalPages = Math.max(1, Math.ceil(filteredFiles.length / filesLimit));
+  const filesCurrentPage = Math.min(filesPage, filesTotalPages);
+  const paginatedFiles = useMemo(
+    () => filteredFiles.slice((filesCurrentPage - 1) * filesLimit, filesCurrentPage * filesLimit),
+    [filteredFiles, filesCurrentPage, filesLimit]
+  );
+  const filesPagination = useMemo(() => ({
+    totalResult: filteredFiles.length,
+    totalPages: filesTotalPages,
+    currentPage: filesCurrentPage,
+    hasPrev: filesCurrentPage > 1,
+    hasNext: filesCurrentPage < filesTotalPages,
+    prevPage: filesCurrentPage > 1 ? filesCurrentPage - 1 : null,
+    nextPage: filesCurrentPage < filesTotalPages ? filesCurrentPage + 1 : null
+  }), [filteredFiles.length, filesTotalPages, filesCurrentPage]);
 
   const badge = formatShortMonthDay(program?.dateFrom);
   const organizerText =
@@ -734,7 +774,7 @@ function ProgramDetailsPage() {
     <div className="max-w-6xl">
       <BackButton onClick={goBack} />
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 pb-4 md:p-6 md:pb-5 lg:p-8 lg:pb-6">
         {loading ? (
           <div className="space-y-4 animate-pulse">
             <div className="h-4 w-28 rounded bg-gray-200" />
@@ -785,6 +825,64 @@ function ProgramDetailsPage() {
             ) : null}
           </div>
         )}
+
+        {!loading && !error && program ? (
+          <div className="mt-4 grid grid-cols-2 gap-4 border-t border-gray-100 pt-3 md:pt-4 lg:grid-cols-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center md:h-10 md:w-10">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-blue-700">
+                  <path d="M7 3v3M17 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Program Date</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">{formatRange(program?.dateFrom, program?.dateTo)}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-purple-50 flex items-center justify-center md:h-10 md:w-10">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-purple-700">
+                  <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M12 22a10 10 0 100-20 10 10 0 000 20Z" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Time</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">
+                  {formatTimeRange(program?.timeFrom, program?.timeTo, program?.time)}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-green-50 flex items-center justify-center md:h-10 md:w-10">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-green-700">
+                  <path d="M12 21s7-4.5 7-10a7 7 0 10-14 0c0 5.5 7 10 7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M12 11a2 2 0 100-4 2 2 0 000 4Z" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Location</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">{program?.venue || "—"}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-orange-50 flex items-center justify-center md:h-10 md:w-10">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-orange-600">
+                  <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Organizer</div>
+                <div className="mt-1 font-semibold text-blue-900 text-sm">{organizerText}</div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <ProgramCreatePage
@@ -806,72 +904,6 @@ function ProgramDetailsPage() {
           }
         }}
       />
-
-      {!loading && !error && program ? (
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-xl border border-blue-100 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-xl bg-blue-50 flex items-center justify-center md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-blue-700">
-                  <path d="M7 3v3M17 3v3M4 8h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.8" />
-                </svg>
-              </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Program Date</div>
-                <div className="mt-1 font-semibold text-blue-900 text-sm">{formatRange(program?.dateFrom, program?.dateTo)}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-purple-100 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-xl bg-purple-50 flex items-center justify-center md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-purple-700">
-                  <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 22a10 10 0 100-20 10 10 0 000 20Z" stroke="currentColor" strokeWidth="1.8" />
-                </svg>
-              </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Time</div>
-                <div className="mt-1 font-semibold text-blue-900 text-sm">
-                  {formatTimeRange(program?.timeFrom, program?.timeTo, program?.time)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-green-100 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-xl bg-green-50 flex items-center justify-center md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-green-700">
-                  <path d="M12 21s7-4.5 7-10a7 7 0 10-14 0c0 5.5 7 10 7 10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                  <path d="M12 11a2 2 0 100-4 2 2 0 000 4Z" stroke="currentColor" strokeWidth="1.8" />
-                </svg>
-              </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Location</div>
-                <div className="mt-1 font-semibold text-blue-900 text-sm">{program?.venue || "—"}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-orange-100 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-xl bg-orange-50 flex items-center justify-center md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-orange-600">
-                  <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
-                  <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </div>
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Organizer</div>
-                <div className="mt-1 font-semibold text-blue-900 text-sm">{organizerText}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {!loading && !error && program ? (
         <PageTabs
@@ -912,7 +944,6 @@ function ProgramDetailsPage() {
             <PageTabs
               tabs={[
                 { key: "registration", label: "By Registration" },
-                { key: "total", label: "Total Number" },
                 { key: "files", label: "File Upload" },
               ]}
               activeTab={activeTab}
@@ -922,7 +953,7 @@ function ProgramDetailsPage() {
 
             {activeTab === "registration" ? (
               <div className="mt-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center justify-between gap-3 w-full md:w-auto md:block">
                     <div>
                       <div className="font-semibold text-gray-900 text-sm">By Registration</div>
@@ -940,7 +971,7 @@ function ProgramDetailsPage() {
                     searchValue={regSearch}
                     onSearchChange={(v) => setRegSearch(v)}
                     searchPlaceholder="Search name, email, phone"
-                    searchWidth="md:w-[320px]"
+                    searchWidth="md:w-[160px]"
                     selects={[]}
                     dateFrom={regDateFrom}
                     dateTo={regDateTo}
@@ -1045,13 +1076,11 @@ function ProgramDetailsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {filteredAttendees.map((r, idx) => (
+                        {paginatedAttendees.map((r, idx) => (
                           <tr key={r?._id || `att-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                              <button type="button" className="text-blue-700 hover:underline" title={r?.fullName || "—"}>
-                                <span className="md:hidden">{truncateMobileName(r?.fullName)}</span>
-                                <span className="hidden md:inline">{truncateDesktopName(r?.fullName)}</span>
-                              </button>
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.fullName || "—"}>
+                              <span className="md:hidden">{truncateMobileName(r?.fullName)}</span>
+                              <span className="hidden md:inline">{truncateDesktopName(r?.fullName)}</span>
                             </td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.email || "—"}>
                               <span className="sm:hidden">{truncateMobileName(r?.email || "—")}</span>
@@ -1075,140 +1104,21 @@ function ProgramDetailsPage() {
                     </table>
                   )}
                 </div>
-              </div>
-            ) : activeTab === "total" ? (
-              <div className="mt-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="flex items-center justify-between gap-3 w-full md:w-auto md:block">
-                    <div>
-                      <div className="font-semibold text-gray-900 text-sm">Total Number</div>
-                      <div className="text-gray-500 text-xs mt-0.5">Record the total number of attendees without listing individual names.</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => guarded(() => { setRecordError(null); setRecordOpen(true); })}
-                      className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
-                    >
-                      <span className="leading-none text-lg">+</span>
-                      Record Attendance
-                    </button>
-                  </div>
-                  <FilterBar
-                    searchValue={totalSearch}
-                    onSearchChange={(v) => setTotalSearch(v)}
-                    searchPlaceholder="Search speaker or date"
-                    searchWidth="md:w-[320px]"
-                    selects={[]}
-                    dateFrom={totalDateFrom}
-                    dateTo={totalDateTo}
-                    onDateApply={(from, to) => { setTotalDateFrom(from); setTotalDateTo(to); }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => guarded(() => { setRecordError(null); setRecordOpen(true); })}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
-                    >
-                      <span className="leading-none text-lg">+</span>
-                      Record Attendance
-                    </button>
-                  </FilterBar>
-                  <MobileFilterBar
-                    searchValue={totalSearch}
-                    onSearchChange={(v) => setTotalSearch(v)}
-                    searchPlaceholder="Search speaker or date"
-                    dateFrom={totalDateFrom}
-                    dateTo={totalDateTo}
-                    onDateApply={(from, to) => { setTotalDateFrom(from); setTotalDateTo(to); }}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
-                  {totalLoading ? (
-                    <table className="min-w-full">
-                      <thead className="bg-white">
-                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Attendance Date</th>
-                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
-                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
-                          <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {[0, 1, 2, 3].map((i) => (
-                          <tr key={i} className="animate-pulse">
-                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                            <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : totalError ? (
-                    <div className="py-4 text-red-700 text-sm px-4 md:px-6">{totalError}</div>
-                  ) : !filteredTotals.length ? (
-                    (() => {
-                      const reason = resolveEmptyReason({ search: totalSearch, dateFrom: totalDateFrom, dateTo: totalDateTo });
-                      const isZero = reason === "zero";
-                      const recovery = buildRecoveryActions(reason, {
-                        onClearSearch: () => setTotalSearch(""),
-                        onClearDate: () => { setTotalDateFrom(""); setTotalDateTo(""); },
-                      });
-                      return (
-                        <EmptyState
-                          compact
-                          illustration={isZero ? "attendance" : "search"}
-                          title={isZero ? "No attendance records yet" : "No attendance found"}
-                          description={isZero
-                            ? "Attendance totals for this program will appear here."
-                            : "We couldn't find any attendance matching your search or date range."}
-                          actionLabel={recovery?.actionLabel}
-                          onAction={recovery?.onAction}
-                          secondaryLabel={recovery?.secondaryLabel}
-                          onSecondary={recovery?.onSecondary}
-                        />
-                      );
-                    })()
-                  ) : (
-                    <table className="min-w-full">
-                      <thead className="bg-white">
-                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Attendance Date</th>
-                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Total Attendees</th>
-                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Main Speaker</th>
-                          <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {filteredTotals.map((r, idx) => (
-                          <tr key={r?._id || `tot-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
-                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                              <button type="button" className="text-blue-700 hover:underline">
-                                {formatDate(r?.date)}
-                              </button>
-                            </td>
-                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{Number(r?.numberOfAttendees || 0) || "—"}</td>
-                            <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.mainSpeaker || "—"}>
-                              <span className="sm:hidden">{truncateMobileName(r?.mainSpeaker || "—")}</span>
-                              <span className="hidden sm:inline">{truncateDesktopName(r?.mainSpeaker || "—")}</span>
-                            </td>
-                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
-                              <TableKebabMenu items={[
-                                canEdit && { label: "Edit", onClick: () => guarded(() => openEditTotal(r)) },
-                                canDelete && { label: "Delete", onClick: () => guarded(() => onDeleteTotal(r)), danger: true }
-                              ]} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+                <Pagination
+                  pagination={attendeesPagination}
+                  rowsCount={paginatedAttendees.length}
+                  limit={regLimit}
+                  onLimitChange={(n) => { setRegLimit(n); setRegPage(1); }}
+                  onPageChange={setRegPage}
+                  itemName="attendees"
+                  filtered={Boolean(regSearch || regDateFrom || regDateTo)}
+                  disabled={attendeesLoading}
+                  className="border-t border-gray-100"
+                />
               </div>
             ) : (
               <div className="mt-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center justify-between gap-3 w-full md:w-auto md:block">
                     <div>
                       <div className="font-semibold text-gray-900 text-sm">File Upload</div>
@@ -1228,7 +1138,7 @@ function ProgramDetailsPage() {
                     searchValue={filesSearch}
                     onSearchChange={(v) => setFilesSearch(v)}
                     searchPlaceholder="Search file name"
-                    searchWidth="md:w-[320px]"
+                    searchWidth="md:w-[160px]"
                     selects={[]}
                     dateFrom={filesDateFrom}
                     dateTo={filesDateTo}
@@ -1303,7 +1213,7 @@ function ProgramDetailsPage() {
                     })()
                   ) : (
                     <div className="divide-y divide-gray-200">
-                      {filteredFiles.map((f, idx) => (
+                      {paginatedFiles.map((f, idx) => (
                         <div key={f?._id || `f-${idx}`} className="w-full px-3 py-2.5 hover:bg-gray-50">
                           <div className="flex items-center gap-3">
                             <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -1351,6 +1261,17 @@ function ProgramDetailsPage() {
                     </div>
                   )}
                 </div>
+                <Pagination
+                  pagination={filesPagination}
+                  rowsCount={paginatedFiles.length}
+                  limit={filesLimit}
+                  onLimitChange={(n) => { setFilesLimit(n); setFilesPage(1); }}
+                  onPageChange={setFilesPage}
+                  itemName="files"
+                  filtered={Boolean(filesSearch || filesDateFrom || filesDateTo)}
+                  disabled={filesLoading}
+                  className="border-t border-gray-100"
+                />
               </div>
             )}
           </div>
@@ -1474,56 +1395,6 @@ function ProgramDetailsPage() {
         </div>
       </SimpleModal>
 
-      <SimpleModal
-        open={editTotalOpen}
-        title="Edit Attendance"
-        onClose={closeEditTotal}
-      >
-        {editTotalError ? (
-          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{editTotalError}</div>
-        ) : null}
-        <div className="grid grid-cols-1 gap-3">
-          <div>
-            <label className="block font-semibold text-gray-500 text-xs">Attendance Date</label>
-            <input
-              type="date"
-              value={editTotalDate}
-              onChange={(e) => setEditTotalDate(e.target.value)}
-              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            />
-          </div>
-          <input
-            value={editTotalNumber}
-            onChange={(e) => setEditTotalNumber(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Total attendees"
-          />
-          <input
-            value={editTotalSpeaker}
-            onChange={(e) => setEditTotalSpeaker(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Main speaker (optional)"
-          />
-        </div>
-        <div className="mt-5 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={closeEditTotal}
-            disabled={editTotalSaving}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSaveEditTotal}
-            disabled={editTotalSaving}
-            className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
-          >
-            {editTotalSaving ? "Saving..." : "Save"}
-          </button>
-        </div>
-      </SimpleModal>
 
       <SimpleModal
         open={editFileOpen}
@@ -1592,6 +1463,7 @@ function ProgramDetailsPage() {
         onClose={() => {
           if (registerSaving) return;
           setRegisterOpen(false);
+          resetRegisterMemberSearch();
         }}
       >
         <div className="flex max-h-[75vh] flex-col">
@@ -1599,6 +1471,79 @@ function ProgramDetailsPage() {
             {registerError ? (
               <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{registerError}</div>
             ) : null}
+
+            <div className="mb-4">
+              <label className="block font-semibold text-gray-500 text-xs">Find a member or visitor</label>
+              <div className="mt-0.5 text-gray-400 text-xs">Search for an existing member or visitor to autofill the details, or type the attendee's info manually below.</div>
+              {regSelectedMember ? (
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-blue-900 truncate text-sm">{regFullName || "—"}</div>
+                    <div className="text-blue-700 truncate text-xs">
+                      {`${regSelectedMember?._source === "visitor" ? "Visitor" : "Member"}${regSelectedMember?.phoneNumber || regSelectedMember?.email ? ` • ${regSelectedMember?.phoneNumber || regSelectedMember?.email}` : ""}`}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearRegisterMember}
+                    className="shrink-0 rounded-lg border border-blue-200 bg-white px-3 py-1.5 font-semibold text-blue-700 hover:bg-blue-50 text-xs"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    value={regMemberQuery}
+                    onChange={(e) => setRegMemberQuery(e.target.value)}
+                    type="text"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                    placeholder="Search member or visitor by name, phone, email"
+                  />
+                  {String(regMemberQuery || "").trim() ? (
+                    <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
+                      {regMemberSearching ? (
+                        <div className="px-4 py-3 text-gray-600 text-sm">Searching...</div>
+                      ) : regMemberOptions.length ? (
+                        <div className="divide-y divide-gray-200">
+                          {regMemberOptions.map((m, idx) => {
+                            const isVisitor = m?._source === "visitor";
+                            const name = isVisitor
+                              ? (m?.fullName || "—")
+                              : (`${String(m?.firstName || "").trim()} ${String(m?.lastName || "").trim()}`.trim() || m?.fullName || "—");
+                            const taken = isMemberTaken(m);
+                            return (
+                              <button
+                                key={`${m?._source || "p"}-${m?._id ?? idx}`}
+                                type="button"
+                                disabled={taken}
+                                onClick={() => selectRegisterMember(m)}
+                                className="w-full px-4 py-2.5 text-left hover:bg-gray-50 disabled:opacity-60 disabled:hover:bg-white disabled:cursor-not-allowed"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="font-semibold text-gray-900 truncate text-sm">{name}</div>
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className={`rounded-full px-2 py-0.5 font-semibold text-xs ${isVisitor ? "bg-yellow-50 text-yellow-700" : "bg-blue-50 text-blue-700"}`}>
+                                      {isVisitor ? "Visitor" : "Member"}
+                                    </span>
+                                    {taken ? (
+                                      <span className="rounded-full bg-gray-100 px-2 py-0.5 font-semibold text-gray-500 text-xs">Already added</span>
+                                    ) : null}
+                                  </div>
+                                </div>
+                                <div className="text-gray-500 truncate text-xs">{[m?.phoneNumber, m?.email].filter(Boolean).join(" • ")}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-3 text-gray-600 text-sm">No members or visitors found — fill the fields below to register them manually.</div>
+                      )}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 gap-3">
               <input
@@ -1638,24 +1583,38 @@ function ProgramDetailsPage() {
             {registerQueue?.length ? (
               <div className="mt-4 rounded-lg border border-gray-200 overflow-hidden">
                 <div className="bg-gray-50 px-4 py-2 font-semibold text-gray-600 text-xs">Queued Attendees</div>
-                <div className="divide-y divide-gray-200">
+                <div className="max-h-36 overflow-y-auto divide-y divide-gray-200">
                   {registerQueue.map((q) => (
-                    <div key={q.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div key={q.id} className="flex items-center justify-between gap-3 px-4 py-2">
                       <div className="min-w-0">
                         <div className="font-semibold text-gray-900 truncate text-sm">{q?.fullName || "—"}</div>
                         <div className="text-gray-600 truncate text-xs">{q?.phoneNumber || ""}</div>
                       </div>
-                      <button
-                        type="button"
-                        disabled={registerSaving}
-                        onClick={() => setRegisterQueue((prev) => prev.filter((x) => x.id !== q.id))}
-                        className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-60 md:h-12 md:w-12"
-                        aria-label="Remove"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-                          <path d="M6 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          disabled={registerSaving}
+                          onClick={() => onEditQueuedAttendee(q)}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+                          aria-label="Edit"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                            <path d="M4 20h4l10-10-4-4L4 16v4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                            <path d="M13 7l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={registerSaving}
+                          onClick={() => setRegisterQueue((prev) => prev.filter((x) => x.id !== q.id))}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:opacity-60"
+                          aria-label="Remove"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                            <path d="M4 7h16M9 7V5h6v2m-9 0 1 13h10l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1666,7 +1625,7 @@ function ProgramDetailsPage() {
           <div className="mt-5 flex items-center justify-end gap-2">
             <button
               type="button"
-              onClick={() => setRegisterOpen(false)}
+              onClick={() => { setRegisterOpen(false); resetRegisterMemberSearch(); }}
               disabled={registerSaving}
               className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
             >
@@ -1694,59 +1653,6 @@ function ProgramDetailsPage() {
         </div>
       </SimpleModal>
 
-      <SimpleModal
-        open={recordOpen}
-        title="Record Attendance"
-        onClose={() => {
-          if (recordSaving) return;
-          setRecordOpen(false);
-        }}
-      >
-        {recordError ? (
-          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{recordError}</div>
-        ) : null}
-        <div className="grid grid-cols-1 gap-3">
-          <div>
-            <label className="block font-semibold text-gray-500 text-xs">Attendance Date</label>
-            <input
-              type="date"
-              value={recordDate}
-              onChange={(e) => setRecordDate(e.target.value)}
-              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            />
-          </div>
-          <input
-            value={recordNumber}
-            onChange={(e) => setRecordNumber(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Total attendees"
-          />
-          <input
-            value={recordSpeaker}
-            onChange={(e) => setRecordSpeaker(e.target.value)}
-            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Main speaker (optional)"
-          />
-        </div>
-        <div className="mt-5 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => setRecordOpen(false)}
-            disabled={recordSaving}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onRecordTotal}
-            disabled={recordSaving}
-            className="rounded-lg bg-green-700 px-4 py-2 font-semibold text-white hover:bg-green-800 disabled:opacity-60 text-sm"
-          >
-            {recordSaving ? "Saving..." : "Record"}
-          </button>
-        </div>
-      </SimpleModal>
     </div>
   );
 }

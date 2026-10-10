@@ -9,12 +9,6 @@ import deleteProgram from "../controller/programController/deleteProgram.js"
 
 import {createProgramAttendee, getProgramAttendees, updateProgramAttendee, deleteProgramAttendee} from "../controller/programController/programAttendee.js"
 
-import {
-    createTotalProgramAttendance,
-    getAllTotalProgramAttendances,
-    updateTotalProgramAttendance,
-    deleteTotalProgramAttendance
-} from "../controller/programController/totalProgramAttendance.js"
 
 import {
   uploadProgramAttendanceFile,
@@ -193,46 +187,6 @@ router.delete(
   deleteProgramAttendee
 );
 
-router.post(
-  "/programs/:programId/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "create"),
-  createTotalProgramAttendance
-);
-router.get(
-  "/programs/:programId/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "view"),
-  getAllTotalProgramAttendances
-);
-router.put(
-  "/programs/:programId/attendances/:attendanceId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "update"),
-  updateTotalProgramAttendance
-);
-router.delete(
-  "/programs/:programId/attendances/:attendanceId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
-  requirePermission("programs", "delete"),
-  deleteTotalProgramAttendance
-);
 
 router.post(
   "/programs/:programId/attendance-files",

@@ -145,7 +145,7 @@ function ProgramOfferingTable({ onEdit, onCreate }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((offering, index) => (
               <tr key={offering?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={offering?.offeringType || "-"}><span className="sm:hidden">{truncateMobileName(offering?.offeringType || "-")}</span><span className="hidden sm:inline">{truncateDesktopName(offering?.offeringType || "-")}</span></td>
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={(offering?.kind === "seed" ? offering?.seedName : offering?.offeringType) || "-"}><span className="sm:hidden">{truncateMobileName((offering?.kind === "seed" ? offering?.seedName : offering?.offeringType) || "-")}</span><span className="hidden sm:inline">{truncateDesktopName((offering?.kind === "seed" ? offering?.seedName : offering?.offeringType) || "-")}</span></td>
                 <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{_fm(offering?.amount || 0, currency)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(offering?.offeringDate)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={offering?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(offering?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(offering?.createdBy?.fullName || "—")}</span></td>
@@ -185,37 +185,41 @@ function ProgramOfferingTable({ onEdit, onCreate }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Offering Details</div>
+              <div className="font-semibold text-gray-900 text-sm">{viewRow?.referenceId || "Offering Details"}</div>
               <button type="button" onClick={closeView} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 px-4 md:px-5 lg:px-6 py-4">
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Offering Type</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.offeringType || "—"}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Amount</div>
-                <div className="mt-1 font-semibold text-blue-700 text-sm">{_fm(viewRow?.amount || 0, currency)}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date Collected</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.offeringDate)}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.createdBy?.fullName || "—"}</div>
-              </div>
-              {viewRow?.referenceId ? (
-                <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
-                  <div className="mt-1 font-mono text-gray-700 text-xs">{viewRow.referenceId}</div>
+            <div className="px-4 md:px-5 lg:px-6 py-4">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                <div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Type</div>
+                  <div className="text-sm text-gray-900 capitalize">{viewRow?.kind === "seed" ? "Seed" : "Offering"}</div>
                 </div>
-              ) : null}
-              <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Note</div>
-                <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{viewRow?.note || "—"}</div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{viewRow?.kind === "seed" ? "Seed Name" : "Offering Type"}</div>
+                  <div className="text-sm text-gray-900">{(viewRow?.kind === "seed" ? viewRow?.seedName : viewRow?.offeringType) || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Amount</div>
+                  <div className="text-sm font-semibold text-blue-700">{_fm(viewRow?.amount || 0, currency)}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Date Collected</div>
+                  <div className="text-sm text-gray-900">{formatDate(viewRow?.offeringDate)}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Recorded By</div>
+                  <div className="text-sm text-gray-900">{viewRow?.createdBy?.fullName || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Recorded Date</div>
+                  <div className="text-sm text-gray-900">{formatDate(viewRow?.createdAt)}</div>
+                </div>
+                <div className="col-span-2">
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Note</div>
+                  <div className="text-sm text-gray-900 whitespace-pre-wrap">{viewRow?.note || "—"}</div>
+                </div>
               </div>
             </div>
             <div className="flex justify-end px-4 md:px-5 lg:px-6 py-4 border-t border-gray-200">

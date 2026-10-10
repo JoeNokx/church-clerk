@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import ChurchContext from "../../church/church.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
@@ -74,9 +74,11 @@ function ProgramPledgesTab({ programId, programTitle }) {
   const [payPledge, setPayPledge] = useState(null);
 
   const debouncedSearch = useDebouncedValue(search, 300);
+  const requestIdRef = useRef(0);
 
   const loadPledges = async (nextPage) => {
     if (!programId) return;
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError("");
     try {
@@ -89,15 +91,17 @@ function ProgramPledgesTab({ programId, programTitle }) {
         status: pledgeStatus || undefined,
         event: programId
       });
+      if (requestId !== requestIdRef.current) return;
       const payload = res?.data?.data ?? res?.data;
       setRows(Array.isArray(payload?.pledges) ? payload.pledges : []);
       setPagination(payload?.pagination || null);
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       setError(e?.response?.data?.message || e?.message || "Failed to load pledges");
       setRows([]);
       setPagination(null);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
@@ -109,7 +113,7 @@ function ProgramPledgesTab({ programId, programTitle }) {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
-      <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 md:py-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="font-semibold text-gray-900 text-sm">Pledges</div>
           <div className="text-gray-500 text-xs">Pledges made toward this program</div>

@@ -13,7 +13,7 @@ import Member from "../models/memberModel.js";
 import Visitor from "../models/visitorsModel.js";
 import Program from "../models/programModel.js";
 import ProgramAttendees from "../models/programModel/programAttendeesModel.js";
-import TotalProgramAttendance from "../models/programModel/totalProgramAttendance.js";
+
 import ProgramAttendanceFile from "../models/programModel/programAttendanceFileModel.js";
 import ProgramOffering from "../models/programModel/programOfferingModel.js";
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
@@ -116,7 +116,6 @@ const ENTITY = {
     self: () => [],
     links: [
       { model: ProgramAttendees, field: "event", label: "attendees" },
-      { model: TotalProgramAttendance, field: "event", label: "attendance records" },
       { model: ProgramAttendanceFile, field: "event", label: "attendance files" },
       { model: ProgramOffering, field: "event", label: "offerings" },
     ],

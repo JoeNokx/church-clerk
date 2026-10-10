@@ -1399,50 +1399,16 @@ function programStatusOf(e, now) {
 async function buildProgramsReport({ churchId, from, to, options, rangeMatch }) {
   const Program = (await import("../models/programModel.js")).default;
   const ProgramAttendees = (await import("../models/programModel/programAttendeesModel.js")).default;
-  const TotalProgramAttendance = (await import("../models/programModel/totalProgramAttendance.js")).default;
 
   const status = normOpt(options?.status) || "all";
   const scope = normOpt(options?.scope) || "all";
   const sub = normOpt(options?.sub) || "offerings";
-  const mode = normOpt(options?.mode) || "registration";
   const entity = String(options?.entity || "").trim();
 
   if (scope === "single" && entity) {
     const programDoc = await Program.findOne({ _id: entity, church: churchId }).select("title").lean();
     if (!programDoc) return { error: "Program not found" };
     const programTitle = programDoc?.title || "Program";
-
-    if (sub === "attendance" && mode === "total") {
-      const rows = await TotalProgramAttendance.find({ church: churchId, event: entity, ...rangeMatch("date") })
-        .select("date numberOfAttendees mainSpeaker createdBy createdAt updatedAt")
-        .populate("createdBy", "fullName")
-        .sort({ date: -1 })
-        .limit(2000)
-        .lean();
-
-      const availableColumns = [
-        { key: "date", label: "Date" },
-        { key: "numberOfAttendees", label: "Attendees" },
-        { key: "mainSpeaker", label: "Speaker" },
-        { key: "recordedBy", label: "Recorded By" },
-        { key: "createdAt", label: "Created At" },
-        { key: "updatedAt", label: "Updated At" }
-      ];
-
-      return {
-        title: `${programTitle} — Attendance (Total)`,
-        columns: availableColumns,
-        availableColumns,
-        rows: rows.map((r) => ({
-          date: toDateStr(r?.date),
-          numberOfAttendees: clampToNumber(r?.numberOfAttendees),
-          mainSpeaker: r?.mainSpeaker || "—",
-          recordedBy: userName(r?.createdBy),
-          createdAt: toDateTimeStr(r?.createdAt),
-          updatedAt: toDateTimeStr(r?.updatedAt)
-        }))
-      };
-    }
 
     if (sub === "attendance") {
       const rows = await ProgramAttendees.find({ church: churchId, event: entity, ...rangeMatch("createdAt") })

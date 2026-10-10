@@ -63,7 +63,7 @@ function ProgramOfferingFilters() {
         searchValue={searchValue}
         onSearchChange={onSearchChange}
         searchPlaceholder="Search recorded by"
-        searchWidth="md:w-[320px]"
+        searchWidth="md:w-[160px]"
         selects={[
           {
             key: "offeringType",

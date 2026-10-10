@@ -202,8 +202,8 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
 
   return (
     <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 p-4 md:p-6 lg:p-8">
-        <div className="flex items-center gap-3 justify-between w-full md:w-auto md:block">
+      <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between md:p-6 lg:p-8">
+        <div className="flex items-center gap-3 justify-between w-full md:w-auto">
           <div>
             <div className="font-semibold text-gray-900 text-sm">Expenses</div>
             <div className="text-gray-500 text-xs">Expense records for this {entityLabel}</div>
@@ -218,54 +218,52 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 items-end w-full md:w-auto">
-          <FilterBar
-            searchValue={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Search name or category"
-            searchWidth="md:w-[320px]"
-            selects={[
-              {
-                key: "category",
-                value: category,
-                onChange: (v) => { setCategory(v); fetchExpenses({ page: 1, category: v }); },
-                options: categorySelectOptions,
-                placeholder: "All Categories"
-              }
-            ]}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); fetchExpenses({ page: 1, dateFrom: from, dateTo: to }); }}
+        <FilterBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search name or category"
+          searchWidth="md:w-[160px]"
+          selects={[
+            {
+              key: "category",
+              value: category,
+              onChange: (v) => { setCategory(v); fetchExpenses({ page: 1, category: v }); },
+              options: categorySelectOptions,
+              placeholder: "All Categories"
+            }
+          ]}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); fetchExpenses({ page: 1, dateFrom: from, dateTo: to }); }}
+        >
+          <button
+            type="button"
+            onClick={() => guarded(openCreate)}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
           >
-            <button
-              type="button"
-              onClick={() => guarded(openCreate)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm h-10"
-            >
-              <span className="leading-none text-lg">+</span>
-              Add Expense
-            </button>
-          </FilterBar>
-          <MobileFilterBar
-            searchValue={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Search name or category"
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); fetchExpenses({ page: 1, dateFrom: from, dateTo: to }); }}
-            filters={[
-              {
-                key: "category",
-                label: "Category",
-                value: category,
-                defaultValue: "",
-                options: [{ label: "All Categories", value: "" }, ...categorySelectOptions]
-              }
-            ]}
-            onApply={(pending) => { setCategory(pending?.category || ""); fetchExpenses({ page: 1, category: pending?.category || "" }); }}
-            className="w-full"
-          />
-        </div>
+            <span className="leading-none text-lg">+</span>
+            Add Expense
+          </button>
+        </FilterBar>
+        <MobileFilterBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search name or category"
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); fetchExpenses({ page: 1, dateFrom: from, dateTo: to }); }}
+          filters={[
+            {
+              key: "category",
+              label: "Category",
+              value: category,
+              defaultValue: "",
+              options: [{ label: "All Categories", value: "" }, ...categorySelectOptions]
+            }
+          ]}
+          onApply={(pending) => { setCategory(pending?.category || ""); fetchExpenses({ page: 1, category: pending?.category || "" }); }}
+          className="w-full"
+        />
       </div>
 
       {error ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{error}</div> : null}

@@ -4,6 +4,7 @@ import ChurchProject from "../../../models/financeModel/projectModel/churchProje
 import Program from "../../../models/programModel.js";
 
 import { validatePhoneNumber } from "../../../utils/validatePhoneNumber.js";
+import { escapeRegex } from "../../../utils/csvParser.js";
 
 // A deadline counts as missed only once the deadline day itself has fully passed.
 const isPastDeadline = (deadline) => {
@@ -116,9 +117,9 @@ const getAllPledge = async (req, res) => {
                       query.serviceType = serviceType;
                     }
 
-                    // Filter by status
+                    // Filter by status (case-insensitive exact match — stored values are title case)
                     if (status) {
-                      query.status = status;
+                      query.status = { $regex: `^${escapeRegex(String(status).trim())}$`, $options: "i" };
                     }
 
                     // Filter by linked fundraiser
@@ -133,14 +134,29 @@ const getAllPledge = async (req, res) => {
 
                     // search by name, phone, or recordedBy
                     if (search) {
+                        const trimmedSearch = String(search || "").trim();
+                        const escaped = escapeRegex(trimmedSearch);
+
+                        // Phone numbers are stored normalized (e.g. +233…) — expand the
+                        // query so local (0…) and international (233…) formats both match.
+                        const phonePatterns = new Set([escaped]);
+                        const phoneDigits = trimmedSearch.replace(/\D/g, "");
+                        if (phoneDigits.startsWith("233") && phoneDigits.length > 3) {
+                          phonePatterns.add(escapeRegex(phoneDigits.slice(3)));
+                        }
+                        if (phoneDigits.startsWith("0") && phoneDigits.length > 1) {
+                          phonePatterns.add(escapeRegex(phoneDigits.slice(1)));
+                          phonePatterns.add(escapeRegex(`233${phoneDigits.slice(1)}`));
+                        }
+
                         const User = (await import("../../../models/userModel.js")).default;
                         const matchingUsers = await User.find({
-                            fullName: { $regex: search, $options: "i" }
+                            fullName: { $regex: escaped, $options: "i" }
                         }).select("_id");
                         const recordedByIds = matchingUsers.map(u => u._id);
                         query.$or = [
-                            { name: { $regex: search, $options: "i" } },
-                            { phoneNumber: { $regex: search, $options: "i" } },
+                            { name: { $regex: escaped, $options: "i" } },
+                            ...[...phonePatterns].map((p) => ({ phoneNumber: { $regex: p, $options: "i" } })),
                             ...(recordedByIds.length ? [{ createdBy: { $in: recordedByIds } }] : [])
                         ];
                     }

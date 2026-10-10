@@ -17,6 +17,13 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+function formatSessionDate(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "short", day: "numeric" });
+}
+
 function StatusChip({ value }) {
   const v = String(value || "").toLowerCase();
 
@@ -201,12 +208,13 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
     );
   }
 
-  const rows = visitors !== undefined
+  const isSessionLog = visitors !== undefined;
+  const rows = isSessionLog
     ? (Array.isArray(visitors) ? visitors : [])
     : (Array.isArray(store?.visitors) ? store.visitors : []);
 
   if (!rows.length) {
-    if (visitors !== undefined) {
+    if (isSessionLog) {
       return (
         <EmptyState
           illustration="visitors"
@@ -255,20 +263,31 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Invited By</th>
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Source</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Service</th>
-              {showSessionColumn ? (
-                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Session</th>
+              {!isSessionLog ? (
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Service</th>
               ) : null}
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Times Attended</th>
+              {showSessionColumn ? (
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">First Visit</th>
+              ) : null}
+              {!isSessionLog ? (
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Times Attended</th>
+              ) : null}
               <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Visit Date</th>
+              {!isSessionLog ? (
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Latest Visit</th>
+              ) : null}
               <th className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {rows.map((row, index) => {
               const sessions = Array.isArray(row?.attendance) ? row.attendance : [];
-              const latestSession = sessions[0] || null;
+              // Sort client-side to guarantee the most recent session is first
+              const sortedSessions = sessions.length > 0
+                ? [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date))
+                : [];
+              const lastSession = sortedSessions[0] || null;
+              const firstSession = sortedSessions[sortedSessions.length - 1] || null;
               const attendanceCount = Number(row?.attendanceCount ?? sessions.length ?? 0);
               return (
               <tr key={String(row?._id ?? row?.id ?? `row-${index}`)} className="max-md:text-xs text-gray-700 text-sm">
@@ -280,17 +299,23 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.location || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.invitedBy || "-"}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{row?.source || "-"}</td>
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{latestSession?.serviceType || "-"}</td>
+                {!isSessionLog ? (
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{lastSession?.serviceType || "-"}</td>
+                ) : null}
                 {showSessionColumn ? (
                   <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
-                    {latestSession?.serviceType ? `${latestSession.serviceType} — ${formatDate(latestSession.date)}` : "-"}
+                    {firstSession?.date ? formatSessionDate(firstSession.date) : "-"}
                   </td>
                 ) : null}
-                <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{attendanceCount}</td>
+                {!isSessionLog ? (
+                  <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{attendanceCount}</td>
+                ) : null}
                 <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                   <StatusChip value={row?.status} />
                 </td>
-                <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(latestSession?.date || row?.createdAt)}</td>
+                {!isSessionLog ? (
+                  <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatSessionDate(lastSession?.date || row?.createdAt)}</td>
+                ) : null}
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu forceKebab items={[
                     canView && { label: "View", onClick: () => openDetails(row) },

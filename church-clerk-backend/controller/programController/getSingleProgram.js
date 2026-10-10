@@ -1,6 +1,5 @@
 import Program from "../../models/programModel.js";
 import ProgramAttendees from "../../models/programModel/programAttendeesModel.js";
-import TotalProgramAttendance from "../../models/programModel/totalProgramAttendance.js";
 
 // GET SINGLE
 const getSingleProgram = async (req, res) => {
@@ -39,11 +38,10 @@ const getSingleProgram = async (req, res) => {
     }
 
     const attendeeCount = await ProgramAttendees.countDocuments({ church: program.church, event: programId });
-    const totalAttendanceRecords = await TotalProgramAttendance.countDocuments({ church: program.church, event: programId });
 
     return res.status(200).json({
       message: "Program retrieved successfully",
-      program: { ...program.toObject(), status, attendeeCount, totalAttendanceRecords }
+      program: { ...program.toObject(), status, attendeeCount }
     });
   } catch (error) {
     console.error("Get single program error:", error);
