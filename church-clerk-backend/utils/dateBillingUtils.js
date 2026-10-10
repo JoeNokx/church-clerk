@@ -13,7 +13,11 @@ export const addMonths = (date, months) => {
 
 export const addDays = (date, days) => {
   const d = new Date(date);
-  d.setDate(d.getDate() + days);
+  // Millisecond arithmetic — a "day" is exactly 24h. Using setDate() here is
+  // DST-sensitive: across a clock-change the resulting interval can be 23h or
+  // 25h per day, which makes countdowns (Math.ceil) show an extra day and
+  // grants slightly more/less access than configured.
+  d.setTime(d.getTime() + Number(days) * 24 * 60 * 60 * 1000);
   return d;
 };
 
@@ -25,7 +29,7 @@ export const addHours = (date, hours) => {
 
 export const addWeeks = (date, weeks) => {
   const d = new Date(date);
-  d.setDate(d.getDate() + weeks * 7);
+  d.setTime(d.getTime() + Number(weeks) * 7 * 24 * 60 * 60 * 1000);
   return d;
 };
 

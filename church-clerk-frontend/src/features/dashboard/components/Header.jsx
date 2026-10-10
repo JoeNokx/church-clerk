@@ -1103,7 +1103,7 @@ function DashboardHeader({ onToggleSidebar = () => {}, onNotificationsClick }) {
 
           onClick={onToggleSidebar}
 
-          className="inline-flex items-center justify-center p-2 -ml-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 md:hidden shrink-0"
+          className="inline-flex items-center justify-center p-2 -ml-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 lg:hidden shrink-0"
 
           aria-label="Toggle sidebar"
 

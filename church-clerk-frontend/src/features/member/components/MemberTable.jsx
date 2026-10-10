@@ -8,6 +8,7 @@ import MemberContext from "../member.store.js";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import { updateMember as apiUpdateMember } from "../services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
@@ -148,16 +149,9 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
     store?.fetchMembers?.({ dateFrom: "", dateTo: "", page: 1 });
   };
 
-  const onPrev = async () => {
-    const prevPage = store?.pagination?.prevPage;
-    if (!prevPage) return;
-    await store?.fetchMembers({ page: prevPage });
-  };
-
-  const onNext = async () => {
-    const nextPage = store?.pagination?.nextPage;
-    if (!nextPage) return;
-    await store?.fetchMembers({ page: nextPage });
+  const onPageChange = (page) => {
+    if (!page) return;
+    store?.fetchMembers({ page });
   };
 
   const updateStatus = async (memberId, newStatus) => {
@@ -283,10 +277,26 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
     );
   }
 
+  const pageSize = Number(store?.filters?.limit) || 20;
+
+  const onLimitChange = (e) => {
+    const n = Number(e.target.value) || 20;
+    store?.fetchMembers({ limit: n, page: 1 });
+  };
+
+  const activeFilters = store?.filters || {};
+  const isFiltered = Boolean(
+    String(activeFilters.search || "").trim() ||
+      (activeFilters.status && activeFilters.status !== "all") ||
+      (activeFilters.ageGroup && activeFilters.ageGroup !== "all") ||
+      activeFilters.dateFrom ||
+      activeFilters.dateTo
+  );
+
   return (
     <div>
       {/* Desktop table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overscroll-x-contain">
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
@@ -334,25 +344,15 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
         </table>
       </div>
 
-      <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-        <button
-          type="button"
-          onClick={onPrev}
-          disabled={!store?.pagination?.prevPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Prev
-        </button>
-        <div className="text-gray-600 text-sm">Page {store?.pagination?.currentPage || 1}</div>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!store?.pagination?.nextPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Next
-        </button>
-      </div>
+      <Pagination
+        pagination={store?.pagination}
+        rowsCount={rows.length}
+        limit={pageSize}
+        onLimitChange={onLimitChange}
+        onPageChange={onPageChange}
+        itemName="members"
+        filtered={isFiltered}
+      />
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">

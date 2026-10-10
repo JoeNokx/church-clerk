@@ -33,6 +33,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { exportToExcel } from "../../../shared/utils/exportExcel.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatDate(value) {
@@ -589,28 +590,14 @@ function ProgramDetailsPage() {
 
   const onExportAttendees = () => {
     const rows = Array.isArray(attendees) ? attendees : [];
-    const header = ["Name", "Email", "Phone", "Location"].join(",");
-    const csv = [
-      header,
-      ...rows.map((r) => {
-        const values = [r?.fullName || "", r?.email || "", r?.phoneNumber || "", r?.location || ""];
-        return values
-          .map((v) => {
-            const str = String(v ?? "");
-            const escaped = str.replaceAll('"', '""');
-            return `"${escaped}"`;
-          })
-          .join(",");
-      })
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `program_attendees_${programId || ""}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const headers = ["Name", "Email", "Phone", "Location"];
+    const data = rows.map((r) => [
+      r?.fullName || "",
+      r?.email || "",
+      r?.phoneNumber || "",
+      r?.location || "",
+    ]);
+    exportToExcel(`program_attendees_${programId || ""}.xlsx`, headers, data, "Attendees");
   };
 
   const onRegister = async () => {

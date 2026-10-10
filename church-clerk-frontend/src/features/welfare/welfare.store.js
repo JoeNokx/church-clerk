@@ -25,7 +25,7 @@ const emptyPagination = {
 
 const emptyContributionFilters = {
   page: 1,
-  limit: 10,
+  limit: 20,
   search: "",
   dateFrom: "",
   dateTo: "",
@@ -34,7 +34,7 @@ const emptyContributionFilters = {
 
 const emptyDisbursementFilters = {
   page: 1,
-  limit: 10,
+  limit: 20,
   category: "",
   search: "",
   dateFrom: "",

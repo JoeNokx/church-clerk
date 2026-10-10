@@ -11,6 +11,7 @@ import {
 import { getPledge } from "../services/pledge.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -235,6 +236,7 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
   const [paymentsError, setPaymentsError] = useState(null);
   const [payments, setPayments] = useState([]);
   const [paymentsPagination, setPaymentsPagination] = useState({ currentPage: 1, nextPage: null, prevPage: null });
+  const [paymentsLimit, setPaymentsLimit] = useState(20);
   const [paymentsSummary, setPaymentsSummary] = useState({ amountPledged: 0, totalPaid: 0, remainingBalance: 0 });
 
   const [newPaymentOpen, setNewPaymentOpen] = useState(false);
@@ -269,7 +271,7 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
     async (partial) => {
       if (!pledgeId) return;
       const page = partial?.page || 1;
-      const limit = partial?.limit || 10;
+      const limit = partial?.limit || paymentsLimit;
 
       setPaymentsLoading(true);
       setPaymentsError(null);
@@ -294,7 +296,7 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
         setPaymentsLoading(false);
       }
     },
-    [pledgeId]
+    [pledgeId, paymentsLimit]
   );
 
   useEffect(() => {
@@ -492,25 +494,14 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
                       </table>
                     </div>
 
-                    <div className="flex items-center justify-end gap-3 px-2 py-4">
-                      <button
-                        type="button"
-                        onClick={async () => { if (paymentsPagination?.prevPage) await loadPayments({ page: paymentsPagination.prevPage }); }}
-                        disabled={!paymentsPagination?.prevPage}
-                        className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                      >
-                        Prev
-                      </button>
-                      <div className="text-gray-600 text-sm">Page {paymentsPagination?.currentPage || 1}</div>
-                      <button
-                        type="button"
-                        onClick={async () => { if (paymentsPagination?.nextPage) await loadPayments({ page: paymentsPagination.nextPage }); }}
-                        disabled={!paymentsPagination?.nextPage}
-                        className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                      >
-                        Next
-                      </button>
-                    </div>
+                    <Pagination
+                      pagination={paymentsPagination}
+                      rowsCount={payments.length}
+                      limit={paymentsLimit}
+                      onLimitChange={(n) => { setPaymentsLimit(n); loadPayments({ page: 1, limit: n }); }}
+                      onPageChange={(p) => loadPayments({ page: p })}
+                      itemName="payments"
+                    />
                   </div>
                 ) : null}
                 </div>

@@ -28,7 +28,7 @@ const emptyPagination = {
 
 const emptyIndividualFilters = {
   page: 1,
-  limit: 10,
+  limit: 20,
   search: "",
   dateFrom: "",
   dateTo: ""
@@ -36,7 +36,7 @@ const emptyIndividualFilters = {
 
 const emptyAggregateFilters = {
   page: 1,
-  limit: 10,
+  limit: 20,
   search: "",
   dateFrom: "",
   dateTo: ""

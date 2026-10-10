@@ -86,7 +86,23 @@ function SubscriptionStatusBanner() {
   const isPastDue = statusNorm === "past_due";
   const isLocked = statusNorm === "locked" || statusNorm === "suspended" || statusNorm === "canceled" || statusNorm === "expired" || statusNorm === "inactive";
 
-  const trialDaysRemaining = useMemo(() => (isFreeTrial ? daysLeft(subscription?.trialEnd) : null), [isFreeTrial, subscription?.trialEnd]);
+  // Remaining days can never exceed the trial's total length. Clamping here
+  // prevents a "+1 day" display right after creation when the client's clock
+  // is slightly behind the server's (trialEnd = serverNow + N days, diff is
+  // then a hair over N*24h and Math.ceil bumps it to N+1).
+  const trialDaysTotal = useMemo(() => {
+    const s = subscription?.trialStart ? new Date(subscription.trialStart) : null;
+    const e = subscription?.trialEnd ? new Date(subscription.trialEnd) : null;
+    if (!s || !e || Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return null;
+    const total = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+    return Number.isFinite(total) && total > 0 ? total : null;
+  }, [subscription?.trialStart, subscription?.trialEnd]);
+
+  const trialDaysRemaining = useMemo(() => {
+    if (!isFreeTrial) return null;
+    const remaining = daysLeft(subscription?.trialEnd);
+    return remaining !== null && trialDaysTotal !== null ? Math.min(remaining, trialDaysTotal) : remaining;
+  }, [isFreeTrial, subscription?.trialEnd, trialDaysTotal]);
   const graceDaysRemaining = useMemo(() => (isPastDue ? daysLeft(subscription?.gracePeriodEnd) : null), [isPastDue, subscription?.gracePeriodEnd]);
 
   const banner = useMemo(() => {

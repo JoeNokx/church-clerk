@@ -16,36 +16,17 @@ import Select from "react-select";
 import { Country, State } from "country-state-city";
 import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import {
+  MEMBER_STATUS_OPTIONS,
+  MEMBER_AGE_GROUP_OPTIONS,
+  MEMBER_GENDER_OPTIONS,
+  MEMBER_MARITAL_STATUS_OPTIONS
+} from "../memberFields.js";
 
-const STATUS_OPTIONS = [
-  { label: "Active", value: "active" },
-  { label: "Dormant", value: "dormant" },
-  { label: "Transferred", value: "transferred" },
-  { label: "Left Church", value: "left_church" },
-  { label: "Deceased", value: "deceased" },
-  { label: "Temporarily Away", value: "temporarily_away" },
-];
-
-const AGE_GROUP_OPTIONS = [
-  { label: "Children", value: "children" },
-  { label: "Teenagers", value: "teenagers" },
-  { label: "Youth", value: "youth" },
-  { label: "Adult", value: "adult" },
-  { label: "Elderly", value: "elderly" },
-];
-
-const GENDER_OPTIONS = [
-  { label: "Male", value: "male" },
-  { label: "Female", value: "female" }
-];
-
-const MARITAL_STATUS_OPTIONS = [
-  { label: "Single", value: "single" },
-  { label: "Married", value: "married" },
-  { label: "Divorced", value: "divorced" },
-  { label: "Widowed", value: "widowed" },
-  { label: "Other", value: "other" }
-];
+const STATUS_OPTIONS = MEMBER_STATUS_OPTIONS;
+const AGE_GROUP_OPTIONS = MEMBER_AGE_GROUP_OPTIONS;
+const GENDER_OPTIONS = MEMBER_GENDER_OPTIONS;
+const MARITAL_STATUS_OPTIONS = MEMBER_MARITAL_STATUS_OPTIONS;
 
 function Field({ label, children }) {
   return (

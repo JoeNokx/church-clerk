@@ -36,10 +36,18 @@ export const previewMembersImport = async (file) => {
   return await http.post("/member/members/import/preview", fd);
 };
 
-export const importMembersCsv = async (file) => {
+export const importMembers = async (file) => {
   const fd = new FormData();
   fd.append("file", file);
   return await http.post("/member/members/import", fd);
+};
+
+export const previewMembersImportRows = async (rows) => {
+  return await http.post("/member/members/import/preview", { rows });
+};
+
+export const importMembersRows = async (rows) => {
+  return await http.post("/member/members/import", { rows });
 };
 
 export const canCreateMember = async () => {

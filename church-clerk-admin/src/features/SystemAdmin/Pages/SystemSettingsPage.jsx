@@ -20,6 +20,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import ConfirmDeleteModal from "../../../shared/components/ConfirmDeleteModal/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 
 function SystemSettingsPage() {
@@ -56,7 +57,7 @@ function SystemSettingsPage() {
   const [senderIdStatus, setSenderIdStatus] = useState("pending");
   const [senderIdSearch, setSenderIdSearch] = useState("");
   const [senderIdPage, setSenderIdPage] = useState(1);
-  const [senderIdLimit] = useState(25);
+  const [senderIdLimit, setSenderIdLimit] = useState(20);
 
   const [senderIdModalOpen, setSenderIdModalOpen] = useState(false);
   const [senderIdSelected, setSenderIdSelected] = useState(null);
@@ -830,27 +831,17 @@ function SystemSettingsPage() {
               </table>
             </Card.Body>
 
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => loadSenderIdRequests({ nextPage: Math.max(1, senderIdPage - 1) })}
-                disabled={senderIdLoading || !(senderIdPagination?.hasPrev ?? senderIdPage > 1)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50"
-              >
-                Prev
-              </button>
-              <div className="text-xs text-gray-600">
-                Page {senderIdPage}
-                {senderIdPagination?.totalPages ? ` / ${senderIdPagination.totalPages}` : ""}
-              </div>
-              <button
-                type="button"
-                onClick={() => loadSenderIdRequests({ nextPage: senderIdPage + 1 })}
-                disabled={senderIdLoading || !(senderIdPagination?.hasNext ?? false)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50"
-              >
-                Next
-              </button>
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <Pagination
+                pagination={senderIdPagination}
+                rowsCount={senderIdRows.length}
+                limit={senderIdLimit}
+                onLimitChange={(n) => { setSenderIdLimit(n); }}
+                onPageChange={(p) => loadSenderIdRequests({ nextPage: p })}
+                itemName="requests"
+                filtered={Boolean(senderIdStatus || String(senderIdSearch || "").trim())}
+                disabled={senderIdLoading}
+              />
             </div>
           </Card>
 

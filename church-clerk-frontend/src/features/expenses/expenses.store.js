@@ -19,7 +19,7 @@ const emptyPagination = {
 
 const emptyFilters = {
   page: 1,
-  limit: 10,
+  limit: 20,
   category: "",
   dateFrom: "",
   dateTo: "",

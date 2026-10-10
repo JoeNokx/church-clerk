@@ -7,11 +7,12 @@ import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../../shared/components/Card/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
+import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
 
-const PAGE_SIZE = 9;
+const TEAM_LIMIT_OPTIONS = [9, 18, 27, 45];
 
 const ROLE_OPTIONS = [
   { value: "team-leader", label: "Team Leader" },
@@ -523,6 +524,7 @@ export default function TeamsTab({ focusTeamId, setHeaderAction }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
@@ -584,8 +586,8 @@ export default function TeamsTab({ focusTeamId, setHeaderAction }) {
 
   const filtered = teams.filter((t) => !search || t.name?.toLowerCase().includes(search.toLowerCase()));
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedTeams = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginatedTeams = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleSearchChange = (value) => {
     setSearch(value);
@@ -648,25 +650,22 @@ export default function TeamsTab({ focusTeamId, setHeaderAction }) {
               />
             ))}
           </div>
-          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-            <button
-              type="button"
-              onClick={() => setCurrentPage(p => p - 1)}
-              disabled={currentPage <= 1}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-            >
-              Prev
-            </button>
-            <div className="text-gray-600 text-sm">Page {currentPage}</div>
-            <button
-              type="button"
-              onClick={() => setCurrentPage(p => p + 1)}
-              disabled={currentPage >= totalPages}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            pagination={{
+              currentPage,
+              totalPages: Math.max(1, totalPages),
+              totalResult: filtered.length,
+              prevPage: currentPage > 1 ? currentPage - 1 : null,
+              nextPage: currentPage < totalPages ? currentPage + 1 : null
+            }}
+            rowsCount={paginatedTeams.length}
+            limit={pageSize}
+            limitOptions={TEAM_LIMIT_OPTIONS}
+            onLimitChange={(n) => { setPageSize(n); setCurrentPage(1); }}
+            onPageChange={setCurrentPage}
+            itemName="teams"
+            filtered={Boolean(String(search || "").trim())}
+          />
           </>
         )}
       </div>

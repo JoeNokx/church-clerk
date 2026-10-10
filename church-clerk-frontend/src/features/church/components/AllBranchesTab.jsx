@@ -7,6 +7,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import Select from "../../../shared/components/Select/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import AddBranchesModal from "./AddBranchesModal.jsx";
 import { getMyBranches } from "../services/church.api.js";
 
@@ -28,7 +29,7 @@ function AllBranchesTab({ onViewBranch }) {
   const [status, setStatus] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const limit = 10;
+  const [limit, setLimit] = useState(20);
 
   const debouncedSearch = useMemo(
     () =>
@@ -81,7 +82,7 @@ function AllBranchesTab({ onViewBranch }) {
     return () => {
       cancelled = true;
     };
-  }, [page, search, status, reloadKey]);
+  }, [page, limit, search, status, reloadKey]);
 
   const filtering = Boolean(String(searchValue || "").trim() || (status && status !== "all"));
 
@@ -274,25 +275,15 @@ function AllBranchesTab({ onViewBranch }) {
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 px-4 py-3 md:px-6">
-          <button
-            type="button"
-            onClick={() => pagination?.prevPage && setPage(pagination.prevPage)}
-            disabled={!pagination?.prevPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Prev
-          </button>
-          <div className="text-gray-600 text-sm">Page {pagination?.currentPage || 1}</div>
-          <button
-            type="button"
-            onClick={() => pagination?.nextPage && setPage(pagination.nextPage)}
-            disabled={!pagination?.nextPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
-        </div>
+        <Pagination
+          pagination={pagination}
+          rowsCount={branches.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); setPage(1); }}
+          onPageChange={setPage}
+          itemName="branches"
+          filtered={filtering}
+        />
       </div>
 
       <AddBranchesModal

@@ -13,6 +13,7 @@ import {
 } from "../services/outreach.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
@@ -52,7 +53,6 @@ const EXISTING_CHURCH_LABELS = {
 const PREFERRED_CONTACT_LABELS = {
   call: "Phone Call", whatsapp: "WhatsApp", sms: "SMS", visit: "Visit", email: "Email",
 };
-const PAGE_SIZE = 10;
 const FOLLOWUP_TYPE_LABELS = { call: "Phone Call", visit: "Home Visit", text: "Text/SMS", email: "Email", "in-person": "In-Person" };
 const FU_STATUS_LABELS = {
   pending: "Pending", contacted: "Contacted", "no-response": "No Response",
@@ -109,6 +109,7 @@ export default function ProspectDetailsPage() {
   const [fuDeleteTarget, setFuDeleteTarget] = useState(null);
   const [fuDeleting, setFuDeleting] = useState(false);
   const [followUpsPage, setFollowUpsPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [viewRow, setViewRow] = useState(null);
 
   const backParams = useMemo(() => {
@@ -192,8 +193,8 @@ export default function ProspectDetailsPage() {
 
   const fullName = `${prospect.firstName || ""} ${prospect.lastName || ""}`.trim();
 
-  const followUpsTotalPages = Math.ceil(followUps.length / PAGE_SIZE);
-  const paginatedFollowUps = followUps.slice((followUpsPage - 1) * PAGE_SIZE, followUpsPage * PAGE_SIZE);
+  const followUpsTotalPages = Math.max(1, Math.ceil(followUps.length / pageSize));
+  const paginatedFollowUps = followUps.slice((followUpsPage - 1) * pageSize, followUpsPage * pageSize);
 
   return (
     <div className="max-w-4xl">
@@ -394,25 +395,20 @@ export default function ProspectDetailsPage() {
             </table>
           </div>
         )}
-        <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-          <button
-            type="button"
-            onClick={() => setFollowUpsPage(p => p - 1)}
-            disabled={followUpsPage <= 1}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Prev
-          </button>
-          <div className="text-gray-600 text-sm">Page {followUpsPage}</div>
-          <button
-            type="button"
-            onClick={() => setFollowUpsPage(p => p + 1)}
-            disabled={followUpsPage >= followUpsTotalPages}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
-        </div>
+        <Pagination
+          pagination={{
+            currentPage: followUpsPage,
+            totalPages: followUpsTotalPages,
+            totalResult: followUps.length,
+            prevPage: followUpsPage > 1 ? followUpsPage - 1 : null,
+            nextPage: followUpsPage < followUpsTotalPages ? followUpsPage + 1 : null
+          }}
+          rowsCount={paginatedFollowUps.length}
+          limit={pageSize}
+          onLimitChange={(n) => { setPageSize(n); setFollowUpsPage(1); }}
+          onPageChange={setFollowUpsPage}
+          itemName="follow-ups"
+        />
       </div>
 
       {/* Modals */}

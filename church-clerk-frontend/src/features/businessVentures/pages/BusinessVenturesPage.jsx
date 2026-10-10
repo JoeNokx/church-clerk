@@ -15,6 +15,7 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -375,7 +376,7 @@ function BusinessVenturesPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const [pageSize, setPageSize] = useState(20);
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -443,11 +444,11 @@ function BusinessVenturesPage() {
     );
   }, [ventures, searchValue]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredVentures.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredVentures.length / pageSize));
   const pagedVentures = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return filteredVentures.slice(start, start + PAGE_SIZE);
-  }, [filteredVentures, page, PAGE_SIZE]);
+    const start = (page - 1) * pageSize;
+    return filteredVentures.slice(start, start + pageSize);
+  }, [filteredVentures, page, pageSize]);
 
   const viewDetails = (row) => {
     if (!row?._id) return;
@@ -666,27 +667,23 @@ function BusinessVenturesPage() {
           })}
             </div>
 
-            {totalPages > 1 && (
-              <div className="mt-4 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                >
-                  Prev
-                </button>
-                <span className="text-gray-600 text-sm">Page {page} of {totalPages}</span>
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                >
-                  Next
-                </button>
-              </div>
-            )}
+            <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+              <Pagination
+                pagination={{
+                  currentPage: page,
+                  totalPages,
+                  totalResult: filteredVentures.length,
+                  prevPage: page > 1 ? page - 1 : null,
+                  nextPage: page < totalPages ? page + 1 : null
+                }}
+                rowsCount={pagedVentures.length}
+                limit={pageSize}
+                onLimitChange={(n) => { setPageSize(n); setPage(1); }}
+                onPageChange={setPage}
+                itemName="ventures"
+                filtered={Boolean(String(searchValue || "").trim() || dateFrom || dateTo)}
+              />
+            </div>
           </div>
         )}
       </div>

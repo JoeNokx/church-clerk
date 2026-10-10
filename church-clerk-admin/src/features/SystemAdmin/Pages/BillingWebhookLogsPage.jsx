@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminGetWebhookLogs } from "../Services/adminBilling.api.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 const fmtDateTime = (v) => {
   if (!v) return "—";
@@ -35,7 +36,7 @@ function BillingWebhookLogsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(25);
+  const [limit, setLimit] = useState(20);
 
   const filtered = useMemo(() => {
     const q = String(search || "").trim().toLowerCase();
@@ -212,25 +213,17 @@ function BillingWebhookLogsPage() {
         </table>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <div className="text-xs text-gray-400">
-          {pagination?.totalItems ? `${pagination.totalItems} total` : ""}
-        </div>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => load({ nextPage: Math.max(1, page - 1) })}
-            disabled={loading || !pagination?.prevPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50">
-            Prev
-          </button>
-          <div className="text-xs text-gray-600">
-            Page {page}{pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}
-          </div>
-          <button type="button" onClick={() => load({ nextPage: page + 1 })}
-            disabled={loading || !pagination?.nextPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50">
-            Next
-          </button>
-        </div>
+      <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+        <Pagination
+          pagination={pagination}
+          rowsCount={filtered.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); }}
+          onPageChange={(p) => load({ nextPage: p })}
+          itemName="logs"
+          filtered={Boolean(status || String(search || "").trim())}
+          disabled={loading}
+        />
       </div>
     </div>
   );

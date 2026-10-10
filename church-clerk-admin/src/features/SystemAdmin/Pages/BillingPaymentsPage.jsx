@@ -4,6 +4,7 @@ import { adminGetPayments, adminVerifyPayment } from "../Services/adminBilling.a
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import Card from "../../../shared/components/Card/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
@@ -26,7 +27,7 @@ function BillingPaymentsPage() {
   const [currency, setCurrency] = useState("");
   const [provider, setProvider] = useState("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(25);
+  const [limit, setLimit] = useState(20);
 
   const filtered = useMemo(() => {
     const q = String(search || "").trim().toLowerCase();
@@ -208,27 +209,17 @@ function BillingPaymentsPage() {
         </table>
       </div>
 
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => load({ nextPage: Math.max(1, page - 1) })}
-          disabled={loading || !(pagination?.prevPage ?? false)}
-        >
-          Prev
-        </Button>
-        <div className="text-xs text-gray-600">
-          Page {page}
-          {pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => load({ nextPage: page + 1 })}
-          disabled={loading || !(pagination?.nextPage ?? false)}
-        >
-          Next
-        </Button>
+      <div className="rounded-xl border border-gray-200 bg-white">
+        <Pagination
+          pagination={pagination}
+          rowsCount={filtered.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); }}
+          onPageChange={(p) => load({ nextPage: p })}
+          itemName="payments"
+          filtered={Boolean(status || String(search || "").trim())}
+          disabled={loading}
+        />
       </div>
     </Card>
   );

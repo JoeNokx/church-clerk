@@ -20,6 +20,7 @@ import AuthContext from "../../auth/auth.store.jsx";
 
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 
 const DashboardCharts = React.lazy(() => import("../components/DashboardCharts.jsx"));
@@ -653,7 +654,7 @@ function DashboardOverview({ onNavigate }) {
 
 
 
-  const birthdaysPageSize = 10;
+  const [birthdaysPageSize, setBirthdaysPageSize] = useState(20);
 
   const birthdaysTotalPages = Math.max(1, Math.ceil(filteredBirthdays.length / birthdaysPageSize));
 
@@ -665,7 +666,7 @@ function DashboardOverview({ onNavigate }) {
 
     return filteredBirthdays.slice(start, start + birthdaysPageSize);
 
-  }, [filteredBirthdays, birthdaysSafePage]);
+  }, [filteredBirthdays, birthdaysSafePage, birthdaysPageSize]);
 
 
 
@@ -1376,48 +1377,22 @@ function DashboardOverview({ onNavigate }) {
 
             </div>
 
-            <div className="border-t border-gray-200 flex items-center justify-between px-4 py-3 gap-2 shrink-0 md:px-6">
-
-              <div className="text-gray-500 text-sm">{filteredBirthdays.length} {filteredBirthdays.length === 1 ? "member" : "members"}</div>
-
-              <div className="flex items-center gap-2">
-
-                <button
-
-                  type="button"
-
-                  onClick={() => setBirthdaysPage((p) => Math.max(1, p - 1))}
-
-                  disabled={birthdaysSafePage <= 1}
-
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-
-                >
-
-                  Prev
-
-                </button>
-
-                <div className="text-gray-600 text-sm">Page {birthdaysSafePage} of {birthdaysTotalPages}</div>
-
-                <button
-
-                  type="button"
-
-                  onClick={() => setBirthdaysPage((p) => Math.min(birthdaysTotalPages, p + 1))}
-
-                  disabled={birthdaysSafePage >= birthdaysTotalPages}
-
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-
-                >
-
-                  Next
-
-                </button>
-
-              </div>
-
+            <div className="border-t border-gray-200 shrink-0">
+              <Pagination
+                pagination={{
+                  currentPage: birthdaysSafePage,
+                  totalPages: birthdaysTotalPages,
+                  totalResult: filteredBirthdays.length,
+                  prevPage: birthdaysSafePage > 1 ? birthdaysSafePage - 1 : null,
+                  nextPage: birthdaysSafePage < birthdaysTotalPages ? birthdaysSafePage + 1 : null
+                }}
+                rowsCount={birthdaysSlice.length}
+                limit={birthdaysPageSize}
+                onLimitChange={(n) => { setBirthdaysPageSize(n); setBirthdaysPage(1); }}
+                onPageChange={setBirthdaysPage}
+                itemName="members"
+                filtered={Boolean(String(birthdaysSearch || "").trim() || birthdaysMonthFilter)}
+              />
             </div>
 
           </div>

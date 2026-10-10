@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   getSystemChurches,
+  getSystemChurch,
   suspendSystemChurch,
   unsuspendSystemChurch,
   deleteSystemChurch,
@@ -12,7 +13,148 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+
+function formatCreatedAt(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("en-US");
+}
+
+function formatDateOnly(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-US");
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <div className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{label}</div>
+      <div className="mt-0.5 text-sm text-gray-900 break-words">{value || "—"}</div>
+    </div>
+  );
+}
+
+function ChurchDetailsModal({ churchId, onClose }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [church, setChurch] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await getSystemChurch(churchId);
+        if (!cancelled) setChurch(res?.data?.data || null);
+      } catch (e) {
+        if (!cancelled) setError(e?.response?.data?.message || e?.message || "Failed to load church details");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [churchId]);
+
+  const branches = Array.isArray(church?.branches) ? church.branches : [];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-base font-bold text-gray-900 truncate">{church?.name || "Church details"}</div>
+            {church?.type && (
+              <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                church.type === "Headquarters" ? "bg-blue-100 text-blue-700" :
+                church.type === "Branch" ? "bg-purple-100 text-purple-700" :
+                "bg-gray-100 text-gray-600"
+              }`}>{church.type}</span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="mt-6 animate-pulse space-y-3">
+            <div className="h-4 w-40 rounded bg-gray-200" />
+            <div className="grid grid-cols-2 gap-4">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-8 rounded bg-gray-100" />
+              ))}
+            </div>
+          </div>
+        ) : error ? (
+          <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>
+        ) : church ? (
+          <>
+            <div className="mt-5 grid grid-cols-2 md:grid-cols-3 gap-4">
+              <DetailRow label="Status" value={church.isActive === false ? "Suspended" : "Active"} />
+              <DetailRow label="Pastor" value={church.pastor} />
+              <DetailRow label="Email" value={church.email} />
+              <DetailRow label="Phone" value={church.phoneNumber} />
+              <DetailRow label="Country" value={church.country} />
+              <DetailRow label="Region" value={church.region} />
+              <DetailRow label="City" value={church.city} />
+              <DetailRow label="Street Address" value={church.streetAddress} />
+              <DetailRow label="Currency" value={church.currency} />
+              <DetailRow label="Members" value={church.memberCount != null ? String(church.memberCount) : "—"} />
+              <DetailRow label="Founded" value={formatDateOnly(church.foundedDate)} />
+              <DetailRow label="Created" value={formatCreatedAt(church.createdAt)} />
+              <DetailRow
+                label="Registered By"
+                value={church.createdBy ? `${church.createdBy.fullName || ""}${church.createdBy.email ? ` (${church.createdBy.email})` : ""}` : "—"}
+              />
+            </div>
+
+            {church.type !== "Branch" && (
+              <div className="mt-6">
+                <div className="text-sm font-bold text-gray-900">
+                  Branches{branches.length ? ` (${branches.length})` : ""}
+                </div>
+                {branches.length === 0 ? (
+                  <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                    No branches under this church.
+                  </div>
+                ) : (
+                  <div className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200">
+                    {branches.map((b) => (
+                      <div key={b._id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-gray-900" title={b.name || ""}>{b.name}</div>
+                          <div className="truncate text-xs text-gray-500">
+                            {[b.pastor, [b.city, b.country].filter(Boolean).join(", ")].filter(Boolean).join(" · ") || "—"}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <StatusChip value={b.isActive === false ? "suspended" : "active"} />
+                          <div className="mt-0.5 text-[10px] text-gray-400">{formatDateOnly(b.createdAt)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 function ConfirmModal({ open, title, message, confirmLabel, confirmClass, onConfirm, onCancel, loading, children }) {
   if (!open) return null;
@@ -48,14 +190,17 @@ function ChurchesPage() {
   const [type, setType] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(25);
+  const [limit, setLimit] = useState(20);
 
   const [suspendModal, setSuspendModal] = useState(null);
   const [suspendReason, setSuspendReason] = useState("");
+  const [suspendReasonVisible, setSuspendReasonVisible] = useState(true);
+  const [unsuspendModal, setUnsuspendModal] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [delegateLoading, setDelegateLoading] = useState("");
   const [delegateModal, setDelegateModal] = useState(null);
+  const [viewModal, setViewModal] = useState(null);
 
   const handleDelegate = async (church) => {
     if (!church?._id) return;
@@ -111,9 +256,10 @@ function ChurchesPage() {
     if (!suspendModal?._id) return;
     setActionLoading("suspend");
     try {
-      await suspendSystemChurch(suspendModal._id, { reason: suspendReason || undefined });
+      await suspendSystemChurch(suspendModal._id, { reason: suspendReason || undefined, suspendReasonVisible });
       setSuspendModal(null);
       setSuspendReason("");
+      setSuspendReasonVisible(true);
       await load({ nextPage: page });
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to suspend church");
@@ -122,11 +268,12 @@ function ChurchesPage() {
     }
   };
 
-  const handleUnsuspend = async (church) => {
-    if (!church?._id) return;
-    setActionLoading(church._id + "_unsuspend");
+  const handleUnsuspend = async () => {
+    if (!unsuspendModal?._id) return;
+    setActionLoading("unsuspend");
     try {
-      await unsuspendSystemChurch(church._id);
+      await unsuspendSystemChurch(unsuspendModal._id);
+      setUnsuspendModal(null);
       await load({ nextPage: page });
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to unsuspend church");
@@ -235,6 +382,7 @@ function ChurchesPage() {
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
                     <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                    <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -246,6 +394,7 @@ function ChurchesPage() {
                       <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
                       <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-28 rounded bg-gray-200" /></td>
                       <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                      <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-24 rounded bg-gray-200" /></td>
                       <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
                     </tr>
                   ))}
@@ -271,6 +420,7 @@ function ChurchesPage() {
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Pastor</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Email</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Country</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Created</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                 </tr>
               </thead>
@@ -308,20 +458,26 @@ function ChurchesPage() {
                         <span className="sm:hidden">{truncateMobileName(c.country)}</span>
                         <span className="hidden sm:inline">{truncateDesktopName(c.country)}</span>
                       </td>
+                      <td className="max-md:px-4 py-1.5 text-gray-500 whitespace-nowrap px-4 md:px-6">
+                        {formatCreatedAt(c.createdAt)}
+                      </td>
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu
                           items={[
                             {
+                              label: "View",
+                              onClick: () => setViewModal(c),
+                              desktopClassName: "rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            },
+                            {
                               label: "View as Church",
                               onClick: () => setDelegateModal(c),
-                              disabled: isSuspended,
                               desktopClassName: "rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             },
                             isSuspended
                               ? {
                                   label: "Unsuspend",
-                                  onClick: () => handleUnsuspend(c),
-                                  disabled: actionLoading === c._id + "_unsuspend",
+                                  onClick: () => setUnsuspendModal(c),
                                   desktopClassName: "rounded-md border border-green-200 bg-white px-2.5 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50"
                                 }
                               : {
@@ -346,28 +502,25 @@ function ChurchesPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-          <button
-            type="button"
-            onClick={() => load({ nextPage: Math.max(1, page - 1) })}
-            disabled={loading || !(pagination?.hasPrev ?? page > 1)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Prev
-          </button>
-          <div className="text-gray-600 text-sm">
-            Page {page}{pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}
-          </div>
-          <button
-            type="button"
-            onClick={() => load({ nextPage: page + 1 })}
-            disabled={loading || !(pagination?.hasNext ?? false)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
-        </div>
+        <Pagination
+          pagination={pagination}
+          rowsCount={rows.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); }}
+          onPageChange={(p) => load({ nextPage: p })}
+          itemName="churches"
+          filtered={Boolean(String(search || "").trim() || type || statusFilter)}
+          disabled={loading}
+        />
       </Card>
+
+      {/* Church details modal */}
+      {viewModal && (
+        <ChurchDetailsModal
+          churchId={viewModal._id}
+          onClose={() => setViewModal(null)}
+        />
+      )}
 
       {/* Suspend Modal */}
       <ConfirmModal
@@ -377,7 +530,7 @@ function ChurchesPage() {
         confirmLabel="Suspend Church"
         confirmClass="bg-amber-600 hover:bg-amber-700"
         onConfirm={handleSuspend}
-        onCancel={() => { setSuspendModal(null); setSuspendReason(""); }}
+        onCancel={() => { setSuspendModal(null); setSuspendReason(""); setSuspendReasonVisible(true); }}
         loading={actionLoading === "suspend"}
       >
         <div className="mt-4">
@@ -385,6 +538,39 @@ function ChurchesPage() {
           <input value={suspendReason} onChange={(e) => setSuspendReason(e.target.value)}
             placeholder="e.g. Policy violation..."
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-100" />
+          <label className="mt-3 flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={suspendReasonVisible}
+              onChange={(e) => setSuspendReasonVisible(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+            />
+            Let the church see this reason
+          </label>
+        </div>
+      </ConfirmModal>
+
+      {/* Unsuspend Modal */}
+      <ConfirmModal
+        open={!!unsuspendModal}
+        title={`Unsuspend "${unsuspendModal?.name}"?`}
+        message="The church will be marked as active and regain full access."
+        confirmLabel="Unsuspend Church"
+        confirmClass="bg-green-600 hover:bg-green-700"
+        onConfirm={handleUnsuspend}
+        onCancel={() => setUnsuspendModal(null)}
+        loading={actionLoading === "unsuspend"}
+      >
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+          <div className="text-xs font-semibold text-amber-800">Suspension reason</div>
+          <div className="mt-1 text-xs text-amber-800/90">
+            {unsuspendModal?.suspendReason || "No reason was recorded."}
+          </div>
+          {unsuspendModal?.suspendedAt && (
+            <div className="mt-1 text-[10px] text-amber-700/80">
+              Suspended on {formatCreatedAt(unsuspendModal.suspendedAt)}
+            </div>
+          )}
         </div>
       </ConfirmModal>
 

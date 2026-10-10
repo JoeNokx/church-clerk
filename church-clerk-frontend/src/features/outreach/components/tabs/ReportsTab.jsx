@@ -6,7 +6,9 @@ import { getMembers } from "../../../member/services/member.api.js";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
+import { exportToExcel } from "../../../../shared/utils/exportExcel.js";
 
 // ── Helpers ───────────────────────────────────────────────────────
 function fmtDate(v) {
@@ -55,23 +57,9 @@ const DECISION_LABELS = {
   baptismInterest: "Baptism Interest", churchVisit: "Church Visit",
 };
 
-// ── CSV Export ────────────────────────────────────────────────────
-function exportCSV(filename, headers, rows) {
-  const escape = (v) => {
-    if (v === null || v === undefined) return "";
-    const s = String(v).replace(/"/g, '""');
-    return /[",\n]/.test(s) ? `"${s}"` : s;
-  };
-  const csv = [headers.join(","), ...rows.map((r) => r.map(escape).join(","))].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+// ── Excel Export ───────────────────────────────────────────────────
+function exportExcel(filename, headers, rows) {
+  exportToExcel(filename, headers, rows, "Report");
 }
 
 // ── UI atoms ──────────────────────────────────────────────────────
@@ -123,7 +111,7 @@ function TableShell({ title, count, onExport, children }) {
         {onExport ? (
           <button onClick={onExport} className="h-8 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-600 hover:bg-gray-50">
             <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            Export CSV
+            Export Excel
           </button>
         ) : null}
       </div>
@@ -150,8 +138,15 @@ export default function ReportsTab() {
   const [peoplePage, setPeoplePage] = useState(1);
   const [followUpsPage, setFollowUpsPage] = useState(1);
   const [teamsPage, setTeamsPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
-  const PAGE_SIZE = 10;
+  const handleLimitChange = (n) => {
+    setPageSize(n);
+    setEventsPage(1);
+    setPeoplePage(1);
+    setFollowUpsPage(1);
+    setTeamsPage(1);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -228,7 +223,7 @@ export default function ReportsTab() {
       e.location || "", e.status, e.prospectCount || 0, e.decisionCount || 0,
       e.coordinator ? (Array.isArray(e.coordinator) ? e.coordinator.map((c) => `${c.firstName} ${c.lastName}`).join("; ") : `${e.coordinator.firstName} ${e.coordinator.lastName}`) : "",
     ]);
-    exportCSV(`outreach-events-report-${Date.now()}.csv`, headers, rows);
+    exportExcel(`outreach-events-report-${Date.now()}.xlsx`, headers, rows);
   };
 
   // ── People report ──
@@ -256,7 +251,7 @@ export default function ReportsTab() {
       p.outreachEvent?.title || "Personal / None",
       fmtDate(p.createdAt),
     ]);
-    exportCSV(`people-reached-report-${Date.now()}.csv`, headers, rows);
+    exportExcel(`people-reached-report-${Date.now()}.xlsx`, headers, rows);
   };
 
   // ── Follow-ups report ──
@@ -283,7 +278,7 @@ export default function ReportsTab() {
       f.nextFollowUpDate ? fmtDate(f.nextFollowUpDate) : "",
       f.notes || "",
     ]);
-    exportCSV(`follow-ups-report-${Date.now()}.csv`, headers, rows);
+    exportExcel(`follow-ups-report-${Date.now()}.xlsx`, headers, rows);
   };
 
   // ── Team participation report ──
@@ -317,21 +312,21 @@ export default function ReportsTab() {
       p.name, p.phone, p.participationCount,
       p.events.map((e) => `${e.title} (${fmtDate(e.date)})`).join("; "),
     ]);
-    exportCSV(`team-participation-report-${Date.now()}.csv`, headers, rows);
+    exportExcel(`team-participation-report-${Date.now()}.xlsx`, headers, rows);
   };
 
   // ── Pagination ──
-  const eventsTotalPages = Math.ceil(filteredEvents.length / PAGE_SIZE);
-  const paginatedEvents = filteredEvents.slice((eventsPage - 1) * PAGE_SIZE, eventsPage * PAGE_SIZE);
+  const eventsTotalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
+  const paginatedEvents = filteredEvents.slice((eventsPage - 1) * pageSize, eventsPage * pageSize);
 
-  const peopleTotalPages = Math.ceil(filteredProspects.length / PAGE_SIZE);
-  const paginatedPeople = filteredProspects.slice((peoplePage - 1) * PAGE_SIZE, peoplePage * PAGE_SIZE);
+  const peopleTotalPages = Math.max(1, Math.ceil(filteredProspects.length / pageSize));
+  const paginatedPeople = filteredProspects.slice((peoplePage - 1) * pageSize, peoplePage * pageSize);
 
-  const followUpsTotalPages = Math.ceil(filteredFollowUps.length / PAGE_SIZE);
-  const paginatedFollowUps = filteredFollowUps.slice((followUpsPage - 1) * PAGE_SIZE, followUpsPage * PAGE_SIZE);
+  const followUpsTotalPages = Math.max(1, Math.ceil(filteredFollowUps.length / pageSize));
+  const paginatedFollowUps = filteredFollowUps.slice((followUpsPage - 1) * pageSize, followUpsPage * pageSize);
 
-  const teamsTotalPages = Math.ceil(teamParticipation.length / PAGE_SIZE);
-  const paginatedTeams = teamParticipation.slice((teamsPage - 1) * PAGE_SIZE, teamsPage * PAGE_SIZE);
+  const teamsTotalPages = Math.max(1, Math.ceil(teamParticipation.length / pageSize));
+  const paginatedTeams = teamParticipation.slice((teamsPage - 1) * pageSize, teamsPage * pageSize);
 
   return (
     <div className="mt-6 space-y-5">
@@ -423,25 +418,21 @@ export default function ReportsTab() {
                     </tbody>
                   </table>
                 </div>
-                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-                  <button
-                    type="button"
-                    onClick={() => setEventsPage(p => p - 1)}
-                    disabled={eventsPage <= 1}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                  >
-                    Prev
-                  </button>
-                  <div className="text-gray-600 text-sm">Page {eventsPage}</div>
-                  <button
-                    type="button"
-                    onClick={() => setEventsPage(p => p + 1)}
-                    disabled={eventsPage >= eventsTotalPages}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                  >
-                    Next
-                  </button>
-                </div>
+                <Pagination
+                  pagination={{
+                    currentPage: eventsPage,
+                    totalPages: eventsTotalPages,
+                    totalResult: filteredEvents.length,
+                    prevPage: eventsPage > 1 ? eventsPage - 1 : null,
+                    nextPage: eventsPage < eventsTotalPages ? eventsPage + 1 : null
+                  }}
+                  rowsCount={paginatedEvents.length}
+                  limit={pageSize}
+                  onLimitChange={handleLimitChange}
+                  onPageChange={setEventsPage}
+                  itemName="events"
+                  filtered={Boolean(dateFrom || dateTo)}
+                />
               </TableShell>
             </>
           ) : null}
@@ -504,25 +495,21 @@ export default function ReportsTab() {
                     </tbody>
                   </table>
                 </div>
-                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-                  <button
-                    type="button"
-                    onClick={() => setPeoplePage(p => p - 1)}
-                    disabled={peoplePage <= 1}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                  >
-                    Prev
-                  </button>
-                  <div className="text-gray-600 text-sm">Page {peoplePage}</div>
-                  <button
-                    type="button"
-                    onClick={() => setPeoplePage(p => p + 1)}
-                    disabled={peoplePage >= peopleTotalPages}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                  >
-                    Next
-                  </button>
-                </div>
+                <Pagination
+                  pagination={{
+                    currentPage: peoplePage,
+                    totalPages: peopleTotalPages,
+                    totalResult: filteredProspects.length,
+                    prevPage: peoplePage > 1 ? peoplePage - 1 : null,
+                    nextPage: peoplePage < peopleTotalPages ? peoplePage + 1 : null
+                  }}
+                  rowsCount={paginatedPeople.length}
+                  limit={pageSize}
+                  onLimitChange={handleLimitChange}
+                  onPageChange={setPeoplePage}
+                  itemName="people"
+                  filtered={Boolean(dateFrom || dateTo)}
+                />
               </TableShell>
             </>
           ) : null}
@@ -581,25 +568,21 @@ export default function ReportsTab() {
                     </tbody>
                   </table>
                 </div>
-                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-                  <button
-                    type="button"
-                    onClick={() => setFollowUpsPage(p => p - 1)}
-                    disabled={followUpsPage <= 1}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                  >
-                    Prev
-                  </button>
-                  <div className="text-gray-600 text-sm">Page {followUpsPage}</div>
-                  <button
-                    type="button"
-                    onClick={() => setFollowUpsPage(p => p + 1)}
-                    disabled={followUpsPage >= followUpsTotalPages}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                  >
-                    Next
-                  </button>
-                </div>
+                <Pagination
+                  pagination={{
+                    currentPage: followUpsPage,
+                    totalPages: followUpsTotalPages,
+                    totalResult: filteredFollowUps.length,
+                    prevPage: followUpsPage > 1 ? followUpsPage - 1 : null,
+                    nextPage: followUpsPage < followUpsTotalPages ? followUpsPage + 1 : null
+                  }}
+                  rowsCount={paginatedFollowUps.length}
+                  limit={pageSize}
+                  onLimitChange={handleLimitChange}
+                  onPageChange={setFollowUpsPage}
+                  itemName="follow-ups"
+                  filtered={Boolean(dateFrom || dateTo)}
+                />
               </TableShell>
             </>
           ) : null}
@@ -633,7 +616,7 @@ export default function ReportsTab() {
                         </td></tr>
                       ) : paginatedTeams.map((p, i) => (
                         <tr key={p.memberId} className="max-md:text-xs text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 font-semibold text-gray-400">{(teamsPage - 1) * PAGE_SIZE + i + 1}</td>
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6 font-semibold text-gray-400">{(teamsPage - 1) * pageSize + i + 1}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 font-semibold">{p.name}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{p.phone || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 text-right tabular-nums font-bold text-blue-700">{p.participationCount}</td>
@@ -653,25 +636,21 @@ export default function ReportsTab() {
                     </tbody>
                   </table>
                 </div>
-                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-                  <button
-                    type="button"
-                    onClick={() => setTeamsPage(p => p - 1)}
-                    disabled={teamsPage <= 1}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                  >
-                    Prev
-                  </button>
-                  <div className="text-gray-600 text-sm">Page {teamsPage}</div>
-                  <button
-                    type="button"
-                    onClick={() => setTeamsPage(p => p + 1)}
-                    disabled={teamsPage >= teamsTotalPages}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                  >
-                    Next
-                  </button>
-                </div>
+                <Pagination
+                  pagination={{
+                    currentPage: teamsPage,
+                    totalPages: teamsTotalPages,
+                    totalResult: teamParticipation.length,
+                    prevPage: teamsPage > 1 ? teamsPage - 1 : null,
+                    nextPage: teamsPage < teamsTotalPages ? teamsPage + 1 : null
+                  }}
+                  rowsCount={paginatedTeams.length}
+                  limit={pageSize}
+                  onLimitChange={handleLimitChange}
+                  onPageChange={setTeamsPage}
+                  itemName="teams"
+                  filtered={Boolean(dateFrom || dateTo)}
+                />
               </TableShell>
             </>
           ) : null}

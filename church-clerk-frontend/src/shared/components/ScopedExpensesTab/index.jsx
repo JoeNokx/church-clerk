@@ -4,6 +4,7 @@ import ChurchContext from "../../../features/church/church.store.js";
 import FilterBar from "../FilterBar/index.jsx";
 import MobileFilterBar from "../MobileFilterBar/index.jsx";
 import TableKebabMenu from "../TableKebabMenu/index.jsx";
+import Pagination from "../Pagination/index.jsx";
 import EmptyState from "../EmptyState/index.jsx";
 import Button from "../Button/index.jsx";
 import { formatMoney } from "../../utils/formatMoney.js";
@@ -55,6 +56,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
 
   const [expenses, setExpenses] = useState([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 0, prevPage: null, nextPage: null });
+  const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -93,7 +95,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
     if (!scope || !entityId) return;
     const params = {
       page: overrides.page || 1,
-      limit: 10
+      limit: overrides.limit || limit
     };
     const nextCategory = overrides.category !== undefined ? overrides.category : category;
     const nextFrom = overrides.dateFrom !== undefined ? overrides.dateFrom : dateFrom;
@@ -117,7 +119,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
     } finally {
       setLoading(false);
     }
-  }, [scope, entityId, category, dateFrom, dateTo, debouncedSearch]);
+  }, [scope, entityId, category, dateFrom, dateTo, debouncedSearch, limit]);
 
   useEffect(() => {
     fetchExpenses({ page: 1 });
@@ -195,8 +197,8 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
     }
   };
 
-  const onPrev = () => { if (pagination?.prevPage) fetchExpenses({ page: pagination.prevPage }); };
-  const onNext = () => { if (pagination?.nextPage) fetchExpenses({ page: pagination.nextPage }); };
+  const onPageChange = (page) => { if (page) fetchExpenses({ page }); };
+  const onLimitChange = (n) => { setLimit(n); fetchExpenses({ page: 1, limit: n }); };
 
   return (
     <div className="mt-6 rounded-xl border border-gray-200 bg-white">
@@ -334,25 +336,15 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
             </table>
           </div>
 
-          <div className="flex items-center justify-end gap-3 py-2 px-4 md:px-6">
-            <button
-              type="button"
-              onClick={onPrev}
-              disabled={!pagination?.prevPage}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-            >
-              Prev
-            </button>
-            <div className="text-gray-600 text-sm">Page {pagination?.currentPage || 1}</div>
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!pagination?.nextPage}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            pagination={pagination}
+            rowsCount={expenses.length}
+            limit={limit}
+            onLimitChange={onLimitChange}
+            onPageChange={onPageChange}
+            itemName="expenses"
+            filtered={hasFilters}
+          />
         </>
       )}
 

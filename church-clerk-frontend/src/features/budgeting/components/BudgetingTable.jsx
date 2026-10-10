@@ -4,6 +4,7 @@ import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import BudgetingContext from "../budgeting.store.js";
 import Card from "../../../shared/components/Card/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
@@ -71,16 +72,13 @@ function BudgetingTable({ onEdit, onCreate }) {
     store?.fetchBudgets?.({ fiscalYear: "", status: "", page: 1 });
   };
 
-  const onPrev = async () => {
-    const prevPage = store?.pagination?.prevPage;
-    if (!prevPage) return;
-    await store?.fetchBudgets?.({ page: prevPage });
+  const onPageChange = (page) => {
+    if (!page) return;
+    store?.fetchBudgets?.({ page });
   };
 
-  const onNext = async () => {
-    const nextPage = store?.pagination?.nextPage;
-    if (!nextPage) return;
-    await store?.fetchBudgets?.({ page: nextPage });
+  const onLimitChange = (n) => {
+    store?.fetchBudgets?.({ limit: n, page: 1 });
   };
 
   if (store?.loading) {
@@ -267,24 +265,20 @@ function BudgetingTable({ onEdit, onCreate }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 px-4 md:px-6 pb-4">
-        <button
-          type="button"
-          onClick={onPrev}
-          disabled={!store?.pagination?.prevPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Prev
-        </button>
-        <div className="text-gray-600 text-sm">Page {store?.pagination?.currentPage || 1}</div>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!store?.pagination?.nextPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Next
-        </button>
+      <div className="pb-2">
+        <Pagination
+          pagination={store?.pagination}
+          rowsCount={rows.length}
+          limit={store?.filters?.limit}
+          onLimitChange={onLimitChange}
+          onPageChange={onPageChange}
+          itemName="budgets"
+          filtered={Boolean(
+            String(store?.filters?.search || "").trim() ||
+              store?.filters?.fiscalYear ||
+              store?.filters?.status
+          )}
+        />
       </div>
 
     </div>

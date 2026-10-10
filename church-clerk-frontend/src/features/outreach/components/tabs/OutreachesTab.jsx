@@ -8,6 +8,7 @@ import {
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../../shared/components/Card/index.jsx";
+import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import { useGuardedAction } from "../../../../shared/context/SubscriptionLockContext.jsx";
@@ -378,6 +379,7 @@ export default function OutreachesTab({ setHeaderAction }) {
 
   const [events, setEvents] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
+  const [limit, setLimit] = useState(12);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ search: "", status: "", type: "" });
 
@@ -392,13 +394,13 @@ export default function OutreachesTab({ setHeaderAction }) {
   const fetchEvents = useCallback(async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
-      const params = { page, limit: 12, ...filters, ...overrides };
+      const params = { page, limit, ...filters, ...overrides };
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const res = await getOutreachEvents(params);
       setEvents(res.data?.data || []);
       setPagination(res.data?.pagination || { page: 1, total: 0, pages: 1 });
     } catch { setEvents([]); } finally { setLoading(false); }
-  }, [filters]);
+  }, [filters, limit]);
 
   useEffect(() => {
     fetchEvents();
@@ -538,25 +540,22 @@ export default function OutreachesTab({ setHeaderAction }) {
                 />
               ))}
             </div>
-            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-              <button
-                type="button"
-                onClick={() => fetchEvents(pagination.page - 1)}
-                disabled={pagination.page <= 1}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-sm">Page {pagination.page}</div>
-              <button
-                type="button"
-                onClick={() => fetchEvents(pagination.page + 1)}
-                disabled={pagination.page >= pagination.pages}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
+            <Pagination
+              pagination={{
+                currentPage: pagination.page || 1,
+                totalPages: Math.max(1, pagination.pages || 1),
+                totalResult: pagination.total || 0,
+                prevPage: (pagination.page || 1) > 1 ? pagination.page - 1 : null,
+                nextPage: (pagination.page || 1) < (pagination.pages || 1) ? pagination.page + 1 : null
+              }}
+              rowsCount={events.length}
+              limit={limit}
+              limitOptions={[12, 24, 48, 96]}
+              onLimitChange={(n) => { setLimit(n); fetchEvents(1, { limit: n }); }}
+              onPageChange={(p) => fetchEvents(p)}
+              itemName="outreaches"
+              filtered={Boolean(filters.search || filters.status || filters.type)}
+            />
           </>
         )}
       </div>

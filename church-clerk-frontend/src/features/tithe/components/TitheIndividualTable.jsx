@@ -5,6 +5,7 @@ import TitheContext from "../tithe.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
@@ -44,16 +45,13 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
   const clearSearch = () => store?.fetchIndividuals?.({ search: "", page: 1 });
   const clearDate = () => store?.fetchIndividuals?.({ dateFrom: "", dateTo: "", page: 1 });
 
-  const onPrev = async () => {
-    const prevPage = store?.individualPagination?.prevPage;
-    if (!prevPage) return;
-    await store?.fetchIndividuals?.({ page: prevPage });
+  const onPageChange = (page) => {
+    if (!page) return;
+    store?.fetchIndividuals?.({ page });
   };
 
-  const onNext = async () => {
-    const nextPage = store?.individualPagination?.nextPage;
-    if (!nextPage) return;
-    await store?.fetchIndividuals?.({ page: nextPage });
+  const onLimitChange = (n) => {
+    store?.fetchIndividuals?.({ limit: n, page: 1 });
   };
 
   if (store?.loading) {
@@ -193,25 +191,19 @@ function TitheIndividualTable({ onEdit, onDeleted, onCreate }) {
         </table>
       </div>
 
-      <div className="flex items-center justify-end gap-3 py-2 px-4 md:px-6">
-        <button
-          type="button"
-          onClick={onPrev}
-          disabled={!store?.individualPagination?.prevPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Prev
-        </button>
-        <div className="text-gray-600 text-sm">Page {store?.individualPagination?.currentPage || 1}</div>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!store?.individualPagination?.nextPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Next
-        </button>
-      </div>
+      <Pagination
+        pagination={store?.individualPagination}
+        rowsCount={rows.length}
+        limit={store?.individualFilters?.limit}
+        onLimitChange={onLimitChange}
+        onPageChange={onPageChange}
+        itemName="records"
+        filtered={Boolean(
+          String(store?.individualFilters?.search || "").trim() ||
+            store?.individualFilters?.dateFrom ||
+            store?.individualFilters?.dateTo
+        )}
+      />
 
       {viewRow ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>

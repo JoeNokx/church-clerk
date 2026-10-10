@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../../church/church.store.js";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 function formatDate(v) {
   if (!v) return "—";
@@ -373,12 +374,13 @@ function MyTicketsTab({ onViewTicket, focusTicketId }) {
   const [tickets, setTickets] = useState([]);
   const [pagination, setPagination] = useState({ totalResult: 0, totalPages: 1, currentPage: 1 });
   const [statusFilter, setStatusFilter] = useState("");
+  const [limit, setLimit] = useState(20);
 
-  const load = useCallback(async ({ page = 1, status = statusFilter } = {}) => {
+  const load = useCallback(async ({ page = 1, status = statusFilter, limit: lim = limit } = {}) => {
     setLoading(true);
     setError("");
     try {
-      const res = await http.get("/support-requests/my", { params: { page, limit: 10, status }, toastError: false });
+      const res = await http.get("/support-requests/my", { params: { page, limit: lim, status }, toastError: false });
       const payload = res?.data;
       setTickets(Array.isArray(payload?.supportRequests) ? payload.supportRequests : []);
       setPagination(payload?.pagination || { totalResult: 0, totalPages: 1, currentPage: 1 });
@@ -388,7 +390,7 @@ function MyTicketsTab({ onViewTicket, focusTicketId }) {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, limit]);
 
   useEffect(() => { void load({ page: 1 }); }, [load]);
 
@@ -466,23 +468,17 @@ function MyTicketsTab({ onViewTicket, focusTicketId }) {
         </div>
       )}
 
-      {pagination.totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            disabled={!pagination.hasPrev}
-            onClick={() => load({ page: pagination.currentPage - 1 })}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 disabled:opacity-50"
-          >Prev</button>
-          <span className="text-xs text-gray-500">Page {pagination.currentPage} of {pagination.totalPages}</span>
-          <button
-            type="button"
-            disabled={!pagination.hasNext}
-            onClick={() => load({ page: pagination.currentPage + 1 })}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 disabled:opacity-50"
-          >Next</button>
-        </div>
-      )}
+      <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+        <Pagination
+          pagination={pagination}
+          rowsCount={tickets.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); load({ page: 1, limit: n }); }}
+          onPageChange={(p) => load({ page: p })}
+          itemName="tickets"
+          filtered={Boolean(statusFilter)}
+        />
+      </div>
     </div>
   );
 }

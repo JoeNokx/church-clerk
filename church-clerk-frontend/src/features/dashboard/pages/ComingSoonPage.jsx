@@ -92,7 +92,7 @@ const GIVING_ROWS = [
 
 const REPORTS = [
   { name: "Monthly giving summary", format: "PDF" },
-  { name: "Branch attendance report", format: "CSV" },
+  { name: "Branch attendance report", format: "Excel" },
   { name: "Member directory", format: "Print" },
   { name: "Financial statement", format: "PDF" }
 ];
@@ -543,7 +543,7 @@ function ComingSoonPage() {
                 Reports leadership can actually use.
               </h2>
               <p className="mt-5 text-base leading-relaxed text-slate-600">
-                Generate giving summaries, attendance trends, and branch comparisons from the same data your team already records. Export to PDF or CSV, share securely, or print.
+                Generate giving summaries, attendance trends, and branch comparisons from the same data your team already records. Export to PDF or Excel, share securely, or print.
               </p>
             </Reveal>
             <Reveal className="md:col-span-7" delay={0.08}>

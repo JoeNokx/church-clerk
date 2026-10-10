@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApprovals, approveRequest, rejectRequest } from "../services/governance.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const STATUS_LABELS = {
@@ -202,12 +203,13 @@ export default function ApprovalsPage() {
   const guarded = useGuardedAction();
   const [statusFilter, setStatusFilter] = useState("PENDING_APPROVAL");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
 
   const approvalsQuery = useQuery({
-    queryKey: ["church-governance", statusFilter, page],
-    queryFn: () => getApprovals({ status: statusFilter || undefined, page, limit: 20 }).then((r) => r.data),
+    queryKey: ["church-governance", statusFilter, page, limit],
+    queryFn: () => getApprovals({ status: statusFilter || undefined, page, limit }).then((r) => r.data),
     placeholderData: (prev) => prev
   });
 
@@ -334,73 +336,22 @@ export default function ApprovalsPage() {
       )}
 
       {rows.length > 0 ? (
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-600">
-          <div className="text-xs text-gray-400">
-            {pagination.total
-              ? `${((page - 1) * 20) + 1}–${Math.min(page * 20, pagination.total)} of ${pagination.total} request${pagination.total !== 1 ? "s" : ""}`
-              : `Page ${page}`}
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage(1)}
-              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold hover:bg-gray-50 disabled:opacity-30 text-xs"
-              title="First page"
-            >
-              «
-            </button>
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold hover:bg-gray-50 disabled:opacity-30 text-xs"
-            >
-              Previous
-            </button>
-            {Array.from({ length: pagination.totalPages || 1 }, (_, i) => i + 1)
-              .filter((p) => p === 1 || p === (pagination.totalPages || 1) || Math.abs(p - page) <= 1)
-              .reduce((acc, p, idx, arr) => {
-                if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, idx) =>
-                p === "..." ? (
-                  <span key={`ellipsis-${idx}`} className="px-1 text-gray-400 text-xs">…</span>
-                ) : (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPage(p)}
-                    className={`rounded-lg border px-3 py-1.5 font-semibold text-xs ${
-                      p === page
-                        ? "border-blue-600 bg-blue-600 text-white"
-                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-            <button
-              type="button"
-              disabled={page >= (pagination.totalPages || 1)}
-              onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold hover:bg-gray-50 disabled:opacity-30 text-xs"
-            >
-              Next
-            </button>
-            <button
-              type="button"
-              disabled={page >= (pagination.totalPages || 1)}
-              onClick={() => setPage(pagination.totalPages || 1)}
-              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold hover:bg-gray-50 disabled:opacity-30 text-xs"
-              title="Last page"
-            >
-              »
-            </button>
-          </div>
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+          <Pagination
+            pagination={{
+              currentPage: page,
+              totalPages: Math.max(1, pagination.totalPages || 1),
+              totalResult: pagination.total || pagination.totalResult || 0,
+              prevPage: page > 1 ? page - 1 : null,
+              nextPage: page < (pagination.totalPages || 1) ? page + 1 : null
+            }}
+            rowsCount={rows.length}
+            limit={limit}
+            onLimitChange={(n) => { setLimit(n); setPage(1); }}
+            onPageChange={setPage}
+            itemName="requests"
+            filtered={statusFilter !== "PENDING_APPROVAL"}
+          />
         </div>
       ) : null}
 

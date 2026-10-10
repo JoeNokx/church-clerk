@@ -3627,7 +3627,7 @@ const downloadSharedReport = async (req, res) => {
     }
 
     const format = String(req.query.format || "pdf").toLowerCase();
-    if (!["pdf", "csv"].includes(format)) {
+    if (!["pdf", "excel", "csv"].includes(format)) {
       return res.status(400).json({ message: "Invalid export format" });
     }
 
@@ -3636,7 +3636,7 @@ const downloadSharedReport = async (req, res) => {
       return res.status(404).json({ message: "Shared report not found" });
     }
 
-    const ext = format === "csv" ? "csv" : "pdf";
+    const ext = format === "excel" ? "xlsx" : format === "csv" ? "csv" : "pdf";
     const fileName = `${toSafeFileName(doc.name) || "report"}.${ext}`;
 
     const period = doc.dateFrom && doc.dateTo

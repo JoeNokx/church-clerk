@@ -4,26 +4,17 @@ import { getChurchInfoByToken, submitSelfRegistration } from "../services/public
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import Button from "../../../shared/components/Button/index.jsx";
+import {
+  MEMBER_STATUS_OPTIONS,
+  MEMBER_AGE_GROUP_OPTIONS,
+  MEMBER_GENDER_OPTIONS,
+  MEMBER_MARITAL_STATUS_OPTIONS
+} from "../memberFields.js";
 
-const GENDER_OPTIONS = [
-  { label: "Male", value: "male" },
-  { label: "Female", value: "female" }
-];
-
-const MARITAL_STATUS_OPTIONS = [
-  { label: "Single", value: "single" },
-  { label: "Married", value: "married" },
-  { label: "Divorced", value: "divorced" },
-  { label: "Widowed", value: "widowed" },
-  { label: "Other", value: "other" }
-];
-
-const AGE_GROUP_OPTIONS = [
-  { label: "Children", value: "children" },
-  { label: "Youth", value: "youth" },
-  { label: "Adult", value: "adult" },
-  { label: "Elderly", value: "elderly" }
-];
+const GENDER_OPTIONS = MEMBER_GENDER_OPTIONS;
+const MARITAL_STATUS_OPTIONS = MEMBER_MARITAL_STATUS_OPTIONS;
+const AGE_GROUP_OPTIONS = MEMBER_AGE_GROUP_OPTIONS;
+const STATUS_OPTIONS = MEMBER_STATUS_OPTIONS;
 
 const INPUT_CLS = "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200";
 const SELECT_CLS = "h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200";
@@ -44,6 +35,19 @@ function SectionTitle({ children }) {
   return <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">{children}</div>;
 }
 
+function BgShell({ children }) {
+  return (
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden">
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/church login.png')" }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/90 via-slate-900/85 to-indigo-950/92" />
+      <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle, white 1.5px, transparent 1.5px)", backgroundSize: "28px 28px" }} />
+      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-32 h-[480px] w-[480px] rounded-full bg-indigo-700/15 blur-3xl pointer-events-none" />
+      <div className="relative z-10 w-full max-w-[460px]">{children}</div>
+    </div>
+  );
+}
+
 export default function JoinPage() {
   const { token } = useParams();
 
@@ -60,6 +64,7 @@ export default function JoinPage() {
   const [occupation, setOccupation] = useState("");
   const [nationality, setNationality] = useState("");
   const [ageGroup, setAgeGroup] = useState("");
+  const [status, setStatus] = useState("active");
   const [maritalStatus, setMaritalStatus] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
@@ -125,6 +130,7 @@ export default function JoinPage() {
       if (occupation.trim()) fd.append("occupation", occupation.trim());
       if (nationality.trim()) fd.append("nationality", nationality.trim());
       if (ageGroup) fd.append("ageGroup", ageGroup);
+      if (status) fd.append("status", status);
       if (maritalStatus) fd.append("maritalStatus", maritalStatus);
       if (streetAddress.trim()) fd.append("streetAddress", streetAddress.trim());
       if (city.trim()) fd.append("city", city.trim());
@@ -146,17 +152,6 @@ export default function JoinPage() {
       setSubmitting(false);
     }
   };
-
-  const BgShell = ({ children }) => (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/church login.png')" }} />
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/90 via-slate-900/85 to-indigo-950/92" />
-      <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle, white 1.5px, transparent 1.5px)", backgroundSize: "28px 28px" }} />
-      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-32 h-[480px] w-[480px] rounded-full bg-indigo-700/15 blur-3xl pointer-events-none" />
-      <div className="relative z-10 w-full max-w-[460px]">{children}</div>
-    </div>
-  );
 
   if (loadingChurch) {
     return (
@@ -311,6 +306,11 @@ export default function JoinPage() {
                   </select>
                 </Field>
               </div>
+              <Field label="Membership Status">
+                <select value={status} onChange={(e) => setStatus(e.target.value)} className={SELECT_CLS}>
+                  {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </Field>
             </div>
           </div>
 

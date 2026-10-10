@@ -74,14 +74,11 @@ function InfoCard({ label, value }) {
   );
 }
 
-function BigCard({ title, subtitle, children }) {
+function SectionBand({ title, subtitle }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white">
-      <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-        <div className="font-semibold text-gray-900 text-sm">{title}</div>
-        {subtitle ? <div className="mt-1 text-gray-500 text-xs">{subtitle}</div> : null}
-      </div>
-      <div className="p-4 md:p-6 lg:p-8">{children}</div>
+    <div className="border-t border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4">
+      <div className="font-semibold text-gray-900 text-sm">{title}</div>
+      {subtitle ? <div className="mt-1 text-gray-500 text-xs">{subtitle}</div> : null}
     </div>
   );
 }
@@ -255,109 +252,102 @@ function MemberDetailsPageInner() {
         ) : error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
         ) : (
-          <>
-            <div className="rounded-xl border border-gray-200 bg-white">
-              <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-                <div className="flex items-center gap-4">
-                  {(member?.photoUrl || member?.profileImageUrl) ? (
-                    <img
-                      src={member?.photoUrl || member?.profileImageUrl}
-                      alt={name}
-                      className="h-16 w-16 shrink-0 rounded-full object-cover border border-gray-200 cursor-zoom-in"
-                      onClick={() => setPhotoEnlarged(true)}
-                    />
-                  ) : (
-                    <div className="h-16 w-16 shrink-0 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-9 w-9 text-gray-400">
-                        <path d="M12 12c2.67 0 4.8-2.13 4.8-4.8S14.67 2.4 12 2.4 7.2 4.53 7.2 7.2 9.33 12 12 12zm0 2.4c-3.2 0-9.6 1.61-9.6 4.8v2.4h19.2v-2.4c0-3.19-6.4-4.8-9.6-4.8z" />
-                      </svg>
-                    </div>
-                  )}
-                  <div>
-                    <div className="font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">{name}</div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-gray-500 text-xs">Member ID:</span>
-                      <IdChip value={member?.memberId} />
-                      <StatusChip value={member?.status} />
-                    </div>
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="px-4 md:px-5 lg:px-6 py-4">
+              <div className="flex items-center gap-4">
+                {(member?.photoUrl || member?.profileImageUrl) ? (
+                  <img
+                    src={member?.photoUrl || member?.profileImageUrl}
+                    alt={name}
+                    className="h-16 w-16 shrink-0 rounded-full object-cover border border-gray-200 cursor-zoom-in"
+                    onClick={() => setPhotoEnlarged(true)}
+                  />
+                ) : (
+                  <div className="h-16 w-16 shrink-0 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-9 w-9 text-gray-400">
+                      <path d="M12 12c2.67 0 4.8-2.13 4.8-4.8S14.67 2.4 12 2.4 7.2 4.53 7.2 7.2 9.33 12 12 12zm0 2.4c-3.2 0-9.6 1.61-9.6 4.8v2.4h19.2v-2.4c0-3.19-6.4-4.8-9.6-4.8z" />
+                    </svg>
+                  </div>
+                )}
+                <div>
+                  <div className="font-semibold text-gray-900 md:text-2xl lg:text-3xl text-xl">{name}</div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-gray-500 text-xs">Member ID:</span>
+                    <IdChip value={member?.memberId} />
+                    <StatusChip value={member?.status} />
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 md:p-6 lg:p-8 md:gap-5">
-                <DataPair label="Email" value={member?.email} />
-                <DataPair label="Phone" value={member?.phoneNumber} />
-                <DataPair label="City" value={member?.city} />
-                <DataPair label="Joined" value={joined} />
-                <DataPair label="Nationality" value={member?.nationality} />
+            </div>
+            <div className="grid grid-cols-1 gap-4 border-t border-gray-200 p-4 md:grid-cols-2 lg:grid-cols-3 md:p-6 lg:p-8 md:gap-5">
+              <DataPair label="Email" value={member?.email} />
+              <DataPair label="Phone" value={member?.phoneNumber} />
+              <DataPair label="City" value={member?.city} />
+              <DataPair label="Joined" value={joined} />
+              <DataPair label="Nationality" value={member?.nationality} />
+            </div>
+
+            <SectionBand title="Personal Information" subtitle="Personal details of the member" />
+            <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 md:p-6 lg:p-8 md:gap-5">
+              <DataPair label="First Name" value={member?.firstName} />
+              <DataPair label="Last Name" value={member?.lastName} />
+              <DataPair label="Gender" value={member?.gender} />
+              <DataPair label="Marital Status" value={member?.maritalStatus} />
+              <DataPair
+                label="Date of Birth"
+                value={member?.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : ""}
+              />
+              <DataPair label="Occupation" value={member?.occupation} />
+              <DataPair label="Age Group" value={member?.ageGroup} />
+              <DataPair label="Nationality" value={member?.nationality} />
+            </div>
+
+            <SectionBand title="Address Information" subtitle="Address details" />
+            <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 md:p-6 lg:p-8 md:gap-5">
+              <DataPair label="Location / Residential Address" value={member?.streetAddress} />
+              <DataPair label="City" value={member?.city} />
+              <DataPair label="Region" value={member?.region} />
+              <DataPair label="Country" value={member?.country} />
+            </div>
+
+            <SectionBand title="Church Information" subtitle="Church membership details" />
+            <div className="space-y-4 p-4 md:p-6 lg:p-8">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+                <DataPair label="Member ID" value={<IdChip value={member?.memberId} />} />
+                <DataPair label="Status" value={<StatusChip value={member?.status} />} />
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
+                <div className="space-y-4">
+                  <DataPair label="Church Role" value={member?.churchRole} />
+                  <DataPair label="Date Joined" value={joined} />
+                </div>
+                <div className="md:col-span-2">
+                  <div className="font-semibold text-gray-500 text-xs">Additional Information</div>
+                  <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{member?.note || "Not Specified"}</div>
+                </div>
               </div>
             </div>
 
-            <BigCard title="Personal Information" subtitle="Personal details of the member">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
-                <DataPair label="First Name" value={member?.firstName} />
-                <DataPair label="Last Name" value={member?.lastName} />
-                <DataPair label="Gender" value={member?.gender} />
-                <DataPair label="Marital Status" value={member?.maritalStatus} />
-                <DataPair
-                  label="Date of Birth"
-                  value={member?.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : ""}
-                />
-                <DataPair label="Occupation" value={member?.occupation} />
-                <DataPair label="Age Group" value={member?.ageGroup} />
-                <DataPair label="Nationality" value={member?.nationality} />
+            <SectionBand title="Organisation Information" subtitle="Cells, departments, groups, and ministries" />
+            <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-4 md:p-6 lg:p-8">
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Cells</div>
+                <div className="mt-2">{renderMinistryChips(cells)}</div>
               </div>
-            </BigCard>
-
-            <BigCard title="Address Information" subtitle="Address details">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5">
-                <DataPair label="Location / Residential Address" value={member?.streetAddress} />
-                <DataPair label="City" value={member?.city} />
-                <DataPair label="Region" value={member?.region} />
-                <DataPair label="Country" value={member?.country} />
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Departments</div>
+                <div className="mt-2">{renderMinistryChips(departments)}</div>
               </div>
-            </BigCard>
-
-            <BigCard title="Church Information" subtitle="Church membership details">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-                  <DataPair label="Member ID" value={<IdChip value={member?.memberId} />} />
-                  <DataPair label="Status" value={<StatusChip value={member?.status} />} />
-                </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
-                  <div className="space-y-4">
-                    <DataPair label="Church Role" value={member?.churchRole} />
-                    <DataPair label="Date Joined" value={joined} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <div className="font-semibold text-gray-500 text-xs">Additional Information</div>
-                    <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{member?.note || "Not Specified"}</div>
-                  </div>
-                </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Groups</div>
+                <div className="mt-2">{renderMinistryChips(groups)}</div>
               </div>
-            </BigCard>
-
-            <BigCard title="Organisation Information" subtitle="Cells, departments, groups, and ministries">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Cells</div>
-                  <div className="mt-2">{renderMinistryChips(cells)}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Departments</div>
-                  <div className="mt-2">{renderMinistryChips(departments)}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Groups</div>
-                  <div className="mt-2">{renderMinistryChips(groups)}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-500 text-xs">Ministries</div>
-                  <div className="mt-2">{renderMinistryChips(ministries)}</div>
-                </div>
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Ministries</div>
+                <div className="mt-2">{renderMinistryChips(ministries)}</div>
               </div>
-            </BigCard>
-
-          </>
+            </div>
+          </div>
         )}
       </div>
 

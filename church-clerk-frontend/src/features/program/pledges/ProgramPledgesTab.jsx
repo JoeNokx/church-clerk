@@ -8,6 +8,7 @@ import EditPledgeModal from "../../pledge/components/EditPledgeModal.jsx";
 import CreatePledgeModal from "../../pledge/components/CreatePledgeModal.jsx";
 import PledgeDetailsModal, { PaymentFormModal } from "../../pledge/components/PledgeDetailsModal.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -61,6 +62,7 @@ function ProgramPledgesTab({ programId, programTitle }) {
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -80,7 +82,7 @@ function ProgramPledgesTab({ programId, programTitle }) {
     try {
       const res = await getPledges({
         page: nextPage,
-        limit: 10,
+        limit,
         search: String(debouncedSearch || "").trim(),
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
@@ -101,7 +103,7 @@ function ProgramPledgesTab({ programId, programTitle }) {
 
   useEffect(() => {
     loadPledges(page);
-  }, [programId, page, debouncedSearch, dateFrom, dateTo, pledgeStatus]);
+  }, [programId, page, limit, debouncedSearch, dateFrom, dateTo, pledgeStatus]);
 
   const reload = async () => loadPledges(page);
 
@@ -267,25 +269,15 @@ function ProgramPledgesTab({ programId, programTitle }) {
           )
         ) : null}
 
-        <div className="flex items-center justify-end gap-3 max-md:px-4 py-3 px-4 md:px-6">
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={!pagination?.hasPrev}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Prev
-          </button>
-          <div className="text-gray-600 text-sm">Page {pagination?.currentPage || 1}</div>
-          <button
-            type="button"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!pagination?.hasNext}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
-        </div>
+        <Pagination
+          pagination={pagination}
+          rowsCount={rows.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); setPage(1); }}
+          onPageChange={setPage}
+          itemName="pledges"
+          filtered={Boolean(debouncedSearch || dateFrom || dateTo || pledgeStatus)}
+        />
       </div>
 
       <CreatePledgeModal

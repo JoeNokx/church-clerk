@@ -5,6 +5,7 @@ import {
   getReportEntities,
   createSavedReport
 } from "../services/reportsAnalytics.api.js";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 function saveBlob(res, fallbackName) {
   const contentType = res?.headers?.["content-type"] || "application/octet-stream";
@@ -409,7 +410,7 @@ function EntitySelect({ entityModule, entityParams, value, onChange, allLabel })
 
 function ReportPreviewModal({ preview, module, description, from, to, downloading, onDownload, onClose }) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(20);
 
   const cols = Array.isArray(preview?.columns) ? preview.columns : [];
   const rows = Array.isArray(preview?.rows) ? preview.rows : [];
@@ -470,39 +471,22 @@ function ReportPreviewModal({ preview, module, description, from, to, downloadin
                   </tbody>
                 </table>
               </div>
-              <div className="shrink-0 pt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
-                <span>Showing {startRow}–{endRow} of {rows.length}</span>
-                <div className="flex items-center gap-1.5">
-                  <select
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
-                      setPage(1);
-                    }}
-                    className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 cursor-pointer"
-                  >
-                    {[10, 25, 50, 100].map((n) => (
-                      <option key={n} value={n}>{n} / page</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    disabled={safePage <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="h-8 rounded-lg border border-gray-200 bg-white px-2.5 font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Prev
-                  </button>
-                  <span className="px-1 text-gray-600">Page {safePage} of {totalPages}</span>
-                  <button
-                    type="button"
-                    disabled={safePage >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    className="h-8 rounded-lg border border-gray-200 bg-white px-2.5 font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </div>
+              <div className="shrink-0 pt-3">
+                <Pagination
+                  pagination={{
+                    currentPage: safePage,
+                    totalPages,
+                    totalResult: rows.length,
+                    prevPage: safePage > 1 ? safePage - 1 : null,
+                    nextPage: safePage < totalPages ? safePage + 1 : null
+                  }}
+                  rowsCount={pageRows.length}
+                  limit={pageSize}
+                  limitOptions={[10, 20, 50, 100]}
+                  onLimitChange={(n) => { setPageSize(n); setPage(1); }}
+                  onPageChange={setPage}
+                  itemName="rows"
+                />
               </div>
             </>
           ) : (
@@ -523,11 +507,11 @@ function ReportPreviewModal({ preview, module, description, from, to, downloadin
           </button>
           <button
             type="button"
-            disabled={downloading === "csv"}
-            onClick={() => onDownload?.("csv")}
+            disabled={downloading === "excel"}
+            onClick={() => onDownload?.("excel")}
             className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
           >
-            {downloading === "csv" ? "Downloading…" : "Download CSV"}
+            {downloading === "excel" ? "Downloading…" : "Download Excel"}
           </button>
         </div>
       </div>
@@ -915,11 +899,11 @@ function ReportGenerateModal({ open, module, canExport, onClose, onSaved }) {
                 </button>
                 <button
                   type="button"
-                  disabled={actionDisabled || downloading === "csv"}
-                  onClick={() => download("csv")}
+                  disabled={actionDisabled || downloading === "excel"}
+                  onClick={() => download("excel")}
                   className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                 >
-                  {downloading === "csv" ? "Downloading…" : "Download CSV"}
+                  {downloading === "excel" ? "Downloading…" : "Download Excel"}
                 </button>
               </>
             ) : null}

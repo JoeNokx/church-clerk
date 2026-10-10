@@ -140,7 +140,7 @@ const GROUPS = [
         name: "Reports",
         accent: "Reports leadership can actually use.",
         desc: "Giving summaries, attendance trends, and growth reports generated from the data your team already records — no separate spreadsheets.",
-        bullets: ["Attendance, finance, and growth reports", "Filter by branch and period", "Export to PDF, CSV, or print"],
+        bullets: ["Attendance, finance, and growth reports", "Filter by branch and period", "Export to PDF, Excel, or print"],
       },
       {
         name: "Billing",
@@ -251,7 +251,7 @@ function FeaturesPage() {
                   <div className="text-[10px] font-bold text-slate-800">Report ready</div>
                   <div className="mt-1 flex items-center gap-1.5">
                     <span className="h-1.5 w-10 rounded-full bg-blue-200" />
-                    <span className="text-[9px] text-slate-400">PDF · CSV</span>
+                    <span className="text-[9px] text-slate-400">PDF · Excel</span>
                   </div>
                 </div>
               </motion.div>

@@ -7,6 +7,7 @@ import {
   markNotificationRead
 } from "../services/notifications.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 function formatDateTime(value) {
   if (!value) return "";
@@ -197,24 +198,17 @@ function NotificationsPage() {
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={() => setPagination((p) => ({ ...p, currentPage: Math.max(1, Number(p.currentPage || 1) - 1) }))}
-          disabled={!pagination?.prevPage && Number(pagination?.currentPage || 1) <= 1}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
-        >
-          Prev
-        </button>
-        <div className="text-gray-600 text-sm">Page {pagination?.currentPage || 1} of {pagination?.totalPages || 1}</div>
-        <button
-          type="button"
-          onClick={() => setPagination((p) => ({ ...p, currentPage: Math.min(Number(p.totalPages || 1), Number(p.currentPage || 1) + 1) }))}
-          disabled={!pagination?.nextPage && Number(pagination?.currentPage || 1) >= Number(pagination?.totalPages || 1)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
-        >
-          Next
-        </button>
+      <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+        <Pagination
+          pagination={pagination}
+          rowsCount={notifications.length}
+          limit={pagination.limit}
+          onLimitChange={(n) => setPagination((p) => ({ ...p, limit: n, currentPage: 1 }))}
+          onPageChange={(page) => setPagination((p) => ({ ...p, currentPage: page }))}
+          itemName="notifications"
+          filtered={unreadOnly}
+          disabled={loading}
+        />
       </div>
     </div>
   );

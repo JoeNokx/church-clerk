@@ -19,6 +19,7 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
@@ -2683,39 +2684,17 @@ function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
-            <div className="text-gray-500 text-xs">
-              Total: <span className="font-semibold text-gray-700">{auditPagination?.total ?? 0}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const prev = auditPagination?.prevPage;
-                  if (!prev) return;
-                  fetchAuditLogs({ page: prev });
-                }}
-                disabled={!auditPagination?.prevPage || auditLoading}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-xs">
-                Page <span className="font-semibold">{auditPagination?.currentPage ?? 1}</span> of <span className="font-semibold">{auditPagination?.totalPages ?? 1}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = auditPagination?.nextPage;
-                  if (!next) return;
-                  fetchAuditLogs({ page: next });
-                }}
-                disabled={!auditPagination?.nextPage || auditLoading}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
-              >
-                Next
-              </button>
-            </div>
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+            <Pagination
+              pagination={auditPagination}
+              rowsCount={auditLogs.length}
+              limit={auditLimit}
+              onLimitChange={(n) => fetchAuditLogs({ page: 1, limit: n })}
+              onPageChange={(p) => fetchAuditLogs({ page: p })}
+              itemName="logs"
+              filtered={Boolean(auditSearch || auditModule || auditAction || auditRole || auditDateFrom || auditDateTo)}
+              disabled={auditLoading}
+            />
           </div>
         </div>
       ) : null}

@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import Skeleton from "react-loading-skeleton";
 import PriceCard from "../../../shared/components/PriceCard/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import {
   cancelMySubscription,
   undoMyCancellation,
@@ -178,7 +179,7 @@ function BillingPage() {
       const [subRes, plansRes, historyRes, referralCodeRes] = await Promise.all([
         getMySubscription(),
         getAvailablePlans(),
-        getMyBillingHistory({ page: 1, limit: 8 }),
+        getMyBillingHistory({ page: 1, limit: 20 }),
         getMyReferralCode().catch(() => null)
       ]);
       const sub = subRes?.data?.subscription || null;
@@ -216,6 +217,7 @@ function BillingPage() {
     return "";
   });
   const [history, setHistory] = useState(cachedBillingData?.fetchedHistory || []);
+  const [historyLimit, setHistoryLimit] = useState(20);
   const [historyPagination, setHistoryPagination] = useState(
     cachedBillingData?.fetchedPagination || { currentPage: 1, nextPage: null, prevPage: null }
   );
@@ -464,16 +466,16 @@ function BillingPage() {
     else if (d.fetchedPlans?.[0]?._id) setPlanId(d.fetchedPlans[0]._id);
   }, [billingQuery.data]);
 
-  const loadHistoryPage = useCallback(async (page) => {
+  const loadHistoryPage = useCallback(async (page, limit = historyLimit) => {
     setError("");
     try {
-      const res = await getMyBillingHistory({ page, limit: 8 });
+      const res = await getMyBillingHistory({ page, limit });
       setHistory(Array.isArray(res?.data?.history) ? res.data.history : []);
       setHistoryPagination(res?.data?.pagination || { currentPage: page });
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to load billing history");
     }
-  }, []);
+  }, [historyLimit]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -1270,24 +1272,16 @@ function BillingPage() {
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => loadHistoryPage(historyPagination?.prevPage)}
-            disabled={!historyPagination?.prevPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-          >
-            Prev
-          </button>
-          <div className="text-gray-600 text-sm">Page {historyPagination?.currentPage || 1}</div>
-          <button
-            type="button"
-            onClick={() => loadHistoryPage(historyPagination?.nextPage)}
-            disabled={!historyPagination?.nextPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
+        <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+          <Pagination
+            pagination={historyPagination}
+            rowsCount={history.length}
+            limit={historyLimit}
+            limitOptions={[10, 20, 50, 100]}
+            onLimitChange={(n) => { setHistoryLimit(n); loadHistoryPage(1, n); }}
+            onPageChange={(p) => loadHistoryPage(p)}
+            itemName="payments"
+          />
         </div>
       </div>
 

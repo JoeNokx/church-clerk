@@ -6,6 +6,7 @@ import {
 } from "../../services/outreach.api.js";
 import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
@@ -289,6 +290,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
   const [stats, setStats] = useState(null);
   const [followUps, setFollowUps] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
+  const [fuLimit, setFuLimit] = useState(20);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("today"); // "today" | "overdue" | "upcoming" | "all"
   const [filterStatus, setFilterStatus] = useState("");
@@ -297,8 +299,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [clientPage, setClientPage] = useState(1);
-
-  const PAGE_SIZE = 10;
+  const [clientPageSize, setClientPageSize] = useState(20);
 
   const [prospects, setProspects] = useState([]);
   const [events, setEvents] = useState([]);
@@ -318,13 +319,13 @@ export default function FollowUpsTab({ setHeaderAction }) {
   const fetchFollowUps = useCallback(async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
-      const params = { page, limit: 25, status: filterStatus || undefined, search: filterSearch || undefined, dateFrom: filterDateFrom || undefined, dateTo: filterDateTo || undefined, assigned: filterAssigned || undefined, ...overrides };
+      const params = { page, limit: fuLimit, status: filterStatus || undefined, search: filterSearch || undefined, dateFrom: filterDateFrom || undefined, dateTo: filterDateTo || undefined, assigned: filterAssigned || undefined, ...overrides };
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const res = await getAllFollowUps(params);
       setFollowUps(res.data?.data || []);
       setPagination(res.data?.pagination || { page: 1, total: 0, pages: 1 });
     } catch { setFollowUps([]); } finally { setLoading(false); }
-  }, [filterStatus, filterSearch, filterDateFrom, filterDateTo, filterAssigned]);
+  }, [filterStatus, filterSearch, filterDateFrom, filterDateTo, filterAssigned, fuLimit]);
 
   useEffect(() => {
     loadStats();
@@ -386,8 +387,8 @@ export default function FollowUpsTab({ setHeaderAction }) {
 
   // Client-side pagination for today/overdue/upcoming views
   // (the "all" view is paginated server-side via fetchFollowUps)
-  const clientTotalPages = Math.ceil(overdueItems.length / PAGE_SIZE);
-  const paginatedItems = overdueItems.slice((clientPage - 1) * PAGE_SIZE, clientPage * PAGE_SIZE);
+  const clientTotalPages = Math.max(1, Math.ceil(overdueItems.length / clientPageSize));
+  const paginatedItems = overdueItems.slice((clientPage - 1) * clientPageSize, clientPage * clientPageSize);
   const itemsToRender = view === "all" ? overdueItems : paginatedItems;
 
   const isOverdue = (fu) => {
@@ -579,19 +580,39 @@ export default function FollowUpsTab({ setHeaderAction }) {
         )}
 
         {view === "all" ? (
-          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-            <button disabled={pagination.page <= 1} onClick={() => fetchFollowUps(pagination.page - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-            <div className="text-gray-600 text-sm">Page {pagination.page}</div>
-            <button disabled={pagination.page >= pagination.pages} onClick={() => fetchFollowUps(pagination.page + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
-          </div>
+          <Pagination
+            pagination={{
+              currentPage: pagination.page || 1,
+              totalPages: Math.max(1, pagination.pages || 1),
+              totalResult: pagination.total || 0,
+              prevPage: (pagination.page || 1) > 1 ? pagination.page - 1 : null,
+              nextPage: (pagination.page || 1) < (pagination.pages || 1) ? pagination.page + 1 : null
+            }}
+            rowsCount={followUps.length}
+            limit={fuLimit}
+            onLimitChange={(n) => { setFuLimit(n); fetchFollowUps(1, { limit: n }); }}
+            onPageChange={(p) => fetchFollowUps(p)}
+            itemName="follow-ups"
+            filtered={Boolean(filterStatus || filterAssigned || String(filterSearch || "").trim() || filterDateFrom || filterDateTo)}
+          />
         ) : null}
 
         {view !== "all" ? (
-          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-            <button disabled={clientPage <= 1} onClick={() => setClientPage(p => p - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-            <div className="text-gray-600 text-sm">Page {clientPage}</div>
-            <button disabled={clientPage >= clientTotalPages} onClick={() => setClientPage(p => p + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
-          </div>
+          <Pagination
+            pagination={{
+              currentPage: clientPage,
+              totalPages: clientTotalPages,
+              totalResult: overdueItems.length,
+              prevPage: clientPage > 1 ? clientPage - 1 : null,
+              nextPage: clientPage < clientTotalPages ? clientPage + 1 : null
+            }}
+            rowsCount={paginatedItems.length}
+            limit={clientPageSize}
+            onLimitChange={(n) => { setClientPageSize(n); setClientPage(1); }}
+            onPageChange={setClientPage}
+            itemName="follow-ups"
+            filtered={Boolean(filterStatus || filterAssigned || String(filterSearch || "").trim() || filterDateFrom || filterDateTo)}
+          />
         ) : null}
       </div>
 

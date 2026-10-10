@@ -6,6 +6,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 const fmtDateTime = (v) => {
   if (!v) return "—";
@@ -88,7 +89,7 @@ function AuditLogPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [limit, setLimit] = useState(20);
 
   const load = useCallback(
     async ({ nextPage } = {}) => {
@@ -253,22 +254,16 @@ function AuditLogPage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-xs text-gray-400">
-            {pagination?.total ? `${pagination.total.toLocaleString()} total` : ""}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => load({ nextPage: Math.max(1, page - 1) })}
-              disabled={loading || !pagination?.prevPage}>
-              Prev
-            </Button>
-            <div className="text-xs text-gray-600">Page {page}{pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}</div>
-            <Button variant="secondary" size="sm" onClick={() => load({ nextPage: page + 1 })}
-              disabled={loading || !pagination?.nextPage}>
-              Next
-            </Button>
-          </div>
-        </div>
+        <Pagination
+          pagination={pagination}
+          rowsCount={rows.length}
+          limit={limit}
+          onLimitChange={(n) => setLimit(n)}
+          onPageChange={(p) => load({ nextPage: p })}
+          itemName="logs"
+          filtered={Boolean(search || module || action || status || dateFrom || dateTo)}
+          disabled={loading}
+        />
       </Card>
     </div>
 

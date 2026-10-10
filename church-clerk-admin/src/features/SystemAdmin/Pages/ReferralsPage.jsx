@@ -5,6 +5,7 @@ import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/t
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
@@ -28,7 +29,7 @@ function ReferralsPage() {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(25);
+  const [limit, setLimit] = useState(20);
 
   const load = useCallback(
     async ({ nextPage } = {}) => {
@@ -234,28 +235,16 @@ function ReferralsPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 p-4 md:p-6 lg:p-8 pt-4">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => load({ nextPage: Math.max(1, page - 1) })}
-            disabled={loading || !(pagination?.prevPage ?? false)}
-          >
-            Prev
-          </Button>
-          <div className="text-xs text-gray-600">
-            Page {page}
-            {pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => load({ nextPage: page + 1 })}
-            disabled={loading || !(pagination?.nextPage ?? false)}
-          >
-            Next
-          </Button>
-        </div>
+        <Pagination
+          pagination={pagination}
+          rowsCount={rows.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); }}
+          onPageChange={(p) => load({ nextPage: p })}
+          itemName="referrals"
+          filtered={Boolean(status || String(search || "").trim())}
+          disabled={loading}
+        />
       </div>
     </div>
   );

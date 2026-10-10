@@ -5,6 +5,7 @@ import OfferingContext from "../offering.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
@@ -39,16 +40,13 @@ function OfferingTable({ onEdit, onDeleted, onCreate }) {
     store?.fetchOfferings?.({ dateFrom: "", dateTo: "", page: 1 });
   };
 
-  const onPrev = async () => {
-    const prevPage = store?.pagination?.prevPage;
-    if (!prevPage) return;
-    await store?.fetchOfferings({ page: prevPage });
+  const onPageChange = (page) => {
+    if (!page) return;
+    store?.fetchOfferings({ page });
   };
 
-  const onNext = async () => {
-    const nextPage = store?.pagination?.nextPage;
-    if (!nextPage) return;
-    await store?.fetchOfferings({ page: nextPage });
+  const onLimitChange = (n) => {
+    store?.fetchOfferings({ limit: n, page: 1 });
   };
 
   if (store?.loading) {
@@ -171,25 +169,20 @@ function OfferingTable({ onEdit, onDeleted, onCreate }) {
         </table>
       </div>
 
-      <div className="flex items-center justify-end gap-3 py-2 px-4 md:px-6">
-        <button
-          type="button"
-          onClick={onPrev}
-          disabled={!store?.pagination?.prevPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Prev
-        </button>
-        <div className="text-gray-600 text-sm">Page {store?.pagination?.currentPage || 1}</div>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!store?.pagination?.nextPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Next
-        </button>
-      </div>
+      <Pagination
+        pagination={store?.pagination}
+        rowsCount={rows.length}
+        limit={store?.filters?.limit}
+        onLimitChange={onLimitChange}
+        onPageChange={onPageChange}
+        itemName="offerings"
+        filtered={Boolean(
+          store?.filters?.serviceType ||
+            store?.filters?.recordedBy ||
+            store?.filters?.dateFrom ||
+            store?.filters?.dateTo
+        )}
+      />
 
       {viewOpen && viewRow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">

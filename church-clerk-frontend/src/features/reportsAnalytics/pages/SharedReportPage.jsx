@@ -57,7 +57,7 @@ export default function SharedReportPage() {
     setDownloading(format);
     try {
       const res = await downloadSharedReport(token, { format });
-      saveBlob(res, `${report?.name || "report"}.${format}`);
+      saveBlob(res, `${report?.name || "report"}.${format === "excel" ? "xlsx" : format}`);
     } catch {
       setError("Download failed. Please try again.");
     } finally {
@@ -121,11 +121,11 @@ export default function SharedReportPage() {
               </button>
               <button
                 type="button"
-                disabled={downloading === "csv"}
-                onClick={() => download("csv")}
+                disabled={downloading === "excel"}
+                onClick={() => download("excel")}
                 className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
               >
-                {downloading === "csv" ? "Downloading…" : "Download CSV"}
+                {downloading === "excel" ? "Downloading…" : "Download Excel"}
               </button>
             </div>
           </div>

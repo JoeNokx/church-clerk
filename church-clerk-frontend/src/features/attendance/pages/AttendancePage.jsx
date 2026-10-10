@@ -28,6 +28,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
@@ -105,12 +106,14 @@ function AttendancePageInner() {
   const [sessionVisitorsLoading, setSessionVisitorsLoading] = useState(false);
   const [sessionVisitorsError, setSessionVisitorsError] = useState("");
   const [sessionVisitorsPagination, setSessionVisitorsPagination] = useState({ currentPage: 1, prevPage: null, nextPage: null });
+  const [sessionVisitorsLimit, setSessionVisitorsLimit] = useState(20);
 
   // --- attendance log tab ---
   const [indivLoading, setIndivLoading] = useState(false);
   const [indivError, setIndivError] = useState("");
   const [indivRecords, setIndivRecords] = useState([]);
   const [indivPagination, setIndivPagination] = useState({ currentPage: 1, prevPage: null, nextPage: null });
+  const [indivLimit, setIndivLimit] = useState(20);
   const [indivDateFrom, setIndivDateFrom] = useState("");
   const [indivDateTo, setIndivDateTo] = useState("");
   const [indivServiceTypeFilter, setIndivServiceTypeFilter] = useState("");
@@ -154,6 +157,8 @@ function AttendancePageInner() {
 
   const [indivMarkingSearch, setIndivMarkingSearch] = useState("");
   const [indivMarkingPage, setIndivMarkingPage] = useState(1);
+  const [indivMarkingPageSize, setIndivMarkingPageSize] = useState(20);
+  const [indivViewPageSize, setIndivViewPageSize] = useState(20);
   const [indivMarkingSelected, setIndivMarkingSelected] = useState([]);
   const [indivMarkingAbsent, setIndivMarkingAbsent] = useState([]);
   const [indivMarkingSaving, setIndivMarkingSaving] = useState(false);
@@ -230,12 +235,12 @@ function AttendancePageInner() {
     setIndivServiceTypeFilter(pending.serviceType || "");
   };
 
-  const loadIndivRecords = useCallback(async (page = 1) => {
+  const loadIndivRecords = useCallback(async (page = 1, limit = indivLimit) => {
     if (!activeChurchId) return;
     setIndivLoading(true);
     setIndivError("");
     try {
-      const res = await getServiceIndividualAttendances({ page, limit: 10 });
+      const res = await getServiceIndividualAttendances({ page, limit });
       const payload = res?.data?.data ?? res?.data;
       setIndivRecords(Array.isArray(payload?.attendances) ? payload.attendances : []);
       setIndivPagination(payload?.pagination || { currentPage: page, prevPage: null, nextPage: null });
@@ -245,7 +250,7 @@ function AttendancePageInner() {
     } finally {
       setIndivLoading(false);
     }
-  }, [activeChurchId]);
+  }, [activeChurchId, indivLimit]);
 
   const loadAllMembers = useCallback(async () => {
     if (!activeChurchId) return;
@@ -455,12 +460,12 @@ function AttendancePageInner() {
   }, [store]);
 
   // --- visitors linked to the open attendance session ---
-  const loadSessionVisitors = useCallback(async (sessionId, page = 1) => {
+  const loadSessionVisitors = useCallback(async (sessionId, page = 1, limit = sessionVisitorsLimit) => {
     if (!sessionId) return;
     setSessionVisitorsLoading(true);
     setSessionVisitorsError("");
     try {
-      const res = await getVisitors({ attendance: sessionId, page, limit: 10 });
+      const res = await getVisitors({ attendance: sessionId, page, limit });
       const payload = res?.data?.data ?? res?.data;
       setSessionVisitors(Array.isArray(payload?.visitors) ? payload.visitors : []);
       setSessionVisitorsPagination(payload?.pagination || { currentPage: page, prevPage: null, nextPage: null });
@@ -470,7 +475,7 @@ function AttendancePageInner() {
     } finally {
       setSessionVisitorsLoading(false);
     }
-  }, []);
+  }, [sessionVisitorsLimit]);
 
   const refreshIndivViewing = useCallback(async () => {
     if (!indivViewing?._id) return;
@@ -533,13 +538,12 @@ function AttendancePageInner() {
         <>
           {/* Manual Marking Modal */}
           {indivMarkingOpen && indivViewing ? (() => {
-            const MARK_PAGE_SIZE = 15;
             const filteredMarkMembers = indivMembers.filter((m) => {
               const q = String(indivMarkingSearch || "").trim().toLowerCase();
               return !q || String(m?.name || "").toLowerCase().includes(q);
             });
-            const markTotalPages = Math.max(1, Math.ceil(filteredMarkMembers.length / MARK_PAGE_SIZE));
-            const markPaged = filteredMarkMembers.slice((indivMarkingPage - 1) * MARK_PAGE_SIZE, indivMarkingPage * MARK_PAGE_SIZE);
+            const markTotalPages = Math.max(1, Math.ceil(filteredMarkMembers.length / indivMarkingPageSize));
+            const markPaged = filteredMarkMembers.slice((indivMarkingPage - 1) * indivMarkingPageSize, indivMarkingPage * indivMarkingPageSize);
             const allIds = indivMembers.map((m) => String(m.id));
             const allPresent = allIds.length > 0 && allIds.every((id) => indivMarkingSelected.includes(id));
             const allAbsent = allIds.length > 0 && allIds.every((id) => indivMarkingAbsent.includes(id));
@@ -709,10 +713,22 @@ function AttendancePageInner() {
 
                   {/* Pagination footer */}
                   {indivMembers.length > 0 ? (
-                    <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 border-t border-gray-200 shrink-0">
-                      <button type="button" onClick={() => setIndivMarkingPage((p) => Math.max(1, p - 1))} disabled={indivMarkingPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-                      <div className="text-gray-600 text-sm">Page {indivMarkingPage} of {markTotalPages}</div>
-                      <button type="button" onClick={() => setIndivMarkingPage((p) => Math.min(markTotalPages, p + 1))} disabled={indivMarkingPage >= markTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                    <div className="border-t border-gray-200 shrink-0">
+                      <Pagination
+                        pagination={{
+                          currentPage: indivMarkingPage,
+                          totalPages: markTotalPages,
+                          totalResult: filteredMarkMembers.length,
+                          prevPage: indivMarkingPage > 1 ? indivMarkingPage - 1 : null,
+                          nextPage: indivMarkingPage < markTotalPages ? indivMarkingPage + 1 : null
+                        }}
+                        rowsCount={markPaged.length}
+                        limit={indivMarkingPageSize}
+                        onLimitChange={(n) => { setIndivMarkingPageSize(n); setIndivMarkingPage(1); }}
+                        onPageChange={setIndivMarkingPage}
+                        itemName="members"
+                        filtered={Boolean(String(indivMarkingSearch || "").trim())}
+                      />
                     </div>
                   ) : null}
                 </div>
@@ -845,10 +861,16 @@ function AttendancePageInner() {
 
                   {/* Pagination */}
                   {!indivLoading && filteredIndivRecords.length > 0 ? (
-                    <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-gray-200">
-                      <button type="button" onClick={() => loadIndivRecords(indivPagination?.prevPage)} disabled={!indivPagination?.prevPage} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-                      <div className="text-gray-600 text-sm">Page {indivPagination?.currentPage || 1}</div>
-                      <button type="button" onClick={() => loadIndivRecords(indivPagination?.nextPage)} disabled={!indivPagination?.nextPage} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                    <div className="border-t border-gray-200">
+                      <Pagination
+                        pagination={indivPagination}
+                        rowsCount={filteredIndivRecords.length}
+                        limit={indivLimit}
+                        onLimitChange={(n) => { setIndivLimit(n); loadIndivRecords(1, n); }}
+                        onPageChange={(p) => loadIndivRecords(p)}
+                        itemName="records"
+                        filtered={Boolean(indivDateFrom || indivDateTo || indivServiceTypeFilter || String(indivSpeakerSearch || "").trim())}
+                      />
                     </div>
                   ) : null}
                 </div>
@@ -884,18 +906,17 @@ function AttendancePageInner() {
                   </div>
                 ) : (
                   (() => {
-                    const VIEW_PAGE_SIZE = 15;
                     const allPresent = Array.isArray(indivViewing?.presentMembers) ? indivViewing.presentMembers : [];
                     const allAbsent = Array.isArray(indivViewing?.absentMembers) ? indivViewing.absentMembers : [];
-                    const presentTotalPages = Math.max(1, Math.ceil(allPresent.length / VIEW_PAGE_SIZE));
-                    const presentPaged = allPresent.slice((indivViewPresentPage - 1) * VIEW_PAGE_SIZE, indivViewPresentPage * VIEW_PAGE_SIZE);
-                    const absentTotalPages = Math.max(1, Math.ceil(allAbsent.length / VIEW_PAGE_SIZE));
-                    const absentPaged = allAbsent.slice((indivViewAbsentPage - 1) * VIEW_PAGE_SIZE, indivViewAbsentPage * VIEW_PAGE_SIZE);
+                    const presentTotalPages = Math.max(1, Math.ceil(allPresent.length / indivViewPageSize));
+                    const presentPaged = allPresent.slice((indivViewPresentPage - 1) * indivViewPageSize, indivViewPresentPage * indivViewPageSize);
+                    const absentTotalPages = Math.max(1, Math.ceil(allAbsent.length / indivViewPageSize));
+                    const absentPaged = allAbsent.slice((indivViewAbsentPage - 1) * indivViewPageSize, indivViewAbsentPage * indivViewPageSize);
                     const presentIds = new Set(allPresent.map((m) => String(m?._id || "")).filter(Boolean));
                     const absentIds = new Set(allAbsent.map((m) => String(m?._id || "")).filter(Boolean));
                     const unmarkedList = indivMembers.filter((m) => !presentIds.has(String(m?.id || "")) && !absentIds.has(String(m?.id || "")));
-                    const unmarkedTotalPages = Math.max(1, Math.ceil(unmarkedList.length / VIEW_PAGE_SIZE));
-                    const unmarkedPaged = unmarkedList.slice((indivViewUnmarkedPage - 1) * VIEW_PAGE_SIZE, indivViewUnmarkedPage * VIEW_PAGE_SIZE);
+                    const unmarkedTotalPages = Math.max(1, Math.ceil(unmarkedList.length / indivViewPageSize));
+                    const unmarkedPaged = unmarkedList.slice((indivViewUnmarkedPage - 1) * indivViewPageSize, indivViewUnmarkedPage * indivViewPageSize);
                     const unmarkedCount = Number(indivViewing?.unmarkedCount ?? unmarkedList.length);
                     return (
                       <div className="rounded-xl border border-gray-200 bg-white">
@@ -990,6 +1011,8 @@ function AttendancePageInner() {
                               loading={sessionVisitorsLoading}
                               error={sessionVisitorsError}
                               onPage={(p) => loadSessionVisitors(indivViewing?._id, p)}
+                              limit={sessionVisitorsLimit}
+                              onLimitChange={(n) => { setSessionVisitorsLimit(n); loadSessionVisitors(indivViewing?._id, 1, n); }}
                               onEdit={(row) => guarded(() => { setEditingVisitor(row); setVisitorFormSession(null); setIsVisitorFormOpen(true); })}
                               onDeleted={() => { loadSessionVisitors(indivViewing?._id, sessionVisitorsPagination?.currentPage || 1); refreshIndivViewing(); refreshVisitors(); }}
                             />
@@ -1046,10 +1069,21 @@ function AttendancePageInner() {
                                     </tbody>
                                   </table>
                                 </div>
-                                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 border-t border-gray-200">
-                                  <button type="button" onClick={() => setIndivViewPresentPage((p) => Math.max(1, p - 1))} disabled={indivViewPresentPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-                                  <div className="text-gray-600 text-sm">Page {indivViewPresentPage} of {presentTotalPages}</div>
-                                  <button type="button" onClick={() => setIndivViewPresentPage((p) => Math.min(presentTotalPages, p + 1))} disabled={indivViewPresentPage >= presentTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                                <div className="border-t border-gray-200">
+                                  <Pagination
+                                    pagination={{
+                                      currentPage: indivViewPresentPage,
+                                      totalPages: presentTotalPages,
+                                      totalResult: allPresent.length,
+                                      prevPage: indivViewPresentPage > 1 ? indivViewPresentPage - 1 : null,
+                                      nextPage: indivViewPresentPage < presentTotalPages ? indivViewPresentPage + 1 : null
+                                    }}
+                                    rowsCount={presentPaged.length}
+                                    limit={indivViewPageSize}
+                                    onLimitChange={(n) => { setIndivViewPageSize(n); setIndivViewPresentPage(1); setIndivViewAbsentPage(1); setIndivViewUnmarkedPage(1); }}
+                                    onPageChange={setIndivViewPresentPage}
+                                    itemName="members"
+                                  />
                                 </div>
                               </>
                             )
@@ -1085,10 +1119,21 @@ function AttendancePageInner() {
                                     </tbody>
                                   </table>
                                 </div>
-                                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 border-t border-gray-200">
-                                  <button type="button" onClick={() => setIndivViewAbsentPage((p) => Math.max(1, p - 1))} disabled={indivViewAbsentPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-                                  <div className="text-gray-600 text-sm">Page {indivViewAbsentPage} of {absentTotalPages}</div>
-                                  <button type="button" onClick={() => setIndivViewAbsentPage((p) => Math.min(absentTotalPages, p + 1))} disabled={indivViewAbsentPage >= absentTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                                <div className="border-t border-gray-200">
+                                  <Pagination
+                                    pagination={{
+                                      currentPage: indivViewAbsentPage,
+                                      totalPages: absentTotalPages,
+                                      totalResult: allAbsent.length,
+                                      prevPage: indivViewAbsentPage > 1 ? indivViewAbsentPage - 1 : null,
+                                      nextPage: indivViewAbsentPage < absentTotalPages ? indivViewAbsentPage + 1 : null
+                                    }}
+                                    rowsCount={absentPaged.length}
+                                    limit={indivViewPageSize}
+                                    onLimitChange={(n) => { setIndivViewPageSize(n); setIndivViewPresentPage(1); setIndivViewAbsentPage(1); setIndivViewUnmarkedPage(1); }}
+                                    onPageChange={setIndivViewAbsentPage}
+                                    itemName="members"
+                                  />
                                 </div>
                               </>
                             )
@@ -1120,10 +1165,21 @@ function AttendancePageInner() {
                                     </tbody>
                                   </table>
                                 </div>
-                                <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3 border-t border-gray-200">
-                                  <button type="button" onClick={() => setIndivViewUnmarkedPage((p) => Math.max(1, p - 1))} disabled={indivViewUnmarkedPage <= 1} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-                                  <div className="text-gray-600 text-sm">Page {indivViewUnmarkedPage} of {unmarkedTotalPages}</div>
-                                  <button type="button" onClick={() => setIndivViewUnmarkedPage((p) => Math.min(unmarkedTotalPages, p + 1))} disabled={indivViewUnmarkedPage >= unmarkedTotalPages} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
+                                <div className="border-t border-gray-200">
+                                  <Pagination
+                                    pagination={{
+                                      currentPage: indivViewUnmarkedPage,
+                                      totalPages: unmarkedTotalPages,
+                                      totalResult: unmarkedList.length,
+                                      prevPage: indivViewUnmarkedPage > 1 ? indivViewUnmarkedPage - 1 : null,
+                                      nextPage: indivViewUnmarkedPage < unmarkedTotalPages ? indivViewUnmarkedPage + 1 : null
+                                    }}
+                                    rowsCount={unmarkedPaged.length}
+                                    limit={indivViewPageSize}
+                                    onLimitChange={(n) => { setIndivViewPageSize(n); setIndivViewPresentPage(1); setIndivViewAbsentPage(1); setIndivViewUnmarkedPage(1); }}
+                                    onPageChange={setIndivViewUnmarkedPage}
+                                    itemName="members"
+                                  />
                                 </div>
                               </>
                             )

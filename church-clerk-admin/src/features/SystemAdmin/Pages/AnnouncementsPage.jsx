@@ -23,6 +23,7 @@ import Card from "../../../shared/components/Card/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 function AnnouncementsPage() {
   const [tab, setTab] = useState("support");
@@ -85,6 +86,7 @@ function AnnouncementsPage() {
   const [srPagination, setSrPagination] = useState(null);
   const [srSearch, setSrSearch] = useState("");
   const [srStatusFilter, setSrStatusFilter] = useState("");
+  const [srLimit, setSrLimit] = useState(20);
   const [srDetailRow, setSrDetailRow] = useState(null);
   const [srUpdatingId, setSrUpdatingId] = useState(null);
 
@@ -187,7 +189,7 @@ function AnnouncementsPage() {
     setSrLoading(true);
     setSrError("");
     try {
-      const res = await getSupportRequests({ page, limit: 20, search, status });
+      const res = await getSupportRequests({ page, limit: srLimit, search, status });
       const payload = res?.data;
       setSrRows(Array.isArray(payload?.supportRequests) ? payload.supportRequests : []);
       setSrPagination(payload?.pagination || null);
@@ -197,7 +199,7 @@ function AnnouncementsPage() {
     } finally {
       setSrLoading(false);
     }
-  }, [srSearch, srStatusFilter]);
+  }, [srLimit, srSearch, srStatusFilter]);
 
   useEffect(() => {
     if (tab !== "support") return;
@@ -1321,24 +1323,17 @@ function AnnouncementsPage() {
             </div>
 
             {srPagination ? (
-              <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-3">
-                <button
-                  type="button"
-                  disabled={!srPagination?.hasPrev}
-                  onClick={() => loadSupportRequests({ page: srPagination.prevPage })}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-50"
-                >
-                  Prev
-                </button>
-                <span className="text-xs text-gray-500">Page {srPagination.currentPage} of {srPagination.totalPages || 1}</span>
-                <button
-                  type="button"
-                  disabled={!srPagination?.hasNext}
-                  onClick={() => loadSupportRequests({ page: srPagination.nextPage })}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 disabled:opacity-50"
-                >
-                  Next
-                </button>
+              <div className="border-t border-gray-100 px-4 py-3">
+                <Pagination
+                  pagination={srPagination}
+                  rowsCount={srRows.length}
+                  limit={srLimit}
+                  onLimitChange={(n) => { setSrLimit(n); }}
+                  onPageChange={(p) => loadSupportRequests({ page: p })}
+                  itemName="requests"
+                  filtered={Boolean(srStatusFilter || String(srSearch || "").trim())}
+                  disabled={srLoading}
+                />
               </div>
             ) : null}
           </Card>

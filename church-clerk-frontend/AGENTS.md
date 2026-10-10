@@ -457,7 +457,7 @@ Show:
 - Report generation
 - Saved reports
 - PDF
-- CSV
+- Excel
 - Printing
 
 Each section should have a different composition.

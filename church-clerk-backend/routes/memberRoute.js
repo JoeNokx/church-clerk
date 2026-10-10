@@ -9,7 +9,7 @@ import {
   getAllMembersKPI,
   downloadMembersImportTemplate,
   previewMembersImport,
-  importMembersCsv,
+  importMembersFromFile,
   canCreateMember,
   uploadMemberPhoto
 } from "../controller/memberController.js"
@@ -25,7 +25,7 @@ import { validateRequest } from "../middleware/validateRequest.js";
 import { createMemberSchema, getMembersQuerySchema, updateMemberSchema } from "../validators/members.js";
 import { deletionGuard } from "../services/recordDependencyService.js";
 
-const uploadMemberCsv = (req, res, next) => {
+const uploadMemberFile = (req, res, next) => {
   uploadMemoryFile.single("file")(req, res, (err) => {
     if (!err) return next();
 
@@ -109,7 +109,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("members", "import"),
-  uploadMemberCsv,
+  uploadMemberFile,
   previewMembersImport
 );
 
@@ -122,8 +122,8 @@ router.post(
   blockMemberCreationIfOverdue,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("members", "import"),
-  uploadMemberCsv,
-  importMembersCsv
+  uploadMemberFile,
+  importMembersFromFile
 );
 router.put(
   "/members/:id/photo",

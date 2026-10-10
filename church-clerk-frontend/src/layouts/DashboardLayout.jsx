@@ -146,9 +146,14 @@ function DashboardLayout() {
                 <div>
                   <div className="font-bold">Church Account Suspended</div>
                   <div className="mt-0.5 text-red-800 text-sm">
-                    <strong>{activeChurch?.name || "This church"}</strong> has been suspended by the system administrator.
+                    <strong>{activeChurch?.name || "This church"}</strong> has been suspended.
                     All actions are restricted. Please contact support to resolve this.
                   </div>
+                  {activeChurch?.suspendReason && (
+                    <div className="mt-2 rounded-lg border border-red-200 bg-red-100/60 px-3 py-2 text-red-800 text-xs">
+                      <span className="font-semibold">Reason:</span> {activeChurch.suspendReason}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

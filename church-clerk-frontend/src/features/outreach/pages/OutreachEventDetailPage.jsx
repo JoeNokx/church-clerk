@@ -20,6 +20,7 @@ import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx"
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
@@ -256,7 +257,7 @@ export default function OutreachEventDetailPage() {
 
   const [prospectsPage, setProspectsPage] = useState(1);
   const [followUpsPage, setFollowUpsPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const [pageSize, setPageSize] = useState(20);
 
   const fetchEvent = useCallback(async () => {
     if (!eventId) return;
@@ -328,8 +329,8 @@ export default function OutreachEventDetailPage() {
     return list;
   }, [prospects, prospectSearch, prospectDateFrom, prospectDateTo]);
 
-  const prospectsTotalPages = Math.ceil(filteredProspects.length / PAGE_SIZE);
-  const paginatedProspects = filteredProspects.slice((prospectsPage - 1) * PAGE_SIZE, prospectsPage * PAGE_SIZE);
+  const prospectsTotalPages = Math.max(1, Math.ceil(filteredProspects.length / pageSize));
+  const paginatedProspects = filteredProspects.slice((prospectsPage - 1) * pageSize, prospectsPage * pageSize);
 
   const filteredFollowUps = useMemo(() => {
     let list = followUps;
@@ -358,8 +359,8 @@ export default function OutreachEventDetailPage() {
     return list;
   }, [followUps, fuSearch, fuDateFrom, fuDateTo, fuAssigned]);
 
-  const followUpsTotalPages = Math.ceil(filteredFollowUps.length / PAGE_SIZE);
-  const paginatedFollowUps = filteredFollowUps.slice((followUpsPage - 1) * PAGE_SIZE, followUpsPage * PAGE_SIZE);
+  const followUpsTotalPages = Math.max(1, Math.ceil(filteredFollowUps.length / pageSize));
+  const paginatedFollowUps = filteredFollowUps.slice((followUpsPage - 1) * pageSize, followUpsPage * pageSize);
 
   if (!eventId) return (
     <div className="text-center py-20 text-gray-500">
@@ -576,25 +577,21 @@ export default function OutreachEventDetailPage() {
                 </table>
               </div>
             )}
-            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-              <button
-                type="button"
-                onClick={() => setProspectsPage(p => p - 1)}
-                disabled={prospectsPage <= 1}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-sm">Page {prospectsPage}</div>
-              <button
-                type="button"
-                onClick={() => setProspectsPage(p => p + 1)}
-                disabled={prospectsPage >= prospectsTotalPages}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
+            <Pagination
+              pagination={{
+                currentPage: prospectsPage,
+                totalPages: prospectsTotalPages,
+                totalResult: filteredProspects.length,
+                prevPage: prospectsPage > 1 ? prospectsPage - 1 : null,
+                nextPage: prospectsPage < prospectsTotalPages ? prospectsPage + 1 : null
+              }}
+              rowsCount={paginatedProspects.length}
+              limit={pageSize}
+              onLimitChange={(n) => { setPageSize(n); setProspectsPage(1); setFollowUpsPage(1); }}
+              onPageChange={setProspectsPage}
+              itemName="people"
+              filtered={Boolean(String(prospectSearch || "").trim() || prospectDateFrom || prospectDateTo)}
+            />
           </div>
         ) : null}
 
@@ -693,25 +690,21 @@ export default function OutreachEventDetailPage() {
                 </table>
               </div>
             )}
-            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-              <button
-                type="button"
-                onClick={() => setFollowUpsPage(p => p - 1)}
-                disabled={followUpsPage <= 1}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-sm">Page {followUpsPage}</div>
-              <button
-                type="button"
-                onClick={() => setFollowUpsPage(p => p + 1)}
-                disabled={followUpsPage >= followUpsTotalPages}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
+            <Pagination
+              pagination={{
+                currentPage: followUpsPage,
+                totalPages: followUpsTotalPages,
+                totalResult: filteredFollowUps.length,
+                prevPage: followUpsPage > 1 ? followUpsPage - 1 : null,
+                nextPage: followUpsPage < followUpsTotalPages ? followUpsPage + 1 : null
+              }}
+              rowsCount={paginatedFollowUps.length}
+              limit={pageSize}
+              onLimitChange={(n) => { setPageSize(n); setProspectsPage(1); setFollowUpsPage(1); }}
+              onPageChange={setFollowUpsPage}
+              itemName="follow-ups"
+              filtered={Boolean(String(fuSearch || "").trim() || fuDateFrom || fuDateTo || fuAssigned)}
+            />
           </div>
         ) : null}
       </div>

@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
+import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import { useDashboardNavigator } from "../../../../shared/hooks/useDashboardNavigator.js";
@@ -591,6 +592,7 @@ export default function PeopleReachedTab({ setHeaderAction }) {
 
   const [prospects, setProspects] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
+  const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const [filters, setFilters] = useState({ search: "", stage: "", dateFrom: "", dateTo: "" });
@@ -605,13 +607,13 @@ export default function PeopleReachedTab({ setHeaderAction }) {
   const fetchProspects = useCallback(async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
-      const params = { page, limit: 25, ...filters, ...overrides };
+      const params = { page, limit, ...filters, ...overrides };
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const res = await getAllProspects(params);
       setProspects(res.data?.data || []);
       setPagination(res.data?.pagination || { page: 1, total: 0, pages: 1 });
     } catch { setProspects([]); } finally { setLoading(false); }
-  }, [filters]);
+  }, [filters, limit]);
 
   useEffect(() => {
     fetchProspects();
@@ -763,11 +765,21 @@ export default function PeopleReachedTab({ setHeaderAction }) {
             </table>
           </div>
         )}
-        <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-          <button disabled={pagination.page <= 1} onClick={() => fetchProspects(pagination.page - 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Prev</button>
-          <div className="text-gray-600 text-sm">Page {pagination.page}</div>
-          <button disabled={pagination.page >= pagination.pages} onClick={() => fetchProspects(pagination.page + 1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm">Next</button>
-        </div>
+        <Pagination
+          pagination={{
+            currentPage: pagination.page || 1,
+            totalPages: Math.max(1, pagination.pages || 1),
+            totalResult: pagination.total || 0,
+            prevPage: (pagination.page || 1) > 1 ? pagination.page - 1 : null,
+            nextPage: (pagination.page || 1) < (pagination.pages || 1) ? pagination.page + 1 : null
+          }}
+          rowsCount={prospects.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); fetchProspects(1, { limit: n }); }}
+          onPageChange={(p) => fetchProspects(p)}
+          itemName="people"
+          filtered={Boolean(filters.search || filters.stage || filters.dateFrom || filters.dateTo)}
+        />
       </div>
 
       <PersonFormModal open={formOpen} mode={formMode} initialData={editingPerson} events={events} onClose={() => setFormOpen(false)} onSaved={() => { setFormOpen(false); fetchProspects(pagination.page); }} />

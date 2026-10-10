@@ -12,6 +12,7 @@ import {
 import ReportGenerateModal from "../components/ReportGenerateModal.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import debounce from "../../../shared/utils/debounce.js";
@@ -338,10 +339,10 @@ function RowDownloadMenu({ row, downloading, onDownload }) {
             </button>
             <button
               type="button"
-              onClick={() => { setOpen(false); onDownload(row, "csv"); }}
+              onClick={() => { setOpen(false); onDownload(row, "excel"); }}
               className="w-full px-4 py-2 text-left font-semibold text-gray-700 hover:bg-gray-50 text-xs"
             >
-              {downloading === "csv" ? "Downloading…" : "CSV"}
+              {downloading === "excel" ? "Downloading…" : "Excel"}
             </button>
           </div>
         </>,
@@ -381,6 +382,7 @@ function ReportsAnalyticsPage() {
   const [savedLoading, setSavedLoading] = useState(true);
   const [savedError, setSavedError] = useState("");
   const [savedPagination, setSavedPagination] = useState(null);
+  const [savedLimit, setSavedLimit] = useState(20);
 
   const [savedSearch, setSavedSearch] = useState("");
   const [savedModule, setSavedModule] = useState("all");
@@ -398,7 +400,7 @@ function ReportsAnalyticsPage() {
     try {
       const params = {
         page: 1,
-        limit: 10,
+        limit: savedLimit,
         search: savedSearch || undefined,
         module: savedModule !== "all" ? savedModule : undefined,
         dateFrom: savedDateFrom || undefined,
@@ -413,7 +415,7 @@ function ReportsAnalyticsPage() {
     } finally {
       setSavedLoading(false);
     }
-  }, [savedSearch, savedModule, savedDateFrom, savedDateTo]);
+  }, [savedSearch, savedModule, savedDateFrom, savedDateTo, savedLimit]);
 
   useEffect(() => {
     if (canRead) fetchSaved();
@@ -548,16 +550,6 @@ function ReportsAnalyticsPage() {
     const row = confirmDelete;
     setConfirmDelete(null);
     if (row) await removeSaved(row);
-  };
-
-  const onSavedPrev = () => {
-    const prev = savedPagination?.prevPage;
-    if (prev) fetchSaved({ page: prev });
-  };
-
-  const onSavedNext = () => {
-    const next = savedPagination?.nextPage;
-    if (next) fetchSaved({ page: next });
   };
 
   const moduleOf = (value) => MODULES.find((m) => m.value === value) || null;
@@ -715,7 +707,7 @@ function ReportsAnalyticsPage() {
                               row={row}
                               downloading={
                                 downloadingKey === `${row?._id}:pdf` ? "pdf"
-                                  : downloadingKey === `${row?._id}:csv` ? "csv"
+                                  : downloadingKey === `${row?._id}:excel` ? "excel"
                                     : ""
                               }
                               onDownload={downloadSaved}
@@ -758,25 +750,15 @@ function ReportsAnalyticsPage() {
               />
             )}
             {savedPagination && saved.length ? (
-              <div className="flex items-center justify-end gap-3 px-2 py-3">
-                <button
-                  type="button"
-                  onClick={onSavedPrev}
-                  disabled={!savedPagination.prevPage}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                >
-                  Prev
-                </button>
-                <div className="text-gray-600 text-sm">Page {savedPagination.currentPage || 1} of {savedPagination.totalPages}</div>
-                <button
-                  type="button"
-                  onClick={onSavedNext}
-                  disabled={!savedPagination.nextPage}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-                >
-                  Next
-                </button>
-              </div>
+              <Pagination
+                pagination={savedPagination}
+                rowsCount={saved.length}
+                limit={savedLimit}
+                onLimitChange={(n) => { setSavedLimit(n); fetchSaved({ page: 1, limit: n }); }}
+                onPageChange={(p) => fetchSaved({ page: p })}
+                itemName="reports"
+                filtered={Boolean(savedSearch || (savedModule && savedModule !== "all") || savedDateFrom || savedDateTo)}
+              />
             ) : null}
           </div>
         </div>
@@ -854,11 +836,11 @@ function ReportsAnalyticsPage() {
                   </button>
                   <button
                     type="button"
-                    disabled={downloadingKey === `${previewDoc?._id}:csv`}
-                    onClick={() => downloadSaved(previewDoc, "csv")}
+                    disabled={downloadingKey === `${previewDoc?._id}:excel`}
+                    onClick={() => downloadSaved(previewDoc, "excel")}
                     className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
                   >
-                    {downloadingKey === `${previewDoc?._id}:csv` ? "Downloading…" : "Download CSV"}
+                    {downloadingKey === `${previewDoc?._id}:excel` ? "Downloading…" : "Download Excel"}
                   </button>
                 </>
               ) : null}

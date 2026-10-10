@@ -11,61 +11,47 @@ import CellMember from "../models/organisationModel/cellMembersModel.js"
 import DepartmentMember from "../models/organisationModel/departmentMembersModel.js"
 import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
-import { parseCsvToObjects } from "../utils/csvParser.js";
+import { parseImportFileToObjects } from "../utils/spreadsheetParser.js";
+import ExcelJS from "exceljs";
 import { parseOptionalDate, getChurchPrefix, generateMemberId } from "../utils/memberHelpers.js";
 import { validateMemberImportRows } from "../services/member/memberImportService.js";
+import { MEMBER_IMPORT_FIELDS } from "../utils/memberImportFields.js";
 import { annotateDeletable } from "../services/recordDependencyService.js";
 
 const downloadMembersImportTemplate = async (req, res) => {
   try {
-    const headers = [
-      "firstName",
-      "lastName",
-      "phoneNumber",
-      "email",
-      "gender",
-      "occupation",
-      "nationality",
-      "status",
-      "dateOfBirth",
-      "churchRole",
-      "dateJoined",
-      "streetAddress",
-      "city",
-      "region",
-      "country",
-      "maritalStatus",
-      "note"
-    ];
+    const headers = MEMBER_IMPORT_FIELDS.map((f) => f.key);
+    const example = MEMBER_IMPORT_FIELDS.map((f) => f.example || "");
 
-    const example = [
-      "John",
-      "Doe",
-      "0240000000",
-      "john@example.com",
-      "male",
-      "Teacher",
-      "Ghanaian",
-      "active",
-      "1990-01-15",
-      "Member",
-      "2025-01-05",
-      "",
-      "Accra",
-      "Greater Accra",
-      "Ghana",
-      "single",
-      ""
-    ];
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Members");
+    const headerRow = sheet.addRow(headers);
+    headerRow.font = { bold: true };
+    headers.forEach((_, i) => {
+      sheet.getColumn(i + 1).width = 20;
+    });
+    sheet.addRow(example);
+    workbook.creator = "ChurchClerk";
 
-    const csv = `${headers.join(",")}\n${example.map((v) => `\"${String(v || "").replace(/\"/g, "\"\"")}\"`).join(",")}\n`;
-
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader("Content-Disposition", "attachment; filename=\"members-import-template.csv\"");
-    return res.status(200).send(csv);
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=\"members-import-template.xlsx\"");
+    await workbook.xlsx.write(res);
+    return res.end();
   } catch (error) {
     return res.status(500).json({ message: "Failed to download template", error: error.message });
   }
+};
+
+const getImportRows = async (req) => {
+  const posted = req.body?.rows;
+  if (Array.isArray(posted) && posted.length) return posted;
+  const file = req.file;
+  if (!file?.buffer) return null;
+  const { rows } = await parseImportFileToObjects(file);
+  return rows;
 };
 
 const previewMembersImport = async (req, res) => {
@@ -73,13 +59,10 @@ const previewMembersImport = async (req, res) => {
     const churchId = req.activeChurch?._id;
     if (!churchId) return res.status(400).json({ message: "Church context not found" });
 
-    const file = req.file;
-    if (!file?.buffer) return res.status(400).json({ message: "CSV file is required" });
-
-    const text = file.buffer.toString("utf8");
-    const { rows } = parseCsvToObjects(text);
+    const rows = await getImportRows(req);
+    if (!rows) return res.status(400).json({ message: "Excel file is required" });
     if (!rows.length) {
-      return res.status(400).json({ message: "CSV has no data rows" });
+      return res.status(400).json({ message: "File has no data rows" });
     }
 
     const result = await validateMemberImportRows({ churchId, rawRows: rows });
@@ -91,28 +74,25 @@ const previewMembersImport = async (req, res) => {
         valid: result.valid.length,
         invalid: result.invalid.length
       },
-      validRows: result.valid.slice(0, 200),
-      invalidRows: result.invalid.slice(0, 200)
+      validRows: result.valid.slice(0, 500),
+      invalidRows: result.invalid.slice(0, 500)
     });
   } catch (error) {
     return res.status(400).json({ message: "Failed to preview import", error: error.message });
   }
 };
 
-const importMembersCsv = async (req, res) => {
+const importMembersFromFile = async (req, res) => {
   try {
     const churchId = req.activeChurch?._id;
     const createdBy = req.user?._id;
     if (!churchId) return res.status(400).json({ message: "Church context not found" });
     if (!createdBy) return res.status(401).json({ message: "Unauthorized" });
 
-    const file = req.file;
-    if (!file?.buffer) return res.status(400).json({ message: "CSV file is required" });
-
-    const text = file.buffer.toString("utf8");
-    const { rows } = parseCsvToObjects(text);
+    const rows = await getImportRows(req);
+    if (!rows) return res.status(400).json({ message: "Excel file is required" });
     if (!rows.length) {
-      return res.status(400).json({ message: "CSV has no data rows" });
+      return res.status(400).json({ message: "File has no data rows" });
     }
 
     const { valid, invalid } = await validateMemberImportRows({ churchId, rawRows: rows });
@@ -158,7 +138,7 @@ const importMembersCsv = async (req, res) => {
         skipped.push({
           rowNumber: valid[i].rowNumber,
           reasons: [e?.message || "Insert failed"],
-          row: payload
+          payload
         });
       }
     }
@@ -784,7 +764,7 @@ export {
   getAllMembersKPI,
   downloadMembersImportTemplate,
   previewMembersImport,
-  importMembersCsv,
+  importMembersFromFile,
   canCreateMember,
   uploadMemberPhoto
 }

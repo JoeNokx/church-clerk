@@ -7,6 +7,7 @@ import {
   markNotificationRead
 } from "../services/notifications.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 function formatDateTime(value) {
   if (!value) return "";
@@ -285,24 +286,15 @@ function NotificationsDrawer({ open, onClose }) {
 
         {/* Pagination footer */}
         {pagination.totalPages > 1 && (
-          <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-3 border-t border-gray-200 bg-gray-50">
-            <button
-              type="button"
-              onClick={() => setPagination((p) => ({ ...p, currentPage: Math.max(1, Number(p.currentPage || 1) - 1) }))}
-              disabled={Number(pagination?.currentPage || 1) <= 1}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 text-xs"
-            >
-              Prev
-            </button>
-            <div className="text-gray-500 text-xs">Page {pagination?.currentPage || 1} of {pagination?.totalPages || 1}</div>
-            <button
-              type="button"
-              onClick={() => setPagination((p) => ({ ...p, currentPage: Math.min(Number(p.totalPages || 1), Number(p.currentPage || 1) + 1) }))}
-              disabled={Number(pagination?.currentPage || 1) >= Number(pagination?.totalPages || 1)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 text-xs"
-            >
-              Next
-            </button>
+          <div className="shrink-0 border-t border-gray-200 bg-gray-50">
+            <Pagination
+              pagination={pagination}
+              rowsCount={notifications.length}
+              onPageChange={(page) => setPagination((p) => ({ ...p, currentPage: page }))}
+              itemName="notifications"
+              filtered={unreadOnly}
+              disabled={loading}
+            />
           </div>
         )}
       </div>

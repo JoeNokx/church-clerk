@@ -17,6 +17,7 @@ import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.js
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function formatCurrency(value, currency) {
@@ -240,7 +241,7 @@ function FundraisingPageInner() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const [pageSize, setPageSize] = useState(20);
 
   const [addProjectOpen, setAddProjectOpen] = useState(false);
 
@@ -293,11 +294,11 @@ function FundraisingPageInner() {
     return projects.filter((p) => String(p?.name || "").toLowerCase().includes(q));
   }, [projects, searchValue]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / pageSize));
   const paginatedProjects = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredProjects.slice(start, start + PAGE_SIZE);
-  }, [filteredProjects, currentPage]);
+    const start = (currentPage - 1) * pageSize;
+    return filteredProjects.slice(start, start + pageSize);
+  }, [filteredProjects, currentPage, pageSize]);
 
   const totals = useMemo(() => {
     const rows = Array.isArray(projects) ? projects : [];
@@ -513,24 +514,22 @@ function FundraisingPageInner() {
           })}
             </div>
 
-            <div className="mt-4 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage <= 1}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-sm">Page {currentPage} of {totalPages}</div>
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage >= totalPages}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
+            <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+              <Pagination
+                pagination={{
+                  currentPage,
+                  totalPages,
+                  totalResult: filteredProjects.length,
+                  prevPage: currentPage > 1 ? currentPage - 1 : null,
+                  nextPage: currentPage < totalPages ? currentPage + 1 : null
+                }}
+                rowsCount={paginatedProjects.length}
+                limit={pageSize}
+                onLimitChange={(n) => { setPageSize(n); setCurrentPage(1); }}
+                onPageChange={setCurrentPage}
+                itemName="projects"
+                filtered={Boolean(String(searchValue || "").trim() || dateFrom || dateTo)}
+              />
             </div>
           </div>
         )}

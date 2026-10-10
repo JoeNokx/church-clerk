@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import debounce from "../../../shared/utils/debounce.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
@@ -29,7 +30,7 @@ function BranchAttendanceTab() {
   const [page, setPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
   const [search, setSearch] = useState("");
-  const limit = 10;
+  const [limit, setLimit] = useState(20);
 
   const debouncedSearch = useMemo(
     () =>
@@ -72,7 +73,7 @@ function BranchAttendanceTab() {
     return () => {
       cancelled = true;
     };
-  }, [page, search]);
+  }, [page, limit, search]);
 
   const kpis = data?.kpis || {};
   const rows = data?.rows || [];
@@ -227,25 +228,15 @@ function BranchAttendanceTab() {
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 px-4 py-3 md:px-6">
-          <button
-            type="button"
-            onClick={() => pagination?.prevPage && setPage(pagination.prevPage)}
-            disabled={!pagination?.prevPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Prev
-          </button>
-          <div className="text-gray-600 text-sm">Page {pagination?.currentPage || 1}</div>
-          <button
-            type="button"
-            onClick={() => pagination?.nextPage && setPage(pagination.nextPage)}
-            disabled={!pagination?.nextPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
-        </div>
+        <Pagination
+          pagination={pagination}
+          rowsCount={rows.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); setPage(1); }}
+          onPageChange={setPage}
+          itemName="churches"
+          filtered={filtering}
+        />
       </div>
     </div>
   );

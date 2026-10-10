@@ -11,6 +11,7 @@ import {
 } from "../services/outreach.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
@@ -81,8 +82,7 @@ export default function TeamDetailsPage() {
   const [deleting, setDeleting] = useState(false);
   const [membersPage, setMembersPage] = useState(1);
   const [outreachPage, setOutreachPage] = useState(1);
-
-  const PAGE_SIZE = 10;
+  const [pageSize, setPageSize] = useState(20);
 
   const backParams = useMemo(() => {
     const params = {};
@@ -147,8 +147,8 @@ export default function TeamDetailsPage() {
     });
   }, [members, memberSearch]);
 
-  const membersTotalPages = Math.ceil(filteredMembers.length / PAGE_SIZE);
-  const paginatedMembers = filteredMembers.slice((membersPage - 1) * PAGE_SIZE, membersPage * PAGE_SIZE);
+  const membersTotalPages = Math.max(1, Math.ceil(filteredMembers.length / pageSize));
+  const paginatedMembers = filteredMembers.slice((membersPage - 1) * pageSize, membersPage * pageSize);
 
   const filteredEvents = useMemo(() => {
     let list = events;
@@ -168,8 +168,8 @@ export default function TeamDetailsPage() {
     return list;
   }, [events, eventSearch, eventDateFrom, eventDateTo]);
 
-  const outreachTotalPages = Math.ceil(filteredEvents.length / PAGE_SIZE);
-  const paginatedEvents = filteredEvents.slice((outreachPage - 1) * PAGE_SIZE, outreachPage * PAGE_SIZE);
+  const outreachTotalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
+  const paginatedEvents = filteredEvents.slice((outreachPage - 1) * pageSize, outreachPage * pageSize);
 
   if (!teamId) return (
     <div className="text-center py-20 text-gray-500">
@@ -342,25 +342,21 @@ export default function TeamDetailsPage() {
                 </table>
               </div>
             )}
-            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-              <button
-                type="button"
-                onClick={() => setMembersPage(p => p - 1)}
-                disabled={membersPage <= 1}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-sm">Page {membersPage}</div>
-              <button
-                type="button"
-                onClick={() => setMembersPage(p => p + 1)}
-                disabled={membersPage >= membersTotalPages}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
+            <Pagination
+              pagination={{
+                currentPage: membersPage,
+                totalPages: membersTotalPages,
+                totalResult: filteredMembers.length,
+                prevPage: membersPage > 1 ? membersPage - 1 : null,
+                nextPage: membersPage < membersTotalPages ? membersPage + 1 : null
+              }}
+              rowsCount={paginatedMembers.length}
+              limit={pageSize}
+              onLimitChange={(n) => { setPageSize(n); setMembersPage(1); setOutreachPage(1); }}
+              onPageChange={setMembersPage}
+              itemName="members"
+              filtered={Boolean(String(memberSearch || "").trim())}
+            />
           </div>
         ) : null}
 
@@ -442,25 +438,21 @@ export default function TeamDetailsPage() {
                 </table>
               </div>
             )}
-            <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-3">
-              <button
-                type="button"
-                onClick={() => setOutreachPage(p => p - 1)}
-                disabled={outreachPage <= 1}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-sm">Page {outreachPage}</div>
-              <button
-                type="button"
-                onClick={() => setOutreachPage(p => p + 1)}
-                disabled={outreachPage >= outreachTotalPages}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
+            <Pagination
+              pagination={{
+                currentPage: outreachPage,
+                totalPages: outreachTotalPages,
+                totalResult: filteredEvents.length,
+                prevPage: outreachPage > 1 ? outreachPage - 1 : null,
+                nextPage: outreachPage < outreachTotalPages ? outreachPage + 1 : null
+              }}
+              rowsCount={paginatedEvents.length}
+              limit={pageSize}
+              onLimitChange={(n) => { setPageSize(n); setMembersPage(1); setOutreachPage(1); }}
+              onPageChange={setOutreachPage}
+              itemName="outreaches"
+              filtered={Boolean(String(eventSearch || "").trim() || eventDateFrom || eventDateTo)}
+            />
           </div>
         ) : null}
       </div>

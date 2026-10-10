@@ -1,55 +1,42 @@
 import Member from "../../models/memberModel.js";
 import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 import { parseOptionalDate } from "../../utils/memberHelpers.js";
+import { MEMBER_IMPORT_FIELDS, memberFieldEnum } from "../../utils/memberImportFields.js";
+
+const pickRaw = (r, f) => {
+  let v = r?.[f.raw];
+  if ((v === undefined || v === null || v === "") && Array.isArray(f.aliases)) {
+    for (const a of f.aliases) {
+      if (r?.[a] !== undefined && r?.[a] !== null && r?.[a] !== "") { v = r[a]; break; }
+    }
+  }
+  return v ?? "";
+};
 
 async function validateMemberImportRows({ churchId, rawRows }) {
   const rows = Array.isArray(rawRows) ? rawRows : [];
   const normalized = rows.map((r) => {
-    const firstName = String(r?.firstname || r?.first || "").trim();
-    const lastName = String(r?.lastname || r?.last || "").trim();
-    const phoneNumberRaw = String(r?.phonenumber || r?.phone || "").trim();
-    let phoneNumber = "";
-    if (phoneNumberRaw) {
-      try {
-        phoneNumber = validatePhoneNumber(phoneNumberRaw, "GH");
-      } catch {
-        phoneNumber = "";
+    const out = { __rowNumber: r.__rowNumber };
+    for (const f of MEMBER_IMPORT_FIELDS) {
+      const raw = pickRaw(r, f);
+      if (f.kind === "phone") {
+        const phoneNumberRaw = String(raw || "").trim();
+        out.phoneNumberRaw = phoneNumberRaw;
+        out.phoneNumber = "";
+        if (phoneNumberRaw) {
+          try {
+            out.phoneNumber = validatePhoneNumber(phoneNumberRaw, "GH");
+          } catch {
+            out.phoneNumber = "";
+          }
+        }
+        continue;
       }
+      if (f.kind === "date") { out[`${f.key}Raw`] = raw; continue; }
+      const s = String(raw ?? "").trim();
+      out[f.key] = f.lower ? s.toLowerCase() : s;
     }
-    const email = String(r?.email || "").trim().toLowerCase();
-    const gender = String(r?.gender || "").trim().toLowerCase();
-    const occupation = String(r?.occupation || "").trim();
-    const nationality = String(r?.nationality || "").trim();
-    const status = String(r?.status || "").trim().toLowerCase();
-    const note = String(r?.note || "").trim();
-    const churchRole = String(r?.churchrole || r?.role || "").trim();
-    const streetAddress = String(r?.streetaddress || r?.address || "").trim();
-    const city = String(r?.city || "").trim();
-    const region = String(r?.region || "").trim();
-    const country = String(r?.country || "").trim();
-    const maritalStatus = String(r?.maritalstatus || "").trim().toLowerCase();
-    const dateOfBirthRaw = r?.dateofbirth || r?.dob || "";
-    const dateJoinedRaw = r?.datejoined || "";
-    return {
-      firstName,
-      lastName,
-      phoneNumber,
-      phoneNumberRaw,
-      email,
-      gender,
-      occupation,
-      nationality,
-      status,
-      note,
-      churchRole,
-      streetAddress,
-      city,
-      region,
-      country,
-      maritalStatus,
-      dateOfBirthRaw,
-      dateJoinedRaw
-    };
+    return out;
   });
 
   const phones = normalized.map((r) => r.phoneNumber).filter(Boolean);
@@ -75,46 +62,63 @@ async function validateMemberImportRows({ churchId, rawRows }) {
   const invalid = [];
 
   normalized.forEach((r, idx) => {
-    const rowNumber = idx + 2;
+    const rowNumber = Number.isFinite(Number(r.__rowNumber)) ? Number(r.__rowNumber) : idx + 2;
     const reasons = [];
 
-    if (!r.firstName) reasons.push("Missing firstName");
-    if (!r.lastName) reasons.push("Missing lastName");
-    if (!r.phoneNumberRaw) reasons.push("Missing phoneNumber");
-
-    if (r.gender && !["male", "female"].includes(r.gender)) reasons.push("Invalid gender");
-    if (r.status && !["active", "inactive", "visitor", "former"].includes(r.status)) reasons.push("Invalid status");
-    if (r.maritalStatus && !["single", "married", "divorced", "widowed", "other"].includes(r.maritalStatus)) {
-      reasons.push("Invalid maritalStatus");
+    for (const f of MEMBER_IMPORT_FIELDS) {
+      if (f.required) {
+        const present = f.kind === "phone" ? Boolean(r.phoneNumberRaw) : Boolean(r[f.key]);
+        if (!present) reasons.push(`Missing ${f.key}`);
+      }
+      if (f.enum) {
+        const v = r[f.key];
+        const allowed = memberFieldEnum(f.enum);
+        if (v && allowed.length && !allowed.includes(v)) {
+          reasons.push(`Invalid ${f.key} "${v}" (use: ${allowed.join(", ")})`);
+        }
+      }
     }
 
     const emailTrimmed = r.email;
-    if (emailTrimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) reasons.push("Invalid email");
+    if (emailTrimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      reasons.push(`Invalid email "${r.email}"`);
+    }
 
     const dob = parseOptionalDate(r.dateOfBirthRaw);
-    if (dob.error) reasons.push("Invalid dateOfBirth");
+    if (dob.error) reasons.push(`Invalid dateOfBirth "${r.dateOfBirthRaw}" (use YYYY-MM-DD)`);
     const joined = parseOptionalDate(r.dateJoinedRaw);
-    if (joined.error) reasons.push("Invalid dateJoined");
+    if (joined.error) reasons.push(`Invalid dateJoined "${r.dateJoinedRaw}" (use YYYY-MM-DD)`);
+
+    const merged = { ...r };
+    for (const f of MEMBER_IMPORT_FIELDS) {
+      if (f.kind === "date") {
+        merged[f.key] = f.key === "dateOfBirth" ? (dob.date || null) : (joined.date || undefined);
+      }
+    }
+    delete merged.__rowNumber;
+    const payload = Object.fromEntries(
+      Object.entries(merged).map(([k, v]) => [k, v === "" ? undefined : v])
+    );
 
     if (r.phoneNumberRaw) {
-      if (!r.phoneNumber) reasons.push("Invalid phoneNumber");
+      if (!r.phoneNumber) reasons.push(`Invalid phoneNumber "${r.phoneNumberRaw}"`);
       if (r.phoneNumber) {
-        if (existingPhones.has(r.phoneNumber)) reasons.push("Duplicate phoneNumber (already exists)");
-        if (seenPhones.has(r.phoneNumber)) reasons.push("Duplicate phoneNumber (in CSV)");
+        if (existingPhones.has(r.phoneNumber)) reasons.push(`Duplicate phoneNumber "${r.phoneNumberRaw}" (already exists)`);
+        if (seenPhones.has(r.phoneNumber)) reasons.push(`Duplicate phoneNumber "${r.phoneNumberRaw}" (in file)`);
         seenPhones.add(r.phoneNumber);
       }
     }
 
     if (r.email) {
-      if (existingEmails.has(r.email)) reasons.push("Duplicate email (already exists)");
-      if (seenEmails.has(r.email)) reasons.push("Duplicate email (in CSV)");
+      if (existingEmails.has(r.email)) reasons.push(`Duplicate email "${r.email}" (already exists)`);
+      if (seenEmails.has(r.email)) reasons.push(`Duplicate email "${r.email}" (in file)`);
       seenEmails.add(r.email);
     }
 
     if (reasons.length) {
-      invalid.push({ rowNumber, reasons, data: r });
+      invalid.push({ rowNumber, reasons, payload });
     } else {
-      valid.push(r);
+      valid.push({ rowNumber, payload });
     }
   });
 

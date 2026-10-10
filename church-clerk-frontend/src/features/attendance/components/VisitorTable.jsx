@@ -4,6 +4,7 @@ import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
@@ -33,7 +34,7 @@ function StatusChip({ value }) {
   );
 }
 
-function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error, onPage, showSessionColumn }) {
+function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error, onPage, onLimitChange, limit, showSessionColumn }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(AttendanceContext);
   const { toPage } = useDashboardNavigator();
@@ -58,19 +59,17 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
 
   const pg = pagination || store?.visitorPagination;
 
-  const onPrev = async () => {
-    const prevPage = pg?.prevPage;
-    if (!prevPage) return;
-    if (onPage) return onPage(prevPage);
-    await store?.fetchVisitors({ page: prevPage });
+  const handlePageChange = (page) => {
+    if (!page) return;
+    if (onPage) return onPage(page);
+    store?.fetchVisitors({ page });
   };
 
-  const onNext = async () => {
-    const nextPage = pg?.nextPage;
-    if (!nextPage) return;
-    if (onPage) return onPage(nextPage);
-    await store?.fetchVisitors({ page: nextPage });
-  };
+  const handleLimitChange = onLimitChange
+    ? onLimitChange
+    : !onPage
+      ? (n) => store?.fetchVisitors({ limit: n, page: 1 })
+      : undefined;
 
   const onDelete = async (id) => {
     await store?.deleteVisitor(id);
@@ -311,25 +310,21 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
         </table>
       </div>
 
-      <div className="flex items-center justify-end gap-3 py-2 px-4 md:px-6">
-        <button
-          type="button"
-          onClick={onPrev}
-          disabled={!pg?.prevPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Prev
-        </button>
-        <div className="text-gray-600 text-sm">Page {pg?.currentPage || 1}</div>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!pg?.nextPage}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-        >
-          Next
-        </button>
-      </div>
+      <Pagination
+        pagination={pg}
+        rowsCount={rows.length}
+        limit={limit ?? store?.visitorFilters?.limit}
+        onLimitChange={handleLimitChange}
+        onPageChange={handlePageChange}
+        itemName="visitors"
+        filtered={Boolean(
+          String(store?.visitorFilters?.search || "").trim() ||
+            store?.visitorFilters?.source ||
+            store?.visitorFilters?.attendance ||
+            store?.visitorFilters?.dateFrom ||
+            store?.visitorFilters?.dateTo
+        )}
+      />
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">

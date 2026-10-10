@@ -2,7 +2,10 @@ import Church from "../models/churchModel.js";
 import Member from "../models/memberModel.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import { getChurchPrefix, generateMemberId, parseOptionalDate } from "../utils/memberHelpers.js";
+import { memberFieldEnum } from "../utils/memberImportFields.js";
 import cloudinary from "../config/cloudinary.js";
+
+const MEMBER_STATUS_ENUM = memberFieldEnum("status");
 
 export const getChurchByToken = async (req, res) => {
   try {
@@ -54,6 +57,7 @@ export const selfRegisterMember = async (req, res) => {
       occupation,
       nationality,
       ageGroup,
+      status,
       dateOfBirth,
       streetAddress,
       city,
@@ -122,7 +126,7 @@ export const selfRegisterMember = async (req, res) => {
       churchRole: churchRole || undefined,
       dateJoined: joined || new Date(),
       note: note || undefined,
-      status: "active",
+      status: MEMBER_STATUS_ENUM.includes(String(status || "").toLowerCase()) ? String(status).toLowerCase() : "active",
       church: church._id,
       createdBy
     });

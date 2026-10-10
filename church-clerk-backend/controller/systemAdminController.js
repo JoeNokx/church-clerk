@@ -88,15 +88,23 @@ const getAllChurches = async (req, res) => {
 const getSystemChurchById = async (req, res) => {
   try {
     const { id } = req.params;
-    const church = await Church.findById(id).lean();
+    const church = await Church.findById(id)
+      .populate("createdBy", "fullName email")
+      .lean();
 
     if (!church) {
       return res.status(404).json({ message: "Church not found" });
     }
 
+    // Branches are churches whose parentChurch points at this church.
+    const branches = await Church.find({ parentChurch: id })
+      .select("name type pastor city region country phoneNumber email isActive memberCount createdAt")
+      .sort({ name: 1 })
+      .lean();
+
     return res.status(200).json({
       message: "Church fetched successfully",
-      data: church
+      data: { ...church, branches }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -816,10 +824,11 @@ const suspendChurch = async (req, res) => {
     if (!id) return res.status(400).json({ message: "Church id is required" });
 
     const reason = String(req.body?.reason || "").trim() || null;
+    const suspendReasonVisible = req.body?.suspendReasonVisible !== false;
 
     const church = await Church.findByIdAndUpdate(
       id,
-      { isActive: false, suspendedAt: new Date(), suspendReason: reason },
+      { isActive: false, suspendedAt: new Date(), suspendReason: reason, suspendReasonVisible },
       { new: true }
     ).lean();
 
@@ -838,7 +847,7 @@ const unsuspendChurch = async (req, res) => {
 
     const church = await Church.findByIdAndUpdate(
       id,
-      { isActive: true, suspendedAt: null, suspendReason: null },
+      { isActive: true, suspendedAt: null, suspendReason: null, suspendReasonVisible: true },
       { new: true }
     ).lean();
 
@@ -908,10 +917,6 @@ const delegateChurchSession = async (req, res) => {
     const church = await Church.findById(id).lean();
     if (!church) {
       return res.status(404).json({ message: "Church not found" });
-    }
-
-    if (church.isActive === false) {
-      return res.status(403).json({ message: "Cannot delegate into a suspended church" });
     }
 
     const adminUser = req.user;

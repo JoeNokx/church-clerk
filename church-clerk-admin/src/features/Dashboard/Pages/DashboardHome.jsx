@@ -12,6 +12,7 @@ import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 const fmt = (n) => Number(n || 0).toLocaleString();
 const fmtGhs = (n) => `GHS ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -54,20 +55,19 @@ function DashboardHome() {
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
-  const [auditPage, setAuditPage] = useState(1);
+  const [auditLimit, setAuditLimit] = useState(7);
   const [auditPagination, setAuditPagination] = useState(null);
   const [auditLoading, setAuditLoading] = useState(false);
 
-  const loadAudit = useCallback(async (pg = 1) => {
+  const loadAudit = useCallback(async (pg = 1, limit = auditLimit) => {
     setAuditLoading(true);
     try {
-      const res = await getSystemAuditLogs({ limit: 7, page: pg });
+      const res = await getSystemAuditLogs({ limit, page: pg });
       setAuditLogs(Array.isArray(res?.data?.logs) ? res.data.logs : []);
       setAuditPagination(res?.data?.pagination || null);
-      setAuditPage(pg);
     } catch { setAuditLogs([]); }
     finally { setAuditLoading(false); }
-  }, []);
+  }, [auditLimit]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -388,22 +388,17 @@ function DashboardHome() {
                     );
                   })}
                 </div>
-                <div className="mt-3 flex items-center justify-between pt-3 border-t border-gray-100">
-                  <div className="text-xs text-gray-400">
-                    Page {auditPage}{auditPagination?.totalPages ? ` / ${auditPagination.totalPages}` : ""}
-                  </div>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => loadAudit(auditPage - 1)}
-                      disabled={auditLoading || !auditPagination?.prevPage}
-                      className="rounded border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 disabled:opacity-40 hover:bg-gray-50">
-                      Prev
-                    </button>
-                    <button type="button" onClick={() => loadAudit(auditPage + 1)}
-                      disabled={auditLoading || !auditPagination?.nextPage}
-                      className="rounded border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 disabled:opacity-40 hover:bg-gray-50">
-                      Next
-                    </button>
-                  </div>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <Pagination
+                    pagination={auditPagination}
+                    rowsCount={auditLogs.length}
+                    limit={auditLimit}
+                    onLimitChange={(n) => { setAuditLimit(n); loadAudit(1, n); }}
+                    onPageChange={(p) => loadAudit(p)}
+                    itemName="events"
+                    disabled={auditLoading}
+                    limitOptions={[7, 14, 28, 50]}
+                  />
                 </div>
               </>
             )}

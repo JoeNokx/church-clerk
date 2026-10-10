@@ -158,6 +158,12 @@ export const setActiveChurch = async (req, res, next) => {
 
     req.activeChurch = church;
 
+    // When a system admin hides the suspension reason, church users must not
+    // see it anywhere the church context is exposed.
+    if (req.activeChurch.suspendReasonVisible === false) {
+      delete req.activeChurch.suspendReason;
+    }
+
 
 
     req.activeChurch.canEdit =

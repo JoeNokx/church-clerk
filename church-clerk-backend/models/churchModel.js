@@ -94,6 +94,11 @@ const churchSchema = new mongoose.Schema({
     trim: true
   },
 
+  suspendReasonVisible: {
+    type: Boolean,
+    default: true
+  },
+
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"

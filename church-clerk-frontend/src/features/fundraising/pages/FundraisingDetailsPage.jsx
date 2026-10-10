@@ -27,6 +27,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
@@ -565,6 +566,7 @@ function FundraisingDetailsPage() {
   const [contribRows, setContribRows] = useState([]);
   const [contribPagination, setContribPagination] = useState(null);
   const [contribPage, setContribPage] = useState(1);
+  const [contribLimit, setContribLimit] = useState(20);
   const [contribSearch, setContribSearch] = useState("");
   const [contribDateFrom, setContribDateFrom] = useState("");
   const [contribDateTo, setContribDateTo] = useState("");
@@ -576,6 +578,7 @@ function FundraisingDetailsPage() {
   const [expenseRows, setExpenseRows] = useState([]);
   const [expensePagination, setExpensePagination] = useState(null);
   const [expensePage, setExpensePage] = useState(1);
+  const [expenseLimit, setExpenseLimit] = useState(20);
   const [expenseSearch, setExpenseSearch] = useState("");
   const [expenseDateFrom, setExpenseDateFrom] = useState("");
   const [expenseDateTo, setExpenseDateTo] = useState("");
@@ -623,7 +626,7 @@ function FundraisingDetailsPage() {
     try {
       const res = await getProjectTransactions(projectId, {
         page: nextPage,
-        limit: 10,
+        limit: contribLimit,
         search: String(debouncedContribSearch || "").trim(),
         dateFrom: contribDateFrom || undefined,
         dateTo: contribDateTo || undefined,
@@ -648,7 +651,7 @@ function FundraisingDetailsPage() {
     try {
       const res = await getProjectExpenses(projectId, {
         page: nextPage,
-        limit: 10,
+        limit: expenseLimit,
         search: String(debouncedExpenseSearch || "").trim(),
         dateFrom: expenseDateFrom || undefined,
         dateTo: expenseDateTo || undefined,
@@ -671,11 +674,11 @@ function FundraisingDetailsPage() {
 
   useEffect(() => {
     loadContributions(contribPage);
-  }, [projectId, contribPage, debouncedContribSearch, contribDateFrom, contribDateTo, contribType, contribPledgeStatus]);
+  }, [projectId, contribPage, contribLimit, debouncedContribSearch, contribDateFrom, contribDateTo, contribType, contribPledgeStatus]);
 
   useEffect(() => {
     loadExpenses(expensePage);
-  }, [projectId, expensePage, debouncedExpenseSearch, expenseDateFrom, expenseDateTo, expenseCategory]);
+  }, [projectId, expensePage, expenseLimit, debouncedExpenseSearch, expenseDateFrom, expenseDateTo, expenseCategory]);
 
   const projectName = kpi?.name || "";
   const badge = statusBadge(kpi?.status);
@@ -1047,25 +1050,15 @@ function FundraisingDetailsPage() {
               )
             ) : null}
 
-            <div className="flex items-center justify-end gap-3 max-md:px-4 py-3 px-4 md:px-6">
-              <button
-                type="button"
-                onClick={() => setContribPage((p) => Math.max(1, p - 1))}
-                disabled={!contribPagination?.hasPrev}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-sm">Page {contribPagination?.currentPage || 1}</div>
-              <button
-                type="button"
-                onClick={() => setContribPage((p) => p + 1)}
-                disabled={!contribPagination?.hasNext}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
+            <Pagination
+              pagination={contribPagination || { currentPage: contribPage }}
+              rowsCount={contribRows.length}
+              limit={contribLimit}
+              onLimitChange={(n) => { setContribLimit(n); setContribPage(1); }}
+              onPageChange={setContribPage}
+              itemName="contributions"
+              filtered={Boolean(String(debouncedContribSearch || "").trim() || contribDateFrom || contribDateTo || contribType || contribPledgeStatus)}
+            />
           </div>
         ) : (
           <div>
@@ -1128,25 +1121,15 @@ function FundraisingDetailsPage() {
               )
             ) : null}
 
-            <div className="flex items-center justify-end gap-3 max-md:px-4 py-3 px-4 md:px-6">
-              <button
-                type="button"
-                onClick={() => setExpensePage((p) => Math.max(1, p - 1))}
-                disabled={!expensePagination?.hasPrev}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Prev
-              </button>
-              <div className="text-gray-600 text-sm">Page {expensePagination?.currentPage || 1}</div>
-              <button
-                type="button"
-                onClick={() => setExpensePage((p) => p + 1)}
-                disabled={!expensePagination?.hasNext}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
+            <Pagination
+              pagination={expensePagination || { currentPage: expensePage }}
+              rowsCount={expenseRows.length}
+              limit={expenseLimit}
+              onLimitChange={(n) => { setExpenseLimit(n); setExpensePage(1); }}
+              onPageChange={setExpensePage}
+              itemName="expenses"
+              filtered={Boolean(String(debouncedExpenseSearch || "").trim() || expenseDateFrom || expenseDateTo || expenseCategory)}
+            />
           </div>
         )}
       </div>

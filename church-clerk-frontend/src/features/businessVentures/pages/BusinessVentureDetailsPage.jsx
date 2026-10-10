@@ -13,6 +13,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
@@ -727,6 +728,7 @@ function BusinessVentureDetailsPage() {
   const [incomeRows, setIncomeRows] = useState([]);
   const [incomePagination, setIncomePagination] = useState(null);
   const [incomePage, setIncomePage] = useState(1);
+  const [incomeLimit, setIncomeLimit] = useState(20);
   const [incomeSearch, setIncomeSearch] = useState("");
   const [incomeDateFrom, setIncomeDateFrom] = useState("");
   const [incomeDateTo, setIncomeDateTo] = useState("");
@@ -735,6 +737,7 @@ function BusinessVentureDetailsPage() {
   const [expenseRows, setExpenseRows] = useState([]);
   const [expensePagination, setExpensePagination] = useState(null);
   const [expensePage, setExpensePage] = useState(1);
+  const [expenseLimit, setExpenseLimit] = useState(20);
   const [expenseSearch, setExpenseSearch] = useState("");
   const [expenseDateFrom, setExpenseDateFrom] = useState("");
   const [expenseDateTo, setExpenseDateTo] = useState("");
@@ -792,7 +795,7 @@ function BusinessVentureDetailsPage() {
     const search = searchOverride !== undefined ? searchOverride : incomeSearchRef.current;
     const res = await getBusinessIncomes(businessId, {
       page,
-      limit: 10,
+      limit: incomeLimit,
       search,
       category: incomeCategory,
       dateFrom: incomeDateFrom,
@@ -800,14 +803,14 @@ function BusinessVentureDetailsPage() {
     });
     setIncomeRows(safeList(res, "businessIncome"));
     setIncomePagination(safePagination(res));
-  }, [businessId, incomeDateFrom, incomeDateTo, incomeCategory]);
+  }, [businessId, incomeDateFrom, incomeDateTo, incomeCategory, incomeLimit]);
 
   const loadExpenses = useCallback(async (page, searchOverride) => {
     if (!businessId) return;
     const search = searchOverride !== undefined ? searchOverride : expenseSearchRef.current;
     const res = await getBusinessExpenses(businessId, {
       page,
-      limit: 10,
+      limit: expenseLimit,
       search,
       category: expenseCategory,
       dateFrom: expenseDateFrom,
@@ -815,7 +818,7 @@ function BusinessVentureDetailsPage() {
     });
     setExpenseRows(safeList(res, "businessExpenses"));
     setExpensePagination(safePagination(res));
-  }, [businessId, expenseDateFrom, expenseDateTo, expenseCategory]);
+  }, [businessId, expenseDateFrom, expenseDateTo, expenseCategory, expenseLimit]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -1197,25 +1200,21 @@ function BusinessVentureDetailsPage() {
                 <EmptyState compact illustration="income" title="No income records found" description="Income from this venture will appear here." />
               )}
 
-              <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-                <button
-                  type="button"
-                  onClick={() => setIncomePage((p) => Math.max(1, p - 1))}
-                  disabled={incomePage <= 1}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-                >
-                  Prev
-                </button>
-                <div className="text-gray-600 text-sm">Page {incomePage} of {incomeTotalPages}</div>
-                <button
-                  type="button"
-                  onClick={() => setIncomePage((p) => Math.min(incomeTotalPages, p + 1))}
-                  disabled={incomePage >= incomeTotalPages}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-                >
-                  Next
-                </button>
-              </div>
+              <Pagination
+                pagination={{
+                  currentPage: incomePage,
+                  totalPages: incomeTotalPages,
+                  totalResult: incomePagination?.totalResult ?? incomePagination?.total ?? 0,
+                  prevPage: incomePage > 1 ? incomePage - 1 : null,
+                  nextPage: incomePage < incomeTotalPages ? incomePage + 1 : null
+                }}
+                rowsCount={incomeRows.length}
+                limit={incomeLimit}
+                onLimitChange={(n) => { setIncomeLimit(n); setIncomePage(1); }}
+                onPageChange={setIncomePage}
+                itemName="records"
+                filtered={Boolean(String(incomeSearch || "").trim() || incomeDateFrom || incomeDateTo || incomeCategory)}
+              />
             </div>
           ) : (
             <div>
@@ -1261,25 +1260,21 @@ function BusinessVentureDetailsPage() {
                 <EmptyState compact illustration="expenses" title="No expense records found" description="Expenses for this venture will appear here." />
               )}
 
-              <div className="flex items-center justify-end gap-3 px-4 md:px-5 lg:px-6 py-4">
-                <button
-                  type="button"
-                  onClick={() => setExpensePage((p) => Math.max(1, p - 1))}
-                  disabled={expensePage <= 1}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-                >
-                  Prev
-                </button>
-                <div className="text-gray-600 text-sm">Page {expensePage} of {expenseTotalPages}</div>
-                <button
-                  type="button"
-                  onClick={() => setExpensePage((p) => Math.min(expenseTotalPages, p + 1))}
-                  disabled={expensePage >= expenseTotalPages}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 disabled:opacity-50 text-sm"
-                >
-                  Next
-                </button>
-              </div>
+              <Pagination
+                pagination={{
+                  currentPage: expensePage,
+                  totalPages: expenseTotalPages,
+                  totalResult: expensePagination?.totalResult ?? expensePagination?.total ?? 0,
+                  prevPage: expensePage > 1 ? expensePage - 1 : null,
+                  nextPage: expensePage < expenseTotalPages ? expensePage + 1 : null
+                }}
+                rowsCount={expenseRows.length}
+                limit={expenseLimit}
+                onLimitChange={(n) => { setExpenseLimit(n); setExpensePage(1); }}
+                onPageChange={setExpensePage}
+                itemName="records"
+                filtered={Boolean(String(expenseSearch || "").trim() || expenseDateFrom || expenseDateTo || expenseCategory)}
+              />
             </div>
           )}
         </div>

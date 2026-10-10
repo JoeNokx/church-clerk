@@ -19,11 +19,15 @@ function getVerificationEmailTemplate(fullName, token, email) {
 }
 
 function getWelcomeEmailTemplate(fullName, churchName) {
+  const baseUrl = getFrontendBaseUrl();
+  const link = `${baseUrl}/login`;
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
       <h2 style="margin: 0 0 12px;">Welcome to Church Clerk</h2>
       <p>Hello ${fullName || ""},</p>
       <p>Your church <strong>${churchName || ""}</strong> has been set up successfully. You can now start managing members, programs, finances, and more.</p>
+      <p><a href="${link}" style="display: inline-block; background: #1e3a8a; color: #ffffff; padding: 10px 14px; border-radius: 8px; text-decoration: none;">Log in to your account</a></p>
+      <p style="color: #6b7280; font-size: 12px;">If the button doesn't work, copy and paste this link into your browser:<br/>${link}</p>
     </div>
   `;
 }

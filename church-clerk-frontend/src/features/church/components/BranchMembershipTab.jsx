@@ -7,6 +7,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import Select from "../../../shared/components/Select/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { getBranchMembers } from "../services/church.api.js";
 
 const MEMBER_STATUSES = [
@@ -42,10 +43,11 @@ function BranchMembershipTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [searchValue, setSearchValue] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
-  const limit = 10;
+
 
   const debouncedSearch = useMemo(
     () =>
@@ -89,7 +91,7 @@ function BranchMembershipTab() {
     return () => {
       cancelled = true;
     };
-  }, [page, search, status]);
+  }, [page, limit, search, status]);
 
   const kpis = data?.kpis || {};
   const members = data?.members || [];
@@ -261,25 +263,15 @@ function BranchMembershipTab() {
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 px-4 py-3 md:px-6">
-          <button
-            type="button"
-            onClick={() => pagination?.prevPage && setPage(pagination.prevPage)}
-            disabled={!pagination?.prevPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Prev
-          </button>
-          <div className="text-gray-600 text-sm">Page {pagination?.currentPage || 1}</div>
-          <button
-            type="button"
-            onClick={() => pagination?.nextPage && setPage(pagination.nextPage)}
-            disabled={!pagination?.nextPage}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
-        </div>
+        <Pagination
+          pagination={pagination}
+          rowsCount={members.length}
+          limit={limit}
+          onLimitChange={(n) => { setLimit(n); setPage(1); }}
+          onPageChange={setPage}
+          itemName="members"
+          filtered={filtering}
+        />
       </div>
     </div>
   );

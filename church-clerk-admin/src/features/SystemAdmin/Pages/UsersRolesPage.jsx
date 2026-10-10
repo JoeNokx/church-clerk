@@ -20,6 +20,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -70,7 +71,7 @@ function UsersRolesPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(25);
+  const [limit, setLimit] = useState(20);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -551,27 +552,17 @@ function UsersRolesPage() {
             </table>
           </div>
 
-          <div className="mt-4 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => load({ nextPage: Math.max(1, page - 1) })}
-              disabled={loading || !(pagination?.hasPrev ?? page > 1)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50"
-            >
-              Prev
-            </button>
-            <div className="text-xs text-gray-600">
-              Page {page}
-              {pagination?.totalPages ? ` / ${pagination.totalPages}` : ""}
-            </div>
-            <button
-              type="button"
-              onClick={() => load({ nextPage: page + 1 })}
-              disabled={loading || !(pagination?.hasNext ?? false)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50"
-            >
-              Next
-            </button>
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+            <Pagination
+              pagination={pagination}
+              rowsCount={rows.length}
+              limit={limit}
+              onLimitChange={(n) => { setLimit(n); }}
+              onPageChange={(p) => load({ nextPage: p })}
+              itemName="users"
+              filtered={Boolean(roleFilter || String(search || "").trim())}
+              disabled={loading}
+            />
           </div>
         </Card>
       ) : (
