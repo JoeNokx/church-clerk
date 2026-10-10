@@ -258,7 +258,8 @@ function AttendancePageInner() {
     setIndivMembersError("");
     setIndivMembers([]);
     try {
-      const firstRes = await getMembers({ page: 1, limit: 200, status: "active" });
+      const ATTENDANCE_STATUSES = "active,dormant,temporarily_away";
+      const firstRes = await getMembers({ page: 1, limit: 200, status: ATTENDANCE_STATUSES });
       const firstPayload = firstRes?.data?.data ?? firstRes?.data;
       const totalPages = firstPayload?.pagination?.totalPages || 1;
       let allRows = Array.isArray(firstPayload?.members) ? [...firstPayload.members] : [];
@@ -266,7 +267,7 @@ function AttendancePageInner() {
       if (totalPages > 1) {
         const pageNums = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
         const rest = await Promise.all(
-          pageNums.map((p) => getMembers({ page: p, limit: 200, status: "active" }))
+          pageNums.map((p) => getMembers({ page: p, limit: 200, status: ATTENDANCE_STATUSES }))
         );
         rest.forEach((r) => {
           const p = r?.data?.data ?? r?.data;
@@ -798,7 +799,7 @@ function AttendancePageInner() {
                       ))}
                     </div>
                   ) : filteredIndivRecords.length === 0 ? (
-                    <EmptyState compact illustration="attendance" title="No individual attendance records found" description="Individual attendance entries will appear here." />
+                    <EmptyState compact illustration="attendance" title="No attendance sessions yet" description="Create a service session to start tracking attendance." />
                   ) : (
                     <div className="p-2 space-y-1.5 max-h-[600px] overflow-y-auto">
                       {filteredIndivRecords.map((r, idx) => {
@@ -1030,7 +1031,7 @@ function AttendancePageInner() {
                                 key={key}
                                 type="button"
                                 onClick={() => { setIndivViewTab(key); setIndivViewPresentPage(1); setIndivViewAbsentPage(1); setIndivViewUnmarkedPage(1); }}
-                                className={`rounded-full px-4 py-1 text-xs font-semibold transition-colors ${indivViewTab === key ? "bg-white text-gray-900 shadow-sm border border-gray-200" : "text-gray-500 hover:text-gray-700"}`}
+                                className={`rounded-full px-4 py-1 text-xs font-semibold transition-colors ${indivViewTab === key ? "bg-white text-gray-900 border border-gray-200" : "text-gray-500 hover:text-gray-700"}`}
                               >
                                 {label}
                               </button>
@@ -1057,7 +1058,7 @@ function AttendancePageInner() {
                                         const fullLoc = [m?.streetAddress, m?.city].filter(Boolean).join(", ").trim() || "";
                                         return (
                                           <tr key={m?._id || idx} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m?._id }, { state: { from: "attendance" } }); }}>
-                                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={fullN}>
+                                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-gray-900 font-semibold whitespace-nowrap" title={fullN}>
                                               <span className="sm:hidden">{truncateMobileName(fullN)}</span>
                                               <span className="hidden sm:inline">{truncateDesktopName(fullN)}</span>
                                             </td>
@@ -1107,7 +1108,7 @@ function AttendancePageInner() {
                                         const fullLoc = [m?.streetAddress, m?.city].filter(Boolean).join(", ").trim() || "";
                                         return (
                                           <tr key={m?._id || idx} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m?._id }, { state: { from: "attendance" } }); }}>
-                                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={fullN}>
+                                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-gray-900 font-semibold whitespace-nowrap" title={fullN}>
                                               <span className="sm:hidden">{truncateMobileName(fullN)}</span>
                                               <span className="hidden sm:inline">{truncateDesktopName(fullN)}</span>
                                             </td>
@@ -1154,7 +1155,7 @@ function AttendancePageInner() {
                                     <tbody className="divide-y divide-gray-200">
                                       {unmarkedPaged.map((m) => (
                                         <tr key={m.id} className="text-sm cursor-pointer hover:bg-gray-50" onClick={() => { toPage("member-details", { id: m.id }, { state: { from: "attendance" } }); }}>
-                                          <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-blue-700 font-semibold whitespace-nowrap" title={m.name}>
+                                          <td className="sticky left-0 z-10 bg-white px-4 py-2.5 text-gray-900 font-semibold whitespace-nowrap" title={m.name}>
                                             <span className="sm:hidden">{truncateMobileName(m.name)}</span>
                                             <span className="hidden sm:inline">{truncateDesktopName(m.name)}</span>
                                           </td>

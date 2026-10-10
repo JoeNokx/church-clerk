@@ -1,4 +1,5 @@
 import Member from "../models/memberModel.js"
+import MemberStatusHistory from "../models/memberStatusHistoryModel.js"
 import Church from "../models/churchModel.js"
 import cloudinary from "../config/cloudinary.js"
 import Visitor from "../models/visitorsModel.js"
@@ -444,7 +445,13 @@ const getAllMembers = async (req, res) => {
     }
 
     if (status && status !== "all") {
-      query.status = status;
+      if (Array.isArray(status)) {
+        query.status = { $in: status };
+      } else if (String(status).includes(",")) {
+        query.status = { $in: String(status).split(",").map((s) => s.trim()).filter(Boolean) };
+      } else {
+        query.status = status;
+      }
     }
 
     if (ageGroup && ageGroup !== "all") {
@@ -614,45 +621,114 @@ const getAllMembersKPI = async (req, res) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    const INACTIVE_STATUSES = ["dormant", "temporarily_away", "inactive"];
+    const FORMER_STATUSES = ["transferred", "left_church", "deceased", "former"];
+    const MEMBER_STATUSES = ["active", ...INACTIVE_STATUSES, ...FORMER_STATUSES];
+
     const pctChange = (current, previous) => {
       const c = Number(current || 0);
       const p = Number(previous || 0);
-      if (!p) return c ? 100 : 0;
-      return ((c - p) / p) * 100;
+      if (p > 0) return ((c - p) / p) * 100;
+      return c > 0 ? null : 0;
     };
+
+    // Lazy baseline: members with no history rows get one stamped "now".
+    // Idempotent via the partial unique index on (church, member, source="baseline").
+    const memberIdsWithHistory = await MemberStatusHistory.distinct("member", { church: query.church });
+    const missingHistory = await Member.find({ ...query, _id: { $nin: memberIdsWithHistory } })
+      .select("_id status")
+      .lean();
+    if (missingHistory.length) {
+      const stamp = new Date();
+      await MemberStatusHistory.insertMany(
+        missingHistory.map((m) => ({
+          church: query.church,
+          member: m._id,
+          fromStatus: null,
+          toStatus: m.status,
+          changedAt: stamp,
+          source: "baseline"
+        })),
+        { ordered: false }
+      ).catch((e) => {
+        if (e?.code !== 11000) throw e;
+      });
+    }
 
     const [
       totalMembers,
       activeMembers,
       inactiveMembers,
       formerMembers,
-      totalMembersPrev,
-      activeMembersPrev,
-      inactiveMembersPrev,
-      formerMembersPrev
+      uncategorisedMembers,
+      memberIdsAtBoundary
     ] = await Promise.all([
-      Member.countDocuments(query),
+      Member.countDocuments({ ...query, status: { $in: MEMBER_STATUSES } }),
       Member.countDocuments({ ...query, status: "active" }),
-      Member.countDocuments({ ...query, status: { $in: ["dormant", "temporarily_away"] } }),
-      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church", "deceased"] } }),
-      Member.countDocuments({ ...query, dateJoined: { $lt: startOfMonth } }),
-      Member.countDocuments({ ...query, status: "active", dateJoined: { $lt: startOfMonth } }),
-      Member.countDocuments({ ...query, status: { $in: ["dormant", "temporarily_away"] }, dateJoined: { $lt: startOfMonth } }),
-      Member.countDocuments({ ...query, status: { $in: ["transferred", "left_church", "deceased"] }, dateJoined: { $lt: startOfMonth } })
+      Member.countDocuments({ ...query, status: { $in: INACTIVE_STATUSES } }),
+      Member.countDocuments({ ...query, status: { $in: FORMER_STATUSES } }),
+      Member.countDocuments({ ...query, status: { $nin: MEMBER_STATUSES } }),
+      Member.find({ ...query, createdAt: { $lt: startOfMonth } }).distinct("_id")
     ]);
 
+    // A month-end comparison is only reliable when every member who existed at the
+    // boundary has a status-history entry at or before it. Without that coverage,
+    // no honest previous count exists — report it as unavailable instead of inventing.
+    const coveredIds = await MemberStatusHistory.distinct("member", {
+      church: query.church,
+      member: { $in: memberIdsAtBoundary },
+      changedAt: { $lt: startOfMonth }
+    });
+    const hasComparisonData = coveredIds.length === memberIdsAtBoundary.length;
+
+    let previous = null;
+    if (hasComparisonData) {
+      // Reconstruct each member's status at month start from history:
+      // the toStatus of their latest entry before the boundary.
+      const statusAtBoundary = await MemberStatusHistory.aggregate([
+        { $match: { church: query.church, member: { $in: memberIdsAtBoundary }, changedAt: { $lt: startOfMonth } } },
+        { $sort: { changedAt: -1 } },
+        { $group: { _id: "$member", toStatus: { $first: "$toStatus" } } },
+        { $group: { _id: "$toStatus", n: { $sum: 1 } } }
+      ]);
+
+      const bucket = { active: 0, inactive: 0, former: 0 };
+      for (const row of statusAtBoundary) {
+        const s = row?._id;
+        if (s === "active") bucket.active += row.n;
+        else if (INACTIVE_STATUSES.includes(s)) bucket.inactive += row.n;
+        else if (FORMER_STATUSES.includes(s)) bucket.former += row.n;
+      }
+      previous = {
+        totalMembers: bucket.active + bucket.inactive + bucket.former,
+        activeMembers: bucket.active,
+        inactiveMembers: bucket.inactive,
+        formerMembers: bucket.former
+      };
+    }
+
+    const buildChange = (current, prev) => (prev === null ? null : pctChange(current, prev));
+    const buildDiff = (current, prev) => (prev === null ? null : current - prev);
+
+    const p = previous || {
+      totalMembers: null,
+      activeMembers: null,
+      inactiveMembers: null,
+      formerMembers: null
+    };
+
     const change = {
-      totalMembers: pctChange(totalMembers, totalMembersPrev),
-      activeMembers: pctChange(activeMembers, activeMembersPrev),
-      inactiveMembers: pctChange(inactiveMembers, inactiveMembersPrev),
-      formerMembers: pctChange(formerMembers, formerMembersPrev)
+      totalMembers: buildChange(totalMembers, p.totalMembers),
+      activeMembers: buildChange(activeMembers, p.activeMembers),
+      inactiveMembers: buildChange(inactiveMembers, p.inactiveMembers),
+      formerMembers: buildChange(formerMembers, p.formerMembers)
     };
 
     const diff = {
-      totalMembers: totalMembers - totalMembersPrev,
-      activeMembers: activeMembers - activeMembersPrev,
-      inactiveMembers: inactiveMembers - inactiveMembersPrev,
-      formerMembers: formerMembers - formerMembersPrev
+      totalMembers: buildDiff(totalMembers, p.totalMembers),
+      activeMembers: buildDiff(activeMembers, p.activeMembers),
+      inactiveMembers: buildDiff(inactiveMembers, p.inactiveMembers),
+      formerMembers: buildDiff(formerMembers, p.formerMembers)
     };
 
     return res.status(200).json({
@@ -662,8 +738,11 @@ const getAllMembersKPI = async (req, res) => {
         activeMembers,
         inactiveMembers,
         formerMembers,
+        previous: hasComparisonData ? previous : null,
         change,
-        diff
+        diff,
+        hasComparisonData,
+        uncategorised: uncategorisedMembers
       }
     });
   } catch (error) {

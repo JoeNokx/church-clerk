@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { getSystemReferralHistory, getSystemReferralSummary } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
-import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
@@ -74,16 +74,8 @@ function ReferralsPage() {
     return () => clearTimeout(t);
   }, [search, status, load]);
 
-  const cards = useMemo(() => {
-    const s = summary || {};
-    const safe = (v) => (v === undefined || v === null ? 0 : Number(v) || 0);
-    return [
-      { label: "Total referrals", value: safe(s.totalReferrals) },
-      { label: "Pending", value: safe(s.pendingReferrals) },
-      { label: "Rewarded", value: safe(s.rewardedReferrals) },
-      { label: "Referral codes", value: safe(s.totalCodes) }
-    ];
-  }, [summary]);
+  const safe = (v) => Number(v === undefined || v === null ? 0 : v) || 0;
+  const s = summary || {};
 
   const statusSelects = [
     {
@@ -120,13 +112,55 @@ function ReferralsPage() {
       </div>
 
       <KpiGrid className="gap-4 lg:grid-cols-4">
-        {cards.map((c) => (
-          <KpiStatCard
-            key={c.label}
-            label={c.label}
-            value={Number(c.value || 0).toLocaleString()}
-          />
-        ))}
+        <KpiCard
+          title="Total Referrals"
+          value={safe(s.totalReferrals).toLocaleString()}
+          iconBg="bg-blue-50"
+          iconColor="text-blue-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M17 8C17 10.76 14.76 13 12 13C9.24 13 7 10.76 7 8C7 5.24 9.24 3 12 3C14.76 3 17 5.24 17 8Z" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M3 21C3 17.13 7.03 14 12 14C14.5 14 16.77 14.84 18.46 16.22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M19 16L22 19M22 16L19 19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Pending"
+          value={safe(s.pendingReferrals).toLocaleString()}
+          iconBg="bg-amber-50"
+          iconColor="text-amber-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Rewarded"
+          value={safe(s.rewardedReferrals).toLocaleString()}
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Referral Codes"
+          value={safe(s.totalCodes).toLocaleString()}
+          iconBg="bg-purple-50"
+          iconColor="text-purple-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M8 11h8M8 14h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M7 3v3M17 3v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
       </KpiGrid>
 
       <div className="rounded-xl border border-gray-200 bg-white">

@@ -8,7 +8,7 @@ function splitCurrency(value) {
   return { prefix: "", rest: str };
 }
 
-function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, icon, accent, iconBg, iconColor, tooltip }) {
+function KpiCard({ title, value, subtitle, change, compareLabel, diff, diffText, upIsGood = true, onClick, icon, accent, iconBg, iconColor, tooltip }) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const [tooltipSide, setTooltipSide] = useState("left");
   const tooltipRef = useRef(null);
@@ -35,29 +35,34 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
     };
   }, [tooltipOpen]);
 
+  // change === null means "no previous baseline" (0 -> N); isNew renders a "New" badge.
+  const isNew = change === null && diff != null && diff > 0;
+  const wentUp = isNew || (change != null && change > 0);
+  const wentDown = change != null && change < 0;
+
   const deltaClass = useMemo(() => {
-    if (change === undefined || change === null) return "bg-gray-100 text-gray-600";
-    if (change > 0) return "bg-green-100 text-green-700";
-    if (change < 0) return "bg-red-100 text-red-700";
+    if (wentUp) return upIsGood ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700";
+    if (wentDown) return upIsGood ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700";
     return "bg-gray-100 text-gray-600";
-  }, [change]);
+  }, [wentUp, wentDown, upIsGood]);
 
   const deltaText = useMemo(() => {
+    if (isNew) return "New";
     if (change === undefined || change === null) return "—";
     const sign = change > 0 ? "+" : "";
-    return `${sign}${Math.round(change)}%`;
-  }, [change]);
+    return `${sign}${change.toFixed(1)}%`;
+  }, [change, isNew]);
 
   const arrow = useMemo(() => {
-    if (change === undefined || change === null) return null;
-    if (change > 0) {
+    if (!wentUp && !wentDown) return null;
+    if (wentUp) {
       return (
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
           <path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5-5.25a.75.75 0 011.08 0l5 5.25a.75.75 0 11-1.08 1.04L10.75 5.612V16.25A.75.75 0 0110 17z" clipRule="evenodd" />
         </svg>
       );
     }
-    if (change < 0) {
+    if (wentDown) {
       return (
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
           <path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5 5.25a.75.75 0 01-1.08 0l-5-5.25a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clipRule="evenodd" />
@@ -65,15 +70,16 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
       );
     }
     return null;
-  }, [change]);
+  }, [wentUp, wentDown]);
 
   const diffLabel = useMemo(() => {
+    if (diffText !== undefined && diffText !== null) return diffText;
     if (diff === undefined || diff === null) return compareLabel || null;
     const period = compareLabel || "last month";
     if (diff > 0) return `${diff} more than ${period}`;
-    if (diff < 0) return `${Math.abs(diff)} less than ${period}`;
+    if (diff < 0) return `${Math.abs(diff)} fewer than ${period}`;
     return `No change from ${period}`;
-  }, [diff, compareLabel]);
+  }, [diff, compareLabel, diffText]);
 
   // Button (clickable) variant
   if (onClick) {
@@ -89,7 +95,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
               {icon}
             </span>
           ) : <span />}
-          {change !== undefined && change !== null ? (
+          {change !== undefined && (change !== null || isNew) ? (
             <span className={`inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 font-semibold text-xs ${deltaClass}`}>
               {arrow}
               {deltaText}
@@ -148,7 +154,7 @@ function KpiCard({ title, value, subtitle, change, compareLabel, diff, onClick, 
               <span className="font-bold text-gray-900 tabular-nums leading-tight text-base md:text-lg">
                 {(() => { const { prefix, rest } = splitCurrency(value); return prefix ? <><span className="text-[10px] md:text-xs font-semibold">{prefix}</span>{rest ?? "—"}</> : (value ?? "—"); })()}
               </span>
-              {change !== undefined && change !== null ? (
+              {change !== undefined && (change !== null || isNew) ? (
                 <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-semibold text-xs ${deltaClass}`}>
                   {arrow}
                   {deltaText}

@@ -4,6 +4,8 @@ import Member from "../models/memberModel.js";
 import Visitor from "../models/visitorsModel.js";
 import { annotateDeletable } from "../services/recordDependencyService.js";
 
+const ATTENDANCE_STATUSES = ["active", "dormant", "temporarily_away"];
+
 const createServiceIndividualAttendance = async (req, res) => {
   try {
     const { date, serviceType, mainSpeaker, presentMembers, absentMembers, expectedCount } = req.body;
@@ -13,7 +15,7 @@ const createServiceIndividualAttendance = async (req, res) => {
 
     const churchId = req.activeChurch._id;
 
-    const totalMembersSnapshot = await Member.countDocuments({ church: churchId, status: "active" });
+    const totalMembersSnapshot = await Member.countDocuments({ church: churchId, status: { $in: ATTENDANCE_STATUSES } });
 
     const presentIds = Array.isArray(presentMembers) ? presentMembers.filter(Boolean) : [];
     const absentIds = Array.isArray(absentMembers) ? absentMembers.filter(Boolean) : [];
@@ -140,7 +142,7 @@ const updateServiceIndividualAttendance = async (req, res) => {
 
     const churchId = req.activeChurch._id;
 
-    const totalMembersSnapshot = await Member.countDocuments({ church: churchId, status: "active" });
+    const totalMembersSnapshot = await Member.countDocuments({ church: churchId, status: { $in: ATTENDANCE_STATUSES } });
 
     const presentIds = Array.isArray(presentMembers) ? presentMembers.filter(Boolean) : [];
     const absentIds = Array.isArray(absentMembers) ? absentMembers.filter(Boolean) : [];
@@ -245,8 +247,8 @@ const memberCheckIn = async (req, res) => {
     if (!phoneNumber || !String(phoneNumber).trim()) return res.status(400).json({ message: "Phone number is required." });
     const attendance = await ServiceIndividualAttendance.findOne({ selfCheckInToken: token, selfCheckInActive: true });
     if (!attendance) return res.status(404).json({ message: "Check-in link is invalid or has been revoked." });
-    const member = await Member.findOne({ church: attendance.church, phoneNumber: String(phoneNumber).trim(), status: "active" }).lean();
-    if (!member) return res.status(404).json({ message: "No active member found with this phone number." });
+    const member = await Member.findOne({ church: attendance.church, phoneNumber: String(phoneNumber).trim(), status: { $in: ATTENDANCE_STATUSES } }).lean();
+    if (!member) return res.status(404).json({ message: "No member found with this phone number." });
     const alreadyPresent = attendance.presentMembers.some((pid) => String(pid) === String(member._id));
     if (alreadyPresent) {
       return res.status(200).json({ message: `You are already marked as present, ${member.firstName}!`, alreadyCheckedIn: true, memberName: `${member.firstName} ${member.lastName}` });

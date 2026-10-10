@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../useAuth.js";
 import { registerUser } from "../services/auth.api.js";
 import AuthCard from "../components/AuthCard.jsx";
@@ -21,6 +21,8 @@ function Register() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [termsError, setTermsError] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -32,6 +34,12 @@ function Register() {
     if (phoneNumber && !isValidPhoneNumber(phoneNumber)) {
       errs.phoneNumber = "Enter a valid phone number";
     }
+    if (!agreedToTerms) {
+      setTermsError("You must agree to the Terms of Service and Privacy Policy to continue.");
+      setIsSubmitting(false);
+      return;
+    }
+    setTermsError("");
     if (hasErrors(errs)) {
       setFieldErrors(errs);
       setIsSubmitting(false);
@@ -186,6 +194,43 @@ function Register() {
             </button>
           </div>
           {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
+        </div>
+
+        <div>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => {
+                setAgreedToTerms(e.target.checked);
+                if (e.target.checked) setTermsError("");
+              }}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+            />
+            <span className="text-sm leading-snug text-slate-600">
+              I agree to ChurchClerk&apos;s{" "}
+              <Link
+                to="/terms-of-service"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-600 hover:underline"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                to="/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-600 hover:underline"
+              >
+                Privacy Policy
+              </Link>
+            </span>
+          </label>
+          {termsError && (
+            <p className="mt-1.5 text-xs text-red-600">{termsError}</p>
+          )}
         </div>
 
         <Button

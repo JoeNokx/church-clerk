@@ -279,8 +279,7 @@ function MemberTable({ onEdit, onDeleted, onCreate }) {
 
   const pageSize = Number(store?.filters?.limit) || 20;
 
-  const onLimitChange = (e) => {
-    const n = Number(e.target.value) || 20;
+  const onLimitChange = (n) => {
     store?.fetchMembers({ limit: n, page: 1 });
   };
 

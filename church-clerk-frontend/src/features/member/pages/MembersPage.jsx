@@ -232,8 +232,22 @@ function MembersPageInner() {
 
   const {
     data: memberKPI,
-    isLoading: kpiLoading
+    isLoading: kpiLoading,
+    isError: kpiError
   } = useMembersKpiQuery({ activeChurchId: store?.activeChurch, enabled: true });
+
+  // Explanatory text under each KPI card. change === null means no previous
+  // baseline existed (0 -> N), shown as "Increased from 0 last month".
+  const memberWord = (n) => (Math.abs(n) === 1 ? "member" : "members");
+  const trendText = (diff, change, noun = "") => {
+    if (kpiError) return "No comparison data available";
+    if (diff === undefined || diff === null) return "No comparison data available";
+    if (diff === 0) return "No change from last month";
+    if (change === null && diff > 0) return "Increased from 0 last month";
+    const n = Math.abs(diff);
+    const phrase = noun ? ` ${noun} ${memberWord(n)}` : "";
+    return `${n} ${diff > 0 ? "more" : "fewer"}${phrase} than last month`;
+  };
 
   const renderLimitMessage = (message) => {
     const msg = String(message || "");
@@ -528,7 +542,7 @@ function MembersPageInner() {
                 value={memberKPI?.totalMembers}
                 change={memberKPI?.change?.totalMembers}
                 diff={memberKPI?.diff?.totalMembers}
-                compareLabel="last month"
+                diffText={trendText(memberKPI?.diff?.totalMembers, memberKPI?.change?.totalMembers)}
                 tooltip="The total count of everyone registered in your church, regardless of their current status."
                 iconBg="bg-blue-50"
                 iconColor="text-blue-500"
@@ -547,7 +561,7 @@ function MembersPageInner() {
                 value={memberKPI?.activeMembers ?? memberKPI?.currentMembers}
                 change={memberKPI?.change?.activeMembers}
                 diff={memberKPI?.diff?.activeMembers}
-                compareLabel="last month"
+                diffText={trendText(memberKPI?.diff?.activeMembers, memberKPI?.change?.activeMembers, "active")}
                 tooltip="Members who are currently attending and actively participating in church life."
                 iconBg="bg-emerald-50"
                 iconColor="text-emerald-500"
@@ -564,7 +578,8 @@ function MembersPageInner() {
                 value={memberKPI?.inactiveMembers}
                 change={memberKPI?.change?.inactiveMembers}
                 diff={memberKPI?.diff?.inactiveMembers}
-                compareLabel="last month"
+                diffText={trendText(memberKPI?.diff?.inactiveMembers, memberKPI?.change?.inactiveMembers, "inactive")}
+                upIsGood={false}
                 tooltip="Members who are dormant or temporarily away — still part of the church but not currently active."
                 iconBg="bg-amber-50"
                 iconColor="text-amber-500"
@@ -581,7 +596,8 @@ function MembersPageInner() {
                 value={memberKPI?.formerMembers}
                 change={memberKPI?.change?.formerMembers}
                 diff={memberKPI?.diff?.formerMembers}
-                compareLabel="last month"
+                diffText={trendText(memberKPI?.diff?.formerMembers, memberKPI?.change?.formerMembers, "former")}
+                upIsGood={false}
                 tooltip="People who have left the church, transferred to another congregation, or are deceased."
                 iconBg="bg-slate-100"
                 iconColor="text-slate-500"

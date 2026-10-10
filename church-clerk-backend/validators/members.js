@@ -4,12 +4,24 @@ const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/);
 
 const dateISO = Joi.string().isoDate();
 
+const QUERY_STATUSES = ["all", "active", "dormant", "transferred", "left_church", "deceased", "temporarily_away", "inactive", "visitor", "former"];
+
+const statusQueryField = Joi.string().custom((value, helpers) => {
+  const parts = value.split(",").map((s) => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    if (!QUERY_STATUSES.includes(part)) {
+      return helpers.error("any.only", { valids: QUERY_STATUSES });
+    }
+  }
+  return value;
+}).optional();
+
 export const getMembersQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(200).default(10),
   search: Joi.string().allow("").max(200).optional(),
   fastSearch: Joi.string().valid("0", "1").optional(),
-  status: Joi.string().valid("all", "active", "dormant", "transferred", "left_church", "deceased", "temporarily_away", "inactive", "visitor", "former").optional(),
+  status: statusQueryField,
   dateFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional(),
   dateTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional()
 });

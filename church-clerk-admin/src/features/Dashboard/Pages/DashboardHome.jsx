@@ -8,7 +8,7 @@ import {
 import { useAuth } from "../../Auth/useAuth.js";
 import { getAdminDashboardStats, getSystemAuditLogs } from "../../SystemAdmin/Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
-import KpiStatCard from "../../../shared/components/KpiStatCard/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -35,7 +35,7 @@ const PLAN_COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"];
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(6)].map((_, i) => <div key={i} className="h-28 rounded-xl bg-gray-200" />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -142,38 +142,90 @@ function DashboardHome() {
       {loading && !stats ? <Skeleton /> : (
         <>
           {/* KPI Cards */}
-          <KpiGrid className="lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <KpiStatCard
-              label="Total Churches"
+          <KpiGrid className="lg:grid-cols-3 gap-4">
+            <KpiCard
+              title="Total Churches"
               value={fmt(churches.total)}
-              subLabel={`${fmt(churches.hq)} HQ · ${fmt(churches.branches)} Branches`}
+              subtitle={`${fmt(churches.hq)} HQ · ${fmt(churches.branches)} Branches`}
               change={trendPct(churches.thisMonth, churches.prevMonth)}
+              iconBg="bg-blue-50"
+              iconColor="text-blue-500"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M3 21h18M9 21V11l3-3 3 3v10M5 21V9l7-7 7 7v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }
             />
-            <KpiStatCard
-              label="Active Subscriptions"
+            <KpiCard
+              title="Active Subscriptions"
               value={fmt(subs.active)}
-              subLabel={`${fmt(subs.trial)} on trial`}
+              subtitle={`${fmt(subs.trial)} on trial`}
+              iconBg="bg-purple-50"
+              iconColor="text-purple-500"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none">
+                  <rect x="2" y="6" width="20" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M2 10h20" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M6 15h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }
             />
-            <KpiStatCard
-              label="Revenue (This Month)"
+            <KpiCard
+              title="Revenue (This Month)"
               value={fmtGhs(rev.thisMonth)}
-              subLabel={`Prev: ${fmtGhs(rev.prevMonth)}`}
+              subtitle={`Prev: ${fmtGhs(rev.prevMonth)}`}
               change={trendPct(rev.thisMonth, rev.prevMonth)}
+              iconBg="bg-emerald-50"
+              iconColor="text-emerald-500"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M12 7v1.5M12 15.5V17M9.5 10a2.5 2.5 0 015 0c0 1.5-1.5 2-2.5 2s-2.5.5-2.5 2a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }
             />
-            <KpiStatCard
-              label="Total Members"
+            <KpiCard
+              title="Total Members"
               value={fmt(d.members?.total)}
-              subLabel="Across all churches"
+              subtitle="Across all churches"
+              iconBg="bg-sky-50"
+              iconColor="text-sky-500"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M3 20c0-3 2-5 5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M21 20c0-3-2-5-5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M8 20c0-3 1.8-5 4-5s4 2 4 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }
             />
-            <KpiStatCard
-              label="New Churches (30d)"
+            <KpiCard
+              title="New Churches (30d)"
               value={fmt(churches.thisMonth)}
-              subLabel="Registered this month"
+              subtitle="Registered this month"
+              change={trendPct(churches.thisMonth, churches.prevMonth)}
+              iconBg="bg-amber-50"
+              iconColor="text-amber-500"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M3 21h18M9 21V11l3-3 3 3v10M5 21V9l7-7 7 7v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M19 8v4M17 10h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }
             />
-            <KpiStatCard
-              label="Total Users"
+            <KpiCard
+              title="Total Users"
               value={fmt(d.users?.total)}
-              subLabel="Admin + church users"
+              subtitle="Admin + church users"
+              iconBg="bg-slate-100"
+              iconColor="text-slate-500"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }
             />
           </KpiGrid>
 

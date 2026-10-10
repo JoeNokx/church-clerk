@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 import { useState } from "react";
 
-function TableKebabMenu({ items = [] }) {
+function TableKebabMenu({ items = [], forceKebab = false }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: null, bottom: null, right: 0 });
 
@@ -23,7 +23,7 @@ function TableKebabMenu({ items = [] }) {
 
   return (
     <>
-      <div className="lg:hidden flex justify-end">
+      <div className={forceKebab ? "flex justify-end" : "lg:hidden flex justify-end"}>
         <button
           type="button"
           onClick={handleOpen}
@@ -39,7 +39,7 @@ function TableKebabMenu({ items = [] }) {
         </button>
       </div>
 
-      <div className="hidden lg:flex items-center justify-end gap-2">
+      <div className={forceKebab ? "hidden" : "hidden lg:flex items-center justify-end gap-2"}>
         {visible.map((item, i) => (
           <button
             key={i}

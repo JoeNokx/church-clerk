@@ -6,7 +6,8 @@ import {
   suspendSystemChurch,
   unsuspendSystemChurch,
   deleteSystemChurch,
-  delegateChurchSession
+  delegateChurchSession,
+  getAdminDashboardStats
 } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -15,6 +16,8 @@ import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 function formatCreatedAt(value) {
   if (!value) return "—";
@@ -179,12 +182,18 @@ function ConfirmModal({ open, title, message, confirmLabel, confirmClass, onConf
   );
 }
 
+function trendPct(current, prev) {
+  if (!prev) return current > 0 ? 100 : 0;
+  return Math.round(((current - prev) / prev) * 100);
+}
+
 function ChurchesPage() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(null);
+  const [churchStats, setChurchStats] = useState(null);
 
   const [search, setSearch] = useState("");
   const [type, setType] = useState("");
@@ -225,14 +234,22 @@ function ChurchesPage() {
       setLoading(true);
       setError("");
       try {
-        const res = await getSystemChurches({
-          page: actualPage,
-          limit,
-          search: search || undefined,
-          type: type || undefined
-        });
-        setRows(Array.isArray(res?.data?.data) ? res.data.data : []);
-        setPagination(res?.data?.pagination || null);
+        const [res, statsRes] = await Promise.allSettled([
+          getSystemChurches({
+            page: actualPage,
+            limit,
+            search: search || undefined,
+            type: type || undefined
+          }),
+          getAdminDashboardStats()
+        ]);
+        if (res.status === "fulfilled") {
+          setRows(Array.isArray(res.value?.data?.data) ? res.value.data.data : []);
+          setPagination(res.value?.data?.pagination || null);
+        }
+        if (statsRes.status === "fulfilled") {
+          setChurchStats(statsRes.value?.data?.data?.churches || null);
+        }
         setPage(actualPage);
       } catch (e) {
         setRows([]);
@@ -324,6 +341,63 @@ function ChurchesPage() {
           <div className="mt-1 text-sm text-gray-500">Manage and monitor all churches in the system.</div>
         </div>
       </div>
+
+      <KpiGrid className="mt-6 gap-4 lg:grid-cols-4">
+        <KpiCard
+          title="Total Churches"
+          value={Number(churchStats?.total ?? 0).toLocaleString()}
+          subtitle={`${Number(churchStats?.hq ?? 0)} HQ · ${Number(churchStats?.branches ?? 0)} branches`}
+          change={churchStats ? trendPct(churchStats.thisMonth, churchStats.prevMonth) : undefined}
+          iconBg="bg-blue-50"
+          iconColor="text-blue-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M3 21h18M9 21V11l3-3 3 3v10M5 21V9l7-7 7 7v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Headquarters"
+          value={Number(churchStats?.hq ?? 0).toLocaleString()}
+          subtitle="Parent churches"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M3 21h18M5 21V9l7-7 7 7v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="9" y="14" width="6" height="7" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Branches"
+          value={Number(churchStats?.branches ?? 0).toLocaleString()}
+          subtitle="Under a headquarters"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M3 21h18M9 21V13l3-3 3 3v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 10V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M9 7l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="New This Month"
+          value={Number(churchStats?.thisMonth ?? 0).toLocaleString()}
+          subtitle="Registered in 30 days"
+          change={churchStats ? trendPct(churchStats.thisMonth, churchStats.prevMonth) : undefined}
+          iconBg="bg-amber-50"
+          iconColor="text-amber-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M3 21h18M9 21V11l3-3 3 3v10M5 21V9l7-7 7 7v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M19 8v4M17 10h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+      </KpiGrid>
 
       <Card className="mt-6">
         {/* Mobile filters (stacked) */}

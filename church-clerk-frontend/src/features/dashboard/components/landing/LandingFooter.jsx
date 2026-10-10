@@ -51,12 +51,24 @@ function LandingFooter() {
                 <li><Link to="/login" className="hover:text-white transition-colors">Sign In</Link></li>
               </ul>
             </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Legal</p>
+              <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
+                <li><Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              </ul>
+            </div>
           </div>
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-8 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-slate-500">© {new Date().getFullYear()} ChurchClerk. All rights reserved.</p>
-          <p className="text-sm text-slate-600">Built for churches that care about accountability and growth.</p>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+            <Link to="/privacy-policy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+            <span className="hidden md:inline text-slate-700">·</span>
+            <span className="text-slate-600">Built for churches that care about accountability and growth.</span>
+          </div>
         </div>
       </div>
     </footer>

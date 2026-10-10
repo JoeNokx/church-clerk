@@ -292,13 +292,12 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                 </td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(latestSession?.date || row?.createdAt)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                  <TableKebabMenu items={[
+                  <TableKebabMenu forceKebab items={[
                     canView && { label: "View", onClick: () => openDetails(row) },
                     canConvert && {
                       label: row?.status === "converted" ? "Converted" : "Convert",
                       onClick: () => guarded(() => { if (row?.status === "converted") return; openConvert(row); }),
                       disabled: row?.status === "converted",
-                      desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 disabled:opacity-50 text-xs"
                     },
                     canEdit && { label: "Edit", onClick: () => guarded(() => { const id = row?._id ?? row?.id; if (!id) return; onEdit?.(row); }) },
                     canDelete && row?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => { const id = row?._id ?? row?.id; if (!id) return; openConfirmDelete(id); }), danger: true }
@@ -381,9 +380,9 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
       )}
 
       {detailsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl">
-            <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden rounded-xl bg-white shadow-xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6 bg-white">
               <div>
                 <div className="font-semibold text-gray-900 text-lg">{detailsVisitor?.fullName || "Visitor Details"}</div>
                 <div className="mt-2">
@@ -403,72 +402,74 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
               </button>
             </div>
 
-            <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
+            <div className="flex-1 overflow-y-auto py-4 md:py-5 lg:py-6 px-4 md:px-6">
               {detailsLoading ? (
-                <div className="space-y-4 animate-pulse">
-                  <div className="h-5 w-40 rounded bg-gray-200" />
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {[0, 1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="h-[54px] w-full rounded-lg bg-gray-200" />
-                    ))}
-                    <div className="md:col-span-2">
-                      <div className="h-[70px] w-full rounded-lg bg-gray-200" />
+                <div className="animate-pulse space-y-4">
+                  <div className="rounded-lg border border-gray-200 px-5 py-4">
+                    <div className="grid grid-cols-3 gap-x-6 gap-y-5">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <div key={i}>
+                          <div className="h-2.5 w-16 rounded bg-gray-200 mb-2" />
+                          <div className="h-4 w-28 rounded bg-gray-200" />
+                        </div>
+                      ))}
+                      <div className="col-span-3">
+                        <div className="h-2.5 w-12 rounded bg-gray-200 mb-2" />
+                        <div className="h-10 w-full rounded bg-gray-200" />
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : detailsError ? (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{detailsError}</div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Phone</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.phoneNumber || "-"}</div>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Email</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.email || "-"}</div>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Location</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.location || "-"}</div>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Times Attended</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">
-                      {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0))}
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-gray-200 px-5 py-4">
+                    <div className="grid grid-cols-3 gap-x-6 gap-y-5">
+                      <div>
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Phone</div>
+                        <div className="text-sm text-gray-900">{detailsVisitor?.phoneNumber || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Email</div>
+                        <div className="text-sm text-gray-900 break-all">{detailsVisitor?.email || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Location</div>
+                        <div className="text-sm text-gray-900">{detailsVisitor?.location || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Times Attended</div>
+                        <div className="text-sm text-gray-900">{Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0))}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Invited By</div>
+                        <div className="text-sm text-gray-900">{detailsVisitor?.invitedBy || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Source</div>
+                        <div className="text-sm text-gray-900">{detailsVisitor?.source || "-"}</div>
+                      </div>
+                      <div className="col-span-3">
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Note</div>
+                        <div className="text-sm text-gray-900 whitespace-pre-wrap">{detailsVisitor?.note || "-"}</div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Invited By</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.invitedBy || "-"}</div>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Source</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{detailsVisitor?.source || "-"}</div>
-                  </div>
-
-                  <div className="md:col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
-                    <div className="font-semibold text-gray-500 text-xs">Note</div>
-                    <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{detailsVisitor?.note || "-"}</div>
-                  </div>
-
-                  <div className="md:col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold text-gray-500 text-xs">Attendance History</div>
+                  <div className="rounded-lg border border-gray-200 px-4 py-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-gray-500 text-xs">Attendance History</span>
                       <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 font-semibold text-blue-700 text-xs">
-                        {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0))} {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0)) === 1 ? "visit" : "visits"}
+                        {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0))}{" "}
+                        {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0)) === 1 ? "visit" : "visits"}
                       </span>
                     </div>
                     {Array.isArray(detailsVisitor?.attendance) && detailsVisitor.attendance.length > 0 ? (
-                      <div className="mt-2 overflow-x-auto">
+                      <div className="overflow-x-auto">
                         <table className="min-w-full">
                           <thead>
-                            <tr className="text-left font-semibold text-gray-500 text-xs border-b border-gray-200">
+                            <tr className="text-left font-semibold text-gray-500 text-xs border-b border-gray-100">
                               <th className="py-2 pr-4 whitespace-nowrap">Date</th>
                               <th className="py-2 pr-4 whitespace-nowrap">Service</th>
                               <th className="py-2 whitespace-nowrap">Speaker</th>
@@ -486,18 +487,18 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                         </table>
                       </div>
                     ) : (
-                      <div className="mt-2 text-gray-500 text-sm">No attendance sessions recorded yet.</div>
+                      <div className="text-gray-500 text-sm">No attendance sessions recorded yet.</div>
                     )}
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-gray-200 py-4 px-4 md:px-6">
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 py-4 px-4 md:px-6 bg-white">
               <button
                 type="button"
                 onClick={closeDetails}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
               >
                 Close
               </button>

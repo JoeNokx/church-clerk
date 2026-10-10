@@ -21,6 +21,8 @@ import Card from "../../../shared/components/Card/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 const safeString = (v) => (typeof v === "string" ? v : "");
 
@@ -95,19 +97,22 @@ function UsersRolesPage() {
       setLoading(true);
       setError("");
       try {
-        const [rolesRes, usersRes] = await Promise.all([
+        const [rolesRes, usersRes, customRolesRes] = await Promise.all([
           getSystemRoles(),
           getSystemUsers({
             page: actualPage,
             limit,
             search: search || undefined,
             role: roleFilter || undefined
-          })
+          }),
+          listCustomRoles({ includeInactive: true })
         ]);
 
         setRoles(rolesRes?.data?.data || null);
         setRows(Array.isArray(usersRes?.data?.data) ? usersRes.data.data : []);
         setPagination(usersRes?.data?.pagination || null);
+        const customList = customRolesRes?.data?.roles;
+        setCustomRoles(Array.isArray(customList) ? customList : []);
         setPage(actualPage);
       } catch (e) {
         setRoles(null);
@@ -397,6 +402,65 @@ function UsersRolesPage() {
         <div className="text-2xl font-semibold text-gray-900">Users & Roles</div>
         <div className="mt-1 text-sm text-gray-600">Manage system users and view role definitions.</div>
       </div>
+
+      <KpiGrid className="gap-4 lg:grid-cols-4">
+        <KpiCard
+          title="Total Users"
+          value={Number(pagination?.total ?? 0).toLocaleString()}
+          subtitle="All registered system users"
+          iconBg="bg-blue-50"
+          iconColor="text-blue-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5S14.34 11 16 11Z" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11Z" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M3 20c0-3 2-5 5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M21 20c0-3-2-5-5-5h0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M8 20c0-3 1.8-5 4-5s4 2 4 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Active Users"
+          value={rows.filter((u) => u?.isActive !== false).length.toLocaleString()}
+          subtitle={`of ${rows.length} on this page`}
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 12a4 4 0 100-8 4 4 0 000 8Z" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M17 11l1.5 1.5L21 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="System Roles"
+          value={allRoles.length.toLocaleString()}
+          subtitle="Built-in permission levels"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7L12 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+        <KpiCard
+          title="Custom Roles"
+          value={customRoles.length.toLocaleString()}
+          subtitle={`${customRoles.filter((r) => r?.isActive !== false).length} active`}
+          iconBg="bg-amber-50"
+          iconColor="text-amber-500"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M8 7V5a4 4 0 018 0v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M12 12v3M10.5 13.5h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          }
+        />
+      </KpiGrid>
 
       <PageTabs
         tabs={[

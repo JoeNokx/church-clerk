@@ -16,6 +16,8 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -91,6 +93,19 @@ function BillingSubscriptionsPage() {
       );
     });
   }, [currencyFilter, planFilter, rows, search, statusFilter]);
+
+  const kpis = useMemo(() => {
+    const all = Array.isArray(rows) ? rows : [];
+    const TRIAL_STATUSES = ["free trial", "trialing"];
+    const ATTENTION_STATUSES = ["past_due", "suspended"];
+    return {
+      total: all.length,
+      active: all.filter((s) => s?.status === "active").length,
+      onTrial: all.filter((s) => TRIAL_STATUSES.includes(String(s?.status || "").toLowerCase())).length,
+      needsAttention: all.filter((s) => ATTENTION_STATUSES.includes(String(s?.status || "").toLowerCase())).length,
+      cancelled: all.filter((s) => ["cancelled", "canceled"].includes(String(s?.status || "").toLowerCase())).length,
+    };
+  }, [rows]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -196,6 +211,63 @@ function BillingSubscriptionsPage() {
   };
 
   return (
+    <div className="space-y-5">
+    <KpiGrid className="gap-4 lg:grid-cols-4">
+      <KpiCard
+        title="Total Subscriptions"
+        value={kpis.total.toLocaleString()}
+        subtitle="All subscription records"
+        iconBg="bg-blue-50"
+        iconColor="text-blue-500"
+        icon={
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="6" width="20" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M2 10h20" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M6 15h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        }
+      />
+      <KpiCard
+        title="Active"
+        value={kpis.active.toLocaleString()}
+        subtitle={kpis.total > 0 ? `${Math.round((kpis.active / kpis.total) * 100)}% of total` : "Paying churches"}
+        iconBg="bg-emerald-50"
+        iconColor="text-emerald-500"
+        icon={
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M8 12l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        }
+      />
+      <KpiCard
+        title="On Trial"
+        value={kpis.onTrial.toLocaleString()}
+        subtitle="Free trial · trialing"
+        iconBg="bg-violet-50"
+        iconColor="text-violet-500"
+        icon={
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        }
+      />
+      <KpiCard
+        title="Needs Attention"
+        value={kpis.needsAttention.toLocaleString()}
+        subtitle="Past due · suspended"
+        iconBg="bg-red-50"
+        iconColor="text-red-500"
+        icon={
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4M12 17h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+          </svg>
+        }
+      />
+    </KpiGrid>
+
     <Card>
       <Card.Header
         title="Subscriptions"
@@ -611,6 +683,7 @@ function BillingSubscriptionsPage() {
         </div>
       )}
     </Card>
+    </div>
   );
 }
 
