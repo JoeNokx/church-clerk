@@ -11,6 +11,12 @@ const projectExpenseSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   description: { type: String, trim: true },
   date: { type: Date, required: true },
+  receipt: {
+    url: { type: String },
+    publicId: { type: String },
+    resourceType: { type: String },
+    originalName: { type: String }
+  },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   referenceId: { type: String, unique: true, sparse: true, index: true },
 }, { timestamps: true });

@@ -1,5 +1,6 @@
 import BusinessIncome from "../../../models/financeModel/businessModel/businessIncomeModel.js";
 import BusinessVentures from "../../../models/financeModel/businessModel/businessVenturesModel.js";
+import { uploadBusinessReceipt, destroyBusinessReceipt, businessReceiptDownloadUrl, validateReceiptFile } from "./businessReceipts.js";
 
 
 const createBusinessIncome = async (req, res) => {
@@ -30,6 +31,15 @@ const createBusinessIncome = async (req, res) => {
                 if (!recievedFrom || !date || !amount) {
                 return res.status(400).json({ message: "recievedFrom, date and amount are required." });
                 }
+
+                let receipt;
+                if (req.file) {
+                const fileError = validateReceiptFile(req.file);
+                if (fileError) {
+                return res.status(400).json({ message: fileError });
+                }
+                receipt = await uploadBusinessReceipt(req.file, businessId, "incomes");
+                }
         
 
                 const businessIncome = await BusinessIncome.create({
@@ -40,6 +50,7 @@ const createBusinessIncome = async (req, res) => {
                 date,
                 amount,
                 note,
+                ...(receipt ? { receipt } : {}),
                 church: business.church,
                 createdBy: req.user._id
                 });
@@ -124,7 +135,7 @@ const getAllBusinessIncome = async (req, res) => {
             
                 // FETCH BUSINESS INCOME
                 const businessIncome = await BusinessIncome.find(query)
-                .select("recievedFrom category paymentMethod date amount note createdBy referenceId createdAt")
+                .select("recievedFrom category paymentMethod date amount note receipt createdBy referenceId createdAt")
                 .populate("createdBy", "fullName")
                 .populate("businessVentures", "businessName")
                     .sort({ createdAt: -1 })
@@ -197,10 +208,32 @@ const updateBusinessIncome = async (req, res) => {
                     return res.status(404).json({message: "business not found"})
                 }
 
-                const businessIncome = await BusinessIncome.findOneAndUpdate(query, req.body, {new: true, runValidators: true})
+                const { removeReceipt, receipt: _receiptBody, ...restBody } = req.body || {};
+                const updatePayload = { ...restBody };
+
+                let newReceipt;
+                if (req.file) {
+                const fileError = validateReceiptFile(req.file);
+                if (fileError) {
+                return res.status(400).json({ message: fileError });
+                }
+                newReceipt = await uploadBusinessReceipt(req.file, businessId, "incomes");
+                updatePayload.receipt = newReceipt;
+                } else if (String(removeReceipt || "") === "true") {
+                updatePayload.receipt = null;
+                }
+
+                const previous = await BusinessIncome.findOne(query).select("receipt");
+        
+                const businessIncome = await BusinessIncome.findOneAndUpdate(query, updatePayload, {new: true, runValidators: true})
         
                 if(!businessIncome) {
+                    if (newReceipt) await destroyBusinessReceipt(newReceipt);
                     return res.status(404).json({message: "business income not found"})
+                }
+
+                if ((newReceipt || String(removeReceipt || "") === "true") && previous?.receipt?.publicId) {
+                await destroyBusinessReceipt(previous.receipt);
                 }
         
                 return res.status(200).json({message: "business income updated successfully", businessIncome})
@@ -236,6 +269,10 @@ if (!businessIncome) {
   return res.status(404).json({ message: "Business income not found" });
 }
 
+if (businessIncome?.receipt?.publicId) {
+  await destroyBusinessReceipt(businessIncome.receipt);
+}
+
 return res.status(200).json({ message: "Business income deleted successfully", businessIncome });
 
     } catch (error) {
@@ -244,5 +281,25 @@ return res.status(200).json({ message: "Business income deleted successfully", b
 }
                 
 
+const downloadBusinessIncomeReceipt = async (req, res) => {
+    try {
+        const { businessId, incomeId } = req.params;
 
-export {createBusinessIncome, getAllBusinessIncome, updateBusinessIncome, deleteBusinessIncome}
+        const query = { _id: incomeId, businessVentures: businessId };
+        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+            query.church = req.activeChurch._id;
+        }
+
+        const businessIncome = await BusinessIncome.findOne(query).select("receipt").lean();
+        if (!businessIncome?.receipt?.publicId) {
+            return res.status(404).json({ message: "Receipt not found" });
+        }
+
+        return res.redirect(businessReceiptDownloadUrl(businessIncome.receipt));
+    } catch (error) {
+        return res.status(400).json({ message: "Receipt could not be downloaded", error: error.message });
+    }
+};
+
+
+export {createBusinessIncome, getAllBusinessIncome, updateBusinessIncome, deleteBusinessIncome, downloadBusinessIncomeReceipt}

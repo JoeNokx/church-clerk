@@ -56,6 +56,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
   const [options, setOptions] = useState([]);
 
   const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [selectedMember, setSelectedMember] = useState(null);
   const [pendingEntries, setPendingEntries] = useState([]);
 
   const listRef = useRef(null);
@@ -68,6 +69,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     setQuery("");
     setOptions([]);
     setSelectedMemberId("");
+    setSelectedMember(null);
     setPendingEntries([]);
 
     if (mode === "edit" && initialData) {
@@ -118,6 +120,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     setQuery("");
     setOptions([]);
     setSelectedMemberId("");
+    setSelectedMember(null);
   };
 
   const buildEntryPayload = () => {
@@ -155,7 +158,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
     const entry = buildEntryPayload();
     if (!entry) return;
 
-    const member = options.find((m) => m?._id === selectedMemberId) || null;
+    const member = selectedMember || options.find((m) => m?._id === selectedMemberId) || null;
     setPendingEntries((prev) => [...prev, { payload: entry, member }]);
     clearCurrentEntry();
   };
@@ -261,9 +264,9 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden rounded-xl bg-white shadow-xl">
+        <div className="shrink-0 flex items-center justify-between border-b border-gray-200 bg-white px-4 md:px-5 lg:px-6 py-4">
           <div>
             <div className="font-semibold text-gray-900 text-sm">{mode === "edit" ? "Edit Individual Tithe" : "Record Individual Tithe"}</div>
             {mode === "edit" && editMemberName ? (
@@ -282,7 +285,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={submit} className="p-4 md:p-6 lg:p-8">
+        <form onSubmit={submit} className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           {formError && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{formError}</div>
           )}
@@ -342,40 +345,63 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
 
               <input
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (selectedMemberId) {
+                    setSelectedMemberId("");
+                    setSelectedMember(null);
+                  }
+                }}
                 type="text"
                 placeholder="Type name, phone, email..."
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               />
 
-              <div ref={listRef} className="mt-3 max-h-64 overflow-y-auto rounded-lg border border-gray-200">
-                {searchLoading ? (
-                  <div className="px-4 py-3 text-gray-600 text-sm">Searching...</div>
-                ) : options.length ? (
-                  <div className="divide-y divide-gray-200">
-                    {options.map((m, idx) => (
-                      <label key={m?._id ?? `m-${idx}`} className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="tithe_member"
-                          checked={selectedMemberId === m._id}
-                          onChange={() => setSelectedMemberId(m._id)}
-                          className="mt-1"
-                        />
-                        <div className="min-w-0">
-                          <div className="font-semibold text-gray-900 truncate text-sm">{memberLabel(m)}</div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                ) : debouncedQuery.trim() ? (
-                  <div className="px-4 py-3 text-gray-600 text-sm">No members found.</div>
-                ) : (
-                  <div className="px-4 py-3 text-gray-600 text-sm">Start typing to search members.</div>
-                )}
-              </div>
-
-              <div className="mt-2 text-gray-500 text-xs">Selected: {selectedMemberId ? 1 : 0}</div>
+              {selectedMemberId && selectedMember ? (
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
+                  <div className="min-w-0 font-semibold text-gray-900 truncate text-sm">{memberLabel(selectedMember)}</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMemberId("");
+                      setSelectedMember(null);
+                    }}
+                    className="shrink-0 rounded-md px-2 py-1 font-semibold text-blue-700 hover:bg-blue-100 text-xs"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <div ref={listRef} className="mt-3 max-h-64 overflow-y-auto rounded-lg border border-gray-200">
+                  {searchLoading ? (
+                    <div className="px-4 py-3 text-gray-600 text-sm">Searching...</div>
+                  ) : options.length ? (
+                    <div className="divide-y divide-gray-200">
+                      {options.map((m, idx) => (
+                        <label key={m?._id ?? `m-${idx}`} className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="tithe_member"
+                            checked={selectedMemberId === m._id}
+                            onChange={() => {
+                              setSelectedMemberId(m._id);
+                              setSelectedMember(m);
+                            }}
+                            className="mt-1"
+                          />
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 truncate text-sm">{memberLabel(m)}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  ) : debouncedQuery.trim() ? (
+                    <div className="px-4 py-3 text-gray-600 text-sm">No members found.</div>
+                  ) : (
+                    <div className="px-4 py-3 text-gray-600 text-sm">Start typing to search members.</div>
+                  )}
+                </div>
+              )}
 
               {pendingEntries.length ? (
                 <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">

@@ -31,7 +31,7 @@ const searchMembersToAddToMinistry = async (req, res) => {
       $or: [{ firstName: regex }, { lastName: regex }, { email: regex }, { phoneNumber: regex }]
     })
       .sort({ firstName: 1, lastName: 1 })
-      .select("firstName lastName phoneNumber email city")
+      .select("firstName lastName phoneNumber email streetAddress city")
       .limit(30)
       .lean();
 
@@ -298,7 +298,7 @@ const addMemberToMinistry = async (req, res) => {
 
 const getMinistryMembers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "" } = req.query;
+    const { page = 1, limit = 10, search = "", dateFrom, dateTo } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -307,7 +307,15 @@ const getMinistryMembers = async (req, res) => {
     const ministryId = req.params.id;
     const churchId = req.activeChurch?._id || req.user?.church;
 
-    const totalMembers = await MinistryMember.countDocuments({ ministry: ministryId, church: churchId });
+    const memberQuery = { ministry: ministryId, church: churchId };
+    if (dateFrom || dateTo) {
+      const range = {};
+      if (dateFrom) range.$gte = new Date(dateFrom);
+      if (dateTo) range.$lte = new Date(`${dateTo}T23:59:59.999Z`);
+      memberQuery.$or = [{ joinedAt: range }, { joinedAt: { $exists: false }, createdAt: range }];
+    }
+
+    const totalMembers = await MinistryMember.countDocuments(memberQuery);
 
     let memberMatch = {};
     if (search) {
@@ -317,13 +325,13 @@ const getMinistryMembers = async (req, res) => {
       };
     }
 
-    const ministryMembers = await MinistryMember.find({ ministry: ministryId, church: churchId })
+    const ministryMembers = await MinistryMember.find(memberQuery)
       .skip(skip)
       .limit(limitNum)
       .populate({
         path: "member",
         match: memberMatch,
-        select: "firstName lastName phoneNumber email joinedAt status"
+        select: "firstName lastName phoneNumber email joinedAt status streetAddress city"
       })
       .populate("ministry", "name");
 

@@ -3,7 +3,26 @@ import PermissionContext from "../../permissions/permission.store.js";
 import SpecialFundContext from "../specialFund.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
+import { getMembers } from "../../member/services/member.api.js";
 import Button from "../../../shared/components/Button/index.jsx";
+
+function useDebouncedValue(value, delayMs) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+
+  return debounced;
+}
+
+function memberLabel(member) {
+  const name = `${member?.firstName || ""} ${member?.lastName || ""}`.trim();
+  const meta = [member?.phoneNumber, member?.email, member?.city].filter(Boolean).join(" • ");
+  if (meta) return `${name || "-"} — ${meta}`;
+  return name || "-";
+}
 
 const CATEGORY_OPTIONS = [
   "Prophetic Seed",
@@ -15,7 +34,7 @@ const CATEGORY_OPTIONS = [
   "Scholarship Fund"
 ];
 
-const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_DESCRIPTION_LENGTH = 500;
 
 function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
@@ -35,11 +54,23 @@ function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [memberQuery, setMemberQuery] = useState("");
+  const [memberOptions, setMemberOptions] = useState([]);
+  const [memberSearching, setMemberSearching] = useState(false);
+  const [memberSearched, setMemberSearched] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const debouncedMemberQuery = useDebouncedValue(memberQuery, 250);
+
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
     setIsSubmitting(false);
+    setMemberQuery("");
+    setMemberOptions([]);
+    setMemberSearching(false);
+    setMemberSearched(false);
+    setSelectedMember(null);
 
     if (mode === "edit" && initialData) {
       setGiverName(initialData.giverName || "");
@@ -56,6 +87,52 @@ function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
     setDescription("");
     setGivingDate("");
   }, [open, mode, initialData]);
+
+  // Search members while the search field is active — stops once a member is picked
+  useEffect(() => {
+    if (!open || selectedMember) return;
+
+    const run = async () => {
+      const q = (debouncedMemberQuery || "").trim();
+      if (!q) {
+        setMemberOptions([]);
+        setMemberSearched(false);
+        return;
+      }
+
+      setMemberSearching(true);
+      try {
+        const res = await getMembers({ search: q, limit: 10, page: 1 });
+        const payload = res?.data?.data ?? res?.data;
+        const data = payload?.data ?? payload;
+        setMemberOptions(Array.isArray(data?.members) ? data.members : []);
+        setMemberSearched(true);
+      } catch {
+        setMemberOptions([]);
+        setMemberSearched(true);
+      } finally {
+        setMemberSearching(false);
+      }
+    };
+
+    run();
+  }, [debouncedMemberQuery, open, selectedMember]);
+
+  const selectMember = (m) => {
+    const name = `${m?.firstName || ""} ${m?.lastName || ""}`.trim();
+    setSelectedMember(m);
+    setGiverName(name);
+    setMemberQuery("");
+    setMemberOptions([]);
+    setMemberSearched(false);
+  };
+
+  const clearSelectedMember = () => {
+    setSelectedMember(null);
+    setMemberQuery("");
+    setMemberOptions([]);
+    setMemberSearched(false);
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -151,6 +228,54 @@ function SpecialFundForm({ open, mode, initialData, onClose, onSuccess }) {
           )}
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Search Member (if giver is a member)</label>
+              {selectedMember ? (
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
+                  <div className="min-w-0 font-semibold text-gray-900 truncate text-sm">{memberLabel(selectedMember)}</div>
+                  <button
+                    type="button"
+                    onClick={clearSelectedMember}
+                    className="shrink-0 rounded-md px-2 py-1 font-semibold text-blue-700 hover:bg-blue-100 text-xs"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    value={memberQuery}
+                    onChange={(e) => setMemberQuery(e.target.value)}
+                    type="text"
+                    className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+                    placeholder="Search member by name, phone, email..."
+                  />
+                  {memberQuery.trim() ? (
+                    <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-gray-200">
+                      {memberSearching ? (
+                        <div className="px-4 py-3 text-gray-600 text-sm">Searching...</div>
+                      ) : memberOptions.length ? (
+                        <div className="divide-y divide-gray-200">
+                          {memberOptions.map((m, idx) => (
+                            <button
+                              key={m?._id ?? `m-${idx}`}
+                              type="button"
+                              onClick={() => selectMember(m)}
+                              className="w-full px-4 py-2.5 text-left hover:bg-gray-50"
+                            >
+                              <div className="font-semibold text-gray-900 truncate text-sm">{memberLabel(m)}</div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : memberSearched ? (
+                        <div className="px-4 py-3 text-gray-600 text-sm">No member found — type the giver's name below instead.</div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+
             <div>
               <label className="block font-semibold text-gray-500 text-xs">Giver Name</label>
               <input

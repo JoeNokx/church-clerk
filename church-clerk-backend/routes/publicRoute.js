@@ -2,6 +2,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import { getChurchByToken, selfRegisterMember } from "../controller/publicRegistrationController.js";
 import { getAttendanceByCheckInToken, memberCheckIn } from "../controller/serviceIndividualAttendanceController.js";
+import { getOrgAttendanceByCheckInToken, orgMemberCheckIn } from "../controller/organisationController/organisationCheckInController.js";
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 import { sendEmail } from "../services/emailService.js";
 
@@ -38,6 +39,9 @@ const checkInLimiter = rateLimit({
 
 router.get("/attendance/:token", getAttendanceByCheckInToken);
 router.post("/attendance/:token/check-in", checkInLimiter, memberCheckIn);
+
+router.get("/attendance/org/:token", getOrgAttendanceByCheckInToken);
+router.post("/attendance/org/:token/check-in", checkInLimiter, orgMemberCheckIn);
 
 // ── Public contact form ──────────────────────────────────────────────────────
 const contactLimiter = rateLimit({

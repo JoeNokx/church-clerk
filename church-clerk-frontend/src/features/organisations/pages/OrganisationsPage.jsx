@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { getGroups, createGroup, updateGroup, deleteGroup } from "../../group/services/group.api.js";
 import Skeleton from "react-loading-skeleton";
@@ -17,6 +18,7 @@ import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.js
 import Button from "../../../shared/components/Button/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../shared/components/Card/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 function safeText(value) {
@@ -352,7 +354,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
                 <div className="font-semibold text-gray-500 text-xs">Meeting Schedule</div>
                 <button
                   type="button"
-                  onClick={() => setMeetingSchedule((prev) => [...(Array.isArray(prev) ? prev : []), { meetingDay: "", meetingTime: "", meetingVenue: "" }])}
+                  onClick={() => setMeetingSchedule((prev) => [{ meetingDay: "", meetingTime: "", meetingVenue: "" }, ...(Array.isArray(prev) ? prev : [])])}
                   className="font-semibold text-blue-700 hover:underline text-xs"
                 >
                   Add another meeting
@@ -506,11 +508,24 @@ function OrganisationsPage() {
   const canView = useMemo(() => (typeof can === "function" ? can("organisation", "view") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("organisation", "create") : false), [can]);
 
-  const [activeTab, setActiveTab] = useState("groups");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const t = String(searchParams.get("tab") || "").trim();
+    return ["cells", "departments", "ministries", "groups"].includes(t) ? t : "cells";
+  });
+
+  useEffect(() => {
+    const t = String(searchParams.get("tab") || "").trim();
+    if (["cells", "departments", "ministries", "groups"].includes(t)) {
+      setActiveTab((prev) => (prev === t ? prev : t));
+    }
+  }, [searchParams]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [cardPage, setCardPage] = useState(1);
+  const [cardLimit, setCardLimit] = useState(20);
 
   const [groups, setGroups] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -519,7 +534,7 @@ function OrganisationsPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
-  const [formType, setFormType] = useState("group");
+  const [formType, setFormType] = useState("cell");
   const [editingRow, setEditingRow] = useState(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -541,6 +556,11 @@ function OrganisationsPage() {
       return name.includes(q) || desc.includes(q);
     });
   }, [activeRows, search]);
+
+  const paginatedRows = useMemo(
+    () => filteredRows.slice((cardPage - 1) * cardLimit, cardPage * cardLimit),
+    [filteredRows, cardPage, cardLimit]
+  );
 
   const badges = useMemo(
     () => ({
@@ -714,13 +734,13 @@ function OrganisationsPage() {
 
       <PageTabs
         tabs={[
-          { key: "groups", label: "Groups", badge: badges.groups, badgeColor: "bg-blue-600 text-white" },
-          { key: "departments", label: "Departments", badge: badges.departments, badgeColor: "bg-orange-500 text-white" },
           { key: "cells", label: "Cells", badge: badges.cells, badgeColor: "bg-gray-600 text-white" },
+          { key: "departments", label: "Departments", badge: badges.departments, badgeColor: "bg-orange-500 text-white" },
           { key: "ministries", label: "Ministries", badge: badges.ministries, badgeColor: "bg-purple-600 text-white" },
+          { key: "groups", label: "Groups", badge: badges.groups, badgeColor: "bg-blue-600 text-white" },
         ]}
         activeTab={activeTab}
-        onChange={setActiveTab}
+        onChange={(key) => { setActiveTab(key); setCardPage(1); }}
         sticky={false}
         className="mt-4"
       />
@@ -738,13 +758,13 @@ function OrganisationsPage() {
           <div className="flex flex-col gap-3">
             <FilterBar
               searchValue={search}
-              onSearchChange={(v) => setSearch(v)}
+              onSearchChange={(v) => { setSearch(v); setCardPage(1); }}
               searchPlaceholder={activeTab === "groups" ? "Search group name..." : activeTab === "departments" ? "Search department name..." : activeTab === "ministries" ? "Search ministry name..." : "Search cell name..."}
               searchWidth="md:w-[320px]"
             />
             <MobileFilterBar
               searchValue={search}
-              onSearchChange={(v) => setSearch(v)}
+              onSearchChange={(v) => { setSearch(v); setCardPage(1); }}
               searchPlaceholder={activeTab === "groups" ? "Search group name..." : activeTab === "departments" ? "Search department name..." : activeTab === "ministries" ? "Search ministry name..." : "Search cell name..."}
             />
           </div>
@@ -771,9 +791,10 @@ function OrganisationsPage() {
             );
           })()
         ) : (
-          <div className="p-2 md:p-6 lg:p-8">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredRows.map((row, index) => {
+          <div>
+            <div className="p-2 md:p-6 lg:p-8">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {paginatedRows.map((row, index) => {
                 const ministryType = activeTab === "groups" ? "group" : activeTab === "cells" ? "cell" : activeTab === "ministries" ? "ministry" : "department";
                 return (
                   <MinistryCard
@@ -791,6 +812,24 @@ function OrganisationsPage() {
                   />
                 );
               })}
+              </div>
+            </div>
+            <div className="border-t border-gray-200">
+              <Pagination
+                pagination={{
+                  currentPage: cardPage,
+                  totalPages: Math.max(1, Math.ceil(filteredRows.length / cardLimit)),
+                  totalResult: filteredRows.length,
+                  prevPage: cardPage > 1 ? cardPage - 1 : null,
+                  nextPage: cardPage < Math.ceil(filteredRows.length / cardLimit) ? cardPage + 1 : null
+                }}
+                rowsCount={paginatedRows.length}
+                limit={cardLimit}
+                onLimitChange={(n) => { setCardLimit(n); setCardPage(1); }}
+                onPageChange={setCardPage}
+                itemName={title.toLowerCase()}
+                filtered={Boolean(String(search || "").trim())}
+              />
             </div>
           </div>
         )}

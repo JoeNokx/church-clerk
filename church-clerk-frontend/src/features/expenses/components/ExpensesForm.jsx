@@ -5,6 +5,8 @@ import ExpensesContext from "../expenses.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import ImageLightbox from "../../../shared/components/ImageLightbox/index.jsx";
+import ReceiptPicker from "../../../shared/components/ReceiptPicker/index.jsx";
 
 const CATEGORY_OPTIONS = [
   "Maintenance",
@@ -39,12 +41,17 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptRemoved, setReceiptRemoved] = useState(false);
+  const [receiptLightbox, setReceiptLightbox] = useState(null);
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
     setIsSubmitting(false);
+    setReceiptFile(null);
+    setReceiptRemoved(false);
 
     if (mode === "edit" && initialData) {
       setTitle(String(initialData.title || ""));
@@ -100,7 +107,9 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
       amount: Number(amount),
       date,
       paymentMethod,
-      description: String(description || "").trim()
+      description: String(description || "").trim(),
+      ...(receiptFile ? { receiptFile } : {}),
+      ...(receiptRemoved && !receiptFile ? { removeReceipt: true } : {})
     };
 
     try {
@@ -240,6 +249,28 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
                 {description.length}/500 chars
               </div>
             </div>
+
+            <div className="md:col-span-2">
+              <ReceiptPicker
+                receiptFile={receiptFile}
+                existingReceipt={mode === "edit" ? initialData?.receipt : null}
+                removed={receiptRemoved}
+                onPick={(f) => {
+                  if (!f) return;
+                  if (!String(f.type || "").startsWith("image/")) {
+                    setFormError("Receipt must be an image file.");
+                    return;
+                  }
+                  setFormError(null);
+                  setReceiptFile(f);
+                  setReceiptRemoved(false);
+                }}
+                onClearFile={() => setReceiptFile(null)}
+                onRemoveExisting={() => setReceiptRemoved(true)}
+                onUndoRemove={() => setReceiptRemoved(false)}
+                onPreview={(url, name) => setReceiptLightbox({ url, name })}
+              />
+            </div>
           </div>
 
           <div className="mt-5 flex items-center justify-end gap-3">
@@ -263,6 +294,7 @@ function ExpensesForm({ open, mode, initialData, onClose, onSuccess }) {
           </div>
         </form>
       </div>
+      <ImageLightbox url={receiptLightbox?.url} name={receiptLightbox?.name} onClose={() => setReceiptLightbox(null)} />
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import WelfareDisbursements from "../../../models/financeModel/welfareModel/welfareDisbursementModel.js"
+import Member from "../../../models/memberModel.js"
+import { uploadReceiptImage, destroyReceiptImage, receiptImageDownloadUrl, validateReceiptImage } from "../../../services/receiptService.js";
 
 const createWelfareDisbursement = async (req, res) => {
     
@@ -9,8 +11,26 @@ const createWelfareDisbursement = async (req, res) => {
         amount,
         date,
         description,
-        paymentMethod
+        paymentMethod,
+        member
         } = req.body;
+
+        const memberId = String(member || "").trim();
+        if (memberId) {
+          const foundMember = await Member.findOne({ _id: memberId, church: req.activeChurch._id }).select("_id");
+          if (!foundMember) {
+            return res.status(404).json({ message: "Member not found" });
+          }
+        }
+
+        let receipt;
+        if (req.file) {
+          const fileError = validateReceiptImage(req.file);
+          if (fileError) {
+            return res.status(400).json({ message: fileError });
+          }
+          receipt = await uploadReceiptImage(req.file, `church-clerk/welfare/${req.activeChurch._id}/disbursements`);
+        }
 
         const welfareDisbursement = await WelfareDisbursements.create({
         beneficiaryName,
@@ -19,6 +39,8 @@ const createWelfareDisbursement = async (req, res) => {
         date,
         description,
         paymentMethod,
+        ...(memberId ? { member: memberId } : {}),
+        ...(receipt ? { receipt } : {}),
         church: req.activeChurch._id,
         createdBy: req.user._id
         });
@@ -92,7 +114,8 @@ const getAllWelfareDisbursement = async (req, res) => {
                     
                         // FETCH welfare Disbursement 
                         const welfareDisbursement = await WelfareDisbursements.find(query)
-                        .select("beneficiaryName category amount date description paymentMethod createdBy referenceId createdAt")
+                        .select("beneficiaryName member category amount date description paymentMethod receipt createdBy referenceId createdAt")
+                        .populate("member", "firstName lastName phoneNumber email")
                         .populate("createdBy", "fullName")
                             .sort({ createdAt: -1 })
                             .skip(skip)
@@ -157,16 +180,48 @@ const updateWelfareDisbursement = async (req, res) => {
         if(req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
             query.church = req.activeChurch._id
         }
-        
 
-        const welfareDisbursement = await WelfareDisbursements.findOneAndUpdate(query, req.body, {
+        const { removeReceipt, receipt: _receiptBody, church: _church, createdBy: _createdBy, ...restBody } = req.body || {};
+        const updatePayload = { ...restBody };
+
+        const memberUpdate = String(updatePayload.member || "").trim();
+        if (updatePayload.member !== undefined && memberUpdate) {
+          const foundMember = await Member.findOne({ _id: memberUpdate, church: req.activeChurch._id }).select("_id");
+          if (!foundMember) {
+            return res.status(404).json({ message: "Member not found" });
+          }
+          updatePayload.member = memberUpdate;
+        } else if (updatePayload.member !== undefined) {
+          updatePayload.member = null;
+        }
+
+        let newReceipt;
+        if (req.file) {
+          const fileError = validateReceiptImage(req.file);
+          if (fileError) {
+            return res.status(400).json({ message: fileError });
+          }
+          newReceipt = await uploadReceiptImage(req.file, `church-clerk/welfare/${req.activeChurch._id}/disbursements`);
+          updatePayload.receipt = newReceipt;
+        } else if (String(removeReceipt || "") === "true") {
+          updatePayload.receipt = null;
+        }
+
+        const previous = await WelfareDisbursements.findOne(query).select("receipt");
+
+        const welfareDisbursement = await WelfareDisbursements.findOneAndUpdate(query, updatePayload, {
             new: true,
             runValidators: true
         })
 
         if(!welfareDisbursement) {
+            if (newReceipt) await destroyReceiptImage(newReceipt);
             return res.status(404).json({message: "Welfare disbursement not found"})
-        }       
+        }
+
+        if ((newReceipt || String(removeReceipt || "") === "true") && previous?.receipt?.publicId) {
+            await destroyReceiptImage(previous.receipt);
+        }
 
         return res.status(200).json({message: "Welfare disbursement updated successfully", welfareDisbursement})
     } catch (error) {
@@ -191,6 +246,10 @@ const deleteWelfareDisbursement = async (req, res) => {
             return res.status(404).json({message: "Welfare disbursement not found"})
         }
 
+        if (welfareDisbursement?.receipt?.publicId) {
+            await destroyReceiptImage(welfareDisbursement.receipt);
+        }
+
         return res.status(200).json({message: "Welfare disbursement deleted successfully", welfareDisbursement})
 
     } catch (error) {
@@ -201,4 +260,26 @@ const deleteWelfareDisbursement = async (req, res) => {
 
 
 
-export {createWelfareDisbursement, getAllWelfareDisbursement, updateWelfareDisbursement, deleteWelfareDisbursement }
+const downloadWelfareDisbursementReceipt = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = { _id: id };
+
+        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+            query.church = req.activeChurch._id;
+        }
+
+        const disbursement = await WelfareDisbursements.findOne(query).select("receipt").lean();
+        if (!disbursement?.receipt?.publicId) {
+            return res.status(404).json({ message: "Receipt not found" });
+        }
+
+        return res.redirect(receiptImageDownloadUrl(disbursement.receipt));
+    } catch (error) {
+        return res.status(400).json({ message: "Receipt could not be downloaded", error: error.message });
+    }
+};
+
+
+
+export {createWelfareDisbursement, getAllWelfareDisbursement, updateWelfareDisbursement, deleteWelfareDisbursement, downloadWelfareDisbursementReceipt }

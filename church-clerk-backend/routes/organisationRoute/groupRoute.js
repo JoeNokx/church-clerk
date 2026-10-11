@@ -2,17 +2,21 @@ import express from "express";
 const router = express.Router();
 import {getAllGroups, getSingleGroup, createGroup, updateGroup, deleteGroup, searchMembersToAddToGroup, addMemberToGroup, getGroupMembers,updateMemberRole, removeMemberFromGroup, addMeeting, updateMeeting, deleteMeeting, getMeetings, getOrganisationKPI } from "../../controller/organisationController/groupController.js"
 
-import  {createGroupAttendance, updateGroupAttendance, deleteGroupAttendance, getAllGroupAttendances} from "../../controller/organisationController/groupAttendanceController.js"
 import {
   createGroupIndividualAttendance,
   getAllGroupIndividualAttendances,
   getSingleGroupIndividualAttendance,
   updateGroupIndividualAttendance,
-  deleteGroupIndividualAttendance
+  deleteGroupIndividualAttendance,
+  getGroupCheckInLinkStatus,
+  generateGroupCheckInLink,
+  revokeGroupCheckInLink
 } from "../../controller/organisationController/groupIndividualAttendanceController.js";
 import  {createGroupOffering, updateGroupOffering, deleteGroupOffering, getAllGroupOfferings} from "../../controller/organisationController/groupOfferingController.js"
-import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense } from "../../controller/scopedExpensesController.js";
+import { createOrgContribution, getOrgContributions, updateOrgContribution, deleteOrgContribution } from "../../controller/organisationController/organisationContributionController.js";
+import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense, downloadScopedExpenseReceipt } from "../../controller/scopedExpensesController.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
+import { uploadReceiptFile } from "../../middleware/uploadReceiptFile.js";
 
 import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
@@ -182,47 +186,6 @@ router.get(
 );
 
 router.post(
-  "/groups/:groupId/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("organisation", "create"),
-  createGroupAttendance
-);
-router.get(
-  "/groups/:groupId/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("organisation", "read"),
-  getAllGroupAttendances
-);
-router.put(
-  "/groups/:groupId/attendances/:attendanceId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("organisation", "update"),
-  updateGroupAttendance
-);
-router.delete(
-  "/groups/:groupId/attendances/:attendanceId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
-  requirePermission("organisation", "delete"),
-  deleteGroupAttendance
-);
-
-router.post(
   "/groups/:groupId/individual-attendances",
   protect,
   setActiveChurch,
@@ -274,6 +237,37 @@ router.delete(
   deleteGroupIndividualAttendance
 );
 
+router.get(
+  "/groups/:groupId/individual-attendances/:attendanceId/checkin-link",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  getGroupCheckInLinkStatus
+);
+router.post(
+  "/groups/:groupId/individual-attendances/:attendanceId/checkin-link/generate",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  generateGroupCheckInLink
+);
+router.delete(
+  "/groups/:groupId/individual-attendances/:attendanceId/checkin-link/revoke",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  revokeGroupCheckInLink
+);
+
 
 router.post(
   "/groups/:groupId/offerings",
@@ -308,6 +302,48 @@ router.put(
   updateGroupOffering
 );
 
+
+router.post(
+  "/groups/:groupId/contributions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("organisation", "create"),
+  createOrgContribution
+);
+router.get(
+  "/groups/:groupId/contributions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("organisation", "read"),
+  getOrgContributions
+);
+router.put(
+  "/groups/:groupId/contributions/:contributionId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("organisation", "update"),
+  updateOrgContribution
+);
+router.delete(
+  "/groups/:groupId/contributions/:contributionId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("organisation", "delete"),
+  deleteOrgContribution
+);
+
 router.post(
   "/groups/:groupId/expenses",
   protect,
@@ -316,6 +352,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("organisation", "create"),
+  uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
   createScopedExpense("group")
 );
@@ -337,8 +374,19 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("organisation", "update"),
+  uploadReceiptFile,
   conditionalImmutableGuard(),
   updateScopedExpense("group")
+);
+router.get(
+  "/groups/:groupId/expenses/:expenseId/receipt/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  downloadScopedExpenseReceipt("group")
 );
 router.delete(
   "/groups/:groupId/expenses/:expenseId",

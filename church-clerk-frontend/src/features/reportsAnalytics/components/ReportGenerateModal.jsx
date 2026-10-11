@@ -94,11 +94,6 @@ const MODULE_OPTIONS = {
         key: "sub", kind: "radio", label: "Show", default: "members",
         options: [RADIO("members", "Members"), RADIO("offerings", "Offerings"), RADIO("attendance", "Attendance")],
         showIf: (o) => o.scope === "single" && !!o.entity
-      },
-      {
-        key: "mode", kind: "radio", label: "Attendance", default: "individual",
-        options: [RADIO("individual", "Individual attendance"), RADIO("total", "Total attendance")],
-        showIf: (o) => o.scope === "single" && !!o.entity && o.sub === "attendance"
       }
     ],
     describe: (v, L) => {
@@ -108,7 +103,7 @@ const MODULE_OPTIONS = {
         const n = L("entity") ? `"${L("entity")}"` : `the selected ${t}`;
         if (v.sub === "offerings") return `Offerings report for the ${t} ${n}.`;
         if (v.sub === "attendance") {
-          return `Attendance report for the ${t} ${n} showing ${v.mode === "total" ? "total" : "individual"} attendance.`;
+          return `Attendance report for the ${t} ${n}.`;
         }
         return `Members report for the ${t} ${n}.`;
       }

@@ -1,8 +1,8 @@
 import express from"express";
 const router = express.Router();
-import {createBusinessVentures, getAllBusinessVentures, getSingleBusinessVentures, updateBusinessVentures, deleteBusinessVentures, getAllBusinessKPI } from "../../controller/financeController/businessVenturesController/businessController.js"
-import {createBusinessIncome, getAllBusinessIncome, updateBusinessIncome, deleteBusinessIncome} from "../../controller/financeController/businessVenturesController/businessIncomeController.js"
-import {createBusinessExpenses, getAllBusinessExpenses, updateBusinessExpenses, deleteBusinessExpenses} from "../../controller/financeController/businessVenturesController/businessExpensesController.js"
+import {createBusinessVentures, getAllBusinessVentures, getSingleBusinessVentures, updateBusinessVentures, deleteBusinessVentures, getAllBusinessKPI, searchMembersForBusinessVenture } from "../../controller/financeController/businessVenturesController/businessController.js"
+import {createBusinessIncome, getAllBusinessIncome, updateBusinessIncome, deleteBusinessIncome, downloadBusinessIncomeReceipt} from "../../controller/financeController/businessVenturesController/businessIncomeController.js"
+import {createBusinessExpenses, getAllBusinessExpenses, updateBusinessExpenses, deleteBusinessExpenses, downloadBusinessExpenseReceipt} from "../../controller/financeController/businessVenturesController/businessExpensesController.js"
 import getIncomeExpensesKPI from "../../controller/financeController/businessVenturesController/businessIncomeExpensesKPI.js"
 
 import { protect } from "../../middleware/authMiddleware.js";
@@ -16,7 +16,20 @@ import BusinessIncome from "../../models/financeModel/businessModel/businessInco
 import BusinessExpenses from "../../models/financeModel/businessModel/businessExpensesModel.js";
 import { createAdjustment } from "../../services/finance/governanceService.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
+import { uploadReceiptFile } from "../../middleware/uploadReceiptFile.js";
 
+const uploadReceipt = uploadReceiptFile;
+
+router.get(
+  "/business-ventures/members/search",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
+  requirePermission("businessVentures", "read"),
+  searchMembersForBusinessVenture
+);
 
 router.post(
   "/business-ventures",
@@ -113,6 +126,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "create"),
+  uploadReceipt,
   backdatingGuard({ dateField: "date", module: "business", entityType: "businessIncome" }),
   createBusinessIncome
 );
@@ -134,8 +148,20 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "update"),
+  uploadReceipt,
   conditionalImmutableGuard(),
   updateBusinessIncome
+);
+
+router.get(
+  "/business-ventures/:businessId/incomes/:incomeId/receipt/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("businessVentures", "view"),
+  downloadBusinessIncomeReceipt
 );
 
 router.post(
@@ -179,6 +205,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "create"),
+  uploadReceipt,
   backdatingGuard({ dateField: "date", module: "business", entityType: "businessExpense" }),
   createBusinessExpenses
 );
@@ -200,8 +227,20 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("businessVentures", "update"),
+  uploadReceipt,
   conditionalImmutableGuard(),
   updateBusinessExpenses
+);
+
+router.get(
+  "/business-ventures/:businessId/expenses/:expensesId/receipt/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("businessVentures", "view"),
+  downloadBusinessExpenseReceipt
 );
 
 router.post(

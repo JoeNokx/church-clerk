@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
@@ -8,6 +8,7 @@ import {
   createBusinessVenture,
   getBusinessKPI,
   getBusinessVentures,
+  searchBusinessVentureMembers,
   updateBusinessVenture
 } from "../services/businessVentures.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -49,10 +50,114 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   );
 }
 
+function memberDisplayName(member) {
+  return [member?.firstName, member?.lastName].filter(Boolean).join(" ").trim();
+}
+
+function ManagerMemberSearch({ selected, onSelect }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef(null);
+
+  useEffect(() => {
+    if (selected) return;
+    const q = String(query || "").trim();
+    if (q.length < 2) {
+      setResults([]);
+      setSearched(false);
+      setOpen(false);
+      return;
+    }
+    const t = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await searchBusinessVentureMembers(q);
+        const payload = res?.data?.data ?? res?.data;
+        const data = payload?.data ?? payload;
+        setResults(Array.isArray(data?.members) ? data.members : Array.isArray(payload?.members) ? payload.members : []);
+        setSearched(true);
+        setOpen(true);
+      } catch {
+        setResults([]);
+        setSearched(true);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query, selected]);
+
+  useEffect(() => {
+    const onDocMouseDown = (e) => {
+      if (!boxRef.current) return;
+      if (boxRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, []);
+
+  if (selected) {
+    const name = memberDisplayName(selected);
+    return (
+      <div className="mt-2 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 h-11 md:h-12">
+        <div className="min-w-0">
+          <div className="text-gray-900 text-sm truncate">{name}</div>
+          <div className="text-gray-500 text-xs truncate">{selected?.phoneNumber || selected?.email || "Church member"}</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => { onSelect?.(null); setQuery(""); setResults([]); setSearched(false); }}
+          className="font-semibold text-blue-700 hover:underline text-xs"
+        >
+          Change
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative" ref={boxRef}>
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onFocus={() => { if (results.length) setOpen(true); }}
+        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+        placeholder="Search members by name, phone or email"
+      />
+      {open ? (
+        <div className="absolute left-0 right-0 z-20 mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+          {searching ? (
+            <div className="px-3 py-2 text-gray-500 text-xs">Searching...</div>
+          ) : results.length ? (
+            results.map((m) => (
+              <button
+                key={m._id}
+                type="button"
+                onClick={() => { onSelect?.(m); setOpen(false); }}
+                className="w-full px-3 py-2 text-left hover:bg-gray-50"
+              >
+                <div className="text-gray-900 text-sm">{memberDisplayName(m)}</div>
+                <div className="text-gray-500 text-xs">{m?.phoneNumber || m?.email || ""}</div>
+              </button>
+            ))
+          ) : searched ? (
+            <div className="px-3 py-2 text-gray-500 text-xs">No members found — type the manager's name below.</div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function AddBusinessModal({ open, onClose, onSuccess }) {
   const [businessName, setBusinessName] = useState("");
   const [description, setDescription] = useState("");
   const [manager, setManager] = useState("");
+  const [managerMember, setManagerMember] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [location, setLocation] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -65,6 +170,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
     setBusinessName("");
     setDescription("");
     setManager("");
+    setManagerMember(null);
     setPhoneNumber("");
     setLocation("");
     setStartDate("");
@@ -103,6 +209,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
         businessName: String(businessName).trim(),
         description: String(description).trim(),
         manager: String(manager || "").trim(),
+        managerMember: managerMember?._id || "",
         phoneNumber: String(phoneNumber || "").trim(),
         location: String(location || "").trim(),
         ...(startDate ? { startDate } : {})
@@ -143,6 +250,16 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
+            <label className="block font-semibold text-gray-500 text-xs">Search Member (optional)</label>
+            <ManagerMemberSearch
+              selected={managerMember}
+              onSelect={(m) => {
+                setManagerMember(m);
+                if (m) setManager(memberDisplayName(m));
+              }}
+            />
+          </div>
+          <div>
             <label className="block font-semibold text-gray-500 text-xs">Manager (optional)</label>
             <input
               value={manager}
@@ -151,15 +268,15 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
               placeholder="e.g. John Doe"
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="block font-semibold text-gray-500 text-xs">Phone Number</label>
             <div className="mt-2">
               <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
             </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="block font-semibold text-gray-500 text-xs">Location (optional)</label>
             <input
@@ -207,6 +324,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
   const [businessName, setBusinessName] = useState("");
   const [description, setDescription] = useState("");
   const [manager, setManager] = useState("");
+  const [managerMember, setManagerMember] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [location, setLocation] = useState("");
   const [error, setError] = useState("");
@@ -218,6 +336,8 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
     setBusinessName(String(initialData?.businessName || ""));
     setDescription(String(initialData?.description || ""));
     setManager(String(initialData?.manager || ""));
+    const mm = initialData?.managerMember;
+    setManagerMember(mm && typeof mm === "object" ? mm : null);
     setPhoneNumber(String(initialData?.phoneNumber || ""));
     setLocation(String(initialData?.location || ""));
     setError("");
@@ -255,6 +375,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
         businessName: String(businessName).trim(),
         description: String(description).trim(),
         manager: String(manager || "").trim(),
+        managerMember: managerMember?._id || "",
         phoneNumber: String(phoneNumber || "").trim(),
         location: String(location || "").trim()
       });
@@ -294,6 +415,16 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
+            <label className="block font-semibold text-gray-500 text-xs">Search Member (optional)</label>
+            <ManagerMemberSearch
+              selected={managerMember}
+              onSelect={(m) => {
+                setManagerMember(m);
+                if (m) setManager(memberDisplayName(m));
+              }}
+            />
+          </div>
+          <div>
             <label className="block font-semibold text-gray-500 text-xs">Manager (optional)</label>
             <input
               value={manager}
@@ -302,22 +433,24 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
               placeholder="e.g. John Doe"
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="block font-semibold text-gray-500 text-xs">Phone Number</label>
             <div className="mt-2">
               <PhoneNumberInput value={phoneNumber} onChange={setPhoneNumber} error={Boolean(error)} />
             </div>
           </div>
-        </div>
-
-        <div>
-          <label className="block font-semibold text-gray-500 text-xs">Location (optional)</label>
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g. Accra, Osu"
-          />
+          <div>
+            <label className="block font-semibold text-gray-500 text-xs">Location (optional)</label>
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="e.g. Accra, Osu"
+            />
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">

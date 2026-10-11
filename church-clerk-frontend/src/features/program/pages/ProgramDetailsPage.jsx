@@ -617,7 +617,8 @@ function ProgramDetailsPage() {
       return;
     }
     if (from === "programs") {
-      toPage("programs");
+      const t = String(location?.state?.tab || program?.status || "").trim();
+      toPage("programs", ["upcoming", "ongoing", "past"].includes(t) ? { tab: t } : undefined);
       return;
     }
     navigate(-1);

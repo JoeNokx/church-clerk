@@ -1,5 +1,6 @@
 import WelfareContributions from "../../../models/financeModel/welfareModel/welfareContributionModel.js"
 import Member from "../../../models/memberModel.js"
+import { generateReferenceId } from "../../../utils/generateReferenceId.js"
 
 
 const createWelfareContribution = async (req, res) => {
@@ -11,9 +12,52 @@ const createWelfareContribution = async (req, res) => {
                 amount,
                 date,
                 paymentMethod,
-                note
+                note,
+                entries
                 } = req.body;
-                
+
+                if (Array.isArray(entries) && entries.length) {
+                  const entryMemberIds = [...new Set(entries.map((e) => String(e?.memberId || "").trim()).filter(Boolean))];
+                  if (!entryMemberIds.length) {
+                    return res.status(400).json({ message: "Please provide at least one member entry." });
+                  }
+
+                  const foundMembers = await Member.find({
+                    _id: { $in: entryMemberIds },
+                    church: req.activeChurch._id
+                  }).select("_id");
+                  const foundIds = new Set(foundMembers.map((m) => String(m._id)));
+                  if (entryMemberIds.some((id) => !foundIds.has(id))) {
+                    return res.status(404).json({ message: "One or more members were not found" });
+                  }
+
+                  const invalidEntry = entries.find((e) => !e?.amount || Number(e.amount) <= 0 || !e?.date);
+                  if (invalidEntry) {
+                    return res.status(400).json({ message: "Each entry requires an amount and a date." });
+                  }
+
+                  const docs = await WelfareContributions.insertMany(
+                    await Promise.all(
+                      entries.map(async (e) => ({
+                        member: e.memberId,
+                        amount: Number(e.amount),
+                        date: e.date,
+                        paymentMethod: e.paymentMethod || "Cash",
+                        note: typeof e.note === "string" ? e.note.trim() : e.note,
+                        church: req.activeChurch._id,
+                        createdBy: req.user._id,
+                        referenceId: await generateReferenceId("WLC")
+                      }))
+                    )
+                  );
+
+                  return res.status(201).json({
+                    message: `${docs.length} welfare contribution(s) created successfully`,
+                    count: docs.length,
+                    welfareContributions: docs
+                  });
+                }
+
                 if (!amount || !date) {
                 return res.status(400).json({ message: "Amount and date are required." });
                 }

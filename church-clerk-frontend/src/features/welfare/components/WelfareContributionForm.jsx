@@ -25,6 +25,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
   const [options, setOptions] = useState([]);
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [selectedMember, setSelectedMember] = useState(null);
+  const [pendingEntries, setPendingEntries] = useState([]);
   const listRef = useRef(null);
 
   const debouncedQuery = useMemo(() => String(query || "").trim(), [query]);
@@ -64,6 +65,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
     setOptions([]);
     setSelectedMemberId("");
     setSelectedMember(null);
+    setPendingEntries([]);
   }, [open, mode, initialData]);
 
   useEffect(() => {
@@ -92,13 +94,45 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
     return () => clearTimeout(id);
   }, [debouncedQuery, open, mode, store]);
 
-  const addSelectedMember = () => {
-    const member = options.find((m) => m?._id === selectedMemberId) || null;
-    if (!member) return;
-    setSelectedMember(member);
+  const buildEntryPayload = () => {
+    if (!selectedMember?._id) {
+      setFormError("Please search and select a member.");
+      return null;
+    }
+    if (!amount || Number(amount) <= 0) {
+      setFormError("Amount is required.");
+      return null;
+    }
+    if (!date) {
+      setFormError("Date is required.");
+      return null;
+    }
+    return {
+      memberId: selectedMember._id,
+      amount: Number(amount),
+      date,
+      paymentMethod,
+      note: String(note || "").trim()
+    };
+  };
+
+  const clearCurrentEntry = () => {
+    setSelectedMember(null);
     setSelectedMemberId("");
     setQuery("");
     setOptions([]);
+    setAmount("");
+    setDate("");
+    setPaymentMethod("Cash");
+    setNote("");
+  };
+
+  const addAnother = () => {
+    setFormError(null);
+    const entry = buildEntryPayload();
+    if (!entry) return;
+    setPendingEntries((prev) => [...prev, { payload: entry, member: selectedMember }]);
+    clearCurrentEntry();
   };
 
   const submit = async (e) => {
@@ -107,42 +141,57 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
     setIsSubmitting(true);
     setFormError(null);
 
-    if (!amount || Number(amount) <= 0) {
-      setFormError("Amount is required.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!date) {
-      setFormError("Date is required.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (mode !== "edit") {
-      if (!selectedMember?._id) {
-        setFormError("Please search, select a member and click \"Add Member\".");
+    if (mode === "edit") {
+      if (!amount || Number(amount) <= 0) {
+        setFormError("Amount is required.");
         setIsSubmitting(false);
         return;
       }
-    }
-
-    const payload = {
-      amount: Number(amount),
-      date,
-      paymentMethod,
-      note: String(note || "").trim()
-    };
-
-    try {
-      if (mode === "edit") {
-        if (!canEdit) return;
-        await store?.updateContribution?.(initialData?._id, payload);
-      } else {
-        if (!canCreate) return;
-        await store?.createContribution?.({ ...payload, memberId: selectedMember._id });
+      if (!date) {
+        setFormError("Date is required.");
+        setIsSubmitting(false);
+        return;
       }
 
+      const payload = {
+        amount: Number(amount),
+        date,
+        paymentMethod,
+        note: String(note || "").trim()
+      };
+
+      try {
+        if (!canEdit) return;
+        await store?.updateContribution?.(initialData?._id, payload);
+        onSuccess?.();
+      } catch (e2) {
+        setFormError(e2?.response?.data?.message || e2?.message || "Request failed");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    const hasCurrentInput = Boolean(selectedMember || String(amount || "").trim() || date || String(note || "").trim());
+    const payloads = pendingEntries.map((p) => p?.payload).filter(Boolean);
+    if (hasCurrentInput) {
+      const currentEntry = buildEntryPayload();
+      if (!currentEntry) {
+        setIsSubmitting(false);
+        return;
+      }
+      payloads.push(currentEntry);
+    }
+
+    if (!payloads.length) {
+      setFormError("Please add at least one member entry.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      if (!canCreate) return;
+      await store?.createContribution?.(payloads.length === 1 ? payloads[0] : { entries: payloads });
       onSuccess?.();
     } catch (e2) {
       setFormError(e2?.response?.data?.message || e2?.message || "Request failed");
@@ -187,69 +236,64 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
               </div>
             ) : (
               <div className="md:col-span-2">
-                <label className="block font-semibold text-gray-500 text-xs">Members</label>
+                <label className="block font-semibold text-gray-500 text-xs">Member</label>
 
                 {selectedMember ? (
-                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate text-sm">{memberOptionLabel(selectedMember)}</div>
-                    </div>
+                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
+                    <div className="min-w-0 font-semibold text-gray-900 truncate text-sm">{memberOptionLabel(selectedMember)}</div>
                     <button
                       type="button"
-                      onClick={() => setSelectedMember(null)}
-                      className="shrink-0 text-gray-500 hover:text-gray-900"
-                      aria-label="Remove member"
+                      onClick={() => {
+                        setSelectedMember(null);
+                        setSelectedMemberId("");
+                      }}
+                      className="shrink-0 rounded-md px-2 py-1 font-semibold text-blue-700 hover:bg-blue-100 text-xs"
                     >
-                      ×
+                      Change
                     </button>
                   </div>
                 ) : (
                   <>
-                    <div className="mt-2 flex items-center gap-2">
-                      <input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        className="h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                        placeholder="Search name, phone, email..."
-                      />
-                      <button
-                        type="button"
-                        onClick={addSelectedMember}
-                        disabled={!selectedMemberId}
-                        className="h-[44px] shrink-0 rounded-lg bg-blue-600 px-4 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 md:h-12 lg:h-11 text-sm"
-                      >
-                        Add Member
-                      </button>
+                    <input
+                      value={query}
+                      onChange={(e) => {
+                        setQuery(e.target.value);
+                        if (selectedMemberId) {
+                          setSelectedMemberId("");
+                          setSelectedMember(null);
+                        }
+                      }}
+                      className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+                      placeholder="Search name, phone, email..."
+                    />
+
+                    <div ref={listRef} className="mt-3 max-h-64 overflow-y-auto rounded-lg border border-gray-200">
+                      {searchLoading ? (
+                        <div className="px-4 py-3 text-gray-600 text-sm">Searching...</div>
+                      ) : options.length ? (
+                        <div className="divide-y divide-gray-200">
+                          {options.map((m, idx) => (
+                            <button
+                              key={m?._id ?? `m-${idx}`}
+                              type="button"
+                              onClick={() => {
+                                setSelectedMemberId(m._id);
+                                setSelectedMember(m);
+                                setQuery("");
+                                setOptions([]);
+                              }}
+                              className="w-full px-4 py-2.5 text-left hover:bg-gray-50"
+                            >
+                              <div className="font-semibold text-gray-900 truncate text-sm">{memberOptionLabel(m)}</div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : debouncedQuery.trim() ? (
+                        <div className="px-4 py-3 text-gray-600 text-sm">No members found.</div>
+                      ) : (
+                        <div className="px-4 py-3 text-gray-600 text-sm">Start typing to search members.</div>
+                      )}
                     </div>
-
-                    {debouncedQuery.trim() ? (
-                      <div ref={listRef} className="mt-3 max-h-64 overflow-y-auto rounded-lg border border-gray-200">
-                        {searchLoading ? (
-                          <div className="px-4 py-3 text-gray-600 text-sm">Searching...</div>
-                        ) : options.length ? (
-                          <div className="divide-y divide-gray-200">
-                            {options.map((m, idx) => (
-                              <label key={m?._id ?? `m-${idx}`} className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name="welfare_member"
-                                  checked={selectedMemberId === m._id}
-                                  onChange={() => setSelectedMemberId(m._id)}
-                                  className="mt-1"
-                                />
-                                <div className="min-w-0">
-                                  <div className="font-semibold text-gray-900 truncate text-sm">{memberOptionLabel(m)}</div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="px-4 py-3 text-gray-600 text-sm">No members found.</div>
-                        )}
-                      </div>
-                    ) : null}
-
-                    <div className="mt-2 text-gray-500 text-xs">Select a member from the list, then click "Add Member".</div>
                   </>
                 )}
               </div>
@@ -301,6 +345,33 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
                 placeholder="e.g. Monthly welfare dues"
               />
             </div>
+
+            {mode !== "edit" && pendingEntries.length ? (
+              <div className="md:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="font-semibold text-gray-700 text-xs">Pending entries ({pendingEntries.length})</div>
+                <div className="mt-2 max-h-40 overflow-y-auto">
+                  <div className="space-y-2">
+                    {pendingEntries.map((p, i) => (
+                      <div key={`pending-${i}`} className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900 truncate text-sm">{memberOptionLabel(p?.member)}</div>
+                          <div className="mt-0.5 text-gray-600 text-xs">
+                            {p?.payload?.amount || 0} • {p?.payload?.paymentMethod || "-"} • {(p?.payload?.date || "").slice(0, 10)}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPendingEntries((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="shrink-0 font-semibold text-red-600 hover:underline text-xs"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-5 flex items-center justify-end gap-3">
@@ -312,6 +383,16 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
               Cancel
             </button>
 
+            {mode !== "edit" ? (
+              <button
+                type="button"
+                onClick={addAnother}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+              >
+                Add Another
+              </button>
+            ) : null}
+
             <Button
               type="submit"
               variant="primary"
@@ -319,7 +400,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
               loadingText={mode === "edit" ? "Updating..." : "Saving..."}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 text-sm"
             >
-              {mode === "edit" ? "Update" : "Save"}
+              {mode === "edit" ? "Update" : pendingEntries.length ? "Save All" : "Save"}
             </Button>
           </div>
         </form>

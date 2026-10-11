@@ -23,3 +23,7 @@ export const getBusinessKPI = async () => {
 export const getBusinessIncomeExpensesKPI = async (businessId) => {
   return await http.get(`/business-ventures/business-ventures/${businessId}/income-expenses/kpi`);
 };
+
+export const searchBusinessVentureMembers = async (search) => {
+  return await http.get("/business-ventures/business-ventures/members/search", { params: { search } });
+};

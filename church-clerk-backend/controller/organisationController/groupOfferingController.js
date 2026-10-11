@@ -4,7 +4,7 @@ import Group from "../../models/organisationModel/groupModel.js";
 const createGroupOffering = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const { date, amount, note, offeringType } = req.body;
+    const { date, amount, note, offeringType, recordType } = req.body;
 
     if(!date || !amount) {
         return res.status(400).json({message: "date and amount are required"})
@@ -29,6 +29,7 @@ const createGroupOffering = async (req, res) => {
       church: group.church,
       createdBy: req.user._id, 
       offeringType: String(offeringType).trim(),
+      recordType: recordType === "seed" ? "seed" : "offering",
       date,
       amount,
       note
@@ -48,7 +49,7 @@ const createGroupOffering = async (req, res) => {
 //get all group Offering
 const getAllGroupOfferings = async(req, res) => {
   try {
-       const { page = 1, limit = 10, search } = req.query;
+       const { page = 1, limit = 10, search, dateFrom, dateTo } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -67,8 +68,14 @@ const getAllGroupOfferings = async(req, res) => {
       query.createdBy = { $in: matchingUsers.length ? matchingUsers.map(u => u._id) : [] };
     }
 
+    if (dateFrom || dateTo) {
+      query.date = {};
+      if (dateFrom) query.date.$gte = new Date(dateFrom);
+      if (dateTo) query.date.$lte = new Date(`${dateTo}T23:59:59.999Z`);
+    }
+
     const offerings = await Offering.find(query)
-      .select("date amount note offeringType group createdBy referenceId")
+      .select("date amount note offeringType recordType group createdBy referenceId")
           .populate("group", "name")
           .populate("createdBy", "fullName")
           .sort({ createdAt: -1 })

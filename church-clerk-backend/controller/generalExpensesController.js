@@ -1,4 +1,5 @@
 import GeneralExpenses from "../models/generalExpenseModel.js";
+import { uploadReceiptImage, destroyReceiptImage, receiptImageDownloadUrl, validateReceiptImage } from "../services/receiptService.js";
 
 const createGeneralExpenses = async (req, res) => {
     try {
@@ -12,6 +13,15 @@ const createGeneralExpenses = async (req, res) => {
             return res.status(400).json({ message: "Amount and date are required." });
         }
 
+        let receipt;
+        if (req.file) {
+            const fileError = validateReceiptImage(req.file);
+            if (fileError) {
+                return res.status(400).json({ message: fileError });
+            }
+            receipt = await uploadReceiptImage(req.file, `church-clerk/general-expenses/${req.activeChurch._id}`);
+        }
+
         const generalExpenses = await GeneralExpenses.create({
             title: String(title).trim(),
             category,
@@ -19,6 +29,7 @@ const createGeneralExpenses = async (req, res) => {
             description,
             date,
             paymentMethod,
+            ...(receipt ? { receipt } : {}),
             church:  req.activeChurch._id,
             createdBy: req.user._id
         });
@@ -90,7 +101,7 @@ const getAllGeneralExpenses = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const generalExpenses = await GeneralExpenses.find(query)
-                .select("title category amount description date paymentMethod status createdBy referenceId createdAt")
+                .select("title category amount description date paymentMethod status receipt createdBy referenceId createdAt")
                 .populate("createdBy", "fullName")
                     .sort({ createdAt: -1 })
                     .skip(skip)
@@ -157,14 +168,35 @@ const updateGeneralExpenses = async (req, res) => {
            church: req.activeChurch._id
         }
 
-    
-        const generalExpenses = await GeneralExpenses.findOneAndUpdate(query, req.body, {
+        const { removeReceipt, receipt: _receiptBody, church: _church, createdBy: _createdBy, ...restBody } = req.body || {};
+        const updatePayload = { ...restBody };
+
+        let newReceipt;
+        if (req.file) {
+            const fileError = validateReceiptImage(req.file);
+            if (fileError) {
+                return res.status(400).json({ message: fileError });
+            }
+            newReceipt = await uploadReceiptImage(req.file, `church-clerk/general-expenses/${req.activeChurch._id}`);
+            updatePayload.receipt = newReceipt;
+        } else if (String(removeReceipt || "") === "true") {
+            updatePayload.receipt = null;
+        }
+
+        const previous = await GeneralExpenses.findOne(query).select("receipt");
+
+        const generalExpenses = await GeneralExpenses.findOneAndUpdate(query, updatePayload, {
             new: true,
             runValidators: true
         });
 
         if(!generalExpenses) {
+            if (newReceipt) await destroyReceiptImage(newReceipt);
             return res.status(404).json({message: "General Expenses not found"})
+        }
+
+        if ((newReceipt || String(removeReceipt || "") === "true") && previous?.receipt?.publicId) {
+            await destroyReceiptImage(previous.receipt);
         }
 
         return res.status(200).json({ message: "General Expenses updated successfully", generalExpenses });
@@ -188,7 +220,12 @@ const deleteGeneralExpenses = async (req, res) => {
 
         if(!generalExpenses) {
             return res.status(404).json({message: "General Expenses not found"})
-        }   
+        }
+
+        if (generalExpenses?.receipt?.publicId) {
+            await destroyReceiptImage(generalExpenses.receipt);
+        }
+
         return res.status(200).json({ message: "General Expenses deleted successfully", generalExpenses });
     } catch (error) {
         return res.status(400).json({ message: "General Expenses could not be deleted", error: error.message });
@@ -294,4 +331,22 @@ const getGeneralExpensesKPI = async (req, res) => {
 
 
 
-export { createGeneralExpenses, getAllGeneralExpenses, updateGeneralExpenses, deleteGeneralExpenses, getGeneralExpensesKPI }
+const downloadGeneralExpenseReceipt = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = { _id: id, church: req.activeChurch._id };
+
+        const expense = await GeneralExpenses.findOne(query).select("receipt").lean();
+        if (!expense?.receipt?.publicId) {
+            return res.status(404).json({ message: "Receipt not found" });
+        }
+
+        return res.redirect(receiptImageDownloadUrl(expense.receipt));
+    } catch (error) {
+        return res.status(400).json({ message: "Receipt could not be downloaded", error: error.message });
+    }
+};
+
+
+
+export { createGeneralExpenses, getAllGeneralExpenses, updateGeneralExpenses, deleteGeneralExpenses, getGeneralExpensesKPI, downloadGeneralExpenseReceipt }

@@ -137,7 +137,7 @@ const searchMembersToAddToGroup = async (req, res) => {
       $or: [{ firstName: regex }, { lastName: regex }, { email: regex }, { phoneNumber: regex }]
     })
       .sort({ firstName: 1, lastName: 1 })
-      .select("firstName lastName phoneNumber email city")
+      .select("firstName lastName phoneNumber email streetAddress city")
       .limit(30)
       .lean();
 
@@ -275,7 +275,7 @@ const addMemberToGroup = async (req, res) => {
 // GET ALL GROUP MEMBERS
 const getGroupMembers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "" } = req.query;
+    const { page = 1, limit = 10, search = "", dateFrom, dateTo } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -283,8 +283,16 @@ const getGroupMembers = async (req, res) => {
 
     const groupId = req.params.id;
 
+    const memberQuery = { group: groupId, church: req.activeChurch._id };
+    if (dateFrom || dateTo) {
+      const range = {};
+      if (dateFrom) range.$gte = new Date(dateFrom);
+      if (dateTo) range.$lte = new Date(`${dateTo}T23:59:59.999Z`);
+      memberQuery.$or = [{ joinedAt: range }, { joinedAt: { $exists: false }, createdAt: range }];
+    }
+
         // 1️⃣ Total members (all, ignore search)
-    const totalMembers = await GroupMember.countDocuments({ group: groupId, church: req.activeChurch._id });
+    const totalMembers = await GroupMember.countDocuments(memberQuery);
 
     // 2️⃣ Build search filter for populated members
     let memberMatch = {};
@@ -303,13 +311,13 @@ const getGroupMembers = async (req, res) => {
 
    
     // 3️⃣ Fetch paginated members with search
-    const groupMembers = await GroupMember.find({ group: groupId, church: req.activeChurch._id })
+    const groupMembers = await GroupMember.find(memberQuery)
       .skip(skip)
       .limit(limitNum)
       .populate({
         path: "member",
         match: memberMatch, // search applied here
-        select: "firstName lastName phoneNumber email joinedAt",
+        select: "firstName lastName phoneNumber email joinedAt streetAddress city",
       })
       .populate("group", "name");
 

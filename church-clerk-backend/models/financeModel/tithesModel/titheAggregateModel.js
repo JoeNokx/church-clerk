@@ -6,6 +6,7 @@ const titheAggregateSchema = new mongoose.Schema({
 
   amount: { type: Number, required: true },
   date: { type: Date, required: true },
+  serviceType: { type: String, trim: true },
   description: { type: String, trim: true },
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

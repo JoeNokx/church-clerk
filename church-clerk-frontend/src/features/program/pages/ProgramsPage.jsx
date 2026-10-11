@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import ProgramContext, { ProgramProvider } from "../program.store.js";
 import ProgramsFilters from "../components/ProgramsFilters.jsx";
 import ProgramsTable from "../components/ProgramsTable.jsx";
@@ -11,7 +12,30 @@ function ProgramsPageInner() {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(ProgramContext);
 
-  const [activeTab, setActiveTab] = useState("upcoming");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const t = String(searchParams.get("tab") || "").trim();
+    return ["upcoming", "ongoing", "past"].includes(t) ? t : "upcoming";
+  });
+
+  useEffect(() => {
+    const t = String(searchParams.get("tab") || "").trim();
+    if (!["upcoming", "ongoing", "past"].includes(t)) return;
+    const id = setTimeout(() => setActiveTab((prev) => (prev === t ? prev : t)), 0);
+    return () => clearTimeout(id);
+  }, [searchParams]);
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.set("tab", key);
+        return p;
+      },
+      { replace: true }
+    );
+  };
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingProgramId, setEditingProgramId] = useState(null);
@@ -66,7 +90,7 @@ function ProgramsPageInner() {
             { key: "past", label: "Past", badge: pastBadge, badgeColor: "bg-gray-600 text-white" },
           ]}
           activeTab={activeTab}
-          onChange={setActiveTab}
+          onChange={handleTabChange}
           sticky={false}
           className="mt-4"
         />

@@ -9,7 +9,9 @@ const welfareDisbursementSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
-  }, 
+  },
+
+  member: { type: mongoose.Schema.Types.ObjectId, ref: 'Member' },
   category: {
     type: String,
     required: true,
@@ -19,6 +21,12 @@ const welfareDisbursementSchema = new mongoose.Schema({
   date: { type: Date, required: true },
 
   description: { type: String, trim: true },
+  receipt: {
+    url: { type: String },
+    publicId: { type: String },
+    resourceType: { type: String },
+    originalName: { type: String }
+  },
   paymentMethod: { 
     type: String,
     enum: ['Cash', 'Mobile Money', 'Bank Transfer', 'Cheque'],

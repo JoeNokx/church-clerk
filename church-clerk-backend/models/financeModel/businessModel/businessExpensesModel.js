@@ -10,6 +10,12 @@ const businessExpensesSchema = new mongoose.Schema({
     category: { type: String, trim: true },
     date: { type: Date, required: true },
     description: { type: String, trim: true },
+    receipt: {
+      url: { type: String },
+      publicId: { type: String },
+      resourceType: { type: String },
+      originalName: { type: String }
+    },
     amount: { type: Number, required: true },
     referenceId: { type: String, unique: true, sparse: true, index: true }
 

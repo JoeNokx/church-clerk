@@ -15,8 +15,12 @@ import { useLookupValues } from "../../../features/lookups/hooks/useLookupValues
 import {
   getScopedExpenses,
   createScopedExpense,
+  getScopedExpenseReceiptDownloadUrl,
   updateScopedExpense
 } from "../../services/scopedExpenses.api.js";
+import ImageLightbox from "../ImageLightbox/index.jsx";
+import ReceiptPicker from "../ReceiptPicker/index.jsx";
+import ReceiptView from "../ReceiptView/index.jsx";
 
 const CATEGORY_OPTIONS = [
   "Maintenance",
@@ -75,6 +79,9 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
 
   const [viewOpen, setViewOpen] = useState(false);
   const [viewRow, setViewRow] = useState(null);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptRemoved, setReceiptRemoved] = useState(false);
+  const [receiptLightbox, setReceiptLightbox] = useState(null);
 
   // form fields
   const [title, setTitle] = useState("");
@@ -144,6 +151,8 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
     setDate("");
     setPaymentMethod("Cash");
     setDescription("");
+    setReceiptFile(null);
+    setReceiptRemoved(false);
     setFormError("");
     setFormOpen(true);
   };
@@ -157,6 +166,8 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
     setDate(String(row?.date || "").slice(0, 10));
     setPaymentMethod(String(row?.paymentMethod || "Cash"));
     setDescription(String(row?.description || ""));
+    setReceiptFile(null);
+    setReceiptRemoved(false);
     setFormError("");
     setFormOpen(true);
   };
@@ -178,7 +189,9 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
       amount: Number(amount),
       date,
       paymentMethod,
-      description: String(description || "").trim()
+      description: String(description || "").trim(),
+      ...(receiptFile ? { receiptFile } : {}),
+      ...(receiptRemoved && !receiptFile ? { removeReceipt: true } : {})
     };
 
     try {
@@ -368,6 +381,11 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewRow?.createdBy?.fullName || "-"}</div></div>
               </div>
               <div><div className="font-semibold text-gray-500 text-xs">Description</div><div className="mt-1 text-gray-700">{viewRow?.description || "-"}</div></div>
+              <ReceiptView
+                receipt={viewRow?.receipt}
+                downloadUrl={viewRow?._id ? getScopedExpenseReceiptDownloadUrl(scope, entityId, viewRow._id) : null}
+                onPreview={(url, name) => setReceiptLightbox({ url, name })}
+              />
             </div>
           </div>
         </div>
@@ -483,6 +501,28 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
                     {description.length}/500 chars
                   </div>
                 </div>
+
+                <div className="md:col-span-2">
+                  <ReceiptPicker
+                    receiptFile={receiptFile}
+                    existingReceipt={formMode === "edit" ? formEditing?.receipt : null}
+                    removed={receiptRemoved}
+                    onPick={(f) => {
+                      if (!f) return;
+                      if (!String(f.type || "").startsWith("image/")) {
+                        setFormError("Receipt must be an image file.");
+                        return;
+                      }
+                      setFormError("");
+                      setReceiptFile(f);
+                      setReceiptRemoved(false);
+                    }}
+                    onClearFile={() => setReceiptFile(null)}
+                    onRemoveExisting={() => setReceiptRemoved(true)}
+                    onUndoRemove={() => setReceiptRemoved(false)}
+                    onPreview={(url, name) => setReceiptLightbox({ url, name })}
+                  />
+                </div>
               </div>
 
               <div className="mt-5 flex items-center justify-end gap-3">
@@ -507,6 +547,8 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
           </div>
         </div>
       )}
+
+      <ImageLightbox url={receiptLightbox?.url} name={receiptLightbox?.name} onClose={() => setReceiptLightbox(null)} />
     </div>
   );
 }

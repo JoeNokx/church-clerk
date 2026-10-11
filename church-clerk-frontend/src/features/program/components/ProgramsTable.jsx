@@ -239,7 +239,7 @@ function ProgramsTable({ status, onEdit, onCreate }) {
               <Card.Footer>
                 {canView ? (
                   <Card.ViewDetailsLink
-                    onClick={() => { if (row?._id) toPage("program-details", { id: row._id }, { state: { from: "programs" } }); }}
+                    onClick={() => { if (row?._id) toPage("program-details", { id: row._id }, { state: { from: "programs", tab: status } }); }}
                   />
                 ) : null}
               </Card.Footer>

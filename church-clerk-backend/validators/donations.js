@@ -6,6 +6,7 @@ export const createTitheIndividualSchema = Joi.object({
   amount: Joi.number().positive().required(),
   paymentMethod: Joi.string().trim().min(1).max(50).required(),
   date: Joi.string().isoDate().required(),
+  note: Joi.string().trim().max(1000).allow("", null).optional(),
 
   memberId: objectId.allow("", null).optional(),
   memberIds: Joi.array().items(objectId).max(200).optional(),
@@ -15,7 +16,8 @@ export const createTitheIndividualSchema = Joi.object({
 export const createTitheAggregateSchema = Joi.object({
   date: Joi.string().isoDate().required(),
   amount: Joi.number().positive().required(),
-  description: Joi.string().trim().min(1).max(500).required()
+  serviceType: Joi.string().trim().min(1).max(100).required(),
+  description: Joi.string().trim().max(500).allow("", null).optional()
 });
 
 export const createOfferingSchema = Joi.object({
@@ -30,20 +32,36 @@ export const createSpecialFundSchema = Joi.object({
   category: Joi.string().trim().min(1).max(120).required(),
   totalAmount: Joi.number().positive().required(),
   givingDate: Joi.string().isoDate().required(),
-  description: Joi.string().trim().max(1000).allow("", null).optional()
+  description: Joi.string().trim().max(500).allow("", null).optional()
 });
 
 export const createWelfareContributionSchema = Joi.object({
-  amount: Joi.number().positive().required(),
-  date: Joi.string().isoDate().required(),
+  amount: Joi.number().positive().optional(),
+  date: Joi.string().isoDate().optional(),
   paymentMethod: Joi.string().trim().max(50).allow("", null).optional(),
+  note: Joi.string().trim().max(500).allow("", null).optional(),
 
   memberId: objectId.allow("", null).optional(),
-  searchMember: Joi.string().trim().max(200).allow("", null).optional()
+  searchMember: Joi.string().trim().max(200).allow("", null).optional(),
+
+  entries: Joi.array()
+    .items(
+      Joi.object({
+        memberId: objectId.required(),
+        amount: Joi.number().positive().required(),
+        date: Joi.string().isoDate().optional(),
+        paymentMethod: Joi.string().trim().max(50).allow("", null).optional(),
+        note: Joi.string().trim().max(500).allow("", null).optional()
+      })
+    )
+    .min(1)
+    .max(200)
+    .optional()
 });
 
 export const createWelfareDisbursementSchema = Joi.object({
   beneficiaryName: Joi.string().trim().min(1).max(200).required(),
+  member: objectId.allow("", null).optional(),
   category: Joi.string().trim().min(1).max(120).required(),
   amount: Joi.number().positive().required(),
   date: Joi.string().isoDate().required(),

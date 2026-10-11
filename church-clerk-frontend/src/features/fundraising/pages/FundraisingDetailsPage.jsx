@@ -10,9 +10,13 @@ import {
 } from "../contributions/services/projectContributions.api.js";
 import {
   createProjectExpense,
+  getProjectExpenseReceiptDownloadUrl,
   getProjectExpenses,
   updateProjectExpense
 } from "../expenses/services/projectExpenses.api.js";
+import ImageLightbox from "../../../shared/components/ImageLightbox/index.jsx";
+import ReceiptPicker from "../../../shared/components/ReceiptPicker/index.jsx";
+import ReceiptView from "../../../shared/components/ReceiptView/index.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import AddContributorModal from "../components/AddContributorModal.jsx";
 import EditPledgeModal from "../../pledge/components/EditPledgeModal.jsx";
@@ -376,6 +380,9 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptRemoved, setReceiptRemoved] = useState(false);
+  const [receiptLightbox, setReceiptLightbox] = useState(null);
 
   const { values: lookupCategories, reload: reloadCategories } = useLookupValues("expenseCategory");
   const categoryOptions = lookupCategories?.length ? lookupCategories : EXPENSE_CATEGORY_OPTIONS;
@@ -384,6 +391,8 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
     if (!open) return;
     setError("");
     setIsSubmitting(false);
+    setReceiptFile(null);
+    setReceiptRemoved(false);
 
     if (mode === "edit" && initialData) {
       setSpentOn(initialData?.spentOn || "");
@@ -431,7 +440,9 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
         category: String(category || "").trim() || undefined,
         date,
         amount: Number(amount),
-        description: String(description || "").trim().slice(0, 2000)
+        description: String(description || "").trim().slice(0, 2000),
+        ...(receiptFile ? { receiptFile } : {}),
+        ...(receiptRemoved && !receiptFile ? { removeReceipt: true } : {})
       });
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
@@ -520,6 +531,26 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
           />
         </div>
 
+        <ReceiptPicker
+          receiptFile={receiptFile}
+          existingReceipt={mode === "edit" ? initialData?.receipt : null}
+          removed={receiptRemoved}
+          onPick={(f) => {
+            if (!f) return;
+            if (!String(f.type || "").startsWith("image/")) {
+              setError("Receipt must be an image file.");
+              return;
+            }
+            setError("");
+            setReceiptFile(f);
+            setReceiptRemoved(false);
+          }}
+          onClearFile={() => setReceiptFile(null)}
+          onRemoveExisting={() => setReceiptRemoved(true)}
+          onUndoRemove={() => setReceiptRemoved(false)}
+          onPreview={(url, name) => setReceiptLightbox({ url, name })}
+        />
+
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
@@ -540,6 +571,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
           </Button>
         </div>
       </form>
+      <ImageLightbox url={receiptLightbox?.url} name={receiptLightbox?.name} onClose={() => setReceiptLightbox(null)} />
     </BaseModal>
   );
 }
@@ -592,6 +624,7 @@ function FundraisingDetailsPage() {
 
   const [expenseViewOpen, setExpenseViewOpen] = useState(false);
   const [expenseViewRow, setExpenseViewRow] = useState(null);
+  const [expenseReceiptLightbox, setExpenseReceiptLightbox] = useState(null);
 
   const [viewRow, setViewRow] = useState(null);
   const [editPledgeRow, setEditPledgeRow] = useState(null);
@@ -1178,6 +1211,15 @@ function FundraisingDetailsPage() {
                 <div className="font-semibold text-gray-500 text-xs">Description</div>
                 <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{expenseViewRow?.description || "—"}</div>
               </div>
+              {expenseViewRow?.receipt?.url ? (
+                <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                  <ReceiptView
+                    receipt={expenseViewRow?.receipt}
+                    downloadUrl={expenseViewRow?._id ? getProjectExpenseReceiptDownloadUrl(projectId, expenseViewRow._id) : null}
+                    onPreview={(url, name) => setExpenseReceiptLightbox({ url, name })}
+                  />
+                </div>
+              ) : null}
             </div>
             <div className="flex justify-end px-4 md:px-5 lg:px-6 py-4 border-t border-gray-200">
               <button type="button" onClick={() => { setExpenseViewOpen(false); setExpenseViewRow(null); }} className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm">Close</button>
@@ -1296,6 +1338,12 @@ function FundraisingDetailsPage() {
           setEditingContribution(null);
           await Promise.all([loadKpi(), loadContributions(contribPage)]);
         }}
+      />
+
+      <ImageLightbox
+        url={expenseReceiptLightbox?.url}
+        name={expenseReceiptLightbox?.name}
+        onClose={() => setExpenseReceiptLightbox(null)}
       />
 
       <ExpenseFormModal

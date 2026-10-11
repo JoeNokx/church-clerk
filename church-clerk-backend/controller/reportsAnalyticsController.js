@@ -1693,7 +1693,6 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
   const orgType = normOpt(options?.orgType) || "cell";
   const scope = normOpt(options?.scope) || "all";
   const sub = normOpt(options?.sub) || "members";
-  const mode = normOpt(options?.mode) || "individual";
   const entity = String(options?.entity || "").trim();
 
   const ORG = {
@@ -1702,7 +1701,6 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
       Model: (await import("../models/organisationModel/cellModel.js")).default,
       Members: (await import("../models/organisationModel/cellMembersModel.js")).default,
       Offering: CellOffering,
-      TotalAtt: (await import("../models/organisationModel/cellAttendanceModel.js")).default,
       IndAtt: (await import("../models/organisationModel/cellIndividualAttendanceModel.js")).default,
       field: "cell"
     },
@@ -1711,7 +1709,6 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
       Model: (await import("../models/organisationModel/departmentModel.js")).default,
       Members: (await import("../models/organisationModel/departmentMembersModel.js")).default,
       Offering: DepartmentOffering,
-      TotalAtt: (await import("../models/organisationModel/departmentAttendanceModel.js")).default,
       IndAtt: (await import("../models/organisationModel/departmentIndividualAttendanceModel.js")).default,
       field: "department"
     },
@@ -1720,7 +1717,6 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
       Model: (await import("../models/organisationModel/groupModel.js")).default,
       Members: (await import("../models/organisationModel/groupMembersModel.js")).default,
       Offering: GroupOffering,
-      TotalAtt: (await import("../models/organisationModel/groupAttendanceModel.js")).default,
       IndAtt: (await import("../models/organisationModel/groupIndividualAttendanceModel.js")).default,
       field: "group"
     },
@@ -1729,7 +1725,6 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
       Model: (await import("../models/organisationModel/ministryModel.js")).default,
       Members: (await import("../models/organisationModel/ministryMembersModel.js")).default,
       Offering: MinistryOffering,
-      TotalAtt: (await import("../models/organisationModel/ministryAttendanceModel.js")).default,
       IndAtt: (await import("../models/organisationModel/ministryIndividualAttendanceModel.js")).default,
       field: "ministry"
     }
@@ -1769,40 +1764,6 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
           date: toDateStr(r?.date),
           amount: clampToNumber(r?.amount),
           note: r?.note || "—",
-          recordedBy: userName(r?.createdBy),
-          createdAt: toDateTimeStr(r?.createdAt),
-          updatedAt: toDateTimeStr(r?.updatedAt)
-        }))
-      };
-    }
-
-    if (sub === "attendance" && mode === "total") {
-      const rows = await cfg.TotalAtt.find({ church: churchId, [cfg.field]: entity, ...rangeMatch("date") })
-        .select("date numberOfAttendees mainSpeaker activity createdBy createdAt updatedAt")
-        .populate("createdBy", "fullName")
-        .sort({ date: -1 })
-        .limit(2000)
-        .lean();
-
-      const availableColumns = [
-        { key: "date", label: "Date" },
-        { key: "numberOfAttendees", label: "Attendees" },
-        { key: "mainSpeaker", label: "Speaker" },
-        { key: "activity", label: "Activity" },
-        { key: "recordedBy", label: "Recorded By" },
-        { key: "createdAt", label: "Created At" },
-        { key: "updatedAt", label: "Updated At" }
-      ];
-
-      return {
-        title: `${orgName} — Attendance (Total)`,
-        columns: availableColumns,
-        availableColumns,
-        rows: rows.map((r) => ({
-          date: toDateStr(r?.date),
-          numberOfAttendees: clampToNumber(r?.numberOfAttendees),
-          mainSpeaker: r?.mainSpeaker || "—",
-          activity: r?.activity || "—",
           recordedBy: userName(r?.createdBy),
           createdAt: toDateTimeStr(r?.createdAt),
           updatedAt: toDateTimeStr(r?.updatedAt)

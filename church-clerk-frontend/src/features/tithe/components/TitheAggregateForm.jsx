@@ -1,9 +1,27 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import TitheContext from "../tithe.store.js";
+import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
+import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import Button from "../../../shared/components/Button/index.jsx";
 
 const MAX_DESCRIPTION_LENGTH = 500;
+
+const SERVICE_TYPES = [
+  "Sunday Service",
+  "First Sunday Service",
+  "Second Sunday Service",
+  "Third Sunday Service",
+  "Worship Service",
+  "Bible Study",
+  "Special Program",
+  "Children Service",
+  "Midweek Service",
+  "Prayer Meeting",
+  "cells Meeting",
+  "groups Meeting",
+  "department Meeting"
+];
 
 function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
@@ -12,6 +30,10 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
   const canCreate = useMemo(() => (typeof can === "function" ? can("tithe", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("tithe", "update") : false), [can]);
 
+  const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
+  const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
+
+  const [serviceType, setServiceType] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
@@ -25,12 +47,14 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
     setIsSubmitting(false);
 
     if (mode === "edit" && initialData) {
+      setServiceType(initialData.serviceType || "");
       setAmount(initialData.amount ?? "");
       setDate((initialData.date || "").slice(0, 10));
       setDescription((initialData.description || "").slice(0, MAX_DESCRIPTION_LENGTH));
       return;
     }
 
+    setServiceType("");
     setAmount("");
     setDate("");
     setDescription("");
@@ -41,6 +65,12 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setFormError(null);
+
+    if (!serviceType) {
+      setFormError("Please select a service type.");
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!date) {
       setFormError("Date is required.");
@@ -57,6 +87,7 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
     const payload = {
       amount: Number(amount),
       date,
+      serviceType,
       description
     };
 
@@ -103,6 +134,34 @@ function TitheAggregateForm({ open, mode, initialData, onClose, onSuccess }) {
           )}
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
+                {canCreate || canEdit ? (
+                  <AddLookupValueButton
+                    label="Add service"
+                    kind="serviceType"
+                    onCreated={async (value) => {
+                      await reloadServiceTypes();
+                      setServiceType(value);
+                    }}
+                  />
+                ) : null}
+              </div>
+              <select
+                value={serviceType}
+                onChange={(e) => setServiceType(e.target.value)}
+                className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+              >
+                <option value="">Select service</option>
+                {serviceTypeOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block font-semibold text-gray-500 text-xs">Amount</label>
               <input

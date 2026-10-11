@@ -56,22 +56,6 @@ export const deleteDepartmentMeeting = async (id, meetingId) => {
   return await http.delete(`/organisations/departments/${id}/meetings/${meetingId}`);
 };
 
-export const createDepartmentAttendance = async (departmentId, payload) => {
-  return await http.post(`/organisations/departments/${departmentId}/attendances`, payload);
-};
-
-export const getDepartmentAttendances = async (departmentId, params) => {
-  return await http.get(`/organisations/departments/${departmentId}/attendances`, { params });
-};
-
-export const updateDepartmentAttendance = async (departmentId, attendanceId, payload) => {
-  return await http.put(`/organisations/departments/${departmentId}/attendances/${attendanceId}`, payload);
-};
-
-export const deleteDepartmentAttendance = async (departmentId, attendanceId) => {
-  return await http.delete(`/organisations/departments/${departmentId}/attendances/${attendanceId}`);
-};
-
 export const createDepartmentIndividualAttendance = async (departmentId, payload) => {
   return await http.post(`/organisations/departments/${departmentId}/individual-attendances`, payload);
 };

@@ -1,5 +1,6 @@
 import BusinessExpenses from "../../../models/financeModel/businessModel/businessExpensesModel.js";
 import BusinessVentures from "../../../models/financeModel/businessModel/businessVenturesModel.js";
+import { uploadBusinessReceipt, destroyBusinessReceipt, businessReceiptDownloadUrl, validateReceiptFile } from "./businessReceipts.js";
 
 
 const createBusinessExpenses = async (req, res) => {
@@ -30,6 +31,15 @@ const createBusinessExpenses = async (req, res) => {
                 if (!spentBy || !date || !amount || !category) {
                 return res.status(400).json({ message: "spentBy, category, date and amount are required." });
                 }
+
+                let receipt;
+                if (req.file) {
+                const fileError = validateReceiptFile(req.file);
+                if (fileError) {
+                return res.status(400).json({ message: fileError });
+                }
+                receipt = await uploadBusinessReceipt(req.file, businessId, "expenses");
+                }
         
 
                 const businessExpenses = await BusinessExpenses.create({
@@ -40,6 +50,7 @@ const createBusinessExpenses = async (req, res) => {
                 amount,
                 description,
                 category,
+                ...(receipt ? { receipt } : {}),
                 church: business.church,
                 createdBy: req.user._id
                 });
@@ -126,7 +137,7 @@ const getAllBusinessExpenses = async (req, res) => {
             
                 // FETCH GENERAL EXPENSES
                 const businessExpenses = await BusinessExpenses.find(query)
-                .select("spentBy name category date amount description createdBy referenceId createdAt")
+                .select("spentBy name category date amount description receipt createdBy referenceId createdAt")
                 .populate("createdBy", "fullName")
                 .populate("businessVentures", "businessName")
                     .sort({ createdAt: -1 })
@@ -199,10 +210,32 @@ const updateBusinessExpenses = async (req, res) => {
                     return res.status(404).json({message: "business not found"})
                 }
 
-                const businessExpenses = await BusinessExpenses.findOneAndUpdate(query, req.body, {new: true, runValidators: true})
+                const { removeReceipt, receipt: _receiptBody, ...restBody } = req.body || {};
+                const updatePayload = { ...restBody };
+
+                let newReceipt;
+                if (req.file) {
+                const fileError = validateReceiptFile(req.file);
+                if (fileError) {
+                return res.status(400).json({ message: fileError });
+                }
+                newReceipt = await uploadBusinessReceipt(req.file, businessId, "expenses");
+                updatePayload.receipt = newReceipt;
+                } else if (String(removeReceipt || "") === "true") {
+                updatePayload.receipt = null;
+                }
+
+                const previous = await BusinessExpenses.findOne(query).select("receipt");
+        
+                const businessExpenses = await BusinessExpenses.findOneAndUpdate(query, updatePayload, {new: true, runValidators: true})
         
                 if(!businessExpenses) {
+                    if (newReceipt) await destroyBusinessReceipt(newReceipt);
                     return res.status(404).json({message: "business expenses not found"})
+                }
+
+                if ((newReceipt || String(removeReceipt || "") === "true") && previous?.receipt?.publicId) {
+                await destroyBusinessReceipt(previous.receipt);
                 }
         
                 return res.status(200).json({message: "business expenses updated successfully", businessExpenses})
@@ -238,6 +271,10 @@ if (!businessExpenses) {
   return res.status(404).json({ message: "business expenses not found" });
 }
 
+if (businessExpenses?.receipt?.publicId) {
+  await destroyBusinessReceipt(businessExpenses.receipt);
+}
+
 return res.status(200).json({ message: "business expenses deleted successfully", businessExpenses });
 
     } catch (error) {
@@ -246,5 +283,25 @@ return res.status(200).json({ message: "business expenses deleted successfully",
 }
                 
 
+const downloadBusinessExpenseReceipt = async (req, res) => {
+    try {
+        const { businessId, expensesId } = req.params;
 
-export {createBusinessExpenses, getAllBusinessExpenses, updateBusinessExpenses, deleteBusinessExpenses}
+        const query = { _id: expensesId, businessVentures: businessId };
+        if (req.user.role !== "superadmin" && req.user.role !== "supportadmin") {
+            query.church = req.activeChurch._id;
+        }
+
+        const businessExpense = await BusinessExpenses.findOne(query).select("receipt").lean();
+        if (!businessExpense?.receipt?.publicId) {
+            return res.status(404).json({ message: "Receipt not found" });
+        }
+
+        return res.redirect(businessReceiptDownloadUrl(businessExpense.receipt));
+    } catch (error) {
+        return res.status(400).json({ message: "Receipt could not be downloaded", error: error.message });
+    }
+};
+
+
+export {createBusinessExpenses, getAllBusinessExpenses, updateBusinessExpenses, deleteBusinessExpenses, downloadBusinessExpenseReceipt}

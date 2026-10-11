@@ -56,22 +56,6 @@ export const deleteMinistryMeeting = async (id, meetingId) => {
   return await http.delete(`/organisations/ministries/${id}/meetings/${meetingId}`);
 };
 
-export const createMinistryAttendance = async (ministryId, payload) => {
-  return await http.post(`/organisations/ministries/${ministryId}/attendances`, payload);
-};
-
-export const getMinistryAttendances = async (ministryId, params) => {
-  return await http.get(`/organisations/ministries/${ministryId}/attendances`, { params });
-};
-
-export const updateMinistryAttendance = async (ministryId, attendanceId, payload) => {
-  return await http.put(`/organisations/ministries/${ministryId}/attendances/${attendanceId}`, payload);
-};
-
-export const deleteMinistryAttendance = async (ministryId, attendanceId) => {
-  return await http.delete(`/organisations/ministries/${ministryId}/attendances/${attendanceId}`);
-};
-
 export const createMinistryIndividualAttendance = async (ministryId, payload) => {
   return await http.post(`/organisations/ministries/${ministryId}/individual-attendances`, payload);
 };

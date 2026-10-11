@@ -4,14 +4,19 @@ import User from '../../../models/userModel.js'
 const createTitheAggregate = async (req, res) => {
     
     try {
-          const {date, amount, description} = req.body;
-        
+          const {date, amount, serviceType, description} = req.body;
+
                 if (!date || !amount) {
                     return res.status(400).json({ message: "Date and amount are required" });
                   }
 
+                  if (!serviceType) {
+                    return res.status(400).json({ message: "Service type is required" });
+                  }
+
                   const titheAggregate = await TitheAggregate.create({
                     date,
+                    serviceType: typeof serviceType === "string" ? serviceType.trim() : serviceType,
                     description: typeof description === "string" ? description.trim() : description,
                     amount,
                     church: req.activeChurch._id,

@@ -1,18 +1,22 @@
 import express from "express";
 const router = express.Router();
 import {getAllCells, getSingleCell, createCell, updateCell, deleteCell, addMemberToCell, searchMembersToAddToCell, getCellMembers, updateCellMemberRole, removeMemberFromCell, addCellMeeting, updateCellMeeting, deleteCellMeeting, getCellMeetings} from "../../controller/organisationController/cellController.js"
-import { createCellAttendance, updateCellAttendance, deleteCellAttendance, getAllCellAttendances } from "../../controller/organisationController/cellAttendanceController.js";
 import {
   createCellIndividualAttendance,
   getAllCellIndividualAttendances,
   getSingleCellIndividualAttendance,
   updateCellIndividualAttendance,
-  deleteCellIndividualAttendance
+  deleteCellIndividualAttendance,
+  getCellCheckInLinkStatus,
+  generateCellCheckInLink,
+  revokeCellCheckInLink
 } from "../../controller/organisationController/cellIndividualAttendanceController.js";
 import { createCellOffering, updateCellOffering, deleteCellOffering, getAllCellOfferings } from "../../controller/organisationController/cellOfferingController.js";
-import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense } from "../../controller/scopedExpensesController.js";
+import { createOrgContribution, getOrgContributions, updateOrgContribution, deleteOrgContribution } from "../../controller/organisationController/organisationContributionController.js";
+import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense, downloadScopedExpenseReceipt } from "../../controller/scopedExpensesController.js";
 import { getOrganisationKPI } from "../../controller/organisationController/groupController.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
+import { uploadReceiptFile } from "../../middleware/uploadReceiptFile.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
@@ -170,48 +174,6 @@ router.delete(
 
 
 router.post(
-  "/cells/:cellId/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "create"),
-  createCellAttendance
-);
-router.get(
-  "/cells/:cellId/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "read"),
-  getAllCellAttendances
-);
-router.put(
-  "/cells/:cellId/attendances/:attendanceId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "update"),
-  updateCellAttendance
-);
-router.delete(
-  "/cells/:cellId/attendances/:attendanceId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "delete"),
-  deleteCellAttendance
-);
-
-
-router.post(
   "/cells/:cellId/individual-attendances",
   protect,
   setActiveChurch,
@@ -263,6 +225,37 @@ router.delete(
   deleteCellIndividualAttendance
 );
 
+router.get(
+  "/cells/:cellId/individual-attendances/:attendanceId/checkin-link",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  getCellCheckInLinkStatus
+);
+router.post(
+  "/cells/:cellId/individual-attendances/:attendanceId/checkin-link/generate",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  generateCellCheckInLink
+);
+router.delete(
+  "/cells/:cellId/individual-attendances/:attendanceId/checkin-link/revoke",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  revokeCellCheckInLink
+);
+
 
 router.post(
   "/cells/:cellId/offerings",
@@ -299,6 +292,48 @@ router.put(
 
 
 router.post(
+  "/cells/:cellId/contributions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "create"),
+  createOrgContribution
+);
+router.get(
+  "/cells/:cellId/contributions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  getOrgContributions
+);
+router.put(
+  "/cells/:cellId/contributions/:contributionId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  updateOrgContribution
+);
+router.delete(
+  "/cells/:cellId/contributions/:contributionId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "delete"),
+  deleteOrgContribution
+);
+
+
+router.post(
   "/cells/:cellId/expenses",
   protect,
   setActiveChurch,
@@ -306,6 +341,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
   requirePermission("organisation", "create"),
+  uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
   createScopedExpense("cell")
 );
@@ -327,8 +363,19 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
   requirePermission("organisation", "update"),
+  uploadReceiptFile,
   conditionalImmutableGuard(),
   updateScopedExpense("cell")
+);
+router.get(
+  "/cells/:cellId/expenses/:expenseId/receipt/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  downloadScopedExpenseReceipt("cell")
 );
 router.delete(
   "/cells/:cellId/expenses/:expenseId",

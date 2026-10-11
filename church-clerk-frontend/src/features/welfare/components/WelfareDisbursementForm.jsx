@@ -5,6 +5,8 @@ import WelfareContext from "../welfare.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import ImageLightbox from "../../../shared/components/ImageLightbox/index.jsx";
+import ReceiptPicker from "../../../shared/components/ReceiptPicker/index.jsx";
 
 const CATEGORY_OPTIONS = ["Birthday", "Wedding", "Funeral", "Hospital", "Emergency", "School", "Other"];
 const PAYMENT_METHODS = ["Cash", "Mobile Money", "Bank Transfer", "Cheque"];
@@ -20,23 +22,71 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
   const categoryOptions = lookupCategories?.length ? lookupCategories : CATEGORY_OPTIONS;
 
   const [beneficiaryName, setBeneficiaryName] = useState("");
-  const [category, setCategory] = useState("Other");
+  const [memberQuery, setMemberQuery] = useState("");
+  const [memberOptions, setMemberOptions] = useState([]);
+  const [memberSearching, setMemberSearching] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [formError, setFormError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptRemoved, setReceiptRemoved] = useState(false);
+  const [receiptLightbox, setReceiptLightbox] = useState(null);
+
+  const memberName = (m) => `${m?.firstName || ""} ${m?.lastName || ""}`.trim() || "-";
+
+  const debouncedMemberQuery = useMemo(() => String(memberQuery || "").trim(), [memberQuery]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const run = async () => {
+      const q = debouncedMemberQuery;
+      if (q.length < 2) {
+        setMemberOptions([]);
+        return;
+      }
+
+      setMemberSearching(true);
+      try {
+        const members = await store?.searchMembers?.(q);
+        setMemberOptions(Array.isArray(members) ? members : []);
+      } catch {
+        setMemberOptions([]);
+      } finally {
+        setMemberSearching(false);
+      }
+    };
+
+    const id = setTimeout(run, 250);
+    return () => clearTimeout(id);
+  }, [debouncedMemberQuery, open, store]);
+
+  const selectMember = (m) => {
+    setSelectedMember(m || null);
+    setBeneficiaryName(memberName(m) === "-" ? "" : memberName(m));
+    setMemberQuery("");
+    setMemberOptions([]);
+  };
 
   useEffect(() => {
     if (!open) return;
 
     setFormError(null);
     setIsSubmitting(false);
+    setMemberQuery("");
+    setMemberOptions([]);
+    setReceiptFile(null);
+    setReceiptRemoved(false);
 
     if (mode === "edit" && initialData) {
       setBeneficiaryName(String(initialData.beneficiaryName || ""));
-      setCategory(String(initialData.category || "Other"));
+      setSelectedMember(initialData?.member && typeof initialData.member === "object" ? initialData.member : null);
+      setCategory(String(initialData.category || ""));
       setAmount(initialData.amount ?? "");
       setDate(String(initialData.date || "").slice(0, 10));
       setDescription(String(initialData.description || ""));
@@ -45,7 +95,8 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
     }
 
     setBeneficiaryName("");
-    setCategory("Other");
+    setSelectedMember(null);
+    setCategory("");
     setAmount("");
     setDate("");
     setDescription("");
@@ -84,11 +135,14 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
 
     const payload = {
       beneficiaryName: String(beneficiaryName).trim(),
+      ...(selectedMember?._id ? { member: selectedMember._id } : {}),
       category: String(category).trim(),
       amount: Number(amount),
       date,
       description: String(description || "").trim(),
-      paymentMethod
+      paymentMethod,
+      ...(receiptFile ? { receiptFile } : {}),
+      ...(receiptRemoved && !receiptFile ? { removeReceipt: true } : {})
     };
 
     try {
@@ -136,6 +190,57 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
             <div className="md:col-span-2">
+              <label className="block font-semibold text-gray-500 text-xs">Search Member (optional)</label>
+              {selectedMember ? (
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-gray-900 truncate text-sm">{memberName(selectedMember)}</div>
+                    <div className="text-gray-500 truncate text-xs">{[selectedMember?.phoneNumber, selectedMember?.email].filter(Boolean).join(" • ") || "—"}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMember(null)}
+                    className="shrink-0 rounded-md px-2 py-1 font-semibold text-blue-700 hover:bg-blue-100 text-xs"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    value={memberQuery}
+                    onChange={(e) => setMemberQuery(e.target.value)}
+                    className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
+                    placeholder="Search name, phone, email..."
+                  />
+                  {debouncedMemberQuery.length >= 2 ? (
+                    <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-gray-200">
+                      {memberSearching ? (
+                        <div className="px-4 py-2.5 text-gray-600 text-sm">Searching members...</div>
+                      ) : memberOptions.length ? (
+                        <div className="divide-y divide-gray-200">
+                          {memberOptions.map((m, idx) => (
+                            <button
+                              key={m?._id ?? `m-${idx}`}
+                              type="button"
+                              onClick={() => selectMember(m)}
+                              className="w-full px-4 py-2.5 text-left hover:bg-gray-50"
+                            >
+                              <div className="font-semibold text-gray-900 truncate text-sm">{memberName(m)}</div>
+                              <div className="text-gray-500 truncate text-xs">{[m?.phoneNumber, m?.email].filter(Boolean).join(" • ") || "—"}</div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-2.5 text-gray-500 text-sm">No members found — type the beneficiary name below.</div>
+                      )}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+
+            <div className="md:col-span-2">
               <label className="block font-semibold text-gray-500 text-xs">Beneficiary Name</label>
               <input
                 value={beneficiaryName}
@@ -164,6 +269,9 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
                 onChange={(e) => setCategory(e.target.value)}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               >
+                <option value="" disabled>
+                  Select category
+                </option>
                 {categoryOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -217,6 +325,28 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
                 placeholder="Optional"
               />
             </div>
+
+            <div className="md:col-span-2">
+              <ReceiptPicker
+                receiptFile={receiptFile}
+                existingReceipt={mode === "edit" ? initialData?.receipt : null}
+                removed={receiptRemoved}
+                onPick={(f) => {
+                  if (!f) return;
+                  if (!String(f.type || "").startsWith("image/")) {
+                    setFormError("Receipt must be an image file.");
+                    return;
+                  }
+                  setFormError(null);
+                  setReceiptFile(f);
+                  setReceiptRemoved(false);
+                }}
+                onClearFile={() => setReceiptFile(null)}
+                onRemoveExisting={() => setReceiptRemoved(true)}
+                onUndoRemove={() => setReceiptRemoved(false)}
+                onPreview={(url, name) => setReceiptLightbox({ url, name })}
+              />
+            </div>
           </div>
 
           <div className="mt-5 flex items-center justify-end gap-3">
@@ -240,6 +370,7 @@ function WelfareDisbursementForm({ open, mode, initialData, onClose, onSuccess }
           </div>
         </form>
       </div>
+      <ImageLightbox url={receiptLightbox?.url} name={receiptLightbox?.name} onClose={() => setReceiptLightbox(null)} />
     </div>
   );
 }

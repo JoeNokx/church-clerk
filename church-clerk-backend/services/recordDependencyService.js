@@ -21,24 +21,21 @@ import WelfareContribution from "../models/financeModel/welfareModel/welfareCont
 import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Ministry from "../models/organisationModel/ministryModel.js";
 import MinistryMembers from "../models/organisationModel/ministryMembersModel.js";
-import MinistryAttendance from "../models/organisationModel/ministryAttendanceModel.js";
 import MinistryIndividualAttendance from "../models/organisationModel/ministryIndividualAttendanceModel.js";
 import MinistryOffering from "../models/organisationModel/ministryOfferingModel.js";
 import Cell from "../models/organisationModel/cellModel.js";
 import CellMembers from "../models/organisationModel/cellMembersModel.js";
-import CellAttendance from "../models/organisationModel/cellAttendanceModel.js";
 import CellIndividualAttendance from "../models/organisationModel/cellIndividualAttendanceModel.js";
 import CellOffering from "../models/organisationModel/cellOfferingModel.js";
 import Department from "../models/organisationModel/departmentModel.js";
 import DepartmentMembers from "../models/organisationModel/departmentMembersModel.js";
-import DepartmentAttendance from "../models/organisationModel/departmentAttendanceModel.js";
 import DepartmentIndividualAttendance from "../models/organisationModel/departmentIndividualAttendanceModel.js";
 import DepartmentOffering from "../models/organisationModel/departmentOfferingModel.js";
 import Group from "../models/organisationModel/groupModel.js";
 import GroupMembers from "../models/organisationModel/groupMembersModel.js";
-import GroupAttendance from "../models/organisationModel/groupAttendanceModel.js";
 import GroupIndividualAttendance from "../models/organisationModel/groupIndividualAttendanceModel.js";
 import GroupOffering from "../models/organisationModel/groupOfferingModel.js";
+import OrganisationContribution from "../models/organisationModel/organisationContributionModel.js";
 import OutreachEvent from "../models/outreachModel/outreachEventModel.js";
 import OutreachProspect from "../models/outreachModel/outreachProspectModel.js";
 import OutreachFollowUp from "../models/outreachModel/outreachFollowUpModel.js";
@@ -50,12 +47,12 @@ const nonEmpty = (v) => (Array.isArray(v) ? v.length > 0 : v != null);
 const nonEmptyFields = (doc, fields) => fields.filter((f) => nonEmpty(doc[f]));
 
 // org entity factory — ministries/cells/departments/groups share shape
-const orgLinks = (field, Members, Attendance, IndividualAttendance, Offering, memberField, eventField) => {
+const orgLinks = (field, Members, IndividualAttendance, Offering, memberField, eventField) => {
   const links = [
     { model: Members, field, label: "members" },
-    { model: Attendance, field, label: "attendance records" },
-    { model: IndividualAttendance, field, label: "individual attendance records" },
+    { model: IndividualAttendance, field, label: "attendance records" },
     { model: Offering, field, label: "offerings" },
+    { model: OrganisationContribution, field: "entity", label: "contributions" },
     { model: Member, field: memberField, label: "member organisation lists" },
   ];
   if (eventField) links.push({ model: Program, field: eventField, label: "programs" });
@@ -76,6 +73,7 @@ const ENTITY = {
     links: [
       { model: TitheIndividual, field: "member", label: "tithe records" },
       { model: WelfareContribution, field: "member", label: "welfare contributions" },
+      { model: OrganisationContribution, field: "member", label: "organisation contributions" },
       { model: MinistryMembers, field: "member", label: "ministry membership" },
       { model: CellMembers, field: "member", label: "cell membership" },
       { model: DepartmentMembers, field: "member", label: "department membership" },
@@ -125,25 +123,25 @@ const ENTITY = {
     model: Ministry,
     label: "ministry",
     self: (doc) => (nonEmpty(doc.members) ? ["member list"] : []),
-    links: orgLinks("ministry", MinistryMembers, MinistryAttendance, MinistryIndividualAttendance, MinistryOffering, "ministry", null),
+    links: orgLinks("ministry", MinistryMembers, MinistryIndividualAttendance, MinistryOffering, "ministry", null),
   },
   cell: {
     model: Cell,
     label: "cell",
     self: (doc) => (nonEmpty(doc.members) ? ["member list"] : []),
-    links: orgLinks("cell", CellMembers, CellAttendance, CellIndividualAttendance, CellOffering, "cell", "cell"),
+    links: orgLinks("cell", CellMembers, CellIndividualAttendance, CellOffering, "cell", "cell"),
   },
   department: {
     model: Department,
     label: "department",
     self: (doc) => (nonEmpty(doc.members) ? ["member list"] : []),
-    links: orgLinks("department", DepartmentMembers, DepartmentAttendance, DepartmentIndividualAttendance, DepartmentOffering, "department", "department"),
+    links: orgLinks("department", DepartmentMembers, DepartmentIndividualAttendance, DepartmentOffering, "department", "department"),
   },
   group: {
     model: Group,
     label: "group",
     self: (doc) => (nonEmpty(doc.members) ? ["member list"] : []),
-    links: orgLinks("group", GroupMembers, GroupAttendance, GroupIndividualAttendance, GroupOffering, "group", "group"),
+    links: orgLinks("group", GroupMembers, GroupIndividualAttendance, GroupOffering, "group", "group"),
   },
 
   announcementMessage: {

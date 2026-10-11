@@ -7,6 +7,7 @@ const businessVenturesSchema = new mongoose.Schema({
     businessName: { type: String, required: true },
     description: { type: String, trim: true },
     manager: { type: String, trim: true },
+    managerMember: { type: mongoose.Schema.Types.ObjectId, ref: "Member" },
     phoneNumber: { type: String, trim: true },
     location: { type: String, trim: true },
 

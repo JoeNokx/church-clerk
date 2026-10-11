@@ -17,6 +17,9 @@ import Pagination from "../../../shared/components/Pagination/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import BackButton from "../../../shared/components/BackButton/index.jsx";
+import ImageLightbox from "../../../shared/components/ImageLightbox/index.jsx";
+import ReceiptPicker from "../../../shared/components/ReceiptPicker/index.jsx";
+import ReceiptView from "../../../shared/components/ReceiptView/index.jsx";
 import {
   getBusinessIncomeExpensesKPI,
   getBusinessVenture
@@ -24,11 +27,13 @@ import {
 import {
   createBusinessIncome,
   getBusinessIncomes,
+  getIncomeReceiptDownloadUrl,
   updateBusinessIncome
 } from "../incomes/services/businessIncomes.api.js";
 import {
   createBusinessExpense,
   getBusinessExpenses,
+  getExpenseReceiptDownloadUrl,
   updateBusinessExpense
 } from "../expenses/services/businessExpenses.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
@@ -274,6 +279,9 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptRemoved, setReceiptRemoved] = useState(false);
+  const [receiptLightbox, setReceiptLightbox] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -286,6 +294,9 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
     setError("");
     setSaving(false);
     setIsSubmitting(false);
+    setReceiptFile(null);
+    setReceiptRemoved(false);
+    setReceiptLightbox(null);
 
     if (mode === "edit" && initialData) {
       setRecievedFrom(String(initialData?.recievedFrom || ""));
@@ -337,7 +348,9 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
         paymentMethod,
         date,
         amount: Number(amount),
-        note: String(note || "").trim()
+        note: String(note || "").trim(),
+        ...(receiptFile ? { receiptFile } : {}),
+        ...(receiptRemoved && !receiptFile ? { removeReceipt: true } : {})
       });
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
@@ -436,6 +449,26 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
           />
         </div>
 
+        <ReceiptPicker
+          receiptFile={receiptFile}
+          existingReceipt={mode === "edit" ? initialData?.receipt : null}
+          removed={receiptRemoved}
+          onPick={(f) => {
+            if (!f) return;
+            if (!String(f.type || "").startsWith("image/")) {
+              setError("Receipt must be an image file.");
+              return;
+            }
+            setError("");
+            setReceiptFile(f);
+            setReceiptRemoved(false);
+          }}
+          onClearFile={() => setReceiptFile(null)}
+          onRemoveExisting={() => setReceiptRemoved(true)}
+          onUndoRemove={() => setReceiptRemoved(false)}
+          onPreview={(url, name) => setReceiptLightbox({ url, name })}
+        />
+
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
@@ -455,6 +488,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
           </Button>
         </div>
       </form>
+      <ImageLightbox url={receiptLightbox?.url} name={receiptLightbox?.name} onClose={() => setReceiptLightbox(null)} />
     </BaseModal>
   );
 }
@@ -466,6 +500,9 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptRemoved, setReceiptRemoved] = useState(false);
+  const [receiptLightbox, setReceiptLightbox] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -475,6 +512,9 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
     setError("");
     setSaving(false);
     setIsSubmitting(false);
+    setReceiptFile(null);
+    setReceiptRemoved(false);
+    setReceiptLightbox(null);
 
     if (mode === "edit" && initialData) {
       setSpentBy(String(initialData?.spentBy || ""));
@@ -538,7 +578,9 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
         category: String(category).trim(),
         date,
         amount: Number(amount),
-        description: String(description || "").trim()
+        description: String(description || "").trim(),
+        ...(receiptFile ? { receiptFile } : {}),
+        ...(receiptRemoved && !receiptFile ? { removeReceipt: true } : {})
       });
     } catch (e2) {
       setError(e2?.response?.data?.message || e2?.message || "Request failed");
@@ -636,6 +678,26 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
           </div>
         </div>
 
+        <ReceiptPicker
+          receiptFile={receiptFile}
+          existingReceipt={mode === "edit" ? initialData?.receipt : null}
+          removed={receiptRemoved}
+          onPick={(f) => {
+            if (!f) return;
+            if (!String(f.type || "").startsWith("image/")) {
+              setError("Receipt must be an image file.");
+              return;
+            }
+            setError("");
+            setReceiptFile(f);
+            setReceiptRemoved(false);
+          }}
+          onClearFile={() => setReceiptFile(null)}
+          onRemoveExisting={() => setReceiptRemoved(true)}
+          onUndoRemove={() => setReceiptRemoved(false)}
+          onPreview={(url, name) => setReceiptLightbox({ url, name })}
+        />
+
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
@@ -655,6 +717,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
           </Button>
         </div>
       </form>
+      <ImageLightbox url={receiptLightbox?.url} name={receiptLightbox?.name} onClose={() => setReceiptLightbox(null)} />
     </BaseModal>
   );
 }
@@ -757,6 +820,7 @@ function BusinessVentureDetailsPage() {
   const [viewIncomeRow, setViewIncomeRow] = useState(null);
   const [viewExpenseOpen, setViewExpenseOpen] = useState(false);
   const [viewExpenseRow, setViewExpenseRow] = useState(null);
+  const [receiptLightbox, setReceiptLightbox] = useState(null);
 
   const [addIncomeOpen, setAddIncomeOpen] = useState(false);
   const [editIncomeOpen, setEditIncomeOpen] = useState(false);
@@ -1303,6 +1367,11 @@ function BusinessVentureDetailsPage() {
                 <div><div className="font-semibold text-gray-500 text-xs">Date Recorded</div><div className="mt-1 text-gray-900">{formatDate(viewIncomeRow?.createdAt)}</div></div>
               </div>
               <div><div className="font-semibold text-gray-500 text-xs">Note</div><div className="mt-1 text-gray-700">{viewIncomeRow?.note || "—"}</div></div>
+              <ReceiptView
+                receipt={viewIncomeRow?.receipt}
+                downloadUrl={viewIncomeRow?._id ? getIncomeReceiptDownloadUrl(businessId, viewIncomeRow._id) : null}
+                onPreview={(url, name) => setReceiptLightbox({ url, name })}
+              />
             </div>
           </div>
         </div>
@@ -1330,6 +1399,11 @@ function BusinessVentureDetailsPage() {
                 <div><div className="font-semibold text-gray-500 text-xs">Date Recorded</div><div className="mt-1 text-gray-900">{formatDate(viewExpenseRow?.createdAt)}</div></div>
               </div>
               <div><div className="font-semibold text-gray-500 text-xs">Description</div><div className="mt-1 text-gray-700">{viewExpenseRow?.description || "—"}</div></div>
+              <ReceiptView
+                receipt={viewExpenseRow?.receipt}
+                downloadUrl={viewExpenseRow?._id ? getExpenseReceiptDownloadUrl(businessId, viewExpenseRow._id) : null}
+                onPreview={(url, name) => setReceiptLightbox({ url, name })}
+              />
             </div>
           </div>
         </div>
@@ -1402,6 +1476,8 @@ function BusinessVentureDetailsPage() {
           await Promise.all([loadHeader(), loadExpenses(expensePage)]);
         }}
       />
+
+      <ImageLightbox url={receiptLightbox?.url} name={receiptLightbox?.name} onClose={() => setReceiptLightbox(null)} />
     </div>
   );
 }

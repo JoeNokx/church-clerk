@@ -1,18 +1,22 @@
 import express from "express";
 const router = express.Router();
 import {getAllMinistries, getSingleMinistry, createMinistry, updateMinistry, deleteMinistry, addMemberToMinistry, searchMembersToAddToMinistry, getMinistryMembers, updateMinistryMemberRole, removeMemberFromMinistry, addMinistryMeeting, updateMinistryMeeting, deleteMinistryMeeting, getMinistryMeetings} from "../../controller/organisationController/ministryController.js"
-import { createMinistryAttendance, updateMinistryAttendance, deleteMinistryAttendance, getAllMinistryAttendances } from "../../controller/organisationController/ministryAttendanceController.js";
 import {
   createMinistryIndividualAttendance,
   getAllMinistryIndividualAttendances,
   getSingleMinistryIndividualAttendance,
   updateMinistryIndividualAttendance,
-  deleteMinistryIndividualAttendance
+  deleteMinistryIndividualAttendance,
+  getMinistryCheckInLinkStatus,
+  generateMinistryCheckInLink,
+  revokeMinistryCheckInLink
 } from "../../controller/organisationController/ministryIndividualAttendanceController.js";
 import { createMinistryOffering, updateMinistryOffering, deleteMinistryOffering, getAllMinistryOfferings } from "../../controller/organisationController/ministryOfferingController.js";
-import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense } from "../../controller/scopedExpensesController.js";
+import { createOrgContribution, getOrgContributions, updateOrgContribution, deleteOrgContribution } from "../../controller/organisationController/organisationContributionController.js";
+import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense, downloadScopedExpenseReceipt } from "../../controller/scopedExpensesController.js";
 import { getOrganisationKPI } from "../../controller/organisationController/groupController.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
+import { uploadReceiptFile } from "../../middleware/uploadReceiptFile.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
@@ -170,48 +174,6 @@ router.delete(
 
 
 router.post(
-  "/ministries/:ministryId/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "create"),
-  createMinistryAttendance
-);
-router.get(
-  "/ministries/:ministryId/attendances",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "read"),
-  getAllMinistryAttendances
-);
-router.put(
-  "/ministries/:ministryId/attendances/:attendanceId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "update"),
-  updateMinistryAttendance
-);
-router.delete(
-  "/ministries/:ministryId/attendances/:attendanceId",
-  protect,
-  setActiveChurch,
-  readOnlyBranchGuard,
-  attachPermissions,
-  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
-  requirePermission("organisation", "delete"),
-  deleteMinistryAttendance
-);
-
-
-router.post(
   "/ministries/:ministryId/individual-attendances",
   protect,
   setActiveChurch,
@@ -263,6 +225,37 @@ router.delete(
   deleteMinistryIndividualAttendance
 );
 
+router.get(
+  "/ministries/:ministryId/individual-attendances/:attendanceId/checkin-link",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  getMinistryCheckInLinkStatus
+);
+router.post(
+  "/ministries/:ministryId/individual-attendances/:attendanceId/checkin-link/generate",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  generateMinistryCheckInLink
+);
+router.delete(
+  "/ministries/:ministryId/individual-attendances/:attendanceId/checkin-link/revoke",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  revokeMinistryCheckInLink
+);
+
 
 router.post(
   "/ministries/:ministryId/offerings",
@@ -299,6 +292,48 @@ router.put(
 
 
 router.post(
+  "/ministries/:ministryId/contributions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "create"),
+  createOrgContribution
+);
+router.get(
+  "/ministries/:ministryId/contributions",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  getOrgContributions
+);
+router.put(
+  "/ministries/:ministryId/contributions/:contributionId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "update"),
+  updateOrgContribution
+);
+router.delete(
+  "/ministries/:ministryId/contributions/:contributionId",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "delete"),
+  deleteOrgContribution
+);
+
+
+router.post(
   "/ministries/:ministryId/expenses",
   protect,
   setActiveChurch,
@@ -306,6 +341,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
   requirePermission("organisation", "create"),
+  uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
   createScopedExpense("ministry")
 );
@@ -327,8 +363,19 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
   requirePermission("organisation", "update"),
+  uploadReceiptFile,
   conditionalImmutableGuard(),
   updateScopedExpense("ministry")
+);
+router.get(
+  "/ministries/:ministryId/expenses/:expenseId/receipt/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "admin", "financialofficer"),
+  requirePermission("organisation", "read"),
+  downloadScopedExpenseReceipt("ministry")
 );
 router.delete(
   "/ministries/:ministryId/expenses/:expenseId",

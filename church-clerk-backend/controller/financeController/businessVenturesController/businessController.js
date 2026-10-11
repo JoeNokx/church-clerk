@@ -2,6 +2,7 @@ import BusinessVentures from "../../../models/financeModel/businessModel/busines
 import BusinessIncome from "../../../models/financeModel/businessModel/businessIncomeModel.js";
 import BusinessExpenses from "../../../models/financeModel/businessModel/businessExpensesModel.js";
 
+import Member from "../../../models/memberModel.js";
 import { validatePhoneNumber } from "../../../utils/validatePhoneNumber.js";
 
 
@@ -12,6 +13,7 @@ const createBusinessVentures = async (req, res) => {
                 businessName,
                 description,
                 manager,
+                managerMember,
                 phoneNumber,
                 location,
                 startDate
@@ -19,6 +21,14 @@ const createBusinessVentures = async (req, res) => {
                 
                 if (!businessName || !description) {
                 return res.status(400).json({ message: "Business name and description are required." });
+                }
+
+                const managerMemberId = String(managerMember || "").trim();
+                if (managerMemberId) {
+                  const foundMember = await Member.findOne({ _id: managerMemberId, church: req.activeChurch._id }).select("_id");
+                  if (!foundMember) {
+                    return res.status(400).json({ message: "Selected manager member not found" });
+                  }
                 }
 
                 let validatedPhoneNumber;
@@ -40,6 +50,7 @@ const createBusinessVentures = async (req, res) => {
                 businessName,
                 description,
                 manager,
+                ...(managerMemberId ? { managerMember: managerMemberId } : {}),
                 phoneNumber: validatedPhoneNumber,
                 location,
                 startDate: startDate ? new Date(startDate) : new Date(),
@@ -89,8 +100,9 @@ const getAllBusinessVentures = async (req, res) => {
     
         // FETCH ALL  BUSINESS VENTURES
         const businessVentures = await BusinessVentures.find(query)
-        .select("businessName description manager phoneNumber location createdBy referenceId startDate")
+        .select("businessName description manager managerMember phoneNumber location createdBy referenceId startDate")
         .populate("createdBy", "fullName")
+        .populate("managerMember", "firstName lastName phoneNumber email")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)
@@ -180,7 +192,8 @@ const getSingleBusinessVentures = async (req, res) => {
                 query.church = req.activeChurch._id
             }
           const businessVentures = await BusinessVentures.findOne(query)
-                .select("businessName description manager phoneNumber location createdBy")
+                .select("businessName description manager managerMember phoneNumber location createdBy")
+                .populate("managerMember", "firstName lastName phoneNumber email")
 
                 if(!businessVentures) {
                     return res.status(404).json({message: "business Venture not found"})
@@ -216,8 +229,23 @@ const updateBusinessVentures = async (req, res) => {
                     req.body.phoneNumber = "";
                   }
                 }
+
+                const { managerMember, ...restBody } = req.body || {};
+                const updatePayload = { ...restBody };
+                const managerMemberId = String(managerMember || "").trim();
+                if (managerMember !== undefined) {
+                  if (!managerMemberId) {
+                    updatePayload.managerMember = null;
+                  } else {
+                    const foundMember = await Member.findOne({ _id: managerMemberId, church: req.activeChurch._id }).select("_id");
+                    if (!foundMember) {
+                      return res.status(400).json({ message: "Selected manager member not found" });
+                    }
+                    updatePayload.managerMember = managerMemberId;
+                  }
+                }
         
-                const businessVentures = await BusinessVentures.findOneAndUpdate(query, req.body, {new: true, runValidators: true})
+                const businessVentures = await BusinessVentures.findOneAndUpdate(query, updatePayload, {new: true, runValidators: true})
         
                 if(!businessVentures) {
                     return res.status(404).json({message: "business Ventures not found"})
@@ -334,4 +362,37 @@ const getAllBusinessKPI = async(req, res) => {
 
 
 
-export {createBusinessVentures, getAllBusinessVentures, getSingleBusinessVentures, updateBusinessVentures, deleteBusinessVentures, getAllBusinessKPI}
+const searchMembersForBusinessVenture = async (req, res) => {
+  try {
+    const search = (req.query.search || "").trim();
+
+    if (!search) {
+      return res.status(200).json({ message: "No search term provided", members: [] });
+    }
+
+    const regex = { $regex: search, $options: "i" };
+
+    const members = await Member.find({
+      church: req.activeChurch._id,
+      $or: [
+        { firstName: regex },
+        { lastName: regex },
+        { phoneNumber: regex },
+        { email: regex },
+        { city: regex },
+        { memberId: regex }
+      ]
+    })
+      .select("firstName lastName phoneNumber email city")
+      .limit(20)
+      .lean();
+
+    return res.status(200).json({ message: "Members fetched successfully", members });
+  } catch (error) {
+    return res.status(400).json({ message: "Members could not be fetched", error: error.message });
+  }
+};
+
+
+
+export {createBusinessVentures, getAllBusinessVentures, getSingleBusinessVentures, updateBusinessVentures, deleteBusinessVentures, getAllBusinessKPI, searchMembersForBusinessVenture}

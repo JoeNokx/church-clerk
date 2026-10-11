@@ -7,6 +7,7 @@ const ministryOfferingSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     ministry: { type: mongoose.Schema.Types.ObjectId, ref: "Ministry", required: true },
     offeringType: { type: String, trim: true },
+    recordType: { type: String, enum: ["offering", "seed"], default: "offering", trim: true },
     date: { type: Date, required: true },
     amount: { type: Number, required: true },
     note: { type: String, trim: true },

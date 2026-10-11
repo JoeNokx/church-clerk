@@ -11,6 +11,9 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
+import ImageLightbox from "../../../shared/components/ImageLightbox/index.jsx";
+import ReceiptView from "../../../shared/components/ReceiptView/index.jsx";
+import { getGeneralExpenseReceiptDownloadUrl } from "../services/expenses.api.js";
 
 function formatDate(value) {
   if (!value) return "";
@@ -28,6 +31,7 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
 
   const [viewOpen, setViewOpen] = useState(false);
   const [viewRow, setViewRow] = useState(null);
+  const [receiptLightbox, setReceiptLightbox] = useState(null);
 
   const canEdit = useMemo(() => (typeof can === "function" ? can("expenses", "update") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("expenses", "create") : false), [can]);
@@ -209,11 +213,17 @@ function ExpensesTable({ onEdit, onDeleted, onCreate }) {
                 <div><div className="font-semibold text-gray-500 text-xs">Recorded By</div><div className="mt-1 text-gray-900">{viewRow?.createdBy?.fullName || "-"}</div></div>
               </div>
               <div><div className="font-semibold text-gray-500 text-xs">Description</div><div className="mt-1 text-gray-700">{viewRow?.description || "-"}</div></div>
+              <ReceiptView
+                receipt={viewRow?.receipt}
+                downloadUrl={viewRow?._id ? getGeneralExpenseReceiptDownloadUrl(viewRow._id) : null}
+                onPreview={(url, name) => setReceiptLightbox({ url, name })}
+              />
             </div>
           </div>
         </div>
       )}
 
+      <ImageLightbox url={receiptLightbox?.url} name={receiptLightbox?.name} onClose={() => setReceiptLightbox(null)} />
     </div>
   );
 }

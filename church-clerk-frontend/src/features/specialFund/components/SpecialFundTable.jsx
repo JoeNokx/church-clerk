@@ -196,7 +196,12 @@ function SpecialFundTable({ onEdit, onDeleted, onCreate }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 md:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">{viewRow?.referenceId || "Special Fund Details"}</div>
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">{viewRow?.giverName || "Special Fund Details"}</div>
+                {viewRow?.referenceId ? (
+                  <span className="mt-1 inline-block font-mono text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{viewRow.referenceId}</span>
+                ) : null}
+              </div>
               <button type="button" onClick={() => setViewOpen(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>

@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { getAttendanceInfoByToken, submitAttendanceCheckIn } from "../services/publicAttendance.api.js";
+import { useLocation, useParams } from "react-router-dom";
+import {
+  getAttendanceInfoByToken,
+  submitAttendanceCheckIn,
+  getOrgAttendanceInfoByToken,
+  submitOrgAttendanceCheckIn
+} from "../services/publicAttendance.api.js";
 import Button from "../../../shared/components/Button/index.jsx";
 
 function formatDate(val) {
@@ -12,6 +17,10 @@ function formatDate(val) {
 
 export default function AttendanceCheckInPage() {
   const { token } = useParams();
+  const { pathname } = useLocation();
+  const isOrg = pathname.startsWith("/attend/org");
+  const getInfo = isOrg ? getOrgAttendanceInfoByToken : getAttendanceInfoByToken;
+  const submitCheckIn = isOrg ? submitOrgAttendanceCheckIn : submitAttendanceCheckIn;
 
   const [session, setSession] = useState(null);
   const [loadingSession, setLoadingSession] = useState(true);
@@ -26,11 +35,11 @@ export default function AttendanceCheckInPage() {
     if (!token) return;
     setLoadingSession(true);
     setSessionError("");
-    getAttendanceInfoByToken(token)
+    getInfo(token)
       .then((res) => setSession(res?.data?.attendance || null))
       .catch((e) => setSessionError(e?.response?.data?.message || "This check-in link is invalid or has expired."))
       .finally(() => setLoadingSession(false));
-  }, [token]);
+  }, [token, getInfo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +52,7 @@ export default function AttendanceCheckInPage() {
       return;
     }
     try {
-      const res = await submitAttendanceCheckIn(token, { phoneNumber: phoneNumber.trim() });
+      const res = await submitCheckIn(token, { phoneNumber: phoneNumber.trim() });
       setSuccess({ message: res?.data?.message || "Check-in successful!", memberName: res?.data?.memberName || null });
     } catch (e) {
       setFormError(e?.response?.data?.message || "Check-in failed. Please try again.");
@@ -117,6 +126,9 @@ export default function AttendanceCheckInPage() {
           )}
           <div className="mt-3 inline-flex flex-col items-center gap-1 rounded-xl border border-blue-100 bg-blue-50 px-5 py-3">
             <span className="font-semibold text-blue-900 text-base">{session?.serviceType || "Service"}</span>
+            {session?.entityName ? (
+              <span className="text-blue-800 text-xs font-medium">{session.entityName}</span>
+            ) : null}
             <span className="text-blue-600 text-sm">{formatDate(session?.date)}</span>
           </div>
           <p className="mt-4 text-gray-600 text-sm">Enter your registered phone number to mark your attendance.</p>

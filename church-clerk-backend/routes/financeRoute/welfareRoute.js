@@ -1,7 +1,8 @@
 import express from "express";
 const router = express.Router();
 import { createWelfareContribution, getAllWelfareContribution, updateWelfareContribution, deleteWelfareContribution, searchMembersForWelfare} from "../../controller/financeController/welfareController/welfareContributionController.js";
-import { createWelfareDisbursement, getAllWelfareDisbursement, updateWelfareDisbursement, deleteWelfareDisbursement} from "../../controller/financeController/welfareController/welfareDisbursementController.js";
+import { createWelfareDisbursement, getAllWelfareDisbursement, updateWelfareDisbursement, deleteWelfareDisbursement, downloadWelfareDisbursementReceipt} from "../../controller/financeController/welfareController/welfareDisbursementController.js";
+import { uploadReceiptFile } from "../../middleware/uploadReceiptFile.js";
 import getWelfareKPI from "../../controller/financeController/welfareController/welfareKPIController.js"
 
 import { protect } from "../../middleware/authMiddleware.js";
@@ -104,6 +105,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("welfare", "create"),
+  uploadReceiptFile,
   validateRequest(createWelfareDisbursementSchema),
   backdatingGuard({ dateField: "date", module: "welfare", entityType: "welfareDisbursement" }),
   createWelfareDisbursement
@@ -126,8 +128,19 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("welfare", "update"),
+  uploadReceiptFile,
   conditionalImmutableGuard(),
   updateWelfareDisbursement
+);
+router.get(
+  "/welfare-disbursements/:id/receipt/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("welfare", "read"),
+  downloadWelfareDisbursementReceipt
 );
 
 router.post(

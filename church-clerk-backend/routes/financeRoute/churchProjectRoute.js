@@ -2,7 +2,8 @@ import express from "express";
 const router = express.Router();
 import {createChurchProjects, getAllChurchProjects, updateChurchProjects, deleteChurchProjects, getSingleChurchProjects, getChurchProjectsKPI, getChurchProjectTransactions } from "../../controller/financeController/projectController/churchProjectController.js";
 import  {createProjectContributions, getAllProjectContributions, updateProjectContributions, deleteProjectContributions } from "../../controller/financeController/projectController/projectContribution.js"
-import{ createProjectExpenses, getAllProjectExpenses, updateProjectExpenses, deleteProjectExpenses } from "../../controller/financeController/projectController/projectExpense.js"
+import{ createProjectExpenses, getAllProjectExpenses, updateProjectExpenses, deleteProjectExpenses, downloadProjectExpenseReceipt } from "../../controller/financeController/projectController/projectExpense.js"
+import { uploadReceiptFile } from "../../middleware/uploadReceiptFile.js";
 import getProjectContributionExpensesKPI from "../../controller/financeController/projectController/projectContributionExpensesKPI.js"
 
 
@@ -169,6 +170,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("churchProjects", "create"),
+  uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "projects", entityType: "projectExpense" }),
   createProjectExpenses
 );
@@ -190,8 +192,19 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer", "secretary", "leader", "admin", "associateadmin"),
   requirePermission("churchProjects", "update"),
+  uploadReceiptFile,
   conditionalImmutableGuard(),
   updateProjectExpenses
+);
+router.get(
+  "/church-projects/:projectId/expenses/:expensesId/receipt/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("churchProjects", "view"),
+  downloadProjectExpenseReceipt
 );
 
 router.post(

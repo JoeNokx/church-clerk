@@ -25,9 +25,10 @@ import {
   deleteProgramOffering
 } from "../controller/programController/programOfferingController.js";
 
-import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense } from "../controller/scopedExpensesController.js";
+import { createScopedExpense, getScopedExpenses, updateScopedExpense, deleteScopedExpense, downloadScopedExpenseReceipt } from "../controller/scopedExpensesController.js";
 
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
+import { uploadReceiptFile } from "../middleware/uploadReceiptFile.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../middleware/financialGovernance.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -287,6 +288,7 @@ router.post(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("programs", "create"),
+  uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
   createScopedExpense("program")
 );
@@ -308,8 +310,19 @@ router.put(
   attachPermissions,
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("programs", "update"),
+  uploadReceiptFile,
   conditionalImmutableGuard(),
   updateScopedExpense("program")
+);
+router.get(
+  "/programs/:programId/expenses/:expenseId/receipt/download",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("programs", "view"),
+  downloadScopedExpenseReceipt("program")
 );
 router.delete(
   "/programs/:programId/expenses/:expenseId",

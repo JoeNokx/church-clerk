@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 
-import {getAllGeneralExpenses, createGeneralExpenses, updateGeneralExpenses, deleteGeneralExpenses, getGeneralExpensesKPI } from "../../controller/generalExpensesController.js"
+import {getAllGeneralExpenses, createGeneralExpenses, updateGeneralExpenses, deleteGeneralExpenses, getGeneralExpensesKPI, downloadGeneralExpenseReceipt } from "../../controller/generalExpensesController.js"
 import { protect } from "../../middleware/authMiddleware.js";
 import {setActiveChurch} from "../../middleware/activeChurchMiddleware.js";
 import {attachBillingBanner} from "../../middleware/expiryWarningMiddleware.js";
@@ -12,6 +12,7 @@ import { requirePermission } from "../../middleware/permissionMiddleware.js";
 import GeneralExpenses from "../../models/generalExpenseModel.js";
 import { createAdjustment } from "../../services/finance/governanceService.js";
 import { backdatingGuard, conditionalImmutableGuard } from "../../middleware/financialGovernance.js";
+import { uploadReceiptFile } from "../../middleware/uploadReceiptFile.js";
 
 router.get(
   "/general-expenses",
@@ -34,6 +35,7 @@ router.post(
   attachBillingBanner,
   authorizeRoles("superadmin", "churchadmin", "financialofficer"),
   requirePermission("expenses", "create"),
+  uploadReceiptFile,
   backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
   createGeneralExpenses
 );
@@ -46,8 +48,20 @@ router.put(
   attachBillingBanner,
   authorizeRoles("superadmin", "churchadmin", "financialofficer"),
   requirePermission("expenses", "update"),
+  uploadReceiptFile,
   conditionalImmutableGuard(),
   updateGeneralExpenses
+);
+router.get(
+  "/general-expenses/:id/receipt/download",
+  protect,
+  attachPermissions,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachBillingBanner,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("expenses", "read"),
+  downloadGeneralExpenseReceipt
 );
 router.get(
   "/general-expenses/stats/kpi",

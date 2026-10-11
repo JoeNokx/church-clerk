@@ -4,7 +4,7 @@ import Ministry from "../../models/organisationModel/ministryModel.js";
 const createMinistryOffering = async (req, res) => {
   try {
     const { ministryId } = req.params;
-    const { date, amount, note, offeringType } = req.body;
+    const { date, amount, note, offeringType, recordType } = req.body;
 
     if (!date || !amount) {
       return res.status(400).json({ message: "date and amount are required" });
@@ -25,6 +25,7 @@ const createMinistryOffering = async (req, res) => {
       church: churchId,
       createdBy: req.user._id,
       offeringType: String(offeringType).trim(),
+      recordType: recordType === "seed" ? "seed" : "offering",
       date,
       amount,
       note
@@ -38,7 +39,7 @@ const createMinistryOffering = async (req, res) => {
 
 const getAllMinistryOfferings = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search } = req.query;
+    const { page = 1, limit = 10, search, dateFrom, dateTo } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -55,8 +56,14 @@ const getAllMinistryOfferings = async (req, res) => {
       query.createdBy = { $in: matchingUsers.length ? matchingUsers.map(u => u._id) : [] };
     }
 
+    if (dateFrom || dateTo) {
+      query.date = {};
+      if (dateFrom) query.date.$gte = new Date(dateFrom);
+      if (dateTo) query.date.$lte = new Date(`${dateTo}T23:59:59.999Z`);
+    }
+
     const offerings = await Offering.find(query)
-      .select("date amount note offeringType ministry createdBy referenceId")
+      .select("date amount note offeringType recordType ministry createdBy referenceId")
       .populate("ministry", "name")
       .populate("createdBy", "fullName")
       .sort({ createdAt: -1 })
