@@ -4,6 +4,7 @@ import Cell from "../models/organisationModel/cellModel.js";
 import Department from "../models/organisationModel/departmentModel.js";
 import Ministry from "../models/organisationModel/ministryModel.js";
 import Program from "../models/programModel.js";
+import OutreachEvent from "../models/outreachModel/outreachEventModel.js";
 import { uploadReceiptImage, destroyReceiptImage, receiptImageDownloadUrl, validateReceiptImage } from "../services/receiptService.js";
 
 // Scope config: scope key -> { scopeField on GeneralExpenses, parent model, route param, label }
@@ -12,10 +13,11 @@ const SCOPES = {
   cell: { scopeField: "cell", parentModel: Cell, paramName: "cellId", label: "Cell" },
   department: { scopeField: "department", parentModel: Department, paramName: "departmentId", label: "Department" },
   ministry: { scopeField: "ministry", parentModel: Ministry, paramName: "ministryId", label: "Ministry" },
-  program: { scopeField: "event", parentModel: Program, paramName: "programId", label: "Program" }
+  program: { scopeField: "event", parentModel: Program, paramName: "programId", label: "Program" },
+  outreach: { scopeField: "outreach", parentModel: OutreachEvent, paramName: "eventId", label: "Outreach" }
 };
 
-const SCOPE_FIELDS = ["group", "cell", "department", "ministry", "event"];
+const SCOPE_FIELDS = ["group", "cell", "department", "ministry", "event", "outreach"];
 
 const isPrivileged = (req) => req.user.role === "superadmin" || req.user.role === "supportadmin";
 

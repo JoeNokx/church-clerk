@@ -1,6 +1,6 @@
 /**
  * EntityPicker — searchable async dropdown for a given entity type.
- * Supported types: "branch" | "cell" | "group" | "department" | "program"
+ * Supported types: "branch" | "cell" | "group" | "department" | "ministry" | "program" | "outreach"
  * Static types (no secondary picker): "church" | "administration"
  */
 
@@ -8,7 +8,9 @@ import { useEffect, useRef, useState } from "react";
 import { getCells } from "../../cell/services/cell.api.js";
 import { getGroups } from "../../group/services/group.api.js";
 import { getDepartments } from "../../department/services/department.api.js";
+import { getMinistries } from "../../ministry/services/ministry.api.js";
 import { getPrograms } from "../../program/services/program.api.js";
+import { getOutreachEvents } from "../../outreach/services/outreach.api.js";
 import { getMyBranches } from "../../church/services/church.api.js";
 
 // Normalise whatever the API returns into [{ _id, name }]
@@ -32,7 +34,11 @@ function normaliseList(res, type) {
     arr = d.departments || d.data || (Array.isArray(d) ? d : []);
     return arr.map((x) => ({ _id: x._id, name: x.name }));
   }
-  if (type === "program" || type === "event") {
+  if (type === "ministry") {
+    arr = d.ministries || d.data || (Array.isArray(d) ? d : []);
+    return arr.map((x) => ({ _id: x._id, name: x.name }));
+  }
+  if (type === "program" || type === "event" || type === "outreach") {
     arr = d.programs || d.events || d.data || (Array.isArray(d) ? d : []);
     return arr.map((e) => ({ _id: e._id, name: e.title || e.name }));
   }
@@ -47,8 +53,10 @@ async function fetchByType(type, search) {
       case "cell":       return normaliseList(await getCells({ ...q, limit: 30 }), "cell");
       case "group":      return normaliseList(await getGroups({ ...q, limit: 30 }), "group");
       case "department": return normaliseList(await getDepartments({ ...q, limit: 30 }), "department");
+      case "ministry":   return normaliseList(await getMinistries({ ...q, limit: 30 }), "ministry");
       case "program":
       case "event":      return normaliseList(await getPrograms({ ...q, limit: 30 }), "program");
+      case "outreach":   return normaliseList(await getOutreachEvents({ ...q, limit: 30 }), "outreach");
       default:           return [];
     }
   } catch {
@@ -64,7 +72,9 @@ export const ENTITY_TYPES = [
   { value: "cell",           label: "Cell",             needsPicker: true  },
   { value: "group",          label: "Group",            needsPicker: true  },
   { value: "department",     label: "Department",       needsPicker: true  },
+  { value: "ministry",       label: "Ministry",         needsPicker: true  },
   { value: "program",        label: "Program",          needsPicker: true  },
+  { value: "outreach",       label: "Outreach",         needsPicker: true  },
   { value: "other",          label: "Other",            needsPicker: false, isCustom: true },
 ];
 

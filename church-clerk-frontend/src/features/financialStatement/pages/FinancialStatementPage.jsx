@@ -6,7 +6,8 @@ import {
   getAnnualFinancialStatement,
   getMonthlyFinancialStatement,
   getQuarterlyFinancialStatement,
-  exportFinancialStatement
+  exportFinancialStatement,
+  getStatementBreakdownDetails
 } from "../services/financialStatement.api.js";
 import {
   getReportsAnalytics
@@ -16,6 +17,7 @@ import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import Spinner from "../../../shared/components/Spinner.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -108,27 +110,181 @@ function YearInput({ value, onChange }) {
   );
 }
 
+const PAGE_LABELS = {
+  tithe: "Tithes",
+  offerings: "Offerings",
+  programs: "Programs",
+  organisations: "Organisations",
+  fundraising: "Fundraising",
+  welfare: "Welfare",
+  "special-funds": "Special Funds",
+  "business-ventures": "Business Ventures",
+  expenses: "Expenses",
+  outreach: "Outreach"
+};
+
 const INCOME_KEY_PAGE = {
   tithes: "tithe",
-  tithesAggregate: "tithe",
   offerings: "offerings",
-  programOfferings: "offerings",
-  cellOfferings: "offerings",
-  groupOfferings: "offerings",
-  departmentOfferings: "offerings",
+  programOfferings: "programs",
+  cellOfferings: "organisations",
+  groupOfferings: "organisations",
+  departmentOfferings: "organisations",
+  ministryOfferings: "organisations",
   projectContributions: "fundraising",
   welfareContributions: "welfare",
+  outreachSupport: "outreach",
   specialFunds: "special-funds",
-  businessIncome: "business-ventures",
-  pledgesPaid: "fundraising"
+  businessIncome: "business-ventures"
 };
 
 const EXPENSE_KEY_PAGE = {
   generalExpenses: "expenses",
+  programExpenses: "programs",
+  cellExpenses: "organisations",
+  departmentExpenses: "organisations",
+  groupExpenses: "organisations",
+  ministryExpenses: "organisations",
+  outreachExpenses: "outreach",
   welfareDisbursements: "welfare",
   projectExpenses: "fundraising",
   businessExpenses: "business-ventures"
 };
+
+function BreakdownDetailsModal({ row, params, currency, modulePage, onClose, onOpenModule }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [data, setData] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const load = useCallback(async () => {
+    if (!row?.key) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getStatementBreakdownDetails({ ...params, key: row.key, page, limit });
+      const payload = res?.data?.data ?? res?.data;
+      setData(payload?.data ?? payload);
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to load records");
+    } finally {
+      setLoading(false);
+    }
+  }, [params, row?.key, page, limit]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const money = (v) => formatCurrency(v, currency);
+  const records = Array.isArray(data?.records) ? data.records : [];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 rounded-t-xl border-b border-gray-200 bg-white p-4 md:px-6">
+          <div className="min-w-0">
+            <div className="font-semibold text-gray-900 text-lg truncate">{row?.label || "Records"}</div>
+            <div className="mt-1 text-gray-500 text-sm">
+              {data?.period?.label || "Loading…"}
+              {data ? ` • ${Number(data.recordCount || 0)} record${Number(data.recordCount || 0) === 1 ? "" : "s"} • ${money(data.total)}` : ""}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md px-2 py-1 font-semibold text-gray-500 hover:text-gray-900 text-sm shrink-0"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center p-10"><Spinner className="text-gray-400" /></div>
+          ) : error ? (
+            <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{error}</div>
+          ) : records.length === 0 ? (
+            <div className="p-4 md:px-6">
+              <EmptyState compact illustration="income" title="No records found" description="There are no records making up this line for the selected period." />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px]">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left">
+                    <th className="px-4 md:px-6 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Date</th>
+                    <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Record</th>
+                    <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">Details</th>
+                    <th className="px-4 md:px-6 py-3 text-right font-semibold text-gray-500 text-xs uppercase tracking-wide">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.map((r, i) => (
+                    <tr key={i} className="border-b border-gray-100 last:border-0">
+                      <td className="px-4 md:px-6 py-3 text-gray-700 text-sm whitespace-nowrap">
+                        {r.date ? new Date(r.date).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-gray-900 text-sm">{r.name || "—"}</div>
+                        {r.referenceId ? <div className="text-gray-400 text-xs font-mono">{r.referenceId}</div> : null}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-sm">{r.meta || "—"}</td>
+                      <td className="px-4 md:px-6 py-3 text-right font-semibold text-gray-900 text-sm whitespace-nowrap">{money(r.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {!error && data ? (
+          <div className="border-t border-gray-200">
+            <Pagination
+              pagination={data.pagination}
+              rowsCount={records.length}
+              limit={limit}
+              disabled={loading}
+              onLimitChange={(n) => {
+                setLimit(n);
+                setPage(1);
+              }}
+              onPageChange={(p) => setPage(p)}
+              itemName="records"
+            />
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-3 border-t border-gray-200 bg-white p-4 md:px-6">
+          <div className="text-gray-500 text-xs">
+            {data ? `Total: ${money(data.total)}` : ""}
+          </div>
+          <div className="flex items-center gap-2">
+            {modulePage ? (
+              <button
+                type="button"
+                onClick={() => onOpenModule(modulePage)}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
+              >
+                Go to {PAGE_LABELS[modulePage] || "module"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-xs"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function FinancialStatementContent() {
   const churchStore = useContext(ChurchContext);
@@ -161,6 +317,17 @@ function FinancialStatementContent() {
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
+
+  const [detailRow, setDetailRow] = useState(null);
+
+  const detailParams = useMemo(() => {
+    if (tab === "monthly") return { type: "monthly", month, year: monthYear };
+    if (tab === "quarterly") {
+      const startMonth = (Number(quarter) - 1) * 3 + 1;
+      return { type: "quarterly", startMonth, endMonth: startMonth + 2, year: quarterYear };
+    }
+    return { type: "annual", year: annualYear };
+  }, [annualYear, month, monthYear, quarter, quarterYear, tab]);
 
   useEffect(() => {
     if (!canRead) return;
@@ -525,6 +692,31 @@ function FinancialStatementContent() {
             />
           </KpiGrid>
 
+          {statement?.pledgePipeline ? (
+            <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6">
+              <div className="font-semibold text-gray-900 text-sm">Pledge Pipeline</div>
+              <div className="mt-1 text-gray-500 text-xs">How much has been pledged and collected</div>
+              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 md:grid-cols-4">
+                <div>
+                  <div className="text-gray-500 text-xs">Pledged this period</div>
+                  <div className="mt-1 font-semibold text-gray-900">{money(statement.pledgePipeline.pledgedInPeriod)}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs">Collected this period</div>
+                  <div className="mt-1 font-semibold text-emerald-600">{money(statement.pledgePipeline.collectedInPeriod)}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs">Outstanding balance</div>
+                  <div className="mt-1 font-semibold text-orange-600">{money(statement.pledgePipeline.outstanding)}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs">Overdue pledges</div>
+                  <div className="mt-1 font-semibold text-red-600">{Number(statement.pledgePipeline.overdueCount || 0)}</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-xl border border-gray-200 bg-white">
               <div className="border-b border-gray-200 p-4 md:p-6 lg:p-8">
@@ -536,20 +728,18 @@ function FinancialStatementContent() {
                   <EmptyState compact illustration="income" title="No income records found for this period" description="Try selecting a different date range." />
                 ) : (
                   <div className="space-y-4">
-                    {sortedIncome.map((row) => {
-                      const page = INCOME_KEY_PAGE[row.key];
-                      return (
+                    {sortedIncome.map((row) => (
                         <div
                           key={row.key}
-                          className={`space-y-2 rounded-lg border border-gray-200 p-3 ${page ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
-                          onClick={page ? () => toPage(page) : undefined}
-                          role={page ? "button" : undefined}
+                          className="space-y-2 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={() => setDetailRow({ key: row.key, label: row.label, kind: "income" })}
+                          role="button"
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div className="font-semibold text-gray-900 text-sm">{row.label}</div>
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-gray-900 text-sm">{money(row.amount)}</span>
-                              {page ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-400 flex-shrink-0"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> : null}
+                              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-400 flex-shrink-0"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
                             </div>
                           </div>
                           <div className="flex items-center justify-between gap-4 text-gray-500 text-xs">
@@ -564,8 +754,7 @@ function FinancialStatementContent() {
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
+                    ))}
                   </div>
                 )}
               </div>
@@ -581,20 +770,18 @@ function FinancialStatementContent() {
                   <EmptyState compact illustration="expenses" title="No expense records found for this period" description="Try selecting a different date range." />
                 ) : (
                   <div className="space-y-4">
-                    {sortedExpenses.map((row) => {
-                      const page = EXPENSE_KEY_PAGE[row.key];
-                      return (
+                    {sortedExpenses.map((row) => (
                         <div
                           key={row.key}
-                          className={`space-y-2 rounded-lg border border-gray-200 p-3 ${page ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
-                          onClick={page ? () => toPage(page) : undefined}
-                          role={page ? "button" : undefined}
+                          className="space-y-2 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={() => setDetailRow({ key: row.key, label: row.label, kind: "expense" })}
+                          role="button"
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div className="font-semibold text-gray-900 text-sm">{row.label}</div>
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-gray-900 text-sm">{money(row.amount)}</span>
-                              {page ? <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-400 flex-shrink-0"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> : null}
+                              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-400 flex-shrink-0"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
                             </div>
                           </div>
                           <div className="flex items-center justify-between gap-4 text-gray-500 text-xs">
@@ -609,8 +796,7 @@ function FinancialStatementContent() {
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
+                    ))}
                   </div>
                 )}
               </div>
@@ -635,6 +821,20 @@ function FinancialStatementContent() {
             </div>
           </div>
         </>
+      ) : null}
+
+      {detailRow ? (
+        <BreakdownDetailsModal
+          row={detailRow}
+          params={detailParams}
+          currency={currency}
+          modulePage={detailRow.kind === "income" ? INCOME_KEY_PAGE[detailRow.key] : EXPENSE_KEY_PAGE[detailRow.key]}
+          onClose={() => setDetailRow(null)}
+          onOpenModule={(page) => {
+            setDetailRow(null);
+            toPage(page);
+          }}
+        />
       ) : null}
 
       {exportOpen ? (
@@ -831,8 +1031,8 @@ function FinancialAnalyticsContent() {
                     <stop offset="95%" stopColor="#16a34a" stopOpacity={0.03} />
                   </linearGradient>
                   <linearGradient id="expensesGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.42} />
-                    <stop offset="95%" stopColor="#f97316" stopOpacity={0.03} />
+                    <stop offset="5%" stopColor="#dc2626" stopOpacity={0.42} />
+                    <stop offset="95%" stopColor="#dc2626" stopOpacity={0.03} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="#f3f4f6" strokeDasharray="4 4" vertical={false} />
@@ -841,7 +1041,7 @@ function FinancialAnalyticsContent() {
                 <Tooltip formatter={(v, n) => (n === "Income" || n === "Expenses" ? formatCurrency(v) : v)} contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }} labelStyle={{ fontWeight: 600, color: "#111827" }} cursor={{ stroke: "#16a34a", strokeWidth: 1, strokeDasharray: "4 2" }} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                 <Area type="monotone" dataKey="income" name="Income" stroke="#16a34a" strokeWidth={1.4} fill="url(#incomeGrad)" dot={false} activeDot={{ r: 5, fill: "#16a34a" }} />
-                <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#f97316" strokeWidth={1.4} fill="url(#expensesGrad)" dot={false} activeDot={{ r: 5, fill: "#f97316" }} />
+                <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#dc2626" strokeWidth={1.4} fill="url(#expensesGrad)" dot={false} activeDot={{ r: 5, fill: "#dc2626" }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -859,8 +1059,8 @@ function FinancialAnalyticsContent() {
                     <stop offset="95%" stopColor="#2563eb" stopOpacity={0.03} />
                   </linearGradient>
                   <linearGradient id="titheGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.42} />
-                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.03} />
+                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.42} />
+                    <stop offset="95%" stopColor="#d97706" stopOpacity={0.03} />
                   </linearGradient>
                   <linearGradient id="specialFundsGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.42} />
@@ -873,7 +1073,7 @@ function FinancialAnalyticsContent() {
                 <Tooltip formatter={(v, n) => (["Offering", "Tithe", "Special Funds"].includes(n) ? formatCurrency(v) : v)} contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }} labelStyle={{ fontWeight: 600, color: "#111827" }} cursor={{ stroke: "#2563eb", strokeWidth: 1, strokeDasharray: "4 2" }} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                 <Area type="monotone" dataKey="offering" name="Offering" stroke="#2563eb" strokeWidth={1.4} fill="url(#offeringGrad)" dot={false} activeDot={{ r: 5, fill: "#2563eb" }} />
-                <Area type="monotone" dataKey="tithe" name="Tithe" stroke="#7c3aed" strokeWidth={1.4} fill="url(#titheGrad)" dot={false} activeDot={{ r: 5, fill: "#7c3aed" }} />
+                <Area type="monotone" dataKey="tithe" name="Tithe" stroke="#d97706" strokeWidth={1.4} fill="url(#titheGrad)" dot={false} activeDot={{ r: 5, fill: "#d97706" }} />
                 <Area type="monotone" dataKey="specialFunds" name="Special Funds" stroke="#10b981" strokeWidth={1.4} fill="url(#specialFundsGrad)" dot={false} activeDot={{ r: 5, fill: "#10b981" }} />
               </AreaChart>
             </ResponsiveContainer>

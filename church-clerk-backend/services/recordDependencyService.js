@@ -40,6 +40,8 @@ import OutreachEvent from "../models/outreachModel/outreachEventModel.js";
 import OutreachProspect from "../models/outreachModel/outreachProspectModel.js";
 import OutreachFollowUp from "../models/outreachModel/outreachFollowUpModel.js";
 import OutreachTeam from "../models/outreachModel/outreachTeamModel.js";
+import OutreachSupport from "../models/outreachModel/outreachSupportModel.js";
+import GeneralExpenses from "../models/generalExpenseModel.js";
 import AnnouncementMessage from "../models/announcementMessageModel.js";
 import AnnouncementMessageDelivery from "../models/announcementMessageDeliveryModel.js";
 
@@ -163,6 +165,8 @@ const ENTITY = {
     links: [
       { model: OutreachProspect, field: "outreachEvent", label: "prospects" },
       { model: OutreachFollowUp, field: "outreachEvent", label: "follow-ups" },
+      { model: OutreachSupport, field: "event", label: "support records" },
+      { model: GeneralExpenses, field: "outreach", label: "expenses" },
     ],
   },
 

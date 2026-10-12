@@ -2,13 +2,24 @@ import { useEffect, useState } from "react";
 import Button from "../../../shared/components/Button/index.jsx";
 import PledgeForm from "../../pledge/components/PledgeForm.jsx";
 import { createProjectContribution } from "../contributions/services/projectContributions.api.js";
+import { getMembers } from "../../member/services/member.api.js";
+import { getVisitors } from "../../attendance/services/attendance.api.js";
+
+function useDebouncedValue(value, delayMs) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+  return debounced;
+}
 
 function BaseModal({ open, title, subtitle, children, onClose }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
+        <div className="sticky top-0 z-10 bg-white rounded-t-xl flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
             {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
@@ -30,13 +41,68 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   );
 }
 
-function ContributionForm({ project, currency, disabled, onDone, onCancel }) {
+function ContributionForm({ project, disabled, onDone, onCancel }) {
   const [contributorName, setContributorName] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [personQuery, setPersonQuery] = useState("");
+  const [personOptions, setPersonOptions] = useState([]);
+  const [personSearching, setPersonSearching] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState(null);
+
+  const debouncedPersonQuery = useDebouncedValue(personQuery, 300);
+
+  useEffect(() => {
+    if (selectedPerson) return;
+    const q = String(debouncedPersonQuery || "").trim();
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (!q) {
+        setPersonOptions([]);
+        return;
+      }
+
+      setPersonSearching(true);
+      const [membersRes, visitorsRes] = await Promise.all([
+        getMembers({ search: q, page: 1, limit: 8 }).catch(() => null),
+        getVisitors({ search: q, page: 1, limit: 8 }).catch(() => null),
+      ]);
+      if (cancelled) return;
+      const mPayload = membersRes?.data?.data ?? membersRes?.data;
+      const vPayload = visitorsRes?.data?.data ?? visitorsRes?.data;
+      const members = (Array.isArray(mPayload?.members) ? mPayload.members : []).map((m) => ({ ...m, _source: "member" }));
+      const visitors = (Array.isArray(vPayload?.visitors) ? vPayload.visitors : []).map((v) => ({ ...v, _source: "visitor" }));
+      setPersonOptions([...members, ...visitors].slice(0, 8));
+      setPersonSearching(false);
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [debouncedPersonQuery, selectedPerson]);
+
+  const selectPerson = (p) => {
+    if (!p) return;
+    const fullName = p?._source === "visitor"
+      ? (p?.fullName || "")
+      : (`${String(p?.firstName || "").trim()} ${String(p?.lastName || "").trim()}`.trim() || p?.fullName || "");
+    setSelectedPerson(p);
+    setPersonQuery(fullName);
+    setPersonOptions([]);
+    setContributorName(fullName);
+    setError("");
+  };
+
+  const clearPerson = () => {
+    setSelectedPerson(null);
+    setPersonQuery("");
+    setPersonOptions([]);
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -81,6 +147,72 @@ function ContributionForm({ project, currency, disabled, onDone, onCancel }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
+
+      <div>
+        <label className="block font-semibold text-gray-500 text-xs">Find a member or visitor</label>
+        <div className="mt-0.5 text-gray-400 text-xs">Search for an existing member or visitor to autofill the contributor, or type the contributor's name manually below.</div>
+        {selectedPerson ? (
+          <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+            <div className="min-w-0">
+              <div className="font-semibold text-blue-900 truncate text-sm">{contributorName || "—"}</div>
+              <div className="text-blue-700 truncate text-xs">
+                {`${selectedPerson?._source === "visitor" ? "Visitor" : "Member"}${selectedPerson?.phoneNumber || selectedPerson?.email ? ` • ${selectedPerson?.phoneNumber || selectedPerson?.email}` : ""}`}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={clearPerson}
+              className="shrink-0 rounded-lg border border-blue-200 bg-white px-3 py-1.5 font-semibold text-blue-700 hover:bg-blue-50 text-xs"
+            >
+              Change
+            </button>
+          </div>
+        ) : (
+          <>
+            <input
+              value={personQuery}
+              onChange={(e) => setPersonQuery(e.target.value)}
+              type="text"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              placeholder="Search member or visitor by name, phone, email"
+            />
+            {String(personQuery || "").trim() ? (
+              <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
+                {personSearching ? (
+                  <div className="px-4 py-3 text-gray-600 text-sm">Searching...</div>
+                ) : personOptions.length ? (
+                  <div className="divide-y divide-gray-200">
+                    {personOptions.map((p, idx) => {
+                      const isVisitor = p?._source === "visitor";
+                      const personName = isVisitor
+                        ? (p?.fullName || "—")
+                        : (`${String(p?.firstName || "").trim()} ${String(p?.lastName || "").trim()}`.trim() || p?.fullName || "—");
+                      return (
+                        <button
+                          key={`${p?._source || "p"}-${p?._id ?? idx}`}
+                          type="button"
+                          onClick={() => selectPerson(p)}
+                          className="w-full px-4 py-2.5 text-left hover:bg-gray-50"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="font-semibold text-gray-900 truncate text-sm">{personName}</div>
+                            <span className={`shrink-0 rounded-full px-2 py-0.5 font-semibold text-xs ${isVisitor ? "bg-yellow-50 text-yellow-700" : "bg-blue-50 text-blue-700"}`}>
+                              {isVisitor ? "Visitor" : "Member"}
+                            </span>
+                          </div>
+                          <div className="text-gray-500 truncate text-xs">{[p?.phoneNumber, p?.email].filter(Boolean).join(" • ")}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 text-gray-600 text-sm">No members or visitors found — fill the contributor field below to add them manually.</div>
+                )}
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
 
       <div>
         <label className="block font-semibold text-gray-500 text-xs">Contributor</label>
@@ -150,11 +282,12 @@ function ContributionForm({ project, currency, disabled, onDone, onCancel }) {
 
 export default function AddContributorModal({ open, onClose, project, disabled, onSuccess, currency, initialType = "pledge" }) {
   const [type, setType] = useState("pledge");
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
-    if (!open) return;
-    setType(initialType === "contribution" ? "contribution" : "pledge");
-  }, [open, initialType]);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setType(initialType === "contribution" ? "contribution" : "pledge");
+  }
 
   const fundraiserName = project?.name || "";
 

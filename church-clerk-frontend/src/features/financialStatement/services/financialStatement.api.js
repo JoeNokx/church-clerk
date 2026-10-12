@@ -18,3 +18,7 @@ export const exportFinancialStatement = async (params) => {
     responseType: "blob"
   });
 };
+
+export const getStatementBreakdownDetails = async (params) => {
+  return await http.get("/financial-statement/financial-statements/details", { params });
+};

@@ -34,6 +34,19 @@ import {
   getTeams, getTeamById, createTeam, updateTeam, deleteTeam,
 } from "../controller/outreachController/outreachTeamController.js";
 
+import {
+  createOutreachSupport, getOutreachSupport, updateOutreachSupport,
+  searchPeopleForSupport,
+} from "../controller/outreachController/outreachSupportController.js";
+
+import {
+  createScopedExpense, getScopedExpenses, updateScopedExpense,
+  deleteScopedExpense, downloadScopedExpenseReceipt,
+} from "../controller/scopedExpensesController.js";
+
+import { uploadReceiptFile } from "../middleware/uploadReceiptFile.js";
+import { backdatingGuard, conditionalImmutableGuard } from "../middleware/financialGovernance.js";
+
 const readRoles = ["superadmin", "supportadmin", "churchadmin", "secretary", "leader", "admin", "associateadmin", "financialofficer"];
 const writeRoles = ["superadmin", "churchadmin", "secretary", "leader", "admin", "associateadmin"];
 const deleteRoles = ["superadmin", "churchadmin", "admin", "associateadmin"];
@@ -77,6 +90,40 @@ router.get("/prospects/:prospectId/follow-ups", ...R, getFollowUpsByProspect);
 router.post("/prospects/:prospectId/follow-ups", ...W, createFollowUp);
 router.put("/follow-ups/:followUpId", ...U, updateFollowUp);
 router.delete("/follow-ups/:followUpId", ...D, deleteFollowUp);
+
+// ── Support (nested under events) ─────────────────────────────────
+router.get("/events/:eventId/support/people/search", ...R, searchPeopleForSupport);
+router.get("/events/:eventId/support", ...R, getOutreachSupport);
+router.post("/events/:eventId/support", ...W, backdatingGuard({ dateField: "date", module: "outreach", entityType: "outreachSupport" }), createOutreachSupport);
+router.put("/events/:eventId/support/:supportId", ...U, conditionalImmutableGuard(), updateOutreachSupport);
+
+// ── Expenses (nested under events) ────────────────────────────────
+router.post(
+  "/events/:eventId/expenses",
+  ...W,
+  uploadReceiptFile,
+  backdatingGuard({ dateField: "date", module: "expenses", entityType: "generalExpense" }),
+  createScopedExpense("outreach")
+);
+router.get("/events/:eventId/expenses", ...R, getScopedExpenses("outreach"));
+router.put(
+  "/events/:eventId/expenses/:expenseId",
+  ...U,
+  uploadReceiptFile,
+  conditionalImmutableGuard(),
+  updateScopedExpense("outreach")
+);
+router.get(
+  "/events/:eventId/expenses/:expenseId/receipt/download",
+  ...R,
+  downloadScopedExpenseReceipt("outreach")
+);
+router.delete(
+  "/events/:eventId/expenses/:expenseId",
+  ...D,
+  conditionalImmutableGuard(),
+  deleteScopedExpense("outreach")
+);
 
 // ── Analytics ─────────────────────────────────────────────────────
 router.get("/analytics", ...R, getOutreachAnalytics);

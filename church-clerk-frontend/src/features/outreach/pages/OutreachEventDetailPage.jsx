@@ -17,6 +17,8 @@ import { getMembers } from "../../member/services/member.api.js";
 import { PersonFormModal } from "../components/tabs/PeopleReachedTab.jsx";
 import { FollowUpFormModal, FollowUpDetailsModal } from "../components/tabs/FollowUpsTab.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
+import ScopedExpensesTab from "../../../shared/components/ScopedExpensesTab/index.jsx";
+import OutreachSupportTab from "../components/tabs/SupportTab.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -219,13 +221,13 @@ export default function OutreachEventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(() => {
     const t = new URLSearchParams(location.search).get("tab");
-    return ["prospects", "followups"].includes(t) ? t : "prospects";
+    return ["prospects", "followups", "support", "expenses"].includes(t) ? t : "prospects";
   });
 
   // Sync tab when URL tab param changes (e.g. navigating back from prospect details)
   useEffect(() => {
     const t = new URLSearchParams(location.search).get("tab");
-    if (["prospects", "followups"].includes(t) && t !== activeTab) {
+    if (["prospects", "followups", "support", "expenses"].includes(t) && t !== activeTab) {
       setActiveTab(t);
     }
   }, [location.search]);
@@ -492,6 +494,8 @@ export default function OutreachEventDetailPage() {
           {[
           { key: "prospects", label: `Prospects (${prospects.length})` },
           { key: "followups", label: `Follow-ups (${followUps.length})` },
+          { key: "support", label: "Support" },
+          { key: "expenses", label: "Expenses" },
         ].map((tab) => (
             <button
               key={tab.key}
@@ -706,6 +710,16 @@ export default function OutreachEventDetailPage() {
               filtered={Boolean(String(fuSearch || "").trim() || fuDateFrom || fuDateTo || fuAssigned)}
             />
           </div>
+        ) : null}
+
+        {/* Support Tab */}
+        {activeTab === "support" ? (
+          <OutreachSupportTab eventId={eventId} />
+        ) : null}
+
+        {/* Expenses Tab */}
+        {activeTab === "expenses" ? (
+          <ScopedExpensesTab scope="outreach" entityId={eventId} entityLabel="outreach" />
         ) : null}
       </div>
 

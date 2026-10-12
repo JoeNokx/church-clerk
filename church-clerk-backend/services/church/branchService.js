@@ -21,6 +21,7 @@ import GroupOffering from "../../models/organisationModel/groupOfferingModel.js"
 import DepartmentOffering from "../../models/organisationModel/departmentOfferingModel.js";
 import MinistryOffering from "../../models/organisationModel/ministryOfferingModel.js";
 import PledgePayment from "../../models/financeModel/pledgeModel/pledgePaymentModel.js";
+import OutreachSupport from "../../models/outreachModel/outreachSupportModel.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Visitor from "../../models/visitorsModel.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
@@ -29,24 +30,47 @@ import { buildPaginationParams, buildPaginationResponse } from "../../utils/pagi
 import { buildSearchQuery } from "../../utils/searchHelper.js";
 
 const INCOME_SOURCES = [
-  { key: "tithes", label: "Tithes", Model: TitheIndividual, dateField: "date", amountField: "amount" },
-  { key: "tithesAggregate", label: "Tithes (Aggregate)", Model: TitheAggregate, dateField: "date", amountField: "amount" },
+  { key: "tithes", label: "Tithes", queries: [
+    { Model: TitheIndividual, dateField: "date", amountField: "amount" },
+    { Model: TitheAggregate, dateField: "date", amountField: "amount" }
+  ] },
   { key: "offerings", label: "Offerings", Model: Offering, dateField: "serviceDate", amountField: "amount" },
-  { key: "programOfferings", label: "Program Offerings", Model: ProgramOffering, dateField: "offeringDate", amountField: "amount" },
-  { key: "cellOfferings", label: "Cell Offerings", Model: CellOffering, dateField: "date", amountField: "amount" },
-  { key: "groupOfferings", label: "Group Offerings", Model: GroupOffering, dateField: "date", amountField: "amount" },
-  { key: "departmentOfferings", label: "Department Offerings", Model: DepartmentOffering, dateField: "date", amountField: "amount" },
-  { key: "ministryOfferings", label: "Ministry Offerings", Model: MinistryOffering, dateField: "date", amountField: "amount" },
+  { key: "programOfferings", label: "Programs Offerings, Seed & Pledges", Model: ProgramOffering, dateField: "offeringDate", amountField: "amount" },
+  { key: "cellOfferings", label: "Cell Offerings & Seed", Model: CellOffering, dateField: "date", amountField: "amount" },
+  { key: "groupOfferings", label: "Groups Offerings & Seed", Model: GroupOffering, dateField: "date", amountField: "amount" },
+  { key: "departmentOfferings", label: "Department Offerings & Seed", Model: DepartmentOffering, dateField: "date", amountField: "amount" },
+  { key: "ministryOfferings", label: "Ministry Offerings & Seed", Model: MinistryOffering, dateField: "date", amountField: "amount" },
   { key: "projectContributions", label: "Fundraising", Model: ProjectContribution, dateField: "date", amountField: "amount" },
   { key: "welfareContributions", label: "Welfare", Model: WelfareContributions, dateField: "date", amountField: "amount" },
+  { key: "outreachSupport", label: "Outreach Support", Model: OutreachSupport, dateField: "date", amountField: "amount" },
   { key: "specialFunds", label: "Special Funds", Model: SpecialFund, dateField: "givingDate", amountField: "totalAmount" },
   { key: "businessIncome", label: "Business Ventures", Model: BusinessIncome, dateField: "date", amountField: "amount" },
-  { key: "pledgesPaid", label: "Pledges Paid", Model: PledgePayment, dateField: "paymentDate", amountField: "amount" },
   { key: "otherIncome", label: "Other Income", Model: Income, dateField: "dateReceived", amountField: "amount" },
 ];
 
+// Pledge payments roll up into their scope's income line: churchProject pledges
+// -> Fundraising, program pledges -> Programs Offerings, unscoped -> Other Income.
+const PLEDGE_SPLIT_BY_KEY = {
+  projectContributions: "project",
+  programOfferings: "program",
+  otherIncome: "unscoped"
+};
+
 const EXPENSE_SOURCES = [
-  { key: "generalExpenses", label: "General Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount" },
+  { key: "generalExpenses", label: "General Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount",
+    extraMatch: { cell: null, department: null, group: null, ministry: null, event: null, outreach: null } },
+  { key: "programExpenses", label: "Programs Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount",
+    extraMatch: { event: { $type: "objectId" } } },
+  { key: "cellExpenses", label: "Cell Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount",
+    extraMatch: { cell: { $type: "objectId" } } },
+  { key: "departmentExpenses", label: "Department Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount",
+    extraMatch: { department: { $type: "objectId" } } },
+  { key: "groupExpenses", label: "Groups Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount",
+    extraMatch: { group: { $type: "objectId" } } },
+  { key: "ministryExpenses", label: "Ministry Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount",
+    extraMatch: { ministry: { $type: "objectId" } } },
+  { key: "outreachExpenses", label: "Outreach Expenses", Model: GeneralExpenses, dateField: "date", amountField: "amount",
+    extraMatch: { outreach: { $type: "objectId" } } },
   { key: "welfareDisbursements", label: "Welfare Disbursements", Model: WelfareDisbursements, dateField: "date", amountField: "amount" },
   { key: "projectExpenses", label: "Fundraising Expenses", Model: ProjectExpense, dateField: "date", amountField: "amount" },
   { key: "businessExpenses", label: "Business Ventures", Model: BusinessExpenses, dateField: "date", amountField: "amount" },
@@ -686,20 +710,74 @@ async function getBranchFinances({ churchId, period }) {
     return { [field]: range };
   };
 
-  const sumByChurch = ({ Model, dateField, amountField }) =>
-    ids.length
-      ? Model.aggregate([
-          { $match: { church: { $in: ids }, ...dateMatch(dateField) } },
+  const sumByChurch = async (source) => {
+    if (!ids.length) return [];
+    const queries = source.queries || [source];
+    const aggs = await Promise.all(
+      queries.map(({ Model, dateField, amountField, extraMatch }) =>
+        Model.aggregate([
+          { $match: { church: { $in: ids }, ...dateMatch(dateField), ...(extraMatch || {}) } },
           { $group: { _id: "$church", total: { $sum: `$${amountField}` } } },
         ])
-      : [];
+      )
+    );
+    const merged = new Map();
+    aggs.flat().forEach((r) => {
+      const id = String(r._id);
+      merged.set(id, (merged.get(id) || 0) + Number(r.total || 0));
+    });
+    return [...merged.entries()].map(([_id, total]) => ({ _id, total }));
+  };
 
-  const [incomeAggs, expenseAggs] = await Promise.all([
+  const hasField = (path) => ({ $eq: [{ $type: path }, "objectId"] });
+  const lacksField = (path) => ({ $ne: [{ $type: path }, "objectId"] });
+
+  const pledgePaymentsByChurch = ids.length
+    ? PledgePayment.aggregate([
+        { $match: { church: { $in: ids }, ...dateMatch("paymentDate") } },
+        { $lookup: { from: "pledges", localField: "pledge", foreignField: "_id", as: "pledgeDoc" } },
+        { $unwind: "$pledgeDoc" },
+        {
+          $group: {
+            _id: "$church",
+            project: { $sum: { $cond: [hasField("$pledgeDoc.churchProject"), "$amount", 0] } },
+            program: {
+              $sum: {
+                $cond: [
+                  { $and: [hasField("$pledgeDoc.event"), lacksField("$pledgeDoc.churchProject")] },
+                  "$amount",
+                  0
+                ]
+              }
+            },
+            unscoped: {
+              $sum: {
+                $cond: [
+                  { $and: [lacksField("$pledgeDoc.churchProject"), lacksField("$pledgeDoc.event")] },
+                  "$amount",
+                  0
+                ]
+              }
+            }
+          }
+        }
+      ])
+    : [];
+
+  const [incomeAggs, expenseAggs, pledgeAggs] = await Promise.all([
     Promise.all(INCOME_SOURCES.map((s) => sumByChurch(s))),
     Promise.all(EXPENSE_SOURCES.map((s) => sumByChurch(s))),
+    pledgePaymentsByChurch,
   ]);
 
   const toMap = (rows) => new Map((rows || []).map((r) => [String(r._id), Number(r.total || 0)]));
+
+  const pledgeSplitMap = new Map(
+    (pledgeAggs || []).map((r) => [
+      String(r._id),
+      { project: Number(r.project || 0), program: Number(r.program || 0), unscoped: Number(r.unscoped || 0) }
+    ])
+  );
 
   const incomeMaps = INCOME_SOURCES.map((s, i) => ({ key: s.key, map: toMap(incomeAggs[i]) }));
   const expenseMaps = EXPENSE_SOURCES.map((s, i) => ({ key: s.key, map: toMap(expenseAggs[i]) }));
@@ -717,7 +795,8 @@ async function getBranchFinances({ churchId, period }) {
     let expenseTotal = 0;
 
     incomeMaps.forEach(({ key, map }) => {
-      const v = map.get(id) || 0;
+      const pledgeKey = PLEDGE_SPLIT_BY_KEY[key];
+      const v = (map.get(id) || 0) + (pledgeKey ? Number(pledgeSplitMap.get(id)?.[pledgeKey] || 0) : 0);
       income[key] = v;
       incomeTotal += v;
     });
@@ -748,8 +827,18 @@ async function getBranchFinances({ churchId, period }) {
       total: [...map.values()].reduce((s, v) => s + v, 0),
     }));
 
+  const pledgeTotals = [...pledgeSplitMap.values()].reduce(
+    (acc, s) => ({
+      project: acc.project + s.project,
+      program: acc.program + s.program,
+      unscoped: acc.unscoped + s.unscoped
+    }),
+    { project: 0, program: 0, unscoped: 0 }
+  );
+
   const incomeBySource = sumSource(incomeMaps).map((r) => ({
     ...r,
+    total: r.total + Number(pledgeTotals[PLEDGE_SPLIT_BY_KEY[r.key]] || 0),
     label: INCOME_SOURCES.find((s) => s.key === r.key)?.label || r.key,
   }));
   const expenseBySource = sumSource(expenseMaps).map((r) => ({

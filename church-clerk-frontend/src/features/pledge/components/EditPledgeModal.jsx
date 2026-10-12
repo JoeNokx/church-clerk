@@ -20,8 +20,8 @@ const SERVICE_TYPES = [
   "Special Program"
 ];
 
-// Fields initialise from initialData via lazy useState — the component remounts
-// on every open (returns null while closed), so values are always fresh.
+// Fields initialise from initialData via lazy useState, then re-sync whenever
+// initialData changes — callers keep the modal mounted while closed.
 function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
   const [name, setName] = useState(() => String(initialData?.name || ""));
   const [phoneNumber, setPhoneNumber] = useState(() => String(initialData?.phoneNumber || ""));
@@ -32,6 +32,20 @@ function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
   const [note, setNote] = useState(() => String(initialData?.note || ""));
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setName(String(initialData?.name || ""));
+    setPhoneNumber(String(initialData?.phoneNumber || ""));
+    setServiceType(String(initialData?.serviceType || ""));
+    setAmount(initialData?.amount ?? "");
+    setPledgeDate(String(initialData?.pledgeDate || "").slice(0, 10));
+    setDeadline(String(initialData?.deadline || "").slice(0, 10));
+    setNote(String(initialData?.note || ""));
+    setError("");
+    setIsSubmitting(false);
+  }
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
   const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : SERVICE_TYPES;
@@ -94,7 +108,7 @@ function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
+        <div className="sticky top-0 z-10 bg-white rounded-t-xl flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">Edit Pledge</div>
             <div className="mt-1 text-gray-500 text-sm">Update pledge details</div>

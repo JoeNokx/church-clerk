@@ -18,6 +18,7 @@ import SpecialFund from "../../models/financeModel/specialFundModel.js";
 import PledgePayment from "../../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import WelfareContribution from "../../models/financeModel/welfareModel/welfareContributionModel.js";
 import ProjectContribution from "../../models/financeModel/projectModel/projectContributionModel.js";
+import OutreachSupport from "../../models/outreachModel/outreachSupportModel.js";
 
 const toNumber = (v) => {
   const n = Number(v);
@@ -84,77 +85,28 @@ async function applyAutoStatus(budget) {
   return budget;
 }
 
-// ─── expense aggregations ────────────────────────────────────────────────────
-
-/**
- * Sum actual expenses across all expense sources for a church within an optional date range.
- */
-const sumExpensesAcrossSources = async (churchId, from, to) => {
-  // Guard: if no date range at all, don't aggregate everything ever recorded
-  if (!from && !to) return null;
-  const sources = [
-    { Model: GeneralExpenses,    dateField: "date"     },
-    { Model: WelfareDisbursements,dateField: "date"    },
-    { Model: ProjectExpense,     dateField: "date"     },
-    { Model: BusinessExpenses,   dateField: "date"     },
-    { Model: Expense,            dateField: "dateSpent"},
-  ];
-
-  const sums = await Promise.all(
-    sources.map(async ({ Model, dateField }) => {
-      const match = { church: churchId, ...buildPeriodMatch(from, to, dateField) };
-      const rows = await Model.aggregate([
-        { $match: match },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
-      ]);
-      return Number(rows?.[0]?.total || 0);
-    })
-  );
-
-  return sums.reduce((acc, v) => acc + v, 0);
-};
-
-// All income sources — mirrors reportsAnalyticsController
-const INCOME_SOURCES = [
-  { Model: TitheIndividual,   dateField: "date"         },
-  { Model: TitheAggregate,    dateField: "date"         },
-  { Model: Offering,          dateField: "serviceDate"  },
-  { Model: BusinessIncome,    dateField: "date"         },
-  { Model: ProgramOffering,     dateField: "offeringDate" },
-  { Model: CellOffering,      dateField: "date"         },
-  { Model: GroupOffering,     dateField: "date"         },
-  { Model: DepartmentOffering,dateField: "date"         },
-  { Model: MinistryOffering, dateField: "date"         },
-  { Model: Income,            dateField: "dateReceived" },
-];
-
-/**
- * Sum actual income across ALL income sources for a church within an optional date range.
- * Returns null when no date range is provided (actuals cannot be meaningfully bounded).
- */
-const sumIncomeAcrossSources = async (churchId, from, to) => {
-  // Guard: if no date range at all, don't aggregate everything ever recorded
-  if (!from && !to) return null;
-  const sums = await Promise.all(
-    INCOME_SOURCES.map(async ({ Model, dateField }) => {
-      const match = { church: churchId, ...buildPeriodMatch(from, to, dateField) };
-      const rows = await Model.aggregate([
-        { $match: match },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
-      ]);
-      return Number(rows?.[0]?.total || 0);
-    })
-  );
-  return sums.reduce((acc, v) => acc + v, 0);
-};
-
 /**
  * Expense sources for per-item actuals. `categoryField` is the field on the
  * document that holds the category label (most use "category"; ProjectExpense
  * uses "spentOn").
+ *
+ * `entityFields` maps an allocatedTo.entityType to the field on that model
+ * that references the entity. When a budget item is allocated to a specific
+ * entity, only sources with a matching entityField are queried (filtered by
+ * that field) — general sources are skipped, same as the income side.
  */
+const EXPENSE_ENTITY_FIELDS = {
+  cell: "cell",
+  group: "group",
+  department: "department",
+  ministry: "ministry",
+  program: "event",
+  event: "event",
+  outreach: "outreach"
+};
+
 const ITEM_EXPENSE_SOURCES = [
-  { Model: GeneralExpenses,     dateField: "date",      categoryField: "category" },
+  { Model: GeneralExpenses,     dateField: "date",      categoryField: "category", entityFields: EXPENSE_ENTITY_FIELDS },
   { Model: WelfareDisbursements,dateField: "date",      categoryField: "category" },
   { Model: ProjectExpense,      dateField: "date",      categoryField: "spentOn"  },
   { Model: BusinessExpenses,    dateField: "date",      categoryField: "category" },
@@ -212,6 +164,9 @@ const INCOME_CATEGORY_SOURCES = {
   ],
   "Church Project Contribution": [
     { Model: ProjectContribution, dateField: "date",         entityType: null },
+  ],
+  "Outreach Support": [
+    { Model: OutreachSupport,     dateField: "date",         entityType: "outreach", entityField: "event" },
   ],
   "Business Ventures Income": [
     { Model: BusinessIncome,      dateField: "date",         entityType: null },
@@ -272,11 +227,22 @@ const getItemActuals = async (churchId, items) => {
     const allocatedTo = item.allocatedTo || {};
 
     if (item.type === "expense") {
+      const rawType = String(allocatedTo?.entityType || "").trim();
+      const allocType = rawType === "event" ? "program" : rawType;
+      const allocId = allocatedTo?.entityId || null;
+      const allocated = Boolean(
+        allocType && !["church", "administration", "other"].includes(allocType) && allocId
+      );
+
       const sums = await Promise.all(
-        ITEM_EXPENSE_SOURCES.map(async ({ Model, dateField, categoryField }) => {
+        ITEM_EXPENSE_SOURCES.map(async ({ Model, dateField, categoryField, entityFields }) => {
+          const entityField = entityFields?.[allocType];
+          // Entity-allocated item: skip sources that can't resolve the entity
+          if (allocated && !entityField) return 0;
           const match = {
             church: churchId,
             [categoryField]: catRegex,
+            ...(allocated ? { [entityField]: allocId } : {}),
             ...buildPeriodMatch(from, to, dateField)
           };
           const rows = await Model.aggregate([

@@ -35,7 +35,7 @@ const budgetItemSchema = new mongoose.Schema(
     allocatedTo: {
       entityType: {
         type: String,
-        enum: ["church", "branch", "cell", "group", "department", "program", "event", "administration", "other", null],
+        enum: ["church", "branch", "cell", "group", "department", "ministry", "program", "event", "outreach", "administration", "other", null],
         default: null
       },
       entityId: {

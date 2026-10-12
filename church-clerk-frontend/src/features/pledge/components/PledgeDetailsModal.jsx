@@ -47,7 +47,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
+        <div className="sticky top-0 z-10 bg-white rounded-t-xl flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
             {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
@@ -340,7 +340,7 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
         <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-          <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 px-4 md:px-6">
+          <div className="sticky top-0 z-10 bg-white rounded-t-xl flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 px-4 md:px-6">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="font-semibold text-gray-900 text-lg truncate">{loading ? "Pledge" : pledge?.name || "Pledge"}</div>
@@ -541,7 +541,7 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
       {viewRow ? (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4">
+            <div className="sticky top-0 z-10 bg-white rounded-t-xl flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4">
               <div className="min-w-0">
                 <div className="font-semibold text-gray-900 text-sm truncate">{pledge?.name || "Pledge Payment"}</div>
                 {viewRow?.referenceId ? (
@@ -552,29 +552,31 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 px-5 py-4">
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Amount</div>
-                <div className="mt-1 font-semibold text-green-700 text-sm">{formatCurrency(viewRow?.amount || 0, currency)}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date Received</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.paymentDate)}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Method</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.paymentMethod || "—"}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.createdAt)}</div>
-              </div>
-              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.createdBy?.fullName || "—"}</div>
+            <div className="px-5 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                  <div className="mt-1 font-semibold text-green-700 text-sm">{formatCurrency(viewRow?.amount || 0, currency)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Date Received</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.paymentDate)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Method</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.paymentMethod || "—"}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.createdAt)}</div>
+                </div>
+                <div className="col-span-2">
+                  <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.createdBy?.fullName || "—"}</div>
+                </div>
               </div>
               {viewRow?.note ? (
-                <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <div className="mt-4">
                   <div className="font-semibold text-gray-500 text-xs">Note</div>
                   <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{viewRow.note}</div>
                 </div>

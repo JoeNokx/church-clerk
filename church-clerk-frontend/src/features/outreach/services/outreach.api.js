@@ -46,6 +46,16 @@ export const updateFollowUp = (followUpId, data) =>
 export const deleteFollowUp = (followUpId) =>
   http.delete(`${B}/follow-ups/${followUpId}`);
 
+// ── Support (nested under events) ────────────────────────────────
+export const getEventSupport = (eventId, params = {}) =>
+  http.get(`${B}/events/${eventId}/support`, { params });
+export const createEventSupport = (eventId, data) =>
+  http.post(`${B}/events/${eventId}/support`, data);
+export const updateEventSupport = (eventId, supportId, data) =>
+  http.put(`${B}/events/${eventId}/support/${supportId}`, data);
+export const searchSupportPeople = (eventId, params = {}) =>
+  http.get(`${B}/events/${eventId}/support/people/search`, { params });
+
 // ── Analytics & Teams ─────────────────────────────────────────────
 export const getOutreachAnalytics = (params = {}) => http.get(`${B}/analytics`, { params });
 export const getTeamStats = () => http.get(`${B}/teams/stats`);

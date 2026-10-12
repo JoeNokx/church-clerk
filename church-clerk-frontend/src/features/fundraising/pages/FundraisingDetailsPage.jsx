@@ -125,7 +125,7 @@ function BaseModal({ open, title, subtitle, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
+        <div className="sticky top-0 z-10 bg-white rounded-t-xl flex items-start justify-between gap-4 border-b border-gray-200 py-4 md:py-5 lg:py-6 px-4 md:px-6">
           <div>
             <div className="font-semibold text-gray-900 text-lg">{title}</div>
             {subtitle ? <div className="mt-1 text-gray-500 text-sm">{subtitle}</div> : null}
@@ -867,6 +867,7 @@ function FundraisingDetailsPage() {
           {tab === "contributions" ? (
             <>
               <FilterBar
+                className="md:!flex-nowrap"
                 searchValue={contribSearch}
                 onSearchChange={(v) => { setContribSearch(v); setContribPage(1); }}
                 searchPlaceholder="Search name or contributor"
@@ -939,6 +940,7 @@ function FundraisingDetailsPage() {
           ) : (
             <>
               <FilterBar
+                className="md:!flex-nowrap"
                 searchValue={expenseSearch}
                 onSearchChange={(v) => { setExpenseSearch(v); setExpensePage(1); }}
                 searchPlaceholder="Search spent on or recorded by"
@@ -1028,7 +1030,7 @@ function FundraisingDetailsPage() {
                       <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                         <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Contributor</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
-                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                        <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount (pledged/paid)</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Date</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded By</th>
                         <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Ref ID</th>
@@ -1170,55 +1172,55 @@ function FundraisingDetailsPage() {
       {expenseViewOpen && expenseViewRow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
-              <div className="font-semibold text-gray-900 text-sm">Expense Details</div>
+            <div className="sticky top-0 z-10 bg-white rounded-t-xl flex items-center justify-between border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4">
+              <div className="font-semibold text-gray-900 text-sm truncate">{expenseViewRow?.spentOn || "Expense"}</div>
               <button type="button" onClick={() => { setExpenseViewOpen(false); setExpenseViewRow(null); }} className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 md:h-12 md:w-12" aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 px-4 md:px-5 lg:px-6 py-4">
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date Spent</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(expenseViewRow?.date)}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Amount</div>
-                <div className="mt-1 font-semibold text-orange-600 text-sm">{formatCurrency(expenseViewRow?.amount || 0, currency)}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Category</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.category || "—"}</div>
-              </div>
-              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Spent On</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.spentOn || "—"}</div>
-              </div>
-              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.createdBy?.fullName || "—"}</div>
-              </div>
-              <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(expenseViewRow?.createdAt)}</div>
+            <div className="px-4 md:px-5 lg:px-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Date Spent</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(expenseViewRow?.date)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                  <div className="mt-1 font-semibold text-orange-600 text-sm">{formatCurrency(expenseViewRow?.amount || 0, currency)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Category</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.category || "—"}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Spent On</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.spentOn || "—"}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{expenseViewRow?.createdBy?.fullName || "—"}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(expenseViewRow?.createdAt)}</div>
+                </div>
               </div>
               {expenseViewRow?.referenceId ? (
-                <div className="col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="mt-4">
                   <div className="font-semibold text-gray-500 text-xs">Ref ID</div>
                   <div className="mt-1 font-mono text-gray-700 text-xs">{expenseViewRow.referenceId}</div>
                 </div>
               ) : null}
-              <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+              <div className="mt-4">
                 <div className="font-semibold text-gray-500 text-xs">Description</div>
                 <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{expenseViewRow?.description || "—"}</div>
               </div>
               {expenseViewRow?.receipt?.url ? (
-                <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
-                  <ReceiptView
-                    receipt={expenseViewRow?.receipt}
-                    downloadUrl={expenseViewRow?._id ? getProjectExpenseReceiptDownloadUrl(projectId, expenseViewRow._id) : null}
-                    onPreview={(url, name) => setExpenseReceiptLightbox({ url, name })}
-                  />
-                </div>
+                <ReceiptView
+                  receipt={expenseViewRow?.receipt}
+                  downloadUrl={expenseViewRow?._id ? getProjectExpenseReceiptDownloadUrl(projectId, expenseViewRow._id) : null}
+                  onPreview={(url, name) => setExpenseReceiptLightbox({ url, name })}
+                />
               ) : null}
             </div>
             <div className="flex justify-end px-4 md:px-5 lg:px-6 py-4 border-t border-gray-200">
@@ -1231,7 +1233,7 @@ function FundraisingDetailsPage() {
       {viewRow ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewRow(null)}>
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4">
+            <div className="sticky top-0 z-10 bg-white rounded-t-xl flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4">
               <div className="min-w-0">
                 <div className="font-semibold text-gray-900 text-sm truncate">{viewRow?.contributorName || viewRow?.displayName || "Contribution"}</div>
                 {viewRow?.referenceId ? (
@@ -1242,25 +1244,27 @@ function FundraisingDetailsPage() {
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 px-5 py-4">
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Amount</div>
-                <div className="mt-1 font-semibold text-green-700 text-sm">{formatCurrency(viewRow?.amount || 0, currency)}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date Received</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.date)}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.createdBy?.fullName || "—"}</div>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
-                <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.createdAt)}</div>
+            <div className="px-5 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Amount</div>
+                  <div className="mt-1 font-semibold text-green-700 text-sm">{formatCurrency(viewRow?.amount || 0, currency)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Date Received</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.date)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Recorded By</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{viewRow?.createdBy?.fullName || "—"}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-500 text-xs">Date Recorded</div>
+                  <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(viewRow?.createdAt)}</div>
+                </div>
               </div>
               {viewRow?.notes ? (
-                <div className="col-span-2 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <div className="mt-4">
                   <div className="font-semibold text-gray-500 text-xs">Notes</div>
                   <div className="mt-1 text-gray-900 whitespace-pre-wrap text-sm">{viewRow.notes}</div>
                 </div>

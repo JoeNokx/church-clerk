@@ -5,7 +5,8 @@ const SCOPE_BASE = {
   cell: "/organisations/cells",
   department: "/organisations/departments",
   ministry: "/organisations/ministries",
-  program: "/program/programs"
+  program: "/program/programs",
+  outreach: "/outreach/events"
 };
 
 const baseFor = (scope, id) => `${SCOPE_BASE[scope]}/${id}/expenses`;

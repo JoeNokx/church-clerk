@@ -12,6 +12,8 @@ import BusinessExpense from "../../models/financeModel/businessModel/businessExp
 import BusinessIncome from "../../models/financeModel/businessModel/businessIncomeModel.js";
 import ProjectContribution from "../../models/financeModel/projectModel/projectContributionModel.js";
 import ProjectExpense from "../../models/financeModel/projectModel/projectExpenseModel.js";
+import GeneralExpense from "../../models/generalExpenseModel.js";
+import OutreachSupport from "../../models/outreachModel/outreachSupportModel.js";
 
 const MODEL_MAP = {
   "tithes:titheIndividual": TitheIndividual,
@@ -28,6 +30,8 @@ const MODEL_MAP = {
   "business:businessIncome": BusinessIncome,
   "programs:projectContribution": ProjectContribution,
   "programs:projectExpense": ProjectExpense,
+  "expenses:generalExpense": GeneralExpense,
+  "outreach:outreachSupport": OutreachSupport,
 };
 
 export function getModelForEntity(module, entityType) {

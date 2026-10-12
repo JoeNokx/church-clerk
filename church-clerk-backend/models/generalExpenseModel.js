@@ -50,6 +50,7 @@ const generalExpenseSchema = new mongoose.Schema(
     department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
     ministry: { type: mongoose.Schema.Types.ObjectId, ref: "Ministry" },
     event: { type: mongoose.Schema.Types.ObjectId, ref: "Program" },
+    outreach: { type: mongoose.Schema.Types.ObjectId, ref: "OutreachEvent" },
     receipt: {
       url: { type: String },
       publicId: { type: String },

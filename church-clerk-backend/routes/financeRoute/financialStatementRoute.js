@@ -4,7 +4,8 @@ import {
   getAnnualFinancialStatement,
   getMonthlyFinancialStatement,
   getQuarterlyFinancialStatement,
-  exportFinancialStatement
+  exportFinancialStatement,
+  getStatementBreakdownDetails
 } from "../../controller/financeController/financialStatementController.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
@@ -43,6 +44,16 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("financialStatement", "read"),
   getQuarterlyFinancialStatement
+);
+router.get(
+  "/financial-statements/details",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("financialStatement", "read"),
+  getStatementBreakdownDetails
 );
 router.get(
   "/financial-statements/export",
