@@ -1,6 +1,7 @@
 import OutreachFollowUp from "../../models/outreachModel/outreachFollowUpModel.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
 import Visitor from "../../models/visitorsModel.js";
+import Member from "../../models/memberModel.js";
 
 const FU_ALLOWED = ["scheduledDate", "followUpDate", "type", "status", "outcome", "notes", "nextFollowUpDate", "assignedTo", "conductedBy"];
 const FU_OBJECTID_FIELDS = new Set(["conductedBy"]);
@@ -57,12 +58,15 @@ export const getAllFollowUps = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, parseInt(req.query.limit) || 25);
     const skip = (page - 1) * limit;
-    const { status, eventId, assignedTo, assigned, dateFrom, dateTo } = req.query;
+    const { status, eventId, assignedTo, assigned, dateFrom, dateTo, subject } = req.query;
 
     const filter = { church: churchId };
     if (status) filter.status = status;
     if (eventId) filter.outreachEvent = eventId;
     if (assignedTo) filter.assignedTo = assignedTo;
+    if (subject === "prospect") filter.prospect = { $ne: null };
+    else if (subject === "visitor") filter.visitor = { $ne: null };
+    else if (subject === "member") filter.member = { $ne: null };
     // assignedTo is an array — legacy docs hold a scalar; both are covered
     if (assigned === "assigned") filter.assignedTo = { $ne: null, $not: { $size: 0 } };
     else if (assigned === "unassigned") filter.$or = [{ assignedTo: null }, { assignedTo: { $size: 0 } }];
@@ -184,9 +188,12 @@ export const getFollowUpsByProspect = async (req, res) => {
 export const createFollowUp = async (req, res) => {
   try {
     const { prospectId } = req.params;
-    const { outreachEvent, scheduledDate, type } = req.body;
+    const { outreachEvent, scheduledDate, type, assignedTo } = req.body;
     if (!outreachEvent || !scheduledDate) {
       return res.status(400).json({ message: "outreachEvent and scheduledDate are required" });
+    }
+    if (!Array.isArray(assignedTo) || !assignedTo.length) {
+      return res.status(400).json({ message: "assignedTo is required — assign at least one member" });
     }
 
     const prospect = await OutreachProspect.findOne({ _id: prospectId, church: req.activeChurch._id });
@@ -237,9 +244,12 @@ export const getFollowUpsByVisitor = async (req, res) => {
 export const createVisitorFollowUp = async (req, res) => {
   try {
     const visitorId = req.params.visitorId || req.params.id;
-    const { scheduledDate, outreachEvent } = req.body;
+    const { scheduledDate, outreachEvent, assignedTo } = req.body;
     if (!scheduledDate) {
       return res.status(400).json({ message: "scheduledDate is required" });
+    }
+    if (!Array.isArray(assignedTo) || !assignedTo.length) {
+      return res.status(400).json({ message: "assignedTo is required — assign at least one member" });
     }
 
     const visitor = await Visitor.findOne({ _id: visitorId, church: req.activeChurch._id });
@@ -264,9 +274,44 @@ export const createVisitorFollowUp = async (req, res) => {
   }
 };
 
+// ── Create follow-up for a member ─────────────────────────────────
+// Members get followed up too (sick visits, absentee check-ins…) — same
+// engine, subject = member, no outreach event needed.
+export const createMemberFollowUp = async (req, res) => {
+  try {
+    const memberId = req.params.memberId;
+    const { scheduledDate, outreachEvent, assignedTo } = req.body;
+    if (!scheduledDate) {
+      return res.status(400).json({ message: "scheduledDate is required" });
+    }
+    if (!Array.isArray(assignedTo) || !assignedTo.length) {
+      return res.status(400).json({ message: "assignedTo is required — assign at least one member" });
+    }
+
+    const member = await Member.findOne({ _id: memberId, church: req.activeChurch._id }).select("_id");
+    if (!member) return res.status(404).json({ message: "Member not found" });
+
+    const payload = { church: req.activeChurch._id, member: memberId, createdBy: req.user._id };
+    if (outreachEvent) payload.outreachEvent = outreachEvent; // optional context
+    setAllowed(req.body, payload);
+    payload.status = payload.status || "pending";
+
+    const followUp = await OutreachFollowUp.create(payload);
+    await syncSubjectWorkers(followUp);
+
+    return res.status(201).json({ message: "Follow-up scheduled", data: followUp });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 // ── Update follow-up ──────────────────────────────────────────────
 export const updateFollowUp = async (req, res) => {
   try {
+    // assignees are required — an explicit empty array would strip them
+    if (req.body.assignedTo !== undefined && (!Array.isArray(req.body.assignedTo) || !req.body.assignedTo.length)) {
+      return res.status(400).json({ message: "assignedTo is required — assign at least one member" });
+    }
     const update = {};
     setAllowed(req.body, update);
 

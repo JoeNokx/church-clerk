@@ -1,11 +1,11 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../../permissions/permission.store.js";
 import {
-  getFollowUpsStats, getAllFollowUps, createFollowUp, updateFollowUp, deleteFollowUp,
-  getAllProspects, getOutreachEvents,
+  getFollowUpsStats, getAllFollowUps, createFollowUp, createMemberFollowUp, createVisitorFollowUp, updateFollowUp, deleteFollowUp,
+  getOutreachEvents,
 } from "../../services/outreach.api.js";
-import { MemberMultiPicker } from "../../../budgeting/components/EntityPicker.jsx";
-import { assigneeList, assigneeNames, assigneeChips } from "../../../../shared/utils/followUps.js";
+import EntityPicker, { MemberMultiPicker } from "../../../budgeting/components/EntityPicker.jsx";
+import { assigneeNames, assigneeChips } from "../../../../shared/utils/followUps.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
@@ -61,9 +61,24 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // "prospect" | "visitor" | "member" — who the follow-up targets (create mode only)
+  const [subjectType, setSubjectType] = useState("prospect");
+  const [memberId, setMemberId] = useState("");
+  const [memberName, setMemberName] = useState("");
+  const [visitorId, setVisitorId] = useState("");
+  const [visitorName, setVisitorName] = useState("");
+  const [prospectId, setProspectId] = useState("");
+  const [prospectName, setProspectName] = useState("");
 
   useEffect(() => {
     if (!open) return;
+    setSubjectType("prospect");
+    setMemberId("");
+    setMemberName("");
+    setVisitorId("");
+    setVisitorName("");
+    setProspectId("");
+    setProspectName("");
     if (mode === "edit" && initialData) {
       setForm({
         prospect: initialData.prospect?._id || initialData.prospect || "",
@@ -75,7 +90,16 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
         notes: initialData.notes || "",
         nextFollowUpDate: initialData.nextFollowUpDate ? initialData.nextFollowUpDate.slice(0, 10) : "",
       });
-    } else { setForm({ ...empty, ...defaultValues }); }
+    } else {
+      setForm({ ...empty, ...defaultValues });
+      // Pre-selected prospect (from prospect/event pages) — resolve the
+      // display name from the passed-in list so the picker shows it.
+      if (defaultValues?.prospect) {
+        setProspectId(defaultValues.prospect);
+        const p = (prospects || []).find((x) => String(x._id) === String(defaultValues.prospect));
+        if (p) setProspectName([p.firstName, p.lastName].filter(Boolean).join(" "));
+      }
+    }
     setError("");
   }, [open, mode, initialData]);
 
@@ -83,15 +107,23 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
 
   const handleSubmit = async () => {
     if (!form.scheduledDate) { setError("Scheduled date is required."); return; }
+    if (mode === "create" && subjectType === "prospect" && !prospectId) { setError("Please select a person."); return; }
+    if (mode === "create" && subjectType === "member" && !memberId) { setError("Please select a member."); return; }
+    if (mode === "create" && subjectType === "visitor" && !visitorId) { setError("Please select a visitor."); return; }
+    if (!form.assignedTo.length) { setError("Please assign at least one member."); return; }
     setSaving(true); setError("");
     const payload = { ...form, assignedTo: form.assignedTo.map((m) => m._id) };
-    if (!payload.outreachEvent) delete payload.outreachEvent;
+    delete payload.prospect;
+    if (!payload.outreachEvent || subjectType !== "prospect") delete payload.outreachEvent;
     try {
       if (mode === "edit") {
         await updateFollowUp(initialData._id, payload);
+      } else if (subjectType === "member") {
+        await createMemberFollowUp(memberId, payload);
+      } else if (subjectType === "visitor") {
+        await createVisitorFollowUp(visitorId, payload);
       } else {
-        if (!form.prospect) { setError("Please select a person."); setSaving(false); return; }
-        await createFollowUp(form.prospect, payload);
+        await createFollowUp(prospectId, payload);
       }
       onSaved?.();
     } catch (err) {
@@ -113,19 +145,58 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
           {mode === "create" ? (
             <>
               <div>
-                <label className={LBL}>Person <span className="text-red-500">*</span></label>
-                <select value={form.prospect} onChange={(e) => set("prospect", e.target.value)} className={SEL}>
-                  <option value="">Select person…</option>
-                  {prospects.map((p) => <option key={p._id} value={p._id}>{p.firstName} {p.lastName}{p.phone ? ` · ${p.phone}` : ""}</option>)}
-                </select>
+                <label className={LBL}>Who is this follow-up for?</label>
+                <div className="mt-1 grid grid-cols-3 gap-2">
+                  {[
+                    { key: "prospect", label: "Prospect" },
+                    { key: "visitor", label: "Visitor" },
+                    { key: "member", label: "Member" },
+                  ].map((o) => (
+                    <label key={o.key} className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${subjectType === o.key ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                      <input type="radio" name="fuSubjectType" checked={subjectType === o.key} onChange={() => { setSubjectType(o.key); set("prospect", ""); setProspectId(""); setProspectName(""); setMemberId(""); setMemberName(""); setVisitorId(""); setVisitorName(""); }} className="h-3.5 w-3.5 accent-blue-600" />
+                      <span className="text-sm font-medium text-gray-700">{o.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-              <div>
-                <label className={LBL}>Outreach Event <span className="text-red-500">*</span></label>
-                <select value={form.outreachEvent} onChange={(e) => set("outreachEvent", e.target.value)} className={SEL}>
-                  <option value="">Select event…</option>
-                  {events.map((ev) => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-                </select>
-              </div>
+
+              {subjectType === "prospect" ? (
+                <>
+                  <div>
+                    <label className={LBL}>Person <span className="text-red-500">*</span></label>
+                    <EntityPicker
+                      entityType="prospect"
+                      value={prospectName ? { entityName: prospectName } : null}
+                      onChange={(id, name) => { setProspectId(id || ""); setProspectName(name || ""); }}
+                    />
+                  </div>
+                  <div>
+                    <label className={LBL}>Outreach Event <span className="text-red-500">*</span></label>
+                    <select value={form.outreachEvent} onChange={(e) => set("outreachEvent", e.target.value)} className={SEL}>
+                      <option value="">Select event…</option>
+                      {events.map((ev) => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
+                    </select>
+                  </div>
+                </>
+              ) : subjectType === "visitor" ? (
+                <div>
+                  <label className={LBL}>Visitor <span className="text-red-500">*</span></label>
+                  <EntityPicker
+                    entityType="visitor"
+                    value={visitorName ? { entityName: visitorName } : null}
+                    onChange={(id, name) => { setVisitorId(id || ""); setVisitorName(name || ""); }}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className={LBL}>Member <span className="text-red-500">*</span></label>
+                  <EntityPicker
+                    entityType="member"
+                    value={memberName ? { entityName: memberName } : null}
+                    onChange={(id, name) => { setMemberId(id || ""); setMemberName(name || ""); }}
+                  />
+                </div>
+              )}
             </>
           ) : null}
           <div className="grid grid-cols-2 gap-3">
@@ -170,7 +241,7 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
             <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} placeholder="What happened during this follow-up?" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
           <div>
-            <label className={LBL}>Assigned To</label>
+            <label className={LBL}>Assigned To <span className="text-red-500">*</span></label>
             <MemberMultiPicker selected={form.assignedTo} onChange={(v) => set("assignedTo", v)} />
           </div>
           {error ? <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{error}</div> : null}
@@ -320,14 +391,13 @@ export default function FollowUpsTab({ setHeaderAction }) {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("today"); // "today" | "overdue" | "upcoming" | "all"
   const [filterStatus, setFilterStatus] = useState("");
-  const [filterAssigned, setFilterAssigned] = useState(""); // "" | "assigned" | "unassigned"
+  const [filterSubject, setFilterSubject] = useState(""); // "" | "prospect" | "visitor" | "member"
   const [filterSearch, setFilterSearch] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [clientPage, setClientPage] = useState(1);
   const [clientPageSize, setClientPageSize] = useState(20);
 
-  const [prospects, setProspects] = useState([]);
   const [events, setEvents] = useState([]);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -344,18 +414,17 @@ export default function FollowUpsTab({ setHeaderAction }) {
   const fetchFollowUps = useCallback(async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
-      const params = { page, limit: fuLimit, status: filterStatus || undefined, search: filterSearch || undefined, dateFrom: filterDateFrom || undefined, dateTo: filterDateTo || undefined, assigned: filterAssigned || undefined, ...overrides };
+      const params = { page, limit: fuLimit, status: filterStatus || undefined, search: filterSearch || undefined, dateFrom: filterDateFrom || undefined, dateTo: filterDateTo || undefined, subject: filterSubject || undefined, ...overrides };
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const res = await getAllFollowUps(params);
       setFollowUps(res.data?.data || []);
       setPagination(res.data?.pagination || { page: 1, total: 0, pages: 1 });
     } catch { setFollowUps([]); } finally { setLoading(false); }
-  }, [filterStatus, filterSearch, filterDateFrom, filterDateTo, filterAssigned, fuLimit]);
+  }, [filterStatus, filterSearch, filterDateFrom, filterDateTo, filterSubject, fuLimit]);
 
   useEffect(() => {
     loadStats();
     fetchFollowUps();
-    getAllProspects({ limit: 100 }).then((r) => setProspects(r.data?.data || [])).catch(() => {});
     getOutreachEvents({ limit: 100 }).then((r) => setEvents(r.data?.data || [])).catch(() => {});
   }, []);
 
@@ -391,10 +460,12 @@ export default function FollowUpsTab({ setHeaderAction }) {
     if (filterStatus) {
       list = list.filter((fu) => fu.status === filterStatus);
     }
-    if (filterAssigned === "assigned") {
-      list = list.filter((fu) => assigneeList(fu).length > 0);
-    } else if (filterAssigned === "unassigned") {
-      list = list.filter((fu) => !assigneeList(fu).length);
+    if (filterSubject) {
+      list = list.filter((fu) =>
+        (filterSubject === "prospect" && fu.prospect) ||
+        (filterSubject === "visitor" && fu.visitor) ||
+        (filterSubject === "member" && fu.member)
+      );
     }
     if (filterDateFrom || filterDateTo) {
       list = list.filter((fu) => {
@@ -406,7 +477,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
       });
     }
     return list;
-  }, [view, rawItems, filterSearch, filterStatus, filterAssigned, filterDateFrom, filterDateTo]);
+  }, [view, rawItems, filterSearch, filterStatus, filterSubject, filterDateFrom, filterDateTo]);
   const overdueItems = filteredStatsItems;
 
   // Client-side pagination for today/overdue/upcoming views
@@ -479,13 +550,14 @@ export default function FollowUpsTab({ setHeaderAction }) {
                   ],
                 },
                 {
-                  key: "assigned",
-                  value: filterAssigned,
-                  onChange: (v) => { setFilterAssigned(v); setClientPage(1); fetchFollowUps(1, { assigned: v || undefined }); },
-                  placeholder: "All",
+                  key: "subject",
+                  value: filterSubject,
+                  onChange: (v) => { setFilterSubject(v); setClientPage(1); fetchFollowUps(1, { subject: v || undefined }); },
+                  placeholder: "All People",
                   options: [
-                    { label: "Assigned", value: "assigned" },
-                    { label: "Unassigned", value: "unassigned" },
+                    { label: "Prospects", value: "prospect" },
+                    { label: "Visitors", value: "visitor" },
+                    { label: "Members", value: "member" },
                   ],
                 },
               ]}
@@ -519,24 +591,25 @@ export default function FollowUpsTab({ setHeaderAction }) {
                   ],
                 },
                 {
-                  key: "assigned",
-                  label: "Assignment",
-                  value: filterAssigned,
+                  key: "subject",
+                  label: "Person Type",
+                  value: filterSubject,
                   defaultValue: "",
                   options: [
-                    { label: "All", value: "" },
-                    { label: "Assigned", value: "assigned" },
-                    { label: "Unassigned", value: "unassigned" },
+                    { label: "All People", value: "" },
+                    { label: "Prospects", value: "prospect" },
+                    { label: "Visitors", value: "visitor" },
+                    { label: "Members", value: "member" },
                   ],
                 },
               ]}
               onApply={(pending) => {
                 const v = pending.status || "";
-                const a = pending.assigned || "";
+                const a = pending.subject || "";
                 setFilterStatus(v);
-                setFilterAssigned(a);
+                setFilterSubject(a);
                 setClientPage(1);
-                fetchFollowUps(1, { status: v || undefined, assigned: a || undefined });
+                fetchFollowUps(1, { status: v || undefined, subject: a || undefined });
               }}
             />
         </div>
@@ -562,16 +635,16 @@ export default function FollowUpsTab({ setHeaderAction }) {
         ) : overdueItems.length === 0 ? (
           <EmptyState
             compact
-            illustration={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo ? "search" : "followUps"}
-            title={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo
+            illustration={filterSearch || filterStatus || filterSubject || filterDateFrom || filterDateTo ? "search" : "followUps"}
+            title={filterSearch || filterStatus || filterSubject || filterDateFrom || filterDateTo
               ? "No follow-ups found"
               : view === "today" ? "No follow-ups today" : view === "overdue" ? "No overdue follow-ups" : view === "upcoming" ? "No upcoming follow-ups" : "No follow-ups yet"}
-            description={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo
+            description={filterSearch || filterStatus || filterSubject || filterDateFrom || filterDateTo
               ? "We couldn't find any follow-ups matching your filters."
-              : view === "overdue" ? "You're all caught up." : "Schedule follow-ups to stay connected with prospects."}
-            actionLabel={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo ? "Clear Filters" : null}
-            onAction={filterSearch || filterStatus || filterAssigned || filterDateFrom || filterDateTo
-              ? () => { setFilterSearch(""); setFilterStatus(""); setFilterAssigned(""); setFilterDateFrom(""); setFilterDateTo(""); }
+              : view === "overdue" ? "You're all caught up." : "Schedule follow-ups to stay connected with people."}
+            actionLabel={filterSearch || filterStatus || filterSubject || filterDateFrom || filterDateTo ? "Clear Filters" : null}
+            onAction={filterSearch || filterStatus || filterSubject || filterDateFrom || filterDateTo
+              ? () => { setFilterSearch(""); setFilterStatus(""); setFilterSubject(""); setFilterDateFrom(""); setFilterDateTo(""); }
               : undefined}
           />
         ) : (
@@ -579,7 +652,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
             <table className="min-w-full">
               <thead className="bg-slate-100">
                 <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
-                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Prospect</th>
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Assigned To</th>
@@ -617,7 +690,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
             onLimitChange={(n) => { setFuLimit(n); fetchFollowUps(1, { limit: n }); }}
             onPageChange={(p) => fetchFollowUps(p)}
             itemName="follow-ups"
-            filtered={Boolean(filterStatus || filterAssigned || String(filterSearch || "").trim() || filterDateFrom || filterDateTo)}
+            filtered={Boolean(filterStatus || filterSubject || String(filterSearch || "").trim() || filterDateFrom || filterDateTo)}
           />
         ) : null}
 
@@ -635,14 +708,14 @@ export default function FollowUpsTab({ setHeaderAction }) {
             onLimitChange={(n) => { setClientPageSize(n); setClientPage(1); }}
             onPageChange={setClientPage}
             itemName="follow-ups"
-            filtered={Boolean(filterStatus || filterAssigned || String(filterSearch || "").trim() || filterDateFrom || filterDateTo)}
+            filtered={Boolean(filterStatus || filterSubject || String(filterSearch || "").trim() || filterDateFrom || filterDateTo)}
           />
         ) : null}
       </div>
 
       <FollowUpFormModal
         open={formOpen} mode={formMode} initialData={editingFU}
-        prospects={prospects} events={events}
+        events={events}
         onClose={() => setFormOpen(false)}
         onSaved={() => { setFormOpen(false); loadStats(); fetchFollowUps(pagination.page); }}
       />

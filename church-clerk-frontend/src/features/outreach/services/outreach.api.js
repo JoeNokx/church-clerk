@@ -41,6 +41,10 @@ export const getFollowUpsByProspect = (prospectId) =>
   http.get(`${B}/prospects/${prospectId}/follow-ups`);
 export const createFollowUp = (prospectId, data) =>
   http.post(`${B}/prospects/${prospectId}/follow-ups`, data);
+export const createMemberFollowUp = (memberId, data) =>
+  http.post(`${B}/follow-ups/members/${memberId}`, data);
+export const createVisitorFollowUp = (visitorId, data) =>
+  http.post(`${B}/follow-ups/visitors/${visitorId}`, data);
 export const updateFollowUp = (followUpId, data) =>
   http.put(`${B}/follow-ups/${followUpId}`, data);
 export const deleteFollowUp = (followUpId) =>

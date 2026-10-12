@@ -73,6 +73,7 @@ export function VisitorFollowUpForm({ visitor, followUp = null, onClose, onSaved
 
   const handleSubmit = async () => {
     if (!form.scheduledDate) { setFormError("Scheduled date is required."); return; }
+    if (!form.assignedTo.length) { setFormError("Please assign at least one member."); return; }
     setSaving(true);
     setFormError("");
     const payload = {
@@ -132,7 +133,7 @@ export function VisitorFollowUpForm({ visitor, followUp = null, onClose, onSaved
             </div>
           </div>
           <div>
-            <label className={LBL}>Assigned To</label>
+            <label className={LBL}>Assigned To <span className="text-red-500">*</span></label>
             <MemberMultiPicker selected={form.assignedTo} onChange={(v) => set("assignedTo", v)} />
           </div>
           <div>

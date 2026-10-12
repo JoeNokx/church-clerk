@@ -1,6 +1,6 @@
 /**
  * EntityPicker — searchable async dropdown for a given entity type.
- * Supported types: "branch" | "cell" | "group" | "department" | "ministry" | "program" | "outreach" | "member"
+ * Supported types: "branch" | "cell" | "group" | "department" | "ministry" | "program" | "outreach" | "member" | "visitor" | "prospect"
  * "member" uses MemberMultiPicker (chips + search) since items can target several members.
  */
 
@@ -10,9 +10,10 @@ import { getGroups } from "../../group/services/group.api.js";
 import { getDepartments } from "../../department/services/department.api.js";
 import { getMinistries } from "../../ministry/services/ministry.api.js";
 import { getPrograms } from "../../program/services/program.api.js";
-import { getOutreachEvents } from "../../outreach/services/outreach.api.js";
+import { getOutreachEvents, getAllProspects } from "../../outreach/services/outreach.api.js";
 import { getMyBranches } from "../../church/services/church.api.js";
 import { getMembers } from "../../member/services/member.api.js";
+import { getVisitors } from "../../attendance/services/attendance.api.js";
 
 // Normalise whatever the API returns into [{ _id, name }]
 function normaliseList(res, type) {
@@ -50,6 +51,17 @@ function normaliseList(res, type) {
       name: m.name || [m.firstName, m.lastName].filter(Boolean).join(" ")
     }));
   }
+  if (type === "visitor") {
+    arr = d.visitors || d.data || (Array.isArray(d) ? d : []);
+    return arr.map((v) => ({ _id: v._id, name: v.fullName }));
+  }
+  if (type === "prospect") {
+    arr = d.prospects || d.data || (Array.isArray(d) ? d : []);
+    return arr.map((p) => ({
+      _id: p._id,
+      name: `${[p.firstName, p.lastName].filter(Boolean).join(" ")}${p.phone ? ` · ${p.phone}` : ""}`
+    }));
+  }
   return [];
 }
 
@@ -66,6 +78,8 @@ async function fetchByType(type, search) {
       case "event":      return normaliseList(await getPrograms({ ...q, limit: 30 }), "program");
       case "outreach":   return normaliseList(await getOutreachEvents({ ...q, limit: 30 }), "outreach");
       case "member":     return normaliseList(await getMembers({ ...q, limit: 30 }), "member");
+      case "visitor":    return normaliseList(await getVisitors({ ...q, limit: 30 }), "visitor");
+      case "prospect":   return normaliseList(await getAllProspects({ ...q, limit: 30 }), "prospect");
       default:           return [];
     }
   } catch {
@@ -128,13 +142,17 @@ function EntityPicker({ entityType, value, onChange, className = "" }) {
     <div ref={containerRef} className={`relative ${className}`}>
       <input
         value={search}
-        onChange={(e) => { setSearch(e.target.value); setOpen(true); if (!e.target.value) onChange(null, ""); }}
-        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          const v = e.target.value;
+          setSearch(v);
+          setOpen(!!v.trim());
+          if (!v) onChange(null, "");
+        }}
         placeholder={`Search ${entityType}…`}
         className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 md:h-12"
         autoComplete="off"
       />
-      {open && (
+      {open && search.trim() ? (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
           {loading ? (
             <div className="px-3 py-2.5 flex items-center justify-center">
@@ -163,7 +181,7 @@ function EntityPicker({ entityType, value, onChange, className = "" }) {
             <div className="px-3 py-2.5 text-xs text-gray-400">No results found</div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -208,6 +226,7 @@ export function MemberMultiPicker({ selected = [], onChange, className = "" }) {
   const add = (m) => {
     onChange([...selected, m]);
     setSearch("");
+    setOpen(false);
   };
   const remove = (id) => {
     onChange(selected.filter((m) => String(m._id) !== String(id)));
@@ -233,13 +252,16 @@ export function MemberMultiPicker({ selected = [], onChange, className = "" }) {
       ) : null}
       <input
         value={search}
-        onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          const v = e.target.value;
+          setSearch(v);
+          setOpen(!!v.trim());
+        }}
         placeholder="Search members to add…"
         className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 md:h-12"
         autoComplete="off"
       />
-      {open && (
+      {open && search.trim() ? (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
           {loading ? (
             <div className="px-3 py-2.5 flex items-center justify-center">
@@ -266,7 +288,7 @@ export function MemberMultiPicker({ selected = [], onChange, className = "" }) {
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

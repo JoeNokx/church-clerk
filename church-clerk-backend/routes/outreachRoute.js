@@ -23,7 +23,7 @@ import {
 
 import {
   getAllFollowUps, getFollowUpsStats, getFollowUpsByEvent,
-  getFollowUpsByProspect, createFollowUp, updateFollowUp, deleteFollowUp,
+  getFollowUpsByProspect, createFollowUp, createMemberFollowUp, createVisitorFollowUp, updateFollowUp, deleteFollowUp,
 } from "../controller/outreachController/outreachFollowUpController.js";
 
 import {
@@ -88,6 +88,10 @@ router.get("/follow-ups", ...R, getAllFollowUps);
 router.get("/events/:eventId/follow-ups", ...R, getFollowUpsByEvent);
 router.get("/prospects/:prospectId/follow-ups", ...R, getFollowUpsByProspect);
 router.post("/prospects/:prospectId/follow-ups", ...W, createFollowUp);
+router.post("/follow-ups/members/:memberId", ...W, createMemberFollowUp);
+// Same handler as the attendance route — creating a visitor follow-up from
+// the outreach tab is an outreach action, not a visitors-register action.
+router.post("/follow-ups/visitors/:visitorId", ...W, createVisitorFollowUp);
 router.put("/follow-ups/:followUpId", ...U, updateFollowUp);
 router.delete("/follow-ups/:followUpId", ...D, deleteFollowUp);
 
