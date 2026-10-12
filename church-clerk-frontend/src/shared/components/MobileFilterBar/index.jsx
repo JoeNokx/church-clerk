@@ -404,17 +404,27 @@ export default function MobileFilterBar({
               <label className="mb-1.5 block text-xs font-semibold text-gray-500">
                 {f.label}
               </label>
-              <select
-                value={pendingFilters[f.key] ?? f.defaultValue ?? ""}
-                onChange={(e) => updatePendingFilter(f.key, e.target.value)}
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-              >
-                {(f.options || []).map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              {f.type === "number" ? (
+                <input
+                  type="number"
+                  value={pendingFilters[f.key] ?? f.defaultValue ?? ""}
+                  placeholder={f.placeholder || ""}
+                  onChange={(e) => updatePendingFilter(f.key, e.target.value)}
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                />
+              ) : (
+                <select
+                  value={pendingFilters[f.key] ?? f.defaultValue ?? ""}
+                  onChange={(e) => updatePendingFilter(f.key, e.target.value)}
+                  className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                >
+                  {(f.options || []).map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           ))}
           <div className="pb-2">

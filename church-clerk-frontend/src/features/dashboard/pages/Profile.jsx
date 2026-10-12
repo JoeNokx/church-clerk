@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Spinner from "../../../shared/components/Spinner.jsx";
 import { getMyProfile } from "../../auth/services/auth.api.js";
 
 function Profile() {
@@ -28,7 +27,17 @@ function Profile() {
     loadUser();
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center"><Spinner className="text-gray-400" /></div>;
+  if (loading) return (
+    <div className="max-w-md mx-auto p-4 bg-white rounded shadow animate-pulse">
+      <div className="h-8 w-36 rounded bg-gray-200 mb-4" />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div key={i} className="mb-3 flex items-center gap-3">
+          <div className="h-4 w-24 rounded bg-gray-200" />
+          <div className="h-4 w-40 rounded bg-gray-100" />
+        </div>
+      ))}
+    </div>
+  );
   if (error) return <p className="text-red-500">{error}</p>;
   if (!user) return <p>User not found.</p>;
 

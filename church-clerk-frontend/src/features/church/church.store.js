@@ -72,13 +72,19 @@ export function ChurchProvider({ children }) {
       const res = await http.get("/user/me");
       const next = res?.data?.data?.activeChurch;
 
-      // Entering branch monitoring: HQ → Branch
-      if (next?.type === "Branch" && currentChurch?.type === "Headquarters") {
+      // Entering branch monitoring: HQ switching context to a DIFFERENT branch church.
+      // Guard: next._id !== currentChurch._id prevents triggering monitoring mode when
+      // the user's own church changes type (e.g. HQ → Branch profile update).
+      if (
+        next?.type === "Branch" &&
+        currentChurch?.type === "Headquarters" &&
+        String(next?._id) !== String(currentChurch?._id)
+      ) {
         setHqChurch({ ...currentChurch });
         setBranchChurch(next);
       }
-      // Exiting monitoring: back to HQ
-      else if (next?.type === "Headquarters") {
+      // Exiting monitoring: back to HQ, or own church type changed to HQ/Independent
+      else if (next?.type !== "Branch") {
         setHqChurch(null);
         setBranchChurch(null);
       }
@@ -106,6 +112,15 @@ export function ChurchProvider({ children }) {
     setActiveChurchState(branchChurch);
   };
 
+  // Exit branch monitoring — instant switch back to HQ + clear monitoring state
+  const exitBranchMonitoring = () => {
+    if (!hqChurch?._id) return;
+    localStorage.setItem("activeChurch", hqChurch._id);
+    setActiveChurchState(hqChurch);
+    setHqChurch(null);
+    setBranchChurch(null);
+  };
+
   // True when HQ is actively monitoring a branch (both church snapshots are stored)
   const isMonitoringBranch = !!(hqChurch?._id && branchChurch?._id);
 
@@ -119,6 +134,7 @@ export function ChurchProvider({ children }) {
         switchChurch,
         quickSwitchToHq,
         quickSwitchToBranch,
+        exitBranchMonitoring,
         hqChurch,
         branchChurch,
         isMonitoringBranch

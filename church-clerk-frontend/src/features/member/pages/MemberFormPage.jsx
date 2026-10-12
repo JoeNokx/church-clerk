@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
+import ChurchContext from "../../church/church.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember, createMember as apiCreateMember, uploadMemberPhoto } from "../services/member.api.js";
-import Skeleton from "react-loading-skeleton";
 import { getCells, createCell as apiCreateCell } from "../../cell/services/cell.api.js";
 import { getDepartments, createDepartment as apiCreateDepartment } from "../../department/services/department.api.js";
 import { getGroups, createGroup as apiCreateGroup } from "../../group/services/group.api.js";
@@ -80,17 +80,30 @@ function MemberFormPageInner() {
   const navigate = useNavigate();
   const { toPage } = useDashboardNavigator();
   const { isLocked, showLockModal } = useSubscriptionLock();
+  const churchCtx = useContext(ChurchContext);
+  const branchViewOnly = Boolean(
+    churchCtx?.isMonitoringBranch ||
+    (churchCtx?.activeChurch?._id && churchCtx?.activeChurch?.canEdit === false)
+  );
 
-  // Mount guard: if the account is locked and the user landed here directly
-  // (e.g. via URL or browser back button), show the lock modal and bounce back.
+  // Mount guard: if the account is locked or the HQ admin is monitoring a
+  // branch (read-only) and landed here directly (e.g. via URL or browser back
+  // button), show the lock modal and bounce back.
   useEffect(() => {
-    if (isLocked) {
-      showLockModal();
+    if (isLocked || branchViewOnly) {
+      if (branchViewOnly) {
+        showLockModal(
+          "You are viewing this branch from your headquarters account. Branch data is read-only — return to your headquarters context to make changes.",
+          { payButton: false }
+        );
+      } else {
+        showLockModal();
+      }
       // Navigate back to members list after showing the modal
       const t = setTimeout(() => toPage("members"), 50);
       return () => clearTimeout(t);
     }
-  }, [isLocked, showLockModal, toPage]);
+  }, [isLocked, branchViewOnly, showLockModal, toPage]);
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const memberId = params.get("id");

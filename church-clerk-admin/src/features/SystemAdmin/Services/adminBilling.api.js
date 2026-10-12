@@ -20,8 +20,8 @@ export const adminDeletePlan = async (id) => {
   return await http.delete(`/admin/billing/plans/${id}`);
 };
 
-export const adminGetSubscriptions = async () => {
-  return await http.get("/admin/billing/subscriptions");
+export const adminGetSubscriptions = async (params) => {
+  return await http.get("/admin/billing/subscriptions", { params });
 };
 
 export const adminUpdateSubscription = async (id, payload) => {

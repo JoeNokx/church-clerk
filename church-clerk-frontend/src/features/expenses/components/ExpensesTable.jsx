@@ -1,5 +1,4 @@
 import { useContext, useMemo, useState } from "react";
-import Skeleton from "react-loading-skeleton";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import ExpensesContext from "../expenses.store.js";

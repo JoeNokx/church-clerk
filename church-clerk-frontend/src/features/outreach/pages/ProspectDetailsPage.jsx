@@ -5,6 +5,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import BackButton from "../../../shared/components/BackButton/index.jsx";
 import { PersonFormModal, ConvertModal } from "../components/tabs/PeopleReachedTab.jsx";
 import { FollowUpFormModal } from "../components/tabs/FollowUpsTab.jsx";
+import { assigneeNames } from "../../../shared/utils/followUps.js";
 import {
   getProspectById,
   deleteProspectDirect,
@@ -220,7 +221,9 @@ export default function ProspectDetailsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {canWrite ? (
             <button onClick={() => guarded(() => setConvertOpen(true))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 whitespace-nowrap">Connect</button>
+            ) : null}
             {canWrite ? (
               <button onClick={() => guarded(() => setEditOpen(true))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">Edit</button>
             ) : null}
@@ -378,9 +381,9 @@ export default function ProspectDetailsPage() {
                     <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
                       <Badge label={FU_STATUS_LABELS[fu.status] || fu.status || "Not Specified"} className={FU_STATUS_STYLES[fu.status] || "bg-gray-100 text-gray-500"} />
                     </td>
-                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "Not Specified"}>
-                      <span className="sm:hidden">{truncateMobileName(fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "Not Specified")}</span>
-                      <span className="hidden sm:inline">{truncateDesktopName(fu.assignedTo ? `${fu.assignedTo.firstName || ""} ${fu.assignedTo.lastName || ""}`.trim() : "Not Specified")}</span>
+                    <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={assigneeNames(fu) || "Not Specified"}>
+                      <span className="sm:hidden">{truncateMobileName(assigneeNames(fu) || "Not Specified")}</span>
+                      <span className="hidden sm:inline">{truncateDesktopName(assigneeNames(fu) || "Not Specified")}</span>
                     </td>
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
@@ -436,7 +439,7 @@ export default function ProspectDetailsPage() {
               </div>
               <div>
                 <div className="font-semibold text-gray-500 text-xs">Assigned To</div>
-                <div className="mt-0.5 text-gray-800">{viewRow?.assignedTo ? `${viewRow.assignedTo?.firstName || ""} ${viewRow.assignedTo?.lastName || ""}`.trim() : "—"}</div>
+                <div className="mt-0.5 text-gray-800">{assigneeNames(viewRow) || "—"}</div>
               </div>
               <div>
                 <div className="font-semibold text-gray-500 text-xs">Notes</div>

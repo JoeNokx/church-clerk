@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getApprovals } from "../../governance/services/governance.api.js";
 
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../auth/useAuth.js";
 
@@ -47,7 +47,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   const { user } = useAuth();
 
-
+  const navigate = useNavigate();
 
   const churchCtx = useContext(ChurchContext);
 
@@ -69,16 +69,13 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   const isMonitoringBranch = churchCtx?.isMonitoringBranch || false;
 
-  // True when the user last clicked a branch-bar item (activeChurch = branch church)
-  const isInBranchContext =
-    isMonitoringBranch &&
-    !!(churchCtx?.branchChurch?._id &&
-      activeChurch?._id &&
-      String(activeChurch._id) === String(churchCtx.branchChurch._id));
+  const handleBackToHq = () => {
+    churchCtx?.exitBranchMonitoring?.();
+    onNavigate?.();
+    navigate("/dashboard");
+  };
 
   const planAllows = (moduleFlagKey) => {
-
-    if (isMonitoringBranch) return true;
 
     const modules = activeChurch?.modules;
 
@@ -127,15 +124,11 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
   const homeChurchId = typeof user?.church === "string" ? user.church : user?.church?._id;
 
+  // Only show HQ-specific nav when in HQ context (not when the sidebar is showing a branch)
   const showHeadquartersNav =
-
-    activeChurch?.type === "Headquarters" ||
-
-    (activeChurch?.type === "Branch" && homeChurchId && String(activeChurch?.parentChurch || "") === String(homeChurchId));
-
-  const isHqMonitoringBranch = showHeadquartersNav && activeChurch?.type === "Branch";
-
-
+    !isMonitoringBranch &&
+    (activeChurch?.type === "Headquarters" ||
+      (activeChurch?.type === "Branch" && homeChurchId && String(activeChurch?.parentChurch || "") === String(homeChurchId)));
 
   const showBranchesOverview = showHeadquartersNav && planAllows("Branches") && canRead("branches");
 
@@ -268,9 +261,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
 
 
-  // When viewing branch data, sidebar items must NOT appear active
   const itemClass = (key) =>
-    `${linkBase} ${page === key && !isInBranchContext ? linkActive : linkInactive}`;
+    `${linkBase} ${page === key ? linkActive : linkInactive}`;
 
   const toPage = (key) => {
 
@@ -294,23 +286,51 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
     <aside className="w-72 bg-slate-900 h-full flex flex-col">
 
-      <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-800 shrink-0">
-
-        <div className="h-8 w-8 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0">
-
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white">
-
-            <path d="M12 3L4 8V21H20V8L12 3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-
-            <path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-
-          </svg>
-
+      {isMonitoringBranch ? (
+        /* ── Branch mode header ───────────────────────────────────────────── */
+        <div className="shrink-0 border-b border-slate-800">
+          <button
+            type="button"
+            onClick={handleBackToHq}
+            className="flex w-full items-center gap-1.5 px-4 pt-2.5 pb-1 text-[11px] font-medium text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 shrink-0" stroke="currentColor" strokeWidth="2.5">
+              <path d="M10 4L6 8l4 4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Back to Headquarters
+          </button>
+          <div className="flex items-center gap-3 px-4 pb-3">
+            <div className="h-8 w-8 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M6 3v12"/>
+                <path d="M18 9a3 3 0 100-6 3 3 0 000 6z"/>
+                <path d="M6 21a3 3 0 100-6 3 3 0 000 6z"/>
+                <path d="M18 9a9 9 0 01-9 9"/>
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="truncate text-[13px] font-semibold text-slate-100 leading-tight">
+                {activeChurch?.name || "Branch"}
+                {activeChurch?.city ? `, ${activeChurch.city}` : ""}
+              </div>
+              <span className="mt-0.5 inline-flex items-center rounded-full border border-blue-700/60 bg-blue-900/50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-blue-300">
+                Branch
+              </span>
+            </div>
+          </div>
         </div>
-
-        <span className="font-semibold text-white text-[15px] tracking-tight">ChurchClerk</span>
-
-      </div>
+      ) : (
+        /* ── Normal ChurchClerk header ────────────────────────────────────── */
+        <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-800 shrink-0">
+          <div className="h-8 w-8 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white">
+              <path d="M12 3L4 8V21H20V8L12 3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+              <path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <span className="font-semibold text-white text-[15px] tracking-tight">ChurchClerk</span>
+        </div>
+      )}
 
 
 
@@ -638,7 +658,7 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
                 {((planAllows("Offerings") && canRead("offerings")) || (planAllows("SpecialFunds") && canRead("specialFunds"))) ? (() => {
 
-                  const isActive = !isInBranchContext && (page === "offering-funds" || page === "offerings" || page === "special-funds" || isOfferingPath);
+                  const isActive = page === "offering-funds" || page === "offerings" || page === "special-funds" || isOfferingPath;
 
                   const bothReadOnly = (!planAllows("Offerings") || !canRead("offerings") || isReadOnly("Offerings")) && (!planAllows("SpecialFunds") || !canRead("specialFunds") || isReadOnly("SpecialFunds"));
 

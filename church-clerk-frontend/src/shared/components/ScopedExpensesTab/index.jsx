@@ -6,6 +6,7 @@ import MobileFilterBar from "../MobileFilterBar/index.jsx";
 import TableKebabMenu from "../TableKebabMenu/index.jsx";
 import Pagination from "../Pagination/index.jsx";
 import EmptyState from "../EmptyState/index.jsx";
+import { SkeletonTableRows } from "../Skeleton/index.jsx";
 import Button from "../Button/index.jsx";
 import { formatMoney } from "../../utils/formatMoney.js";
 import { truncateMobileName, truncateDesktopName } from "../../utils/truncateTableText.js";
@@ -57,6 +58,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
   const guarded = useGuardedAction();
   const churchStore = useContext(ChurchContext);
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
+  const canEditChurch = churchStore?.activeChurch?._id ? churchStore?.activeChurch?.canEdit !== false : true;
 
   const [expenses, setExpenses] = useState([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 0, prevPage: null, nextPage: null });
@@ -221,6 +223,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
             <div className="font-semibold text-gray-900 text-sm">Expenses</div>
             <div className="text-gray-500 text-xs">Expense records for this {entityLabel}</div>
           </div>
+          {canEditChurch ? (
           <button
             type="button"
             onClick={() => guarded(openCreate)}
@@ -229,6 +232,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
             <span className="leading-none text-lg">+</span>
             Add Expense
           </button>
+          ) : null}
         </div>
 
         <FilterBar
@@ -249,6 +253,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
           dateTo={dateTo}
           onDateApply={(from, to) => { setDateFrom(from); setDateTo(to); fetchExpenses({ page: 1, dateFrom: from, dateTo: to }); }}
         >
+          {canEditChurch ? (
           <button
             type="button"
             onClick={() => guarded(openCreate)}
@@ -257,6 +262,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
             <span className="leading-none text-lg">+</span>
             Add Expense
           </button>
+          ) : null}
         </FilterBar>
         <MobileFilterBar
           searchValue={search}
@@ -282,13 +288,12 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
       {error ? <div className="p-4 text-red-700 md:p-6 lg:p-8 text-sm">{error}</div> : null}
 
       {loading ? (
-        <div className="p-4 space-y-3 animate-pulse md:p-6 lg:p-8">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center justify-between gap-3 py-1.5">
-              <div className="h-4 w-24 rounded bg-gray-200" />
-              <div className="h-4 w-16 rounded bg-gray-200" />
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <tbody className="divide-y divide-gray-200">
+              <SkeletonTableRows rows={5} widths={["w-28", "w-20", "w-16", "w-20", "w-24", "w-16", "w-10"]} cellClass="py-1.5 px-4 md:px-6" />
+            </tbody>
+          </table>
         </div>
       ) : expenses.length === 0 ? (
         <EmptyState
@@ -338,7 +343,7 @@ function ScopedExpensesTab({ scope, entityId, entityLabel = "record" }) {
                     <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => { setViewRow(row); setViewOpen(true); } },
-                        { label: "Edit", onClick: () => guarded(() => openEdit(row)) }
+                        canEditChurch && { label: "Edit", onClick: () => guarded(() => openEdit(row)) }
                       ]} />
                     </td>
                   </tr>

@@ -19,6 +19,8 @@ import GroupOffering from "../models/organisationModel/groupOfferingModel.js";
 import DepartmentOffering from "../models/organisationModel/departmentOfferingModel.js";
 import MinistryOffering from "../models/organisationModel/ministryOfferingModel.js";
 import PledgePayment from "../models/financeModel/pledgeModel/pledgePaymentModel.js";
+import OrganisationContribution from "../models/organisationModel/organisationContributionModel.js";
+import OutreachSupport from "../models/outreachModel/outreachSupportModel.js";
 import Income from "../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Expense from "../models/financeModel/incomeExpenseModel/expenseModel.js";
 import Budget from "../models/financeModel/budgetingModel.js";
@@ -335,6 +337,8 @@ const INCOME_SOURCES = [
   { Model: DepartmentOffering, dateField: "date", amountField: "amount" },
   { Model: MinistryOffering, dateField: "date", amountField: "amount" },
   { Model: PledgePayment, dateField: "paymentDate", amountField: "amount" },
+  { Model: OrganisationContribution, dateField: "date", amountField: "amount" },
+  { Model: OutreachSupport, dateField: "date", amountField: "amount" },
   { Model: Income, dateField: "dateReceived", amountField: "amount" }
 ];
 
@@ -805,8 +809,39 @@ function orderReportColumns(columns) {
   return [...head, ...tail];
 }
 
+// Audit/metadata and free-text keys are stripped from every generated report —
+// they clutter exports and aren't part of the report data.
+const REPORT_STRIPPED_KEYS = new Set([
+  "note",
+  "notes",
+  "description",
+  "recordedBy",
+  "createdBy",
+  "updatedBy",
+  "createdAt",
+  "updatedAt",
+  "recordedAt"
+]);
+
+function stripReportMeta(report) {
+  if (!report || typeof report !== "object") return report;
+  const drop = (cols) => (Array.isArray(cols) ? cols.filter((c) => !REPORT_STRIPPED_KEYS.has(c?.key)) : cols);
+  report.columns = drop(report.columns);
+  report.availableColumns = drop(report.availableColumns);
+  if (Array.isArray(report.rows)) {
+    report.rows = report.rows.map((row) => {
+      if (!row || typeof row !== "object") return row;
+      const next = { ...row };
+      REPORT_STRIPPED_KEYS.forEach((k) => delete next[k]);
+      return next;
+    });
+  }
+  return report;
+}
+
 async function buildModuleReport({ moduleKey, churchId, from, to, options }) {
   const report = await buildModuleReportBase({ moduleKey, churchId, from, to, options });
+  stripReportMeta(report);
   if (report?.columns) report.columns = orderReportColumns(report.columns);
   if (report?.availableColumns) report.availableColumns = orderReportColumns(report.availableColumns);
   return report;
@@ -1150,19 +1185,56 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
   }
 
   if (module === "expenses") {
+    const scope = normOpt(options?.scope) || "all";
+    const SCOPE_FIELDS = {
+      cell: { field: "cell", label: "Cell" },
+      group: { field: "group", label: "Group" },
+      department: { field: "department", label: "Department" },
+      ministry: { field: "ministry", label: "Ministry" },
+      program: { field: "event", label: "Program" },
+      outreach: { field: "outreach", label: "Outreach" }
+    };
     const match = { church: churchId, ...rangeMatch("date") };
+    if (scope === "general") {
+      match.cell = null;
+      match.group = null;
+      match.department = null;
+      match.ministry = null;
+      match.event = null;
+      match.outreach = null;
+    } else if (SCOPE_FIELDS[scope]) {
+      match[SCOPE_FIELDS[scope].field] = { $type: "objectId" };
+    }
+
     const rows = await GeneralExpenses.find(match)
-      .select("category amount description date paymentMethod referenceId createdBy createdAt updatedAt")
+      .select("category amount description date paymentMethod referenceId cell group department ministry event outreach createdBy createdAt updatedAt")
       .populate("createdBy", "fullName")
+      .populate("cell", "name")
+      .populate("group", "name")
+      .populate("department", "name")
+      .populate("ministry", "name")
+      .populate("event", "title")
+      .populate("outreach", "title")
       .sort({ date: -1 })
       .limit(2000)
       .lean();
+
+    const scopeOf = (r) => {
+      if (r?.cell) return `Cell: ${r.cell?.name || "—"}`;
+      if (r?.group) return `Group: ${r.group?.name || "—"}`;
+      if (r?.department) return `Department: ${r.department?.name || "—"}`;
+      if (r?.ministry) return `Ministry: ${r.ministry?.name || "—"}`;
+      if (r?.event) return `Program: ${r.event?.title || "—"}`;
+      if (r?.outreach) return `Outreach: ${r.outreach?.title || "—"}`;
+      return "General";
+    };
 
     const availableColumns = [
       { key: "referenceId", label: "Reference ID" },
       { key: "date", label: "Date" },
       { key: "category", label: "Category" },
       { key: "amount", label: "Amount" },
+      { key: "scope", label: "Scope" },
       { key: "paymentMethod", label: "Payment" },
       { key: "description", label: "Description" },
       { key: "recordedBy", label: "Recorded By" },
@@ -1170,8 +1242,12 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
       { key: "updatedAt", label: "Updated At" }
     ];
 
+    const scopeTitle = scope === "general" ? "General Expenses"
+      : SCOPE_FIELDS[scope] ? `${SCOPE_FIELDS[scope].label} Expenses`
+      : "Expenses";
+
     return {
-      title: "Expenses",
+      title: scopeTitle,
       columns: availableColumns,
       availableColumns,
       rows: rows.map((r) => ({
@@ -1179,6 +1255,7 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
         date: toDateStr(r?.date),
         category: r?.category || "—",
         amount: clampToNumber(r?.amount),
+        scope: scopeOf(r),
         paymentMethod: r?.paymentMethod || "—",
         description: r?.description || "—",
         recordedBy: userName(r?.createdBy),
@@ -1254,12 +1331,13 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
       .lean();
 
     const availableColumns = [
-      { key: "visitDate", label: "Visit Date" },
       { key: "fullName", label: "Name" },
       { key: "phoneNumber", label: "Phone" },
       { key: "email", label: "Email" },
       { key: "location", label: "Location" },
-      { key: "serviceType", label: "Service Type" },
+      { key: "firstVisitSession", label: "First Visit Session" },
+      { key: "lastVisitDate", label: "Last Visit Date" },
+      { key: "visits", label: "Visits" },
       { key: "invitedBy", label: "Invited By" },
       { key: "source", label: "Source" },
       { key: "status", label: "Status" },
@@ -1269,25 +1347,38 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
       { key: "updatedAt", label: "Updated At" }
     ];
 
+    // attendance is populated sorted desc — [0] is the latest session,
+    // [length-1] is the first session the visitor joined.
+    const sessionLabel = (s) => {
+      if (!s) return "—";
+      const d = toDateStr(s?.date);
+      const t = s?.serviceType || "";
+      return t ? (d !== "—" ? `${t} · ${d}` : t) : d;
+    };
+
     return {
       title: "Visitors",
       columns: availableColumns,
       availableColumns,
-      rows: rows.map((r) => ({
-        visitDate: toDateStr(r?.attendance?.[0]?.date || r?.createdAt),
-        fullName: r?.fullName || "—",
-        phoneNumber: r?.phoneNumber || "—",
-        email: r?.email || "—",
-        location: r?.location || "—",
-        serviceType: r?.attendance?.[0]?.serviceType || "—",
-        invitedBy: r?.invitedBy || "—",
-        source: r?.source || "—",
-        status: r?.status || "—",
-        note: r?.note || "—",
-        recordedBy: userName(r?.createdBy),
-        createdAt: toDateTimeStr(r?.createdAt),
-        updatedAt: toDateTimeStr(r?.updatedAt)
-      }))
+      rows: rows.map((r) => {
+        const att = Array.isArray(r?.attendance) ? r.attendance : [];
+        return {
+          fullName: r?.fullName || "—",
+          phoneNumber: r?.phoneNumber || "—",
+          email: r?.email || "—",
+          location: r?.location || "—",
+          firstVisitSession: sessionLabel(att[att.length - 1]),
+          lastVisitDate: toDateStr(att[0]?.date || r?.createdAt),
+          visits: att.length,
+          invitedBy: r?.invitedBy || "—",
+          source: r?.source || "—",
+          status: r?.status || "—",
+          note: r?.note || "—",
+          recordedBy: userName(r?.createdBy),
+          createdAt: toDateTimeStr(r?.createdAt),
+          updatedAt: toDateTimeStr(r?.updatedAt)
+        };
+      })
     };
   }
 
@@ -1310,6 +1401,61 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
       return f || t || "—";
     };
 
+    // Mirrors budgetingController's source labels — income items use their
+    // category as the source, expense items use one of these keys.
+    const SOURCE_LABELS = {
+      general: "General Expenses",
+      program: "Program Expenses",
+      cell: "Cell Expenses",
+      group: "Group Expenses",
+      department: "Department Expenses",
+      ministry: "Ministry Expenses",
+      organisation: "Organisation Expenses",
+      outreach: "Outreach Expenses",
+      welfare: "Welfare Disbursements",
+      project: "Fundraising Expenses",
+      business: "Business Expenses",
+      other: "Other Expenses"
+    };
+    const sourceLabel = (it) => {
+      if (!it?.source) return it?.type === "expense" ? "All expense sources" : "—";
+      return SOURCE_LABELS[it.source] || it.source;
+    };
+
+    // Member allocations store ids in allocatedTo.entityIds (no ref set on
+    // the schema path) — resolve them to names once for the whole result set.
+    const memberIds = new Set();
+    (budgets || []).forEach((b) => {
+      (Array.isArray(b?.items) ? b.items : []).forEach((it) => {
+        if (it?.allocatedTo?.entityType !== "member") return;
+        (Array.isArray(it.allocatedTo.entityIds) ? it.allocatedTo.entityIds : [])
+          .concat(it.allocatedTo.entityId ? [it.allocatedTo.entityId] : [])
+          .forEach((id) => id && memberIds.add(String(id)));
+      });
+    });
+    const memberNameById = new Map();
+    if (memberIds.size) {
+      const mems = await Member.find({ _id: { $in: [...memberIds] } })
+        .select("firstName lastName")
+        .lean();
+      (mems || []).forEach((m) => memberNameById.set(String(m._id), personName(m)));
+    }
+
+    const allocatedToLabel = (it) => {
+      const a = it?.allocatedTo;
+      if (!a) return "Not specified";
+      if (a.entityType === "member") {
+        const ids = (Array.isArray(a.entityIds) ? a.entityIds : [])
+          .concat(a.entityId ? [a.entityId] : []);
+        const names = ids.map((id) => memberNameById.get(String(id))).filter(Boolean);
+        if (names.length) return names.join(", ");
+      }
+      if (a.entityName) {
+        return a.entityType ? `${a.entityName} (${a.entityType})` : a.entityName;
+      }
+      return a.entityType || "Not specified";
+    };
+
     const rows = [];
     (budgets || []).forEach((b) => {
       const base = {
@@ -1328,10 +1474,12 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
         rows.push({
           ...base,
           type: "—",
+          source: "—",
           category: "—",
           amount: 0,
           itemPeriod: "—",
-          allocatedTo: "—",
+          allocatedTo: "Not specified",
+          purpose: "—",
           notes: "—"
         });
         return;
@@ -1340,14 +1488,12 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
         rows.push({
           ...base,
           type: it?.type || "—",
+          source: it?.type === "expense" ? sourceLabel(it) : "—",
           category: it?.category || "—",
           amount: clampToNumber(it?.amount),
           itemPeriod: formatPeriod(it?.dateFrom, it?.dateTo),
-          allocatedTo: it?.allocatedTo?.entityName
-            ? it.allocatedTo.entityType
-              ? `${it.allocatedTo.entityName} (${it.allocatedTo.entityType})`
-              : it.allocatedTo.entityName
-            : it?.allocatedTo?.entityType || "—",
+          allocatedTo: allocatedToLabel(it),
+          purpose: it?.purpose || "—",
           notes: it?.notes || "—"
         });
       });
@@ -1359,10 +1505,12 @@ async function buildModuleReportBase({ moduleKey, churchId, from, to, options = 
       { key: "fiscalYear", label: "Fiscal Year" },
       { key: "budgetPeriod", label: "Budget Period" },
       { key: "type", label: "Type" },
+      { key: "source", label: "Source" },
       { key: "category", label: "Category" },
       { key: "amount", label: "Amount" },
       { key: "itemPeriod", label: "Item Period" },
       { key: "allocatedTo", label: "Allocated To" },
+      { key: "purpose", label: "Purpose" },
       { key: "notes", label: "Notes" },
       { key: "status", label: "Status" },
       { key: "recordedBy", label: "Recorded By" },
@@ -1438,6 +1586,81 @@ async function buildProgramsReport({ churchId, from, to, options, rangeMatch }) 
           location: r?.location || "—",
           recordedBy: userName(r?.createdBy),
           createdAt: toDateTimeStr(r?.createdAt)
+        }))
+      };
+    }
+
+    if (sub === "expenses") {
+      const rows = await GeneralExpenses.find({ church: churchId, event: entity, ...rangeMatch("date") })
+        .select("category amount description date paymentMethod referenceId createdBy createdAt updatedAt")
+        .populate("createdBy", "fullName")
+        .sort({ date: -1 })
+        .limit(2000)
+        .lean();
+
+      const availableColumns = [
+        { key: "referenceId", label: "Reference ID" },
+        { key: "date", label: "Date" },
+        { key: "category", label: "Category" },
+        { key: "amount", label: "Amount" },
+        { key: "paymentMethod", label: "Payment" },
+        { key: "description", label: "Description" },
+        { key: "recordedBy", label: "Recorded By" },
+        { key: "createdAt", label: "Created At" },
+        { key: "updatedAt", label: "Updated At" }
+      ];
+
+      return {
+        title: `${programTitle} — Expenses`,
+        columns: availableColumns,
+        availableColumns,
+        rows: rows.map((r) => ({
+          referenceId: r?.referenceId || "—",
+          date: toDateStr(r?.date),
+          category: r?.category || "—",
+          amount: clampToNumber(r?.amount),
+          paymentMethod: r?.paymentMethod || "—",
+          description: r?.description || "—",
+          recordedBy: userName(r?.createdBy),
+          createdAt: toDateTimeStr(r?.createdAt),
+          updatedAt: toDateTimeStr(r?.updatedAt)
+        }))
+      };
+    }
+
+    if (sub === "pledges") {
+      const Pledge = (await import("../models/financeModel/pledgeModel/pledgeModel.js")).default;
+      const rows = await Pledge.find({ church: churchId, event: entity, ...rangeMatch("pledgeDate") })
+        .select("name phoneNumber amount pledgeDate deadline status referenceId createdBy createdAt updatedAt")
+        .populate("createdBy", "fullName")
+        .sort({ pledgeDate: -1 })
+        .limit(2000)
+        .lean();
+
+      const availableColumns = [
+        { key: "referenceId", label: "Reference ID" },
+        { key: "pledgeDate", label: "Pledge Date" },
+        { key: "name", label: "Name" },
+        { key: "phoneNumber", label: "Phone" },
+        { key: "amount", label: "Amount" },
+        { key: "deadline", label: "Deadline" },
+        { key: "status", label: "Status" },
+        { key: "recordedBy", label: "Recorded By" }
+      ];
+
+      return {
+        title: `${programTitle} — Pledges`,
+        columns: availableColumns,
+        availableColumns,
+        rows: rows.map((r) => ({
+          referenceId: r?.referenceId || "—",
+          pledgeDate: toDateStr(r?.pledgeDate),
+          name: r?.name || "—",
+          phoneNumber: r?.phoneNumber || "—",
+          amount: clampToNumber(r?.amount),
+          deadline: toDateStr(r?.deadline),
+          status: r?.status || "—",
+          recordedBy: userName(r?.createdBy)
         }))
       };
     }
@@ -1738,8 +1961,78 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
     const orgName = orgDoc?.name || cfg.label;
 
     if (sub === "offerings") {
-      const rows = await cfg.Offering.find({ church: churchId, [cfg.field]: entity, ...rangeMatch("date") })
-        .select("date amount note referenceId createdBy createdAt updatedAt")
+      const [offerings, contributions] = await Promise.all([
+        cfg.Offering.find({ church: churchId, [cfg.field]: entity, ...rangeMatch("date") })
+          .select("date amount note referenceId createdBy createdAt updatedAt")
+          .populate("createdBy", "fullName")
+          .sort({ date: -1 })
+          .limit(2000)
+          .lean(),
+        // Member contributions recorded on the entity (e.g. dues) fold into
+        // the same line as its offerings across the financial modules.
+        OrganisationContribution.find({ church: churchId, entityType: orgType, entity, ...rangeMatch("date") })
+          .select("date amount note paymentMethod referenceId member createdBy createdAt updatedAt")
+          .populate("member", "firstName lastName")
+          .populate("createdBy", "fullName")
+          .lean()
+      ]);
+
+      const availableColumns = [
+        { key: "referenceId", label: "Reference ID" },
+        { key: "date", label: "Date" },
+        { key: "recordType", label: "Record" },
+        { key: "giver", label: "Giver" },
+        { key: "amount", label: "Amount" },
+        { key: "paymentMethod", label: "Payment" },
+        { key: "note", label: "Note" },
+        { key: "recordedBy", label: "Recorded By" },
+        { key: "createdAt", label: "Created At" },
+        { key: "updatedAt", label: "Updated At" }
+      ];
+
+      const rows = [
+        ...(offerings || []).map((r) => ({
+          referenceId: r?.referenceId || "—",
+          date: toDateStr(r?.date),
+          recordType: "Offering",
+          giver: "—",
+          amount: clampToNumber(r?.amount),
+          paymentMethod: "—",
+          note: r?.note || "—",
+          recordedBy: userName(r?.createdBy),
+          createdAt: toDateTimeStr(r?.createdAt),
+          updatedAt: toDateTimeStr(r?.updatedAt),
+          __sort: r?.date ? new Date(r.date).getTime() : 0
+        })),
+        ...(contributions || []).map((r) => ({
+          referenceId: r?.referenceId || "—",
+          date: toDateStr(r?.date),
+          recordType: "Contribution",
+          giver: personName(r?.member) || "—",
+          amount: clampToNumber(r?.amount),
+          paymentMethod: r?.paymentMethod || "—",
+          note: r?.note || "—",
+          recordedBy: userName(r?.createdBy),
+          createdAt: toDateTimeStr(r?.createdAt),
+          updatedAt: toDateTimeStr(r?.updatedAt),
+          __sort: r?.date ? new Date(r.date).getTime() : 0
+        }))
+      ]
+        .sort((a, b) => b.__sort - a.__sort)
+        .map(({ __sort, ...r }) => r)
+        .slice(0, 2000);
+
+      return {
+        title: `${orgName} — Offerings & Contributions`,
+        columns: availableColumns,
+        availableColumns,
+        rows
+      };
+    }
+
+    if (sub === "expenses") {
+      const rows = await GeneralExpenses.find({ church: churchId, [cfg.field]: entity, ...rangeMatch("date") })
+        .select("category amount description date paymentMethod referenceId createdBy createdAt updatedAt")
         .populate("createdBy", "fullName")
         .sort({ date: -1 })
         .limit(2000)
@@ -1748,22 +2041,26 @@ async function buildOrganisationsReport({ churchId, from, to, options, rangeMatc
       const availableColumns = [
         { key: "referenceId", label: "Reference ID" },
         { key: "date", label: "Date" },
+        { key: "category", label: "Category" },
         { key: "amount", label: "Amount" },
-        { key: "note", label: "Note" },
+        { key: "paymentMethod", label: "Payment" },
+        { key: "description", label: "Description" },
         { key: "recordedBy", label: "Recorded By" },
         { key: "createdAt", label: "Created At" },
         { key: "updatedAt", label: "Updated At" }
       ];
 
       return {
-        title: `${orgName} — Offerings`,
+        title: `${orgName} — Expenses`,
         columns: availableColumns,
         availableColumns,
         rows: rows.map((r) => ({
           referenceId: r?.referenceId || "—",
           date: toDateStr(r?.date),
+          category: r?.category || "—",
           amount: clampToNumber(r?.amount),
-          note: r?.note || "—",
+          paymentMethod: r?.paymentMethod || "—",
+          description: r?.description || "—",
           recordedBy: userName(r?.createdBy),
           createdAt: toDateTimeStr(r?.createdAt),
           updatedAt: toDateTimeStr(r?.updatedAt)
@@ -2001,7 +2298,8 @@ async function buildOutreachReport({ churchId, from, to, options, rangeMatch }) 
     .populate("createdBy", "fullName");
 
   const followUpColumns = [
-    { key: "name", label: "Prospect" },
+    { key: "name", label: "Person" },
+    { key: "subjectType", label: "Register" },
     { key: "phone", label: "Phone" },
     { key: "detail", label: "Type" },
     { key: "event", label: "Outreach Event" },
@@ -2017,14 +2315,15 @@ async function buildOutreachReport({ churchId, from, to, options, rangeMatch }) 
   ];
 
   const mapFollowUp = (r) => ({
-    name: personName(r?.prospect) || "—",
-    phone: r?.prospect?.phone || "—",
+    name: personName(r?.prospect) || r?.visitor?.fullName || personName(r?.member) || "—",
+    subjectType: r?.prospect ? "Prospect" : r?.visitor ? "Visitor" : r?.member ? "Member" : "—",
+    phone: r?.prospect?.phone || r?.visitor?.phoneNumber || r?.member?.phoneNumber || "—",
     detail: r?.type || "—",
     event: r?.outreachEvent?.title || "—",
     status: r?.status || "—",
     outcome: r?.outcome || "—",
     date: toDateStr(r?.followUpDate || r?.scheduledDate || r?.createdAt),
-    assignedTo: personName(r?.assignedTo) || personName(r?.conductedBy) || "—",
+    assignedTo: (Array.isArray(r?.assignedTo) ? r.assignedTo.map(personName).filter(Boolean).join(", ") : personName(r?.assignedTo)) || personName(r?.conductedBy) || "—",
     nextFollowUpDate: toDateStr(r?.nextFollowUpDate),
     note: r?.notes || "—",
     recordedBy: userName(r?.createdBy),
@@ -2032,13 +2331,116 @@ async function buildOutreachReport({ churchId, from, to, options, rangeMatch }) 
     updatedAt: toDateTimeStr(r?.updatedAt)
   });
 
-  const followUpSelect = "type status outcome scheduledDate followUpDate nextFollowUpDate notes prospect outreachEvent assignedTo conductedBy createdBy createdAt updatedAt";
+  const followUpSelect = "type status outcome scheduledDate followUpDate nextFollowUpDate notes prospect visitor member outreachEvent assignedTo conductedBy createdBy createdAt updatedAt";
   const followUpPopulate = (q) => q
     .populate("prospect", "firstName lastName phone")
+    .populate("visitor", "fullName phoneNumber")
+    .populate("member", "firstName lastName phoneNumber")
     .populate("outreachEvent", "title")
     .populate("assignedTo", "firstName lastName")
     .populate("conductedBy", "firstName lastName")
     .populate("createdBy", "fullName");
+
+  if (type === "support") {
+    const match = { church: churchId, ...rangeMatch("date") };
+    let evtName = "";
+    if (scope === "single" && entity) {
+      match.event = entity;
+      const evt = await OutreachEvent.findOne({ _id: entity, church: churchId }).select("title").lean();
+      evtName = evt?.title || "";
+    }
+
+    const rows = await OutreachSupport.find(match)
+      .select("event member visitor name amount date paymentMethod note referenceId createdBy createdAt updatedAt")
+      .populate("event", "title")
+      .populate("member", "firstName lastName")
+      .populate("visitor", "fullName")
+      .populate("createdBy", "fullName")
+      .sort({ date: -1 })
+      .limit(2000)
+      .lean();
+
+    const availableColumns = [
+      { key: "referenceId", label: "Reference ID" },
+      { key: "date", label: "Date" },
+      { key: "event", label: "Outreach" },
+      { key: "supporter", label: "Supporter" },
+      { key: "amount", label: "Amount" },
+      { key: "paymentMethod", label: "Payment" },
+      { key: "note", label: "Note" },
+      { key: "recordedBy", label: "Recorded By" },
+      { key: "createdAt", label: "Created At" },
+      { key: "updatedAt", label: "Updated At" }
+    ];
+
+    return {
+      title: evtName ? `${evtName} — Support Received` : "Outreach Support",
+      columns: availableColumns,
+      availableColumns,
+      rows: (rows || []).map((r) => ({
+        referenceId: r?.referenceId || "—",
+        date: toDateStr(r?.date),
+        event: r?.event?.title || "—",
+        supporter: personName(r?.member) || r?.visitor?.fullName || r?.name || "—",
+        amount: clampToNumber(r?.amount),
+        paymentMethod: r?.paymentMethod || "—",
+        note: r?.note || "—",
+        recordedBy: userName(r?.createdBy),
+        createdAt: toDateTimeStr(r?.createdAt),
+        updatedAt: toDateTimeStr(r?.updatedAt)
+      }))
+    };
+  }
+
+  if (type === "expenses") {
+    // Outreach expenses live in the shared expense module, scoped by `outreach`.
+    const match = { church: churchId, outreach: { $type: "objectId" }, ...rangeMatch("date") };
+    let evtName = "";
+    if (scope === "single" && entity) {
+      match.outreach = entity;
+      const evt = await OutreachEvent.findOne({ _id: entity, church: churchId }).select("title").lean();
+      evtName = evt?.title || "";
+    }
+
+    const rows = await GeneralExpenses.find(match)
+      .select("category amount description date paymentMethod referenceId outreach createdBy createdAt updatedAt")
+      .populate("outreach", "title")
+      .populate("createdBy", "fullName")
+      .sort({ date: -1 })
+      .limit(2000)
+      .lean();
+
+    const availableColumns = [
+      { key: "referenceId", label: "Reference ID" },
+      { key: "date", label: "Date" },
+      { key: "event", label: "Outreach" },
+      { key: "category", label: "Category" },
+      { key: "amount", label: "Amount" },
+      { key: "paymentMethod", label: "Payment" },
+      { key: "description", label: "Description" },
+      { key: "recordedBy", label: "Recorded By" },
+      { key: "createdAt", label: "Created At" },
+      { key: "updatedAt", label: "Updated At" }
+    ];
+
+    return {
+      title: evtName ? `${evtName} — Expenses` : "Outreach Expenses",
+      columns: availableColumns,
+      availableColumns,
+      rows: (rows || []).map((r) => ({
+        referenceId: r?.referenceId || "—",
+        date: toDateStr(r?.date),
+        event: r?.outreach?.title || "—",
+        category: r?.category || "—",
+        amount: clampToNumber(r?.amount),
+        paymentMethod: r?.paymentMethod || "—",
+        description: r?.description || "—",
+        recordedBy: userName(r?.createdBy),
+        createdAt: toDateTimeStr(r?.createdAt),
+        updatedAt: toDateTimeStr(r?.updatedAt)
+      }))
+    };
+  }
 
   if (type === "prospects") {
     const rows = await prospectPopulate(
@@ -2290,6 +2692,49 @@ async function buildChurchProjectsReport({ churchId, from, to, options, rangeMat
   const type = normOpt(options?.type) || "all";
   const entity = String(options?.entity || "").trim();
 
+  if (type === "pledges") {
+    const Pledge = (await import("../models/financeModel/pledgeModel/pledgeModel.js")).default;
+    const match = { church: churchId, ...rangeMatch("pledgeDate") };
+    if (entity) match.churchProject = entity;
+
+    const rows = await Pledge.find(match)
+      .select("churchProject name phoneNumber amount pledgeDate deadline status referenceId createdBy createdAt updatedAt")
+      .populate("churchProject", "name")
+      .populate("createdBy", "fullName")
+      .sort({ pledgeDate: -1 })
+      .limit(2000)
+      .lean();
+
+    const availableColumns = [
+      { key: "referenceId", label: "Reference ID" },
+      { key: "pledgeDate", label: "Pledge Date" },
+      { key: "project", label: "Fundraising" },
+      { key: "name", label: "Name" },
+      { key: "phoneNumber", label: "Phone" },
+      { key: "amount", label: "Amount" },
+      { key: "deadline", label: "Deadline" },
+      { key: "status", label: "Status" },
+      { key: "recordedBy", label: "Recorded By" }
+    ];
+
+    return {
+      title: "Fundraising — Pledges",
+      columns: availableColumns,
+      availableColumns,
+      rows: rows.map((r) => ({
+        referenceId: r?.referenceId || "—",
+        pledgeDate: toDateStr(r?.pledgeDate),
+        project: r?.churchProject?.name || "—",
+        name: r?.name || "—",
+        phoneNumber: r?.phoneNumber || "—",
+        amount: clampToNumber(r?.amount),
+        deadline: toDateStr(r?.deadline),
+        status: r?.status || "—",
+        recordedBy: userName(r?.createdBy)
+      }))
+    };
+  }
+
   if (type === "contributions" || type === "expenses") {
     const isContrib = type === "contributions";
     const Model = isContrib ? ProjectContribution : ProjectExpense;
@@ -2517,9 +2962,17 @@ async function buildPledgesReport({ churchId, from, to, options, rangeMatch }) {
     };
   }
 
+  // Pledges are always scoped — `event` links to a Program, `churchProject`
+  // to a fundraising project.
+  const linkedTo = normOpt(options?.linkedTo) || "all";
   const match = { church: churchId, ...rangeMatch("pledgeDate") };
+  if (linkedTo === "program") match.event = { $type: "objectId" };
+  else if (linkedTo === "fundraising") match.churchProject = { $type: "objectId" };
+
   const rows = await Pledge.find(match)
-    .select("name phoneNumber serviceType amount pledgeDate deadline note status referenceId createdBy createdAt updatedAt")
+    .select("name phoneNumber serviceType amount pledgeDate deadline note status referenceId event churchProject createdBy createdAt updatedAt")
+    .populate("event", "title")
+    .populate("churchProject", "name")
     .populate("createdBy", "fullName")
     .sort({ pledgeDate: -1 })
     .limit(2000)
@@ -2530,6 +2983,8 @@ async function buildPledgesReport({ churchId, from, to, options, rangeMatch }) {
     { key: "pledgeDate", label: "Pledge Date" },
     { key: "name", label: "Name" },
     { key: "phoneNumber", label: "Phone" },
+    { key: "linkedType", label: "Linked To" },
+    { key: "linkedTo", label: "Program / Fundraising" },
     { key: "serviceType", label: "Service Type" },
     { key: "amount", label: "Amount" },
     { key: "deadline", label: "Deadline" },
@@ -2540,8 +2995,12 @@ async function buildPledgesReport({ churchId, from, to, options, rangeMatch }) {
     { key: "updatedAt", label: "Updated At" }
   ];
 
+  const linkTitle = linkedTo === "program" ? "Program Pledges"
+    : linkedTo === "fundraising" ? "Fundraising Pledges"
+    : "Pledges";
+
   return {
-    title: "Pledges",
+    title: linkTitle,
     columns: availableColumns,
     availableColumns,
     rows: rows.map((r) => ({
@@ -2549,6 +3008,8 @@ async function buildPledgesReport({ churchId, from, to, options, rangeMatch }) {
       pledgeDate: toDateStr(r?.pledgeDate),
       name: r?.name || "—",
       phoneNumber: r?.phoneNumber || "—",
+      linkedType: r?.event ? "Program" : r?.churchProject ? "Fundraising" : "—",
+      linkedTo: r?.event?.title || r?.churchProject?.name || "—",
       serviceType: r?.serviceType || "—",
       amount: clampToNumber(r?.amount),
       deadline: toDateStr(r?.deadline),
@@ -3148,7 +3609,8 @@ function extractReportOptions(source) {
     entity: pick("entity"),
     sub: pick("sub"),
     mode: pick("mode"),
-    orgType: pick("orgType")
+    orgType: pick("orgType"),
+    linkedTo: pick("linkedTo")
   };
 }
 

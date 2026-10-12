@@ -5,6 +5,8 @@ const assignedWorkerSchema = new mongoose.Schema({
   assignedAt: { type: Date, default: Date.now },
 }, { _id: false });
 
+export { assignedWorkerSchema };
+
 const outreachProspectSchema = new mongoose.Schema(
   {
     // ── Core identity ──────────────────────────────────────────────

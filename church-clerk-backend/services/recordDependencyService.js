@@ -107,6 +107,7 @@ const ENTITY = {
     links: [
       { model: Member, field: "visitorId", label: "member record (converted)" },
       { model: OutreachProspect, field: "linkedVisitor", label: "outreach prospects" },
+      { model: OutreachFollowUp, field: "visitor", label: "follow-up records" },
     ],
   },
 

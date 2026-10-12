@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import Skeleton from "react-loading-skeleton";
+import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import ChurchContext from "../../church/church.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { getPledges, updatePledge } from "../../pledge/services/pledge.api.js";
@@ -182,8 +182,12 @@ function ProgramPledgesTab({ programId, programTitle }) {
 
       <div>
         {loading ? (
-          <div className="p-4 md:p-6 lg:p-8">
-            <Skeleton height={14} count={6} />
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <tbody className="divide-y divide-gray-200">
+                <SkeletonTableRows rows={5} widths={["w-24", "w-24", "w-16", "w-16", "w-16", "w-14", "w-20", "w-20", "w-16", "w-10"]} cellClass="py-1.5 px-4 md:px-6" />
+              </tbody>
+            </table>
           </div>
         ) : null}
         {error ? (
@@ -236,8 +240,8 @@ function ProgramPledgesTab({ programId, programTitle }) {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             { label: "View", onClick: () => setPledgeModal({ id: row._id, view: "details" }), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                            { label: "Pay", onClick: () => guarded(() => setPayPledge(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                            { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                            canWrite && { label: "Pay", onClick: () => guarded(() => setPayPledge(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                            canWrite && { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                           ]} />
                         </td>
                       </tr>

@@ -5,7 +5,6 @@ import PermissionContext from "../../permissions/permission.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { createProgram as apiCreateProgram, getProgram as apiGetProgram, updateProgram as apiUpdateProgram } from "../services/program.api.js";
-import Skeleton from "react-loading-skeleton";
 import Button from "../../../shared/components/Button/index.jsx";
 
 const CATEGORY_OPTIONS = [

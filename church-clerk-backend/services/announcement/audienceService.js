@@ -5,6 +5,7 @@ import DepartmentMember from "../../models/organisationModel/departmentMembersMo
 import MinistryMember from "../../models/organisationModel/ministryMembersModel.js";
 import ProgramAttendees from "../../models/programModel/programAttendeesModel.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
+import Visitor from "../../models/visitorsModel.js";
 import mongoose from "mongoose";
 import { toObjectIdList } from "../../utils/announcementHelpers.js";
 
@@ -83,6 +84,18 @@ async function countUniqueMembersForAudience({ churchId, audience }) {
     return phones.filter((p) => String(p || "").trim()).length;
   }
 
+  // Visitors: count recorded visitors by phone number. When visitorIds is
+  // present it scopes to the selected visitors only (empty array = none);
+  // a missing key means all visitors.
+  if (type === "visitors") {
+    const visitorIds = toObjectIdList(audience?.visitorIds);
+    if (Array.isArray(audience?.visitorIds) && !visitorIds.length) return 0;
+    const query = { church: churchId };
+    if (visitorIds.length) query._id = { $in: visitorIds };
+    const phones = await Visitor.distinct("phoneNumber", query);
+    return phones.filter((p) => String(p || "").trim()).length;
+  }
+
   // Outreach: count prospects (optionally scoped to selected outreach events).
   if (type === "outreach") {
     const outreachIds = toObjectIdList(audience?.outreachIds);
@@ -157,6 +170,22 @@ async function resolveAudienceRecipients({ churchId, audience }) {
     const programIds = toObjectIdList(audience?.programIds || audience?.eventIds);
     if (!programIds.length) return [];
     const rows = await ProgramAttendees.find({ church: churchId, event: { $in: programIds } }).lean();
+    return rows
+      .map((r) => ({
+        key: String(r?.phoneNumber || r?._id || "").trim(),
+        member: null,
+        memberName: String(r?.fullName || "").trim(),
+        phone: String(r?.phoneNumber || "").trim()
+      }))
+      .filter((r) => r.phone);
+  }
+
+  if (type === "visitors") {
+    const visitorIds = toObjectIdList(audience?.visitorIds);
+    if (Array.isArray(audience?.visitorIds) && !visitorIds.length) return [];
+    const query = { church: churchId };
+    if (visitorIds.length) query._id = { $in: visitorIds };
+    const rows = await Visitor.find(query).lean();
     return rows
       .map((r) => ({
         key: String(r?.phoneNumber || r?._id || "").trim(),

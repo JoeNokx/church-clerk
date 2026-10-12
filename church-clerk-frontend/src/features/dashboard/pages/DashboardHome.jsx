@@ -19,6 +19,7 @@ import ChurchContext from "../../church/church.store.js";
 import AuthContext from "../../auth/auth.store.jsx";
 
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
+import { SkeletonKpiCard } from "../../../shared/components/Skeleton/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 
@@ -680,25 +681,11 @@ function DashboardOverview({ onNavigate }) {
 
         <div className="hidden md:block mt-1 text-gray-500 text-sm">Here is a quick summary of what's happening with your church.</div>
 
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
 
           {[0, 1, 2, 3].map((i) => (
 
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 animate-pulse md:p-6 lg:p-8">
-
-              <div className="flex items-center gap-2">
-
-                <div className="h-11 rounded-lg bg-gray-200 md:h-12 md:w-11 w-11 md:w-12" />
-
-                <div className="h-4 w-24 rounded bg-gray-200" />
-
-              </div>
-
-              <div className="mt-3 h-11 w-20 rounded bg-gray-200 md:h-12" />
-
-              <div className="mt-3 h-6 w-28 rounded-full bg-gray-200" />
-
-            </div>
+            <SkeletonKpiCard key={i} />
 
           ))}
 

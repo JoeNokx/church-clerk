@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 import { releaseDueScheduledAnnouncementMessages } from "../controller/announcementMessagingController.js";
+import { processDueAutomations } from "./announcement/automationService.js";
 
 let workerInterval = null;
 
@@ -11,6 +12,7 @@ export function startAnnouncementMessagingWorker({ intervalMs = 60_000 } = {}) {
     try {
       if (mongoose.connection?.readyState !== 1) return;
       await releaseDueScheduledAnnouncementMessages();
+      await processDueAutomations();
     } catch {
       void 0;
     }

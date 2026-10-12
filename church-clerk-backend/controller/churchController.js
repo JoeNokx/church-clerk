@@ -140,7 +140,6 @@ const searchBranchChurches = async (req, res) => {
 
     const filter = {
       type: "Branch",
-      parentChurch: null,
       name: { $regex: search, $options: "i" }
     };
 
@@ -148,6 +147,7 @@ const searchBranchChurches = async (req, res) => {
 
     const churches = await Church.find(filter)
       .select("_id name city region parentChurch")
+      .populate("parentChurch", "name city")
       .limit(10)
       .lean();
 
@@ -327,8 +327,8 @@ const updateMyChurchProfile = async (req, res) => {
       }
     }
 
-    // Prevent illegal parentChurch usage
-    if (updateData.type !== "Branch") {
+    // Normalize parentChurch: null when not a branch, or when branch with no HQ chosen
+    if (updateData.type !== "Branch" || !updateData.parentChurch) {
       updateData.parentChurch = null;
     }
 

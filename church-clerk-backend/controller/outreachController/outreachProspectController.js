@@ -207,6 +207,31 @@ export const updateProspect = async (req, res) => {
       { new: true, runValidators: true }
     );
     if (!prospect) return res.status(404).json({ message: "Prospect not found" });
+
+    // Keep the linked visitor record in sync — same person, so
+    // name/phone/email/location must stay identical in both registers.
+    if (prospect.linkedVisitor) {
+      const visitorUpdate = {};
+      if (update.firstName !== undefined || update.lastName !== undefined) {
+        visitorUpdate.fullName = `${prospect.firstName || ""} ${prospect.lastName || ""}`.trim();
+      }
+      if (update.phone !== undefined) visitorUpdate.phoneNumber = update.phone;
+      if (update.email !== undefined) visitorUpdate.email = update.email;
+      if (update.address !== undefined || update.community !== undefined) {
+        visitorUpdate.location = prospect.address || prospect.community || "";
+      }
+      if (Object.keys(visitorUpdate).length) {
+        try {
+          await Visitor.updateOne(
+            { _id: prospect.linkedVisitor, church: req.activeChurch._id },
+            { $set: visitorUpdate }
+          );
+        } catch {
+          // Linked-record sync is best-effort — the prospect update stands.
+        }
+      }
+    }
+
     return res.status(200).json({ message: "Prospect updated", data: prospect });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -296,9 +321,10 @@ export const markAsVisitor = async (req, res) => {
       fullName: `${prospect.firstName} ${prospect.lastName || ""}`.trim(),
       phoneNumber: prospect.phone || "0000000000",
       email: prospect.email || "",
-      location: prospect.community || prospect.address || "Unknown",
+      location: prospect.address || prospect.community || "Unknown",
       invitedBy: invitedBy || "",
       note: `From outreach. ${prospect.notes || ""}`.trim(),
+      linkedProspect: prospect._id,
       createdBy: req.user._id,
     });
 

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getMySubscription } from "../../features/subscription/services/subscription.api.js";
+import ChurchContext from "../../features/church/church.store.js";
 
 const SubscriptionLockContext = createContext(null);
 
@@ -110,7 +111,14 @@ export function SubscriptionLockProvider({ children }) {
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState(null);
+  const [modalPayVisible, setModalPayVisible] = useState(true);
   const fetchedRef = useRef(false);
+  const churchCtx = useContext(ChurchContext);
+  // True when an HQ admin is monitoring a branch — branch data is read-only
+  const branchViewOnly = Boolean(
+    churchCtx?.isMonitoringBranch ||
+    (churchCtx?.activeChurch?._id && churchCtx?.activeChurch?.canEdit === false)
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -146,8 +154,9 @@ export function SubscriptionLockProvider({ children }) {
   }, [refresh]);
 
   const showLockModal = useCallback(
-    (customMessage) => {
+    (customMessage, options) => {
       setModalMessage(customMessage || null);
+      setModalPayVisible(options?.payButton !== false);
       setModalOpen(true);
     },
     []
@@ -156,14 +165,23 @@ export function SubscriptionLockProvider({ children }) {
   const closeLockModal = useCallback(() => {
     setModalOpen(false);
     setModalMessage(null);
+    setModalPayVisible(true);
   }, []);
 
   /**
-   * Wraps an action callback. If the account is locked, shows the modal
-   * instead of calling the action. Returns nothing — call as a fire-and-forget.
+   * Wraps an action callback. If the account is locked or the HQ admin is
+   * monitoring a branch (read-only), shows the modal instead of calling the
+   * action. Returns nothing — call as a fire-and-forget.
    */
   const guardAction = useCallback(
     (action) => {
+      if (branchViewOnly) {
+        showLockModal(
+          "You are viewing this branch from your headquarters account. Branch data is read-only — return to your headquarters context to make changes.",
+          { payButton: false }
+        );
+        return false;
+      }
       if (lockState.isLocked) {
         showLockModal();
         return false;
@@ -171,7 +189,7 @@ export function SubscriptionLockProvider({ children }) {
       if (typeof action === "function") action();
       return true;
     },
-    [lockState.isLocked, showLockModal]
+    [branchViewOnly, lockState.isLocked, showLockModal]
   );
 
   const value = useMemo(
@@ -179,12 +197,13 @@ export function SubscriptionLockProvider({ children }) {
       ...lockState,
       modalOpen,
       modalMessage,
+      modalPayVisible,
       showLockModal,
       closeLockModal,
       guardAction,
       refresh
     }),
-    [lockState, modalOpen, modalMessage, showLockModal, closeLockModal, guardAction, refresh]
+    [lockState, modalOpen, modalMessage, modalPayVisible, showLockModal, closeLockModal, guardAction, refresh]
   );
 
   return (
@@ -206,6 +225,7 @@ export function useSubscriptionLock() {
       lockMessage: "",
       modalOpen: false,
       modalMessage: null,
+      modalPayVisible: true,
       showLockModal: () => {},
       closeLockModal: () => {},
       guardAction: (action) => {

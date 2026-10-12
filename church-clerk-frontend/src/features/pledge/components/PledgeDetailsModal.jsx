@@ -1,5 +1,4 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import Skeleton from "react-loading-skeleton";
 
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
@@ -13,7 +12,7 @@ import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
-import Spinner from "../../../shared/components/Spinner.jsx";
+import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
@@ -367,7 +366,14 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
 
           <div className="p-4 md:p-6">
             {loading ? (
-              <Skeleton height={14} count={6} />
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 animate-pulse">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div key={i}>
+                    <div className="h-3 w-20 rounded bg-gray-200" />
+                    <div className="mt-1.5 h-4 w-28 rounded bg-gray-200" />
+                  </div>
+                ))}
+              </div>
             ) : error ? (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
             ) : (
@@ -440,7 +446,25 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
                   ) : null}
                 </div>
 
-                {paymentsLoading ? <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
+                {paymentsLoading ? (
+                  <div className="mt-4 overflow-x-auto rounded-xl border border-gray-200">
+                    <table className="min-w-full">
+                      <thead className="bg-slate-100">
+                        <tr className="text-left">
+                          <th className="py-2 px-4"><div className="h-3 w-20 rounded bg-gray-300/60 animate-pulse" /></th>
+                          <th className="py-2 px-4"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                          <th className="py-2 px-4"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                          <th className="py-2 px-4"><div className="h-3 w-16 rounded bg-gray-300/60 animate-pulse" /></th>
+                          <th className="py-2 px-4"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                          <th className="py-2 px-4"><div className="ml-auto h-3 w-12 rounded bg-gray-300/60 animate-pulse" /></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        <SkeletonTableRows rows={3} widths={["w-20", "w-16", "w-16", "w-24", "w-20", "w-12"]} cellClass="py-2.5 px-4" />
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
                 {!paymentsLoading && paymentsError ? (
                   <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{paymentsError}</div>
                 ) : null}

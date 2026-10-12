@@ -3,6 +3,7 @@ import { createContext, createElement, useCallback, useContext, useEffect, useMe
 import ChurchContext from "../church/church.store.js";
 import {
   createBudget as apiCreateBudget,
+  deleteBudget as apiDeleteBudget,
   getBudget as apiGetBudget,
   getBudgetSummary as apiGetBudgetSummary,
   getBudgets as apiGetBudgets,
@@ -18,11 +19,13 @@ const emptyPagination = {
   prevPage: null
 };
 
+// The year filter defaults to the current calendar year — clearing the
+// input (empty value) lists budgets from every year.
 const emptyFilters = {
   page: 1,
   limit: 20,
   search: "",
-  fiscalYear: "",
+  fiscalYear: String(new Date().getFullYear()),
   status: ""
 };
 
@@ -140,6 +143,23 @@ export function BudgetingProvider({ children }) {
     [fetchBudgets]
   );
 
+  const deleteBudget = useCallback(
+    async (id) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await apiDeleteBudget(id);
+        await fetchBudgets();
+      } catch (e) {
+        setError(e?.response?.data?.message || e?.message || "Failed to delete budget");
+        throw e;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchBudgets]
+  );
+
   const value = useMemo(() => {
     return {
       activeChurchId,
@@ -153,9 +173,10 @@ export function BudgetingProvider({ children }) {
       getBudget,
       getBudgetSummary,
       createBudget,
-      updateBudget
+      updateBudget,
+      deleteBudget
     };
-  }, [activeChurchId, budgets, pagination, filters, loading, error, setFilters, fetchBudgets, getBudget, getBudgetSummary, createBudget, updateBudget]);
+  }, [activeChurchId, budgets, pagination, filters, loading, error, setFilters, fetchBudgets, getBudget, getBudgetSummary, createBudget, updateBudget, deleteBudget]);
 
   return createElement(
     BudgetingContext.Provider,

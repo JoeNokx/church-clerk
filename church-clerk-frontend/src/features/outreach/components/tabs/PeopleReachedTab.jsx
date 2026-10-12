@@ -358,6 +358,10 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
               </select>
             </div>
           </div>
+          <div>
+            <label className={LBL}>Location / Address</label>
+            <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Where they live — e.g. Ablekuma, near the lorry station" className={INP} />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LBL}>Community / Area</label>

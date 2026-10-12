@@ -5,7 +5,6 @@ import BackButton from "../../../shared/components/BackButton/index.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import { getMember as apiGetMember } from "../services/member.api.js";
-import Skeleton from "react-loading-skeleton";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const STATUS_STYLES = {

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import Skeleton from "react-loading-skeleton";
+import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
@@ -171,7 +171,26 @@ function BranchFinancesTab({ currency }) {
       ) : null}
 
       {loading ? (
-        <Skeleton height={14} count={6} />
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="border-b border-gray-200 p-4">
+            <div className="h-3.5 w-32 rounded bg-gray-200 animate-pulse" />
+            <div className="mt-1.5 h-3 w-56 rounded bg-gray-100 animate-pulse" />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <th key={i} className="px-4 py-2 md:px-6"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <SkeletonTableRows rows={5} widths={["w-32", "w-20", "w-20", "w-20", "w-20"]} cellClass="px-4 py-2.5 md:px-6" />
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
           <div className="border-b border-gray-200 p-4">

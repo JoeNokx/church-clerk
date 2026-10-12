@@ -8,6 +8,7 @@ import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
+import { assigneeNames } from "../../../../shared/utils/followUps.js";
 import { exportToExcel } from "../../../../shared/utils/exportExcel.js";
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -274,7 +275,7 @@ export default function ReportsTab() {
       fmtDate(f.scheduledDate),
       TYPE_LABELS[f.type] || f.type || "",
       FU_STATUS_LABELS[f.status] || f.status || "",
-      f.assignedTo ? `${f.assignedTo.firstName} ${f.assignedTo.lastName}` : "",
+      assigneeNames(f),
       f.nextFollowUpDate ? fmtDate(f.nextFollowUpDate) : "",
       f.notes || "",
     ]);
@@ -557,7 +558,7 @@ export default function ReportsTab() {
                             </span>
                           </td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{TYPE_LABELS[f.type] || f.type || "Not Specified"}</td>
-                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{f.assignedTo ? `${f.assignedTo.firstName} ${f.assignedTo.lastName}` : "Not Specified"}</td>
+                          <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{assigneeNames(f) || "Not Specified"}</td>
                           <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={f.outreachEvent?.title || "Not Specified"}>
                             <span className="sm:hidden">{truncateMobileName(f.outreachEvent?.title || "Not Specified")}</span>
                             <span className="hidden sm:inline">{truncateDesktopName(f.outreachEvent?.title || "Not Specified")}</span>

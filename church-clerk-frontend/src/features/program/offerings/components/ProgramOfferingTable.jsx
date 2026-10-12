@@ -1,7 +1,6 @@
 import { useContext, useMemo, useState } from "react";
 import { useGuardedAction } from "../../../../shared/context/SubscriptionLockContext.jsx";
 import { formatMoney as _fm } from "../../../../shared/utils/formatMoney.js";
-import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../../permissions/permission.store.js";
 import ProgramOfferingContext from "../programOfferings.store.js";
 import ChurchContext from "../../../church/church.store.js";

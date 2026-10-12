@@ -7,3 +7,7 @@ export const getLookupValues = async (kind, config = {}) => {
 export const createLookupValue = async ({ kind, value }) => {
   return await http.post("/lookups", { kind, value });
 };
+
+export const deleteLookupValue = async (id) => {
+  return await http.delete(`/lookups/${id}`);
+};

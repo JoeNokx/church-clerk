@@ -2,7 +2,6 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { getGroups, createGroup, updateGroup, deleteGroup } from "../../group/services/group.api.js";
-import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import {
   getDepartments,
@@ -119,7 +118,7 @@ function formatTimeWithAmPm(timeStr) {
   return `${h}:${m} ${period}`;
 }
 
-function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
+function MinistryCard({ row, type, canView, canEdit, canDelete, onView, onEdit, onDelete }) {
   const meetings = normalizeMeetingSchedule(row);
   const totalMembers = row?.totalMembers ?? 0;
 
@@ -140,10 +139,12 @@ function MinistryCard({ row, type, canView, onView, onEdit, onDelete }) {
         badgeClass={badgeClass}
         actions={
           <>
-            <button onClick={onEdit} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            </button>
-            {row?.canDelete !== false ? (
+            {canEdit ? (
+              <button onClick={onEdit} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+              </button>
+            ) : null}
+            {canDelete && row?.canDelete !== false ? (
               <button onClick={onDelete} className="cck-allow-icons h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-500 hover:bg-red-50">
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
@@ -507,6 +508,8 @@ function OrganisationsPage() {
   const { can } = useContext(PermissionContext) || {};
   const canView = useMemo(() => (typeof can === "function" ? can("organisation", "view") : false), [can]);
   const canCreate = useMemo(() => (typeof can === "function" ? can("organisation", "create") : false), [can]);
+  const canEdit = useMemo(() => (typeof can === "function" ? can("organisation", "update") : false), [can]);
+  const canDelete = useMemo(() => (typeof can === "function" ? can("organisation", "delete") : false), [can]);
 
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
@@ -721,14 +724,16 @@ function OrganisationsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => guarded(openCreate)}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-          >
-            <span className="leading-none text-lg">+</span>
-            Add {activeTab === "groups" ? "Group" : activeTab === "cells" ? "Cell" : activeTab === "ministries" ? "Ministry" : "Department"}
-          </button>
+          {canCreate ? (
+            <button
+              type="button"
+              onClick={() => guarded(openCreate)}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+            >
+              <span className="leading-none text-lg">+</span>
+              Add {activeTab === "groups" ? "Group" : activeTab === "cells" ? "Cell" : activeTab === "ministries" ? "Ministry" : "Department"}
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -771,8 +776,28 @@ function OrganisationsPage() {
         </div>
 
         {loading ? (
-          <div className="p-4 md:p-6 lg:p-8">
-            <Skeleton height={14} count={6} />
+          <div className="p-2 md:p-6 lg:p-8">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 animate-pulse">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1.5">
+                      <div className="h-3.5 w-28 rounded bg-gray-200" />
+                      <div className="h-5 w-16 rounded-full bg-gray-200" />
+                    </div>
+                    <div className="flex gap-1">
+                      <div className="h-8 w-8 rounded-lg bg-gray-200" />
+                      <div className="h-8 w-8 rounded-lg bg-gray-200" />
+                    </div>
+                  </div>
+                  <div className="h-3 w-20 rounded bg-gray-100" />
+                  <div className="h-3 w-40 rounded bg-gray-100" />
+                  <div className="mt-auto pt-2 border-t border-gray-100">
+                    <div className="h-4 w-20 rounded bg-gray-200" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : filteredRows.length === 0 ? (
           (() => {
@@ -802,6 +827,8 @@ function OrganisationsPage() {
                     row={row}
                     type={ministryType}
                     canView={canView}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                     onView={() => {
                       if (!row?._id) return;
 

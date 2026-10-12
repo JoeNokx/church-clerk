@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { assignedWorkerSchema } from "./outreachModel/outreachProspectModel.js";
 
 const visitorSchema = new mongoose.Schema(
   {
@@ -72,6 +73,17 @@ const visitorSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+
+    // ── Follow-up / outreach link ──────────────────────────────────
+    // Set when this visitor came from (or matched) an outreach prospect,
+    // so one person isn't tracked twice in both registers.
+    linkedProspect: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "OutreachProspect",
+      default: null,
+    },
+    nextFollowUpDate: { type: Date },
+    assignedFollowUpWorkers: [assignedWorkerSchema],
   },
   { timestamps: true }
 );

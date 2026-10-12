@@ -37,6 +37,13 @@
   cursor: pointer;
  }
 
+ /* HQ monitoring a branch: hide all write-action elements entirely.
+    Any element tagged data-hq-action="true" is a write action that is
+    read-only in branch view — hide it instead of blocking clicks. */
+ .hq-view-only [data-hq-action="true"] {
+  display: none !important;
+ }
+
  input:not([type="checkbox"]):not([type="radio"]),
  textarea,
  [contenteditable="true"] {

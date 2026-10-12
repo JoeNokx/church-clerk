@@ -239,7 +239,8 @@ function ChurchesPage() {
             page: actualPage,
             limit,
             search: search || undefined,
-            type: type || undefined
+            type: type || undefined,
+            status: statusFilter || undefined
           }),
           getAdminDashboardStats()
         ]);
@@ -259,7 +260,7 @@ function ChurchesPage() {
         setLoading(false);
       }
     },
-    [limit, page, search, type]
+    [limit, page, search, statusFilter, type]
   );
 
   useEffect(() => { load({ nextPage: 1 }); }, [load]);
@@ -267,7 +268,7 @@ function ChurchesPage() {
   useEffect(() => {
     const t = setTimeout(() => { load({ nextPage: 1 }); }, 300);
     return () => clearTimeout(t);
-  }, [search, type, load]);
+  }, [search, statusFilter, type, load]);
 
   const handleSuspend = async () => {
     if (!suspendModal?._id) return;
@@ -314,14 +315,6 @@ function ChurchesPage() {
       setActionLoading("");
     }
   };
-
-  const displayRows = statusFilter
-    ? rows.filter((c) => {
-        if (statusFilter === "active") return c.isActive !== false;
-        if (statusFilter === "suspended") return c.isActive === false;
-        return true;
-      })
-    : rows;
 
   const typeOptions = [
     { label: "Independent", value: "Independent" },
@@ -476,7 +469,7 @@ function ChurchesPage() {
               </table>
             </div>
           </div>
-        ) : displayRows.length === 0 ? (
+        ) : rows.length === 0 ? (
           <EmptyState
             compact
             illustration="church"
@@ -499,7 +492,7 @@ function ChurchesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {displayRows.map((c) => {
+                {rows.map((c) => {
                   const isSuspended = c.isActive === false;
                   return (
                     <tr key={c._id} className={`max-md:text-xs text-gray-700 text-sm ${isSuspended ? "bg-red-50/30" : ""}`}>

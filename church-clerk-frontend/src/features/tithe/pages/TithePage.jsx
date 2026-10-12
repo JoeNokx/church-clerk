@@ -294,16 +294,17 @@ function ModeSelectCard({ kind, onSelect, disabled = false }) {
           )}
         </div>
 
+        {!disabled ? (
         <button
           type="button"
-          disabled={disabled}
           onClick={() => onSelect?.(kind)}
-          className={`mt-3 md:mt-5 h-8 md:h-11 w-full rounded-xl px-3 md:px-6 text-xs md:text-sm font-semibold text-white shadow-sm disabled:opacity-60 ${
+          className={`mt-3 md:mt-5 h-8 md:h-11 w-full rounded-xl px-3 md:px-6 text-xs md:text-sm font-semibold text-white shadow-sm ${
             isAggregate ? "bg-green-700 hover:bg-green-800" : "bg-blue-700 hover:bg-blue-800"
           }`}
         >
           Use {isAggregate ? "Aggregate" : "Individual"} Mode
         </button>
+        ) : null}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import Skeleton from "react-loading-skeleton";
+import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { getProjectContributionExpensesKPI, getProjectTransactions } from "../services/fundraising.api.js";
 import {
@@ -1012,8 +1013,12 @@ function FundraisingDetailsPage() {
         {tab === "contributions" ? (
           <div>
             {contribLoading ? (
-              <div className="p-4 md:p-6 lg:p-8">
-                <Skeleton height={14} count={6} />
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <tbody className="divide-y divide-gray-200">
+                    <SkeletonTableRows rows={5} widths={["w-28", "w-16", "w-24", "w-20", "w-24", "w-16", "w-12"]} cellClass="py-1.5 px-4 md:px-6" />
+                  </tbody>
+                </table>
               </div>
             ) : null}
             {contribError ? (
@@ -1067,11 +1072,11 @@ function FundraisingDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={isPledge ? [
                               { label: "View", onClick: () => setPledgeModal({ id: row._id, view: "details" }), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              { label: "Pay", onClick: () => guarded(() => setPayPledge(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                              canWrite && { label: "Pay", onClick: () => guarded(() => setPayPledge(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
+                              canWrite && { label: "Edit", onClick: () => guarded(() => setEditPledgeRow(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                             ] : [
                               { label: "View", onClick: () => setViewRow(row), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              { label: "Edit", onClick: () => guarded(() => openEditContribution(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                              canWrite && { label: "Edit", onClick: () => guarded(() => openEditContribution(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
                           </td>
                         </tr>
@@ -1098,8 +1103,12 @@ function FundraisingDetailsPage() {
         ) : (
           <div>
             {expenseLoading ? (
-              <div className="p-4 md:p-6 lg:p-8">
-                <Skeleton height={14} count={6} />
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <tbody className="divide-y divide-gray-200">
+                    <SkeletonTableRows rows={5} widths={["w-32", "w-20", "w-20", "w-20", "w-24", "w-12"]} cellClass="py-1.5 px-4 md:px-6" />
+                  </tbody>
+                </table>
               </div>
             ) : null}
             {expenseError ? (
@@ -1143,7 +1152,7 @@ function FundraisingDetailsPage() {
                           <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <TableKebabMenu items={[
                               { label: "View", onClick: () => { setExpenseViewRow(row); setExpenseViewOpen(true); }, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" },
-                              { label: "Edit", onClick: () => guarded(() => openEditExpense(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
+                              canWrite && { label: "Edit", onClick: () => guarded(() => openEditExpense(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-xs" }
                             ]} />
                           </td>
                         </tr>

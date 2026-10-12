@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 import { getVisitors } from "../services/attendance.api.js";
+import { getAllProspects } from "../../outreach/services/outreach.api.js";
 import debounce from "../../../shared/utils/debounce.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
@@ -39,6 +40,8 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedExisting, setSelectedExisting] = useState(null);
+  const [selectedProspect, setSelectedProspect] = useState(null);
+  const [lockedFields, setLockedFields] = useState({});
 
   const debouncedSearch = useMemo(
     () =>
@@ -49,9 +52,20 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
           return;
         }
         try {
-          const res = await getVisitors({ search: q.trim(), page: 1, limit: 5 });
-          const payload = res?.data?.data ?? res?.data;
-          setSearchResults(Array.isArray(payload?.visitors) ? payload.visitors : []);
+          const [vRes, pRes] = await Promise.all([
+            getVisitors({ search: q.trim(), page: 1, limit: 5 }).catch(() => null),
+            getAllProspects({ search: q.trim(), page: 1, limit: 5 }).catch(() => null),
+          ]);
+          const vPayload = vRes?.data?.data ?? vRes?.data;
+          const pPayload = pRes?.data?.data ?? pRes?.data;
+          const visitors = (Array.isArray(vPayload?.visitors) ? vPayload.visitors : [])
+            .map((v) => ({ kind: "visitor", ...v }));
+          // Prospects already converted to members or already marked as
+          // visitors are excluded — they belong to another register now.
+          const prospects = (Array.isArray(pPayload) ? pPayload : pPayload?.prospects || [])
+            .filter((p) => !p.markedAsVisitor && !p.linkedVisitor && !p.linkedMember && p.stage !== "member")
+            .map((p) => ({ kind: "prospect", ...p }));
+          setSearchResults([...visitors, ...prospects]);
         } catch {
           setSearchResults([]);
         } finally {
@@ -70,6 +84,42 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
     debouncedSearch(q);
   };
 
+  // A visitor result adds the existing person to the session; a prospect
+  // result prefills the form — saving links the new visitor to their
+  // outreach record automatically (matched on phone number).
+  const pickResult = (r) => {
+    if (r.kind === "prospect") {
+      const name = `${r.firstName || ""} ${r.lastName || ""}`.trim();
+      const phone = r.phone || r.alternativePhone || "";
+      const loc = r.address || r.community || "";
+      setSelectedProspect(r);
+      setSelectedExisting(null);
+      setFullName(name);
+      setPhoneNumber(phone);
+      setEmail(r.email || "");
+      setLocation(loc);
+      setSource((s) => s || "Church outreach");
+      setNote((n) => n || "From outreach.");
+      // Fields the prospect record already provides are locked so the two
+      // registers can't drift apart — missing fields stay editable.
+      setLockedFields({
+        fullName: Boolean(name),
+        // Leave the field editable if the stored number is invalid so the
+        // save isn't blocked by a value the user can't change.
+        phoneNumber: Boolean(phone) && isValidPhoneNumber(phone),
+        email: Boolean(r.email),
+        location: Boolean(loc),
+      });
+      setFormError(null);
+    } else {
+      setSelectedExisting(r);
+      setSelectedProspect(null);
+      setLockedFields({});
+    }
+    setSearchResults([]);
+    setSearchQuery("");
+  };
+
   useEffect(() => {
     if (!open) return;
 
@@ -79,6 +129,8 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
     setSearchResults([]);
     setSearchLoading(false);
     setSelectedExisting(null);
+    setSelectedProspect(null);
+    setLockedFields({});
 
     if (initialData) {
       setFullName(initialData.fullName || "");
@@ -162,6 +214,12 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
       note
     };
 
+    // The person was picked from outreach — link that exact record even if
+    // the phone given doesn't match what outreach has on file.
+    if (selectedProspect?._id) {
+      payload.linkedProspect = selectedProspect._id;
+    }
+
     const sessionId = sessionContext?._id || (typeof initialData?.attendance === "string" ? initialData.attendance : "");
     if (sessionId) {
       payload.attendance = sessionId;
@@ -223,7 +281,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
 
           {mode !== "edit" ? (
             <div className="mb-4">
-              <label className="block font-semibold text-gray-500 text-xs">Search existing visitor first</label>
+              <label className="block font-semibold text-gray-500 text-xs">Search existing visitor or outreach person first</label>
               <input
                 value={searchQuery}
                 onChange={onSearchChange}
@@ -237,25 +295,38 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                 <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
                   {searchResults.map((v) => (
                     <button
-                      key={v._id}
+                      key={`${v.kind}-${v._id}`}
                       type="button"
-                      onClick={() => setSelectedExisting(v)}
+                      onClick={() => pickResult(v)}
                       className="flex w-full items-center justify-between gap-3 border-b border-gray-100 px-3 py-2 text-left hover:bg-gray-50 last:border-b-0"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold text-gray-900 text-sm">{v.fullName}</span>
-                        <span className="block truncate text-gray-500 text-xs">{v.phoneNumber || "-"}</span>
+                        <span className="block truncate font-semibold text-gray-900 text-sm">
+                          {v.kind === "prospect" ? `${v.firstName || ""} ${v.lastName || ""}`.trim() || "-" : v.fullName}
+                        </span>
+                        <span className="block truncate text-gray-500 text-xs">{v.kind === "prospect" ? (v.phone || v.alternativePhone || "-") : (v.phoneNumber || "-")}</span>
                       </span>
-                      <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700 text-xs">
-                        Select
+                      <span className="flex items-center gap-2 shrink-0">
+                        {v.kind === "prospect" ? (
+                          <span className="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700 text-[10px]">Prospect</span>
+                        ) : (
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 text-[10px]">Visitor</span>
+                        )}
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700 text-xs">Select</span>
                       </span>
                     </button>
                   ))}
                 </div>
               ) : null}
               {!searchLoading && searchQuery.trim().length >= 2 && searchResults.length === 0 ? (
-                <div className="mt-2 text-gray-500 text-xs">No existing visitor found — fill the details below to add a new one.</div>
+                <div className="mt-2 text-gray-500 text-xs">No matching visitor or outreach person found — fill the details below to add a new one.</div>
               ) : null}
+            </div>
+          ) : null}
+
+          {mode === "edit" && initialData?.linkedProspect ? (
+            <div className="mb-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-2.5 text-indigo-700 text-xs">
+              Linked to an outreach record — changes to name, phone, email or location update it too.
             </div>
           ) : null}
 
@@ -277,13 +348,39 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
               </div>
             </div>
           ) : (
+          <>
+          {selectedProspect ? (
+            <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 md:col-span-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-indigo-900 text-sm">
+                    {`${selectedProspect.firstName || ""} ${selectedProspect.lastName || ""}`.trim()}
+                    <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 align-middle">Prospect</span>
+                  </div>
+                  <div className="mt-1 text-indigo-700 text-xs">Already in Outreach — their details are filled and locked. To change them, edit the visitor after saving; the outreach record updates too.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProspect(null);
+                    setLockedFields({});
+                    setFullName(""); setPhoneNumber(""); setEmail(""); setLocation(""); setSource(""); setNote("");
+                  }}
+                  className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          ) : null}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="block font-semibold text-gray-500 text-xs">Full Name</label>
               <input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                disabled={!!lockedFields.fullName}
+                className={`mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 md:h-12 text-sm ${lockedFields.fullName ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white text-gray-700"}`}
                 placeholder="e.g. John Doe"
               />
             </div>
@@ -295,6 +392,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                   value={phoneNumber}
                   onChange={setPhoneNumber}
                   error={Boolean(formError)}
+                  disabled={!!lockedFields.phoneNumber}
                   flagOnlySelectedCountry
                   countryMenuSearchBar
                 />
@@ -306,7 +404,8 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                disabled={!!lockedFields.email}
+                className={`mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 md:h-12 text-sm ${lockedFields.email ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white text-gray-700"}`}
                 placeholder=""
               />
             </div>
@@ -316,7 +415,8 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
               <input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                disabled={!!lockedFields.location}
+                className={`mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 md:h-12 text-sm ${lockedFields.location ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white text-gray-700"}`}
                 placeholder=""
               />
             </div>
@@ -363,6 +463,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
               />
             </div>
           </div>
+          </>
           )}
 
           <div className="mt-5 flex items-center justify-end gap-3">

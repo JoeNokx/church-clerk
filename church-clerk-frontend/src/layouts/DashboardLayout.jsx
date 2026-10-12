@@ -8,7 +8,6 @@ import ChurchContext from "../features/church/church.store.js";
 import SubscriptionStatusBanner from "../shared/components/SubscriptionStatusBanner.jsx";
 import { AnimatePresence, motion } from "framer-motion";
 import InAppAnnouncementsHost from "../features/inAppAnnouncements/components/InAppAnnouncementsHost.jsx";
-import BranchContextNav from "../features/dashboard/components/BranchContextNav.jsx";
 import GlobalSearch from "../features/search/components/GlobalSearch.jsx";
 
 function MobileSearchBanner({ user, churchName }) {
@@ -37,14 +36,7 @@ function DashboardLayout() {
   const location = useLocation();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showBranchBlock, setShowBranchBlock] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-
-  const homeChurchId = useMemo(() => {
-    const c = user?.church;
-    if (!c) return null;
-    return typeof c === "string" ? c : c?._id || null;
-  }, [user]);
 
   const homeChurchName = useMemo(() => {
     const c = user?.church;
@@ -65,15 +57,6 @@ function DashboardLayout() {
 
   const isHqMonitoringBranch = churchCtx?.isMonitoringBranch || false;
 
-  const isInBranchContext = useMemo(
-    () =>
-      isHqMonitoringBranch &&
-      !!(churchCtx?.branchChurch?._id &&
-        activeChurch?._id &&
-        String(activeChurch._id) === String(churchCtx.branchChurch._id)),
-    [isHqMonitoringBranch, activeChurch?._id, churchCtx?.branchChurch?._id]
-  );
-
   const isReadOnly = isChurchSuspended || isUserSuspended;
 
 
@@ -92,7 +75,6 @@ function DashboardLayout() {
       >
         <Sidebar
           onNavigate={() => setIsSidebarOpen(false)}
-          onBeforeNavigate={isHqMonitoringBranch ? () => churchCtx.quickSwitchToHq?.() : undefined}
         />
       </div>
 
@@ -105,14 +87,6 @@ function DashboardLayout() {
           onNotificationsClick={() => setNotifOpen(true)}
         />
         <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} />
-
-        {/* branch context navigation bar — hidden when user switched to HQ sidebar view */}
-        {isHqMonitoringBranch && isInBranchContext && (
-          <BranchContextNav
-            homeChurchName={homeChurchName}
-            homeChurchId={homeChurchId}
-          />
-        )}
 
         <main className="flex-1 min-h-0 min-w-0 w-full p-[16px] md:p-[24px] overflow-y-auto md:p-8 lg:p-4">
 
@@ -161,25 +135,8 @@ function DashboardLayout() {
           <SubscriptionStatusBanner />
           <InAppAnnouncementsHost />
 
-          {isHqMonitoringBranch && isInBranchContext && (
-            <div className="mb-4 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-semibold text-amber-800 text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                Branch Data · View Only
-                <span className="ml-1 font-normal text-amber-700">— {churchCtx?.branchChurch?.name || "Branch"}</span>
-              </span>
-            </div>
-          )}
-
           <div
-            className={`relative ${isReadOnly ? "pointer-events-none select-none" : ""}`}
-            onClickCapture={isInBranchContext ? (e) => {
-              const actionable = e.target.closest('[data-hq-action="true"]');
-              if (!actionable) return;
-              e.stopPropagation();
-              e.preventDefault();
-              setShowBranchBlock(true);
-            } : undefined}
+            className={`relative ${isReadOnly ? "pointer-events-none select-none" : ""} ${isHqMonitoringBranch ? "hq-view-only" : ""}`}
           >
             {isReadOnly && (
               <div className="absolute inset-0 z-10 rounded-xl bg-white/50" />
@@ -197,41 +154,6 @@ function DashboardLayout() {
               </motion.div>
             </AnimatePresence>
           </div>
-
-          {/* Branch view-only modal */}
-          {showBranchBlock && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/30"
-              onClick={() => setShowBranchBlock(false)}
-            >
-              <div
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-4 md:p-6 lg:p-8"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex flex-col items-center text-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
-                    <svg className="h-7 w-7 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m0-6v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-base">View-Only Access</h3>
-                    <p className="mt-1.5 text-gray-500 leading-relaxed text-sm">
-                      As a <span className="font-semibold text-gray-700">Headquarters admin</span>, you can only
-                      view branch data. To make changes, a branch admin must log in directly.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="w-full rounded-xl bg-gray-900 py-2.5 font-semibold text-white hover:bg-gray-700 transition-colors text-sm"
-                    onClick={() => setShowBranchBlock(false)}
-                  >
-                    Got It
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </main>
       </div>
 

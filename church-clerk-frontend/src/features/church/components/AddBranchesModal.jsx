@@ -136,24 +136,45 @@ function AddBranchesModal({ open, onClose, onAdded }) {
                   ) : branchResults.length ? (
                     branchResults
                       .filter((c) => !selectedBranches.some((s) => s._id === c._id))
-                      .map((c) => (
-                        <button
-                          key={c._id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedBranches((prev) => [...prev, c]);
-                            setBranchSearch("");
-                            setBranchResults([]);
-                            setBranchDropdownOpen(false);
-                          }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50"
-                        >
-                          <div className="font-semibold text-gray-900 truncate text-sm">{c.name || "—"}</div>
-                          <div className="mt-0.5 text-gray-500 truncate text-xs">
-                            {`${c.city || ""}${c.region ? `, ${c.region}` : ""}`.trim() || "—"}
-                          </div>
-                        </button>
-                      ))
+                      .filter((c) => {
+                        // Hide branches already belonging to this HQ
+                        if (!c.parentChurch) return true;
+                        const pid = c.parentChurch?._id || c.parentChurch;
+                        return String(pid) !== String(activeChurch?._id);
+                      })
+                      .map((c) => {
+                        const takenBy = c.parentChurch && typeof c.parentChurch === "object" ? c.parentChurch : null;
+                        return (
+                          <button
+                            key={c._id}
+                            type="button"
+                            disabled={!!takenBy}
+                            onClick={() => {
+                              if (takenBy) return;
+                              setSelectedBranches((prev) => [...prev, c]);
+                              setBranchSearch("");
+                              setBranchResults([]);
+                              setBranchDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 transition-colors ${takenBy ? "cursor-not-allowed bg-gray-50/70" : "hover:bg-gray-50"}`}
+                          >
+                            <div className={`font-semibold truncate text-sm ${takenBy ? "text-gray-400" : "text-gray-900"}`}>
+                              {c.name || "—"}
+                            </div>
+                            <div className="mt-0.5 text-gray-400 truncate text-xs">
+                              {`${c.city || ""}${c.region ? `, ${c.region}` : ""}`.trim() || "—"}
+                            </div>
+                            {takenBy ? (
+                              <span className="mt-1.5 inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                                <svg viewBox="0 0 16 16" fill="none" className="h-2.5 w-2.5 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                  <path d="M5 8h2a1 1 0 000-2H5a2 2 0 000 4h2M11 8H9a1 1 0 010 2h2a2 2 0 000-4H9"/>
+                                </svg>
+                                Connected to {takenBy.name || "another HQ"}
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })
                   ) : (
                     <div className="px-4 py-3 text-gray-600 text-sm">Type to search branch churches.</div>
                   )}

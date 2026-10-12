@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { getProgram as apiGetProgram, updateProgram as apiUpdateProgram } from "../services/program.api.js";
-import Skeleton from "react-loading-skeleton";
 import Button from "../../../shared/components/Button/index.jsx";
 
 const CATEGORY_OPTIONS = [

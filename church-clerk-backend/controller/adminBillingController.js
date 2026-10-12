@@ -19,8 +19,10 @@ import {
   sanitizePriceByCurrency,
   sanitizePlanCurrencies,
   normalizePlanName,
-  validatePlanName
+  validatePlanName,
+  isFreeTierPlanName
 } from "../utils/planHelpers.js";
+import { addInterval } from "../utils/dateBillingUtils.js";
 import { syncAllowancesForPlan } from "../services/announcement/allowanceService.js";
 
 export const createPlan = async (req, res) => {
@@ -221,6 +223,30 @@ export const updateSubscription = async (req, res) => {
       updates.pendingPlan = null;
       updates.pendingPlanEffectiveDate = null;
       updates.pendingPlanAction = null;
+
+      // Admin assigning a plan to a church still on trial activates the
+      // subscription immediately — trial fields are cleared so the trial
+      // expiry cron can never downgrade this plan to Free Lite.
+      const existing = await Subscription.findById(id).lean();
+      if (!existing) return res.status(404).json({ message: "Subscription not found" });
+
+      const wasTrial = ["free trial", "trialing"].includes(
+        String(existing.status || "").toLowerCase()
+      );
+      if (wasTrial) {
+        if (updates.status === undefined) updates.status = "active";
+        if (req.body?.trialStart === undefined) updates.trialStart = null;
+        if (req.body?.trialEnd === undefined) updates.trialEnd = null;
+        updates.gracePeriodEnd = null;
+        updates["expiryWarning.shown"] = false;
+
+        if (req.body?.nextBillingDate === undefined) {
+          const plan = await Plan.findById(req.body.planId).lean();
+          updates.nextBillingDate = isFreeTierPlanName(plan?.name)
+            ? null
+            : addInterval(new Date(), updates.billingInterval || existing.billingInterval || "monthly");
+        }
+      }
     }
     if (req.body?.pendingPlanId) updates.pendingPlan = req.body.pendingPlanId;
 

@@ -1,6 +1,5 @@
 import { useContext, useMemo, useState } from "react";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
-import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
@@ -9,6 +8,7 @@ import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/emptyState.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
+import VisitorFollowUps, { VisitorFollowUpForm } from "./VisitorFollowUps.jsx";
 
 function formatDate(value) {
   if (!value) return "";
@@ -58,6 +58,8 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState(null);
   const [detailsVisitor, setDetailsVisitor] = useState(null);
+  const [detailsTab, setDetailsTab] = useState("attendance");
+  const [fuVisitor, setFuVisitor] = useState(null);
 
   const canView = useMemo(() => (typeof can === "function" ? can("visitors", "view") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("visitors", "update") : false), [can]);
@@ -110,6 +112,7 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
   const openDetails = async (row) => {
     if (!row?._id) return;
     setDetailsOpen(true);
+    setDetailsTab("attendance");
     setDetailsError(null);
     setDetailsVisitor(null);
     setDetailsLoading(true);
@@ -168,30 +171,32 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
 
   const isLoading = loading !== undefined ? loading : store?.visitorLoading;
   const tableError = error !== undefined ? error : store?.visitorError;
+  const isSessionLog = visitors !== undefined;
 
   if (isLoading) {
+    const headCell = "max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6";
+    const bodyCell = "max-md:px-4 py-3 px-4 md:px-6";
+    const headWidths = isSessionLog
+      ? ["w-16", "w-12", "w-12", "w-14", "w-10", ...(showSessionColumn ? ["w-14"] : []), "w-10", "w-10"]
+      : ["w-16", "w-12", "w-12", "w-14", "w-10", "w-12", ...(showSessionColumn ? ["w-14"] : []), "w-14", "w-10", "w-14", "w-10"];
     return (
       <div className="overflow-x-auto animate-pulse">
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left font-semibold text-gray-500 text-xs">
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-16 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-11 rounded bg-gray-200 md:w-12" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-20 rounded bg-gray-200" /></th>
-              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+              {headWidths.map((w, i) => (
+                <th key={i} className={`${headCell} ${i === 0 ? "sticky left-0 z-20 bg-slate-100" : ""}`}><div className={`h-3 rounded bg-gray-200 ${w}`} /></th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {[0, 1, 2, 3, 4].map((i) => (
               <tr key={i} className="text-sm">
-                <td className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-20 rounded bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>
-                <td className="max-md:px-4 py-3 px-4 md:px-6"><div className="h-4 w-12 rounded bg-gray-200" /></td>
+                {headWidths.map((w, j) => (
+                  <td key={j} className={`${bodyCell} ${j === 0 ? "sticky left-0 z-10 bg-white whitespace-nowrap" : ""}`}>
+                    <div className={`h-4 rounded bg-gray-200 ${w}`} />
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -208,7 +213,6 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
     );
   }
 
-  const isSessionLog = visitors !== undefined;
   const rows = isSessionLog
     ? (Array.isArray(visitors) ? visitors : [])
     : (Array.isArray(store?.visitors) ? store.visitors : []);
@@ -319,6 +323,7 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                   <TableKebabMenu forceKebab items={[
                     canView && { label: "View", onClick: () => openDetails(row) },
+                    canEdit && { label: "Schedule Follow-Up", onClick: () => guarded(() => setFuVisitor(row)) },
                     canConvert && {
                       label: row?.status === "converted" ? "Converted" : "Convert",
                       onClick: () => guarded(() => { if (row?.status === "converted") return; openConvert(row); }),
@@ -482,9 +487,29 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                     </div>
                   </div>
 
+                  <div className="flex gap-1 border-b border-gray-200 -mx-1 px-1">
+                    {[
+                      { key: "attendance", label: "Attendance" },
+                      { key: "followups", label: "Follow-Ups" },
+                    ].map((t) => (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => setDetailsTab(t.key)}
+                        className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                          detailsTab === t.key
+                            ? "border-blue-600 text-blue-700"
+                            : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {detailsTab === "attendance" ? (
                   <div className="rounded-lg border border-gray-200 px-4 py-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-500 text-xs">Attendance History</span>
+                    <div className="flex items-center justify-end mb-2">
                       <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 font-semibold text-blue-700 text-xs">
                         {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0))}{" "}
                         {Number(detailsVisitor?.attendanceCount ?? (Array.isArray(detailsVisitor?.attendance) ? detailsVisitor.attendance.length : 0)) === 1 ? "visit" : "visits"}
@@ -512,9 +537,19 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
                         </table>
                       </div>
                     ) : (
-                      <div className="text-gray-500 text-sm">No attendance sessions recorded yet.</div>
+                      <EmptyState
+                        compact
+                        illustration="attendance"
+                        title="No attendance yet"
+                        description="This visitor hasn't been recorded at any service session."
+                      />
                     )}
                   </div>
+                  ) : null}
+
+                  {detailsTab === "followups" ? (
+                    <VisitorFollowUps visitorId={detailsVisitor?._id} />
+                  ) : null}
                 </div>
               )}
             </div>
@@ -531,6 +566,14 @@ function VisitorTable({ onEdit, onDeleted, visitors, pagination, loading, error,
           </div>
         </div>
       )}
+
+      {fuVisitor ? (
+        <VisitorFollowUpForm
+          visitor={fuVisitor}
+          onClose={() => setFuVisitor(null)}
+          onSaved={() => {}}
+        />
+      ) : null}
     </div>
   );
 }

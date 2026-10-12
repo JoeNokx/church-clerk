@@ -929,6 +929,7 @@ function AttendancePageInner() {
                               <div className="text-gray-500 text-xs mt-0.5">{indivViewing?.serviceType || "-"}</div>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
+                              {canUpdateAttendance ? (
                               <button
                                 type="button"
                                 onClick={() => guarded(() => { setIndivLinkError(""); setIndivLinkModalOpen(true); })}
@@ -937,6 +938,7 @@ function AttendancePageInner() {
                                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                 Generate Link
                               </button>
+                              ) : null}
                               {canUpdateAttendance ? (
                                 <button
                                   type="button"

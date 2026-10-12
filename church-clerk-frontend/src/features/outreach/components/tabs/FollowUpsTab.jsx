@@ -4,7 +4,8 @@ import {
   getFollowUpsStats, getAllFollowUps, createFollowUp, updateFollowUp, deleteFollowUp,
   getAllProspects, getOutreachEvents,
 } from "../../services/outreach.api.js";
-import { getMembers } from "../../../member/services/member.api.js";
+import { MemberMultiPicker } from "../../../budgeting/components/EntityPicker.jsx";
+import { assigneeList, assigneeNames, assigneeChips } from "../../../../shared/utils/followUps.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
@@ -20,6 +21,19 @@ const LBL = "block text-xs font-semibold text-gray-500 mb-1";
 function fmtDate(v) {
   if (!v) return "Not Specified";
   return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+// A follow-up's subject is a prospect, a visitor, or a member.
+function subjectName(fu) {
+  return (
+    `${fu?.prospect?.firstName || ""} ${fu?.prospect?.lastName || ""}`.trim() ||
+    fu?.visitor?.fullName ||
+    `${fu?.member?.firstName || ""} ${fu?.member?.lastName || ""}`.trim() ||
+    "Not Specified"
+  );
+}
+function subjectPhone(fu) {
+  return fu?.prospect?.phone || fu?.visitor?.phoneNumber || fu?.member?.phoneNumber || "";
 }
 
 const STATUS_STYLES = {
@@ -39,10 +53,10 @@ function StatusBadge({ status }) {
 }
 
 // ── Follow-Up Form Modal ──────────────────────────────────────────
-export function FollowUpFormModal({ open, mode, initialData, prospects, events, members, defaultValues, onClose, onSaved }) {
+export function FollowUpFormModal({ open, mode, initialData, prospects, events, defaultValues, onClose, onSaved }) {
   const empty = {
     prospect: "", outreachEvent: "", scheduledDate: "", type: "call",
-    status: "pending", assignedTo: "", notes: "", nextFollowUpDate: "",
+    status: "pending", assignedTo: [], notes: "", nextFollowUpDate: "",
   };
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
@@ -57,7 +71,7 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
         scheduledDate: initialData.scheduledDate ? initialData.scheduledDate.slice(0, 10) : "",
         type: initialData.type || "call",
         status: initialData.status || "pending",
-        assignedTo: initialData.assignedTo?._id || initialData.assignedTo || "",
+        assignedTo: assigneeChips(initialData),
         notes: initialData.notes || "",
         nextFollowUpDate: initialData.nextFollowUpDate ? initialData.nextFollowUpDate.slice(0, 10) : "",
       });
@@ -70,8 +84,7 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
   const handleSubmit = async () => {
     if (!form.scheduledDate) { setError("Scheduled date is required."); return; }
     setSaving(true); setError("");
-    const payload = { ...form };
-    if (!payload.assignedTo) delete payload.assignedTo;
+    const payload = { ...form, assignedTo: form.assignedTo.map((m) => m._id) };
     if (!payload.outreachEvent) delete payload.outreachEvent;
     try {
       if (mode === "edit") {
@@ -158,10 +171,7 @@ export function FollowUpFormModal({ open, mode, initialData, prospects, events, 
           </div>
           <div>
             <label className={LBL}>Assigned To</label>
-            <select value={form.assignedTo} onChange={(e) => set("assignedTo", e.target.value)} className={SEL}>
-              <option value="">Unassigned</option>
-              {members.map((m) => <option key={m._id} value={m._id}>{m.firstName} {m.lastName}{m.phoneNumber ? ` · ${m.phoneNumber}` : ""}</option>)}
-            </select>
+            <MemberMultiPicker selected={form.assignedTo} onChange={(v) => set("assignedTo", v)} />
           </div>
           {error ? <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{error}</div> : null}
         </div>
@@ -182,15 +192,15 @@ export function FollowUpDetailsModal({ open, followUp, onClose }) {
 
   const statusKey = followUp.status || followUp.outcome || "";
   const dateVal = followUp.scheduledDate || followUp.followUpDate;
-  const prospectName = `${followUp.prospect?.firstName || ""} ${followUp.prospect?.lastName || ""}`.trim() || "Not Specified";
+  const prospectName = subjectName(followUp);
 
   const fields = [
-    { label: "Prospect", value: prospectName },
-    { label: "Phone", value: followUp.prospect?.phone || "Not Specified" },
+    { label: "Person", value: prospectName },
+    { label: "Phone", value: subjectPhone(followUp) || "Not Specified" },
     { label: "Scheduled Date", value: fmtDate(dateVal) },
     { label: "Method", value: TYPE_LABELS[followUp.type] || followUp.type || "Not Specified" },
     { label: "Status", value: null, badge: true },
-    { label: "Assigned To", value: followUp.assignedTo ? `${followUp.assignedTo.firstName} ${followUp.assignedTo.lastName}` : "Not Specified" },
+    { label: "Assigned To", value: assigneeNames(followUp) || "Not Specified" },
     { label: "Outreach Event", value: followUp.outreachEvent?.title || "Not Specified" },
     { label: "Next Follow-Up", value: followUp.nextFollowUpDate ? fmtDate(followUp.nextFollowUpDate) : "Not Specified" },
   ];
@@ -211,8 +221,17 @@ export function FollowUpDetailsModal({ open, followUp, onClose }) {
               {(prospectName[0] || "?").toUpperCase()}
             </div>
             <div className="min-w-0">
-              <div className="font-semibold text-gray-900 text-sm truncate">{prospectName}</div>
-              {followUp.prospect?.phone ? <div className="text-xs text-gray-400">{followUp.prospect.phone}</div> : null}
+              <div className="font-semibold text-gray-900 text-sm truncate">
+                {prospectName}
+                {followUp.visitor ? (
+                  <span className="ml-1.5 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 align-middle">Visitor</span>
+                ) : followUp.member ? (
+                  <span className="ml-1.5 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 align-middle">Member</span>
+                ) : followUp.prospect ? (
+                  <span className="ml-1.5 inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 align-middle">Prospect</span>
+                ) : null}
+              </div>
+              {subjectPhone(followUp) ? <div className="text-xs text-gray-400">{subjectPhone(followUp)}</div> : null}
             </div>
           </div>
 
@@ -252,17 +271,24 @@ const TYPE_LABELS = {
 function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDelete }) {
   return (
     <tr className={`max-md:text-xs text-gray-700 text-sm ${isOverdue ? "bg-red-50/40" : ""}`}>
-      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={`${fu.prospect?.firstName || ""} ${fu.prospect?.lastName || ""}`.trim() || "Not Specified"}>
+      <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={subjectName(fu)}>
         <div className="font-semibold text-gray-900 text-sm">
-          <span className="sm:hidden">{truncateMobileName(`${fu.prospect?.firstName || ""} ${fu.prospect?.lastName || ""}`.trim() || "Not Specified")}</span>
-          <span className="hidden sm:inline">{truncateDesktopName(`${fu.prospect?.firstName || ""} ${fu.prospect?.lastName || ""}`.trim() || "Not Specified")}</span>
+          <span className="sm:hidden">{truncateMobileName(subjectName(fu))}</span>
+          <span className="hidden sm:inline">{truncateDesktopName(subjectName(fu))}</span>
+          {fu.visitor ? (
+            <span className="ml-1.5 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 align-middle">Visitor</span>
+          ) : fu.member ? (
+            <span className="ml-1.5 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 align-middle">Member</span>
+          ) : fu.prospect ? (
+            <span className="ml-1.5 inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 align-middle">Prospect</span>
+          ) : null}
         </div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu.scheduledDate)}</td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6"><StatusBadge status={fu.status} /></td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "Not Specified"}>
-        <span className="sm:hidden">{truncateMobileName(fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "Not Specified")}</span>
-        <span className="hidden sm:inline">{truncateDesktopName(fu.assignedTo ? `${fu.assignedTo.firstName} ${fu.assignedTo.lastName}` : "Not Specified")}</span>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={assigneeNames(fu) || "Not Specified"}>
+        <span className="sm:hidden">{truncateMobileName(assigneeNames(fu) || "Not Specified")}</span>
+        <span className="hidden sm:inline">{truncateDesktopName(assigneeNames(fu) || "Not Specified")}</span>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={fu.outreachEvent?.title || "Not Specified"}>
         <span className="sm:hidden">{truncateMobileName(fu.outreachEvent?.title || "Not Specified")}</span>
@@ -303,7 +329,6 @@ export default function FollowUpsTab({ setHeaderAction }) {
 
   const [prospects, setProspects] = useState([]);
   const [events, setEvents] = useState([]);
-  const [members, setMembers] = useState([]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
@@ -332,7 +357,6 @@ export default function FollowUpsTab({ setHeaderAction }) {
     fetchFollowUps();
     getAllProspects({ limit: 100 }).then((r) => setProspects(r.data?.data || [])).catch(() => {});
     getOutreachEvents({ limit: 100 }).then((r) => setEvents(r.data?.data || [])).catch(() => {});
-    getMembers({ limit: 200, status: "active" }).then((r) => setMembers(r.data?.members || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -359,8 +383,8 @@ export default function FollowUpsTab({ setHeaderAction }) {
     if (filterSearch.trim()) {
       const q = filterSearch.toLowerCase();
       list = list.filter((fu) => {
-        const name = `${fu.prospect?.firstName || ""} ${fu.prospect?.lastName || ""}`.trim().toLowerCase();
-        const assignedTo = `${fu.assignedTo?.firstName || ""} ${fu.assignedTo?.lastName || ""}`.trim().toLowerCase();
+        const name = subjectName(fu).toLowerCase();
+        const assignedTo = assigneeNames(fu).toLowerCase();
         return name.includes(q) || assignedTo.includes(q);
       });
     }
@@ -368,9 +392,9 @@ export default function FollowUpsTab({ setHeaderAction }) {
       list = list.filter((fu) => fu.status === filterStatus);
     }
     if (filterAssigned === "assigned") {
-      list = list.filter((fu) => Boolean(fu.assignedTo));
+      list = list.filter((fu) => assigneeList(fu).length > 0);
     } else if (filterAssigned === "unassigned") {
-      list = list.filter((fu) => !fu.assignedTo);
+      list = list.filter((fu) => !assigneeList(fu).length);
     }
     if (filterDateFrom || filterDateTo) {
       list = list.filter((fu) => {
@@ -437,7 +461,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
             <FilterBar
               searchValue={filterSearch}
               onSearchChange={(v) => { setFilterSearch(v); setClientPage(1); fetchFollowUps(1, { search: v || undefined }); }}
-              searchPlaceholder="Search prospect or assigned to…"
+              searchPlaceholder="Search person or assigned to…"
               selects={[
                 {
                   key: "status",
@@ -473,7 +497,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
             <MobileFilterBar
               searchValue={filterSearch}
               onSearchChange={(v) => { setFilterSearch(v); setClientPage(1); fetchFollowUps(1, { search: v || undefined }); }}
-              searchPlaceholder="Search prospect or assigned to…"
+              searchPlaceholder="Search person or assigned to…"
               dateFrom={filterDateFrom}
               dateTo={filterDateTo}
               onDateApply={(from, to) => { setFilterDateFrom(from); setFilterDateTo(to); setClientPage(1); fetchFollowUps(1, { dateFrom: from || undefined, dateTo: to || undefined }); }}
@@ -618,7 +642,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
 
       <FollowUpFormModal
         open={formOpen} mode={formMode} initialData={editingFU}
-        prospects={prospects} events={events} members={members}
+        prospects={prospects} events={events}
         onClose={() => setFormOpen(false)}
         onSaved={() => { setFormOpen(false); loadStats(); fetchFollowUps(pagination.page); }}
       />

@@ -41,6 +41,16 @@ const createPledge = async (req, res) => {
                 event
                 } = req.body;
 
+                  // Pledges always belong to a program or a fundraising
+                  // project — there is no general pledge type, since pledge
+                  // income is reported under its destination module.
+                  if (!churchProject && !event) {
+                    return res.status(400).json({ message: "Pledges must be linked to a program or a fundraising project." });
+                  }
+                  if (churchProject && event) {
+                    return res.status(400).json({ message: "Link a pledge to either a program or a fundraising project — not both." });
+                  }
+
                   if (churchProject) {
                     const fundraiser = await ChurchProject.findOne({
                       _id: churchProject,

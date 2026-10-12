@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
+import ChurchContext from "../../church/church.store.js";
 
 function AddLookupValueButton({ label, kind, onCreated }) {
   const [open, setOpen] = useState(false);
   const guarded = useGuardedAction();
+  const churchCtx = useContext(ChurchContext);
+  const canEditChurch = churchCtx?.activeChurch?._id ? churchCtx?.activeChurch?.canEdit !== false : true;
+
+  if (!canEditChurch) return null;
 
   if (!open) {
     return (

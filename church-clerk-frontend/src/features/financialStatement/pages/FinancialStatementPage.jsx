@@ -18,7 +18,7 @@ import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
-import Spinner from "../../../shared/components/Spinner.jsx";
+import { SkeletonKpiCard, SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import {
@@ -203,7 +203,13 @@ function BreakdownDetailsModal({ row, params, currency, modulePage, onClose, onO
 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center p-10"><Spinner className="text-gray-400" /></div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px]">
+                <tbody>
+                  <SkeletonTableRows rows={4} widths={["w-20", "w-32", "w-40", "w-16"]} />
+                </tbody>
+              </table>
+            </div>
           ) : error ? (
             <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{error}</div>
           ) : records.length === 0 ? (
@@ -641,7 +647,28 @@ function FinancialStatementContent() {
       ) : null}
 
       {loading ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
+        <div className="mt-6 space-y-6">
+          <KpiGrid className="gap-4 lg:grid-cols-3">
+            <SkeletonKpiCard />
+            <SkeletonKpiCard />
+            <SkeletonKpiCard />
+          </KpiGrid>
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden animate-pulse">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-6 py-4">
+              <div className="h-3.5 w-44 rounded bg-gray-200" />
+              <div className="h-8 w-28 rounded-lg bg-gray-200" />
+            </div>
+            <div className="divide-y divide-gray-100">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-6 px-4 md:px-6 py-3.5">
+                  <div className="h-3.5 w-52 rounded bg-gray-200" />
+                  <div className="hidden md:block h-3 w-32 rounded bg-gray-100" />
+                  <div className="ml-auto h-3.5 w-24 rounded bg-gray-200" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {!loading && !error ? (

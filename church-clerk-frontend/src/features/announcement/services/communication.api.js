@@ -48,6 +48,22 @@ export const resendFailedDelivery = async (id) => {
   return await http.post(`/announcement/deliveries/${id}/resend`);
 };
 
+export const getAutomations = async () => {
+  return await http.get("/announcement/automations");
+};
+
+export const createAutomation = async (payload) => {
+  return await http.post("/announcement/automations", payload);
+};
+
+export const updateAutomation = async (id, payload) => {
+  return await http.put(`/announcement/automations/${id}`, payload);
+};
+
+export const deleteAutomation = async (id) => {
+  return await http.delete(`/announcement/automations/${id}`);
+};
+
 export const getMessageTemplates = async (params) => {
   return await http.get("/announcement/templates", { params });
 };

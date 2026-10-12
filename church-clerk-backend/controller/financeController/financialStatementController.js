@@ -17,6 +17,7 @@ import MinistryOffering from "../../models/organisationModel/ministryOfferingMod
 import Pledge from "../../models/financeModel/pledgeModel/pledgeModel.js";
 import PledgePayment from "../../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import OutreachSupport from "../../models/outreachModel/outreachSupportModel.js";
+import OrganisationContribution from "../../models/organisationModel/organisationContributionModel.js";
 import Income from "../../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Expense from "../../models/financeModel/incomeExpenseModel/expenseModel.js";
 
@@ -305,36 +306,66 @@ const INCOME_SOURCES = [
         detail: { nameFields: ["seedName", "offeringType"], tagField: "kind", tag: "Offering", metaFields: [] } }
     ]
   },
+  // Organisation contributions fold into their entity's line — there is no
+  // standalone organisation-contribution line, so nothing counts twice.
   {
-    key: "cellOfferings", label: "Cell Offerings & Seed",
+    key: "cellOfferings", label: "Cell Offerings, Seed & Contributions",
     queries: [
       { Model: CellOffering, dateField: "date", amountField: "amount",
-        detail: { nameFields: ["offeringType"], tagField: "recordType", tag: "Offering", metaFields: [] } }
+        detail: { nameFields: ["offeringType"], tagField: "recordType", tag: "Offering", metaFields: [] } },
+      { Model: OrganisationContribution, dateField: "date", amountField: "amount",
+        extraMatch: { entityType: "cell" },
+        detail: {
+          nameJoin: ["member.firstName", "member.lastName"], nameFields: ["note"],
+          tag: "Contribution", metaFields: ["paymentMethod"],
+          populate: [{ path: "member", select: "firstName lastName" }]
+        } }
     ]
   },
   {
-    key: "groupOfferings", label: "Groups Offerings & Seed",
+    key: "groupOfferings", label: "Groups Offerings, Seed & Contributions",
     queries: [
       { Model: GroupOffering, dateField: "date", amountField: "amount",
-        detail: { nameFields: ["offeringType"], tagField: "recordType", tag: "Offering", metaFields: [] } }
+        detail: { nameFields: ["offeringType"], tagField: "recordType", tag: "Offering", metaFields: [] } },
+      { Model: OrganisationContribution, dateField: "date", amountField: "amount",
+        extraMatch: { entityType: "group" },
+        detail: {
+          nameJoin: ["member.firstName", "member.lastName"], nameFields: ["note"],
+          tag: "Contribution", metaFields: ["paymentMethod"],
+          populate: [{ path: "member", select: "firstName lastName" }]
+        } }
     ]
   },
   {
-    key: "departmentOfferings", label: "Department Offerings & Seed",
+    key: "departmentOfferings", label: "Department Offerings, Seed & Contributions",
     queries: [
       { Model: DepartmentOffering, dateField: "date", amountField: "amount",
-        detail: { nameFields: ["offeringType"], tagField: "recordType", tag: "Offering", metaFields: [] } }
+        detail: { nameFields: ["offeringType"], tagField: "recordType", tag: "Offering", metaFields: [] } },
+      { Model: OrganisationContribution, dateField: "date", amountField: "amount",
+        extraMatch: { entityType: "department" },
+        detail: {
+          nameJoin: ["member.firstName", "member.lastName"], nameFields: ["note"],
+          tag: "Contribution", metaFields: ["paymentMethod"],
+          populate: [{ path: "member", select: "firstName lastName" }]
+        } }
     ]
   },
   {
-    key: "ministryOfferings", label: "Ministry Offerings & Seed",
+    key: "ministryOfferings", label: "Ministry Offerings, Seed & Contributions",
     queries: [
       { Model: MinistryOffering, dateField: "date", amountField: "amount",
-        detail: { nameFields: ["offeringType"], tagField: "recordType", tag: "Offering", metaFields: [] } }
+        detail: { nameFields: ["offeringType"], tagField: "recordType", tag: "Offering", metaFields: [] } },
+      { Model: OrganisationContribution, dateField: "date", amountField: "amount",
+        extraMatch: { entityType: "ministry" },
+        detail: {
+          nameJoin: ["member.firstName", "member.lastName"], nameFields: ["note"],
+          tag: "Contribution", metaFields: ["paymentMethod"],
+          populate: [{ path: "member", select: "firstName lastName" }]
+        } }
     ]
   },
   {
-    key: "projectContributions", label: "Fundraising Contributions", pledgeScope: "project",
+    key: "projectContributions", label: "Fundraising Contributions & Pledges", pledgeScope: "project",
     queries: [
       { Model: ProjectContribution, dateField: "date", amountField: "amount",
         detail: { nameFields: ["contributorName"], tag: "Instant Pay", metaFields: [] } }
@@ -384,7 +415,9 @@ const INCOME_SOURCES = [
     ]
   },
   {
-    key: "otherIncome", label: "Other Income", pledgeScope: "unscoped",
+    // Unscoped pledges aren't allowed — pledge payments only ever fold into
+    // the program or fundraising lines above.
+    key: "otherIncome", label: "Other Income",
     queries: [
       { Model: Income, dateField: "dateReceived", amountField: "amount",
         detail: { nameFields: ["category"], tag: "Other income", metaFields: [] } }
@@ -480,12 +513,11 @@ const EXPENSE_SOURCES = [
 ];
 
 // Pledge payments are folded into the income line of the pledge's scope:
-// churchProject pledges -> Fundraising Contributions, program pledges -> Programs Offerings.
-// Rare unscoped pledges land in Other Income so totals stay complete.
+// churchProject pledges -> Fundraising Contributions, program pledges ->
+// Programs Offerings. Unscoped pledges aren't allowed and count nowhere.
 const PLEDGE_SPLIT_BY_KEY = {
   projectContributions: "project",
-  programOfferings: "program",
-  otherIncome: "unscoped"
+  programOfferings: "program"
 };
 
 async function sumSource({ source, churchId, periodStart, periodEnd }) {

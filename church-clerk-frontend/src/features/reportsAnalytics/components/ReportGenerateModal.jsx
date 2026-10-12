@@ -46,7 +46,12 @@ const MODULE_OPTIONS = {
       },
       {
         key: "sub", kind: "radio", label: "Show", default: "offerings",
-        options: [RADIO("offerings", "Offerings"), RADIO("attendance", "Attendance")],
+        options: [
+          RADIO("offerings", "Offerings"),
+          RADIO("attendance", "Attendance"),
+          RADIO("expenses", "Expenses"),
+          RADIO("pledges", "Pledges")
+        ],
         showIf: (o) => o.scope === "single" && !!o.entity
       }
     ],
@@ -55,6 +60,12 @@ const MODULE_OPTIONS = {
         const n = L("entity") ? `"${L("entity")}"` : "the selected program";
         if (v.sub === "attendance") {
           return `Attendance report for the program ${n}.`;
+        }
+        if (v.sub === "expenses") {
+          return `Expenses report for the program ${n}.`;
+        }
+        if (v.sub === "pledges") {
+          return `Pledges report for the program ${n}.`;
         }
         return `Offerings report for the program ${n}.`;
       }
@@ -92,7 +103,7 @@ const MODULE_OPTIONS = {
       },
       {
         key: "sub", kind: "radio", label: "Show", default: "members",
-        options: [RADIO("members", "Members"), RADIO("offerings", "Offerings"), RADIO("attendance", "Attendance")],
+        options: [RADIO("members", "Members"), RADIO("offerings", "Offerings & Contributions"), RADIO("attendance", "Attendance"), RADIO("expenses", "Expenses")],
         showIf: (o) => o.scope === "single" && !!o.entity
       }
     ],
@@ -101,7 +112,8 @@ const MODULE_OPTIONS = {
       const plural = t === "ministry" ? "ministries" : `${t}s`;
       if (v.scope === "single") {
         const n = L("entity") ? `"${L("entity")}"` : `the selected ${t}`;
-        if (v.sub === "offerings") return `Offerings report for the ${t} ${n}.`;
+        if (v.sub === "offerings") return `Offerings and contributions report for the ${t} ${n}.`;
+        if (v.sub === "expenses") return `Expenses report for the ${t} ${n}.`;
         if (v.sub === "attendance") {
           return `Attendance report for the ${t} ${n}.`;
         }
@@ -114,19 +126,26 @@ const MODULE_OPTIONS = {
     controls: [
       {
         key: "type", kind: "radio", label: "Report on", default: "outreaches",
-        options: [RADIO("outreaches", "Outreaches"), RADIO("prospects", "People reached"), RADIO("teams", "Teams"), RADIO("followups", "Follow-ups")]
+        options: [
+          RADIO("outreaches", "Outreaches"),
+          RADIO("prospects", "People reached"),
+          RADIO("teams", "Teams"),
+          RADIO("followups", "Follow-ups"),
+          RADIO("support", "Support received"),
+          RADIO("expenses", "Expenses")
+        ]
       },
       {
         key: "scope", kind: "radio", label: "Outreaches", default: "all",
         options: [RADIO("all", "All outreaches"), RADIO("single", "One outreach")],
-        showIf: (o) => o.type === "outreaches"
+        showIf: (o) => ["outreaches", "support", "expenses"].includes(o.type)
       },
       {
         key: "entity", kind: "entity", label: "Outreach",
         entityModule: "outreach-followup",
         entityParams: () => ({ type: "outreaches" }),
         allLabel: "Select an outreach",
-        showIf: (o) => o.type === "outreaches" && o.scope === "single"
+        showIf: (o) => ["outreaches", "support", "expenses"].includes(o.type) && o.scope === "single"
       },
       {
         key: "sub", kind: "radio", label: "Show", default: "prospects",
@@ -157,6 +176,14 @@ const MODULE_OPTIONS = {
     describe: (v, L) => {
       if (v.type === "prospects") return "Report on all people reached through outreach.";
       if (v.type === "followups") return "Report on all outreach follow-ups.";
+      if (v.type === "support") {
+        const n = L("entity") ? ` the "${L("entity")}" outreach` : " all outreaches";
+        return `Report on support received toward${n}.`;
+      }
+      if (v.type === "expenses") {
+        const n = L("entity") ? ` the "${L("entity")}" outreach` : " all outreaches";
+        return `Report on expenses recorded for${n}.`;
+      }
       if (v.type === "teams") {
         if (v.teamScope === "single") {
           const n = L("teamEntity") ? `"${L("teamEntity")}"` : "the selected team";
@@ -190,7 +217,7 @@ const MODULE_OPTIONS = {
     controls: [
       {
         key: "type", kind: "radio", label: "Report on", default: "all",
-        options: [RADIO("all", "All fundraising"), RADIO("contributions", "Contributions"), RADIO("expenses", "Expenses")]
+        options: [RADIO("all", "All fundraising"), RADIO("contributions", "Contributions"), RADIO("pledges", "Pledges"), RADIO("expenses", "Expenses")]
       },
       {
         key: "entity", kind: "entity", label: "Fundraising",
@@ -202,6 +229,7 @@ const MODULE_OPTIONS = {
     describe: (v, L) => {
       const n = L("entity") ? ` the "${L("entity")}" fundraising` : " all fundraising";
       if (v.type === "contributions") return `Report on contributions to${n}.`;
+      if (v.type === "pledges") return `Report on pledges toward${n}.`;
       if (v.type === "expenses") return `Report on expenses for${n}.`;
       return "Report on all fundraising.";
     }
@@ -226,27 +254,6 @@ const MODULE_OPTIONS = {
       return "Report on all business ventures.";
     }
   },
-  pledges: {
-    controls: [
-      {
-        key: "type", kind: "radio", label: "Report on", default: "all",
-        options: [RADIO("all", "All pledges"), RADIO("payments", "Payment history")]
-      },
-      {
-        key: "entity", kind: "entity", label: "Pledge",
-        entityModule: "pledges",
-        allLabel: "All pledges",
-        showIf: (o) => o.type === "payments"
-      }
-    ],
-    describe: (v, L) => {
-      if (v.type === "payments") {
-        const n = L("entity") ? ` the "${L("entity")}" pledge` : " all pledges";
-        return `Report on payment history for${n}.`;
-      }
-      return "Report on all pledges.";
-    }
-  },
   billing: {
     controls: [],
     describe: () => "Report on billing history."
@@ -265,14 +272,42 @@ const MODULE_OPTIONS = {
   },
   members: { controls: [], describe: () => "Report on all registered church members." },
   attendance: { controls: [], describe: () => "Report on member-level attendance records per service." },
-  visitors: { controls: [], describe: () => "Report on first-time and returning visitors." },
+  visitors: { controls: [], describe: () => "Report on visitors with first visit session and last visit date." },
   tithe: { controls: [], describe: () => "Report on tithe records." },
   "tithe-individual": { controls: [], describe: () => "Report on tithe payments made by individual members." },
   "tithe-aggregate": { controls: [], describe: () => "Report on aggregate tithe totals per service or group." },
   offerings: { controls: [], describe: () => "Report on offering collections by service and type." },
   "special-funds": { controls: [], describe: () => "Report on special fund giving by category and giver." },
-  expenses: { controls: [], describe: () => "Report on general church expenses by category." },
-  budgeting: { controls: [], describe: () => "Report on budget items and allocations by fiscal year." }
+  expenses: {
+    controls: [
+      {
+        key: "scope", kind: "radio", label: "Expense scope", default: "all",
+        options: [
+          RADIO("all", "All expenses"),
+          RADIO("general", "General"),
+          RADIO("program", "Program"),
+          RADIO("cell", "Cell"),
+          RADIO("group", "Group"),
+          RADIO("department", "Department"),
+          RADIO("ministry", "Ministry"),
+          RADIO("outreach", "Outreach")
+        ]
+      }
+    ],
+    describe: (v) => {
+      const scopes = {
+        general: "general church expenses",
+        program: "program expenses",
+        cell: "cell expenses",
+        group: "group expenses",
+        department: "department expenses",
+        ministry: "ministry expenses",
+        outreach: "outreach expenses"
+      };
+      return `Report on ${scopes[v.scope] || "expenses across all scopes"} by category.`;
+    }
+  },
+  budgeting: { controls: [], describe: () => "Report on budget items, expense sources and allocations by fiscal year." }
 };
 
 function EntitySelect({ entityModule, entityParams, value, onChange, allLabel }) {

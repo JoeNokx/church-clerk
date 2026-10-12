@@ -20,6 +20,24 @@ export const getVisitors = async (params, config = {}) => {
   return await http.get("/attendance/visitors", { params, ...(config || {}) });
 };
 
+// Visitor follow-ups — shared outreach follow-up engine, subject = visitor.
+// Update/delete reuse the outreach follow-up endpoints (same collection).
+export const getVisitorFollowUps = async (visitorId, config = {}) => {
+  return await http.get(`/attendance/visitors/${visitorId}/follow-ups`, config || {});
+};
+
+export const createVisitorFollowUp = async (visitorId, payload, config = {}) => {
+  return await http.post(`/attendance/visitors/${visitorId}/follow-ups`, payload, config || {});
+};
+
+export const updateFollowUp = async (followUpId, payload, config = {}) => {
+  return await http.put(`/outreach/follow-ups/${followUpId}`, payload, config || {});
+};
+
+export const deleteFollowUp = async (followUpId, config = {}) => {
+  return await http.delete(`/outreach/follow-ups/${followUpId}`, config || {});
+};
+
 export const getServiceIndividualAttendances = async (params, config = {}) => {
   return await http.get("/attendance/individual-attendances", { params, ...(config || {}) });
 };

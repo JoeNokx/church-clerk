@@ -4,6 +4,7 @@ import {
   createCustomRole,
   deleteCustomRole,
   getPermissionCatalog,
+  getSystemChurches,
   getSystemRoles,
   getSystemUsers,
   listCustomRoles,
@@ -70,6 +71,7 @@ function UsersRolesPage() {
 
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(null);
+  const [activeUsersTotal, setActiveUsersTotal] = useState(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -86,6 +88,18 @@ function UsersRolesPage() {
   const [verifyEmailModal, setVerifyEmailModal] = useState(null);
   const [verifyEmailLoading, setVerifyEmailLoading] = useState(false);
 
+  // ── By-church tab ──
+  const [churchList, setChurchList] = useState([]);
+  const [churchListPagination, setChurchListPagination] = useState(null);
+  const [churchSearch, setChurchSearch] = useState("");
+  const [churchListPage, setChurchListPage] = useState(1);
+  const [churchListLimit, setChurchListLimit] = useState(15);
+  const [byChurchLoading, setByChurchLoading] = useState(false);
+  const [byChurchError, setByChurchError] = useState("");
+  const [expandedChurchId, setExpandedChurchId] = useState(null);
+  // { [churchId]: { users: [], loading: bool, loaded: bool, error: string } }
+  const [churchUsersMap, setChurchUsersMap] = useState({});
+
   const allRoles = useMemo(() => {
     const list = roles?.allRoles;
     return Array.isArray(list) ? list : [];
@@ -97,7 +111,7 @@ function UsersRolesPage() {
       setLoading(true);
       setError("");
       try {
-        const [rolesRes, usersRes, customRolesRes] = await Promise.all([
+        const [rolesRes, usersRes, customRolesRes, activeCountRes] = await Promise.all([
           getSystemRoles(),
           getSystemUsers({
             page: actualPage,
@@ -105,12 +119,14 @@ function UsersRolesPage() {
             search: search || undefined,
             role: roleFilter || undefined
           }),
-          listCustomRoles({ includeInactive: true })
+          listCustomRoles({ includeInactive: true }),
+          getSystemUsers({ page: 1, limit: 1, isActive: "true" })
         ]);
 
         setRoles(rolesRes?.data?.data || null);
         setRows(Array.isArray(usersRes?.data?.data) ? usersRes.data.data : []);
         setPagination(usersRes?.data?.pagination || null);
+        setActiveUsersTotal(activeCountRes?.data?.pagination?.totalResult ?? null);
         const customList = customRolesRes?.data?.roles;
         setCustomRoles(Array.isArray(customList) ? customList : []);
         setPage(actualPage);
@@ -119,6 +135,7 @@ function UsersRolesPage() {
         setCustomRoles([]);
         setRows([]);
         setPagination(null);
+        setActiveUsersTotal(null);
         setError(e?.response?.data?.message || e?.message || "Failed to load users");
       } finally {
         setLoading(false);
@@ -396,6 +413,69 @@ function UsersRolesPage() {
     }
   };
 
+  // ── By-church tab logic ──
+  const loadChurches = useCallback(
+    async ({ nextPage } = {}) => {
+      const actualPage = nextPage ?? churchListPage;
+      setByChurchLoading(true);
+      setByChurchError("");
+      try {
+        const res = await getSystemChurches({
+          page: actualPage,
+          limit: churchListLimit,
+          search: churchSearch || undefined
+        });
+        setChurchList(Array.isArray(res?.data?.data) ? res.data.data : []);
+        setChurchListPagination(res?.data?.pagination || null);
+        setChurchListPage(actualPage);
+      } catch (e) {
+        setByChurchError(e?.response?.data?.message || e?.message || "Failed to load churches");
+        setChurchList([]);
+        setChurchListPagination(null);
+      } finally {
+        setByChurchLoading(false);
+      }
+    },
+    [churchListLimit, churchListPage, churchSearch]
+  );
+
+  const toggleChurch = async (churchId) => {
+    if (expandedChurchId === churchId) {
+      setExpandedChurchId(null);
+      return;
+    }
+    setExpandedChurchId(churchId);
+    if (churchUsersMap[churchId]?.loaded) return;
+    setChurchUsersMap((prev) => ({
+      ...prev,
+      [churchId]: { users: [], loading: true, loaded: false, error: "" }
+    }));
+    try {
+      const res = await getSystemUsers({ churchId, limit: 200, page: 1 });
+      const users = Array.isArray(res?.data?.data) ? res.data.data : [];
+      setChurchUsersMap((prev) => ({
+        ...prev,
+        [churchId]: { users, loading: false, loaded: true, error: "" }
+      }));
+    } catch (e) {
+      setChurchUsersMap((prev) => ({
+        ...prev,
+        [churchId]: { users: [], loading: false, loaded: false, error: e?.response?.data?.message || e?.message || "Failed to load users" }
+      }));
+    }
+  };
+
+  // Load church list when entering the by-church tab
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tab === "byChurch") loadChurches({ nextPage: 1 }); }, [tab]);
+
+  // Debounce church search
+  useEffect(() => {
+    if (tab !== "byChurch") return;
+    const t = setTimeout(() => { loadChurches({ nextPage: 1 }); }, 300);
+    return () => clearTimeout(t);
+  }, [churchSearch, loadChurches, tab]);
+
   return (
     <div className="max-w-6xl space-y-5">
       <div>
@@ -422,8 +502,8 @@ function UsersRolesPage() {
         />
         <KpiCard
           title="Active Users"
-          value={rows.filter((u) => u?.isActive !== false).length.toLocaleString()}
-          subtitle={`of ${rows.length} on this page`}
+          value={activeUsersTotal !== null ? Number(activeUsersTotal).toLocaleString() : "—"}
+          subtitle="Accounts not suspended"
           iconBg="bg-emerald-50"
           iconColor="text-emerald-500"
           icon={
@@ -465,6 +545,7 @@ function UsersRolesPage() {
       <PageTabs
         tabs={[
           { key: "users", label: "Users" },
+          { key: "byChurch", label: "By Church" },
           { key: "roles", label: "Roles" }
         ]}
         activeTab={tab}
@@ -629,6 +710,169 @@ function UsersRolesPage() {
             />
           </div>
         </Card>
+      ) : tab === "byChurch" ? (
+        // ── By Church tab ──────────────────────────────────────────────────
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              value={churchSearch}
+              onChange={(e) => setChurchSearch(e.target.value)}
+              placeholder="Search church name..."
+              className="h-9 w-full md:w-72 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+            />
+            {churchListPagination?.total !== undefined && (
+              <div className="text-xs text-gray-500 shrink-0">
+                {churchListPagination.total.toLocaleString()} churches
+              </div>
+            )}
+          </div>
+
+          {byChurchError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">{byChurchError}</div>
+          )}
+
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            {byChurchLoading ? (
+              <div className="divide-y divide-gray-100">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-3.5 animate-pulse">
+                    <div className="h-3.5 w-3.5 rounded bg-gray-200 shrink-0" />
+                    <div className="h-4 w-48 rounded bg-gray-200" />
+                    <div className="ml-2 h-4 w-16 rounded bg-gray-200" />
+                    <div className="ml-auto h-5 w-10 rounded-full bg-gray-200" />
+                  </div>
+                ))}
+              </div>
+            ) : churchList.length === 0 ? (
+              <EmptyState
+                compact
+                illustration="users"
+                title="No churches found"
+                description="Try adjusting your search to find a church."
+              />
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {churchList.map((church) => {
+                  const isExpanded = expandedChurchId === church._id;
+                  const churchData = churchUsersMap[church._id];
+                  const churchUsers = churchData?.users || [];
+                  const usersLoading = churchData?.loading === true;
+                  const usersLoaded = churchData?.loaded === true;
+                  const usersError = churchData?.error || "";
+
+                  return (
+                    <div key={church._id}>
+                      {/* ── Church row ── */}
+                      <button
+                        type="button"
+                        onClick={() => toggleChurch(church._id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 ${isExpanded ? "bg-blue-50 hover:bg-blue-50" : ""}`}
+                      >
+                        <span className={`text-gray-400 text-[10px] transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}>▶</span>
+                        <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900 truncate">{church.name}</span>
+                          {church.type && (
+                            <span className="inline-flex shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600 capitalize">
+                              {church.type}
+                            </span>
+                          )}
+                          {church.isActive === false && (
+                            <span className="inline-flex shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-600">
+                              Suspended
+                            </span>
+                          )}
+                        </div>
+                        {church.email && (
+                          <span className="hidden md:block shrink-0 text-xs text-gray-400 max-w-[180px] truncate">{church.email}</span>
+                        )}
+                        {usersLoaded && (
+                          <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5">
+                            {churchUsers.length}
+                          </span>
+                        )}
+                      </button>
+
+                      {/* ── Expanded users panel ── */}
+                      {isExpanded && (
+                        <div className="border-t border-gray-100 bg-slate-50 px-4 py-4">
+                          {usersLoading ? (
+                            <div className="space-y-2">
+                              {[0, 1, 2].map((i) => (
+                                <div key={i} className="flex gap-4 animate-pulse">
+                                  <div className="h-4 w-32 rounded bg-gray-200" />
+                                  <div className="h-4 w-44 rounded bg-gray-200" />
+                                  <div className="h-4 w-20 rounded bg-gray-200" />
+                                  <div className="h-4 w-14 rounded bg-gray-200" />
+                                </div>
+                              ))}
+                            </div>
+                          ) : usersError ? (
+                            <div className="text-sm text-red-600">{usersError}</div>
+                          ) : churchUsers.length === 0 ? (
+                            <div className="text-sm text-gray-500">No users found for this church.</div>
+                          ) : (
+                            <>
+                              <div className="text-xs text-gray-500 mb-2">{churchUsers.length} user{churchUsers.length !== 1 ? "s" : ""}</div>
+                              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                                <table className="min-w-full bg-white">
+                                  <thead className="bg-slate-100">
+                                    <tr className="text-left text-xs font-semibold text-gray-500">
+                                      <th className="py-2 px-3 whitespace-nowrap">Name</th>
+                                      <th className="py-2 px-3 whitespace-nowrap">Email</th>
+                                      <th className="py-2 px-3 whitespace-nowrap">Role</th>
+                                      <th className="py-2 px-3 whitespace-nowrap">Account</th>
+                                      <th className="py-2 px-3 whitespace-nowrap">Email verified</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {churchUsers.map((u) => (
+                                      <tr key={u._id} className="text-sm text-gray-700 hover:bg-gray-50">
+                                        <td className="py-1.5 px-3 whitespace-nowrap font-medium text-gray-900">
+                                          {u.fullName || "—"}
+                                        </td>
+                                        <td className="py-1.5 px-3 whitespace-nowrap text-gray-600">
+                                          {u.email || "—"}
+                                        </td>
+                                        <td className="py-1.5 px-3 whitespace-nowrap">
+                                          <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                            {u.role || "—"}
+                                          </span>
+                                        </td>
+                                        <td className="py-1.5 px-3 whitespace-nowrap">
+                                          <StatusChip value={u.isActive === false ? "Inactive" : "Active"} />
+                                        </td>
+                                        <td className="py-1.5 px-3 whitespace-nowrap">
+                                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${u.isEmailVerified === false ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
+                                            {u.isEmailVerified === false ? "Unverified" : "Verified"}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <Pagination
+              pagination={churchListPagination}
+              rowsCount={churchList.length}
+              limit={churchListLimit}
+              onLimitChange={(n) => setChurchListLimit(n)}
+              onPageChange={(p) => loadChurches({ nextPage: p })}
+              itemName="churches"
+              filtered={Boolean(churchSearch.trim())}
+              disabled={byChurchLoading}
+            />
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card>

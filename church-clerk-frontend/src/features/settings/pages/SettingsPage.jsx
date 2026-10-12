@@ -22,7 +22,7 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import Button from "../../../shared/components/Button/index.jsx";
-import Spinner from "../../../shared/components/Spinner.jsx";
+import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { showSuccess } from "../../../utils/toast.js";
@@ -1746,9 +1746,11 @@ function SettingsPage() {
                       <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-blue-300"><path d="M12 3L4 8V21H20V8L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>
                     </div>
                   )}
-                  <button type="button" onClick={() => guarded(() => logoInputRef.current?.click())} disabled={!canWrite} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 disabled:opacity-50" title="Change logo">
+                  {canWrite ? (
+                  <button type="button" onClick={() => guarded(() => logoInputRef.current?.click())} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50" title="Change logo">
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-700"><path d="M4 20h4l10.5-10.5a2 2 0 10-4-4L4 16v4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M13.5 6.5l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
                   </button>
+                  ) : null}
                   <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 2 * 1024 * 1024) { setProfileError("Logo must be under 2 MB"); return; } setProfileError(""); const url = URL.createObjectURL(f); setLogoPreviewUrl(url); setLogoFile(f); }} />
                 </div>
                 <div>
@@ -1848,25 +1850,45 @@ function SettingsPage() {
                         ) : branchResults.length ? (
                           branchResults
                             .filter((c) => !selectedBranches.some((s) => s._id === c._id))
-                            .map((c) => (
-                              <button
-                                key={c._id}
-                                type="button"
-                                disabled={!canWrite}
-                                onClick={() => {
-                                  setSelectedBranches((prev) => [...prev, c]);
-                                  setBranchSearch("");
-                                  setBranchResults([]);
-                                  setBranchDropdownOpen(false);
-                                }}
-                                className="w-full text-left px-4 py-3 hover:bg-gray-50"
-                              >
-                                <div className="font-semibold text-gray-900 truncate text-sm">{c.name || "—"}</div>
-                                <div className="mt-0.5 text-gray-500 truncate text-xs">
-                                  {`${c.city || ""}${c.region ? `, ${c.region}` : ""}`.trim() || "—"}
-                                </div>
-                              </button>
-                            ))
+                            .filter((c) => {
+                              // Hide branches already belonging to this HQ
+                              if (!c.parentChurch) return true;
+                              const pid = c.parentChurch?._id || c.parentChurch;
+                              return String(pid) !== String(activeChurch?._id);
+                            })
+                            .map((c) => {
+                              const takenBy = c.parentChurch && typeof c.parentChurch === "object" ? c.parentChurch : null;
+                              return (
+                                <button
+                                  key={c._id}
+                                  type="button"
+                                  disabled={!canWrite || !!takenBy}
+                                  onClick={() => {
+                                    if (takenBy) return;
+                                    setSelectedBranches((prev) => [...prev, c]);
+                                    setBranchSearch("");
+                                    setBranchResults([]);
+                                    setBranchDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left px-4 py-3 transition-colors ${takenBy ? "cursor-not-allowed bg-gray-50/70" : "hover:bg-gray-50"}`}
+                                >
+                                  <div className={`font-semibold truncate text-sm ${takenBy ? "text-gray-400" : "text-gray-900"}`}>
+                                    {c.name || "—"}
+                                  </div>
+                                  <div className="mt-0.5 text-gray-400 truncate text-xs">
+                                    {`${c.city || ""}${c.region ? `, ${c.region}` : ""}`.trim() || "—"}
+                                  </div>
+                                  {takenBy ? (
+                                    <span className="mt-1.5 inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                                      <svg viewBox="0 0 16 16" fill="none" className="h-2.5 w-2.5 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                        <path d="M5 8h2a1 1 0 000-2H5a2 2 0 000 4h2M11 8H9a1 1 0 010 2h2a2 2 0 000-4H9"/>
+                                      </svg>
+                                      Connected to {takenBy.name || "another HQ"}
+                                    </span>
+                                  ) : null}
+                                </button>
+                              );
+                            })
                         ) : (
                           <div className="px-4 py-3 text-gray-600 text-sm">Type to search branch churches.</div>
                         )}
@@ -2113,18 +2135,19 @@ function SettingsPage() {
                 />
               </div>
 
+              {canWrite ? (
               <div className="flex justify-end">
                 <Button
                   type="submit"
                   variant="primary"
                   loading={isSubmittingChurchProfile}
                   loadingText="Saving..."
-                  disabled={!canWrite || (type === "Branch" && !parentChurchId)}
                   className="bg-blue-900 text-white px-5 py-2 rounded-lg font-semibold shadow-sm hover:bg-blue-800 disabled:opacity-50 text-sm"
                 >
                   Update Church Profile
                 </Button>
               </div>
+              ) : null}
             </form>
           </div>
         </div>
@@ -2144,7 +2167,7 @@ function SettingsPage() {
               <button
                 type="button"
                 onClick={() => guarded(() => handleSwitchTitheMode("individual"))}
-                disabled={titheModeSwitching || activeChurch?.titheRecordingMode === "individual"}
+                disabled={!canWrite || titheModeSwitching || activeChurch?.titheRecordingMode === "individual"}
                 className={`cck-allow-icons rounded-2xl border p-4 md:p-6 text-left transition ${activeChurch?.titheRecordingMode === "individual" ? "border-blue-500 bg-blue-50 pointer-events-none" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
               >
                 <div className="flex flex-col items-center text-center">
@@ -2157,16 +2180,18 @@ function SettingsPage() {
                     <div>Track individual patterns</div>
                     <div>Named tithe entries</div>
                   </div>
+                  {canWrite || activeChurch?.titheRecordingMode === "individual" ? (
                   <div className={`mt-5 inline-flex h-11 items-center justify-center rounded-lg px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs ${activeChurch?.titheRecordingMode === "individual" ? "bg-blue-700" : "bg-blue-700"}`}>
                     {activeChurch?.titheRecordingMode === "individual" ? "Current Mode" : "Switch to Individual"}
                   </div>
+                  ) : null}
                 </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => guarded(() => handleSwitchTitheMode("aggregate"))}
-                disabled={titheModeSwitching || activeChurch?.titheRecordingMode === "aggregate"}
+                disabled={!canWrite || titheModeSwitching || activeChurch?.titheRecordingMode === "aggregate"}
                 className={`cck-allow-icons rounded-2xl border p-4 md:p-6 text-left transition ${activeChurch?.titheRecordingMode === "aggregate" ? "border-green-500 bg-green-50 pointer-events-none" : "border-gray-200 bg-white hover:border-gray-300 disabled:opacity-60"}`}
               >
                 <div className="flex flex-col items-center text-center">
@@ -2179,9 +2204,11 @@ function SettingsPage() {
                     <div>No individual names</div>
                     <div>Bulk collection</div>
                   </div>
+                  {canWrite || activeChurch?.titheRecordingMode === "aggregate" ? (
                   <div className={`mt-5 inline-flex h-11 items-center justify-center rounded-lg px-4 md:px-5 lg:px-6 font-semibold text-white md:h-12 text-xs ${activeChurch?.titheRecordingMode === "aggregate" ? "bg-green-700" : "bg-green-700"}`}>
                     {activeChurch?.titheRecordingMode === "aggregate" ? "Current Mode" : "Switch to Aggregate"}
                   </div>
+                  ) : null}
                 </div>
               </button>
             </div>
@@ -2230,6 +2257,7 @@ function SettingsPage() {
                     Max 11 characters. Letters and numbers only. {senderIdInputLen}/11 ({senderIdCharsLeft} left)
                   </div>
 
+                  {canWrite ? (
                   <div className="mt-3 flex items-center justify-end gap-2">
                     <button
                       type="button"
@@ -2246,12 +2274,13 @@ function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => guarded(handleRequestSenderId)}
-                      disabled={!canWrite || senderIdLoading || !String(senderIdInput || "").trim()}
+                      disabled={senderIdLoading || !String(senderIdInput || "").trim()}
                       className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-sm"
                     >
                       {senderIdLoading ? "Submitting..." : senderStatusMeta.raw === "pending" ? "Resubmit Request" : "Request Sender ID"}
                     </button>
                   </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -2337,7 +2366,23 @@ function SettingsPage() {
             </div>
 
             {usersLoading ? (
-              <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
+              <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                      <th className="px-4 py-3"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                      <th className="px-4 py-3"><div className="h-3 w-12 rounded bg-gray-300/60 animate-pulse" /></th>
+                      <th className="px-4 py-3"><div className="h-3 w-10 rounded bg-gray-300/60 animate-pulse" /></th>
+                      <th className="px-4 py-3"><div className="h-3 w-12 rounded bg-gray-300/60 animate-pulse" /></th>
+                      <th className="px-4 py-3"><div className="ml-auto h-3 w-12 rounded bg-gray-300/60 animate-pulse" /></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    <SkeletonTableRows rows={5} widths={["w-24", "w-36", "w-24", "w-16", "w-16", "w-12"]} cellClass="px-4 py-3" />
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
                 <table className="min-w-full text-sm">
@@ -2377,7 +2422,7 @@ function SettingsPage() {
                             </td>
                             <td className="px-4 py-3">
                               <TableKebabMenu items={[
-                                { label: "Edit", onClick: () => guarded(() => handleOpenEdit(row)), disabled: !canWrite, desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
+                                canWrite && { label: "Edit", onClick: () => guarded(() => handleOpenEdit(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
                                 canDeactivateUsers && { label: isActive ? "Deactivate" : "Activate", onClick: () => guarded(() => openDeactivateConfirm(row)), danger: isActive, desktopClassName: `rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}` }
                               ]} />
                             </td>
@@ -2418,7 +2463,18 @@ function SettingsPage() {
             </div>
 
             {rolesLoading ? (
-              <div className="mt-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="rounded-lg border border-gray-200 p-4 animate-pulse">
+                    <div className="h-3.5 w-24 rounded bg-gray-200" />
+                    <div className="mt-3 space-y-2">
+                      {[0, 1, 2, 3, 4].map((j) => (
+                        <div key={j} className="h-3 w-full rounded bg-gray-100" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : churchRoles.length ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {churchRoles.map((r) => {

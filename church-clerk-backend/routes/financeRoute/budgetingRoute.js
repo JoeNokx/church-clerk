@@ -13,6 +13,7 @@ import {
   deleteBudget,
   getBudget,
   getBudgetSummary,
+  getExpenseCategories,
   listBudgets,
   updateBudget
 } from "../../controller/financeController/budgetingController.js";
@@ -37,6 +38,17 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("budgeting", "read"),
   listBudgets
+);
+
+router.get(
+  "/budgets/expense-categories",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("budgeting", "read"),
+  getExpenseCategories
 );
 
 router.get(
@@ -70,6 +82,17 @@ router.put(
   authorizeRoles("superadmin", "churchadmin", "financialofficer"),
   requirePermission("budgeting", "update"),
   updateBudget
+);
+
+router.delete(
+  "/budgets/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "churchadmin", "financialofficer"),
+  requirePermission("budgeting", "delete"),
+  deleteBudget
 );
 
 export default router;

@@ -43,7 +43,7 @@ const MODULES = [
   {
     value: "visitors",
     label: "Visitors",
-    description: "First-time and returning visitor records.",
+    description: "Visitor records with first visit session and last visit date.",
     iconBg: "bg-lime-100",
     iconColor: "text-lime-700",
     icon: (
@@ -93,7 +93,7 @@ const MODULES = [
   {
     value: "expenses",
     label: "Expenses",
-    description: "General church expense records by category.",
+    description: "Expense records by category — general, program, organisation and outreach.",
     iconBg: "bg-red-100",
     iconColor: "text-red-700",
     icon: (
@@ -103,21 +103,11 @@ const MODULES = [
   {
     value: "budgeting",
     label: "Budgeting",
-    description: "Budget items and allocations by fiscal year.",
+    description: "Budget items, sources and allocations by fiscal year.",
     iconBg: "bg-slate-100",
     iconColor: "text-slate-700",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 7h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
-    )
-  },
-  {
-    value: "pledges",
-    label: "Fundraising — Pledges",
-    description: "Member pledges, amounts, deadlines and status.",
-    iconBg: "bg-cyan-100",
-    iconColor: "text-cyan-700",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M6 21V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M6 4h11l-2.5 4L17 12H6" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
     )
   },
   {
@@ -173,7 +163,7 @@ const MODULES = [
   {
     value: "outreach-followup",
     label: "Outreach & Follow-Up",
-    description: "Outreach events, prospects and follow-up activity.",
+    description: "Outreach events, prospects, follow-ups, support and expenses.",
     iconBg: "bg-fuchsia-100",
     iconColor: "text-fuchsia-700",
     icon: (
@@ -590,16 +580,17 @@ function ReportsAnalyticsPage() {
               />
               <Card.Body>{m.description}</Card.Body>
               <Card.Footer>
+                {canGenerate ? (
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    disabled={!canGenerate}
                     onClick={() => guarded(() => setGenModule(m))}
                     className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50 text-xs"
                   >
                     Generate Report
                   </button>
                 </div>
+                ) : null}
               </Card.Footer>
             </Card>
           ))}

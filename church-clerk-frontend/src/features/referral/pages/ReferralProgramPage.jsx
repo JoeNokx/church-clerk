@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import Skeleton from "react-loading-skeleton";
 
 import { getMyReferralCode, getMyReferralHistory, getMyReferrer } from "../services/referral.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";

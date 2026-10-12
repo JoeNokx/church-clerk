@@ -115,7 +115,7 @@ const getSystemChurchById = async (req, res) => {
 // GET all users in system (superadmin + supportadmin)
 const getAllSystemUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 25, search = "", role = "", churchId = "" } = req.query;
+    const { page = 1, limit = 25, search = "", role = "", churchId = "", isActive = "" } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 25);
@@ -129,6 +129,12 @@ const getAllSystemUsers = async (req, res) => {
 
     if (churchId) {
       filter.church = churchId;
+    }
+
+    if (isActive === "true") {
+      filter.isActive = true;
+    } else if (isActive === "false") {
+      filter.isActive = false;
     }
 
     if (search) {

@@ -52,17 +52,28 @@ async function getSubscriptionForChurch(churchId) {
       throw new Error("Church not found");
     }
 
-    await createSubscriptionForChurch({
-      church,
-      trial: true,
-      currency: church?.currency,
-      billingInterval: "monthly"
-    });
+    // Only create a trial subscription for brand-new churches (no prior subscription).
+    // If a subscription previously existed and was deleted externally, throw rather than
+    // silently replacing it with a free trial — this prevents a paid church from losing
+    // their plan without an explicit admin action.
+    const existingCount = await Subscription.countDocuments({ church: churchId });
+    if (existingCount > 0) {
+      // A subscription exists but wasn't returned (e.g. populated query issue) — retry bare
+      subscription = await Subscription.findOne({ church: churchId }).populate("plan").populate("pendingPlan").lean();
+      if (!subscription) throw new Error("Subscription lookup failed — please contact support");
+    } else {
+      await createSubscriptionForChurch({
+        church,
+        trial: true,
+        currency: church?.currency,
+        billingInterval: "monthly"
+      });
 
-    subscription = await Subscription.findOne({ church: churchId })
-      .populate("plan")
-      .populate("pendingPlan")
-      .lean();
+      subscription = await Subscription.findOne({ church: churchId })
+        .populate("plan")
+        .populate("pendingPlan")
+        .lean();
+    }
   }
 
   if (!subscription) {

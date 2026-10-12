@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import debounce from "../../../shared/utils/debounce.js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
-import Skeleton from "react-loading-skeleton";
+import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import ChurchContext from "../../church/church.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
@@ -1032,9 +1032,28 @@ function BusinessVentureDetailsPage() {
       </KpiGrid>
 
       {loading ? (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <Skeleton height={14} count={4} />
-        </div>
+        <>
+          <div className="mt-6 flex gap-2">
+            <div className="h-9 w-24 rounded-lg bg-gray-200 animate-pulse" />
+            <div className="h-9 w-24 rounded-lg bg-gray-100 animate-pulse" />
+          </div>
+          <div className="mt-2 rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-3 flex items-center justify-between">
+              <div>
+                <div className="h-3.5 w-20 rounded bg-gray-200 animate-pulse" />
+                <div className="mt-1.5 h-3 w-28 rounded bg-gray-100 animate-pulse" />
+              </div>
+              <div className="h-9 w-20 rounded-lg bg-gray-200 animate-pulse" />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <tbody className="divide-y divide-gray-200">
+                  <SkeletonTableRows rows={5} widths={["w-28", "w-20", "w-20", "w-24", "w-16"]} cellClass="px-4 py-2.5 md:px-6" />
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
         <>
           <PageTabs

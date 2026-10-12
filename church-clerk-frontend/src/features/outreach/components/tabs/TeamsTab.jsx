@@ -7,6 +7,7 @@ import { getMembers } from "../../../member/services/member.api.js";
 import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import Card from "../../../../shared/components/Card/index.jsx";
 import TableKebabMenu from "../../../../shared/components/TableKebabMenu/index.jsx";
+import { SkeletonTableRows } from "../../../../shared/components/Skeleton/index.jsx";
 import Pagination from "../../../../shared/components/Pagination/index.jsx";
 import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
@@ -455,7 +456,15 @@ function TeamDetailModal({ team, open, onClose }) {
           {/* ── Outreach tab ── */}
           {activeTab === "outreach" ? (
             eventsLoading ? (
-              <div className="space-y-2">{[0,1,2].map(i => <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />)}</div>
+              <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <tbody className="divide-y divide-gray-200">
+                      <SkeletonTableRows rows={3} widths={["w-32", "w-24", "w-28", "w-16", "w-10"]} cellClass="py-1.5 px-4 md:px-6" />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             ) : events.length === 0 ? (
               <EmptyState compact illustration="events" title="No outreaches assigned" description="This team has not been assigned to any outreach events yet." />
             ) : (

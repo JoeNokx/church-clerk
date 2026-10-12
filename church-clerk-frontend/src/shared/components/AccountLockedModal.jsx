@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useSubscriptionLock } from "../context/SubscriptionLockContext.jsx";
 
 export default function AccountLockedModal() {
-  const { modalOpen, modalMessage, lockTitle, lockMessage, closeLockModal } = useSubscriptionLock();
+  const { modalOpen, modalMessage, modalPayVisible, lockTitle, lockMessage, closeLockModal } = useSubscriptionLock();
   const navigate = useNavigate();
 
   if (!modalOpen) return null;
@@ -21,16 +21,18 @@ export default function AccountLockedModal() {
         <div className="font-semibold text-gray-900 mb-2 text-base">{title}</div>
         <div className="text-gray-500 mb-6 text-sm whitespace-pre-wrap">{message}</div>
         <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              closeLockModal();
-              navigate("/dashboard/billing");
-            }}
-            className="w-full rounded-lg bg-blue-700 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
-          >
-            Pay now / Upgrade
-          </button>
+          {modalPayVisible !== false && (
+            <button
+              type="button"
+              onClick={() => {
+                closeLockModal();
+                navigate("/dashboard/billing");
+              }}
+              className="w-full rounded-lg bg-blue-700 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
+            >
+              Pay now / Upgrade
+            </button>
+          )}
           <button
             type="button"
             onClick={closeLockModal}

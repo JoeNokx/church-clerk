@@ -5,7 +5,7 @@ import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
 import http from "../../../shared/services/http.js";
 import PriceCard from "../../../shared/components/PriceCard/index.jsx";
-import Spinner from "../../../shared/components/Spinner.jsx";
+
 import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
 import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
@@ -189,7 +189,23 @@ function PricingPage() {
             </div>
 
             <div className="mt-10">
-              {loadingPlans && <div className="py-16 flex items-center justify-center"><Spinner className="text-slate-400" /></div>}
+              {loadingPlans && (
+                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 animate-pulse">
+                      <div className="h-3.5 w-16 rounded bg-slate-200" />
+                      <div className="mt-4 h-7 w-24 rounded bg-slate-200" />
+                      <div className="mt-2 h-3 w-16 rounded bg-slate-100" />
+                      <div className="mt-5 space-y-2.5">
+                        {[0, 1, 2, 3, 4].map((j) => (
+                          <div key={j} className="h-3 w-full rounded bg-slate-100" />
+                        ))}
+                      </div>
+                      <div className="mt-6 h-10 w-full rounded-lg bg-slate-200" />
+                    </div>
+                  ))}
+                </div>
+              )}
               {!loadingPlans && plansSorted.length === 0 && <div className="py-16 text-center text-sm text-slate-500">No plans available right now.</div>}
               {!loadingPlans && plansSorted.length > 0 && (
                 <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -236,7 +252,7 @@ function PricingPage() {
                   <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                     <thead>
                       <tr className="border-b border-slate-200">
-                        <th scope="col" className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Features</th>
+                        <th scope="col" className="sticky left-0 z-10 bg-white pl-2 pr-0.5 md:pl-5 md:pr-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400 max-w-[110px] md:max-w-none md:static">Features</th>
                         {plansSorted.map((p) => (
                           <th key={p?._id || p?.name} scope="col" className="px-4 py-4 text-center">
                             <div className="text-sm font-bold text-slate-900">{p?.name || "—"}</div>
@@ -248,13 +264,14 @@ function PricingPage() {
                       {COMPARISON_GROUPS.map((group) => (
                         <Fragment key={group.title}>
                           <tr className="bg-slate-50">
-                            <td colSpan={plansSorted.length + 1} className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                            <td className="sticky left-0 z-10 bg-slate-50 pl-2 pr-0.5 md:pl-5 md:pr-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 max-w-[110px] md:max-w-none md:static">
                               {group.title}
                             </td>
+                            <td colSpan={plansSorted.length} className="bg-slate-50 py-2.5" />
                           </tr>
                           {group.rows.map((row) => (
                             <tr key={row.label} className="border-t border-slate-100">
-                              <td className="px-5 py-3 text-[13px] font-medium text-slate-700">{row.label}</td>
+                              <td className="sticky left-0 z-10 bg-white pl-2 pr-0.5 md:pl-5 md:pr-5 py-3 text-[13px] font-medium text-slate-700 max-w-[110px] md:max-w-none md:static">{row.label}</td>
                               {plansSorted.map((p) => (
                                 <td key={`${p?._id || p?.name}-${row.label}`} className="px-4 py-3 text-center">
                                   {row.render ? (

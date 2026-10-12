@@ -16,6 +16,7 @@ import {
 import { getMembers } from "../../member/services/member.api.js";
 import { PersonFormModal } from "../components/tabs/PeopleReachedTab.jsx";
 import { FollowUpFormModal, FollowUpDetailsModal } from "../components/tabs/FollowUpsTab.jsx";
+import { assigneeList, assigneeNames } from "../../../shared/utils/followUps.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import ScopedExpensesTab from "../../../shared/components/ScopedExpensesTab/index.jsx";
 import OutreachSupportTab from "../components/tabs/SupportTab.jsx";
@@ -145,11 +146,11 @@ function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">
         <span className="text-xs text-gray-600 capitalize">{FOLLOWUP_TYPE_LABELS[followUp.type] || followUp.type}</span>
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={followUp.assignedTo ? `${followUp.assignedTo.firstName || ""} ${followUp.assignedTo.lastName || ""}`.trim() : "Unassigned"}>
-        {followUp.assignedTo ? (
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={assigneeNames(followUp) || "Unassigned"}>
+        {assigneeList(followUp).length ? (
           <>
-            <span className="sm:hidden">{truncateMobileName(`${followUp.assignedTo.firstName || ""} ${followUp.assignedTo.lastName || ""}`.trim())}</span>
-            <span className="hidden sm:inline">{truncateDesktopName(`${followUp.assignedTo.firstName || ""} ${followUp.assignedTo.lastName || ""}`.trim())}</span>
+            <span className="sm:hidden">{truncateMobileName(assigneeNames(followUp))}</span>
+            <span className="hidden sm:inline">{truncateDesktopName(assigneeNames(followUp))}</span>
           </>
         ) : (
           <span className="text-xs text-gray-400">Unassigned</span>
@@ -340,7 +341,7 @@ export default function OutreachEventDetailPage() {
       const q = fuSearch.toLowerCase();
       list = list.filter((f) => {
         const name = `${f.prospect?.firstName || ""} ${f.prospect?.lastName || ""}`.trim().toLowerCase();
-        const assignedTo = `${f.assignedTo?.firstName || ""} ${f.assignedTo?.lastName || ""}`.trim().toLowerCase();
+        const assignedTo = assigneeNames(f).toLowerCase();
         return name.includes(q) || assignedTo.includes(q);
       });
     }
@@ -354,9 +355,9 @@ export default function OutreachEventDetailPage() {
       });
     }
     if (fuAssigned === "assigned") {
-      list = list.filter((f) => Boolean(f.assignedTo));
+      list = list.filter((f) => assigneeList(f).length > 0);
     } else if (fuAssigned === "unassigned") {
-      list = list.filter((f) => !f.assignedTo);
+      list = list.filter((f) => !assigneeList(f).length);
     }
     return list;
   }, [followUps, fuSearch, fuDateFrom, fuDateTo, fuAssigned]);

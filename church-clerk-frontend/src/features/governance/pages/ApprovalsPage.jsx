@@ -1,9 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useContext } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApprovals, approveRequest, rejectRequest } from "../services/governance.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
+import ChurchContext from "../../church/church.store.js";
 
 const STATUS_LABELS = {
   PENDING_APPROVAL: { label: "Pending", className: "bg-amber-100 text-amber-700" },
@@ -201,6 +202,8 @@ function PayloadPreview({ payload, actionType }) {
 export default function ApprovalsPage() {
   const queryClient = useQueryClient();
   const guarded = useGuardedAction();
+  const churchCtx = useContext(ChurchContext);
+  const canEditChurch = churchCtx?.activeChurch?._id ? churchCtx?.activeChurch?.canEdit !== false : true;
   const [statusFilter, setStatusFilter] = useState("PENDING_APPROVAL");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -308,7 +311,7 @@ export default function ApprovalsPage() {
                     ) : null}
                   </div>
 
-                  {row.status === "PENDING_APPROVAL" ? (
+                  {row.status === "PENDING_APPROVAL" && canEditChurch ? (
                     <div className="flex shrink-0 gap-2">
                       <button
                         type="button"

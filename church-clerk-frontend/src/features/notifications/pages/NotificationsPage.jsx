@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Skeleton from "react-loading-skeleton";
 
 import {
   getMyNotifications,

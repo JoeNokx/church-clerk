@@ -1,5 +1,5 @@
 import { Fragment, useContext, useEffect, useMemo, useRef, useState } from "react";
-import Spinner from "../../../shared/components/Spinner.jsx";
+import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useAuth } from "../../auth/useAuth.js";
 import ChurchContext from "../../church/church.store.js";
@@ -11,10 +11,12 @@ import { getDepartments } from "../../department/services/department.api.js";
 import { getMinistries } from "../../ministry/services/ministry.api.js";
 import { getPrograms } from "../../program/services/program.api.js";
 import { getOutreachEvents } from "../../outreach/services/outreach.api.js";
+import { getVisitors } from "../../attendance/services/attendance.api.js";
 import Select from "react-select";
 import { getMembers } from "../../member/services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import {
   createCommunicationMessage,
@@ -32,10 +34,42 @@ import {
   createMessageTemplate,
   deleteMessageTemplate,
   getMessageTemplates,
-  updateMessageTemplate
+  updateMessageTemplate,
+  getAutomations,
+  createAutomation,
+  updateAutomation,
+  deleteAutomation
 } from "../services/communication.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { useGuardedAction, useSubscriptionLock } from "../../../shared/context/SubscriptionLockContext.jsx";
+
+/**
+ * Client-side pagination for announcement tables — these endpoints return the
+ * full list, so paging happens on the loaded rows. Default page size: 20.
+ * Returns a member-page-style pagination descriptor plus slice() for the page.
+ */
+function useTablePagination(totalItems, defaultLimit = 20) {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(defaultLimit);
+  const total = Math.max(0, Number(totalItems) || 0);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const pagination = {
+    totalResult: total,
+    totalPages,
+    currentPage,
+    prevPage: currentPage > 1 ? currentPage - 1 : null,
+    nextPage: currentPage < totalPages ? currentPage + 1 : null,
+    limit
+  };
+  return {
+    limit,
+    pagination,
+    onPageChange: setPage,
+    onLimitChange: (n) => { setLimit(Number(n) || defaultLimit); setPage(1); },
+    slice: (list) => (Array.isArray(list) ? list.slice((currentPage - 1) * limit, currentPage * limit) : [])
+  };
+}
 
 function InfoTooltip({ text }) {
   const [open, setOpen] = useState(false);
@@ -256,6 +290,7 @@ function WalletCard({ wallet, allowance, onFund, onViewHistory, isGhana, usdToGh
           </div>
         </div>
 
+        {onFund ? (
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -265,6 +300,7 @@ function WalletCard({ wallet, allowance, onFund, onViewHistory, isGhana, usdToGh
             Fund Wallet
           </button>
         </div>
+        ) : null}
       </div>
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -416,6 +452,9 @@ function formatTxType(type) {
 
 function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhana, usdToGhs }) {
   const [viewTx, setViewTx] = useState(null);
+  const txList = Array.isArray(transactions) ? transactions : [];
+  const txPager = useTablePagination(txList.length);
+  const pagedTransactions = txPager.slice(txList);
 
   if (!open) return null;
 
@@ -436,43 +475,41 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
         </button>
       </div>
 
-      <div className="p-4 md:p-6 lg:p-8">
-        {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
+      {error ? (
+        <div className="px-4 pt-4 md:px-6 md:pt-6 lg:px-8 lg:pt-8">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div>
+        </div>
+      ) : null}
 
-        <div className="overflow-x-auto">
+      {!loading && !txList.length ? (
+        <EmptyState illustration="wallet" title="No wallet transactions yet" description="Top up your wallet to start sending announcements." />
+      ) : (
+        <div className="overflow-x-auto overscroll-x-contain">
           <table className="min-w-full">
-            <thead>
+            <thead className="bg-slate-100">
               <tr className="text-left font-semibold text-gray-500 text-xs">
-                <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Transaction Date</th>
-                <th className="py-2 pr-4 whitespace-nowrap">Type</th>
-                <th className="py-2 pr-4 whitespace-nowrap">Amount</th>
-                <th className="py-2 whitespace-nowrap">Balance After</th>
+                <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Transaction Date</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Amount</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Balance After</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
-                </tr>
-              ) : !transactions.length ? (
-                <tr>
-                  <td colSpan={4} className="px-4">
-                    <EmptyState compact illustration="wallet" title="No wallet transactions yet" description="Top up your wallet to start sending announcements." />
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={4} widths={["w-32", "w-20", "w-20", "w-24"]} />
               ) : (
-                transactions.map((t, idx) => (
-                  <tr key={t?._id || `tx-${idx}`} className="text-gray-700 text-sm cursor-pointer hover:bg-gray-50" onClick={() => setViewTx(t)}>
-                    <td className="sticky left-0 z-10 bg-white py-2 pr-4 text-gray-600 whitespace-nowrap">{t?.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}</td>
-                    <td className="py-2 pr-4 whitespace-nowrap">{formatTxType(t?.type)}</td>
-                    <td className="py-2 pr-4 font-semibold whitespace-nowrap">
+                pagedTransactions.map((t, idx) => (
+                  <tr key={t?._id || `tx-${idx}`} className="max-md:text-xs text-gray-700 text-sm cursor-pointer hover:bg-gray-50" onClick={() => setViewTx(t)}>
+                    <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{t?.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}</td>
+                    <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatTxType(t?.type)}</td>
+                    <td className="max-md:px-4 py-1.5 font-semibold whitespace-nowrap px-4 md:px-6">
                       {typeof t?.amountCredits === "number" ? (
                         !isGhana && usdToGhs
                           ? `${t.amountCredits >= 0 ? "+" : ""}${formatMoneyUsd(creditsToGhs(t.amountCredits) / Number(usdToGhs))}`
                           : `${t.amountCredits >= 0 ? "+" : "-"}${Math.abs(t.amountCredits)} credits`
                       ) : "—"}
                     </td>
-                    <td className="py-2 font-semibold text-gray-900">
+                    <td className="max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">
                       {typeof t?.balanceAfterCredits === "number" ? (
                         !isGhana && usdToGhs
                           ? formatMoneyUsd(creditsToGhs(t.balanceAfterCredits) / Number(usdToGhs))
@@ -485,7 +522,17 @@ function WalletHistoryTab({ open, transactions, loading, error, onReload, isGhan
             </tbody>
           </table>
         </div>
-      </div>
+      )}
+      {!loading && txList.length ? (
+        <Pagination
+          pagination={txPager.pagination}
+          rowsCount={pagedTransactions.length}
+          limit={txPager.limit}
+          onLimitChange={txPager.onLimitChange}
+          onPageChange={txPager.onPageChange}
+          itemName="transactions"
+        />
+      ) : null}
 
       {viewTx ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto" onClick={() => setViewTx(null)}>
@@ -632,6 +679,9 @@ function TemplatesTab({ open, onUseTemplate }) {
     }
   };
 
+  const pager = useTablePagination(rows.length);
+  const pagedRows = pager.slice(rows);
+
   if (!open) return null;
 
   return (
@@ -659,11 +709,12 @@ function TemplatesTab({ open, onUseTemplate }) {
           />
         </fieldset>
 
+        {canWrite ? (
         <div className="mt-3 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={resetForm}
-            disabled={loading || !canWrite}
+            disabled={loading}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
           >
             Clear
@@ -671,12 +722,13 @@ function TemplatesTab({ open, onUseTemplate }) {
           <button
             type="button"
             onClick={() => guarded(onSave)}
-            disabled={loading || !canWrite}
+            disabled={loading}
             className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
           >
             {loading ? "Saving..." : editId ? "Update Template" : "Create Template"}
           </button>
         </div>
+        ) : null}
       </div>
 
       <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-hidden">
@@ -691,39 +743,34 @@ function TemplatesTab({ open, onUseTemplate }) {
             Refresh
           </button>
         </div>
-        <div className="p-4 overflow-x-auto md:p-6 lg:p-8">
+        {!loading && !rows.length ? (
+          <EmptyState illustration="templates" title="No templates found" description="Save reusable message templates to speed up announcements." />
+        ) : (
+        <div className="overflow-x-auto overscroll-x-contain">
           <table className="min-w-full">
-            <thead>
+            <thead className="bg-slate-100">
               <tr className="text-left font-semibold text-gray-500 text-xs">
-                <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Template Name</th>
-                <th className="py-2 pr-4 whitespace-nowrap">Message</th>
-                <th className="py-2 whitespace-nowrap">Actions</th>
+                <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Template Name</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Message</th>
+                <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan={3} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
-                </tr>
-              ) : !rows.length ? (
-                <tr>
-                  <td colSpan={3} className="px-4">
-                    <EmptyState compact illustration="templates" title="No templates found" description="Save reusable message templates to speed up announcements." />
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={4} widths={["w-32", "w-64", "w-16"]} />
               ) : (
-                rows.map((t, idx) => (
-                  <tr key={t?._id || `tpl-${idx}`} className="text-gray-700 text-sm">
-                    <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">{t?.name || "—"}</td>
-                    <td className="py-2 pr-4 text-gray-600" title={t?.message || ""}>
+                pagedRows.map((t, idx) => (
+                  <tr key={t?._id || `tpl-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                    <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">{t?.name || "—"}</td>
+                    <td className="max-md:px-4 py-1.5 text-gray-600 px-4 md:px-6" title={t?.message || ""}>
                       <span className="block max-w-xs truncate">{t?.message || "—"}</span>
                     </td>
-                    <td className="py-2">
+                    <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => setViewRow(t) },
-                        { label: "Use", onClick: () => onUseTemplate?.(t), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
-                        { label: "Edit", onClick: () => guarded(() => onEdit(t)) },
-                        { label: "Delete", onClick: () => guarded(() => onDelete(t?._id)), danger: true }
+                        canWrite && { label: "Use", onClick: () => onUseTemplate?.(t), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                        canWrite && { label: "Edit", onClick: () => guarded(() => onEdit(t)) },
+                        canWrite && { label: "Delete", onClick: () => guarded(() => onDelete(t?._id)), danger: true }
                       ]} />
                     </td>
                   </tr>
@@ -732,6 +779,17 @@ function TemplatesTab({ open, onUseTemplate }) {
             </tbody>
           </table>
         </div>
+        )}
+        {!loading && rows.length ? (
+          <Pagination
+            pagination={pager.pagination}
+            rowsCount={pagedRows.length}
+            limit={pager.limit}
+            onLimitChange={pager.onLimitChange}
+            onPageChange={pager.onPageChange}
+            itemName="templates"
+          />
+        ) : null}
       </div>
 
       {viewRow ? (
@@ -784,6 +842,11 @@ function formatAudienceLabel(audience) {
     const n = Array.isArray(audience?.outreachIds) ? audience.outreachIds.length : 0;
     return n ? `${n} outreach event${n > 1 ? "s" : ""}` : "Outreach Prospects";
   }
+  if (type === "visitors") {
+    const n = Array.isArray(audience?.visitorIds) ? audience.visitorIds.length : 0;
+    return n ? `${n} visitor${n > 1 ? "s" : ""}` : "Visitors";
+  }
+  if (type === "birthday_members") return "Members celebrating their birthday";
   if (type === "segment") {
     const parts = [];
     if (Array.isArray(audience?.statuses) && audience.statuses.length) parts.push(`${audience.statuses.length} status${audience.statuses.length > 1 ? "es" : ""}`);
@@ -829,6 +892,9 @@ function DraftsTable({ open, onUseDraft, onWalletUpdated }) {
     load();
   }, [open]);
 
+  const pager = useTablePagination(rows.length);
+  const pagedRows = pager.slice(rows);
+
   if (!open) return null;
 
   const onDeleteRow = async (row) => {
@@ -869,39 +935,34 @@ function DraftsTable({ open, onUseDraft, onWalletUpdated }) {
         </button>
       </div>
 
-      <div className="p-4 overflow-x-auto md:p-6 lg:p-8">
+      {!loading && !rows.length ? (
+        <EmptyState illustration="announcements" title="No drafts found" description="Save a message as a draft to continue editing later." />
+      ) : (
+      <div className="overflow-x-auto overscroll-x-contain">
         <table className="min-w-full">
-          <thead>
+          <thead className="bg-slate-100">
             <tr className="text-left font-semibold text-gray-500 text-xs">
-              <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Title</th>
-              <th className="py-2 pr-4 whitespace-nowrap">Audience / Recipients</th>
-              <th className="py-2 pr-4 whitespace-nowrap">Created Date</th>
-              <th className="py-2 pr-4 whitespace-nowrap">Last Updated</th>
-              <th className="py-2 whitespace-nowrap">Actions</th>
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Audience / Recipients</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Created Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Last Updated</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
-              <tr>
-                <td colSpan={5} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
-              </tr>
-            ) : !rows.length ? (
-              <tr>
-                <td colSpan={5} className="px-4">
-                  <EmptyState compact illustration="announcements" title="No drafts found" description="Save a message as a draft to continue editing later." />
-                </td>
-              </tr>
+              <SkeletonTableRows rows={4} widths={["w-32", "w-28", "w-32", "w-32", "w-16"]} />
             ) : (
-              rows.map((m, idx) => (
-                <tr key={m?._id || `d-${idx}`} className="text-gray-700 text-sm">
-                  <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap" title={m?.title || ""}>
+              pagedRows.map((m, idx) => (
+                <tr key={m?._id || `d-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6" title={m?.title || ""}>
                     <span className="sm:hidden">{truncateMobileName(m?.title)}</span>
                     <span className="hidden sm:inline">{truncateDesktopName(m?.title)}</span>
                   </td>
-                  <td className="py-2 pr-4 text-gray-600">{formatAudienceLabel(m?.audience)}</td>
-                  <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
-                  <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{m?.updatedAt ? new Date(m.updatedAt).toLocaleString() : "—"}</td>
-                  <td className="py-2">
+                  <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatAudienceLabel(m?.audience)}</td>
+                  <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
+                  <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{m?.updatedAt ? new Date(m.updatedAt).toLocaleString() : "—"}</td>
+                  <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <TableKebabMenu items={[
                       { label: "Continue Editing", onClick: () => onUseDraft?.(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
                       canDelete && m?.canDelete !== false && { label: "Delete", onClick: () => guarded(() => onDeleteRow(m)), danger: true, disabled: actionLoadingId === m?._id }
@@ -913,6 +974,17 @@ function DraftsTable({ open, onUseDraft, onWalletUpdated }) {
           </tbody>
         </table>
       </div>
+      )}
+      {!loading && rows.length ? (
+        <Pagination
+          pagination={pager.pagination}
+          rowsCount={pagedRows.length}
+          limit={pager.limit}
+          onLimitChange={pager.onLimitChange}
+          onPageChange={pager.onPageChange}
+          itemName="drafts"
+        />
+      ) : null}
     </div>
   );
 }
@@ -986,6 +1058,9 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
     setMenuId(null);
   }, [open]);
 
+  const pager = useTablePagination(rows.length);
+  const pagedRows = pager.slice(rows);
+
   if (!open) return null;
 
   const onSaveEdit = async (payload) => {
@@ -1034,9 +1109,6 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
 
   const isScheduledVariant = variant === "scheduled";
 
-  // Column count for colSpan
-  const colCount = isScheduledVariant ? 6 : 7;
-
   return (
     <div className="mt-5 rounded-xl border border-gray-200 bg-white overflow-hidden">
       <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
@@ -1054,68 +1126,63 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
         </button>
       </div>
 
-      <div className="p-4 overflow-x-auto md:p-6 lg:p-8">
+      {!loading && !rows.length ? (
+        <EmptyState illustration="announcements" title="No messages found" description={isScheduledVariant ? "Scheduled messages will appear here." : "Sent announcements will appear here."} />
+      ) : (
+      <div className="overflow-x-auto overscroll-x-contain">
         <table className="min-w-full">
-          <thead>
+          <thead className="bg-slate-100">
             <tr className="text-left font-semibold text-gray-500 text-xs">
-              <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Title</th>
-              <th className="py-2 pr-4 whitespace-nowrap">Recipients</th>
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Title</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recipients</th>
               {isScheduledVariant ? (
                 <>
-                  <th className="py-2 pr-4 whitespace-nowrap">Scheduled Date/Time</th>
-                  <th className="py-2 pr-4 whitespace-nowrap">Status</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled Date/Time</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                 </>
               ) : (
                 <>
-                  <th className="py-2 pr-4 whitespace-nowrap">Delivered</th>
-                  <th className="py-2 pr-4 whitespace-nowrap">Pending</th>
-                  <th className="py-2 pr-4 whitespace-nowrap">Failed</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Delivered</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Pending</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Failed</th>
                 </>
               )}
-              <th className="py-2 pr-4 whitespace-nowrap">Created Date</th>
-              <th className="py-2 whitespace-nowrap">Actions</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Created Date</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
-              <tr>
-                <td colSpan={colCount} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
-              </tr>
-            ) : !rows.length ? (
-              <tr>
-                <td colSpan={colCount} className="px-4">
-                  <EmptyState compact illustration="announcements" title="No messages found" description={isScheduledVariant ? "Scheduled messages will appear here." : "Sent announcements will appear here."} />
-                </td>
-              </tr>
+              <SkeletonTableRows rows={4} widths={["w-32", "w-16", "w-20", "w-32", "w-16"]} />
             ) : (
-              rows.map((m, idx) => {
+              pagedRows.map((m, idx) => {
                 const status = String(m?.status || "");
                 const canEdit = isScheduledVariant && status === "scheduled" && canUpdate;
                 const canCancel = isScheduledVariant && status === "scheduled" && canUpdate;
 
                 return (
-                  <tr key={m?._id || `m-${idx}`} className="text-gray-700 text-sm">
-                    <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap" title={m?.title || ""}>
+                  <tr key={m?._id || `m-${idx}`} className="max-md:text-xs text-gray-700 text-sm">
+                    <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6" title={m?.title || ""}>
                       <span className="sm:hidden">{truncateMobileName(m?.title)}</span>
                       <span className="hidden sm:inline">{truncateDesktopName(m?.title)}</span>
                     </td>
-                    <td className="py-2 pr-4 text-gray-600">{typeof m?.recipientCount === "number" ? m.recipientCount : "—"}</td>
+                    <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{typeof m?.recipientCount === "number" ? m.recipientCount : "—"}</td>
                     {isScheduledVariant ? (
                       <>
-                        <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">
+                        <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">
                           {m?.scheduledAt ? new Date(m.scheduledAt).toLocaleString() : "—"}
                         </td>
-                        <td className="py-2 pr-4 whitespace-nowrap">{statusBadge(status)}</td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{statusBadge(status)}</td>
                       </>
                     ) : (
                       <>
-                        <td className="py-2 pr-4 text-gray-600">{typeof m?.deliveredCount === "number" ? m.deliveredCount : "—"}</td>
-                        <td className="py-2 pr-4 text-gray-600">{typeof m?.pendingCount === "number" ? m.pendingCount : "—"}</td>
-                        <td className="py-2 pr-4 text-gray-600">{typeof m?.failedCount === "number" ? m.failedCount : "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{typeof m?.deliveredCount === "number" ? m.deliveredCount : "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{typeof m?.pendingCount === "number" ? m.pendingCount : "—"}</td>
+                        <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{typeof m?.failedCount === "number" ? m.failedCount : "—"}</td>
                       </>
                     )}
-                    <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
-                    <td className="py-2">
+                    <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{m?.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}</td>
+                    <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                       <TableKebabMenu items={[
                         canView && { label: "View", onClick: () => onOpenDeliveryReport(m), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
                         canEdit && { label: "Edit", onClick: () => guarded(() => openEdit(m)), disabled: actionLoadingId === m?._id },
@@ -1129,6 +1196,17 @@ function MessagesTable({ title, open, query, onOpenDeliveryReport, onWalletUpdat
           </tbody>
         </table>
       </div>
+      )}
+      {!loading && rows.length ? (
+        <Pagination
+          pagination={pager.pagination}
+          rowsCount={pagedRows.length}
+          limit={pager.limit}
+          onLimitChange={pager.onLimitChange}
+          onPageChange={pager.onPageChange}
+          itemName="messages"
+        />
+      ) : null}
 
       <EditScheduledMessageModal
         open={editOpen}
@@ -1320,6 +1398,8 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
 
 function DeliveryReportModal({ open, onClose, message }) {
   const guarded = useGuardedAction();
+  const { can } = useContext(PermissionContext) || {};
+  const canResend = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
@@ -1406,6 +1486,9 @@ function DeliveryReportModal({ open, onClose, message }) {
     return Array.from(byKey.values());
   }, [rows]);
 
+  const pager = useTablePagination(groupedRows.length);
+  const pagedGroups = pager.slice(groupedRows);
+
   if (!open) return null;
 
   return (
@@ -1487,30 +1570,25 @@ function DeliveryReportModal({ open, onClose, message }) {
             <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{resendError}</div>
           ) : null}
 
-          <div className="mt-4 overflow-x-auto">
+          {!loading && !groupedRows.length ? (
+            <EmptyState illustration="announcements" title="No delivery records" description="Delivery reports for this message will appear here." />
+          ) : (
+          <div className="mt-4 overflow-x-auto overscroll-x-contain">
             <table className="min-w-full">
-              <thead>
+              <thead className="bg-slate-100">
                 <tr className="text-left font-semibold text-gray-500 text-xs">
-                  <th className="sticky left-0 z-20 bg-white py-2 pr-4 whitespace-nowrap">Member</th>
-                  <th className="py-2 pr-4 whitespace-nowrap">Phone</th>
-                  <th className="py-2 pr-4 whitespace-nowrap">Status</th>
-                  <th className="py-2 pr-4 whitespace-nowrap">Time</th>
-                  <th className="py-2 whitespace-nowrap">Action</th>
+                  <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Member</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Time</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="py-6 text-center"><Spinner className="mx-auto text-gray-400" /></td>
-                  </tr>
-                ) : !groupedRows.length ? (
-                  <tr>
-                    <td colSpan={5} className="px-4">
-                      <EmptyState compact illustration="announcements" title="No delivery records" description="Delivery reports for this message will appear here." />
-                    </td>
-                  </tr>
+                  <SkeletonTableRows rows={4} widths={["w-28", "w-24", "w-16", "w-24", "w-16"]} />
                 ) : (
-                  groupedRows.map((g, idx) => {
+                  pagedGroups.map((g, idx) => {
                     const d = g.latest;
                     const isFailed = String(d?.status || "").toLowerCase() === "failed";
                     const recipientKey = d?.member ? String(d.member) : String(d?.phone || "");
@@ -1518,8 +1596,8 @@ function DeliveryReportModal({ open, onClose, message }) {
                     const hasMultipleAttempts = g.all.length > 1;
                     return (
                       <Fragment key={recipientKey || `g-${idx}`}>
-                        <tr className="text-gray-700 text-sm">
-                          <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-semibold text-gray-900 whitespace-nowrap">
+                        <tr className="max-md:text-xs text-gray-700 text-sm">
+                          <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6">
                             {hasMultipleAttempts ? (
                               <button
                                 type="button"
@@ -1531,8 +1609,8 @@ function DeliveryReportModal({ open, onClose, message }) {
                             ) : null}
                             {d?.memberName || "—"}
                           </td>
-                          <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">{d?.phone || "—"}</td>
-                          <td className="py-2 pr-4 whitespace-nowrap">
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{d?.phone || "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                             <div className="flex items-center gap-1.5">
                               <span className="font-semibold text-gray-700">{d?.status || "—"}</span>
                               {isFailed && d?.errorMessage ? (
@@ -1543,9 +1621,9 @@ function DeliveryReportModal({ open, onClose, message }) {
                               ) : null}
                             </div>
                           </td>
-                          <td className="py-2 text-gray-600 whitespace-nowrap">{d?.updatedAt ? new Date(d.updatedAt).toLocaleString() : d?.createdAt ? new Date(d.createdAt).toLocaleString() : "—"}</td>
-                          <td className="py-2 whitespace-nowrap">
-                            {isFailed ? (
+                          <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{d?.updatedAt ? new Date(d.updatedAt).toLocaleString() : d?.createdAt ? new Date(d.createdAt).toLocaleString() : "—"}</td>
+                          <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                            {isFailed && canResend ? (
                               <button
                                 type="button"
                                 onClick={() => guarded(() => onResend(d?._id))}
@@ -1585,6 +1663,17 @@ function DeliveryReportModal({ open, onClose, message }) {
               </tbody>
             </table>
           </div>
+          )}
+          {!loading && groupedRows.length ? (
+            <Pagination
+              pagination={pager.pagination}
+              rowsCount={pagedGroups.length}
+              limit={pager.limit}
+              onLimitChange={pager.onLimitChange}
+              onPageChange={pager.onPageChange}
+              itemName="recipients"
+            />
+          ) : null}
         </div>
       </div>
     </div>
@@ -1679,6 +1768,12 @@ const AUDIENCE_OPTIONS = [
     icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M3 11l14-6v14L3 13v-2z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="M17 8a4 4 0 010 8M7 13v5a1 1 0 001 1h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
   },
   {
+    value: "visitors",
+    label: "Visitors",
+    hint: "Everyone recorded in the visitors register",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="2" /><path d="M3 20a6 6 0 0112 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M17.5 9.5l1.8 1.8L21 9.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M17 14.5v1a1 1 0 001 1h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+  },
+  {
     value: "members",
     label: "Specific Members",
     hint: "Search and pick individual members",
@@ -1757,6 +1852,12 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
   const [memberIds, setMemberIds] = useState([]);
   const [memberNameById, setMemberNameById] = useState({});
 
+  const [visitorSearch, setVisitorSearch] = useState("");
+  const [visitorResults, setVisitorResults] = useState([]);
+  const [visitorSearchLoading, setVisitorSearchLoading] = useState(false);
+  const [visitorIds, setVisitorIds] = useState([]);
+  const [visitorNameById, setVisitorNameById] = useState({});
+
   const groupOptions = useMemo(() => toAudienceOptions(groups, (x) => x?.name || "—"), [groups]);
   const cellOptions = useMemo(() => toAudienceOptions(cells, (x) => x?.name || "—"), [cells]);
   const departmentOptions = useMemo(() => toAudienceOptions(departments, (x) => x?.name || "—"), [departments]);
@@ -1782,8 +1883,9 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
 
   const totalRecipientsPreview = useMemo(() => {
     if (audienceType === "members") return memberIds.length;
+    if (audienceType === "visitors") return visitorIds.length;
     return estimatedRecipients;
-  }, [audienceType, estimatedRecipients, memberIds.length]);
+  }, [audienceType, estimatedRecipients, memberIds.length, visitorIds.length]);
 
   // Local segment counter (matches backend GSM-7 / UCS-2 logic for preview only).
   const previewSegments = useMemo(() => {
@@ -1803,7 +1905,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
   }, [channels.sms, previewSegments]);
 
   const estimatedTotalCost = useMemo(() => {
-    if (audienceType === "members") return totalRecipientsPreview * costPerRecipient;
+    if (audienceType === "members" || audienceType === "visitors") return totalRecipientsPreview * costPerRecipient;
     return estimatedTotalCostServer;
   }, [audienceType, costPerRecipient, estimatedTotalCostServer, totalRecipientsPreview]);
 
@@ -1841,6 +1943,10 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     setMemberResults([]);
     setMemberIds(Array.isArray(prefill?.audience?.memberIds) ? prefill.audience.memberIds.map(String) : []);
     setMemberNameById({});
+    setVisitorSearch("");
+    setVisitorResults([]);
+    setVisitorIds(Array.isArray(prefill?.audience?.visitorIds) ? prefill.audience.visitorIds.map(String) : []);
+    setVisitorNameById({});
 
     const arr = Array.isArray(prefill?.channels) ? prefill.channels : [];
     setChannels({
@@ -1868,7 +1974,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
       return;
     }
 
-    if (audienceType === "members") {
+    if (audienceType === "members" || audienceType === "visitors") {
       setEstimateError("");
       setEstimatedRecipients(0);
       setEstimatedCostPerRecipient(0);
@@ -1914,6 +2020,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             departmentIds,
             ministryIds,
             memberIds,
+            visitorIds,
             programIds,
             outreachIds,
             statuses: segStatuses,
@@ -1954,7 +2061,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     return () => {
       cancelled = true;
     };
-  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, ministryIds, programIds, outreachIds, memberIds, segStatuses, segGenders, segAgeGroups, segMaritalStatuses, isLocked, open]);
+  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, ministryIds, programIds, outreachIds, memberIds, visitorIds, segStatuses, segGenders, segAgeGroups, segMaritalStatuses, isLocked, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -2053,6 +2160,39 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     };
   }, [audienceType, memberSearch, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    if (audienceType !== "visitors") return;
+
+    const q = String(visitorSearch || "").trim();
+    if (q.length < 1) {
+      setVisitorResults([]);
+      setVisitorSearchLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const t = setTimeout(async () => {
+      setVisitorSearchLoading(true);
+      try {
+        const res = await getVisitors({ search: q, limit: 10, page: 1 });
+        if (cancelled) return;
+        const rows = Array.isArray(res?.data?.visitors) ? res.data.visitors : [];
+        setVisitorResults(rows);
+      } catch {
+        if (!cancelled) setVisitorResults([]);
+      } finally {
+        if (!cancelled) setVisitorSearchLoading(false);
+      }
+    }, 50);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [audienceType, visitorSearch, open]);
+
   const toggleId = (list, id) => {
     const sid = String(id || "");
     if (!sid) return list;
@@ -2090,6 +2230,31 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     });
   };
 
+  const visitorLabel = (v) => String(v?.fullName || "").trim() || "—";
+
+  const toggleVisitor = (v) => {
+    const id = String(v?._id || "");
+    if (!id) return;
+    const label = visitorLabel(v);
+
+    setVisitorIds((prev) => toggleId(prev, id));
+    setVisitorNameById((prev) => ({
+      ...(prev || {}),
+      [id]: label
+    }));
+  };
+
+  const removeVisitor = (id) => {
+    const sid = String(id || "");
+    if (!sid) return;
+    setVisitorIds((prev) => prev.filter((x) => x !== sid));
+    setVisitorNameById((prev) => {
+      const next = { ...(prev || {}) };
+      delete next[sid];
+      return next;
+    });
+  };
+
   const resetForm = () => {
     setTitle("");
     setContent("");
@@ -2108,6 +2273,10 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     setMemberResults([]);
     setMemberIds([]);
     setMemberNameById({});
+    setVisitorSearch("");
+    setVisitorResults([]);
+    setVisitorIds([]);
+    setVisitorNameById({});
     setChannels({ sms: true });
     setSendMode("now");
     setScheduleDate("");
@@ -2184,6 +2353,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           departmentIds,
           ministryIds,
           memberIds,
+          visitorIds,
           programIds,
           outreachIds,
           statuses: segStatuses,
@@ -2365,6 +2535,66 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             </div>
           ) : null}
 
+          {audienceType === "visitors" ? (
+            <div className="mt-4">
+              <div className="mb-2 text-gray-500 text-xs">Search and select the visitors who should receive the message.</div>
+              <input
+                value={visitorSearch}
+                onChange={(e) => setVisitorSearch(e.target.value)}
+                placeholder="Search visitors by name..."
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+              />
+
+              {String(visitorSearch || "").trim().length >= 1 ? (
+                <div className="mt-1 text-gray-500 text-xs">
+                  {visitorSearchLoading ? "Searching..." : visitorResults.length ? "" : "No visitors found"}
+                </div>
+              ) : null}
+
+              {visitorResults.length ? (
+                <div className="mt-2 rounded-lg border border-gray-200 bg-white">
+                  {visitorResults.map((v) => {
+                    const id = String(v?._id || "");
+                    const checked = id ? visitorIds.includes(id) : false;
+                    return (
+                      <label
+                        key={id}
+                        className="flex items-center justify-between gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm"
+                      >
+                        <span className="min-w-0 truncate">{visitorLabel(v)}</span>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleVisitor(v)}
+                          className="shrink-0"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {visitorIds.length ? (
+                <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="font-semibold text-gray-600 text-xs">Selected Visitors</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {visitorIds.map((id) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => removeVisitor(id)}
+                        className="rounded-full border border-gray-200 bg-white px-3 py-1 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
+                      >
+                        {visitorNameById?.[id] || id.slice(-6)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-gray-500 text-xs">Click a chip to remove.</div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           {audienceType === "groups" ? (
             <div className="mt-4">
               <div className="text-gray-500 text-xs">Members in any of the selections below will receive the message. You can pick from multiple lists.</div>
@@ -2482,7 +2712,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
                 <InfoTooltip text="A segment is a piece of your SMS. Short messages fit in 1 segment (160 characters). Longer messages split into multiple segments. Each segment costs credits." />
               </div>
               <div className="mt-1 font-semibold text-gray-900 text-sm">
-                {audienceType === "members" ? previewSegments : (estimatedSegments || previewSegments)}
+                {audienceType === "members" || audienceType === "visitors" ? previewSegments : (estimatedSegments || previewSegments)}
               </div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -2491,7 +2721,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
                 <InfoTooltip text="How many credits it costs to send this message to one person. It is segments multiplied by the credit cost per segment set by the admin." />
               </div>
               <div className="mt-1 font-semibold text-gray-900 text-sm">
-                {(audienceType === "members" ? costPerRecipient : estimatedCostPerRecipient || costPerRecipient)} credits
+                {(audienceType === "members" || audienceType === "visitors" ? costPerRecipient : estimatedCostPerRecipient || costPerRecipient)} credits
               </div>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -2563,6 +2793,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
         </div>
           </fieldset>
 
+        {canWrite ? (
         <div className="mt-6 flex items-center justify-end gap-2">
           <button
             type="button"
@@ -2589,7 +2820,486 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             {loading && submitAction === "send" ? "Sending..." : "Send Announcement"}
           </button>
         </div>
+        ) : null}
       </div>
+    </div>
+  );
+}
+
+const AUTOMATION_TYPE_OPTIONS = [
+  {
+    value: "birthday",
+    label: "Birthday Wishes",
+    hint: "Each member receives the message on their birthday",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 3v3M8 8c-1.5 0-3 .9-3 2.5V20h14v-9.5c0-1.6-1.5-2.5-3-2.5H8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" stroke="currentColor" strokeWidth="2" /><path d="M8 14h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+  },
+  {
+    value: "weekly_reminder",
+    label: "Weekly Reminder",
+    hint: "Recurring message on selected day(s) of the week",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M15 16l2 2 3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  }
+];
+
+const AUTOMATION_DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const AUTOMATION_AUDIENCE_OPTIONS = [
+  { value: "all", label: "All Members" },
+  { value: "visitors", label: "Visitors" }
+];
+
+function describeAutomationSchedule(a) {
+  const time = String(a?.sendTime || "08:00");
+  if (String(a?.type || "") === "birthday") return `Every day at ${time}`;
+  const days = Array.isArray(a?.daysOfWeek)
+    ? a.daysOfWeek.map(Number).filter((d) => d >= 0 && d <= 6).sort((x, y) => x - y)
+    : [];
+  if (!days.length) return `Weekly at ${time}`;
+  return `${days.map((d) => AUTOMATION_DAY_LABELS[d]).join(", ")} at ${time}`;
+}
+
+function automationRunBadge(status) {
+  const s = String(status || "").toLowerCase();
+  const map = {
+    sent: { cls: "bg-green-100 text-green-700", label: "Sent" },
+    skipped: { cls: "bg-amber-100 text-amber-700", label: "Skipped" },
+    skipped_insufficient_credits: { cls: "bg-amber-100 text-amber-700", label: "Skipped: low credits" },
+    failed: { cls: "bg-red-100 text-red-700", label: "Failed" }
+  };
+  const cfg = map[s];
+  if (!cfg) return <span className="text-gray-400">—</span>;
+  return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.cls}`}>{cfg.label}</span>;
+}
+
+function AutomationFormModal({ open, initial, onClose, onSaved }) {
+  const isEdit = Boolean(initial?._id);
+  const [name, setName] = useState("");
+  const [type, setType] = useState("birthday");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [sendTime, setSendTime] = useState("08:00");
+  const [daysOfWeek, setDaysOfWeek] = useState([]);
+  const [audienceType, setAudienceType] = useState("all");
+  const [enabled, setEnabled] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setName(String(initial?.name || ""));
+    setType(String(initial?.type || "birthday"));
+    setTitle(String(initial?.title || ""));
+    setContent(String(initial?.content || ""));
+    setSendTime(String(initial?.sendTime || "08:00"));
+    setDaysOfWeek(Array.isArray(initial?.daysOfWeek) ? initial.daysOfWeek.map(Number) : []);
+    setAudienceType(String(initial?.audience?.type || "all") === "visitors" ? "visitors" : "all");
+    setEnabled(initial?.enabled !== undefined ? Boolean(initial.enabled) : true);
+    setSaving(false);
+    setError("");
+  }, [open, initial]);
+
+  if (!open) return null;
+
+  const toggleDay = (d) =>
+    setDaysOfWeek((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort((a, b) => a - b)));
+
+  const submit = async () => {
+    setError("");
+    if (!name.trim()) return setError("Name is required");
+    if (!title.trim()) return setError("Message title is required");
+    if (!content.trim()) return setError("Message content is required");
+    if (type === "weekly_reminder" && !daysOfWeek.length) return setError("Select at least one day");
+
+    setSaving(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        type,
+        title: title.trim(),
+        content: content.trim(),
+        sendTime,
+        daysOfWeek,
+        audience: type === "birthday" ? { type: "all" } : { type: audienceType },
+        enabled
+      };
+      if (isEdit) await updateAutomation(initial._id, payload);
+      else await createAutomation(payload);
+      onSaved?.();
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to save automation");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-start justify-between gap-3">
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">{isEdit ? "Edit Automation" : "New Automation"}</div>
+            <div className="mt-1 text-gray-500 text-xs">Set up a message that sends itself on a schedule.</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="px-4 md:px-5 lg:px-6 py-4 max-h-[70vh] overflow-y-auto">
+          {error ? <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{error}</div> : null}
+
+          <div>
+            <div className="font-semibold text-gray-500 text-xs">Automation Name</div>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={type === "birthday" ? "e.g. Birthday wishes" : "e.g. Sunday service reminder"}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+            />
+          </div>
+
+          <div className="mt-4">
+            <div className="font-semibold text-gray-500 text-xs">Automation Type</div>
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {AUTOMATION_TYPE_OPTIONS.map((o) => {
+                const active = type === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setType(o.value)}
+                    className={`relative flex items-start gap-3 rounded-xl border p-3 text-left transition ${
+                      active ? "border-blue-500 bg-blue-50 ring-1 ring-blue-300" : "border-gray-200 bg-white hover:bg-gray-50"
+                    }`}
+                  >
+                    <span className={`h-9 w-9 shrink-0 rounded-lg flex items-center justify-center ${active ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                      {o.icon}
+                    </span>
+                    <span className="min-w-0">
+                      <span className={`block font-semibold text-sm ${active ? "text-blue-800" : "text-gray-800"}`}>{o.label}</span>
+                      <span className="mt-0.5 block text-gray-500 leading-snug text-xs">{o.hint}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {type === "weekly_reminder" ? (
+            <div className="mt-4">
+              <div className="font-semibold text-gray-500 text-xs">Send On</div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {AUTOMATION_DAY_LABELS.map((label, d) => {
+                  const active = daysOfWeek.includes(d);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => toggleDay(d)}
+                      className={`rounded-lg px-3 py-2 font-semibold text-xs transition ${
+                        active ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <div className="font-semibold text-gray-500 text-xs">Send Time</div>
+              <input
+                type="time"
+                value={sendTime}
+                onChange={(e) => setSendTime(e.target.value)}
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+              />
+            </div>
+            {type === "weekly_reminder" ? (
+              <div>
+                <div className="font-semibold text-gray-500 text-xs">Audience</div>
+                <select
+                  value={audienceType}
+                  onChange={(e) => setAudienceType(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+                >
+                  {AUTOMATION_AUDIENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+          </div>
+
+          {type === "birthday" ? (
+            <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800 text-xs">
+              Sent daily at the chosen time to every member whose birthday falls that day. Members marked deceased, transferred, left church or former are excluded.
+            </div>
+          ) : null}
+
+          <div className="mt-4">
+            <div className="font-semibold text-gray-500 text-xs">Message Title</div>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Happy Birthday!"
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+            />
+          </div>
+
+          <div className="mt-4">
+            <div className="font-semibold text-gray-500 text-xs">Message</div>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={4}
+              placeholder={type === "birthday" ? "Happy birthday {firstName}! Wishing you a wonderful year ahead." : "Dear {firstName}, reminder that service holds this Sunday. See you there!"}
+              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-gray-700 text-sm"
+            />
+            <div className="mt-1 text-gray-400 text-xs">Use {"{firstName}"}, {"{lastName}"} or {"{fullName}"} to personalise each message.</div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2 text-gray-600 text-sm">
+            <input
+              type="checkbox"
+              id="automation-enabled"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+            />
+            <label htmlFor="automation-enabled">Enabled — starts sending on the next scheduled run</label>
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={saving}
+              className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
+            >
+              {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Automation"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AutomatedTab({ open }) {
+  const guarded = useGuardedAction();
+  const { can } = useContext(PermissionContext) || {};
+  const canUpdate = useMemo(() => (typeof can === "function" ? can("announcements", "update") : true), [can]);
+  const canDelete = useMemo(() => (typeof can === "function" ? can("announcements", "delete") : true), [can]);
+  const canWrite = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [rows, setRows] = useState([]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formInitial, setFormInitial] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getAutomations();
+      setRows(Array.isArray(res?.data?.automations) ? res.data.automations : []);
+    } catch (e) {
+      setRows([]);
+      setError(e?.response?.data?.message || e?.message || "Failed to load automations");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    load();
+  }, [open]);
+
+  const pager = useTablePagination(rows.length);
+  const pagedRows = pager.slice(rows);
+
+  if (!open) return null;
+
+  const onToggle = async (row) => {
+    const id = String(row?._id || "");
+    if (!id) return;
+    setActionLoadingId(id);
+    setError("");
+    try {
+      await updateAutomation(id, { enabled: !row?.enabled });
+      await load();
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to update automation");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const onDelete = async (row) => {
+    const id = String(row?._id || "");
+    if (!id) return;
+    if (!window.confirm(`Delete "${row?.name || "this automation"}"? Future scheduled messages will stop.`)) return;
+    setActionLoadingId(id);
+    setError("");
+    try {
+      await deleteAutomation(id);
+      await load();
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Failed to delete automation");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const openCreate = () => {
+    setFormInitial(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (row) => {
+    setFormInitial(row);
+    setFormOpen(true);
+  };
+
+  return (
+    <div className="mt-5 rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
+        <div>
+          <div className="font-semibold text-gray-900 text-sm">Automated Messages</div>
+          <div className="mt-0.5 text-gray-500 text-xs">Messages that send themselves — birthdays, weekly reminders and more.</div>
+          {error ? <div className="mt-1 text-red-700 text-xs">{error}</div> : null}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
+          >
+            Refresh
+          </button>
+          {canWrite ? (
+            <button
+              type="button"
+              onClick={() => guarded(openCreate)}
+              className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-sm"
+            >
+              New Automation
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {!loading && !rows.length ? (
+        <EmptyState illustration="announcements" title="No automations yet" description="Create an automation to send messages automatically — like birthday wishes or weekly service reminders." />
+      ) : (
+      <div className="overflow-x-auto overscroll-x-contain">
+        <table className="min-w-full">
+          <thead className="bg-slate-100">
+            <tr className="text-left font-semibold text-gray-500 text-xs">
+              <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Name</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Schedule</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Audience</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Next Run</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Last Run</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Enabled</th>
+              <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {loading ? (
+              <SkeletonTableRows rows={3} widths={["w-32", "w-24", "w-28", "w-20", "w-28", "w-24", "w-12", "w-10"]} />
+            ) : (
+              pagedRows.map((a) => (
+                <tr key={a?._id} className="max-md:text-xs text-gray-700 text-sm">
+                  <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 font-semibold text-gray-900 whitespace-nowrap px-4 md:px-6" title={a?.name || ""}>
+                    <span className="sm:hidden">{truncateMobileName(a?.name)}</span>
+                    <span className="hidden sm:inline">{truncateDesktopName(a?.name)}</span>
+                  </td>
+                  <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${String(a?.type) === "birthday" ? "bg-pink-100 text-pink-700" : "bg-blue-100 text-blue-700"}`}>
+                      {String(a?.type) === "birthday" ? "Birthday" : "Weekly reminder"}
+                    </span>
+                  </td>
+                  <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{describeAutomationSchedule(a)}</td>
+                  <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">
+                    {String(a?.type) === "birthday" ? "Members celebrating their birthday" : formatAudienceLabel(a?.audience)}
+                  </td>
+                  <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{a?.nextRunAt ? new Date(a.nextRunAt).toLocaleString() : "—"}</td>
+                  <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                    <div>{a?.lastRunAt ? new Date(a.lastRunAt).toLocaleString() : "—"}</div>
+                    {a?.lastRunStatus ? <div className="mt-0.5">{automationRunBadge(a.lastRunStatus)}</div> : null}
+                    {a?.lastRunError ? <div className="mt-0.5 text-red-600 text-xs max-w-[200px] whitespace-normal">{a.lastRunError}</div> : null}
+                  </td>
+                  <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                    {canUpdate ? (
+                      <button
+                        type="button"
+                        onClick={() => guarded(() => onToggle(a))}
+                        disabled={actionLoadingId === a?._id}
+                        aria-label={a?.enabled ? "Disable automation" : "Enable automation"}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition disabled:opacity-60 ${a?.enabled ? "bg-blue-600" : "bg-gray-300"}`}
+                      >
+                        <span className={`inline-block h-4 w-4 rounded-full bg-white transition ${a?.enabled ? "translate-x-4" : "translate-x-0.5"}`} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 text-xs">{a?.enabled ? "On" : "Off"}</span>
+                    )}
+                  </td>
+                  <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
+                    <TableKebabMenu items={[
+                      canUpdate && { label: "Edit", onClick: () => guarded(() => openEdit(a)), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                      canDelete && { label: "Delete", onClick: () => guarded(() => onDelete(a)), danger: true, disabled: actionLoadingId === a?._id }
+                    ]} />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      )}
+      {!loading && rows.length ? (
+        <Pagination
+          pagination={pager.pagination}
+          rowsCount={pagedRows.length}
+          limit={pager.limit}
+          onLimitChange={pager.onLimitChange}
+          onPageChange={pager.onPageChange}
+          itemName="automations"
+        />
+      ) : null}
+
+      <AutomationFormModal
+        open={formOpen}
+        initial={formInitial}
+        onClose={() => setFormOpen(false)}
+        onSaved={async () => {
+          setFormOpen(false);
+          setFormInitial(null);
+          await load();
+        }}
+      />
     </div>
   );
 }
@@ -2599,6 +3309,7 @@ function AnnouncementPage() {
   const { user } = useAuth();
   const guarded = useGuardedAction();
   const canRead = useMemo(() => (typeof can === "function" ? can("announcements", "read") : true), [can]);
+  const canWrite = useMemo(() => (typeof can === "function" ? can("announcements", "create") : true), [can]);
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
   const isGhana = String(activeChurch?.country || "").trim().toLowerCase() === "ghana";
@@ -2840,12 +3551,12 @@ function AnnouncementPage() {
         <WalletCard
           wallet={wallet}
           allowance={allowance}
-          onFund={() => guarded(openFund)}
+          onFund={canWrite ? () => guarded(openFund) : undefined}
           onViewHistory={() => setTab("wallet-history")}
           isGhana={isGhana}
           usdToGhs={usdToGhs}
         />
-        {walletLoading ? <div className="mt-2 flex items-center justify-center"><Spinner className="text-gray-400" /></div> : null}
+        {walletLoading ? <div className="mt-2 h-9 rounded-lg bg-gray-100 animate-pulse" /> : null}
       </div>
 
       <PageTabs
@@ -2853,6 +3564,7 @@ function AnnouncementPage() {
           { key: "communication", label: "Communication" },
           { key: "sent", label: "Sent Messages" },
           { key: "scheduled", label: "Scheduled Messages" },
+          { key: "automated", label: "Automated" },
           { key: "templates", label: "Templates & Drafts" },
           { key: "wallet-history", label: "Wallet History" },
         ]}
@@ -2887,6 +3599,8 @@ function AnnouncementPage() {
         onWalletUpdated={loadWallet}
         variant="scheduled"
       />
+
+      <AutomatedTab open={tab === "automated"} />
 
       <TemplatesAndDraftsTab
         open={tab === "templates"}

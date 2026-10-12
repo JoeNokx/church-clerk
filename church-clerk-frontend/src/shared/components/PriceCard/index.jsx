@@ -36,10 +36,12 @@ function PriceCard({
   const subtitleClass = isMostPopular ? "text-blue-100" : "text-slate-600";
   const memberLine = memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`;
   const buttonClass = variant === "landing"
-    ? `mt-5 w-full inline-flex justify-center items-center rounded-lg text-sm font-semibold px-4 py-2.5 shadow-sm ${
-        isMostPopular
-          ? "bg-blue-900 text-white hover:bg-blue-800"
-          : "border border-blue-900 text-blue-900 hover:bg-blue-50"
+    ? `mt-5 w-full inline-flex justify-center items-center gap-2 rounded-lg text-sm font-semibold px-4 py-2.5 shadow-sm disabled:opacity-60 ${
+        isCurrent
+          ? "bg-gray-100 text-gray-600"
+          : isMostPopular
+            ? "bg-blue-900 text-white hover:bg-blue-800"
+            : "border border-blue-900 text-blue-900 hover:bg-blue-50"
       }`
     : `mt-5 w-full rounded-lg px-4 py-2 text-xs font-semibold shadow-sm disabled:opacity-60 flex items-center justify-center gap-2 ${
         isCurrent

@@ -13,6 +13,11 @@ const announcementMessageSchema = new mongoose.Schema(
       ref: "User",
       default: null
     },
+    automation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AnnouncementAutomation",
+      default: null
+    },
     title: {
       type: String,
       required: true,

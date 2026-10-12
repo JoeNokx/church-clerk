@@ -1,7 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getProgram as apiGetProgram } from "../services/program.api.js";
-import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
 import { createProgramAttendee, deleteProgramAttendee, getProgramAttendees, updateProgramAttendee } from "../attendees/services/programAttendees.api.js";
@@ -960,6 +959,7 @@ function ProgramDetailsPage() {
                       <div className="font-semibold text-gray-900 text-sm">By Registration</div>
                       <div className="text-gray-500 text-xs mt-0.5">Record and manage attendance collected for this program.</div>
                     </div>
+                    {canEdit ? (
                     <button
                       type="button"
                       onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); })}
@@ -967,6 +967,7 @@ function ProgramDetailsPage() {
                     >
                       Register
                     </button>
+                    ) : null}
                   </div>
                   <FilterBar
                     searchValue={regSearch}
@@ -978,6 +979,7 @@ function ProgramDetailsPage() {
                     dateTo={regDateTo}
                     onDateApply={(from, to) => { setRegDateFrom(from); setRegDateTo(to); }}
                   >
+                    {canEdit ? (
                     <button
                       type="button"
                       onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); })}
@@ -989,6 +991,7 @@ function ProgramDetailsPage() {
                       </svg>
                       Register
                     </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={onExportAttendees}
@@ -1125,6 +1128,7 @@ function ProgramDetailsPage() {
                       <div className="font-semibold text-gray-900 text-sm">File Upload</div>
                       <div className="text-gray-500 text-xs mt-0.5">Upload attendance files from Excel, Word, PDF, or image formats.</div>
                     </div>
+                    {canEdit ? (
                     <FileUploadButton
                       accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
                       disabled={fileUploading}
@@ -1134,6 +1138,7 @@ function ProgramDetailsPage() {
                     >
                       {fileUploading ? "Uploading..." : "Upload File"}
                     </FileUploadButton>
+                    ) : null}
                   </div>
                   <FilterBar
                     searchValue={filesSearch}
@@ -1145,6 +1150,7 @@ function ProgramDetailsPage() {
                     dateTo={filesDateTo}
                     onDateApply={(from, to) => { setFilesDateFrom(from); setFilesDateTo(to); }}
                   >
+                    {canEdit ? (
                     <FileUploadButton
                       accept=".xlsx,.xls,.doc,.docx,.pdf,image/*"
                       disabled={fileUploading}
@@ -1159,6 +1165,7 @@ function ProgramDetailsPage() {
                       </svg>
                       {fileUploading ? "Uploading..." : "Upload File"}
                     </FileUploadButton>
+                    ) : null}
                   </FilterBar>
                   <MobileFilterBar
                     searchValue={filesSearch}

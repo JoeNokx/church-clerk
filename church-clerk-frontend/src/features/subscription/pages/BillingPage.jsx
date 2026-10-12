@@ -1,8 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
-import Skeleton from "react-loading-skeleton";
 import PriceCard from "../../../shared/components/PriceCard/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import {
@@ -25,7 +25,6 @@ import MinistryPlusCustomPlanModal from "../../../shared/components/MinistryPlus
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
-import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
 import { getSystemSettingsAdmin, updateSystemSettingsAdmin, toggleGovernanceFlags } from "../../settings/services/settings.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
@@ -40,6 +39,73 @@ function formatShortDate(value) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+const COMPARISON_GROUPS = [
+  {
+    title: "Core",
+    rows: [
+      { label: "Members", render: (p) => (p?.memberLimit === null || p?.memberLimit === undefined ? "Unlimited" : `Up to ${Number(p.memberLimit).toLocaleString()}`) },
+      { label: "Admin accounts", render: (p) => (p?.userLimit === null || p?.userLimit === undefined ? "—" : `Up to ${Number(p.userLimit).toLocaleString()}`) },
+      { label: "Monthly SMS credits", render: (p) => (Number(p?.monthlySmsCredits) > 0 ? Number(p.monthlySmsCredits).toLocaleString() : "—") },
+    ],
+  },
+  {
+    title: "People & ministries",
+    rows: [
+      { label: "Members", keys: ["members"] },
+      { label: "Attendance", keys: ["attendance"] },
+      { label: "Programs", keys: ["programsEvents"] },
+      { label: "Organisations", keys: ["organisations"] },
+      { label: "Outreach & Follow-up", keys: ["outreach"] },
+      { label: "Announcements", keys: ["announcements", "announcement"] },
+      { label: "Branches overview", keys: ["branchesOverview"] },
+    ],
+  },
+  {
+    title: "Finance",
+    rows: [
+      { label: "Tithe", keys: ["tithes"] },
+      { label: "Offering & Funds", keys: ["offerings", "specialFund", "specialFunds"] },
+      { label: "Welfare", keys: ["welfare"] },
+      { label: "Fundraising", keys: ["churchProjects", "pledges"] },
+      { label: "Budgeting", keys: ["budgeting"] },
+      { label: "General Expenses", keys: ["expenses"] },
+      { label: "Business Ventures", keys: ["businessVentures"] },
+      { label: "Financial Overview", keys: ["financialStatement"] },
+    ],
+  },
+  {
+    title: "Administration",
+    rows: [
+      { label: "Reports", keys: ["reportsAnalytics"] },
+      { label: "Billing", keys: ["billing"] },
+      { label: "Referrals", keys: ["referrals"] },
+      { label: "Settings", keys: ["settings"] },
+      { label: "Support & Help", keys: ["supportHelp"] },
+    ],
+  },
+];
+
+const COMPARISON_ITEMS = COMPARISON_GROUPS.flatMap((g) => [
+  { type: "group", key: `group-${g.title}`, title: g.title },
+  ...g.rows.map((r) => ({ type: "row", key: `row-${r.label}`, row: r })),
+]);
+const COMPARISON_TOTAL_ROWS = COMPARISON_ITEMS.filter((i) => i.type === "row").length;
+const COMPARISON_COLLAPSED_ROWS = 6;
+
+function planHas(plan, keys) {
+  return keys.some((k) => Boolean(plan?.features?.[k]));
+}
+
+function CheckCell() {
+  return (
+    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-100 text-green-600">
+      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
+        <path d="M6 12.5l3.2 3.2L18 7.8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
 }
 
 function StatusPill({ value }) {
@@ -164,6 +230,8 @@ function BillingPage() {
   const { user } = useAuth();
   const churchStore = useContext(ChurchContext);
   const activeChurch = churchStore?.activeChurch;
+  // HQ monitoring a branch is read-only — hide all billing write actions
+  const canManageBilling = !(activeChurch?._id && activeChurch?.canEdit === false);
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
 
@@ -251,6 +319,7 @@ function BillingPage() {
   const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
   const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
   const [showCustomPlanModal, setShowCustomPlanModal] = useState(false);
+  const [comparisonExpanded, setComparisonExpanded] = useState(false);
 
   // System admin settings (configuration durations + governance toggles)
   // Hidden for delegated sessions — those are scoped to a single church view.
@@ -443,17 +512,6 @@ function BillingPage() {
     return result;
   }, [plansSorted]);
 
-  const plansForComparison = useMemo(() => {
-    const rows = Array.isArray(plansSorted) ? plansSorted.filter((p) => p?.isActive !== false) : [];
-    const byName = (name) => rows.find((p) => String(p?.name || "").trim().toLowerCase() === name) || null;
-
-    const picked = [byName("basic"), byName("standard"), byName("premium")].filter(Boolean);
-    if (picked.length > 0) return picked;
-
-    const withoutFreeLite = rows.filter((p) => String(p?.name || "").trim().toLowerCase() !== "free lite");
-    return withoutFreeLite.slice(0, 3);
-  }, [plansSorted]);
-
   // Sync UI-only state and history when query data arrives or refreshes after a mutation.
   useEffect(() => {
     const d = billingQuery.data;
@@ -644,6 +702,19 @@ function BillingPage() {
     setShowCancelConfirm(true);
   };
 
+  const visibleComparisonItems = (() => {
+    if (comparisonExpanded) return COMPARISON_ITEMS;
+    const out = [];
+    let shown = 0;
+    for (const item of COMPARISON_ITEMS) {
+      if (item.type === "row" && shown >= COMPARISON_COLLAPSED_ROWS) break;
+      out.push(item);
+      if (item.type === "row") shown++;
+    }
+    return out;
+  })();
+  const hiddenComparisonCount = COMPARISON_TOTAL_ROWS - Math.min(COMPARISON_TOTAL_ROWS, COMPARISON_COLLAPSED_ROWS);
+
   const currentPlanFeatures = getPlanDescriptionFeatures(currentPlan, { max: 6 });
   const currentPlanName = String(currentPlan?.name || "").trim().toLowerCase();
   const isFreeLitePlan = currentPlanName === "free lite";
@@ -687,33 +758,34 @@ function BillingPage() {
         <div className="flex flex-col items-center justify-center gap-3">
           <div className="font-semibold text-gray-500 text-xs">Available Plans</div>
 
-          <div className="inline-flex flex-wrap items-center justify-center gap-2">
-            <div className="inline-flex flex-wrap rounded-lg border border-gray-200 bg-white p-1 gap-0.5">
-              {[
-                { key: "monthly",  label: "Monthly" },
-                { key: "halfYear", label: "6 Months" },
-                { key: "yearly",   label: "Yearly" }
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setBillingInterval(key)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                    billingInterval === key ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            
+          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+            {[
+              { key: "monthly",  label: "Monthly" },
+              { key: "halfYear", label: "6 Months" },
+              { key: "yearly",   label: "Yearly" }
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setBillingInterval(key)}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                  billingInterval === key
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+          <p className="text-xs text-slate-400">
+            Prices shown in <span className="font-semibold text-slate-600">{displayCurrency}</span>
+          </p>
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-4">
-        {plansSorted.map((p) => {
+      <div className="mx-auto mt-8 grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+        {plansSorted.map((p, idx) => {
           const id = p?._id;
           const isCurrent = id && String(id) === String(subscribedPlanId || "");
           const name = String(p?.name || "");
@@ -735,6 +807,8 @@ function BillingPage() {
           })();
 
           const planFeatures = getPlanDescriptionFeatures(p, { max: 5 });
+          const memberLine = p?.memberLimit === null ? "Unlimited members" : `Up to ${Number(p?.memberLimit || 0).toLocaleString()} members`;
+          const highlights = [memberLine, ...planFeatures];
 
           const isFreeLite = name.toLowerCase() === "free lite";
           const isFreeLiteDuringTrial = Boolean(isFreeLite && isFreeTrial);
@@ -761,46 +835,107 @@ function BillingPage() {
                       : "Subscribe now";
 
           return (
-            <PriceCard
-              id={id}
-              name={name}
-              price={priceDisplay}
-              currency={displayCurrency}
-              per={per}
-              isMostPopular={isMostPopular}
-              isCurrent={isCurrent}
-              savingsPct={planSavingsPct}
-              memberLimit={p?.memberLimit}
-              features={planFeatures}
-              actionLabel={actionLabel}
-              onAction={() => onPlanAction(p)}
-              disabled={payLoading || manageLoading || prorationLoading || isFreeLiteDuringTrial || isHQLockedPlan || (isCurrent && !paymentRequired)}
-              loading={prorationLoading && isUpgrade && String(id) === String(planId)}
-              variant="billing"
-            />
+            <motion.div key={id} className="h-full" initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.4, delay: idx * 0.04 }}>
+              <PriceCard
+                id={id}
+                name={name}
+                price={priceDisplay}
+                currency={displayCurrency}
+                per={per}
+                isMostPopular={isMostPopular}
+                isCurrent={isCurrent}
+                savingsPct={planSavingsPct}
+                memberLimit={p?.memberLimit}
+                features={highlights}
+                actionLabel={actionLabel}
+                onAction={canManageBilling ? () => onPlanAction(p) : undefined}
+                disabled={payLoading || manageLoading || prorationLoading || isFreeLiteDuringTrial || isHQLockedPlan || (isCurrent && !paymentRequired)}
+                loading={prorationLoading && isUpgrade && String(id) === String(planId)}
+                variant="landing"
+              />
+            </motion.div>
           );
         })}
       </div>
 
-      <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4 md:p-6 lg:p-8">
-        <div className="font-semibold text-gray-900 text-sm">Need a fully customized church management solution?</div>
-        <div className="mt-2 text-gray-700 text-sm">
-          With Ministry Plus, get a tailor-made system built specifically for your church’s needs. Features, workflows, and integrations — all designed just for you.
-        </div>
-        <div className="mt-4">
+      <div className="mx-auto mt-10 max-w-5xl rounded-2xl border border-slate-200 bg-slate-50 p-6 md:p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">Need a fully customized solution?</h3>
+            <p className="mt-1 text-sm text-slate-500">Ministry Plus is built around your church's specific workflows, scale, and integration needs.</p>
+          </div>
           <button
             type="button"
             onClick={() => {
               setShowCustomPlanModal(true);
             }}
-            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 text-xs"
+            className="shrink-0 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800 transition-colors"
           >
-            Contact us for a custom plan
+            Contact us for Ministry Plus
           </button>
         </div>
       </div>
 
-      <PlanComparisonTable plans={plansForComparison} collapsible={true} collapsedCount={4} />
+      {plansSorted.length > 0 ? (
+        <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.45 }} className="mx-auto mt-14 max-w-5xl">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold tracking-tight text-slate-900">Compare plans in detail</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-slate-500">Every row below reflects the actual plan configuration — nothing hidden, nothing inflated.</p>
+          </div>
+          <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th scope="col" className="sticky left-0 z-10 bg-white pl-2 pr-0.5 md:pl-5 md:pr-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400 max-w-[110px] md:max-w-none md:static">Features</th>
+                  {plansSorted.map((p) => (
+                    <th key={p?._id || p?.name} scope="col" className="px-4 py-4 text-center">
+                      <div className="text-sm font-bold text-slate-900">{p?.name || "—"}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visibleComparisonItems.map((item) => (
+                  item.type === "group" ? (
+                    <tr key={item.key} className="bg-slate-50">
+                      <td className="sticky left-0 z-10 bg-slate-50 pl-2 pr-0.5 md:pl-5 md:pr-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 max-w-[110px] md:max-w-none md:static">
+                        {item.title}
+                      </td>
+                      <td colSpan={plansSorted.length} className="bg-slate-50 py-2.5" />
+                    </tr>
+                  ) : (
+                    <tr key={item.key} className="border-t border-slate-100">
+                      <td className="sticky left-0 z-10 bg-white pl-2 pr-0.5 md:pl-5 md:pr-5 py-3 text-[13px] font-medium text-slate-700 max-w-[110px] md:max-w-none md:static">{item.row.label}</td>
+                      {plansSorted.map((p) => (
+                        <td key={`${p?._id || p?.name}-${item.row.label}`} className="px-4 py-3 text-center">
+                          {item.row.render ? (
+                            <span className="text-xs font-semibold text-slate-800">{item.row.render(p)}</span>
+                          ) : planHas(p, item.row.keys) ? (
+                            <CheckCell />
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {hiddenComparisonCount > 0 ? (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setComparisonExpanded((v) => !v)}
+                className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+              >
+                {comparisonExpanded ? "Show less" : `Show all features (+${hiddenComparisonCount} more)`}
+              </button>
+            </div>
+          ) : null}
+        </motion.div>
+      ) : null}
 
     </div>
   );
@@ -1007,6 +1142,7 @@ function BillingPage() {
                 }
               </div>
             </div>
+            {canManageBilling ? (
             <button
               type="button"
               onClick={() => { setPlanId(String(currentPlanId)); onPay(); }}
@@ -1015,6 +1151,7 @@ function BillingPage() {
             >
               Renew Now
             </button>
+            ) : null}
           </div>
         )}
 
@@ -1028,6 +1165,7 @@ function BillingPage() {
                 <strong>Subscription suspended.</strong> Your grace period has ended and access to write actions is locked. Renew to restore full access.
               </div>
             </div>
+            {canManageBilling ? (
             <button
               type="button"
               onClick={() => { setPlanId(String(currentPlanId)); onPay(); }}
@@ -1036,6 +1174,7 @@ function BillingPage() {
             >
               Renew Now
             </button>
+            ) : null}
           </div>
         )}
 
@@ -1285,7 +1424,7 @@ function BillingPage() {
         </div>
       </div>
 
-      {cancelSubscriptionCard}
+      {canManageBilling ? cancelSubscriptionCard : null}
 
       <ModalShell
         open={showCancelConfirm}

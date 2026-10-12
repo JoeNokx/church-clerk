@@ -4,7 +4,44 @@ import Visitor from "../models/visitorsModel.js";
 import VisitorLog from "../models/visitorLogModel.js";
 import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Member from "../models/memberModel.js";
+import OutreachProspect from "../models/outreachModel/outreachProspectModel.js";
 import { annotateDeletable } from "../services/recordDependencyService.js";
+
+// Link a visitor to the outreach prospect record for the same person —
+// matched on the last 9 digits of the phone so "+233..." and "0..." match.
+const findLinkedProspect = async (churchId, phoneNumber) => {
+  const digits = String(phoneNumber || "").replace(/\D/g, "");
+  if (digits.length < 7) return null;
+  const suffix = digits.slice(-9);
+  return OutreachProspect.findOne({
+    church: churchId,
+    $or: [
+      { phone: { $regex: `${suffix}$` } },
+      { alternativePhone: { $regex: `${suffix}$` } }
+    ]
+  }).select("_id").lean();
+};
+
+// Explicit link — the person was picked from outreach in the form, so we
+// link that exact record even when the phone given doesn't match theirs.
+const findProspectById = async (churchId, prospectId) => {
+  if (!prospectId || !mongoose.Types.ObjectId.isValid(prospectId)) return null;
+  return OutreachProspect.findOne({ _id: prospectId, church: churchId }).select("_id").lean();
+};
+
+// Mirror of markAsVisitor's prospect-side updates — when a known prospect
+// shows up at a service, their pipeline advances to "visited-church" and
+// the back-link is set, whichever direction the link was made from.
+const STAGE_ORDER = ["reached", "contacted", "interested", "visited-church", "connected", "new-believer", "member"];
+const linkProspectVisit = async (prospectId, visitorId) => {
+  const p = await OutreachProspect.findById(prospectId);
+  if (!p) return;
+  let changed = false;
+  if (!p.markedAsVisitor) { p.markedAsVisitor = true; p.markedAsVisitorAt = new Date(); changed = true; }
+  if (String(p.linkedVisitor) !== String(visitorId)) { p.linkedVisitor = visitorId; changed = true; }
+  if (STAGE_ORDER.indexOf(p.stage) < STAGE_ORDER.indexOf("visited-church")) { p.stage = "visited-church"; changed = true; }
+  if (changed) await p.save();
+};
 
 // create visitor
 
@@ -52,6 +89,19 @@ const createVisitor = async (req, res) => {
     });
 
     if (existingVisitor) {
+      // Back-fill the outreach link if this person is a known prospect.
+      if (!existingVisitor.linkedProspect) {
+        const prospect = await findLinkedProspect(req.activeChurch._id, validatedPhoneNumber)
+          || await findProspectById(req.activeChurch._id, req.body.linkedProspect);
+        if (prospect) {
+          existingVisitor.linkedProspect = prospect._id;
+          await existingVisitor.save();
+        }
+      }
+      // Keep the prospect side in sync — the visit advances their pipeline.
+      if (existingVisitor.linkedProspect) {
+        await linkProspectVisit(existingVisitor.linkedProspect, existingVisitor._id);
+      }
       if (session) {
         await Visitor.updateOne(
           { _id: existingVisitor._id },
@@ -92,7 +142,19 @@ const createVisitor = async (req, res) => {
       data.status = status;
     }
 
+    // If this person already exists in outreach, link instead of
+    // tracking the same person twice in both registers.
+    const linkedProspect = await findLinkedProspect(req.activeChurch._id, validatedPhoneNumber)
+      || await findProspectById(req.activeChurch._id, req.body.linkedProspect);
+    if (linkedProspect) {
+      data.linkedProspect = linkedProspect._id;
+    }
+
     const visitor = await Visitor.create(data);
+
+    if (linkedProspect) {
+      await linkProspectVisit(linkedProspect._id, visitor._id);
+    }
 
     return res.status(201).json({
       message: "Visitor created successfully",
@@ -117,6 +179,7 @@ const getSingleVisitor = async (req, res) => {
 
         const visitor = await Visitor.findOne(query)
           .populate("visitorLog", "serviceType serviceDate referenceId")
+          .populate("linkedProspect", "firstName lastName stage")
           .populate({ path: "attendance", select: "date serviceType mainSpeaker", options: { sort: { date: -1 } } })
           .lean();
 
@@ -348,6 +411,30 @@ const updateVisitor = async (req, res) => {
 
         if(!attendance) {
             return res.status(404).json({message: "visitor not found"})
+        }
+
+        // Keep the linked outreach record in sync — same person, so
+        // name/phone/email/location must stay identical in both registers.
+        if (attendance.linkedProspect) {
+          const prospectUpdate = {};
+          if (req.body.fullName !== undefined) {
+            const parts = String(req.body.fullName || "").trim().split(/\s+/).filter(Boolean);
+            prospectUpdate.firstName = parts[0] || "";
+            prospectUpdate.lastName = parts.slice(1).join(" ");
+          }
+          if (req.body.phoneNumber !== undefined) prospectUpdate.phone = req.body.phoneNumber;
+          if (req.body.email !== undefined) prospectUpdate.email = req.body.email;
+          if (req.body.location !== undefined) prospectUpdate.address = req.body.location;
+          if (Object.keys(prospectUpdate).length) {
+            try {
+              await OutreachProspect.updateOne(
+                { _id: attendance.linkedProspect, church: req.activeChurch._id },
+                { $set: prospectUpdate }
+              );
+            } catch {
+              // Linked-record sync is best-effort — the visitor update stands.
+            }
+          }
         }
 
         return res.status(200).json({message: "visitor updated successfully", attendance})

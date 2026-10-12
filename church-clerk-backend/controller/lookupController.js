@@ -1,4 +1,5 @@
 import LookupValue from "../models/lookupValueModel.js";
+import Budget from "../models/financeModel/budgetingModel.js";
 import GeneralExpenses from "../models/generalExpenseModel.js";
 import WelfareDisbursements from "../models/financeModel/welfareModel/welfareDisbursementModel.js";
 import ProjectExpense from "../models/financeModel/projectModel/projectExpenseModel.js";
@@ -18,7 +19,7 @@ import BusinessIncome from "../models/financeModel/businessModel/businessIncomeM
 
 const normalizeValue = (value) => String(value || "").trim().toLowerCase();
 
-const defaultValuesByKind = {
+export const defaultValuesByKind = {
   serviceType: [
     "Sunday Service",
     "Sunday First Service",
@@ -116,7 +117,7 @@ const EXPENSE_CATEGORY_SOURCES = [
   { Model: Expense,              field: "category" },
 ];
 
-const collectExpenseCategoriesFromRecords = async (churchId) => {
+export const collectExpenseCategoriesFromRecords = async (churchId) => {
   const results = await Promise.all(
     EXPENSE_CATEGORY_SOURCES.map(async ({ Model, field }) => {
       try {
@@ -260,6 +261,60 @@ export const createLookupValue = async (req, res) => {
     });
 
     return res.status(201).json({ message: "Lookup value saved", lookup: doc });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Which collections each lookup kind is written into. A lookup value may only
+ * be deleted when no record anywhere in the system references it — otherwise
+ * the label would silently disappear from historical records and budgets.
+ */
+const LOOKUP_USAGE_SOURCES = {
+  expenseCategory: [
+    ...EXPENSE_CATEGORY_SOURCES,
+    { Model: Budget, field: "items.category" },
+  ],
+  incomeCategory: [
+    ...INCOME_CATEGORY_SOURCES,
+    { Model: Budget, field: "items.category" },
+  ],
+};
+
+const exactMatchRx = (value) =>
+  new RegExp(`^${String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+
+export const deleteLookupValue = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Active church context is required" });
+
+    const id = String(req.params?.id || "").trim();
+    const doc = await LookupValue.findOne({ _id: id, churchId }).lean();
+    if (!doc) return res.status(404).json({ message: "Lookup value not found" });
+
+    const sources = LOOKUP_USAGE_SOURCES[doc.kind] || [];
+    const rx = exactMatchRx(doc.value);
+    const checks = await Promise.all(
+      sources.map(async ({ Model, field }) => {
+        try {
+          return await Model.countDocuments({ church: churchId, [field]: rx });
+        } catch {
+          return 0;
+        }
+      })
+    );
+    const usedBy = checks.reduce((a, n) => a + n, 0);
+
+    if (usedBy > 0) {
+      return res.status(400).json({
+        message: `"${doc.value}" is used by ${usedBy} record${usedBy === 1 ? "" : "s"} and can't be deleted.`
+      });
+    }
+
+    await LookupValue.deleteOne({ _id: doc._id, churchId });
+    return res.status(200).json({ message: "Lookup value deleted" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

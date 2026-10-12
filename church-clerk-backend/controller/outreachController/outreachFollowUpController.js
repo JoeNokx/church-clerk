@@ -1,19 +1,51 @@
 import OutreachFollowUp from "../../models/outreachModel/outreachFollowUpModel.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
+import Visitor from "../../models/visitorsModel.js";
 
 const FU_ALLOWED = ["scheduledDate", "followUpDate", "type", "status", "outcome", "notes", "nextFollowUpDate", "assignedTo", "conductedBy"];
-const FU_OBJECTID_FIELDS = new Set(["assignedTo", "conductedBy"]);
+const FU_OBJECTID_FIELDS = new Set(["conductedBy"]);
 const setAllowed = (src, target) => {
   FU_ALLOWED.forEach((k) => {
     if (src[k] === undefined) return;
+    if (k === "assignedTo") {
+      if (src[k] === "") return; // skip empty ObjectId
+      // Multi-assignee: accept a single id or an array; [] clears all assignees
+      target[k] = Array.isArray(src[k]) ? src[k] : [src[k]];
+      return;
+    }
     if (src[k] === "" && FU_OBJECTID_FIELDS.has(k)) return; // skip empty ObjectId
     target[k] = src[k];
   });
 };
 
+// Mirror follow-up assignees onto the subject's worker list (additive —
+// a worker stays assigned to the person even if later follow-ups differ).
+const syncSubjectWorkers = async (followUp) => {
+  const ids = (Array.isArray(followUp.assignedTo) ? followUp.assignedTo : followUp.assignedTo ? [followUp.assignedTo] : [])
+    .map((m) => String(m?._id || m))
+    .filter(Boolean);
+  if (!ids.length) return;
+  const Subject = followUp.visitor ? Visitor : followUp.prospect ? OutreachProspect : null;
+  const subjectId = followUp.visitor || followUp.prospect;
+  if (!Subject || !subjectId) return;
+  const subject = await Subject.findById(subjectId);
+  if (!subject) return;
+  const existing = new Set((subject.assignedFollowUpWorkers || []).map((w) => String(w.member)));
+  let changed = false;
+  ids.forEach((id) => {
+    if (!existing.has(id)) {
+      subject.assignedFollowUpWorkers.push({ member: id, assignedAt: new Date() });
+      changed = true;
+    }
+  });
+  if (changed) await subject.save();
+};
+
 const populateFU = (query) =>
   query
     .populate("prospect", "firstName lastName phone stage")
+    .populate("visitor", "fullName phoneNumber status")
+    .populate("member", "firstName lastName phoneNumber")
     .populate("assignedTo", "firstName lastName photoUrl phoneNumber")
     .populate("conductedBy", "firstName lastName photoUrl")
     .populate("outreachEvent", "title date");
@@ -31,8 +63,9 @@ export const getAllFollowUps = async (req, res) => {
     if (status) filter.status = status;
     if (eventId) filter.outreachEvent = eventId;
     if (assignedTo) filter.assignedTo = assignedTo;
-    if (assigned === "assigned") filter.assignedTo = { $exists: true, $ne: null };
-    else if (assigned === "unassigned") filter.assignedTo = null;
+    // assignedTo is an array — legacy docs hold a scalar; both are covered
+    if (assigned === "assigned") filter.assignedTo = { $ne: null, $not: { $size: 0 } };
+    else if (assigned === "unassigned") filter.$or = [{ assignedTo: null }, { assignedTo: { $size: 0 } }];
     if (dateFrom || dateTo) {
       filter.scheduledDate = {};
       if (dateFrom) filter.scheduledDate.$gte = new Date(dateFrom);
@@ -164,12 +197,66 @@ export const createFollowUp = async (req, res) => {
     payload.status = payload.status || "pending";
 
     const followUp = await OutreachFollowUp.create(payload);
+    await syncSubjectWorkers(followUp);
 
     if (req.body.nextFollowUpDate || scheduledDate) {
       prospect.nextFollowUpDate = req.body.nextFollowUpDate ? new Date(req.body.nextFollowUpDate) : new Date(scheduledDate);
       if (prospect.stage === "reached") prospect.stage = "contacted";
       await prospect.save();
     }
+
+    return res.status(201).json({ message: "Follow-up scheduled", data: followUp });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── Follow-ups by visitor ─────────────────────────────────────────
+// Visitors aren't prospects, but they share the same follow-up engine —
+// one collection, the subject just points at the visitor instead.
+export const getFollowUpsByVisitor = async (req, res) => {
+  try {
+    const visitorId = req.params.visitorId || req.params.id;
+    const visitor = await Visitor.findOne({ _id: visitorId, church: req.activeChurch._id }).select("linkedProspect").lean();
+    if (!visitor) return res.status(404).json({ message: "Visitor not found" });
+    // One person, one history — follow-ups recorded while they were still
+    // an outreach prospect belong in the same list.
+    const subjectQuery = visitor.linkedProspect
+      ? { $or: [{ visitor: visitorId }, { prospect: visitor.linkedProspect }] }
+      : { visitor: visitorId };
+    const followUps = await populateFU(
+      OutreachFollowUp.find({ church: req.activeChurch._id, ...subjectQuery }).sort({ createdAt: -1 }).lean()
+    );
+    return res.status(200).json({ message: "Follow-ups fetched", data: followUps });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── Create follow-up for a visitor ────────────────────────────────
+export const createVisitorFollowUp = async (req, res) => {
+  try {
+    const visitorId = req.params.visitorId || req.params.id;
+    const { scheduledDate, outreachEvent } = req.body;
+    if (!scheduledDate) {
+      return res.status(400).json({ message: "scheduledDate is required" });
+    }
+
+    const visitor = await Visitor.findOne({ _id: visitorId, church: req.activeChurch._id });
+    if (!visitor) return res.status(404).json({ message: "Visitor not found" });
+
+    const payload = { church: req.activeChurch._id, visitor: visitorId, createdBy: req.user._id };
+    if (outreachEvent) payload.outreachEvent = outreachEvent; // optional context
+    setAllowed(req.body, payload);
+    payload.status = payload.status || "pending";
+
+    const followUp = await OutreachFollowUp.create(payload);
+    await syncSubjectWorkers(followUp);
+
+    visitor.nextFollowUpDate = req.body.nextFollowUpDate
+      ? new Date(req.body.nextFollowUpDate)
+      : new Date(scheduledDate);
+    await visitor.save();
 
     return res.status(201).json({ message: "Follow-up scheduled", data: followUp });
   } catch (error) {
@@ -190,8 +277,15 @@ export const updateFollowUp = async (req, res) => {
     );
     if (!followUp) return res.status(404).json({ message: "Follow-up not found" });
 
-    if (update.nextFollowUpDate && followUp.prospect) {
-      await OutreachProspect.findByIdAndUpdate(followUp.prospect, { nextFollowUpDate: new Date(update.nextFollowUpDate) });
+    if (update.assignedTo !== undefined) await syncSubjectWorkers(followUp);
+
+    if (update.nextFollowUpDate) {
+      const next = new Date(update.nextFollowUpDate);
+      if (followUp.prospect) {
+        await OutreachProspect.findByIdAndUpdate(followUp.prospect, { nextFollowUpDate: next });
+      } else if (followUp.visitor) {
+        await Visitor.findByIdAndUpdate(followUp.visitor, { nextFollowUpDate: next });
+      }
     }
 
     return res.status(200).json({ message: "Follow-up updated", data: followUp });

@@ -10,6 +10,7 @@ import {
   adminRunCycleForChurch,
   adminRunBillingCycle
 } from "../Services/adminBilling.api.js";
+import { getAdminDashboardStats } from "../Services/systemAdmin.api.js";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import Card from "../../../shared/components/Card/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -18,6 +19,7 @@ import StatusChip from "../../../shared/components/StatusChip/index.jsx";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 
 const fmtDate = (v) => {
   if (!v) return "—";
@@ -51,6 +53,10 @@ function BillingSubscriptionsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const [currencyFilter, setCurrencyFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [pagination, setPagination] = useState(null);
+  const [subStats, setSubStats] = useState(null);
 
   const planOptions = useMemo(() => {
     const list = Array.isArray(plans) ? plans : [];
@@ -58,81 +64,62 @@ function BillingSubscriptionsPage() {
     return Array.from(new Set(names));
   }, [plans]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const st = String(statusFilter || "").trim().toLowerCase();
-    const pf = String(planFilter || "").trim().toLowerCase();
-    const cf = String(currencyFilter || "").trim().toUpperCase();
+  // KPI values come from dashboard stats (accurate totals, not page-level counts)
+  const kpis = useMemo(() => ({
+    total: subStats?.total || 0,
+    active: subStats?.active || 0,
+    onTrial: subStats?.trial || 0,
+    needsAttention: (subStats?.pastDue || 0) + (subStats?.suspended || 0),
+  }), [subStats]);
 
-    return (Array.isArray(rows) ? rows : []).filter((s) => {
-      const church = s?.church;
-      const plan = s?.plan;
-
-      if (st) {
-        const statusValue = String(s?.status || "").toLowerCase();
-        if (statusValue !== st) return false;
-      }
-
-      if (pf) {
-        const planName = String(plan?.name || "").toLowerCase();
-        if (planName !== pf) return false;
-      }
-
-      if (cf) {
-        const cur = String(s?.currency || "").toUpperCase();
-        if (cur !== cf) return false;
-      }
-
-      if (!q) return true;
-
-      return (
-        String(church?.name || "").toLowerCase().includes(q) ||
-        String(church?.email || "").toLowerCase().includes(q) ||
-        String(plan?.name || "").toLowerCase().includes(q) ||
-        String(s?.status || "").toLowerCase().includes(q)
-      );
-    });
-  }, [currencyFilter, planFilter, rows, search, statusFilter]);
-
-  const kpis = useMemo(() => {
-    const all = Array.isArray(rows) ? rows : [];
-    const TRIAL_STATUSES = ["free trial", "trialing"];
-    const ATTENTION_STATUSES = ["past_due", "suspended"];
-    return {
-      total: all.length,
-      active: all.filter((s) => s?.status === "active").length,
-      onTrial: all.filter((s) => TRIAL_STATUSES.includes(String(s?.status || "").toLowerCase())).length,
-      needsAttention: all.filter((s) => ATTENTION_STATUSES.includes(String(s?.status || "").toLowerCase())).length,
-      cancelled: all.filter((s) => ["cancelled", "canceled"].includes(String(s?.status || "").toLowerCase())).length,
-    };
-  }, [rows]);
-
-  const load = useCallback(async () => {
+  const load = useCallback(async ({ nextPage } = {}) => {
+    const actualPage = nextPage ?? page;
     setLoading(true);
     setError("");
     try {
-      const [subsRes, plansRes] = await Promise.all([adminGetSubscriptions(), adminGetPlans()]);
+      const [subsRes, plansRes, statsRes] = await Promise.all([
+        adminGetSubscriptions({
+          page: actualPage,
+          limit,
+          search: search || undefined,
+          status: statusFilter || undefined,
+          plan: planFilter || undefined,
+          currency: currencyFilter || undefined,
+        }),
+        adminGetPlans(),
+        getAdminDashboardStats(),
+      ]);
       setRows(Array.isArray(subsRes?.data?.subscriptions) ? subsRes.data.subscriptions : []);
+      setPagination(subsRes?.data?.pagination || null);
       setPlans(Array.isArray(plansRes?.data?.plans) ? plansRes.data.plans : []);
+      setSubStats(statsRes?.data?.data?.subscriptions || null);
+      setPage(actualPage);
     } catch (e) {
       setRows([]);
+      setPagination(null);
       setPlans([]);
       setError(e?.response?.data?.message || e?.message || "Failed to load subscriptions");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currencyFilter, limit, page, planFilter, search, statusFilter]);
 
   useEffect(() => {
-    load();
+    load({ nextPage: 1 });
   }, [load]);
+
+  // Debounce search/filter changes
+  useEffect(() => {
+    const t = setTimeout(() => { load({ nextPage: 1 }); }, 300);
+    return () => clearTimeout(t);
+  }, [search, statusFilter, planFilter, currencyFilter, load]);
 
   const runAction = async (label, fn) => {
     setActionLoading(label);
     setError("");
     try {
       await fn();
-      await load();
+      await load({ nextPage: page });
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || `Failed: ${label}`);
     } finally {
@@ -184,7 +171,7 @@ function BillingSubscriptionsPage() {
     try {
       await adminRunBillingCycle();
       setCycleMessage("Global billing cycle executed — all overdue subscriptions processed.");
-      await load();
+      await load({ nextPage: 1 });
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to run global billing cycle");
     } finally {
@@ -202,7 +189,7 @@ function BillingSubscriptionsPage() {
     try {
       const res = await adminRunCycleForChurch(churchId);
       setCycleMessage(res?.data?.message || "Billing cycle ran for this church.");
-      await load();
+      await load({ nextPage: page });
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to run billing cycle");
     } finally {
@@ -351,7 +338,7 @@ function BillingSubscriptionsPage() {
                   </tr>
                 ))}
               </>
-            ) : filtered.length === 0 ? (
+            ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={6}>
                   <EmptyState
@@ -363,7 +350,7 @@ function BillingSubscriptionsPage() {
                 </td>
               </tr>
             ) : (
-              filtered.map((s) => {
+              rows.map((s) => {
                 const isSuspended = s?.status === "suspended";
                 const pendingAction = s?.pendingPlanAction;
                 const pendingDate = s?.pendingPlanEffectiveDate ? fmtDate(s.pendingPlanEffectiveDate) : null;
@@ -444,6 +431,17 @@ function BillingSubscriptionsPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        pagination={pagination}
+        rowsCount={rows.length}
+        limit={limit}
+        onLimitChange={(n) => setLimit(n)}
+        onPageChange={(p) => load({ nextPage: p })}
+        itemName="subscriptions"
+        filtered={Boolean(search || statusFilter || planFilter || currencyFilter)}
+        disabled={loading}
+      />
 
       {confirmCycleChurch && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

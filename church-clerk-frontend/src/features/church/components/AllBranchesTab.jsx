@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import Skeleton from "react-loading-skeleton";
+import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import debounce from "../../../shared/utils/debounce.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -219,8 +219,22 @@ function AllBranchesTab({ onViewBranch }) {
         </div>
 
         {loading ? (
-          <div className="p-4 md:p-6">
-            <Skeleton height={14} count={6} />
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-100">
+                <tr className="text-left">
+                  <th className="sticky left-0 z-20 bg-slate-100 px-4 py-2 md:px-6"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                  <th className="px-4 py-2 md:px-6"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                  <th className="px-4 py-2 md:px-6"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                  <th className="px-4 py-2 md:px-6"><div className="h-3 w-14 rounded bg-gray-300/60 animate-pulse" /></th>
+                  <th className="px-4 py-2 md:px-6"><div className="h-3 w-12 rounded bg-gray-300/60 animate-pulse" /></th>
+                  <th className="px-4 py-2 md:px-6"><div className="ml-auto h-3 w-12 rounded bg-gray-300/60 animate-pulse" /></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <SkeletonTableRows rows={5} widths={["w-28", "w-32", "w-24", "w-14", "w-16", "w-20"]} cellClass="px-4 py-2.5 md:px-6" />
+              </tbody>
+            </table>
           </div>
         ) : !branches.length ? (
           <EmptyState

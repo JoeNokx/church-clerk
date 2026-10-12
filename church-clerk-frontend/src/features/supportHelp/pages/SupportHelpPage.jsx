@@ -598,11 +598,11 @@ function SupportHelpPage() {
   const faqs = useMemo(() => [
     {
       q: "Why can't I see action buttons (Add, Edit, Delete)?",
-      a: "Your account may be deactivated or set to read-only by your administrator. Contact your church admin to activate your account or adjust your permissions."
+      a: "Either your role doesn't have write permission for that module, or the account is in read-only mode (expired trial, suspended subscription, or an HQ admin monitoring a branch). Ask your church admin to check your role under Settings, or renew the plan from Billing."
     },
     {
-      q: "Why do I see 'Read-only' when switching church context?",
-      a: "As a Headquarters admin viewing a branch, your access is view-only. Only a branch admin can make changes to branch data directly."
+      q: "Why do I see 'Read-only' when viewing a branch?",
+      a: "Headquarters admins monitoring a branch get view-only access — branch data can only be changed by a branch admin in that branch's own context. Switch back to your headquarters context to make HQ-level changes."
     },
     {
       q: "How do I change my password?",
@@ -610,39 +610,79 @@ function SupportHelpPage() {
     },
     {
       q: "How do I add a new member?",
-      a: "Go to Members from the sidebar, then click 'Add Member'. Fill in the required details and click 'Save'. The member will appear in your records immediately."
+      a: "Go to Members from the sidebar, then click 'Add Member'. Fill in the required details and save. The member appears in your records immediately."
     },
     {
       q: "Why is my subscription showing as expired or suspended?",
-      a: "Your trial or billing period may have ended. Go to Billing & Subscription in Settings to renew or upgrade your plan. During a grace period you can still view data."
+      a: "Your trial or billing period may have ended. Open Billing from the sidebar to renew or upgrade. During a grace period you can still view data but actions are limited."
     },
     {
-      q: "How do I record tithes and offerings?",
-      a: "Navigate to Tithes or Offerings from the Finance section in the sidebar. Use 'Add Record' to capture individual or aggregate contributions. You can also attach service type and offering type categories."
+      q: "How do I record tithes?",
+      a: "Go to Tithe from the sidebar and pick a recording mode: Individual Recording (per member) or Aggregate Recording (one total for the service). You can switch modes at the top of the page."
     },
     {
-      q: "How do I export financial reports?",
-      a: "Open Financial Statement or Reports & Analytics, set your desired period and filters, then click 'Export'. You can export as PDF or Excel. Make sure your role has export permissions."
+      q: "How do I record offerings and special funds?",
+      a: "Go to Offering & Funds from the sidebar. Regular offerings, cell/group/department/ministry offerings, and special funds are each recorded under their own section so reports can break them down correctly."
+    },
+    {
+      q: "Where do pledges live — and why must I pick a program or project?",
+      a: "Every pledge is tied to exactly one thing: a program (recorded on the program's Pledges tab) or a fundraising project (recorded on the project's page). There are no general pledges — payments always count toward the program's offerings or the project's fundraising total."
     },
     {
       q: "How do I create an event or program?",
-      a: "Go to Programs from the sidebar and click 'Create Program'. Fill in the title, category, date range, time, and venue, then save. The program will appear in the Upcoming tab."
+      a: "Go to Programs from the sidebar and click 'Create Program'. Fill in the title, category, date range, time, and venue, then save. Attendees can be registered by searching existing members or entering their details manually."
     },
     {
-      q: "How do I manage groups, departments, and cells (Ministries)?",
-      a: "Go to Ministries in the sidebar. Use the Groups, Departments, and Cells tabs to view and manage each type. Click 'Add' to create a new entry, or use Edit/Delete on any existing record."
+      q: "How do I manage cells, departments, ministries, and groups?",
+      a: "Go to Organisations from the sidebar. The Cells, Departments, Ministries, and Groups tabs each let you view, add, edit, or delete entries."
+    },
+    {
+      q: "How does Budgeting calculate actual income and expenses?",
+      a: "Each expense item picks a source (the module the money is spent through — e.g. Welfare Disbursements or Cell Expenses), a category, and a date range. The system automatically sums matching records from that module. Income items work the same way — the income source you pick (Tithes, Cell Offerings & Contributions, Fundraising Contributions & Pledges, etc.) determines where actuals come from."
+    },
+    {
+      q: "Why does my budget item show 0 actuals?",
+      a: "Check three things: the item's dates cover the period the money moved, the source matches the module the records were entered in, and the category label matches what was recorded there exactly. Allocated items also only count records tied to the chosen entity or member."
+    },
+    {
+      q: "What do budget statuses mean?",
+      a: "Status is computed automatically from the budget period — you never set it. Upcoming means the period hasn't started, Current means today falls inside it, and Ended means it has passed."
+    },
+    {
+      q: "What is 'Allocated To' on a budget item?",
+      a: "It narrows actuals to records tied to a specific entity — a cell, group, department, ministry, program, outreach activity, or one or more members. Leave it unset to count everything church-wide. The optional Purpose field is a free-text label for records; on Welfare Disbursements it additionally matches the beneficiary name."
+    },
+    {
+      q: "Where do organisation contributions appear in reports?",
+      a: "Under the entity they belong to — cell contributions fold into Cell Offerings & Contributions, department contributions into Department Offerings & Contributions, and so on — in Budgeting, the Financial Overview, and branch summaries. There is no separate organisation-contribution line."
+    },
+    {
+      q: "Are welfare disbursements treated as expenses?",
+      a: "Yes. Disbursements count as expenses everywhere — in the Financial Overview's expense breakdown and as the 'Welfare Disbursements' source in Budgeting."
+    },
+    {
+      q: "How do I record an expense against a program, cell, or outreach activity?",
+      a: "When adding a record under Expenses, choose what it's tied to (a program, cell, group, department, ministry, or outreach activity). Scoped expenses are reported under their own expense lines and kept out of General Expenses — which is also how Budgeting counts them."
     },
     {
       q: "How do I add a branch church?",
       a: "From your Headquarters account, go to Settings and navigate to the Branches section. Click 'Add Branch' and fill in the branch details. Branches can then be viewed from the header context switcher."
     },
     {
-      q: "Why is attendance data not showing in charts?",
-      a: "Charts require at least one attendance record to be saved. Make sure attendance has been recorded under the Attendance module. Data updates on the dashboard after records are added."
+      q: "How do I record visitors?",
+      a: "Open a session under Attendance and use its Visitors tab to log who visited. The All Visitors list shows each person's First Visit Session and Last Visit Date, tracked separately from member attendance."
     },
     {
-      q: "How do I record visitor information?",
-      a: "Go to Attendance from the sidebar and switch to the Visitors tab. Click 'Add Visitor' to log a visitor's details. Visitor counts are tracked separately from regular member attendance."
+      q: "Why is attendance data not showing in charts?",
+      a: "Charts need at least one saved attendance record. Record attendance on a session under the Attendance module and the dashboard updates after records are added."
+    },
+    {
+      q: "Why can't I delete a category or lookup value?",
+      a: "Values that are in use can't be deleted — removing them would orphan the records that reference them. Delete or update the records using the value first, then remove it."
+    },
+    {
+      q: "How do I export financial reports?",
+      a: "Open Financial Overview or Reports, set your period and filters, then export as PDF or Excel. Your role needs export permissions."
     },
     {
       q: "Can I recover deleted records?",

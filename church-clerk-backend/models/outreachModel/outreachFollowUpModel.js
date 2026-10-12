@@ -3,15 +3,22 @@ import mongoose from "mongoose";
 const outreachFollowUpSchema = new mongoose.Schema(
   {
     church: { type: mongoose.Schema.Types.ObjectId, ref: "Church", required: true },
-    prospect: { type: mongoose.Schema.Types.ObjectId, ref: "OutreachProspect", required: true },
-    outreachEvent: { type: mongoose.Schema.Types.ObjectId, ref: "OutreachEvent", required: true },
+
+    // ── Subject — exactly one of prospect / visitor / member ───────
+    // A follow-up belongs to whoever the person is: someone met at an
+    // outreach (prospect), a service visitor, or a member. outreachEvent
+    // is only required when the subject is a prospect.
+    prospect: { type: mongoose.Schema.Types.ObjectId, ref: "OutreachProspect", default: null },
+    visitor: { type: mongoose.Schema.Types.ObjectId, ref: "Visitor", default: null },
+    member: { type: mongoose.Schema.Types.ObjectId, ref: "Member", default: null },
+    outreachEvent: { type: mongoose.Schema.Types.ObjectId, ref: "OutreachEvent", default: null },
 
     // ── Scheduling ──────────────────────────────────────────────────
     scheduledDate: { type: Date },
     followUpDate: { type: Date },
 
-    // ── Assignment ──────────────────────────────────────────────────
-    assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "Member" },
+    // ── Assignment — several members can share a follow-up ─────────
+    assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }],
     conductedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Member" },
 
     // ── Method & status ─────────────────────────────────────────────
@@ -39,8 +46,20 @@ const outreachFollowUpSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+outreachFollowUpSchema.pre("validate", function () {
+  const subjects = [this.prospect, this.visitor, this.member].filter(Boolean).length;
+  if (subjects !== 1) {
+    this.invalidate("prospect", "A follow-up must target exactly one prospect, visitor, or member");
+  }
+  if (this.prospect && !this.outreachEvent) {
+    this.invalidate("outreachEvent", "An outreach event is required for prospect follow-ups");
+  }
+});
+
 outreachFollowUpSchema.index({ church: 1, outreachEvent: 1 });
 outreachFollowUpSchema.index({ church: 1, prospect: 1 });
+outreachFollowUpSchema.index({ church: 1, visitor: 1 });
+outreachFollowUpSchema.index({ church: 1, member: 1 });
 outreachFollowUpSchema.index({ church: 1, status: 1 });
 outreachFollowUpSchema.index({ church: 1, scheduledDate: 1, status: 1 });
 outreachFollowUpSchema.index({ church: 1, nextFollowUpDate: 1, status: 1 });

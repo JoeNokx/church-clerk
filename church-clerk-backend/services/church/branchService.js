@@ -22,6 +22,7 @@ import DepartmentOffering from "../../models/organisationModel/departmentOfferin
 import MinistryOffering from "../../models/organisationModel/ministryOfferingModel.js";
 import PledgePayment from "../../models/financeModel/pledgeModel/pledgePaymentModel.js";
 import OutreachSupport from "../../models/outreachModel/outreachSupportModel.js";
+import OrganisationContribution from "../../models/organisationModel/organisationContributionModel.js";
 import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Visitor from "../../models/visitorsModel.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
@@ -36,11 +37,25 @@ const INCOME_SOURCES = [
   ] },
   { key: "offerings", label: "Offerings", Model: Offering, dateField: "serviceDate", amountField: "amount" },
   { key: "programOfferings", label: "Programs Offerings, Seed & Pledges", Model: ProgramOffering, dateField: "offeringDate", amountField: "amount" },
-  { key: "cellOfferings", label: "Cell Offerings & Seed", Model: CellOffering, dateField: "date", amountField: "amount" },
-  { key: "groupOfferings", label: "Groups Offerings & Seed", Model: GroupOffering, dateField: "date", amountField: "amount" },
-  { key: "departmentOfferings", label: "Department Offerings & Seed", Model: DepartmentOffering, dateField: "date", amountField: "amount" },
-  { key: "ministryOfferings", label: "Ministry Offerings & Seed", Model: MinistryOffering, dateField: "date", amountField: "amount" },
-  { key: "projectContributions", label: "Fundraising", Model: ProjectContribution, dateField: "date", amountField: "amount" },
+  // Organisation contributions fold into their entity's line — no standalone
+  // line, so nothing counts twice.
+  { key: "cellOfferings", label: "Cell Offerings, Seed & Contributions", queries: [
+    { Model: CellOffering, dateField: "date", amountField: "amount" },
+    { Model: OrganisationContribution, dateField: "date", amountField: "amount", extraMatch: { entityType: "cell" } }
+  ] },
+  { key: "groupOfferings", label: "Groups Offerings, Seed & Contributions", queries: [
+    { Model: GroupOffering, dateField: "date", amountField: "amount" },
+    { Model: OrganisationContribution, dateField: "date", amountField: "amount", extraMatch: { entityType: "group" } }
+  ] },
+  { key: "departmentOfferings", label: "Department Offerings, Seed & Contributions", queries: [
+    { Model: DepartmentOffering, dateField: "date", amountField: "amount" },
+    { Model: OrganisationContribution, dateField: "date", amountField: "amount", extraMatch: { entityType: "department" } }
+  ] },
+  { key: "ministryOfferings", label: "Ministry Offerings, Seed & Contributions", queries: [
+    { Model: MinistryOffering, dateField: "date", amountField: "amount" },
+    { Model: OrganisationContribution, dateField: "date", amountField: "amount", extraMatch: { entityType: "ministry" } }
+  ] },
+  { key: "projectContributions", label: "Fundraising Contributions & Pledges", Model: ProjectContribution, dateField: "date", amountField: "amount" },
   { key: "welfareContributions", label: "Welfare", Model: WelfareContributions, dateField: "date", amountField: "amount" },
   { key: "outreachSupport", label: "Outreach Support", Model: OutreachSupport, dateField: "date", amountField: "amount" },
   { key: "specialFunds", label: "Special Funds", Model: SpecialFund, dateField: "givingDate", amountField: "totalAmount" },
@@ -49,11 +64,11 @@ const INCOME_SOURCES = [
 ];
 
 // Pledge payments roll up into their scope's income line: churchProject pledges
-// -> Fundraising, program pledges -> Programs Offerings, unscoped -> Other Income.
+// -> Fundraising, program pledges -> Programs Offerings. Unscoped pledges
+// aren't allowed and count nowhere.
 const PLEDGE_SPLIT_BY_KEY = {
   projectContributions: "project",
-  programOfferings: "program",
-  otherIncome: "unscoped"
+  programOfferings: "program"
 };
 
 const EXPENSE_SOURCES = [

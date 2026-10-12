@@ -2,7 +2,6 @@ import { useContext, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
-import Skeleton from "react-loading-skeleton";
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext from "../member.store.js";
 import StatusChip from "../../../shared/components/StatusChip/index.jsx";

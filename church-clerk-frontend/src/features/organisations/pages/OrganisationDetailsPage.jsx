@@ -6,7 +6,6 @@ import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../shared/components/MobileFilterBar/index.jsx";
 import DateRangeFilter from "../../../shared/components/DateRangeFilter/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
-import Skeleton from "react-loading-skeleton";
 
 import ChurchContext from "../../church/church.store.js";
 import PermissionContext from "../../permissions/permission.store.js";
@@ -245,6 +244,7 @@ function OrganisationDetailsPage() {
   const churchStore = useContext(ChurchContext);
   const { can } = useContext(PermissionContext) || {};
   const canViewMembers = useMemo(() => (typeof can === "function" ? can("members", "view") : false), [can]);
+  const canEdit = churchStore?.activeChurch?._id ? churchStore?.activeChurch?.canEdit !== false : true;
   const currency = String(churchStore?.activeChurch?.currency || "").trim().toUpperCase() || "GHS";
 
   const id = params.get("id") || "";
@@ -1284,6 +1284,7 @@ function OrganisationDetailsPage() {
                 <div className="font-semibold text-gray-900 text-sm">Members</div>
                 <div className="text-gray-500 text-xs">Manage members in this {title.toLowerCase()}</div>
               </div>
+              {canEdit ? (
               <button
                 type="button"
                 onClick={() => guarded(() => {
@@ -1299,6 +1300,7 @@ function OrganisationDetailsPage() {
               >
                 + Add Member
               </button>
+              ) : null}
             </div>
 
             <FilterBar
@@ -1318,6 +1320,7 @@ function OrganisationDetailsPage() {
                 dateTo={memberDateTo}
                 onDateApply={(from, to) => { setMemberDateFrom(from); setMemberDateTo(to); setMemberPage(1); }}
               />
+              {canEdit ? (
               <button
                 type="button"
                 onClick={() => guarded(() => {
@@ -1334,6 +1337,7 @@ function OrganisationDetailsPage() {
                 <span className="leading-none text-lg">+</span>
                 Add Member
               </button>
+              ) : null}
             </FilterBar>
           </div>
 
@@ -1390,8 +1394,8 @@ function OrganisationDetailsPage() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             canViewMembers && { label: "View", onClick: () => { const memberId = member?._id; if (!memberId) return; toPage("member-details", { id: memberId }); } },
-                            { label: "Edit Role", onClick: () => guarded(() => openRoleModal(member?._id, m?.role || "member")) },
-                            { label: "Remove", onClick: () => guarded(() => openConfirm("remove-member", { memberId: member?._id, memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() })), danger: true }
+                            canEdit && { label: "Edit Role", onClick: () => guarded(() => openRoleModal(member?._id, m?.role || "member")) },
+                            canEdit && { label: "Remove", onClick: () => guarded(() => openConfirm("remove-member", { memberId: member?._id, memberName: `${safeText(member?.firstName)} ${safeText(member?.lastName)}`.trim() })), danger: true }
                           ]} />
                         </td>
                       </tr>
@@ -1668,6 +1672,7 @@ function OrganisationDetailsPage() {
                       <div className="font-semibold text-gray-900 text-sm">Attendance Log</div>
                       <div className="text-gray-500 text-xs hidden md:block">Record and track member presence per meeting</div>
                     </div>
+                    {canEdit ? (
                     <button
                       type="button"
                       onClick={() => guarded(() => void openIndividualAttendanceForm("create", null))}
@@ -1676,6 +1681,7 @@ function OrganisationDetailsPage() {
                       <span className="leading-none text-base">+</span>
                       Record
                     </button>
+                    ) : null}
                   </div>
                   <div className="hidden md:flex items-center gap-2">
                     <input
@@ -1740,6 +1746,7 @@ function OrganisationDetailsPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
                               <div className="font-semibold text-gray-900 text-xs truncate">{formatDay(r?.date) || "-"}, {formatDate(r?.date)}</div>
+                              {canEdit ? (
                               <div className="flex items-center gap-1 shrink-0">
                                 <button
                                   type="button"
@@ -1760,6 +1767,7 @@ function OrganisationDetailsPage() {
                                   </button>
                                 ) : null}
                               </div>
+                              ) : null}
                             </div>
                             <div className="text-gray-500 text-[11px] truncate">{r?.serviceType || "Service"} · {r?.mainSpeaker || "No speaker"}</div>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -1835,6 +1843,7 @@ function OrganisationDetailsPage() {
                         <h3 className="font-semibold text-gray-900 text-sm">{formatDay(individualViewing?.date) || "-"}, {formatDate(individualViewing?.date)}</h3>
                         <div className="text-gray-500 text-xs mt-0.5">{individualViewing?.serviceType || "-"} · {individualViewing?.mainSpeaker || "No speaker"}</div>
                       </div>
+                      {canEdit ? (
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
@@ -1853,6 +1862,7 @@ function OrganisationDetailsPage() {
                           Manual Marking
                         </button>
                       </div>
+                      ) : null}
                     </div>
                     {/* Counts summary - separate row for breathing room */}
                     <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -2210,10 +2220,12 @@ function OrganisationDetailsPage() {
                           <div className="text-gray-500 text-xs mt-0.5">{individualViewing?.serviceType || "-"}</div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                          {canEdit ? (
                           <button type="button" onClick={saveIndividualMarking} disabled={individualMarkingSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
                             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             {individualMarkingSaving ? "Saving..." : "Save Attendance"}
                           </button>
+                          ) : null}
                           <button type="button" onClick={() => { if (!individualMarkingSaving) setIndividualMarkingOpen(false); }} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
                             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                           </button>
@@ -2389,6 +2401,7 @@ function OrganisationDetailsPage() {
                 <div className="font-semibold text-gray-900 text-sm">Offerings & Seeds</div>
                 <div className="text-gray-500 text-xs">Record {title.toLowerCase()} offerings</div>
               </div>
+              {canEdit ? (
               <button
                 type="button"
                 onClick={() => guarded(() => openOfferingForm("create", null))}
@@ -2397,6 +2410,7 @@ function OrganisationDetailsPage() {
                 <span className="leading-none text-lg">+</span>
                 Add Offering
               </button>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-2 items-end w-full md:w-auto">
@@ -2409,6 +2423,7 @@ function OrganisationDetailsPage() {
                 dateTo={offeringDateTo}
                 onDateApply={(from, to) => { setOfferingDateFrom(from); setOfferingDateTo(to); setOfferingPage(1); }}
               >
+                {canEdit ? (
                 <button
                   type="button"
                   onClick={() => guarded(() => openOfferingForm("create", null))}
@@ -2417,6 +2432,7 @@ function OrganisationDetailsPage() {
                   <span className="leading-none text-lg">+</span>
                   Add Offering
                 </button>
+                ) : null}
               </FilterBar>
               <MobileFilterBar
                 searchValue={offeringSearch}
@@ -2474,7 +2490,7 @@ function OrganisationDetailsPage() {
                       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                         <TableKebabMenu items={[
                           { label: "View", onClick: () => { setOfferingViewRow(r); setOfferingViewOpen(true); } },
-                          { label: "Edit", onClick: () => guarded(() => openOfferingForm("edit", r)) }
+                          canEdit && { label: "Edit", onClick: () => guarded(() => openOfferingForm("edit", r)) }
                         ]} />
                       </td>
                     </tr>
@@ -2678,6 +2694,7 @@ function OrganisationDetailsPage() {
                 <div className="font-semibold text-gray-900 text-sm">Contributions</div>
                 <div className="text-gray-500 text-xs">Record member contributions for this {title.toLowerCase()}</div>
               </div>
+              {canEdit ? (
               <button
                 type="button"
                 onClick={() => guarded(() => openContributionForm("create", null))}
@@ -2686,6 +2703,7 @@ function OrganisationDetailsPage() {
                 <span className="leading-none text-lg">+</span>
                 Add Contribution
               </button>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-2 items-end w-full md:w-auto">
@@ -2698,6 +2716,7 @@ function OrganisationDetailsPage() {
                 dateTo={contributionDateTo}
                 onDateApply={(from, to) => { setContributionDateFrom(from); setContributionDateTo(to); setContributionPage(1); }}
               >
+                {canEdit ? (
                 <button
                   type="button"
                   onClick={() => guarded(() => openContributionForm("create", null))}
@@ -2706,6 +2725,7 @@ function OrganisationDetailsPage() {
                   <span className="leading-none text-lg">+</span>
                   Add Contribution
                 </button>
+                ) : null}
               </FilterBar>
               <MobileFilterBar
                 searchValue={contributionSearch}
@@ -2770,8 +2790,8 @@ function OrganisationDetailsPage() {
                         <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                           <TableKebabMenu items={[
                             { label: "View", onClick: () => { setContributionViewRow(r); setContributionViewOpen(true); } },
-                            { label: "Edit", onClick: () => guarded(() => openContributionForm("edit", r)) },
-                            { label: "Delete", onClick: () => guarded(() => openConfirm("delete-contribution", r?._id)), danger: true }
+                            canEdit && { label: "Edit", onClick: () => guarded(() => openContributionForm("edit", r)) },
+                            canEdit && { label: "Delete", onClick: () => guarded(() => openConfirm("delete-contribution", r?._id)), danger: true }
                           ]} />
                         </td>
                       </tr>

@@ -4,6 +4,9 @@ import {
     createVisitor, getSingleVisitor, getAllVisitors, updateVisitor, deleteVisitor
 } from "../controller/attendanceController.js"
 import {
+    getFollowUpsByVisitor, createVisitorFollowUp
+} from "../controller/outreachController/outreachFollowUpController.js"
+import {
   createVisitorLog,
   getAllVisitorLogs,
   getSingleVisitorLog,
@@ -79,6 +82,28 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("visitors", "read"),
   getAllVisitors
+);
+
+// Visitor follow-ups — same engine as outreach follow-ups, subject = visitor
+router.get(
+  "/visitors/:visitorId/follow-ups",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("visitors", "view"),
+  getFollowUpsByVisitor
+);
+router.post(
+  "/visitors/:visitorId/follow-ups",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("visitors", "update"),
+  createVisitorFollowUp
 );
 
 

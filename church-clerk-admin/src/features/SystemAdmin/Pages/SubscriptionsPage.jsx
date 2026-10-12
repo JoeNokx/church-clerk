@@ -1,10 +1,9 @@
+import { Navigate } from "react-router-dom";
+
+// Legacy stub — active route redirects to /admin/billing/subscriptions via the router.
+// This component is kept as a safety fallback.
 function SubscriptionsPage() {
-  return (
-    <div className="space-y-2">
-      <div className="text-2xl font-semibold text-gray-900">Subscriptions</div>
-      <div className="text-sm text-gray-600">This page will be migrated into the admin portal.</div>
-    </div>
-  );
+  return <Navigate to="/admin/billing/subscriptions" replace />;
 }
 
 export default SubscriptionsPage;

@@ -74,7 +74,10 @@ function BudgetingPageInner() {
         <BudgetingTable onEdit={openEdit} onCreate={openCreate} />
       </div>
 
+      {/* Key remounts the form per edit target so its fields always
+          repopulate from the clicked budget — no stale state between opens. */}
       <BudgetingForm
+        key={editing?._id || "create"}
         open={formOpen}
         mode={editing ? "edit" : "create"}
         initialData={editing}

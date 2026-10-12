@@ -26,6 +26,12 @@ import {
   updateTemplate,
   deleteTemplate
 } from "../controller/announcementTemplateController.js";
+import {
+  getAutomations,
+  createAutomation,
+  updateAutomation,
+  deleteAutomation
+} from "../controller/announcementAutomationController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
@@ -239,6 +245,50 @@ router.post(
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("announcements", "update"),
   resendFailedDelivery
+);
+
+router.get(
+  "/automations",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("announcements", "read"),
+  getAutomations
+);
+
+router.post(
+  "/automations",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "create"),
+  createAutomation
+);
+
+router.put(
+  "/automations/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "update"),
+  updateAutomation
+);
+
+router.delete(
+  "/automations/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("announcements", "delete"),
+  deleteAutomation
 );
 
 router.get(

@@ -4,13 +4,14 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../permissions/permission.store.js";
 import MemberContext, { MemberProvider } from "../member.store.js";
 import AuthContext from "../../auth/auth.store.jsx";
+import ChurchContext from "../../church/church.store.js";
 import {
   getRegistrationToken,
   generateRegistrationToken,
   revokeRegistrationToken
 } from "../../church/services/church.api.js";
 import MemberFilters from "../components/MemberFilters.jsx";
-import Spinner from "../../../shared/components/Spinner.jsx";
+import { SkeletonKpiCard } from "../../../shared/components/Skeleton/index.jsx";
 import MemberTable from "../components/MemberTable.jsx";
 import {
   downloadMembersImportTemplate,
@@ -133,9 +134,12 @@ function MembersPageInner() {
   const { can } = useContext(PermissionContext) || {};
   const { user } = useContext(AuthContext) || {};
   const store = useContext(MemberContext);
+  const churchCtx = useContext(ChurchContext);
   const location = useLocation();
   const { toPage } = useDashboardNavigator();
   const guarded = useGuardedAction();
+
+  const canEditChurch = churchCtx?.activeChurch?._id ? churchCtx?.activeChurch?.canEdit !== false : true;
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
   const canImport = useMemo(() => (typeof can === "function" ? can("members", "import") : false), [can]);
@@ -439,7 +443,8 @@ function MembersPageInner() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 md:gap-3">
-          {/* Mobile: single Add Member button with popup */}
+          {/* Mobile: single Add Member button with popup — all items inside are writes; hide entirely when read-only */}
+          {canEditChurch ? (
           <div className="relative md:hidden">
             <div className="inline-flex rounded-lg bg-blue-600 shadow-sm overflow-hidden">
               <button
@@ -475,7 +480,7 @@ function MembersPageInner() {
                       Register Member
                     </button>
                   ) : null}
-                  {isChurchAdmin ? (
+                  {isChurchAdmin && canEditChurch ? (
                     <button
                       type="button"
                       onClick={() => guarded(() => { setMobileAddOpen(false); openRegLink(); })}
@@ -499,9 +504,10 @@ function MembersPageInner() {
               </>
             ) : null}
           </div>
+          ) : null}
 
           {/* Desktop: individual buttons */}
-          {isChurchAdmin && (
+          {isChurchAdmin && canEditChurch && (
             <button
               type="button"
               onClick={() => guarded(openRegLink)}
@@ -534,7 +540,12 @@ function MembersPageInner() {
 
       <KpiGrid className="mt-4 gap-3 lg:grid-cols-4">
           {kpiLoading ? (
-            <div className="col-span-2 lg:col-span-4 flex items-center justify-center"><Spinner className="text-gray-400" /></div>
+            <>
+              <SkeletonKpiCard />
+              <SkeletonKpiCard />
+              <SkeletonKpiCard />
+              <SkeletonKpiCard />
+            </>
           ) : (
             <>
               <KpiCard
