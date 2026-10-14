@@ -43,7 +43,7 @@ const createServiceIndividualAttendance = async (req, res) => {
 
 const getAllServiceIndividualAttendances = async (req, res) => {
   try {
-    const { page = 1, limit = 10, dateFrom, dateTo, serviceType, mainSpeaker } = req.query;
+    const { page = 1, limit = 10, dateFrom, dateTo, serviceType, mainSpeaker, search } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -53,6 +53,11 @@ const getAllServiceIndividualAttendances = async (req, res) => {
 
     if (serviceType) query.serviceType = serviceType;
     if (mainSpeaker) query.mainSpeaker = { $regex: mainSpeaker, $options: "i" };
+    if (search && String(search).trim()) {
+      const term = String(search).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rx = { $regex: term, $options: "i" };
+      query.$or = [{ serviceType: rx }, { mainSpeaker: rx }];
+    }
 
     if (dateFrom || dateTo) {
       query.date = {};

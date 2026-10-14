@@ -288,7 +288,8 @@ function MembersPageInner() {
       undefined,
       {
         state: {
-          prefillMember: prefill
+          prefillMember: prefill,
+          fromProspectId: state?.fromProspectId
         }
       }
     );

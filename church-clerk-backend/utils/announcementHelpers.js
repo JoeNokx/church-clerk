@@ -112,7 +112,7 @@ function resolveSmsSenderIdOrThrow({ church, requestedSenderId }) {
     if (process.env.NODE_ENV !== "production") {
       return null;
     }
-    throw new Error("SMS sender ID is required. Set AFRICA_TALKING_SENDER_ID in .env or provide an approved church sender ID.");
+    throw new Error("SMS sender ID is required. Set AFRICA_TALKING__DEFAULT_SENDER_ID in .env or provide an approved church sender ID.");
   }
   return resolved;
 }
@@ -167,6 +167,27 @@ function friendlySmsError(statusOrError) {
   return s ? String(statusOrError) : "Failed";
 }
 
+// {firstName} / {lastName} / {fullName} / {name} personalization — used by
+// both automated messages and the regular compose send.
+const PLACEHOLDER_RE = /\{\s*(firstName|lastName|fullName|name)\s*\}/i;
+
+function hasPlaceholders(content) {
+  return PLACEHOLDER_RE.test(String(content || ""));
+}
+
+function renderPersonalizedContent(template, recipient) {
+  const fullName = String(recipient?.memberName || recipient?.fullName || "").trim();
+  const parts = fullName.split(/\s+/).filter(Boolean);
+  const firstName = String(recipient?.firstName || parts[0] || "").trim();
+  const lastName = String(recipient?.lastName || (parts.length > 1 ? parts[parts.length - 1] : "")).trim();
+
+  return String(template || "")
+    .replace(/\{\s*firstName\s*\}/gi, firstName)
+    .replace(/\{\s*lastName\s*\}/gi, lastName)
+    .replace(/\{\s*fullName\s*\}/gi, fullName)
+    .replace(/\{\s*name\s*\}/gi, fullName);
+}
+
 export {
   computeCostPerRecipientCredits,
   parseSchedule,
@@ -178,5 +199,7 @@ export {
   isAfricasTalkingPreAcceptanceRejection,
   friendlySmsError,
   countSmsSegments,
-  computeSmsBroadcastCredits
+  computeSmsBroadcastCredits,
+  hasPlaceholders,
+  renderPersonalizedContent
 };

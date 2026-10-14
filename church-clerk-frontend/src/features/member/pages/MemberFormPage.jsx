@@ -190,6 +190,7 @@ function MemberFormPageInner() {
   const [status, setStatus] = useState("active");
   const [note, setNote] = useState("");
   const [visitorId, setVisitorId] = useState(null);
+  const [fromProspectId, setFromProspectId] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -310,6 +311,7 @@ function MemberFormPageInner() {
     const prefill = state?.prefillMember || null;
     if (!prefill) return;
 
+    setFromProspectId(state?.fromProspectId || prefill?.fromProspectId || null);
     hydrateFromMember(prefill);
     if (prefill?._id) setPageMode("edit");
 
@@ -468,7 +470,8 @@ function MemberFormPageInner() {
       ageGroup: ageGroup || undefined,
       status,
       note,
-      visitorId: visitorId || null
+      visitorId: visitorId || null,
+      fromProspectId: fromProspectId || undefined
     };
 
     try {

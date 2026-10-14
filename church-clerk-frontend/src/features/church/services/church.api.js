@@ -31,6 +31,10 @@ export const getBranchFinances = async (params) => {
   return await http.get("/church/branches/finances", { params });
 };
 
+export const getBranchPerformance = async (params) => {
+  return await http.get("/church/branches/performance", { params });
+};
+
 export const getActiveChurchContext = async () => {
   return await http.get("/church/active-context");
 };

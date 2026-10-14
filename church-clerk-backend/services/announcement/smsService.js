@@ -6,7 +6,9 @@ import {
   resolveSmsSenderIdOrThrow,
   mapAfricasTalkingRecipientToStatus,
   isAfricasTalkingPreAcceptanceRejection,
-  friendlySmsError
+  friendlySmsError,
+  hasPlaceholders,
+  renderPersonalizedContent
 } from "../../utils/announcementHelpers.js";
 
 async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, deliveries, markProviderErrorsFailed = true }) {
@@ -56,6 +58,67 @@ async function sendSmsAndUpdateDeliveries({ churchId, church, messageDoc, delive
       invalid: invalid.length,
       rejectedBeforeAcceptance: invalid.length,
       rejectedDeliveryIds: []
+    };
+  }
+
+  // Personalized content ({firstName} / {fullName} / …) — one SMS per
+  // recipient, rendered individually from the delivery's member name.
+  if (hasPlaceholders(messageDoc?.content)) {
+    let pDelivered = 0;
+    let pSent = 0;
+    let pFailed = 0;
+    const pRejectedIds = [];
+
+    for (const v of valid) {
+      const rendered = renderPersonalizedContent(messageDoc.content, v.delivery);
+      try {
+        const resp = await sendBulkSms({ to: [v.phoneE164], message: rendered, from: senderId });
+        const list = resp?.SMSMessageData?.Recipients;
+        const r = Array.isArray(list) ? list[0] : null;
+        const status = mapAfricasTalkingRecipientToStatus(r?.status);
+
+        if (status === "delivered") pDelivered += 1;
+        else if (status === "sent") pSent += 1;
+        else {
+          pFailed += 1;
+          if (isAfricasTalkingPreAcceptanceRejection(r?.status)) pRejectedIds.push(v.delivery._id);
+        }
+
+        await AnnouncementMessageDelivery.updateOne(
+          { _id: v.delivery._id, church: churchId },
+          {
+            $set: {
+              status,
+              provider: "africastalking",
+              providerMessageId: r?.messageId ? String(r.messageId) : null,
+              errorMessage: status === "failed" ? friendlySmsError(r?.status || "Failed") : null,
+              phone: v.phoneE164
+            }
+          }
+        );
+      } catch (err) {
+        pFailed += 1;
+        await AnnouncementMessageDelivery.updateOne(
+          { _id: v.delivery._id, church: churchId },
+          {
+            $set: {
+              status: markProviderErrorsFailed ? "failed" : "pending",
+              provider: "africastalking",
+              errorMessage: friendlySmsError(err?.message || "SMS send failed")
+            }
+          }
+        );
+      }
+    }
+
+    return {
+      attempted: valid.length,
+      delivered: pDelivered,
+      sent: pSent,
+      failed: pFailed + invalid.length,
+      invalid: invalid.length,
+      rejectedBeforeAcceptance: pRejectedIds.length + invalid.length,
+      rejectedDeliveryIds: pRejectedIds
     };
   }
 

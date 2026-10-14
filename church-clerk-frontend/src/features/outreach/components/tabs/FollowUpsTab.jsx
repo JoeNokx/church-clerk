@@ -36,6 +36,20 @@ function subjectPhone(fu) {
   return fu?.prospect?.phone || fu?.visitor?.phoneNumber || fu?.member?.phoneNumber || "";
 }
 
+// Register the follow-up's person belongs to — prospect, visitor, or member.
+function SubjectTag({ fu }) {
+  if (fu?.visitor) {
+    return <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Visitor</span>;
+  }
+  if (fu?.member) {
+    return <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Member</span>;
+  }
+  if (fu?.prospect) {
+    return <span className="inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">Prospect</span>;
+  }
+  return null;
+}
+
 const STATUS_STYLES = {
   pending: "bg-amber-100 text-amber-700",
   contacted: "bg-blue-100 text-blue-700",
@@ -294,13 +308,7 @@ export function FollowUpDetailsModal({ open, followUp, onClose }) {
             <div className="min-w-0">
               <div className="font-semibold text-gray-900 text-sm truncate">
                 {prospectName}
-                {followUp.visitor ? (
-                  <span className="ml-1.5 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 align-middle">Visitor</span>
-                ) : followUp.member ? (
-                  <span className="ml-1.5 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 align-middle">Member</span>
-                ) : followUp.prospect ? (
-                  <span className="ml-1.5 inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 align-middle">Prospect</span>
-                ) : null}
+                <span className="ml-1.5 align-middle"><SubjectTag fu={followUp} /></span>
               </div>
               {subjectPhone(followUp) ? <div className="text-xs text-gray-400">{subjectPhone(followUp)}</div> : null}
             </div>
@@ -346,30 +354,21 @@ function FollowUpRow({ fu, isOverdue, onEdit, onDelete, onView, canWrite, canDel
         <div className="font-semibold text-gray-900 text-sm">
           <span className="sm:hidden">{truncateMobileName(subjectName(fu))}</span>
           <span className="hidden sm:inline">{truncateDesktopName(subjectName(fu))}</span>
-          {fu.visitor ? (
-            <span className="ml-1.5 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 align-middle">Visitor</span>
-          ) : fu.member ? (
-            <span className="ml-1.5 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 align-middle">Member</span>
-          ) : fu.prospect ? (
-            <span className="ml-1.5 inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 align-middle">Prospect</span>
-          ) : null}
         </div>
       </td>
+      <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6"><SubjectTag fu={fu} /></td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fmtDate(fu.scheduledDate)}</td>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{fu.nextFollowUpDate ? fmtDate(fu.nextFollowUpDate) : "—"}</td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6"><StatusBadge status={fu.status} /></td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={assigneeNames(fu) || "Not Specified"}>
         <span className="sm:hidden">{truncateMobileName(assigneeNames(fu) || "Not Specified")}</span>
         <span className="hidden sm:inline">{truncateDesktopName(assigneeNames(fu) || "Not Specified")}</span>
       </td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={fu.outreachEvent?.title || "Not Specified"}>
-        <span className="sm:hidden">{truncateMobileName(fu.outreachEvent?.title || "Not Specified")}</span>
-        <span className="hidden sm:inline">{truncateDesktopName(fu.outreachEvent?.title || "Not Specified")}</span>
-      </td>
       <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(fu) },
           canWrite && { label: "Edit", onClick: () => onEdit(fu) },
-          canDelete && { label: "Delete", onClick: () => onDelete(fu), danger: true },
+          canDelete && fu.canDelete !== false && { label: "Delete", onClick: () => onDelete(fu), danger: true },
         ]} />
       </td>
     </tr>
@@ -619,7 +618,7 @@ export default function FollowUpsTab({ setHeaderAction }) {
             <table className="min-w-full">
               <thead className="bg-slate-100">
                 <tr className="text-left font-semibold text-gray-500 text-xs">
-                  {[0,1,2,3,4,5].map(i => <th key={i} className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>)}
+                  {[0,1,2,3,4,5,6].map(i => <th key={i} className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6"><div className="h-3 w-12 rounded bg-gray-200" /></th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -653,10 +652,11 @@ export default function FollowUpsTab({ setHeaderAction }) {
               <thead className="bg-slate-100">
                 <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                   <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Type</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Scheduled</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Next Follow-Up</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Assigned To</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                 </tr>
               </thead>

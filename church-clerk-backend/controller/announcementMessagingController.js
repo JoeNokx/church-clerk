@@ -54,7 +54,7 @@ export const createMessage = async (req, res) => {
     // without one — AT will use its default sender so churches can test SMS.
     if (primaryChannel === "sms" && status !== "draft" && process.env.NODE_ENV === "production" && !(smsSenderId || resolvedSenderId)) {
       return res.status(400).json({
-        message: "SMS sender ID is required. Set AFRICA_TALKING_SENDER_ID in .env or request and approve a Sender ID."
+        message: "SMS sender ID is required. Set AFRICA_TALKING__DEFAULT_SENDER_ID in .env or request and approve a Sender ID."
       });
     }
     const scheduledAt = status === "scheduled"

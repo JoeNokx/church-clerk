@@ -8,6 +8,7 @@ import AllBranchesTab from "../components/AllBranchesTab.jsx";
 import BranchFinancesTab from "../components/BranchFinancesTab.jsx";
 import BranchMembershipTab from "../components/BranchMembershipTab.jsx";
 import BranchAttendanceTab from "../components/BranchAttendanceTab.jsx";
+import BranchPerformanceTab from "../components/BranchPerformanceTab.jsx";
 
 function BranchesOverviewPage() {
   const navigate = useNavigate();
@@ -140,6 +141,7 @@ function BranchesOverviewPage() {
               { key: "finances", label: "Branch Finances" },
               { key: "membership", label: "Membership" },
               { key: "attendance", label: "Attendance" },
+              { key: "performance", label: "Branch Performance" },
             ]}
             activeTab={activeTab}
             onChange={setActiveTab}
@@ -155,6 +157,8 @@ function BranchesOverviewPage() {
               <BranchMembershipTab />
             ) : activeTab === "attendance" ? (
               <BranchAttendanceTab />
+            ) : activeTab === "performance" ? (
+              <BranchPerformanceTab currency={activeChurch?.currency || "GHS"} />
             ) : null}
           </div>
         </div>

@@ -953,7 +953,7 @@ function DashboardOverview({ onNavigate }) {
 
                     <th className="text-left py-2 px-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap">City</th>
 
-                    <th className="text-left py-2 pl-3 pr-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap">Joined</th>
+                    <th className="text-left py-2 pl-3 pr-3 font-semibold text-gray-400 uppercase tracking-wide text-[10px] whitespace-nowrap">Registered</th>
 
                   </tr>
 

@@ -19,10 +19,12 @@ import {
   resolveSmsSenderIdOrThrow,
   mapAfricasTalkingRecipientToStatus,
   isAfricasTalkingPreAcceptanceRejection,
-  friendlySmsError
+  friendlySmsError,
+  hasPlaceholders,
+  renderPersonalizedContent
 } from "../../utils/announcementHelpers.js";
 
-const AUTOMATION_TYPES = ["birthday", "weekly_reminder"];
+const AUTOMATION_TYPES = ["birthday", "weekly_reminder", "daily", "monthly", "one_time"];
 
 // Member statuses that should never receive automated SMS.
 const BIRTHDAY_EXCLUDED_STATUSES = ["deceased", "transferred", "left_church", "former"];
@@ -36,11 +38,37 @@ function parseSendTime(value) {
 /**
  * Next local occurrence of the automation's sendTime on an allowed day,
  * strictly after `from`. Weekly reminders require at least one day selected;
- * birthday automations run every day. Returns null when no valid slot exists.
+ * birthday and daily automations run every day; monthly runs on its day of
+ * month (clamped to the month's last day); one_time runs once on runDate.
+ * Returns null when no valid slot exists.
  */
 function computeNextRunAt(automation, from = new Date()) {
   const { hours, minutes } = parseSendTime(automation?.sendTime);
-  const isWeekly = String(automation?.type || "") === "weekly_reminder";
+  const type = String(automation?.type || "");
+
+  if (type === "one_time") {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(automation?.runDate || "").trim());
+    if (!m) return null;
+    const runAt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), hours, minutes, 0, 0);
+    return runAt.getTime() > from.getTime() ? runAt : null;
+  }
+
+  if (type === "monthly") {
+    const day = Number(automation?.dayOfMonth);
+    if (!Number.isInteger(day) || day < 1 || day > 31) return null;
+    const cursor = new Date(from.getTime());
+    cursor.setDate(1);
+    cursor.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 15; i += 1) {
+      const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+      const runAt = new Date(cursor.getFullYear(), cursor.getMonth(), Math.min(day, daysInMonth), hours, minutes, 0, 0);
+      if (runAt.getTime() > from.getTime()) return runAt;
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+    return null;
+  }
+
+  const isWeekly = type === "weekly_reminder";
   const days = Array.isArray(automation?.daysOfWeek)
     ? automation.daysOfWeek.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
     : [];
@@ -64,25 +92,6 @@ function runKeyFor(date) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
-
-const PLACEHOLDER_RE = /\{\s*(firstName|lastName|fullName|name)\s*\}/i;
-
-function hasPlaceholders(content) {
-  return PLACEHOLDER_RE.test(String(content || ""));
-}
-
-function renderPersonalizedContent(template, recipient) {
-  const fullName = String(recipient?.memberName || "").trim();
-  const parts = fullName.split(/\s+/).filter(Boolean);
-  const firstName = String(recipient?.firstName || parts[0] || "").trim();
-  const lastName = String(recipient?.lastName || (parts.length > 1 ? parts[parts.length - 1] : "")).trim();
-
-  return String(template || "")
-    .replace(/\{\s*firstName\s*\}/gi, firstName)
-    .replace(/\{\s*lastName\s*\}/gi, lastName)
-    .replace(/\{\s*fullName\s*\}/gi, fullName)
-    .replace(/\{\s*name\s*\}/gi, fullName);
 }
 
 async function resolveAutomationRecipients(automation, today) {
@@ -248,7 +257,10 @@ async function finalizeMessageCounts({ churchId, messageId }) {
 async function runAutomation(automation, now) {
   const churchId = automation.church;
   const runKey = runKeyFor(now);
-  const nextRunAt = computeNextRunAt(automation, now);
+  const isOneTime = String(automation?.type || "") === "one_time";
+  const nextRunAt = isOneTime ? null : computeNextRunAt(automation, now);
+  // A one-time automation is finished after its run — disable it.
+  const doneSet = isOneTime ? { nextRunAt: null, enabled: false } : { nextRunAt };
 
   const markRun = async (status, extra = {}) => {
     await AnnouncementAutomation.updateOne(
@@ -257,8 +269,8 @@ async function runAutomation(automation, now) {
         $set: {
           lastRunAt: now,
           lastRunKey: runKey,
-          nextRunAt,
           lastRunStatus: status,
+          ...doneSet,
           ...extra
         }
       }
@@ -267,11 +279,11 @@ async function runAutomation(automation, now) {
 
   // Idempotency: never run the same automation twice for the same day.
   if (automation.lastRunKey && String(automation.lastRunKey) === runKey) {
-    await AnnouncementAutomation.updateOne({ _id: automation._id }, { $set: { nextRunAt } });
+    await AnnouncementAutomation.updateOne({ _id: automation._id }, { $set: doneSet });
     return { status: "skipped_duplicate" };
   }
 
-  if (!nextRunAt) {
+  if (!isOneTime && !nextRunAt) {
     await markRun("skipped", { lastRunError: "No valid schedule", lastRunRecipientCount: 0 });
     return { status: "skipped" };
   }

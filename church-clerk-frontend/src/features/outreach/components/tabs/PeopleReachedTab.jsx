@@ -30,7 +30,7 @@ const STAGES = [
 const DECISIONS = [
   { key: "none", label: "None" }, { key: "firstTimeSalvation", label: "First-Time Salvation" },
   { key: "rededication", label: "Rededication" }, { key: "baptismInterest", label: "Baptism Interest" },
-  { key: "churchVisit", label: "Church Visit" },
+  { key: "churchVisit", label: "Church Visit" }, { key: "member", label: "Member" },
 ];
 
 function fmtDate(v) {
@@ -92,22 +92,14 @@ function EventSearchSelect({ events, value, onChange }) {
     <div ref={ref} className="relative">
       <input
         value={open ? search : (selected ? `${selected.title}${selected.date ? " — " + fmtDate(selected.date) : ""}` : "")}
-        onChange={(e) => { setSearch(e.target.value); onChange(""); setOpen(true); }}
-        onFocus={() => setOpen(true)}
+        onChange={(e) => { const v = e.target.value; setSearch(v); onChange(""); setOpen(!!v.trim()); }}
+        onFocus={(e) => e.target.select()}
         placeholder="Search outreach event…"
         className={INP}
         autoComplete="off"
       />
       {open ? (
         <div className="absolute z-30 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg max-h-48 overflow-y-auto">
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => { onChange(""); setSearch(""); setOpen(false); }}
-            className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50 border-b border-gray-100"
-          >
-            None — Walk-in / no event
-          </button>
           {filtered.length > 0 ? filtered.map((ev) => (
             <button
               key={ev._id}
@@ -131,7 +123,7 @@ function EventSearchSelect({ events, value, onChange }) {
 export function PersonFormModal({ open, mode, initialData, events, defaultOutreachEventId, onClose, onSaved }) {
   const getEmpty = (defaultEventId) => ({
     outreachEvent: defaultEventId || "", firstName: "", lastName: "", phone: "", alternativePhone: "",
-    email: "", gender: "", ageGroup: "", occupation: "", address: "", community: "",
+    email: "", gender: "", ageGroup: "", occupation: "", address: "",
     preferredContact: "call", howReached: "street", existingChurchStatus: "none",
     heardGospel: false, acceptedChrist: false, rededication: false,
     wantsPrayer: false, wantsToVisitChurch: false, alreadyChristian: false, notInterested: false,
@@ -141,7 +133,6 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [duplicates, setDuplicates] = useState(null);
-  const [checkingDup, setCheckingDup] = useState(false);
   const [step, setStep] = useState("form"); // "form" | "duplicate"
   // "outreach" = linked to an event, "personal" = personal soul-winning (no event)
   const [sourceMode, setSourceMode] = useState("outreach");
@@ -156,7 +147,7 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
         phone: initialData.phone || "", alternativePhone: initialData.alternativePhone || "",
         email: initialData.email || "", gender: initialData.gender || "",
         ageGroup: initialData.ageGroup || "", occupation: initialData.occupation || "",
-        address: initialData.address || "", community: initialData.community || "",
+        address: initialData.address || "",
         preferredContact: initialData.preferredContact || "call",
         howReached: initialData.howReached || "street",
         existingChurchStatus: initialData.existingChurchStatus || "none",
@@ -177,7 +168,6 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
 
   const runDupCheck = useCallback(async (phone, email, firstName, lastName) => {
     if (!phone && !email && (!firstName || !lastName)) return;
-    setCheckingDup(true);
     try {
       const res = await checkDuplicate({ phone: phone || undefined, email: email || undefined, firstName: firstName || undefined, lastName: lastName || undefined });
       const found = res?.data?.data || [];
@@ -186,7 +176,7 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
       } else {
         setDuplicates(found);
       }
-    } catch { setDuplicates(null); } finally { setCheckingDup(false); }
+    } catch { setDuplicates(null); }
   }, [mode, initialData]);
 
   const handlePhoneChange = (v) => {
@@ -251,7 +241,21 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
               />
               <p className="mt-1 text-[11px] text-gray-400">Automatically linked to this outreach — cannot be changed here</p>
             </div>
-          ) : mode === "create" ? (
+          ) : mode === "edit" ? (
+            /* ── Edit: show the linked outreach, read-only ── */
+            <div>
+              <label className={LBL}>Outreach Event</label>
+              <input
+                disabled
+                value={
+                  initialData?.outreachEvent?.title
+                    ? `${initialData.outreachEvent.title}${initialData.outreachEvent.date ? " — " + fmtDate(initialData.outreachEvent.date) : ""}`
+                    : "Personal Soul-Winning — not tied to an event"
+                }
+                className="w-full h-11 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 cursor-not-allowed select-none"
+              />
+            </div>
+          ) : (
             /* ── People Reached tab: choose source ── */
             <div>
               <label className={LBL}>Outreach Connection <span className="text-gray-400 font-normal">(optional)</span></label>
@@ -295,7 +299,7 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
                 </div>
               )}
             </div>
-          ) : null}
+          )}
 
           {/* Basic info */}
           <div className="grid grid-cols-2 gap-3">
@@ -310,7 +314,7 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={LBL}>Phone {checkingDup ? <span className="text-blue-500 text-[10px] ml-1">Checking…</span> : null}</label>
+              <label className={LBL}>Phone</label>
               <input value={form.phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="e.g. 0244123456" className={INP} />
             </div>
             <div>
@@ -332,16 +336,15 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
             <div>
               <label className={LBL}>Gender</label>
               <select value={form.gender} onChange={(e) => set("gender", e.target.value)} className={SEL}>
-                <option value="">—</option>
+                <option value="">Select</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
-                <option value="other">Other</option>
               </select>
             </div>
             <div>
               <label className={LBL}>Age Group</label>
               <select value={form.ageGroup} onChange={(e) => set("ageGroup", e.target.value)} className={SEL}>
-                <option value="">—</option>
+                <option value="">Select</option>
                 <option value="child">Child</option>
                 <option value="teenager">Teenager</option>
                 <option value="youth">Youth</option>
@@ -363,10 +366,6 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
             <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Where they live — e.g. Ablekuma, near the lorry station" className={INP} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={LBL}>Community / Area</label>
-              <input value={form.community} onChange={(e) => set("community", e.target.value)} placeholder="Neighborhood reached" className={INP} />
-            </div>
             <div>
               <label className={LBL}>How Reached</label>
               <select value={form.howReached} onChange={(e) => set("howReached", e.target.value)} className={SEL}>
@@ -473,6 +472,8 @@ export function ConvertModal({ open, prospect, onClose, onDone }) {
 
   const fullName = `${prospect.firstName || ""} ${prospect.lastName || ""}`.trim();
   const prospectId = prospect._id;
+  const alreadyMember = !!(prospect.convertedToMember || prospect.linkedMember || prospect.stage === "member");
+  const alreadyVisitor = !!(prospect.markedAsVisitor || prospect.linkedVisitor);
 
   const handleChoose = (chosenMode) => {
     if (chosenMode === "member") {
@@ -526,22 +527,22 @@ export function ConvertModal({ open, prospect, onClose, onDone }) {
           Connect {fullName}
         </div>
         <div className="space-y-2 mb-4">
-          <button onClick={() => handleChoose("member")} className="w-full flex items-center gap-3 rounded-xl border border-gray-200 p-3 text-left transition-colors hover:bg-gray-50">
+          <button onClick={() => handleChoose("member")} disabled={alreadyMember} className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${alreadyMember ? "border-gray-200 opacity-60 cursor-not-allowed" : "border-gray-200 hover:bg-gray-50"}`}>
             <div className="h-9 w-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="1.8" /><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
             </div>
             <div>
               <div className="font-semibold text-gray-900 text-sm">Convert to Member</div>
-              <div className="text-xs text-gray-500">Go to member registration form</div>
+              <div className="text-xs text-gray-500">{alreadyMember ? "Already connected as a member" : "Go to member registration form"}</div>
             </div>
           </button>
-          <button onClick={() => handleChoose("visitor")} className="w-full flex items-center gap-3 rounded-xl border border-gray-200 p-3 text-left transition-colors hover:bg-gray-50">
+          <button onClick={() => handleChoose("visitor")} disabled={alreadyVisitor} className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${alreadyVisitor ? "border-gray-200 opacity-60 cursor-not-allowed" : "border-gray-200 hover:bg-gray-50"}`}>
             <div className="h-9 w-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
             </div>
             <div>
               <div className="font-semibold text-gray-900 text-sm">Mark as Visitor</div>
-              <div className="text-xs text-gray-500">Go to visitor registration form</div>
+              <div className="text-xs text-gray-500">{alreadyVisitor ? "Already recorded as a visitor" : "Go to visitor registration form"}</div>
             </div>
           </button>
         </div>
@@ -564,9 +565,9 @@ function PersonRow({ person, onEdit, onConvert, onDelete, onView, canWrite, canD
         </div>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6">{person.phone || <span className="text-gray-400 italic">Not Specified</span>}</td>
-      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={person.community || person.address || "Not Specified"}>
-        <span className="sm:hidden">{truncateMobileName(person.community || person.address || "Not Specified")}</span>
-        <span className="hidden sm:inline">{truncateDesktopName(person.community || person.address || "Not Specified")}</span>
+      <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={person.address || person.community || "Not Specified"}>
+        <span className="sm:hidden">{truncateMobileName(person.address || person.community || "Not Specified")}</span>
+        <span className="hidden sm:inline">{truncateDesktopName(person.address || person.community || "Not Specified")}</span>
       </td>
       <td className="max-md:px-4 py-1.5 text-gray-700 whitespace-nowrap px-4 md:px-6" title={person.outreachEvent?.title || "Not Specified"}>
         <span className="sm:hidden">{truncateMobileName(person.outreachEvent?.title || "Not Specified")}</span>
@@ -748,7 +749,7 @@ export default function PeopleReachedTab({ setHeaderAction }) {
                 <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                   <th className="sticky left-0 z-20 bg-slate-100 max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Person</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Phone</th>
-                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Area</th>
+                  <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Recorded</th>
                   <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>

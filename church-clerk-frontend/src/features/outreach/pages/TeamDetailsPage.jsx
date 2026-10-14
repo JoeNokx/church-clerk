@@ -7,8 +7,8 @@ import {
   getOutreachTeamById,
   getOutreachEvents,
   updateOutreachTeam,
-  deleteOutreachTeam,
 } from "../services/outreach.api.js";
+import { MemberSearchSelect } from "../components/tabs/TeamsTab.jsx";
 import { getMembers } from "../../member/services/member.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
@@ -58,11 +58,92 @@ function Avatar({ name, size = "md" }) {
   );
 }
 
+const SEL = "w-full h-11 rounded-lg border border-gray-200 px-3 text-sm text-gray-800 focus:outline-none focus:border-blue-500 bg-white";
+const LBL = "block text-xs font-semibold text-gray-500 mb-1";
+
+// ── Add Member Modal ──────────────────────────────────────────────
+function AddMemberModal({ open, team, allMembers, onClose, onSaved }) {
+  const [picked, setPicked] = useState(null);
+  const [role, setRole] = useState("volunteer");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setPicked(null); setRole("volunteer"); setError("");
+  }, [open]);
+
+  if (!open || !team) return null;
+
+  const existing = new Set((team.members || []).map((m) => String(m.member?._id || m.member)));
+  const available = allMembers.filter((m) => !existing.has(String(m._id)));
+
+  const save = async () => {
+    if (!picked) { setError("Pick a member to add."); return; }
+    setSaving(true); setError("");
+    try {
+      const members = (team.members || []).map((m) => ({ member: m.member?._id || m.member, role: m.role || "volunteer" }));
+      members.push({ member: picked._id, role });
+      const res = await updateOutreachTeam(team._id, { members });
+      onSaved?.(res?.data?.data);
+    } catch (e) {
+      setError(e?.response?.data?.message || "Something went wrong.");
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+      <div className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+          <h2 className="font-semibold text-gray-900 text-base">Add Member to {team.name}</h2>
+          <button onClick={onClose} className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className={LBL}>Member <span className="text-red-500">*</span></label>
+            {picked ? (
+              <div className="flex items-center gap-2.5 rounded-lg border border-gray-200 px-3 py-2">
+                <Avatar name={`${picked.firstName} ${picked.lastName}`} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 truncate">{picked.firstName} {picked.lastName}</div>
+                  {picked.phoneNumber ? <div className="text-[11px] text-gray-400">{picked.phoneNumber}</div> : null}
+                </div>
+                <button type="button" onClick={() => setPicked(null)} className="text-xs font-semibold text-blue-700 hover:underline shrink-0">Change</button>
+              </div>
+            ) : (
+              <>
+                <MemberSearchSelect allMembers={available} onSelect={(id) => setPicked(available.find((m) => String(m._id) === String(id)) || null)} />
+                {available.length === 0 && allMembers.length > 0 ? (
+                  <p className="mt-1 text-[11px] text-gray-400">All active members are already in this team.</p>
+                ) : null}
+              </>
+            )}
+          </div>
+          <div>
+            <label className={LBL}>Role</label>
+            <select value={role} onChange={(e) => setRole(e.target.value)} className={SEL}>
+              {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </div>
+          {error ? <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4">
+          <button onClick={onClose} className="h-10 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
+          <button onClick={save} disabled={saving || !picked} className="h-10 rounded-lg bg-blue-700 px-6 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
+            {saving ? "Adding…" : "Add Member"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TeamDetailsPage() {
   const guarded = useGuardedAction();
   const { can } = useContext(PermissionContext) || {};
   const canWrite = typeof can === "function" ? can("outreach", "update") : false;
-  const canDelete = typeof can === "function" ? can("outreach", "delete") : false;
 
   const { toPage } = useDashboardNavigator();
   const location = useLocation();
@@ -78,8 +159,8 @@ export default function TeamDetailsPage() {
   const [eventSearch, setEventSearch] = useState("");
   const [eventDateFrom, setEventDateFrom] = useState("");
   const [eventDateTo, setEventDateTo] = useState("");
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [allMembers, setAllMembers] = useState([]);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [membersPage, setMembersPage] = useState(1);
   const [outreachPage, setOutreachPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -125,16 +206,8 @@ export default function TeamDetailsPage() {
   useEffect(() => {
     fetchTeam();
     fetchEvents();
+    getMembers({ limit: 200, status: "active" }).then((r) => setAllMembers(r.data?.members || [])).catch(() => {});
   }, [fetchTeam, fetchEvents]);
-
-  const handleDeleteConfirm = async () => {
-    if (!team) return;
-    setDeleting(true);
-    try {
-      await deleteOutreachTeam(team._id);
-      toPage("outreach", backParams);
-    } catch { } finally { setDeleting(false); }
-  };
 
   const members = team?.members || [];
   const filteredMembers = useMemo(() => {
@@ -224,14 +297,6 @@ export default function TeamDetailsPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {canWrite ? (
-              <button onClick={() => guarded(() => toPage("outreach", { ...backParams, editTeamId: team._id }))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap">Edit</button>
-            ) : null}
-            {canDelete ? (
-              <button onClick={() => guarded(() => setDeleteOpen(true))} className="h-9 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-red-600 hover:bg-red-50 whitespace-nowrap">Delete</button>
-            ) : null}
-          </div>
         </div>
         {/* Description below */}
         {team.description ? (
@@ -268,16 +333,27 @@ export default function TeamDetailsPage() {
                 <div className="font-semibold text-gray-900 text-sm">Members</div>
                 <div className="text-gray-500 text-xs">All members in this team</div>
               </div>
-              <FilterBar
-                searchValue={memberSearch}
-                onSearchChange={(v) => { setMemberSearch(v); setMembersPage(1); }}
-                searchPlaceholder="Search members…"
-              />
-              <MobileFilterBar
-                searchValue={memberSearch}
-                onSearchChange={(v) => { setMemberSearch(v); setMembersPage(1); }}
-                searchPlaceholder="Search members…"
-              />
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
+                {canWrite ? (
+                  <button
+                    onClick={() => guarded(() => setAddMemberOpen(true))}
+                    className="h-9 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 shrink-0"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                    Add Member
+                  </button>
+                ) : null}
+                <FilterBar
+                  searchValue={memberSearch}
+                  onSearchChange={(v) => { setMemberSearch(v); setMembersPage(1); }}
+                  searchPlaceholder="Search members…"
+                />
+                <MobileFilterBar
+                  searchValue={memberSearch}
+                  onSearchChange={(v) => { setMemberSearch(v); setMembersPage(1); }}
+                  searchPlaceholder="Search members…"
+                />
+              </div>
             </div>
             {filteredMembers.length === 0 ? (
               <div className="p-4 md:p-6 lg:p-8">
@@ -407,6 +483,7 @@ export default function TeamDetailsPage() {
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Outreach Date</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Location</th>
                       <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Status</th>
+                      <th className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -431,6 +508,11 @@ export default function TeamDetailsPage() {
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${EVENT_STATUS_STYLES[ev.status] || "bg-gray-100 text-gray-600"}`}>
                             {ev.status}
                           </span>
+                        </td>
+                        <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6" onClick={(e) => e.stopPropagation()}>
+                          <TableKebabMenu items={[
+                            { label: "View", onClick: () => toPage("outreach-event-details", { id: ev._id, from: "teams" }) }
+                          ]} />
                         </td>
                       </tr>
                     ))}
@@ -457,19 +539,13 @@ export default function TeamDetailsPage() {
         ) : null}
       </div>
 
-      {/* Delete confirmation */}
-      {deleteOpen ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
-            <div className="font-semibold text-gray-900 text-sm mb-2">Delete "{team.name}"?</div>
-            <p className="text-xs text-gray-400 mb-5">This will remove the team and all member assignments.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteOpen(false)} className="flex-1 h-10 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button onClick={handleDeleteConfirm} disabled={deleting} className="flex-1 h-10 rounded-lg bg-red-600 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">{deleting ? "Deleting…" : "Delete"}</button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <AddMemberModal
+        open={addMemberOpen}
+        team={team}
+        allMembers={allMembers}
+        onClose={() => setAddMemberOpen(false)}
+        onSaved={(updated) => { setAddMemberOpen(false); if (updated) setTeam(updated); else fetchTeam(); }}
+      />
     </div>
   );
 }

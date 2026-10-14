@@ -12,7 +12,6 @@ import { getMinistries } from "../../ministry/services/ministry.api.js";
 import { getPrograms } from "../../program/services/program.api.js";
 import { getOutreachEvents } from "../../outreach/services/outreach.api.js";
 import { getVisitors } from "../../attendance/services/attendance.api.js";
-import Select from "react-select";
 import { getMembers } from "../../member/services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
@@ -1680,22 +1679,6 @@ function DeliveryReportModal({ open, onClose, message }) {
   );
 }
 
-const AUDIENCE_SELECT_STYLES = {
-  control: (base, state) => ({
-    ...base,
-    minHeight: 42,
-    borderRadius: "0.5rem",
-    borderColor: state.isFocused ? "#93c5fd" : "#e5e7eb",
-    boxShadow: state.isFocused ? "0 0 0 3px rgba(59,130,246,0.12)" : "none",
-    ":hover": { borderColor: state.isFocused ? "#93c5fd" : "#d1d5db" },
-    fontSize: "0.875rem"
-  }),
-  multiValue: (base) => ({ ...base, backgroundColor: "#eff6ff", borderRadius: "0.375rem" }),
-  multiValueLabel: (base) => ({ ...base, color: "#1d4ed8", fontWeight: 600 }),
-  multiValueRemove: (base) => ({ ...base, color: "#1d4ed8", ":hover": { backgroundColor: "#dbeafe", color: "#1e40af" } }),
-  menuPortal: (base) => ({ ...base, zIndex: 9999 })
-};
-
 function toAudienceOptions(list, labelFor) {
   return (Array.isArray(list) ? list : [])
     .map((x) => ({ value: String(x?._id || ""), label: labelFor(x) }))
@@ -1703,9 +1686,40 @@ function toAudienceOptions(list, labelFor) {
 }
 
 function AudienceMultiSelect({ label, options, values, onChange, placeholder }) {
-  const selected = useMemo(() => (options || []).filter((o) => (values || []).includes(o.value)), [options, values]);
-  const allValues = useMemo(() => (options || []).map((o) => o.value), [options]);
-  const allSelected = allValues.length > 0 && allValues.every((v) => (values || []).includes(v));
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef(null);
+
+  // Close the results list on outside click/tap.
+  useEffect(() => {
+    if (!open) return undefined;
+    const handle = (e) => {
+      if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    document.addEventListener("touchstart", handle);
+    return () => {
+      document.removeEventListener("mousedown", handle);
+      document.removeEventListener("touchstart", handle);
+    };
+  }, [open]);
+
+  const safeOptions = Array.isArray(options) ? options : [];
+  const safeValues = Array.isArray(values) ? values.map(String) : [];
+  const selected = safeOptions.filter((o) => safeValues.includes(String(o.value)));
+  const q = query.trim().toLowerCase();
+  const matches = q
+    ? safeOptions.filter((o) => !safeValues.includes(String(o.value)) && String(o.label || "").toLowerCase().includes(q))
+    : [];
+  const allValues = safeOptions.map((o) => o.value);
+  const allSelected = allValues.length > 0 && allValues.every((v) => safeValues.includes(String(v)));
+
+  const pick = (o) => {
+    onChange([...safeValues, String(o.value)]);
+    setQuery("");
+    setOpen(false);
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
@@ -1720,18 +1734,49 @@ function AudienceMultiSelect({ label, options, values, onChange, placeholder }) 
           </button>
         ) : null}
       </div>
-      <Select
-        isMulti
-        closeMenuOnSelect={false}
-        className="mt-2 text-sm"
-        options={options}
-        value={selected}
-        onChange={(sel) => onChange((sel || []).map((o) => o.value))}
-        placeholder={placeholder || "Select..."}
-        styles={AUDIENCE_SELECT_STYLES}
-        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-        noOptionsMessage={() => "Nothing to select"}
-      />
+      <div ref={boxRef} className="relative">
+        <input
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          placeholder={placeholder || "Type to search..."}
+          className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+          autoComplete="off"
+        />
+        {open && q ? (
+          <div className="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+            {matches.length ? (
+              matches.slice(0, 50).map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => pick(o)}
+                  className="w-full border-b border-gray-100 px-3 py-2 text-left text-gray-800 last:border-b-0 hover:bg-gray-50 text-sm"
+                >
+                  {o.label}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-gray-400 text-sm">No matches</div>
+            )}
+          </div>
+        ) : null}
+      </div>
+      {selected.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {selected.map((o) => (
+            <span key={o.value} className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 text-xs">
+              {o.label}
+              <button
+                type="button"
+                onClick={() => onChange(safeValues.filter((x) => x !== String(o.value)))}
+                className="text-blue-500 hover:text-blue-800"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2104,7 +2149,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
         setCells(cellsRows);
         setDepartments(departmentsRows);
         setMinistries(ministriesRows);
-        setEvents(programsRows);
+        setPrograms(programsRows);
         setOutreachEvents(outreachRows);
       } catch {
         if (cancelled) return;
@@ -2493,6 +2538,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
               className="min-h-[140px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
             />
             <div className="mt-1 text-gray-500 text-xs">Characters: {messageCharCount}</div>
+            <div className="mt-1 text-gray-400 text-xs">Use {"{firstName}"}, {"{lastName}"} or {"{fullName}"} to personalise each message. Only this content is delivered — the message title is for your records.</div>
           </div>
         </div>
 
@@ -2599,10 +2645,10 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             <div className="mt-4">
               <div className="text-gray-500 text-xs">Members in any of the selections below will receive the message. You can pick from multiple lists.</div>
               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <AudienceMultiSelect label="Groups" options={groupOptions} values={groupIds} onChange={setGroupIds} placeholder="Select groups..." />
-                <AudienceMultiSelect label="Cells" options={cellOptions} values={cellIds} onChange={setCellIds} placeholder="Select cells..." />
-                <AudienceMultiSelect label="Departments" options={departmentOptions} values={departmentIds} onChange={setDepartmentIds} placeholder="Select departments..." />
-                <AudienceMultiSelect label="Ministries" options={ministryOptions} values={ministryIds} onChange={setMinistryIds} placeholder="Select ministries..." />
+                <AudienceMultiSelect label="Groups" options={groupOptions} values={groupIds} onChange={setGroupIds} placeholder="Search groups..." />
+                <AudienceMultiSelect label="Cells" options={cellOptions} values={cellIds} onChange={setCellIds} placeholder="Search cells..." />
+                <AudienceMultiSelect label="Departments" options={departmentOptions} values={departmentIds} onChange={setDepartmentIds} placeholder="Search departments..." />
+                <AudienceMultiSelect label="Ministries" options={ministryOptions} values={ministryIds} onChange={setMinistryIds} placeholder="Search ministries..." />
               </div>
             </div>
           ) : null}
@@ -2611,7 +2657,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             <div className="mt-4">
               <div className="text-gray-500 text-xs">Registered attendees of the selected programs will receive the message.</div>
               <div className="mt-3">
-                <AudienceMultiSelect label="Programs" options={programOptions} values={programIds} onChange={setProgramIds} placeholder="Select programs..." />
+                <AudienceMultiSelect label="Programs" options={programOptions} values={programIds} onChange={setProgramIds} placeholder="Search programs..." />
               </div>
               {!programs.length ? <div className="mt-2 text-gray-500 text-xs">No programs found.</div> : null}
             </div>
@@ -2621,7 +2667,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             <div className="mt-4">
               <div className="text-gray-500 text-xs">Prospects recorded under the selected outreach events will receive the message.</div>
               <div className="mt-3">
-                <AudienceMultiSelect label="Outreach Events" options={outreachOptions} values={outreachIds} onChange={setOutreachIds} placeholder="Select outreach events..." />
+                <AudienceMultiSelect label="Outreach Events" options={outreachOptions} values={outreachIds} onChange={setOutreachIds} placeholder="Search outreach events..." />
               </div>
               {!outreachEvents.length ? <div className="mt-2 text-gray-500 text-xs">No outreach events found.</div> : null}
             </div>
@@ -2631,10 +2677,10 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             <div className="mt-4">
               <div className="text-gray-500 text-xs">Pick any combination — members matching all selected filters will receive the message.</div>
               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <AudienceMultiSelect label="Membership Status" options={SEGMENT_SECTIONS[0].options} values={segStatuses} onChange={setSegStatuses} placeholder="Select statuses..." />
-                <AudienceMultiSelect label="Gender" options={SEGMENT_SECTIONS[1].options} values={segGenders} onChange={setSegGenders} placeholder="Select genders..." />
-                <AudienceMultiSelect label="Age Group" options={SEGMENT_SECTIONS[2].options} values={segAgeGroups} onChange={setSegAgeGroups} placeholder="Select age groups..." />
-                <AudienceMultiSelect label="Marital Status" options={SEGMENT_SECTIONS[3].options} values={segMaritalStatuses} onChange={setSegMaritalStatuses} placeholder="Select marital statuses..." />
+                <AudienceMultiSelect label="Membership Status" options={SEGMENT_SECTIONS[0].options} values={segStatuses} onChange={setSegStatuses} placeholder="Search statuses..." />
+                <AudienceMultiSelect label="Gender" options={SEGMENT_SECTIONS[1].options} values={segGenders} onChange={setSegGenders} placeholder="Search genders..." />
+                <AudienceMultiSelect label="Age Group" options={SEGMENT_SECTIONS[2].options} values={segAgeGroups} onChange={setSegAgeGroups} placeholder="Search age groups..." />
+                <AudienceMultiSelect label="Marital Status" options={SEGMENT_SECTIONS[3].options} values={segMaritalStatuses} onChange={setSegMaritalStatuses} placeholder="Search marital statuses..." />
               </div>
               {!segStatuses.length && !segGenders.length && !segAgeGroups.length && !segMaritalStatuses.length ? (
                 <div className="mt-2 text-gray-500 text-xs">Select at least one filter to target members.</div>
@@ -2834,23 +2880,47 @@ const AUTOMATION_TYPE_OPTIONS = [
     icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M12 3v3M8 8c-1.5 0-3 .9-3 2.5V20h14v-9.5c0-1.6-1.5-2.5-3-2.5H8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" stroke="currentColor" strokeWidth="2" /><path d="M8 14h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
   },
   {
+    value: "one_time",
+    label: "One-Time Send",
+    hint: "Send once on a specific date and time",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="12" cy="15" r="2" fill="currentColor" /></svg>
+  },
+  {
+    value: "daily",
+    label: "Daily",
+    hint: "Every day at a set time",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" /><path d="M12 8v4l2.5 2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+  },
+  {
     value: "weekly_reminder",
     label: "Weekly Reminder",
     hint: "Recurring message on selected day(s) of the week",
     icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M15 16l2 2 3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  },
+  {
+    value: "monthly",
+    label: "Monthly",
+    hint: "Same day of each month at a set time",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M8 15h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
   }
 ];
 
-const AUTOMATION_DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const AUTOMATION_TYPE_BADGES = {
+  birthday: { cls: "bg-pink-100 text-pink-700", label: "Birthday" },
+  one_time: { cls: "bg-indigo-100 text-indigo-700", label: "One-time" },
+  daily: { cls: "bg-teal-100 text-teal-700", label: "Daily" },
+  weekly_reminder: { cls: "bg-blue-100 text-blue-700", label: "Weekly reminder" },
+  monthly: { cls: "bg-amber-100 text-amber-700", label: "Monthly" }
+};
 
-const AUTOMATION_AUDIENCE_OPTIONS = [
-  { value: "all", label: "All Members" },
-  { value: "visitors", label: "Visitors" }
-];
+const AUTOMATION_DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function describeAutomationSchedule(a) {
   const time = String(a?.sendTime || "08:00");
-  if (String(a?.type || "") === "birthday") return `Every day at ${time}`;
+  const type = String(a?.type || "");
+  if (type === "birthday" || type === "daily") return `Every day at ${time}`;
+  if (type === "one_time") return a?.runDate ? `Once — ${a.runDate} at ${time}` : `Once at ${time}`;
+  if (type === "monthly") return `Monthly on day ${a?.dayOfMonth || "?"} at ${time}`;
   const days = Array.isArray(a?.daysOfWeek)
     ? a.daysOfWeek.map(Number).filter((d) => d >= 0 && d <= 6).sort((x, y) => x - y)
     : [];
@@ -2871,15 +2941,306 @@ function automationRunBadge(status) {
   return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.cls}`}>{cfg.label}</span>;
 }
 
+/**
+ * Compact audience picker for automations — same audience spec the regular
+ * send uses, so scheduled messages can target any audience.
+ */
+function AutomationAudiencePicker({ value, onChange }) {
+  const audience = value && typeof value === "object" ? value : { type: "all" };
+  const type = String(audience.type || "all");
+  const set = (patch) => onChange({ ...audience, ...patch });
+
+  const [lists, setLists] = useState({ groups: [], cells: [], departments: [], ministries: [], programs: [], outreach: [] });
+  const [listsLoading, setListsLoading] = useState(false);
+  const listsStarted = useRef(false);
+
+  const [memberSearch, setMemberSearch] = useState("");
+  const [memberResults, setMemberResults] = useState([]);
+  const [memberNameById, setMemberNameById] = useState({});
+  const [visitorSearch, setVisitorSearch] = useState("");
+  const [visitorResults, setVisitorResults] = useState([]);
+  const [visitorNameById, setVisitorNameById] = useState({});
+
+  const memberIds = useMemo(() => (Array.isArray(audience.memberIds) ? audience.memberIds.map(String) : []), [audience.memberIds]);
+  const visitorIds = useMemo(() => (Array.isArray(audience.visitorIds) ? audience.visitorIds.map(String) : []), [audience.visitorIds]);
+  const groupIds = useMemo(() => (Array.isArray(audience.groupIds) ? audience.groupIds.map(String) : []), [audience.groupIds]);
+  const cellIds = useMemo(() => (Array.isArray(audience.cellIds) ? audience.cellIds.map(String) : []), [audience.cellIds]);
+  const departmentIds = useMemo(() => (Array.isArray(audience.departmentIds) ? audience.departmentIds.map(String) : []), [audience.departmentIds]);
+  const ministryIds = useMemo(() => (Array.isArray(audience.ministryIds) ? audience.ministryIds.map(String) : []), [audience.ministryIds]);
+  const programIds = useMemo(() => (Array.isArray(audience.programIds) ? audience.programIds.map(String) : []), [audience.programIds]);
+  const outreachIds = useMemo(() => (Array.isArray(audience.outreachIds) ? audience.outreachIds.map(String) : []), [audience.outreachIds]);
+  const segStatuses = useMemo(() => (Array.isArray(audience.statuses) ? audience.statuses.map(String) : []), [audience.statuses]);
+  const segGenders = useMemo(() => (Array.isArray(audience.genders) ? audience.genders.map(String) : []), [audience.genders]);
+  const segAgeGroups = useMemo(() => (Array.isArray(audience.ageGroups) ? audience.ageGroups.map(String) : []), [audience.ageGroups]);
+  const segMaritalStatuses = useMemo(() => (Array.isArray(audience.maritalStatuses) ? audience.maritalStatuses.map(String) : []), [audience.maritalStatuses]);
+
+  // Lazily load org units / programs / outreach lists the first time the
+  // audience type needs them. The ref guard (not state) prevents the
+  // "loading" state change from cancelling the in-flight fetch on re-run.
+  useEffect(() => {
+    if (!["groups", "programs", "outreach"].includes(type)) return;
+    if (listsStarted.current) return;
+    listsStarted.current = true;
+    setListsLoading(true);
+    (async () => {
+      try {
+        const [g, c, d, mn, ev, or] = await Promise.allSettled([
+          getGroups({ page: 1, limit: 200 }),
+          getCells({ page: 1, limit: 200 }),
+          getDepartments({ page: 1, limit: 200 }),
+          getMinistries({ page: 1, limit: 200 }),
+          getPrograms({ page: 1, limit: 200 }),
+          getOutreachEvents({ page: 1, limit: 200 })
+        ]);
+        setLists({
+          groups: g.status === "fulfilled" ? (g.value?.data?.groups || []) : [],
+          cells: c.status === "fulfilled" ? (c.value?.data?.cells || []) : [],
+          departments: d.status === "fulfilled" ? (d.value?.data?.departments || []) : [],
+          ministries: mn.status === "fulfilled" ? (mn.value?.data?.ministries || mn.value?.data?.data?.ministries || []) : [],
+          programs: ev.status === "fulfilled" ? (ev.value?.data?.programs || ev.value?.data?.data?.programs || ev.value?.data?.data || []) : [],
+          outreach: or.status === "fulfilled" ? (or.value?.data?.data || or.value?.data?.events || or.value?.data?.data?.events || []) : []
+        });
+      } catch {
+        /* lists stay empty — picker still usable */
+      } finally {
+        setListsLoading(false);
+      }
+    })();
+  }, [type]);
+
+  // Resolve names for member/visitor ids already selected (e.g. editing).
+  // One fetch per mount — ref guards so a partial result can't loop forever.
+  const memberNamesFetched = useRef(false);
+  const visitorNamesFetched = useRef(false);
+
+  useEffect(() => {
+    if (memberNamesFetched.current) return;
+    if (!memberIds.filter((id) => !memberNameById[id]).length) return;
+    memberNamesFetched.current = true;
+    getMembers({ page: 1, limit: 200 }).then((res) => {
+      const rows = res?.data?.members || res?.data?.data?.members || [];
+      setMemberNameById((cur) => {
+        const next = { ...cur };
+        rows.forEach((m) => { next[String(m._id)] = `${m.firstName || ""} ${m.lastName || ""}`.trim(); });
+        return next;
+      });
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberIds]);
+
+  useEffect(() => {
+    if (visitorNamesFetched.current) return;
+    if (!visitorIds.filter((id) => !visitorNameById[id]).length) return;
+    visitorNamesFetched.current = true;
+    getVisitors({ page: 1, limit: 200 }).then((res) => {
+      const rows = res?.data?.visitors || [];
+      setVisitorNameById((cur) => {
+        const next = { ...cur };
+        rows.forEach((v) => { next[String(v._id)] = String(v.fullName || ""); });
+        return next;
+      });
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visitorIds]);
+
+  // Search-as-you-type for members / visitors.
+  useEffect(() => {
+    if (type !== "members") return;
+    const q = memberSearch.trim();
+    if (!q) { setMemberResults([]); return; }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const res = await getMembers({ search: q, fastSearch: 0, limit: 10, page: 1 });
+        if (cancelled) return;
+        setMemberResults(res?.data?.data?.members || res?.data?.members || []);
+      } catch { if (!cancelled) setMemberResults([]); }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [type, memberSearch]);
+
+  useEffect(() => {
+    if (type !== "visitors") return;
+    const q = visitorSearch.trim();
+    if (!q) { setVisitorResults([]); return; }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const res = await getVisitors({ search: q, limit: 10, page: 1 });
+        if (cancelled) return;
+        setVisitorResults(res?.data?.visitors || []);
+      } catch { if (!cancelled) setVisitorResults([]); }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [type, visitorSearch]);
+
+  const toggleIn = (key, list, v) => {
+    const sv = String(v);
+    set({ [key]: list.includes(sv) ? list.filter((x) => x !== sv) : [...list, sv] });
+  };
+
+  const pickMember = (m) => {
+    const id = String(m._id);
+    if (!memberIds.includes(id)) set({ memberIds: [...memberIds, id] });
+    setMemberNameById((cur) => ({ ...cur, [id]: `${m.firstName || ""} ${m.lastName || ""}`.trim() }));
+    setMemberSearch("");
+    setMemberResults([]);
+  };
+
+  const pickVisitor = (v) => {
+    const id = String(v._id);
+    if (!visitorIds.includes(id)) set({ visitorIds: [...visitorIds, id] });
+    setVisitorNameById((cur) => ({ ...cur, [id]: String(v.fullName || "") }));
+    setVisitorSearch("");
+    setVisitorResults([]);
+  };
+
+  const chipCls = "inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700";
+
+  return (
+    <div>
+      <div className="font-semibold text-gray-500 text-xs">Audience</div>
+      <select
+        value={type}
+        onChange={(e) => set({ type: e.target.value })}
+        className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+      >
+        {AUDIENCE_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      <div className="mt-1 text-gray-400 text-xs">{AUDIENCE_OPTIONS.find((o) => o.value === type)?.hint}</div>
+
+      {type === "groups" ? (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <AudienceMultiSelect label="Groups" options={toAudienceOptions(lists.groups, (x) => x?.name || "—")} values={groupIds} onChange={(v) => set({ groupIds: v })} />
+          <AudienceMultiSelect label="Cells" options={toAudienceOptions(lists.cells, (x) => x?.name || "—")} values={cellIds} onChange={(v) => set({ cellIds: v })} />
+          <AudienceMultiSelect label="Departments" options={toAudienceOptions(lists.departments, (x) => x?.name || "—")} values={departmentIds} onChange={(v) => set({ departmentIds: v })} />
+          <AudienceMultiSelect label="Ministries" options={toAudienceOptions(lists.ministries, (x) => x?.name || "—")} values={ministryIds} onChange={(v) => set({ ministryIds: v })} />
+          {listsLoading ? <div className="text-gray-400 text-xs sm:col-span-2">Loading organisations…</div> : null}
+        </div>
+      ) : null}
+
+      {type === "segment" ? (
+        <div className="mt-3 space-y-3">
+          {SEGMENT_SECTIONS.map((sec) => {
+            const key = sec.label === "Membership Status" ? "statuses" : sec.label === "Gender" ? "genders" : sec.label === "Age Group" ? "ageGroups" : "maritalStatuses";
+            const cur = { statuses: segStatuses, genders: segGenders, ageGroups: segAgeGroups, maritalStatuses: segMaritalStatuses }[key];
+            return (
+              <div key={sec.label}>
+                <div className="font-semibold text-gray-500 text-xs">{sec.label}</div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {sec.options.map((o) => {
+                    const active = cur.includes(o.value);
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => toggleIn(key, cur, o.value)}
+                        className={`rounded-lg px-2.5 py-1.5 font-semibold text-xs transition ${active ? "bg-blue-700 text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
+                      >
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          <div className="text-gray-400 text-xs">Members matching ANY selected filter receive the message.</div>
+        </div>
+      ) : null}
+
+      {type === "programs" ? (
+        <div className="mt-3">
+          <AudienceMultiSelect label="Programs" options={toAudienceOptions(lists.programs, (x) => x?.name || x?.title || "—")} values={programIds} onChange={(v) => set({ programIds: v })} />
+        </div>
+      ) : null}
+
+      {type === "outreach" ? (
+        <div className="mt-3">
+          <AudienceMultiSelect label="Outreach Events" options={toAudienceOptions(lists.outreach, (x) => x?.title || x?.name || "—")} values={outreachIds} onChange={(v) => set({ outreachIds: v })} />
+        </div>
+      ) : null}
+
+      {type === "members" ? (
+        <div className="mt-3">
+          <input
+            value={memberSearch}
+            onChange={(e) => setMemberSearch(e.target.value)}
+            placeholder="Search members by name…"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+            autoComplete="off"
+          />
+          {memberSearch.trim() && memberResults.length ? (
+            <div className="mt-1.5 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
+              {memberResults.filter((m) => !memberIds.includes(String(m._id))).map((m) => (
+                <button key={m._id} type="button" onClick={() => pickMember(m)} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                  <span className="font-semibold text-gray-800">{m.firstName} {m.lastName}</span>
+                  {m.phoneNumber ? <span className="text-gray-400 text-xs"> · {m.phoneNumber}</span> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {memberIds.length ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {memberIds.map((id) => (
+                <span key={id} className={chipCls}>
+                  {memberNameById[id] || "Member"}
+                  <button type="button" onClick={() => set({ memberIds: memberIds.filter((x) => x !== id) })} className="text-blue-500 hover:text-blue-800">×</button>
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {type === "visitors" ? (
+        <div className="mt-3">
+          <input
+            value={visitorSearch}
+            onChange={(e) => setVisitorSearch(e.target.value)}
+            placeholder="Search visitors by name…"
+            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+            autoComplete="off"
+          />
+          {visitorSearch.trim() && visitorResults.length ? (
+            <div className="mt-1.5 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
+              {visitorResults.filter((v) => !visitorIds.includes(String(v._id))).map((v) => (
+                <button key={v._id} type="button" onClick={() => pickVisitor(v)} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                  <span className="font-semibold text-gray-800">{v.fullName}</span>
+                  {v.phoneNumber ? <span className="text-gray-400 text-xs"> · {v.phoneNumber}</span> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {visitorIds.length ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {visitorIds.map((id) => (
+                <span key={id} className={chipCls}>
+                  {visitorNameById[id] || "Visitor"}
+                  <button type="button" onClick={() => set({ visitorIds: visitorIds.filter((x) => x !== id) })} className="text-blue-500 hover:text-blue-800">×</button>
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function AutomationFormModal({ open, initial, onClose, onSaved }) {
   const isEdit = Boolean(initial?._id);
   const [name, setName] = useState("");
-  const [type, setType] = useState("birthday");
+  const [type, setType] = useState("one_time");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [sendTime, setSendTime] = useState("08:00");
   const [daysOfWeek, setDaysOfWeek] = useState([]);
-  const [audienceType, setAudienceType] = useState("all");
+  const [runDate, setRunDate] = useState("");
+  const [dayOfMonth, setDayOfMonth] = useState("");
+  const [audience, setAudience] = useState({ type: "all" });
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -2887,12 +3248,23 @@ function AutomationFormModal({ open, initial, onClose, onSaved }) {
   useEffect(() => {
     if (!open) return;
     setName(String(initial?.name || ""));
-    setType(String(initial?.type || "birthday"));
+    setType(String(initial?.type || "one_time"));
     setTitle(String(initial?.title || ""));
     setContent(String(initial?.content || ""));
     setSendTime(String(initial?.sendTime || "08:00"));
     setDaysOfWeek(Array.isArray(initial?.daysOfWeek) ? initial.daysOfWeek.map(Number) : []);
-    setAudienceType(String(initial?.audience?.type || "all") === "visitors" ? "visitors" : "all");
+    setRunDate(String(initial?.runDate || ""));
+    setDayOfMonth(initial?.dayOfMonth ? String(initial.dayOfMonth) : "");
+    const a = initial?.audience && typeof initial.audience === "object" ? initial.audience : { type: "all" };
+    setAudience({
+      type: String(a.type || "all"),
+      groupIds: a.groupIds || [], cellIds: a.cellIds || [], departmentIds: a.departmentIds || [],
+      ministryIds: a.ministryIds || [], memberIds: a.memberIds || [],
+      ...(a.visitorIds !== undefined ? { visitorIds: a.visitorIds } : {}),
+      programIds: a.programIds || [], outreachIds: a.outreachIds || [],
+      statuses: a.statuses || [], genders: a.genders || [], ageGroups: a.ageGroups || [],
+      maritalStatuses: a.maritalStatuses || []
+    });
     setEnabled(initial?.enabled !== undefined ? Boolean(initial.enabled) : true);
     setSaving(false);
     setError("");
@@ -2903,12 +3275,27 @@ function AutomationFormModal({ open, initial, onClose, onSaved }) {
   const toggleDay = (d) =>
     setDaysOfWeek((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort((a, b) => a - b)));
 
+  const audienceType = String(audience.type || "all");
+  const audienceValid = () => {
+    if (type === "birthday" || audienceType === "all") return true;
+    if (audienceType === "groups") return (audience.groupIds || []).length || (audience.cellIds || []).length || (audience.departmentIds || []).length || (audience.ministryIds || []).length;
+    if (audienceType === "segment") return (audience.statuses || []).length || (audience.genders || []).length || (audience.ageGroups || []).length || (audience.maritalStatuses || []).length;
+    if (audienceType === "members") return (audience.memberIds || []).length;
+    if (audienceType === "visitors") return (audience.visitorIds || []).length;
+    if (audienceType === "programs") return (audience.programIds || []).length;
+    if (audienceType === "outreach") return (audience.outreachIds || []).length;
+    return true;
+  };
+
   const submit = async () => {
     setError("");
     if (!name.trim()) return setError("Name is required");
     if (!title.trim()) return setError("Message title is required");
     if (!content.trim()) return setError("Message content is required");
     if (type === "weekly_reminder" && !daysOfWeek.length) return setError("Select at least one day");
+    if (type === "one_time" && !runDate) return setError("Pick a date for a one-time message");
+    if (type === "monthly" && !dayOfMonth) return setError("Pick a day of the month");
+    if (!audienceValid()) return setError("Select who should receive this message");
 
     setSaving(true);
     try {
@@ -2919,7 +3306,9 @@ function AutomationFormModal({ open, initial, onClose, onSaved }) {
         content: content.trim(),
         sendTime,
         daysOfWeek,
-        audience: type === "birthday" ? { type: "all" } : { type: audienceType },
+        runDate: type === "one_time" ? runDate : null,
+        dayOfMonth: type === "monthly" ? Number(dayOfMonth) : null,
+        audience: type === "birthday" ? { type: "all" } : audience,
         enabled
       };
       if (isEdit) await updateAutomation(initial._id, payload);
@@ -2990,6 +3379,19 @@ function AutomationFormModal({ open, initial, onClose, onSaved }) {
             </div>
           </div>
 
+          {type === "one_time" ? (
+            <div className="mt-4">
+              <div className="font-semibold text-gray-500 text-xs">Send On</div>
+              <input
+                type="date"
+                value={runDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setRunDate(e.target.value)}
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+              />
+            </div>
+          ) : null}
+
           {type === "weekly_reminder" ? (
             <div className="mt-4">
               <div className="font-semibold text-gray-500 text-xs">Send On</div>
@@ -3013,35 +3415,45 @@ function AutomationFormModal({ open, initial, onClose, onSaved }) {
             </div>
           ) : null}
 
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <div className="font-semibold text-gray-500 text-xs">Send Time</div>
-              <input
-                type="time"
-                value={sendTime}
-                onChange={(e) => setSendTime(e.target.value)}
+          {type === "monthly" ? (
+            <div className="mt-4">
+              <div className="font-semibold text-gray-500 text-xs">Send On — Day of Month</div>
+              <select
+                value={dayOfMonth}
+                onChange={(e) => setDayOfMonth(e.target.value)}
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
-              />
+              >
+                <option value="">Select a day…</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={d}>{d}{d === 31 ? " (last day in shorter months)" : ""}</option>
+                ))}
+              </select>
             </div>
-            {type === "weekly_reminder" ? (
-              <div>
-                <div className="font-semibold text-gray-500 text-xs">Audience</div>
-                <select
-                  value={audienceType}
-                  onChange={(e) => setAudienceType(e.target.value)}
-                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
-                >
-                  {AUTOMATION_AUDIENCE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
+          ) : null}
+
+          <div className="mt-4">
+            <div className="font-semibold text-gray-500 text-xs">Send Time</div>
+            <input
+              type="time"
+              value={sendTime}
+              onChange={(e) => setSendTime(e.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
+            />
           </div>
 
           {type === "birthday" ? (
-            <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800 text-xs">
+            <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800 text-xs">
               Sent daily at the chosen time to every member whose birthday falls that day. Members marked deceased, transferred, left church or former are excluded.
+            </div>
+          ) : (
+            <div className="mt-4">
+              <AutomationAudiencePicker value={audience} onChange={setAudience} />
+            </div>
+          )}
+
+          {type === "one_time" ? (
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 text-xs">
+              Sends once on the chosen date, then turns itself off.
             </div>
           ) : null}
 
@@ -3064,7 +3476,7 @@ function AutomationFormModal({ open, initial, onClose, onSaved }) {
               placeholder={type === "birthday" ? "Happy birthday {firstName}! Wishing you a wonderful year ahead." : "Dear {firstName}, reminder that service holds this Sunday. See you there!"}
               className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-gray-700 text-sm"
             />
-            <div className="mt-1 text-gray-400 text-xs">Use {"{firstName}"}, {"{lastName}"} or {"{fullName}"} to personalise each message.</div>
+            <div className="mt-1 text-gray-400 text-xs">Use {"{firstName}"}, {"{lastName}"} or {"{fullName}"} to personalise each message. Note: only this message content is delivered to recipients — the Automation Name and Message Title are for your records.</div>
           </div>
 
           <div className="mt-4 flex items-center gap-2 text-gray-600 text-sm">
@@ -3101,6 +3513,77 @@ function AutomationFormModal({ open, initial, onClose, onSaved }) {
   );
 }
 
+function AutomationDetailRow({ label, children }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 last:border-b-0">
+      <div className="font-semibold text-gray-500 text-xs shrink-0">{label}</div>
+      <div className="text-gray-800 text-sm text-right min-w-0">{children ?? "—"}</div>
+    </div>
+  );
+}
+
+function AutomationViewModal({ automation, onClose }) {
+  if (!automation) return null;
+  const badge = AUTOMATION_TYPE_BADGES[String(automation?.type)] || { cls: "bg-gray-100 text-gray-600", label: String(automation?.type || "—") };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
+        <div className="border-b border-gray-200 px-4 md:px-5 lg:px-6 py-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-semibold text-gray-900 text-sm truncate">{automation?.name || "Automation"}</div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
+              <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${automation?.enabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                {automation?.enabled ? "Enabled" : "Disabled"}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="px-4 md:px-5 lg:px-6 py-4 max-h-[70vh] overflow-y-auto">
+          <div className="font-semibold text-gray-900 text-xs uppercase tracking-wide">Schedule</div>
+          <div className="mt-1 rounded-lg border border-gray-100 px-3">
+            <AutomationDetailRow label="Runs">{describeAutomationSchedule(automation)}</AutomationDetailRow>
+            <AutomationDetailRow label="Send Time">{automation?.sendTime || "—"}</AutomationDetailRow>
+            <AutomationDetailRow label="Next Run">{automation?.nextRunAt ? new Date(automation.nextRunAt).toLocaleString() : "—"}</AutomationDetailRow>
+          </div>
+
+          <div className="mt-4 font-semibold text-gray-900 text-xs uppercase tracking-wide">Audience</div>
+          <div className="mt-1 rounded-lg border border-gray-100 px-3">
+            <AutomationDetailRow label="Audience">
+              {String(automation?.type) === "birthday" ? "Members celebrating their birthday" : formatAudienceLabel(automation?.audience)}
+            </AutomationDetailRow>
+          </div>
+
+          <div className="mt-4 font-semibold text-gray-900 text-xs uppercase tracking-wide">Message</div>
+          <div className="mt-1 rounded-lg border border-gray-100 px-3">
+            <AutomationDetailRow label="Title">{automation?.title || "—"}</AutomationDetailRow>
+          </div>
+          <div className="mt-2 whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700 text-sm">{automation?.content || "—"}</div>
+          <div className="mt-1 text-gray-400 text-xs">Only this message content is delivered to recipients.</div>
+
+          <div className="mt-4 font-semibold text-gray-900 text-xs uppercase tracking-wide">Last Run</div>
+          <div className="mt-1 rounded-lg border border-gray-100 px-3">
+            <AutomationDetailRow label="Ran At">{automation?.lastRunAt ? new Date(automation.lastRunAt).toLocaleString() : "Never"}</AutomationDetailRow>
+            <AutomationDetailRow label="Status">{automationRunBadge(automation?.lastRunStatus)}</AutomationDetailRow>
+            <AutomationDetailRow label="Recipients">{automation?.lastRunRecipientCount ?? 0}</AutomationDetailRow>
+            {automation?.lastRunError ? (
+              <AutomationDetailRow label="Error"><span className="text-red-600">{automation.lastRunError}</span></AutomationDetailRow>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AutomatedTab({ open }) {
   const guarded = useGuardedAction();
   const { can } = useContext(PermissionContext) || {};
@@ -3113,6 +3596,7 @@ function AutomatedTab({ open }) {
   const [rows, setRows] = useState([]);
   const [formOpen, setFormOpen] = useState(false);
   const [formInitial, setFormInitial] = useState(null);
+  const [viewRow, setViewRow] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const load = async () => {
@@ -3185,7 +3669,7 @@ function AutomatedTab({ open }) {
       <div className="border-b border-gray-200 bg-gray-50 px-4 md:px-5 lg:px-6 py-4 flex items-center justify-between gap-3">
         <div>
           <div className="font-semibold text-gray-900 text-sm">Automated Messages</div>
-          <div className="mt-0.5 text-gray-500 text-xs">Messages that send themselves — birthdays, weekly reminders and more.</div>
+          <div className="mt-0.5 text-gray-500 text-xs">Messages that send themselves — schedule anything to any audience, once or recurring.</div>
           {error ? <div className="mt-1 text-red-700 text-xs">{error}</div> : null}
         </div>
         <div className="flex items-center gap-2">
@@ -3237,9 +3721,10 @@ function AutomatedTab({ open }) {
                     <span className="hidden sm:inline">{truncateDesktopName(a?.name)}</span>
                   </td>
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${String(a?.type) === "birthday" ? "bg-pink-100 text-pink-700" : "bg-blue-100 text-blue-700"}`}>
-                      {String(a?.type) === "birthday" ? "Birthday" : "Weekly reminder"}
-                    </span>
+                    {(() => {
+                      const badge = AUTOMATION_TYPE_BADGES[String(a?.type)] || { cls: "bg-gray-100 text-gray-600", label: String(a?.type || "—") };
+                      return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${badge.cls}`}>{badge.label}</span>;
+                    })()}
                   </td>
                   <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">{describeAutomationSchedule(a)}</td>
                   <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6">
@@ -3268,7 +3753,8 @@ function AutomatedTab({ open }) {
                   </td>
                   <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">
                     <TableKebabMenu items={[
-                      canUpdate && { label: "Edit", onClick: () => guarded(() => openEdit(a)), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                      { label: "View", onClick: () => setViewRow(a), desktopClassName: "rounded-md border border-gray-200 bg-white px-3 py-1 font-semibold text-blue-700 hover:bg-gray-50 text-xs" },
+                      canUpdate && { label: "Edit", onClick: () => guarded(() => openEdit(a)) },
                       canDelete && { label: "Delete", onClick: () => guarded(() => onDelete(a)), danger: true, disabled: actionLoadingId === a?._id }
                     ]} />
                   </td>
@@ -3289,6 +3775,8 @@ function AutomatedTab({ open }) {
           itemName="automations"
         />
       ) : null}
+
+      <AutomationViewModal automation={viewRow} onClose={() => setViewRow(null)} />
 
       <AutomationFormModal
         open={formOpen}

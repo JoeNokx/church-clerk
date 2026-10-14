@@ -166,7 +166,7 @@ function FollowUpRow({ followUp, onEdit, onDelete, onView, canWrite, canDelete }
         <TableKebabMenu items={[
           { label: "View", onClick: () => onView(followUp) },
           canWrite && { label: "Edit", onClick: () => onEdit(followUp) },
-          canDelete && { label: "Delete", onClick: () => onDelete(followUp), danger: true },
+          canDelete && followUp.canDelete !== false && { label: "Delete", onClick: () => onDelete(followUp), danger: true },
         ]} />
       </td>
     </tr>

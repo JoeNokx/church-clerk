@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
-import { getVisitors } from "../services/attendance.api.js";
+import { getVisitors, getServiceIndividualAttendances } from "../services/attendance.api.js";
 import { getAllProspects } from "../../outreach/services/outreach.api.js";
 import debounce from "../../../shared/utils/debounce.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -43,6 +43,11 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
   const [selectedProspect, setSelectedProspect] = useState(null);
   const [lockedFields, setLockedFields] = useState({});
 
+  const [sessionQuery, setSessionQuery] = useState("");
+  const [sessionResults, setSessionResults] = useState([]);
+  const [sessionLoading, setSessionLoading] = useState(false);
+  const [pickedSession, setPickedSession] = useState(null);
+
   const debouncedSearch = useMemo(
     () =>
       debounce(async (q) => {
@@ -77,12 +82,51 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
 
   useEffect(() => () => debouncedSearch.cancel?.(), [debouncedSearch]);
 
+  const debouncedSessionSearch = useMemo(
+    () =>
+      debounce(async (q) => {
+        if (!q || q.trim().length < 2) {
+          setSessionResults([]);
+          setSessionLoading(false);
+          return;
+        }
+        try {
+          const res = await getServiceIndividualAttendances({ search: q.trim(), page: 1, limit: 5 });
+          setSessionResults(res?.data?.attendances || []);
+        } catch {
+          setSessionResults([]);
+        } finally {
+          setSessionLoading(false);
+        }
+      }, 350),
+    []
+  );
+
+  useEffect(() => () => debouncedSessionSearch.cancel?.(), [debouncedSessionSearch]);
+
   const onSearchChange = (e) => {
     const q = e.target.value;
     setSearchQuery(q);
     if (q.trim().length >= 2) setSearchLoading(true);
     debouncedSearch(q);
   };
+
+  const onSessionSearchChange = (e) => {
+    const q = e.target.value;
+    setSessionQuery(q);
+    if (q.trim().length >= 2) setSessionLoading(true);
+    debouncedSessionSearch(q);
+  };
+
+  const pickSession = (s) => {
+    setPickedSession(s);
+    setSessionQuery("");
+    setSessionResults([]);
+  };
+
+  // The session a new/existing visitor is logged against — from context
+  // (opened on a session page) or picked via the search field.
+  const targetSession = sessionContext || pickedSession;
 
   // A visitor result adds the existing person to the session; a prospect
   // result prefills the form — saving links the new visitor to their
@@ -131,6 +175,10 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
     setSelectedExisting(null);
     setSelectedProspect(null);
     setLockedFields({});
+    setSessionQuery("");
+    setSessionResults([]);
+    setSessionLoading(false);
+    setPickedSession(null);
 
     if (initialData) {
       setFullName(initialData.fullName || "");
@@ -159,8 +207,8 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
     setFormError(null);
 
     if (selectedExisting) {
-      if (!sessionContext?._id) {
-        setFormError("This visitor already exists in the system.");
+      if (!targetSession?._id) {
+        setFormError("Pick a service session to add this visitor to.");
         setIsSubmitting(false);
         return;
       }
@@ -169,7 +217,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
           setIsSubmitting(false);
           return;
         }
-        await store?.updateVisitor(selectedExisting._id, { attendance: sessionContext._id });
+        await store?.updateVisitor(selectedExisting._id, { attendance: targetSession._id });
         onSuccess?.();
       } catch (e2) {
         const message = e2?.response?.data?.error || e2?.response?.data?.message || e2?.message || "Request failed";
@@ -214,13 +262,14 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
       note
     };
 
-    // The person was picked from outreach — link that exact record even if
-    // the phone given doesn't match what outreach has on file.
-    if (selectedProspect?._id) {
-      payload.linkedProspect = selectedProspect._id;
+    // The person was picked from outreach (or arrived via Connect) — link
+    // that exact record even if the phone given doesn't match theirs.
+    const prospectLink = selectedProspect?._id || initialData?.fromProspectId;
+    if (prospectLink) {
+      payload.linkedProspect = prospectLink;
     }
 
-    const sessionId = sessionContext?._id || (typeof initialData?.attendance === "string" ? initialData.attendance : "");
+    const sessionId = targetSession?._id || (typeof initialData?.attendance === "string" ? initialData.attendance : "");
     if (sessionId) {
       payload.attendance = sessionId;
     }
@@ -276,6 +325,57 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
           {sessionContext ? (
             <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800 text-sm">
               {mode === "edit" ? "This visitor belongs to the session" : "Adding to session"}: <span className="font-semibold">{sessionContext.serviceType || "-"}</span> — {formatSessionDate(sessionContext.date)}
+            </div>
+          ) : mode !== "edit" && pickedSession ? (
+            <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-blue-800 text-sm">
+                  Adding to session: <span className="font-semibold">{pickedSession.serviceType || "-"}</span> — {formatSessionDate(pickedSession.date)}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPickedSession(null)}
+                  className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
+                >
+                  Change
+                </button>
+              </div>
+            </div>
+          ) : mode !== "edit" ? (
+            <div className="mb-4">
+              <label className="block font-semibold text-gray-500 text-xs">Service Session</label>
+              <input
+                value={sessionQuery}
+                onChange={onSessionSearchChange}
+                className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                placeholder="Search service sessions — e.g. Sunday Service"
+              />
+              {sessionLoading ? (
+                <div className="mt-2 text-gray-500 text-xs">Searching…</div>
+              ) : null}
+              {!sessionLoading && sessionResults.length > 0 ? (
+                <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
+                  {sessionResults.map((s) => (
+                    <button
+                      key={s._id}
+                      type="button"
+                      onClick={() => pickSession(s)}
+                      className="flex w-full items-center justify-between gap-3 border-b border-gray-100 px-3 py-2 text-left hover:bg-gray-50 last:border-b-0"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold text-gray-900 text-sm">{s.serviceType || "Service"}</span>
+                        <span className="block truncate text-gray-500 text-xs">
+                          {formatSessionDate(s.date)}{s.mainSpeaker ? ` · ${s.mainSpeaker}` : ""}
+                        </span>
+                      </span>
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700 text-xs shrink-0">Select</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {!sessionLoading && sessionQuery.trim().length >= 2 && sessionResults.length === 0 ? (
+                <div className="mt-2 text-gray-500 text-xs">No matching service session found.</div>
+              ) : null}
             </div>
           ) : null}
 

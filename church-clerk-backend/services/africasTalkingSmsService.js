@@ -20,7 +20,12 @@ function getAfricasTalkingClient() {
 }
 
 export function getDefaultSmsSenderId() {
-  const senderId = String(process.env.AFRICA_TALKING_SENDER_ID || "").trim();
+  const senderId = String(
+    process.env.AFRICA_TALKING__SENDER_ID
+    || process.env.AFRICA_TALKING__DEFAULT_SENDER_ID
+    || process.env.AFRICA_TALKING_SENDER_ID
+    || ""
+  ).trim();
   if (senderId) return senderId;
 
   // No fallback — return null so AT uses its default sender.

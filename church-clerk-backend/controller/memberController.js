@@ -3,6 +3,7 @@ import MemberStatusHistory from "../models/memberStatusHistoryModel.js"
 import Church from "../models/churchModel.js"
 import cloudinary from "../config/cloudinary.js"
 import Visitor from "../models/visitorsModel.js"
+import OutreachProspect from "../models/outreachModel/outreachProspectModel.js"
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 
@@ -169,7 +170,7 @@ const importMembersFromFile = async (req, res) => {
 
 const createMember = async (req, res) => {
   try {
-    const { firstName, lastName, email, visitorId, phoneNumber, gender, occupation, nationality, ageGroup, status, note, dateOfBirth, churchRole, dateJoined, streetAddress, city, region, country, maritalStatus, department, group: groupIds, cell, ministry: ministryIds } = req.body;
+    const { firstName, lastName, email, visitorId, fromProspectId, phoneNumber, gender, occupation, nationality, ageGroup, status, note, dateOfBirth, churchRole, dateJoined, streetAddress, city, region, country, maritalStatus, department, group: groupIds, cell, ministry: ministryIds } = req.body;
 
     if (!firstName || !lastName || !phoneNumber) {
       return res.status(400).json({ message: "first name, last name and phone number are required" })
@@ -203,6 +204,26 @@ const createMember = async (req, res) => {
       validatedPhoneNumber = validatePhoneNumber(phoneNumber, "GH");
     } catch (e) {
       return res.status(400).json({ message: e?.message || "Invalid phone number" })
+    }
+
+    // Connect-once guards — a visitor or outreach person converts to a
+    // member exactly once.
+    if (visitorId) {
+      const sourceVisitor = await Visitor.findOne({ _id: visitorId, church: churchId }).select("_id status").lean();
+      if (sourceVisitor && (sourceVisitor.status === "converted" || await Member.exists({ church: churchId, visitorId }))) {
+        return res.status(409).json({ message: "This visitor has already been converted to a member." });
+      }
+    }
+
+    let sourceProspect = null;
+    if (fromProspectId) {
+      sourceProspect = await OutreachProspect.findOne({ _id: fromProspectId, church: churchId });
+      if (!sourceProspect) {
+        return res.status(404).json({ message: "Outreach person not found" });
+      }
+      if (sourceProspect.convertedToMember || sourceProspect.linkedMember || sourceProspect.stage === "member") {
+        return res.status(409).json({ message: "This outreach person has already been connected as a member." });
+      }
     }
 
     let member;
@@ -243,6 +264,14 @@ const createMember = async (req, res) => {
       await Visitor.findByIdAndUpdate(visitorId, {
         status: "converted",
       });
+    }
+
+    if (sourceProspect) {
+      sourceProspect.convertedToMember = true;
+      sourceProspect.linkedMember = member._id;
+      sourceProspect.convertedAt = new Date();
+      sourceProspect.stage = "member";
+      await sourceProspect.save();
     }
 
     if (groupIds && groupIds.length > 0) {

@@ -194,6 +194,20 @@ const ENTITY = {
     ],
   },
 
+  // A follow-up is deletable only while it's still a plan — once it's been
+  // carried out it is history (activity recorded, outcome, completed).
+  outreachFollowUp: {
+    model: OutreachFollowUp,
+    label: "follow-up",
+    self: (doc) => {
+      if (doc.followUpDate || doc.conductedBy || doc.outcome || doc.status === "completed") {
+        return ["recorded follow-up activity"];
+      }
+      return [];
+    },
+    links: [],
+  },
+
   // individual attendance records carry member check-ins — locked once they
   // contain recorded members (that is their history/relationship)
   serviceIndividualAttendance: {

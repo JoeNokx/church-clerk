@@ -144,7 +144,7 @@ function BranchMembershipTab() {
         <KpiCard
           title="Active Members"
           value={Number(kpis.activeMembers || 0).toLocaleString()}
-          subtitle="Status: active"
+          tooltip="Members who are currently attending and actively participating in church life."
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 11l3 3L22 4" />
@@ -157,7 +157,7 @@ function BranchMembershipTab() {
         <KpiCard
           title="Inactive Members"
           value={Number(kpis.inactiveMembers || 0).toLocaleString()}
-          subtitle="All other statuses"
+          tooltip="Members who are dormant or temporarily away — still part of the church but not currently active."
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />

@@ -13,8 +13,6 @@ import FilterBar from "../../../../shared/components/FilterBar/index.jsx";
 import MobileFilterBar from "../../../../shared/components/MobileFilterBar/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
 
-const TEAM_LIMIT_OPTIONS = [9, 18, 27, 45];
-
 const ROLE_OPTIONS = [
   { value: "team-leader", label: "Team Leader" },
   { value: "evangelist", label: "Evangelist" },
@@ -69,17 +67,17 @@ function Avatar({ name, size = "md" }) {
 }
 
 // ── Searchable member combobox ────────────────────────────────────
-function MemberSearchSelect({ allMembers, onSelect }) {
+export function MemberSearchSelect({ allMembers, onSelect, placeholder = "Search member to add…" }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  const filtered = search
+  const filtered = search.trim()
     ? allMembers.filter((m) =>
-        `${m.firstName} ${m.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
-        m.phoneNumber?.includes(search)
+        `${m.firstName} ${m.lastName}`.toLowerCase().includes(search.trim().toLowerCase()) ||
+        m.phoneNumber?.includes(search.trim())
       )
-    : allMembers;
+    : [];
 
   useEffect(() => {
     const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -93,9 +91,8 @@ function MemberSearchSelect({ allMembers, onSelect }) {
     <div ref={ref} className="relative">
       <input
         value={search}
-        onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
-        placeholder="Search member to add…"
+        onChange={(e) => { const v = e.target.value; setSearch(v); setOpen(!!v.trim()); }}
+        placeholder={placeholder}
         className={INP}
         autoComplete="off"
       />
@@ -117,7 +114,7 @@ function MemberSearchSelect({ allMembers, onSelect }) {
             </button>
           ))}
         </div>
-      ) : open && search ? (
+      ) : open && search.trim() ? (
         <div className="absolute z-30 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg px-3 py-2 text-sm text-gray-400">
           No members match
         </div>
@@ -313,11 +310,14 @@ function TeamDetailModal({ team, open, onClose }) {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("members");
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize, setListPageSize] = useState(20);
   const { toPage } = useDashboardNavigator();
 
   useEffect(() => {
     if (!open || !team) return;
     setActiveTab("members");
+    setListPage(1);
     setEventsLoading(true);
     getOutreachEvents({ limit: 200 })
       .then((r) => {
@@ -339,6 +339,9 @@ function TeamDetailModal({ team, open, onClose }) {
     { key: "members", label: "Members", count: members.length },
     { key: "outreach", label: "Outreach", count: events.length },
   ];
+  const activeList = activeTab === "members" ? members : events;
+  const listTotalPages = Math.max(1, Math.ceil(activeList.length / listPageSize));
+  const pagedList = activeList.slice((listPage - 1) * listPageSize, listPage * listPageSize);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto">
@@ -379,7 +382,7 @@ function TeamDetailModal({ team, open, onClose }) {
           {tabs.map((t) => (
             <button
               key={t.key}
-              onClick={() => setActiveTab(t.key)}
+              onClick={() => { setActiveTab(t.key); setListPage(1); }}
               className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors -mb-px ${activeTab === t.key ? "border-blue-600 text-blue-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
             >
               {t.label}
@@ -411,7 +414,7 @@ function TeamDetailModal({ team, open, onClose }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {members.map((m, i) => {
+                      {pagedList.map((m, i) => {
                         const mem = typeof m.member === "object" ? m.member : null;
                         const name = mem ? `${mem.firstName} ${mem.lastName || ""}`.trim() : String(m.member);
                         const memberId = mem?._id || (typeof m.member === "string" ? m.member : null);
@@ -481,7 +484,7 @@ function TeamDetailModal({ team, open, onClose }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {events.map((ev) => (
+                      {pagedList.map((ev) => (
                         <tr key={ev._id} className="max-md:text-xs text-gray-700 text-sm">
                           <td className="max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6 sticky left-0 z-10 bg-white" title={ev.title}>
                             <div className="text-sm font-semibold text-gray-900">
@@ -512,6 +515,24 @@ function TeamDetailModal({ team, open, onClose }) {
               </div>
             )
           ) : null}
+
+          {(activeTab === "members" ? members.length > 0 : !eventsLoading && events.length > 0) ? (
+            <Pagination
+              pagination={{
+                currentPage: listPage,
+                totalPages: listTotalPages,
+                totalResult: activeList.length,
+                prevPage: listPage > 1 ? listPage - 1 : null,
+                nextPage: listPage < listTotalPages ? listPage + 1 : null
+              }}
+              rowsCount={pagedList.length}
+              limit={listPageSize}
+              onLimitChange={(n) => { setListPageSize(n); setListPage(1); }}
+              onPageChange={setListPage}
+              itemName={activeTab === "members" ? "members" : "outreaches"}
+              className="border-t border-gray-200 rounded-b-xl bg-white"
+            />
+          ) : null}
         </div>
       </div>
     </div>
@@ -533,7 +554,7 @@ export default function TeamsTab({ focusTeamId, setHeaderAction }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(9);
+  const [pageSize, setPageSize] = useState(20);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
@@ -669,7 +690,6 @@ export default function TeamsTab({ focusTeamId, setHeaderAction }) {
             }}
             rowsCount={paginatedTeams.length}
             limit={pageSize}
-            limitOptions={TEAM_LIMIT_OPTIONS}
             onLimitChange={(n) => { setPageSize(n); setCurrentPage(1); }}
             onPageChange={setCurrentPage}
             itemName="teams"

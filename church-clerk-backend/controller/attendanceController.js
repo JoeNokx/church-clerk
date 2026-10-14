@@ -19,14 +19,14 @@ const findLinkedProspect = async (churchId, phoneNumber) => {
       { phone: { $regex: `${suffix}$` } },
       { alternativePhone: { $regex: `${suffix}$` } }
     ]
-  }).select("_id").lean();
+  }).select("_id markedAsVisitor linkedVisitor").lean();
 };
 
 // Explicit link — the person was picked from outreach in the form, so we
 // link that exact record even when the phone given doesn't match theirs.
 const findProspectById = async (churchId, prospectId) => {
   if (!prospectId || !mongoose.Types.ObjectId.isValid(prospectId)) return null;
-  return OutreachProspect.findOne({ _id: prospectId, church: churchId }).select("_id").lean();
+  return OutreachProspect.findOne({ _id: prospectId, church: churchId }).select("_id markedAsVisitor linkedVisitor").lean();
 };
 
 // Mirror of markAsVisitor's prospect-side updates — when a known prospect
@@ -38,7 +38,8 @@ const linkProspectVisit = async (prospectId, visitorId) => {
   if (!p) return;
   let changed = false;
   if (!p.markedAsVisitor) { p.markedAsVisitor = true; p.markedAsVisitorAt = new Date(); changed = true; }
-  if (String(p.linkedVisitor) !== String(visitorId)) { p.linkedVisitor = visitorId; changed = true; }
+  // The first linked visitor is canonical — never repoint it.
+  if (!p.linkedVisitor) { p.linkedVisitor = visitorId; changed = true; }
   if (STAGE_ORDER.indexOf(p.stage) < STAGE_ORDER.indexOf("visited-church")) { p.stage = "visited-church"; changed = true; }
   if (changed) await p.save();
 };
@@ -147,6 +148,14 @@ const createVisitor = async (req, res) => {
     const linkedProspect = await findLinkedProspect(req.activeChurch._id, validatedPhoneNumber)
       || await findProspectById(req.activeChurch._id, req.body.linkedProspect);
     if (linkedProspect) {
+      // One person connects as a visitor exactly once — an already-linked
+      // prospect means a visitor record for them is already on file.
+      if (linkedProspect.markedAsVisitor && linkedProspect.linkedVisitor) {
+        return res.status(409).json({
+          message: "This outreach person is already recorded as a visitor — add them to the session from the visitor list instead.",
+          existing: true,
+        });
+      }
       data.linkedProspect = linkedProspect._id;
     }
 
@@ -370,6 +379,7 @@ const updateVisitor = async (req, res) => {
         delete req.body.visitorLog;
         delete req.body.serviceType;
         delete req.body.serviceDate;
+        delete req.body.linkedProspect; // linking is only decided at creation
 
         let sessionToAdd = null;
         if (req.body?.attendance !== undefined) {

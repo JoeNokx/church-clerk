@@ -20,10 +20,25 @@ const announcementAutomationSchema = new mongoose.Schema(
     },
     // "birthday"        → daily check for members whose birthday is today
     // "weekly_reminder" → recurring send on the selected day(s) of the week
+    // "daily"           → every day at sendTime
+    // "monthly"         → same day of each month (clamped to month length)
+    // "one_time"        → once on runDate at sendTime, then auto-disables
     type: {
       type: String,
-      enum: ["birthday", "weekly_reminder"],
+      enum: ["birthday", "weekly_reminder", "daily", "monthly", "one_time"],
       required: true
+    },
+    // Calendar date for one_time automations — "YYYY-MM-DD" (local).
+    runDate: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    // Day of month (1-31) for monthly automations — months shorter than the
+    // day run on their last day instead.
+    dayOfMonth: {
+      type: Number,
+      default: null
     },
     enabled: {
       type: Boolean,

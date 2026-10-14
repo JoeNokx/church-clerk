@@ -243,7 +243,7 @@ export default function VisitorFollowUps({ visitorId }) {
                     <TableKebabMenu items={[
                       { label: "View", onClick: () => setViewing(fu) },
                       canWrite && { label: "Edit", onClick: () => guarded(() => setEditing(fu)) },
-                      canWrite && { label: "Delete", onClick: () => guarded(() => handleDelete(fu)), danger: true },
+                      canWrite && fu.canDelete !== false && { label: "Delete", onClick: () => guarded(() => handleDelete(fu)), danger: true },
                     ]} />
                   </td>
                 </tr>

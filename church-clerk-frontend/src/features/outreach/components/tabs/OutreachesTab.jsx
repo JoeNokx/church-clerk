@@ -50,9 +50,9 @@ function SearchableChipSelect({ label, placeholder, options, selected, onAdd, on
   const containerRef = useRef(null);
 
   const available = options.filter((o) => !selected.includes(o._id));
-  const filtered = search
-    ? available.filter((o) => getLabel(o).toLowerCase().includes(search.toLowerCase()))
-    : available;
+  const filtered = search.trim()
+    ? available.filter((o) => getLabel(o).toLowerCase().includes(search.trim().toLowerCase()))
+    : [];
 
   useEffect(() => {
     const handler = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
@@ -66,8 +66,7 @@ function SearchableChipSelect({ label, placeholder, options, selected, onAdd, on
       <div ref={containerRef} className="relative">
         <input
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
+          onChange={(e) => { const v = e.target.value; setSearch(v); setOpen(!!v.trim()); }}
           placeholder={placeholder}
           className={INP}
           autoComplete="off"
@@ -87,7 +86,7 @@ function SearchableChipSelect({ label, placeholder, options, selected, onAdd, on
             ))}
           </div>
         ) : null}
-        {open && search && filtered.length === 0 ? (
+        {open && search.trim() && filtered.length === 0 ? (
           <div className="absolute z-20 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg px-3 py-2 text-sm text-gray-400">
             No matches found
           </div>
@@ -114,7 +113,7 @@ function SearchableChipSelect({ label, placeholder, options, selected, onAdd, on
 function EventFormModal({ open, mode, initialData, members, teams, onClose, onSaved }) {
   const empty = {
     title: "", date: "", endDate: "", startTime: "", endTime: "",
-    location: "", area: "", type: "street-evangelism", description: "",
+    location: "", type: "street-evangelism", description: "",
     objective: "", targetCount: "", notes: "", status: "planned",
     coordinator: [], teams: [],
   };
@@ -132,7 +131,6 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
         startTime: initialData.startTime || "",
         endTime: initialData.endTime || "",
         location: initialData.location || "",
-        area: initialData.area || "",
         type: initialData.type || "street-evangelism",
         description: initialData.description || "",
         objective: initialData.objective || "",
@@ -223,10 +221,6 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
             <div>
               <label className={LBL}>Location</label>
               <input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Venue / address" className={INP} />
-            </div>
-            <div>
-              <label className={LBL}>Community / Area</label>
-              <input value={form.area} onChange={(e) => set("area", e.target.value)} placeholder="Neighborhood" className={INP} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -379,7 +373,7 @@ export default function OutreachesTab({ setHeaderAction }) {
 
   const [events, setEvents] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
-  const [limit, setLimit] = useState(12);
+  const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ search: "", status: "", type: "" });
 
@@ -550,7 +544,6 @@ export default function OutreachesTab({ setHeaderAction }) {
               }}
               rowsCount={events.length}
               limit={limit}
-              limitOptions={[12, 24, 48, 96]}
               onLimitChange={(n) => { setLimit(n); fetchEvents(1, { limit: n }); }}
               onPageChange={(p) => fetchEvents(p)}
               itemName="outreaches"

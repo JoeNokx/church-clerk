@@ -10,7 +10,7 @@ import { getWelcomeEmailTemplate } from "../utils/emailTemplates.js";
 import { buildPaginationParams, buildPaginationResponse } from "../utils/paginationHelper.js";
 import { buildSearchQuery } from "../utils/searchHelper.js";
 import { handleReferralCode, assignUserRole, createReferralCodeForChurch } from "../services/church/churchCreationService.js";
-import { getBranchesPaginated, getBranchKPIs, getBranchesConsolidated, getBranchMembers, getBranchAttendanceRecords, getBranchFinances } from "../services/church/branchService.js";
+import { getBranchesPaginated, getBranchKPIs, getBranchesConsolidated, getBranchMembers, getBranchAttendanceRecords, getBranchFinances, getBranchPerformance } from "../services/church/branchService.js";
 
 const createMyChurch = async (req, res) => {
   try {
@@ -675,10 +675,24 @@ const getMyBranchFinances = async (req, res) => {
 
     const data = await getBranchFinances({
       churchId: req.activeChurch._id,
-      period: req.query.period
+      period: req.query.period,
+      month: req.query.month,
+      year: req.query.year
     });
 
     return res.status(200).json({ message: "Branch finances fetched successfully", ...data });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+//ranked performance scorecard across headquarters + branches
+const getMyBranchPerformance = async (req, res) => {
+  try {
+    if (!requireHeadquarters(req, res)) return;
+
+    const data = await getBranchPerformance({ churchId: req.activeChurch._id });
+    return res.status(200).json({ message: "Branch performance fetched successfully", ...data });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -695,6 +709,7 @@ export {
   getMyBranchMembers,
   getMyBranchAttendance,
   getMyBranchFinances,
+  getMyBranchPerformance,
   getActiveChurchContext,
   requestMyChurchSenderId,
   generateRegistrationToken,

@@ -262,7 +262,6 @@ export default function ProspectDetailsPage() {
           <Field label="Age Group" value={prospect.ageGroup ? <span className="capitalize">{prospect.ageGroup}</span> : ""} />
           <Field label="Occupation" value={prospect.occupation} />
           <Field label="Address" value={prospect.address} />
-          <Field label="Community" value={prospect.community} />
           <Field label="Preferred Contact" value={PREFERRED_CONTACT_LABELS[prospect.preferredContact] || prospect.preferredContact} />
         </div>
       </div>
@@ -389,7 +388,7 @@ export default function ProspectDetailsPage() {
                       <TableKebabMenu items={[
                         { label: "View", onClick: () => setViewRow(fu) },
                         canWrite && { label: "Edit", onClick: () => guarded(() => { setFuEditTarget(fu); setFuModalOpen(true); }) },
-                        canDelete && { label: "Delete", onClick: () => guarded(() => setFuDeleteTarget(fu)), danger: true }
+                        canDelete && fu.canDelete !== false && { label: "Delete", onClick: () => guarded(() => setFuDeleteTarget(fu)), danger: true }
                       ]} />
                     </td>
                   </tr>

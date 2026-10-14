@@ -78,6 +78,28 @@ function validatePayload(body, { partial = false } = {}) {
     out.daysOfWeek = [];
   }
 
+  if (body?.runDate !== undefined) {
+    const runDate = String(body.runDate || "").trim();
+    if (runDate && !/^\d{4}-\d{2}-\d{2}$/.test(runDate)) {
+      errors.push("Run date must be a valid YYYY-MM-DD date");
+    } else {
+      out.runDate = runDate || null;
+    }
+  } else if (!partial) {
+    out.runDate = null;
+  }
+
+  if (body?.dayOfMonth !== undefined) {
+    const dom = Number(body.dayOfMonth);
+    if (body.dayOfMonth !== null && (!Number.isInteger(dom) || dom < 1 || dom > 31)) {
+      errors.push("Day of month must be between 1 and 31");
+    } else {
+      out.dayOfMonth = body.dayOfMonth === null ? null : dom;
+    }
+  } else if (!partial) {
+    out.dayOfMonth = null;
+  }
+
   if (body?.audience !== undefined) {
     out.audience = sanitizeAudience(body.audience);
   } else if (!partial) {
@@ -91,6 +113,14 @@ function validatePayload(body, { partial = false } = {}) {
   const type = out.type ?? body?.type;
   if (type === "weekly_reminder" && Array.isArray(out.daysOfWeek) && !out.daysOfWeek.length) {
     errors.push("Select at least one day for a weekly reminder");
+  }
+  // Require the date/day when it's missing — on create, when the type is
+  // being switched to that schedule, or when the field was sent empty.
+  if (type === "one_time" && !out.runDate && (!partial || body?.type === "one_time" || body?.runDate !== undefined)) {
+    errors.push("Pick a date for a one-time message");
+  }
+  if (type === "monthly" && !out.dayOfMonth && (!partial || body?.type === "monthly" || body?.dayOfMonth !== undefined)) {
+    errors.push("Pick a day of the month for a monthly message");
   }
 
   return { errors, out };
@@ -121,12 +151,23 @@ export const createAutomation = async (req, res) => {
       return res.status(400).json({ message: errors[0] });
     }
 
+    const nextRunAt = computeNextRunAt({
+      type: out.type,
+      sendTime: out.sendTime,
+      daysOfWeek: out.daysOfWeek,
+      runDate: out.runDate,
+      dayOfMonth: out.dayOfMonth
+    });
+    if (!nextRunAt) {
+      return res.status(400).json({ message: "The schedule has no upcoming run — pick a future date/time" });
+    }
+
     const automation = await AnnouncementAutomation.create({
       church: req.activeChurch._id,
       createdBy: req.user?._id || null,
       ...out,
       enabled: out.enabled !== undefined ? out.enabled : true,
-      nextRunAt: computeNextRunAt({ type: out.type, sendTime: out.sendTime, daysOfWeek: out.daysOfWeek })
+      nextRunAt
     });
 
     return res.status(201).json({ automation });
@@ -153,11 +194,14 @@ export const updateAutomation = async (req, res) => {
     }
 
     const scheduleChanged =
-      out.sendTime !== undefined || out.daysOfWeek !== undefined || out.type !== undefined;
+      out.sendTime !== undefined || out.daysOfWeek !== undefined || out.type !== undefined
+      || out.runDate !== undefined || out.dayOfMonth !== undefined;
     const merged = {
       type: out.type ?? existing.type,
       sendTime: out.sendTime ?? existing.sendTime,
-      daysOfWeek: out.daysOfWeek ?? existing.daysOfWeek
+      daysOfWeek: out.daysOfWeek ?? existing.daysOfWeek,
+      runDate: out.runDate !== undefined ? out.runDate : existing.runDate,
+      dayOfMonth: out.dayOfMonth !== undefined ? out.dayOfMonth : existing.dayOfMonth
     };
 
     const update = { ...out };

@@ -27,8 +27,17 @@ import Subscription from "../../models/billingModel/subscriptionModel.js";
 import Visitor from "../../models/visitorsModel.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
 import OutreachFollowUp from "../../models/outreachModel/outreachFollowUpModel.js";
+import Budget from "../../models/financeModel/budgetingModel.js";
 import { buildPaginationParams, buildPaginationResponse } from "../../utils/paginationHelper.js";
 import { buildSearchQuery } from "../../utils/searchHelper.js";
+
+// Same buckets the members module uses: "inactive" = dormant/temporarily away
+// (still members), "former" = transferred/left/deceased. Visitors and
+// uncategorised rows are excluded from member totals entirely.
+const MEMBER_ACTIVE_STATUSES = ["active"];
+const MEMBER_INACTIVE_STATUSES = ["dormant", "temporarily_away", "inactive"];
+const MEMBER_FORMER_STATUSES = ["transferred", "left_church", "deceased", "former"];
+const MEMBER_ALL_STATUSES = [...MEMBER_ACTIVE_STATUSES, ...MEMBER_INACTIVE_STATUSES, ...MEMBER_FORMER_STATUSES];
 
 const INCOME_SOURCES = [
   { key: "tithes", label: "Tithes", queries: [
@@ -56,10 +65,10 @@ const INCOME_SOURCES = [
     { Model: OrganisationContribution, dateField: "date", amountField: "amount", extraMatch: { entityType: "ministry" } }
   ] },
   { key: "projectContributions", label: "Fundraising Contributions & Pledges", Model: ProjectContribution, dateField: "date", amountField: "amount" },
-  { key: "welfareContributions", label: "Welfare", Model: WelfareContributions, dateField: "date", amountField: "amount" },
+  { key: "welfareContributions", label: "Welfare Contributions", Model: WelfareContributions, dateField: "date", amountField: "amount" },
   { key: "outreachSupport", label: "Outreach Support", Model: OutreachSupport, dateField: "date", amountField: "amount" },
   { key: "specialFunds", label: "Special Funds", Model: SpecialFund, dateField: "givingDate", amountField: "totalAmount" },
-  { key: "businessIncome", label: "Business Ventures", Model: BusinessIncome, dateField: "date", amountField: "amount" },
+  { key: "businessIncome", label: "Business Ventures Income", Model: BusinessIncome, dateField: "date", amountField: "amount" },
   { key: "otherIncome", label: "Other Income", Model: Income, dateField: "dateReceived", amountField: "amount" },
 ];
 
@@ -88,7 +97,7 @@ const EXPENSE_SOURCES = [
     extraMatch: { outreach: { $type: "objectId" } } },
   { key: "welfareDisbursements", label: "Welfare Disbursements", Model: WelfareDisbursements, dateField: "date", amountField: "amount" },
   { key: "projectExpenses", label: "Fundraising Expenses", Model: ProjectExpense, dateField: "date", amountField: "amount" },
-  { key: "businessExpenses", label: "Business Ventures", Model: BusinessExpenses, dateField: "date", amountField: "amount" },
+  { key: "businessExpenses", label: "Business Ventures Expenses", Model: BusinessExpenses, dateField: "date", amountField: "amount" },
   { key: "otherExpenses", label: "Other Expenses", Model: Expense, dateField: "dateSpent", amountField: "amount" },
 ];
 
@@ -485,9 +494,9 @@ async function getOrgChurches(churchId) {
   }));
 }
 
-function resolveFinancePeriod(period) {
+function resolveFinancePeriod(period, { month, year } = {}) {
   const now = new Date();
-  const p = String(period || "month").toLowerCase();
+  const p = String(period || "").toLowerCase();
 
   if (p === "all") return { start: null, end: null, label: "All time" };
   if (p === "year") {
@@ -502,10 +511,18 @@ function resolveFinancePeriod(period) {
       label: start.toLocaleDateString("en", { month: "long", year: "numeric" }),
     };
   }
+
+  // Month + year selection: "March 2026". Defaults to the current month.
+  const m = parseInt(month, 10);
+  const y = parseInt(year, 10);
+  const monthIdx = Number.isInteger(m) && m >= 1 && m <= 12 ? m - 1 : now.getMonth();
+  const yearNum = Number.isInteger(y) && y >= 1900 && y <= 2200 ? y : now.getFullYear();
+  const start = new Date(yearNum, monthIdx, 1);
+  const end = new Date(yearNum, monthIdx + 1, 0, 23, 59, 59, 999);
   return {
-    start: new Date(now.getFullYear(), now.getMonth(), 1),
-    end: null,
-    label: now.toLocaleDateString("en", { month: "long", year: "numeric" }),
+    start,
+    end,
+    label: start.toLocaleDateString("en", { month: "long", year: "numeric" }),
   };
 }
 
@@ -536,11 +553,13 @@ async function getBranchMembers({ churchId, page, limit, search, status, branchI
   const scopeIds = scope.map((c) => c._id);
 
   const baseMatch = { church: { $in: scopeIds } };
+  const kpiMatch = { ...baseMatch, status: { $in: MEMBER_ALL_STATUSES } };
 
-  const [totalMembers, newThisMonth, activeMembers, monthlyAgg] = await Promise.all([
-    scopeIds.length ? Member.countDocuments(baseMatch) : 0,
-    scopeIds.length ? Member.countDocuments({ ...baseMatch, dateJoined: { $gte: startOfMonth } }) : 0,
-    scopeIds.length ? Member.countDocuments({ ...baseMatch, status: "active" }) : 0,
+  const [totalMembers, newThisMonth, activeMembers, inactiveMembers, monthlyAgg] = await Promise.all([
+    scopeIds.length ? Member.countDocuments(kpiMatch) : 0,
+    scopeIds.length ? Member.countDocuments({ ...kpiMatch, dateJoined: { $gte: startOfMonth } }) : 0,
+    scopeIds.length ? Member.countDocuments({ ...kpiMatch, status: { $in: MEMBER_ACTIVE_STATUSES } }) : 0,
+    scopeIds.length ? Member.countDocuments({ ...kpiMatch, status: { $in: MEMBER_INACTIVE_STATUSES } }) : 0,
     scopeIds.length
       ? Member.aggregate([
           { $match: { ...baseMatch, dateJoined: { $gte: sixMonthsAgo } } },
@@ -593,7 +612,7 @@ async function getBranchMembers({ churchId, page, limit, search, status, branchI
       totalMembers,
       newMembersThisMonth: newThisMonth,
       activeMembers,
-      inactiveMembers: Math.max(0, totalMembers - activeMembers),
+      inactiveMembers,
     },
     growth: {
       months: labels,
@@ -616,16 +635,14 @@ async function getBranchAttendanceRecords({ churchId, page, limit, search, branc
 
   const orgChurches = await getOrgChurches(churchId);
   const allIds = orgChurches.map((c) => c._id);
-  const monthMatch = (field) => ({
-    church: { $in: allIds },
-    $expr: { $gte: [{ $ifNull: [`$${field}`, "$createdAt"] }, startOfMonth] },
-  });
 
+  // "This Sunday" mirrors the dashboard: members present + visitors attached to
+  // that Sunday's sessions, attributed to the session's church.
   const [sundayAgg, visitorAgg, convertedAgg, outreachAgg, followUpAgg] = await Promise.all([
     allIds.length
       ? ServiceIndividualAttendance.aggregate([
           { $match: { church: { $in: allIds }, date: { $gte: sundayStart, $lte: sundayEnd } } },
-          { $group: { _id: "$church", total: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } } } },
+          { $group: { _id: "$church", total: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } }, serviceIds: { $push: "$_id" } } },
         ])
       : [],
     allIds.length
@@ -642,17 +659,37 @@ async function getBranchAttendanceRecords({ churchId, page, limit, search, branc
       : [],
     allIds.length
       ? OutreachProspect.aggregate([
-          { $match: monthMatch("dateReached") },
+          { $match: { church: { $in: allIds }, createdAt: { $gte: startOfMonth } } },
           { $group: { _id: "$church", total: { $sum: 1 } } },
         ])
       : [],
     allIds.length
       ? OutreachFollowUp.aggregate([
-          { $match: monthMatch("followUpDate") },
+          { $match: { church: { $in: allIds }, createdAt: { $gte: startOfMonth } } },
           { $group: { _id: "$church", total: { $sum: 1 } } },
         ])
       : [],
   ]);
+
+  // Visitor headcount per Sunday service, folded back onto the service's church.
+  const serviceToChurch = new Map();
+  const sundayServiceIds = [];
+  sundayAgg.forEach((r) => (r.serviceIds || []).forEach((sid) => {
+    serviceToChurch.set(String(sid), String(r._id));
+    sundayServiceIds.push(sid);
+  }));
+  const sundayVisitorAgg = sundayServiceIds.length
+    ? await Visitor.aggregate([
+        { $unwind: "$attendance" },
+        { $match: { attendance: { $in: sundayServiceIds } } },
+        { $group: { _id: "$attendance", count: { $sum: 1 } } },
+      ])
+    : [];
+  const sundayVisitorByChurch = new Map();
+  sundayVisitorAgg.forEach((v) => {
+    const cid = serviceToChurch.get(String(v._id));
+    if (cid) sundayVisitorByChurch.set(cid, (sundayVisitorByChurch.get(cid) || 0) + Number(v.count || 0));
+  });
 
   const toMap = (rows, field = "total") =>
     new Map((rows || []).map((r) => [String(r._id), Number(r[field] || 0)]));
@@ -688,7 +725,7 @@ async function getBranchAttendanceRecords({ churchId, page, limit, search, branc
       city: c.city || "",
       region: c.region || "",
       isHeadquarters: c.isHeadquarters,
-      thisSunday: sundayMap.get(id) || 0,
+      thisSunday: (sundayMap.get(id) || 0) + (sundayVisitorByChurch.get(id) || 0),
       visitorsThisMonth: visitorMap.get(id) || 0,
       convertedVisitorsThisMonth: convertedMap.get(id) || 0,
       outreachThisMonth: outreachMap.get(id) || 0,
@@ -699,7 +736,9 @@ async function getBranchAttendanceRecords({ churchId, page, limit, search, branc
   return {
     period: { sundayDate: sundayStart, month: startOfMonth },
     kpis: {
-      thisSunday: sundayAgg.reduce((s, r) => s + Number(r.total || 0), 0),
+      thisSunday:
+        sundayAgg.reduce((s, r) => s + Number(r.total || 0), 0)
+        + sundayVisitorAgg.reduce((s, r) => s + Number(r.count || 0), 0),
       visitorsThisMonth: visitorAgg.reduce((s, r) => s + Number(r.visitors || 0), 0),
       convertedVisitorsThisMonth: convertedAgg.reduce((s, r) => s + Number(r.total || 0), 0),
       outreachThisMonth: outreachAgg.reduce((s, r) => s + Number(r.total || 0), 0),
@@ -711,8 +750,211 @@ async function getBranchAttendanceRecords({ churchId, page, limit, search, branc
 }
 
 // Income & expense breakdown per church (HQ + branches) across every money module
-async function getBranchFinances({ churchId, period }) {
-  const { start, end, label } = resolveFinancePeriod(period);
+// Per-church income/expense totals across every money module — pledge payments
+// included as real income. Used by the performance view; the detail breakdown
+// in getBranchFinances computes its own per-source splits.
+async function churchIncomeExpenseTotals({ ids, start, end }) {
+  const dateMatch = (field) => {
+    if (!start && !end) return {};
+    const range = {};
+    if (start) range.$gte = start;
+    if (end) range.$lte = end;
+    return { [field]: range };
+  };
+  const run = async (queries) => {
+    const aggs = await Promise.all(
+      queries.map(({ Model, dateField, amountField, extraMatch }) =>
+        Model.aggregate([
+          { $match: { church: { $in: ids }, ...dateMatch(dateField), ...(extraMatch || {}) } },
+          { $group: { _id: "$church", total: { $sum: `$${amountField}` } } },
+        ])
+      )
+    );
+    const merged = new Map();
+    aggs.flat().forEach((r) => {
+      const id = String(r._id);
+      merged.set(id, (merged.get(id) || 0) + Number(r.total || 0));
+    });
+    return merged;
+  };
+  const incomeQueries = INCOME_SOURCES.flatMap((s) => s.queries || [s]);
+  incomeQueries.push({ Model: PledgePayment, dateField: "paymentDate", amountField: "amount" });
+  const expenseQueries = EXPENSE_SOURCES.flatMap((s) => s.queries || [s]);
+  const [incomeMap, expenseMap] = await Promise.all([run(incomeQueries), run(expenseQueries)]);
+  return { incomeMap, expenseMap };
+}
+
+// HQ-facing branch scorecard: ranks every church on attendance engagement,
+// member growth, visitor pipeline, outreach reach, and financial health.
+async function getBranchPerformance({ churchId }) {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const sundayWindowStart = new Date(now.getTime() - 9 * 7 * 24 * 60 * 60 * 1000);
+
+  const orgChurches = await getOrgChurches(churchId);
+  const ids = orgChurches.map((c) => c._id);
+  if (!ids.length) {
+    return { period: { month: startOfMonth, sundays: 8 }, kpis: {}, branches: [] };
+  }
+
+  const memberMatch = { church: { $in: ids }, status: { $in: MEMBER_ALL_STATUSES } };
+
+  const [
+    memberAgg,
+    newMemberAgg,
+    sundaySessionAgg,
+    visitorAgg,
+    convertedAgg,
+    reachedAgg,
+    { incomeMap, expenseMap },
+  ] = await Promise.all([
+    Member.aggregate([{ $match: memberMatch }, { $group: { _id: "$church", n: { $sum: 1 } } }]),
+    Member.aggregate([{ $match: { ...memberMatch, dateJoined: { $gte: startOfMonth } } }, { $group: { _id: "$church", n: { $sum: 1 } } }]),
+    // Sunday headcount per session so the average isn't skewed by service count
+    ServiceIndividualAttendance.aggregate([
+      {
+        $match: {
+          church: { $in: ids },
+          date: { $gte: sundayWindowStart, $lte: now },
+          $or: [{ serviceType: { $regex: /^Sunday/i } }, { $expr: { $eq: [{ $dayOfWeek: "$date" }, 1] } }]
+        }
+      },
+      { $group: { _id: { church: "$church", day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } } }, total: { $sum: { $size: { $ifNull: ["$presentMembers", []] } } }, serviceIds: { $push: "$_id" } } },
+    ]),
+    Visitor.aggregate([
+      { $match: { church: { $in: ids }, createdAt: { $gte: startOfMonth } } },
+      { $group: { _id: "$church", n: { $sum: 1 } } }
+    ]),
+    Member.aggregate([
+      { $match: { church: { $in: ids }, visitorId: { $ne: null }, createdAt: { $gte: startOfMonth } } },
+      { $group: { _id: "$church", n: { $sum: 1 } } }
+    ]),
+    OutreachProspect.aggregate([
+      { $match: { church: { $in: ids }, createdAt: { $gte: startOfMonth } } },
+      { $group: { _id: "$church", n: { $sum: 1 } } }
+    ]),
+    churchIncomeExpenseTotals({ ids, start: startOfMonth, end: endOfMonth }),
+  ]);
+
+  // Visitors attached to the Sunday sessions, attributed to each session's church
+  const serviceToChurch = new Map();
+  const sundayServiceIds = [];
+  sundaySessionAgg.forEach((r) => (r.serviceIds || []).forEach((sid) => {
+    serviceToChurch.set(String(sid), String(r._id.church));
+    sundayServiceIds.push(sid);
+  }));
+  const sundayVisitorAgg = sundayServiceIds.length
+    ? await Visitor.aggregate([
+        { $unwind: "$attendance" },
+        { $match: { attendance: { $in: sundayServiceIds } } },
+        { $group: { _id: "$attendance", n: { $sum: 1 } } }
+      ])
+    : [];
+  const sundayVisitorByService = new Map(sundayVisitorAgg.map((r) => [String(r._id), Number(r.n || 0)]));
+
+  // Average per-Sunday headcount (members + visitors) per church
+  const sundayByChurch = new Map();
+  sundaySessionAgg.forEach((r) => {
+    const cid = String(r._id.church);
+    const visitors = (r.serviceIds || []).reduce((s, sid) => s + (sundayVisitorByService.get(String(sid)) || 0), 0);
+    const cur = sundayByChurch.get(cid) || { total: 0, sundays: 0 };
+    cur.total += Number(r.total || 0) + visitors;
+    cur.sundays += 1;
+    sundayByChurch.set(cid, cur);
+  });
+
+  const countMap = (rows) => new Map(rows.map((r) => [String(r._id), Number(r.n || 0)]));
+  const membersMap = countMap(memberAgg);
+  const newMembersMap = countMap(newMemberAgg);
+  const visitorsMap = countMap(visitorAgg);
+  const convertedMap = countMap(convertedAgg);
+  const reachedMap = countMap(reachedAgg);
+
+  // Income-per-member ceiling across the org — the best church sets the bar so
+  // the finance score is honest across different branch sizes/currencies.
+  const incomePerMember = new Map();
+  let maxIncomePerMember = 0;
+  ids.forEach((id) => {
+    const m = membersMap.get(String(id)) || 0;
+    const ipm = m > 0 ? (incomeMap.get(String(id)) || 0) / m : 0;
+    incomePerMember.set(String(id), ipm);
+    if (ipm > maxIncomePerMember) maxIncomePerMember = ipm;
+  });
+
+  const branches = orgChurches.map((c) => {
+    const id = String(c._id);
+    const members = membersMap.get(id) || 0;
+    const newMembers = newMembersMap.get(id) || 0;
+    const visitors = visitorsMap.get(id) || 0;
+    const converted = convertedMap.get(id) || 0;
+    const reached = reachedMap.get(id) || 0;
+    const sunday = sundayByChurch.get(id) || { total: 0, sundays: 0 };
+    const avgSundayAttendance = sunday.sundays ? Math.round(sunday.total / sunday.sundays) : 0;
+    const income = incomeMap.get(id) || 0;
+    const expenses = expenseMap.get(id) || 0;
+    const net = income - expenses;
+
+    const clamp = (v, target) => (target > 0 ? Math.min(1, v / target) : 0);
+    const scoreParts = {
+      attendance: clamp(members ? avgSundayAttendance / members : 0, 0.7) * 30,
+      growth: clamp(members ? newMembers / members : 0, 0.03) * 20,
+      visitors: clamp(members ? visitors / members : 0, 0.05) * 15,
+      outreach: clamp(members ? reached / members : 0, 0.05) * 10,
+      finance: clamp(incomePerMember.get(id) || 0, maxIncomePerMember) * 20 + (net > 0 ? 5 : 0),
+    };
+    const score = Math.round(Object.values(scoreParts).reduce((s, v) => s + v, 0));
+    const rating = score >= 75 ? "strong" : score >= 55 ? "healthy" : score >= 35 ? "watch" : "at-risk";
+
+    return {
+      _id: c._id,
+      name: c.name,
+      city: c.city || "",
+      region: c.region || "",
+      isHeadquarters: c.isHeadquarters,
+      currency: c.currency || "GHS",
+      members,
+      newMembersThisMonth: newMembers,
+      avgSundayAttendance,
+      attendanceRate: members ? Math.round((avgSundayAttendance / members) * 100) : 0,
+      visitorsThisMonth: visitors,
+      convertedThisMonth: converted,
+      peopleReachedThisMonth: reached,
+      incomeThisMonth: income,
+      expenseThisMonth: expenses,
+      netThisMonth: net,
+      score,
+      scoreParts: {
+        attendance: Math.round(scoreParts.attendance),
+        growth: Math.round(scoreParts.growth),
+        visitors: Math.round(scoreParts.visitors),
+        outreach: Math.round(scoreParts.outreach),
+        finance: Math.round(scoreParts.finance),
+      },
+      rating,
+    };
+  }).sort((a, b) => b.score - a.score);
+
+  const needsAttention = branches.filter((b) => b.rating === "watch" || b.rating === "at-risk").length;
+  const top = branches[0] || null;
+  const avgScore = branches.length
+    ? Math.round(branches.reduce((s, b) => s + b.score, 0) / branches.length)
+    : 0;
+
+  return {
+    period: { month: startOfMonth, label: now.toLocaleDateString("en", { month: "long", year: "numeric" }), sundays: 8 },
+    kpis: {
+      topBranch: top ? { name: top.name, score: top.score } : null,
+      averageScore: avgScore,
+      needsAttention,
+      branchesTracked: branches.length,
+    },
+    branches,
+  };
+}
+
+async function getBranchFinances({ churchId, period, month, year }) {
+  const { start, end, label } = resolveFinancePeriod(period, { month, year });
 
   const orgChurches = await getOrgChurches(churchId);
   const ids = orgChurches.map((c) => c._id);
@@ -779,11 +1021,28 @@ async function getBranchFinances({ churchId, period }) {
       ])
     : [];
 
-  const [incomeAggs, expenseAggs, pledgeAggs] = await Promise.all([
+  const [incomeAggs, expenseAggs, pledgeAggs, budgets] = await Promise.all([
     Promise.all(INCOME_SOURCES.map((s) => sumByChurch(s))),
     Promise.all(EXPENSE_SOURCES.map((s) => sumByChurch(s))),
     pledgePaymentsByChurch,
+    ids.length
+      ? Budget.find({ church: { $in: ids } }).select("fiscalYear periodFrom periodTo items").lean()
+      : [],
   ]);
+
+  // Total Budget Plan: planned item amounts whose range overlaps the selected
+  // period. Item dates win, then the budget period, then the fiscal year.
+  const totalBudgetPlan = (budgets || []).reduce((sum, b) => {
+    const bStart = b.periodFrom || new Date(b.fiscalYear, 0, 1);
+    const bEnd = b.periodTo || new Date(b.fiscalYear, 11, 31, 23, 59, 59, 999);
+    return sum + (b.items || []).reduce((s, it) => {
+      const iStart = it.dateFrom || bStart;
+      const iEnd = it.dateTo || bEnd;
+      if (end && iStart > end) return s;
+      if (start && iEnd < start) return s;
+      return s + Number(it.amount || 0);
+    }, 0);
+  }, 0);
 
   const toMap = (rows) => new Map((rows || []).map((r) => [String(r._id), Number(r.total || 0)]));
 
@@ -880,6 +1139,7 @@ async function getBranchFinances({ churchId, period }) {
       totalIncome,
       totalExpenses,
       net: totalIncome - totalExpenses,
+      totalBudgetPlan,
       topIncomeSource: topIncomeSource && topIncomeSource.total > 0
         ? { key: topIncomeSource.key, label: topIncomeSource.label, total: topIncomeSource.total }
         : null,
@@ -894,4 +1154,4 @@ async function getBranchFinances({ churchId, period }) {
   };
 }
 
-export { getBranchesPaginated, getBranchKPIs, getBranchesConsolidated, getBranchMembers, getBranchAttendanceRecords, getBranchFinances };
+export { getBranchesPaginated, getBranchKPIs, getBranchesConsolidated, getBranchMembers, getBranchAttendanceRecords, getBranchFinances, getBranchPerformance };

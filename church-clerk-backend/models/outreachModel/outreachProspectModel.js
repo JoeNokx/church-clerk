@@ -54,7 +54,7 @@ const outreachProspectSchema = new mongoose.Schema(
     // ── Legacy decision field (kept for backward compat) ──────────
     decision: {
       type: String,
-      enum: ["none", "firstTimeSalvation", "rededication", "baptismInterest", "churchVisit"],
+      enum: ["none", "firstTimeSalvation", "rededication", "baptismInterest", "churchVisit", "member"],
       default: "none",
     },
     interestLevel: { type: String, enum: ["low", "medium", "high"], default: "medium" },

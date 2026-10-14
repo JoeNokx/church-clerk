@@ -1,4 +1,5 @@
 import OutreachFollowUp from "../../models/outreachModel/outreachFollowUpModel.js";
+import { annotateDeletable } from "../../services/recordDependencyService.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
 import Visitor from "../../models/visitorsModel.js";
 import Member from "../../models/memberModel.js";
@@ -58,12 +59,36 @@ export const getAllFollowUps = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, parseInt(req.query.limit) || 25);
     const skip = (page - 1) * limit;
-    const { status, eventId, assignedTo, assigned, dateFrom, dateTo, subject } = req.query;
+    const { status, eventId, assignedTo, assigned, dateFrom, dateTo, subject, search } = req.query;
 
     const filter = { church: churchId };
     if (status) filter.status = status;
     if (eventId) filter.outreachEvent = eventId;
     if (assignedTo) filter.assignedTo = assignedTo;
+
+    // Free-text search across the follow-up person (any register) and
+    // assignee names — same scope the client-side filter uses on the
+    // Today/Overdue/Upcoming views.
+    if (search && String(search).trim()) {
+      const term = String(search).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rx = { $regex: term, $options: "i" };
+      const [prospectIds, visitorIds, memberIds, assigneeIds] = await Promise.all([
+        OutreachProspect.find({ church: churchId, $or: [{ firstName: rx }, { lastName: rx }, { phone: rx }] }).select("_id").lean(),
+        Visitor.find({ church: churchId, $or: [{ fullName: rx }, { phoneNumber: rx }] }).select("_id").lean(),
+        Member.find({ church: churchId, $or: [{ firstName: rx }, { lastName: rx }, { phoneNumber: rx }] }).select("_id").lean(),
+        Member.find({ church: churchId, $or: [{ firstName: rx }, { lastName: rx }] }).select("_id").lean(),
+      ]);
+      const pIds = prospectIds.map((x) => x._id);
+      const vIds = visitorIds.map((x) => x._id);
+      const mIds = memberIds.map((x) => x._id);
+      const aIds = assigneeIds.map((x) => x._id);
+      filter.$or = [
+        { prospect: { $in: pIds } },
+        { visitor: { $in: vIds } },
+        { member: { $in: mIds } },
+        { assignedTo: { $in: aIds } },
+      ];
+    }
     if (subject === "prospect") filter.prospect = { $ne: null };
     else if (subject === "visitor") filter.visitor = { $ne: null };
     else if (subject === "member") filter.member = { $ne: null };
@@ -83,7 +108,7 @@ export const getAllFollowUps = async (req, res) => {
 
     return res.status(200).json({
       message: "Follow-ups fetched",
-      data: followUps,
+      data: await annotateDeletable("outreachFollowUp", followUps, churchId),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
@@ -123,24 +148,29 @@ export const getFollowUpsStats = async (req, res) => {
       OutreachFollowUp.countDocuments({ church: churchId, status: "completed", updatedAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } }),
     ]);
 
+    // Lists feed the tab views incl. client-side search — keep them whole
+    // (buckets are bounded: active statuses within a date window).
+    const LIST_CAP = 200;
     const overdueList = await populateFU(
       OutreachFollowUp.find({ church: churchId, status: { $in: activeStatuses }, scheduledDate: { $lt: todayStart } })
-        .sort({ scheduledDate: 1 }).limit(10).lean()
+        .sort({ scheduledDate: 1 }).limit(LIST_CAP).lean()
     );
     const todayList = await populateFU(
       OutreachFollowUp.find({ church: churchId, status: { $in: activeStatuses }, scheduledDate: { $gte: todayStart, $lte: todayEnd } })
-        .sort({ scheduledDate: 1 }).limit(10).lean()
+        .sort({ scheduledDate: 1 }).limit(LIST_CAP).lean()
     );
     const upcomingList = await populateFU(
       OutreachFollowUp.find({ church: churchId, status: { $in: activeStatuses }, scheduledDate: { $gt: todayEnd, $lte: in7Days } })
-        .sort({ scheduledDate: 1 }).limit(10).lean()
+        .sort({ scheduledDate: 1 }).limit(LIST_CAP).lean()
     );
 
     return res.status(200).json({
       message: "Follow-up stats fetched",
       data: {
         overdue, dueToday, upcoming, completedThisMonth,
-        overdueList, todayList, upcomingList,
+        overdueList: await annotateDeletable("outreachFollowUp", overdueList, churchId),
+        todayList: await annotateDeletable("outreachFollowUp", todayList, churchId),
+        upcomingList: await annotateDeletable("outreachFollowUp", upcomingList, churchId),
         change: {
           overdue: pctChange(overdue, overdueLastMonth),
           completedThisMonth: pctChange(completedThisMonth, completedLastMonth),
@@ -165,7 +195,7 @@ export const getFollowUpsByEvent = async (req, res) => {
     if (status) filter.status = status;
 
     const followUps = await populateFU(OutreachFollowUp.find(filter).sort({ scheduledDate: 1, createdAt: -1 }).lean());
-    return res.status(200).json({ message: "Follow-ups fetched", data: followUps });
+    return res.status(200).json({ message: "Follow-ups fetched", data: await annotateDeletable("outreachFollowUp", followUps, req.activeChurch._id) });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -178,7 +208,7 @@ export const getFollowUpsByProspect = async (req, res) => {
     const followUps = await populateFU(
       OutreachFollowUp.find({ church: req.activeChurch._id, prospect: prospectId }).sort({ createdAt: -1 }).lean()
     );
-    return res.status(200).json({ message: "Follow-ups fetched", data: followUps });
+    return res.status(200).json({ message: "Follow-ups fetched", data: await annotateDeletable("outreachFollowUp", followUps, req.activeChurch._id) });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -206,11 +236,16 @@ export const createFollowUp = async (req, res) => {
     const followUp = await OutreachFollowUp.create(payload);
     await syncSubjectWorkers(followUp);
 
+    // A prospect followed up under an event belongs in that event's list —
+    // reassign when the follow-up targets a different one.
+    if (String(prospect.outreachEvent || "") !== String(outreachEvent)) {
+      prospect.outreachEvent = outreachEvent;
+    }
     if (req.body.nextFollowUpDate || scheduledDate) {
       prospect.nextFollowUpDate = req.body.nextFollowUpDate ? new Date(req.body.nextFollowUpDate) : new Date(scheduledDate);
       if (prospect.stage === "reached") prospect.stage = "contacted";
-      await prospect.save();
     }
+    if (prospect.isModified()) await prospect.save();
 
     return res.status(201).json({ message: "Follow-up scheduled", data: followUp });
   } catch (error) {
@@ -234,7 +269,7 @@ export const getFollowUpsByVisitor = async (req, res) => {
     const followUps = await populateFU(
       OutreachFollowUp.find({ church: req.activeChurch._id, ...subjectQuery }).sort({ createdAt: -1 }).lean()
     );
-    return res.status(200).json({ message: "Follow-ups fetched", data: followUps });
+    return res.status(200).json({ message: "Follow-ups fetched", data: await annotateDeletable("outreachFollowUp", followUps, req.activeChurch._id) });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

@@ -6,7 +6,14 @@ export const resolveSenderId = (church) => {
     return requested;
   }
 
-  const fallback = String(process.env.AFRICA_TALKING_SENDER_ID || "").trim();
+  // Env-level sender ID if the church has no approved one:
+  // AFRICA_TALKING__SENDER_ID is the primary, AFRICA_TALKING__DEFAULT_SENDER_ID the fallback.
+  const fallback = String(
+    process.env.AFRICA_TALKING__SENDER_ID
+    || process.env.AFRICA_TALKING__DEFAULT_SENDER_ID
+    || process.env.AFRICA_TALKING_SENDER_ID
+    || ""
+  ).trim();
   if (fallback) return fallback;
 
   // Development-only fallback: return null so AT uses its default sender.

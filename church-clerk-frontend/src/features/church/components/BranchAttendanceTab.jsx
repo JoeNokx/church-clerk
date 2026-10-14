@@ -131,7 +131,7 @@ function BranchAttendanceTab() {
           iconColor="text-green-700"
         />
         <KpiCard
-          title="Outreach This Month"
+          title="People Reached This Month"
           value={Number(kpis.outreachThisMonth || 0).toLocaleString()}
           subtitle="People reached via outreach"
           icon={
@@ -216,7 +216,7 @@ function BranchAttendanceTab() {
                   <th className="px-4 py-2 whitespace-nowrap md:px-6">This Sunday</th>
                   <th className="px-4 py-2 whitespace-nowrap md:px-6">Visitors This Month</th>
                   <th className="px-4 py-2 whitespace-nowrap md:px-6">Converted Visitors This Month</th>
-                  <th className="px-4 py-2 whitespace-nowrap md:px-6">Outreach This Month</th>
+                  <th className="px-4 py-2 whitespace-nowrap md:px-6">People Reached This Month</th>
                   <th className="px-4 py-2 whitespace-nowrap md:px-6">Follow Up This Month</th>
                 </tr>
               </thead>

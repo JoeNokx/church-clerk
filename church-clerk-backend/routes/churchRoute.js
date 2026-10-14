@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { createMyChurch, searchHeadquartersChurches, searchBranchChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getMyBranchesConsolidated, getMyBranchMembers, getMyBranchAttendance, getMyBranchFinances, getActiveChurchContext, requestMyChurchSenderId, generateRegistrationToken, revokeRegistrationToken, getMyRegistrationToken } from "../controller/churchController.js"
+import { createMyChurch, searchHeadquartersChurches, searchBranchChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getMyBranchesConsolidated, getMyBranchMembers, getMyBranchAttendance, getMyBranchFinances, getMyBranchPerformance, getActiveChurchContext, requestMyChurchSenderId, generateRegistrationToken, revokeRegistrationToken, getMyRegistrationToken } from "../controller/churchController.js"
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
@@ -80,6 +80,16 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("branches", "read"),
   getMyBranchFinances
+);
+router.get(
+  "/branches/performance",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("branches", "read"),
+  getMyBranchPerformance
 );
 router.get(
   "/active-context",

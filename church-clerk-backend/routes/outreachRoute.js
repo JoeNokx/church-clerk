@@ -93,7 +93,7 @@ router.post("/follow-ups/members/:memberId", ...W, createMemberFollowUp);
 // the outreach tab is an outreach action, not a visitors-register action.
 router.post("/follow-ups/visitors/:visitorId", ...W, createVisitorFollowUp);
 router.put("/follow-ups/:followUpId", ...U, updateFollowUp);
-router.delete("/follow-ups/:followUpId", ...D, deleteFollowUp);
+router.delete("/follow-ups/:followUpId", ...D, deletionGuard("outreachFollowUp", "followUpId"), deleteFollowUp);
 
 // ── Support (nested under events) ─────────────────────────────────
 router.get("/events/:eventId/support/people/search", ...R, searchPeopleForSupport);

@@ -1,24 +1,106 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
+import Pagination from "../../../shared/components/Pagination/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
-import Select from "../../../shared/components/Select/index.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { getBranchFinances } from "../services/church.api.js";
 
-const PERIODS = [
-  { value: "month", label: "This month" },
-  { value: "last-month", label: "Last month" },
-  { value: "year", label: "This year" },
-  { value: "all", label: "All time" },
-];
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function HqBadge() {
   return (
     <span className="ml-2 inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 font-semibold text-indigo-700 text-[10px]">
-      Headquarters
+      HQ
     </span>
+  );
+}
+
+// Month + year picker: type the year or step it with the arrows, pick a month.
+function MonthYearPicker({ month, year, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [draftYear, setDraftYear] = useState(year);
+  const boxRef = useRef(null);
+
+  useEffect(() => { setDraftYear(year); }, [year]);
+  useEffect(() => {
+    if (!open) return undefined;
+    const handle = (e) => {
+      if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    document.addEventListener("touchstart", handle);
+    return () => {
+      document.removeEventListener("mousedown", handle);
+      document.removeEventListener("touchstart", handle);
+    };
+  }, [open]);
+
+  const label = `${new Date(year, month - 1).toLocaleDateString("en", { month: "long" })} ${year}`;
+  const commitYear = (v) => {
+    const y = Math.min(2200, Math.max(1900, parseInt(v, 10) || year));
+    setDraftYear(y);
+  };
+
+  return (
+    <div ref={boxRef} className="relative w-full md:w-44">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-11 w-full items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 font-medium text-gray-700 text-sm hover:bg-gray-50 md:h-10"
+      >
+        {label}
+        <svg viewBox="0 0 24 24" className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {open ? (
+        <div className="absolute right-0 z-30 mt-1 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => commitYear(draftYear - 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50"
+              aria-label="Previous year"
+            >
+              ‹
+            </button>
+            <input
+              type="number"
+              value={draftYear}
+              onChange={(e) => setDraftYear(e.target.value === "" ? "" : parseInt(e.target.value, 10) || draftYear)}
+              onBlur={(e) => commitYear(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") commitYear(e.target.value); }}
+              className="h-8 w-20 rounded-md border border-gray-200 bg-white text-center font-semibold text-gray-800 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => commitYear(draftYear + 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50"
+              aria-label="Next year"
+            >
+              ›
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-4 gap-1">
+            {MONTHS_SHORT.map((m, i) => {
+              const sel = i + 1 === month && draftYear === year;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { onChange({ month: i + 1, year: draftYear }); setOpen(false); }}
+                  className={`rounded-md px-1 py-1.5 text-xs font-semibold ${sel ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -26,8 +108,12 @@ function BranchFinancesTab({ currency }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [period, setPeriod] = useState("month");
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
   const [subTab, setSubTab] = useState("income");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,7 +122,7 @@ function BranchFinancesTab({ currency }) {
       setLoading(true);
       setError("");
       try {
-        const res = await getBranchFinances({ period });
+        const res = await getBranchFinances({ month, year });
         const payload = res?.data?.data ?? res?.data;
         if (!cancelled) setData(payload || null);
       } catch (e) {
@@ -53,17 +139,16 @@ function BranchFinancesTab({ currency }) {
     return () => {
       cancelled = true;
     };
-  }, [period]);
+  }, [month, year]);
 
   const kpis = data?.kpis || {};
 
-  // Only render source columns that actually have activity in the period
-  const activeSources = useMemo(() => {
-    const defs = subTab === "income" ? data?.incomeSources || [] : data?.expenseSources || [];
-    const bySource = subTab === "income" ? data?.incomeBySource || [] : data?.expenseBySource || [];
-    const totalsMap = new Map(bySource.map((s) => [s.key, Number(s.total || 0)]));
-    return defs.filter((s) => (totalsMap.get(s.key) || 0) > 0);
-  }, [data, subTab]);
+  // Show every source column — zero-activity columns render "—" rather than
+  // disappearing, so the table stays stable and nothing looks left out.
+  const activeSources = useMemo(
+    () => (subTab === "income" ? data?.incomeSources || [] : data?.expenseSources || []),
+    [data, subTab]
+  );
 
   const sourceTotals = useMemo(() => {
     const bySource = subTab === "income" ? data?.incomeBySource || [] : data?.expenseBySource || [];
@@ -83,6 +168,17 @@ function BranchFinancesTab({ currency }) {
 
   const grandTotal = subTab === "income" ? Number(kpis.totalIncome || 0) : Number(kpis.totalExpenses || 0);
 
+  const totalPages = Math.max(1, Math.ceil(rows.length / limit));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = rows.slice((safePage - 1) * limit, safePage * limit);
+  const pagination = {
+    totalResult: rows.length,
+    currentPage: safePage,
+    totalPages,
+    prevPage: safePage > 1 ? safePage - 1 : null,
+    nextPage: safePage < totalPages ? safePage + 1 : null,
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -94,7 +190,7 @@ function BranchFinancesTab({ currency }) {
             <button
               key={t.key}
               type="button"
-              onClick={() => setSubTab(t.key)}
+              onClick={() => { setSubTab(t.key); setPage(1); }}
               className={`rounded-md px-4 py-1.5 font-semibold text-sm transition-colors ${
                 subTab === t.key ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
               }`}
@@ -103,13 +199,11 @@ function BranchFinancesTab({ currency }) {
             </button>
           ))}
         </div>
-        <div className="w-full md:w-44">
-          <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-            {PERIODS.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </Select>
-        </div>
+        <MonthYearPicker
+          month={month}
+          year={year}
+          onChange={({ month: m, year: y }) => { setMonth(m); setYear(y); setPage(1); }}
+        />
       </div>
 
       <KpiGrid className="gap-3 md:grid-cols-4">
@@ -153,12 +247,12 @@ function BranchFinancesTab({ currency }) {
           iconColor="text-indigo-700"
         />
         <KpiCard
-          title="Top Income Source"
-          value={kpis?.topIncomeSource?.label || "—"}
-          subtitle={kpis?.topIncomeSource ? formatMoney(kpis.topIncomeSource.total, currency) : "No income recorded"}
+          title="Total Budget Plan"
+          value={formatMoney(kpis.totalBudgetPlan || 0, currency)}
+          subtitle={`Planned · ${data?.period?.label || ""}`}
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2l2.9 6.26L21 9.27l-5 4.4L17.8 21 12 17.27 6.2 21 8 13.67l-5-4.4 6.1-1.01z" />
+              <path d="M9 17v-6M15 17V7M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16" />
             </svg>
           }
           iconBg="bg-amber-100"
@@ -218,7 +312,7 @@ function BranchFinancesTab({ currency }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {rows.map((b) => {
+                  {pageRows.map((b) => {
                     const amounts = subTab === "income" ? b.income || {} : b.expenses || {};
                     const total = subTab === "income" ? b.incomeTotal : b.expenseTotal;
                     const cur = b.currency || currency;
@@ -261,6 +355,16 @@ function BranchFinancesTab({ currency }) {
               </table>
             </div>
           )}
+          {rows.length ? (
+            <Pagination
+              pagination={pagination}
+              rowsCount={pageRows.length}
+              limit={limit}
+              onLimitChange={(n) => { setLimit(n); setPage(1); }}
+              onPageChange={setPage}
+              itemName="churches"
+            />
+          ) : null}
         </div>
       )}
     </div>
