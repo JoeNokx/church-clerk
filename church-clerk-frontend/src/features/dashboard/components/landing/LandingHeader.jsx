@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import LandingButton from "../../../../shared/components/LandingButton/index.jsx";
 
 const NAV = [
-  { label: "Product", href: "/product" },
+  { label: "Home", href: "/", match: ["/", "/home"] },
   { label: "Features", href: "/features" },
   { label: "Pricing", href: "/pricing" },
   { label: "About Us", href: "/about" },
@@ -16,7 +17,7 @@ function LandingHeader() {
 
   return (
     <div className="sticky top-0 z-50 border-b border-slate-200 bg-white" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-      <header className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3.5 md:px-6">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3.5 md:px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700 text-white">
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -29,7 +30,7 @@ function LandingHeader() {
 
         <nav className="hidden items-center gap-1 md:flex">
           {NAV.map((item) => {
-            const active = pathname === item.href;
+            const active = item.match ? item.match.includes(pathname) : pathname === item.href;
             return (
               <Link
                 key={item.href}
@@ -47,12 +48,12 @@ function LandingHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link to="/login" className="rounded-lg border border-transparent px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-blue-700">
+          <LandingButton to="/login" variant="ghost" size="sm">
             Login
-          </Link>
-          <Link to="/register" className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition-colors">
+          </LandingButton>
+          <LandingButton to="/register" size="sm">
             Get Started
-          </Link>
+          </LandingButton>
         </div>
 
         <button
@@ -77,9 +78,9 @@ function LandingHeader() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="absolute inset-x-0 top-full z-50 border-b border-slate-200 bg-white md:hidden"
           >
-            <div className="mx-auto max-w-7xl space-y-1 px-4 py-3">
+            <div className="mx-auto max-w-5xl space-y-1 px-4 py-3">
               {NAV.map(item => {
-                const active = pathname === item.href;
+                const active = item.match ? item.match.includes(pathname) : pathname === item.href;
                 return (
                   <Link
                     key={item.href}
@@ -96,8 +97,8 @@ function LandingHeader() {
                 );
               })}
               <div className="grid grid-cols-2 gap-2 pt-2 pb-1">
-                <Link to="/login" onClick={() => setOpen(false)} className="rounded-lg border border-slate-200 py-2.5 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700">Login</Link>
-                <Link to="/register" onClick={() => setOpen(false)} className="rounded-lg bg-blue-700 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-800">Get Started</Link>
+                <LandingButton to="/login" onClick={() => setOpen(false)} variant="outline" size="sm" className="py-2.5">Login</LandingButton>
+                <LandingButton to="/register" onClick={() => setOpen(false)} size="sm" className="py-2.5">Get Started</LandingButton>
               </div>
             </div>
           </motion.div>

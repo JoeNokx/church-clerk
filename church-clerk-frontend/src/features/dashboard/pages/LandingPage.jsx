@@ -1,0 +1,824 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
+import LandingHeader from "../components/landing/LandingHeader.jsx";
+import LandingFooter from "../components/landing/LandingFooter.jsx";
+import http from "../../../shared/services/http.js";
+import PriceCard from "../../../shared/components/PriceCard/index.jsx";
+import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
+import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
+import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
+import LandingButton from "../../../shared/components/LandingButton/index.jsx";
+import { MODULE_ICONS } from "../components/landing/modules.jsx";
+
+function Reveal({ children, className = "", delay = 0 }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.div
+      initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: reduce ? 0 : 0.5, delay }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function Eyebrow({ children, dark = false }) {
+  return (
+    <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${dark ? "text-blue-300" : "text-blue-700"}`}>
+      {children}
+    </p>
+  );
+}
+
+const PROBLEMS = [
+  {
+    title: "Member records live everywhere",
+    desc: "Contact details, family links, and membership status end up split across notebooks, spreadsheets, and individual phones.",
+    icon: MODULE_ICONS["Members"],
+    color: "#4f39f6"
+  },
+  {
+    title: "Branch updates travel by phone call",
+    desc: "Headquarters learns what happened at each branch days later — through calls and chat threads instead of a shared record.",
+    icon: MODULE_ICONS["HQ & Branches"],
+    color: "#ff6900"
+  },
+  {
+    title: "Attendance and giving are counted on paper",
+    desc: "Service attendance, tithes, and offerings are recorded by hand, so trends and errors go unnoticed.",
+    icon: MODULE_ICONS["Attendance"],
+    color: "#00b8db"
+  },
+  {
+    title: "Reports are assembled by hand",
+    desc: "Before every leadership meeting, someone gathers figures from multiple places and hopes they agree.",
+    icon: MODULE_ICONS["Reports"],
+    color: "#ff2056"
+  },
+  {
+    title: "Members are hard to reach",
+    desc: "Announcements and reminders depend on word of mouth — or someone manually texting every member one by one.",
+    icon: MODULE_ICONS["SMS Messaging"],
+    color: "#fe9a00"
+  },
+  {
+    title: "Follow-up depends on memory",
+    desc: "Visitors and absent members are only remembered if someone thinks of them — and many quietly slip through.",
+    icon: MODULE_ICONS["Outreach & Follow-up"],
+    color: "#00a63e"
+  }
+];
+
+const PLATFORM_FEATURES = [
+  {
+    name: "Members",
+    color: "#4f39f6",
+    icon: MODULE_ICONS["Members"],
+    desc: "Complete profiles with contact details, family links, and departments — searchable and always up to date."
+  },
+  {
+    name: "Attendance",
+    color: "#ff6900",
+    icon: MODULE_ICONS["Attendance"],
+    desc: "Record service attendance manually or through shareable check-in links. Trends appear automatically."
+  },
+  {
+    name: "Announcements & SMS",
+    color: "#00b8db",
+    icon: MODULE_ICONS["Announcements"],
+    desc: "Reach the whole church, a branch, or a ministry — schedule messages ahead and track delivery."
+  },
+  {
+    name: "Tithes & Offerings",
+    color: "#fe9a00",
+    icon: MODULE_ICONS["Offering & Funds"],
+    desc: "Record tithes, offerings, welfare, and special funds — every entry linked to a member and a date."
+  },
+  {
+    name: "HQ & Branches",
+    color: "#615fff",
+    icon: MODULE_ICONS["HQ & Branches"],
+    desc: "Each branch manages its own records while headquarters sees the whole network."
+  },
+  {
+    name: "Reports",
+    color: "#ff2056",
+    icon: MODULE_ICONS["Reports"],
+    desc: "Giving, attendance, and branch reports — export to PDF or Excel, share securely, or print."
+  },
+  {
+    name: "Outreach & Follow-up",
+    color: "#9810fa",
+    icon: MODULE_ICONS["Outreach & Follow-up"],
+    desc: "Track visitors and assign follow-ups so no first-timer slips through the cracks."
+  },
+  {
+    name: "Ministries & Departments",
+    color: "#01a3ff",
+    icon: MODULE_ICONS["Organisations"],
+    desc: "Every ministry gets its own space with members and leaders assigned per branch."
+  },
+  {
+    name: "Programs",
+    color: "#00a63e",
+    icon: MODULE_ICONS["Programs"],
+    desc: "Plan services and special programs, with attendance tracked per event."
+  },
+  {
+    name: "Visitors",
+    color: "#00bba7",
+    icon: MODULE_ICONS["Outreach & Follow-up"],
+    desc: "Keep visitor records from first visit through follow-up to membership."
+  },
+  {
+    name: "Fundraising",
+    color: "#e12afb",
+    icon: MODULE_ICONS["Fundraising"],
+    desc: "Track church projects and member pledges all the way to fulfillment."
+  },
+  {
+    name: "Welfare",
+    color: "#fb2c36",
+    icon: MODULE_ICONS["Welfare"],
+    desc: "Record welfare contributions and disbursements with a transparent history."
+  },
+  {
+    name: "Business Ventures",
+    color: "#155dfc",
+    icon: MODULE_ICONS["Business Ventures"],
+    desc: "Track income from church ventures alongside — but separate from — giving."
+  },
+  {
+    name: "General Expenses",
+    color: "#f54900",
+    icon: MODULE_ICONS["General Expenses"],
+    desc: "Log church expenses with categories and a searchable history."
+  },
+  {
+    name: "Financial Overview",
+    color: "#193cb8",
+    icon: MODULE_ICONS["Financial Overview"],
+    desc: "Consolidated income and expense statements ready for leadership review."
+  },
+  {
+    name: "Budgeting",
+    color: "#f0b100",
+    icon: MODULE_ICONS["Budgeting"],
+    desc: "Set budgets per category or period and compare them against actual spending."
+  }
+];
+
+const TRUST_FEATURES = [
+  {
+    img: "/trust-audit.jpg",
+    alt: "Calculator and financial documents",
+    title: "Complete financial audit trail",
+    desc: "Every tithe, offering, expense, and disbursement is tied to a record — traceable from entry to report."
+  },
+  {
+    img: "/trust-access.jpg",
+    alt: "Person handling financial records on a laptop",
+    title: "Restricted finance access",
+    desc: "Financial records are visible only to the people whose role grants access — everyone else is locked out."
+  },
+  {
+    img: "/trust-history.jpg",
+    alt: "Stream of logged activity data",
+    title: "Permanent activity history",
+    desc: "Sensitive actions are logged against the person who made them — nothing disappears quietly."
+  },
+  {
+    img: "/trust-roles.jpg",
+    alt: "A team organizing work and responsibilities together",
+    title: "Role-based permissions",
+    desc: "Each admin sees and changes only what their role allows — nothing more."
+  },
+  {
+    img: "/trust-branch.jpg",
+    alt: "A network of connected locations seen from above",
+    title: "Branch-level access control",
+    desc: "Branch teams work inside their own records while HQ keeps the wider view."
+  },
+  {
+    img: "/trust-data.jpg",
+    alt: "Circuit board close-up",
+    title: "Protected data",
+    desc: "Church records stay backed up and recoverable, so nothing your church has built is lost."
+  }
+];
+
+const STEPS = [
+  {
+    title: "Create your account",
+    desc: "Sign up free and register your church — no credit card needed to get started."
+  },
+  {
+    title: "Register your church",
+    desc: "Set up your headquarters and link every branch, so each location gets its own space in the system."
+  },
+  {
+    title: "Add members & ministries",
+    desc: "Build member profiles, assign departments and ministries, and organize your people."
+  },
+  {
+    title: "Run the work",
+    desc: "Track attendance, record giving, message members, and pull reports — all from one place."
+  }
+];
+
+const BENEFITS_LEFT = [
+  { icon: MODULE_ICONS["Members"], title: "One record for every member", desc: "Everything your church knows about a person lives on a single profile — no duplicate lists, no outdated spreadsheets." },
+  { icon: MODULE_ICONS["Outreach & Follow-up"], title: "Follow-up that doesn't rely on memory", desc: "Visitors and absent members surface automatically, so someone always reaches out before people quietly leave." },
+  { icon: MODULE_ICONS["Financial Overview"], title: "Finances leadership can trust", desc: "Tithes, offerings, welfare, and expenses reconcile into one auditable overview — not five separate books." }
+];
+
+const BENEFITS_RIGHT = [
+  { icon: MODULE_ICONS["HQ & Branches"], title: "Every branch in view", desc: "Headquarters sees the whole network while each branch keeps its own records and its own people." },
+  { icon: MODULE_ICONS["Reports"], title: "Reports without the all-nighter", desc: "Attendance, giving, and growth reports generate from records your team already keeps — export and go." },
+  { icon: MODULE_ICONS["Announcements"], title: "Reach members in seconds", desc: "Announcements and SMS go out to the whole church or just the group that needs to hear it." }
+];
+
+function BenefitCard({ title, desc, icon }) {
+  return (
+    <div className="flex flex-1 items-start gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.10)] transition-shadow duration-200 hover:shadow-md">
+      <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">{icon}</svg>
+      </span>
+      <div>
+        <p className="text-sm font-bold text-slate-900">{title}</p>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+const FEATURE_ANCHOR = {
+  "Members": "members",
+  "Attendance": "attendance",
+  "Announcements & SMS": "announcements",
+  "Tithes & Offerings": "tithe",
+  "HQ & Branches": "hq-branches",
+  "Reports": "reports",
+  "Outreach & Follow-up": "outreach-follow-up",
+  "Ministries & Departments": "organisations",
+  "Programs": "programs",
+  "Visitors": "outreach-follow-up",
+  "Fundraising": "fundraising",
+  "Welfare": "welfare",
+  "Business Ventures": "business-ventures",
+  "General Expenses": "general-expenses",
+  "Financial Overview": "financial-overview",
+  "Budgeting": "budgeting"
+};
+
+function LandingPage() {
+  const [plans, setPlans] = useState([]);
+  const [billingInterval, setBillingInterval] = useState("monthly");
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [visitorCurrency, setVisitorCurrency] = useState("GHS");
+  const [ghsToVisitorRate, setGhsToVisitorRate] = useState(1);
+  const [fxLoading, setFxLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadingPlans(true);
+      try {
+        const res = await http.get("/subscription/public/plans");
+        if (cancelled) return;
+        setPlans(Array.isArray(res?.data?.plans) ? res.data.plans : []);
+      } catch {
+        if (cancelled) return;
+        setPlans([]);
+      } finally {
+        if (cancelled) return;
+        setLoadingPlans(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setFxLoading(true);
+      try {
+        const rate = await convertGhsToCurrency(1, visitorCurrency);
+        if (cancelled) return;
+        const n = Number(rate);
+        setGhsToVisitorRate(Number.isFinite(n) && n > 0 ? n : 1);
+      } catch {
+        if (cancelled) return;
+        setGhsToVisitorRate(1);
+      } finally {
+        if (cancelled) return;
+        setFxLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [visitorCurrency]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
+        if (!res.ok) throw new Error("geo lookup failed");
+        const json = await res.json();
+        if (cancelled) return;
+        const code = String(json?.country_code || json?.country || "").trim().toUpperCase();
+        const resolved = resolveCurrencyFromCountryCode(code);
+        setVisitorCurrency(resolved?.currency || "GHS");
+      } catch {
+        if (cancelled) return;
+        setVisitorCurrency("GHS");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const plansSorted = useMemo(() => {
+    const rows = Array.isArray(plans) ? plans : [];
+    const order = { "free lite": 0, basic: 1, standard: 2, premium: 3 };
+    return rows.slice().sort((a, b) => {
+      const aName = String(a?.name || "").toLowerCase();
+      const bName = String(b?.name || "").toLowerCase();
+      const aRank = Number.isFinite(order[aName]) ? order[aName] : 99;
+      const bRank = Number.isFinite(order[bName]) ? order[bName] : 99;
+      if (aRank !== bRank) return aRank - bRank;
+      return aName.localeCompare(bName);
+    });
+  }, [plans]);
+
+  const displayCurrency = String(visitorCurrency || "GHS").trim().toUpperCase() || "GHS";
+
+  return (
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      <LandingHeader />
+
+      <main>
+        {/* ── HERO ── */}
+        <section className="relative overflow-hidden bg-white">
+          {/* Off-white backdrop with a faint blue glow — covers text and top two-thirds of the screenshot */}
+          <div
+            className="absolute inset-x-0 top-0 bottom-[100px] sm:bottom-[127px] lg:bottom-[180px]"
+            style={{
+              backgroundColor: "#f8fafc",
+              backgroundImage: "radial-gradient(ellipse 80% 65% at 50% 0%, rgba(37, 99, 235, 0.08), transparent)"
+            }}
+          />
+
+          <div className="relative mx-auto w-full max-w-5xl px-4 pt-14 md:px-6 md:pt-20">
+            <div className="mx-auto max-w-4xl text-center">
+              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-600">
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 text-white" fill="currentColor" aria-hidden="true">
+                      <path d="M4.6 4.2C5.5 3.4 7 2.9 9 2.9l2.8.3c1.2.2 2.4.9 3.4 1.8.7.7 1.2 1.6 1.8 2.2.8.8 2.4 1.4 3.3 2-.2.4-1.7.5-2.4 1.1-1 .9-1.6 2.3-2 3.7-.4 1.5-.9 2.8-1.7 4-.8 1.3-1.7 2.5-2.8 3.6-.8-.8-1.4-1.8-1.6-2.9-.2-1.3-.4-2.7-.7-3.9-.2-1.1-.7-2.1-1.5-2.8-.4-.4-.6-1-.6-1.6-.6 0-1.4.1-2-.2-1-.5-1.8-1.3-2.1-2.3-.2-.9.3-2.3 1.7-3.7Z" />
+                      <path d="M18.9 14.5c.4-.3 1 .1 1.2.8.3 1.2.5 2.5.3 3.7-.1.7-.7 1-1.1.5-.5-1.1-.7-2.6-.7-3.8 0-.5.1-1 .3-1.2Z" />
+                    </svg>
+                  </span>
+                  Made for African Churches
+                </span>
+                <h1 className="mx-auto mt-6 max-w-3xl text-center text-4xl font-bold leading-[1.08] tracking-tight text-slate-950 md:max-w-none md:text-[3.5rem] lg:text-[4rem]">
+                  <span className="md:whitespace-nowrap">One system to manage all your</span>
+                  <br className="hidden md:block" />
+                  church operations.
+                </h1>
+                <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-500 md:text-lg">
+                  Manage members, branches, communication, attendance, giving, and reports from one place — built for the people who keep a church running.
+                </p>
+                <div className="mt-8 flex items-center justify-center gap-3">
+                  <LandingButton to="/register" size="lg">
+                    Get Started
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                    </svg>
+                  </LandingButton>
+                  <LandingButton to="/contact" state={{ intent: "demo" }} variant="outline" size="lg">
+                    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
+                      <path d="M5.5 3v2.5M14.5 3v2.5M3.5 8h13M5 5.5h10a1.5 1.5 0 011.5 1.5v9A1.5 1.5 0 0115 17.5H5A1.5 1.5 0 013.5 16V7A1.5 1.5 0 015 5.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    Book demo
+                  </LandingButton>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Product screenshot — clean browser frame, floating module icons */}
+          <div className="relative mx-auto w-full max-w-5xl px-4 pt-10 md:px-6 md:pt-14">
+            {/* Floating module icons — desktop only */}
+            <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden="true">
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5, duration: 0.4 }} className="absolute -left-6 top-6 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.7"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7, duration: 0.4 }} className="absolute -left-14 top-[42%] flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M4 10l8-6 8 6M6 10v10h12V10M10 20v-6h4v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.9, duration: 0.4 }} className="absolute -left-8 bottom-10 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 1v22M17 5.5c0-1.9-1.8-3.5-5-3.5S7 3.6 7 5.5 8.8 9 12 9s5 1.6 5 3.5S15.2 16 12 16s-5-1.6-5-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.4 }} className="absolute -right-6 top-10 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, duration: 0.4 }} className="absolute -right-14 top-[48%] flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M7 3v3M17 3v3M4 8h16M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.7"/><path d="M8 13l2.5 2.5L16 9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1, duration: 0.4 }} className="absolute -right-8 bottom-14 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/><path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></svg>
+              </motion.div>
+            </div>
+
+            <Reveal delay={0.15}>
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+                {/* Browser bar */}
+                <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                  </div>
+                  <div className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-md bg-slate-100 px-3 py-1">
+                    <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 shrink-0 text-slate-400">
+                      <path d="M8 1a4 4 0 00-4 4v1H3a1 1 0 00-1 1v7a1 1 0 001 1h10a1 1 0 001-1V7a1 1 0 00-1-1h-1V5a4 4 0 00-4-4zm0 1.5A2.5 2.5 0 0110.5 5v1h-5V5A2.5 2.5 0 018 2.5z" fill="currentColor" />
+                    </svg>
+                    <span className="truncate font-mono text-xs text-slate-500">app.churchclerkapp.com</span>
+                  </div>
+                  <div className="w-12" />
+                </div>
+                <img
+                  src="/hero image (3).png"
+                  alt="The ChurchClerk dashboard showing member, attendance, and finance overview"
+                  className="block h-[300px] w-full object-cover object-top sm:h-[380px] lg:h-[540px]"
+                />
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── THE PROBLEM ── */}
+        <section className="bg-blue-50 py-20 lg:py-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <div className="grid lg:grid-cols-[1fr_0.7fr]">
+              <Reveal className="md:px-4">
+                <div className="mb-4 flex w-fit items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                  <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                  <small className="text-xs font-medium">Problems your church faces</small>
+                </div>
+                <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+                  Church administration shouldn't feel scattered.
+                </h2>
+                <p className="mt-4 text-base leading-relaxed text-slate-500 md:w-[80%]">
+                  The work already gets done — it's just spread across notebooks, spreadsheets, and personal phones. That fragmentation costs time and hides what needs attention.
+                </p>
+                <ul className="mt-8 grid gap-6">
+                  {PROBLEMS.map((p) => (
+                    <li key={p.title}>
+                      <p className="flex items-center gap-3 font-bold text-slate-900">
+                        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: p.color }}>
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">{p.icon}</svg>
+                        </span>
+                        {p.title}
+                      </p>
+                      <p className="ml-10 mt-2 text-sm leading-relaxed text-slate-500">{p.desc}</p>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+              <div className="mx-auto -mt-20 hidden lg:block">
+                <img
+                  src="/problemImg.jpg"
+                  alt="The reality of church administration — scattered records and paperwork"
+                  className="h-full w-full rounded-2xl object-cover scale-90"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── PLATFORM FEATURES ── */}
+        <section className="bg-white py-28 lg:py-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:flex md:flex-col md:items-center md:px-6">
+            <Reveal>
+              <div className="mb-4 flex w-fit items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                <small className="text-xs font-medium">Platform Features</small>
+              </div>
+            </Reveal>
+            <Reveal className="md:w-[70%] lg:w-[60%] lg:text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+                Everything your church needs, built in.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[80%]">
+                One system designed to handle every corner of church administration — no scattered records, no stress.
+              </p>
+            </Reveal>
+            <Reveal className="mt-12 w-full" delay={0.08}>
+              <div className="grid divide-y divide-slate-200 rounded-lg border-t border-l border-slate-200 bg-white shadow-xl max-sm:border-r max-sm:border-b md:grid-cols-3 md:divide-x lg:grid-cols-4">
+                {PLATFORM_FEATURES.map((f) => (
+                  <Link key={f.name} to={`/features#${FEATURE_ANCHOR[f.name]}`} className="block h-full">
+                    <div className="flex h-full flex-col justify-between p-5 transition-colors duration-200 hover:bg-blue-50 lg:p-6 lg:pb-7">
+                      <div>
+                        <div className="grid h-6 aspect-square place-content-center rounded-sm text-white" style={{ backgroundColor: f.color }}>
+                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">{f.icon}</svg>
+                        </div>
+                        <h3 className="mt-2 text-base font-semibold text-slate-900 lg:mt-3">{f.name}</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-slate-500">{f.desc}</p>
+                      </div>
+                      <span className="mt-4 flex items-center gap-1 text-sm font-medium text-slate-600 underline-offset-4 hover:text-blue-500 hover:underline lg:mt-8">
+                        Learn More
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m9 18 6-6-6-6" /></svg>
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── BENEFITS ── */}
+        <section className="bg-white py-24 lg:py-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                <small className="text-xs font-medium">Why choose ChurchClerk</small>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+                Benefits for your church.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
+                Less time on administration, more time on ministry — here's what changes when everything lives in one system.
+              </p>
+            </Reveal>
+
+            {/* Desktop — 3 cards | circular image | 3 cards, curved connectors */}
+            <Reveal className="relative mt-14 hidden lg:grid lg:grid-cols-[1fr_340px_1fr] lg:items-center lg:gap-x-2 lg:gap-y-10">
+              {/* Curved arrows flowing from the image to each card */}
+              <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full text-slate-500" viewBox="0 0 1000 600" fill="none" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <marker id="benefitArrow" markerWidth="9" markerHeight="9" refX="5.5" refY="4" orient="auto">
+                    <path d="M0 0.5 L7 4 L0 7.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </marker>
+                </defs>
+                <path d="M415 215 C 380 175 352 130 332 100" stroke="currentColor" strokeWidth="3" strokeLinecap="round" markerEnd="url(#benefitArrow)" />
+                <path d="M585 215 C 620 175 648 130 668 100" stroke="currentColor" strokeWidth="3" strokeLinecap="round" markerEnd="url(#benefitArrow)" />
+                <path d="M372 300 C 362 300 350 300 338 300" stroke="currentColor" strokeWidth="3" strokeLinecap="round" markerEnd="url(#benefitArrow)" />
+                <path d="M628 300 C 638 300 650 300 662 300" stroke="currentColor" strokeWidth="3" strokeLinecap="round" markerEnd="url(#benefitArrow)" />
+                <path d="M415 385 C 380 425 352 470 332 500" stroke="currentColor" strokeWidth="3" strokeLinecap="round" markerEnd="url(#benefitArrow)" />
+                <path d="M585 385 C 620 425 648 470 668 500" stroke="currentColor" strokeWidth="3" strokeLinecap="round" markerEnd="url(#benefitArrow)" />
+              </svg>
+
+              <div className="relative z-10">
+                <BenefitCard {...BENEFITS_LEFT[0]} />
+              </div>
+
+              <div className="row-span-3 z-10 flex items-center justify-center">
+                <div className="relative">
+                  <div className="absolute -inset-3 rounded-full bg-blue-100/70" aria-hidden="true" />
+                  <div className="absolute -inset-6 rounded-full border border-blue-100" aria-hidden="true" />
+                  <div className="relative h-56 w-56 overflow-hidden rounded-full border-4 border-white shadow-2xl">
+                    <img
+                      src="/benefitImg.jpg"
+                      alt="A church leader relieved that administration is handled"
+                      className="h-full w-full scale-[1.6] object-cover object-[42%_55%]"
+                      style={{ transformOrigin: "42% 55%" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative z-10">
+                <BenefitCard {...BENEFITS_RIGHT[0]} />
+              </div>
+
+              <div className="relative z-10">
+                <BenefitCard {...BENEFITS_LEFT[1]} />
+              </div>
+              <div className="relative z-10">
+                <BenefitCard {...BENEFITS_RIGHT[1]} />
+              </div>
+
+              <div className="relative z-10">
+                <BenefitCard {...BENEFITS_LEFT[2]} />
+              </div>
+              <div className="relative z-10">
+                <BenefitCard {...BENEFITS_RIGHT[2]} />
+              </div>
+            </Reveal>
+
+            {/* Mobile/tablet — image on top, cards stacked below */}
+            <div className="mt-12 flex flex-col items-center gap-4 lg:hidden">
+              <div className="relative mb-4">
+                <div className="absolute -inset-3 rounded-full bg-blue-100/70" aria-hidden="true" />
+                <div className="relative h-44 w-44 overflow-hidden rounded-full border-4 border-white shadow-xl sm:h-52 sm:w-52">
+                  <img
+                    src="/benefitImg.jpg"
+                    alt="A church leader relieved that administration is handled"
+                    className="h-full w-full scale-[1.6] object-cover object-[42%_55%]"
+                    style={{ transformOrigin: "42% 55%" }}
+                  />
+                </div>
+              </div>
+              {[...BENEFITS_LEFT, ...BENEFITS_RIGHT].map((b) => (
+                <div key={b.title} className="w-full max-w-md">
+                  <BenefitCard {...b} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── HOW IT WORKS ── */}
+        <section className="bg-white pb-24 lg:pb-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                <small className="text-xs font-medium">How it works</small>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+                Getting started is simple.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
+                No technical background needed — from signup to your first report, the path is simple.
+              </p>
+            </Reveal>
+
+            <Reveal className="relative mt-14" delay={0.08}>
+              {/* Connecting line — desktop only */}
+              <div className="absolute left-[12.5%] right-[12.5%] top-6 hidden border-t-2 border-slate-200 lg:block" aria-hidden="true" />
+              <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+                {STEPS.map((s, i) => (
+                  <div key={s.title} className="relative text-center">
+                    <div className="relative z-10 mx-auto flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-blue-600 text-base font-bold text-white shadow-md">
+                      {i + 1}
+                    </div>
+                    <h3 className="mt-5 text-base font-bold text-slate-900">{s.title}</h3>
+                    <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-slate-500">{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── ACCOUNTABILITY ── */}
+        <section className="border-t border-slate-200 bg-slate-50 py-24 lg:py-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                <small className="text-xs font-medium">Trust &amp; Control</small>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+                Built for accountability.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
+                Every action recorded, every role scoped, every branch visible — leadership always knows what happened and who did it.
+              </p>
+            </Reveal>
+
+            {/* Feature cards — real images, 3 per row */}
+            <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {TRUST_FEATURES.map((t, i) => (
+                <Reveal key={t.title} delay={i * 0.05}>
+                  <div className="group h-full overflow-hidden rounded-2xl border border-slate-200 bg-white transition-shadow duration-200 hover:shadow-md">
+                    <div className="h-44 overflow-hidden bg-slate-100">
+                      <img
+                        src={t.img}
+                        alt={t.alt}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="p-5">
+                      <h3 className="text-base font-bold text-slate-900">{t.title}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{t.desc}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── PRICING ── */}
+        <section id="pricing" className="border-t border-slate-200 bg-slate-50 py-20 md:py-28">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <Eyebrow>Pricing</Eyebrow>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+                Plans that grow with your church.
+              </h2>
+              <p className="mt-4 text-base text-slate-600">
+                Start free. Upgrade when you're ready. No hidden fees, no complicated contracts.
+              </p>
+            </Reveal>
+
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <div className="inline-flex rounded-full border border-slate-200 bg-white p-1">
+                {[{ key: "monthly", label: "Monthly" }, { key: "halfYear", label: "6 Months" }, { key: "yearly", label: "Yearly" }].map(({ key, label }) => (
+                  <button key={key} type="button" onClick={() => setBillingInterval(key)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${billingInterval === key ? "bg-blue-600 text-white" : "text-slate-600 hover:text-slate-900"}`}
+                  >{label}</button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400">
+                Prices shown in <span className="font-semibold text-slate-600">{displayCurrency}</span>
+                {fxLoading && <span className="ml-1">(updating…)</span>}
+              </p>
+            </div>
+
+            <div className="mt-10">
+              {loadingPlans && (
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 animate-pulse">
+                      <div className="h-3.5 w-16 rounded bg-slate-200" />
+                      <div className="mt-4 h-7 w-24 rounded bg-slate-200" />
+                      <div className="mt-2 h-3 w-16 rounded bg-slate-100" />
+                      <div className="mt-5 space-y-2.5">
+                        {[0, 1, 2, 3, 4].map((j) => (
+                          <div key={j} className="h-3 w-full rounded bg-slate-100" />
+                        ))}
+                      </div>
+                      <div className="mt-6 h-10 w-full rounded-lg bg-slate-200" />
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!loadingPlans && plansSorted.length === 0 && <div className="py-16 text-center text-sm text-slate-500">No plans available right now.</div>}
+              {!loadingPlans && plansSorted.length > 0 && (
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+                  {plansSorted.map((p, idx) => {
+                    const id = p?._id;
+                    const name = String(p?.name || "");
+                    const isMostPopular = name.toLowerCase() === "standard";
+                    const ghsPrice = p?.pricing?.GHS?.[billingInterval] ?? p?.priceByCurrency?.GHS?.[billingInterval] ?? 0;
+                    const displayPrice = Number(ghsPrice || 0) * Number(ghsToVisitorRate || 1);
+                    const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
+                    const memberLimit = p?.memberLimit;
+                    const memberLine = memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`;
+                    const descriptionFeatures = getPlanDescriptionFeatures(p, { max: 5 });
+                    const highlights = [memberLine, ...descriptionFeatures];
+                    return (
+                      <Reveal key={id} className="h-full" delay={idx * 0.04}>
+                        <PriceCard id={id} name={name} price={displayPrice} currency={displayCurrency} per={per} isMostPopular={isMostPopular} memberLimit={memberLimit} features={highlights} actionLabel="Get started" actionHref="/register" variant="landing" />
+                      </Reveal>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-10 text-center">
+              <Link to="/pricing" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800 transition-colors">
+                See full pricing details
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FINAL CTA ── */}
+        <section className="bg-slate-950 py-20 md:py-28">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-3xl text-center">
+              <Eyebrow dark>Get Started</Eyebrow>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl lg:text-5xl">
+                Your church deserves better tools for the work behind the scenes.
+              </h2>
+              <p className="mt-5 text-base leading-relaxed text-slate-400">
+                Start using ChurchClerk to keep your members, branches, giving, and reports in one organized system.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+                <LandingButton to="/register" size="lg" className="px-8 py-4">
+                  Get Started
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                  </svg>
+                </LandingButton>
+                <Link to="/login" className="text-sm font-semibold text-slate-400 hover:text-white transition-colors">
+                  Already have an account? Sign in
+                </Link>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+      </main>
+
+      <LandingFooter />
+    </div>
+  );
+}
+
+export default LandingPage;

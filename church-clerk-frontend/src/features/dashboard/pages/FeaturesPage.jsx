@@ -1,8 +1,9 @@
-import React, { useRef } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
+import LandingButton from "../../../shared/components/LandingButton/index.jsx";
 
 
 const fade = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
@@ -206,9 +207,37 @@ const GROUPS = [
 
 function FeaturesPage() {
   const groupRefs = useRef({});
+  const [activeGroup, setActiveGroup] = useState(GROUPS[0].id);
+  const location = useLocation();
+
   const scrollTo = (id) => {
     groupRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.slice(1);
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => clearTimeout(t);
+  }, [location.hash]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActiveGroup(e.target.id);
+        });
+      },
+      { rootMargin: "-40% 0px -55% 0px", threshold: 0 }
+    );
+    GROUPS.forEach((g) => {
+      const el = groupRefs.current[g.id];
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="min-h-screen overflow-x-clip bg-white" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
@@ -216,7 +245,7 @@ function FeaturesPage() {
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden bg-white">
-          <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16 pt-20 md:px-6 lg:pt-24">
+          <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-16 pt-20 md:px-6 lg:pt-24">
             <div className="grid items-center gap-12 lg:grid-cols-2">
               <motion.div initial="hidden" animate="show" variants={fade} transition={{ duration: 0.55 }}>
                 <span className="text-xs font-bold uppercase tracking-widest text-blue-600">ChurchClerk Features</span>
@@ -226,10 +255,10 @@ function FeaturesPage() {
                 <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-500 md:text-lg">
                   Members, attendance, finance, communication, and administration — organized in a single platform built for how churches actually operate.
                 </p>
-                <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-800">
+                <LandingButton to="/register" size="lg" className="mt-8">
                   Get Started
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M5 12h14m0 0-6-6m6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </Link>
+                </LandingButton>
               </motion.div>
 
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="relative">
@@ -261,7 +290,7 @@ function FeaturesPage() {
 
         {/* Features */}
         <section className="bg-slate-50/60 py-20">
-          <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <div className="text-center">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-600">Features</span>
               <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
@@ -272,28 +301,34 @@ function FeaturesPage() {
               </p>
             </div>
 
-            {/* Group buttons → scroll to groups */}
-            <div className="mx-auto mt-10 grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {GROUPS.map((g) => (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => scrollTo(g.id)}
-                  className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-                >
-                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">{GROUP_ICONS[g.name]}</svg>
-                  </span>
-                  {g.name}
-                </button>
-              ))}
+            {/* Group tabs — sticky segmented control, click scrolls to group, active tab highlighted */}
+            <div className="sticky top-20 z-30 mt-8">
+              <div className="mx-auto flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-blue-100 p-1">
+                {GROUPS.map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => scrollTo(g.id)}
+                    className={`flex shrink-0 items-center justify-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
+                      activeGroup === g.id
+                        ? "bg-blue-600 text-white"
+                        : "text-blue-800 hover:bg-white/50"
+                    }`}
+                  >
+                    <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${activeGroup === g.id ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"}`}>
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">{GROUP_ICONS[g.name]}</svg>
+                    </span>
+                    {g.name}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Groups */}
             <div className="mt-16 space-y-0">
               {GROUPS.map((g) => (
-                <div key={g.id} ref={(el) => { groupRefs.current[g.id] = el; }} className={`scroll-mt-28 ${g.tint.wash} py-8 md:py-12`} style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
-                  <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+                <div key={g.id} id={g.id} ref={(el) => { groupRefs.current[g.id] = el; }} className={`scroll-mt-44 ${g.tint.wash} py-8 md:py-12`} style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
+                  <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
                   {/* Group header — text only */}
                   <div className="max-w-2xl">
                     <span className="text-xs font-bold uppercase tracking-widest text-blue-600">{g.name}</span>
@@ -305,11 +340,12 @@ function FeaturesPage() {
                     {g.modules.map((m, i) => (
                       <motion.div
                         key={m.name}
+                        id={m.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-60px" }}
                         transition={{ duration: 0.5 }}
-                        className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_-6px_rgba(15,23,42,0.08)]"
+                        className="scroll-mt-40 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_-6px_rgba(15,23,42,0.08)]"
                       >
                         <div className="grid items-stretch lg:grid-cols-2">
                           <div className={`flex items-center justify-center bg-gradient-to-br ${i % 2 === 1 ? g.tint.gradientAlt : g.tint.gradient} px-6 py-8 md:px-10 ${i % 2 === 0 ? "lg:order-2" : ""}`}>
@@ -342,12 +378,14 @@ function FeaturesPage() {
 
         {/* CTA */}
         <section className="bg-slate-950 py-16">
-          <div className="mx-auto max-w-3xl px-4 text-center md:px-6">
-            <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Start using these features today.</h2>
-            <p className="mt-4 text-slate-400">Create your free account and get full access to every feature.</p>
-            <Link to="/register" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
-              Get Started Free
-            </Link>
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Start using these features today.</h2>
+              <p className="mt-4 text-slate-400">Create your free account and get full access to every feature.</p>
+              <LandingButton to="/register" size="lg" className="mt-6 px-8 py-4">
+                Get Started Free
+              </LandingButton>
+            </div>
           </div>
         </section>
       </main>

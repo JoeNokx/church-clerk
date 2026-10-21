@@ -1,5 +1,4 @@
 import React, { Fragment, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
@@ -9,6 +8,7 @@ import PriceCard from "../../../shared/components/PriceCard/index.jsx";
 import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
 import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
+import LandingButton from "../../../shared/components/LandingButton/index.jsx";
 
 const fade = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
@@ -159,8 +159,8 @@ function PricingPage() {
       <main>
         <section className="relative overflow-hidden bg-white">
           <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-blue-50 blur-3xl pointer-events-none" />
-          <div className="relative z-10 mx-auto w-full max-w-4xl px-4 pt-24 pb-16 text-center md:px-6">
-            <motion.div initial="hidden" animate="show" variants={fade} transition={{ duration: 0.55 }}>
+          <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 md:px-6">
+            <motion.div initial="hidden" animate="show" variants={fade} transition={{ duration: 0.55 }} className="mx-auto max-w-4xl text-center">
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl lg:text-6xl">
                 Plans that grow{" "}
                 <span className="text-blue-600">with your church.</span>
@@ -173,12 +173,12 @@ function PricingPage() {
         </section>
 
         <section className="bg-white py-12">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <div className="flex flex-col items-center gap-3">
-              <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+              <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1">
                 {[{ key: "monthly", label: "Monthly" }, { key: "halfYear", label: "6 Months" }, { key: "yearly", label: "Yearly" }].map(({ key, label }) => (
                   <button key={key} type="button" onClick={() => setBillingInterval(key)}
-                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${billingInterval === key ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${billingInterval === key ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
                   >{label}</button>
                 ))}
               </div>
@@ -236,9 +236,9 @@ function PricingPage() {
                   <h3 className="text-base font-semibold text-slate-900">Need a fully customized solution?</h3>
                   <p className="mt-1 text-sm text-slate-500">Ministry Plus is built around your church's specific workflows, scale, and integration needs.</p>
                 </div>
-                <Link to="/contact" className="shrink-0 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800 transition-colors">
+                <LandingButton to="/contact" className="shrink-0">
                   Contact us for Ministry Plus
-                </Link>
+                </LandingButton>
               </div>
             </div>
 
@@ -296,12 +296,14 @@ function PricingPage() {
         </section>
 
         <section className="bg-slate-950 py-16">
-          <div className="mx-auto max-w-3xl px-4 text-center md:px-6">
-            <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Still have questions?</h2>
-            <p className="mt-4 text-slate-400">We're happy to help you choose the right plan for your church.</p>
-            <Link to="/contact" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 transition-colors">
-              Contact Us
-            </Link>
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Still have questions?</h2>
+              <p className="mt-4 text-slate-400">We're happy to help you choose the right plan for your church.</p>
+              <LandingButton to="/contact" size="lg" className="mt-6 px-8 py-4 shadow-lg shadow-blue-600/30">
+                Contact Us
+              </LandingButton>
+            </div>
           </div>
         </section>
       </main>

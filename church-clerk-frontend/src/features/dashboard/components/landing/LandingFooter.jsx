@@ -1,10 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import LandingButton from "../../../../shared/components/LandingButton/index.jsx";
 
 function LandingFooter() {
   return (
     <footer className="bg-slate-950 text-white" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-      <div className="mx-auto w-full max-w-7xl px-4 py-14 md:px-6">
+      <div className="mx-auto w-full max-w-5xl px-4 py-14 md:px-6">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
           <div className="md:col-span-5">
             <Link to="/" className="inline-flex items-center gap-2.5">
@@ -20,8 +21,8 @@ function LandingFooter() {
               The complete church management platform—members, attendance, finance, ministries, and insights, all in one place built for growing churches.
             </p>
             <div className="mt-6 flex items-center gap-3">
-              <Link to="/register" className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Start Free Trial</Link>
-              <Link to="/login" className="rounded-lg border border-white/15 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5 transition-colors">Log in</Link>
+              <LandingButton to="/register">Start Free Trial</LandingButton>
+              <LandingButton to="/login" variant="dark">Log in</LandingButton>
             </div>
           </div>
 
@@ -29,7 +30,7 @@ function LandingFooter() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Product</p>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><Link to="/product" className="hover:text-white transition-colors">Overview</Link></li>
+                <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
                 <li><Link to="/features" className="hover:text-white transition-colors">Features</Link></li>
                 <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
+import LandingButton from "../../../shared/components/LandingButton/index.jsx";
 
 function Reveal({ children, className = "", delay = 0 }) {
   const reduce = useReducedMotion();
@@ -135,16 +135,18 @@ function TeamCard({ member }) {
         <p className="text-base font-semibold text-white">{member.name}</p>
         <p className="text-xs font-medium text-blue-300">{member.role}</p>
         <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-300">{member.fullBio}</p>
-        <button
+        <LandingButton
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/20"
+          variant="dark"
+          size="xs"
+          className="mt-3 gap-1.5 border-white/25 bg-white/10 text-white hover:bg-white/20"
         >
           View all
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
             <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
           </svg>
-        </button>
+        </LandingButton>
       </div>
 
       {/* Expanded bio panel — slides up over the image */}
@@ -157,16 +159,18 @@ function TeamCard({ member }) {
         <p className="text-base font-semibold text-white">{member.name}</p>
         <p className="text-xs font-medium text-blue-300">{member.role}</p>
         <p className="mt-3 text-sm leading-relaxed text-slate-200">{member.fullBio}</p>
-        <button
+        <LandingButton
           type="button"
           onClick={() => setOpen(false)}
-          className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/20"
+          variant="dark"
+          size="xs"
+          className="mt-4 w-fit gap-1.5 border-white/25 bg-white/10 text-white hover:bg-white/20"
         >
           Show less
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
             <path fillRule="evenodd" d="M14.77 12.79a.75.75 0 01-1.06-.02L10 8.832l-3.71 3.94a.75.75 0 11-1.08-1.04l4.25-4.5a.75.75 0 011.08 0l4.25 4.5a.75.75 0 01-.02 1.06z" clipRule="evenodd" />
           </svg>
-        </button>
+        </LandingButton>
       </motion.div>
     </div>
   );
@@ -180,8 +184,8 @@ function AboutPage() {
       <main>
         {/* ── HERO ── */}
         <section className="bg-white">
-          <div className="mx-auto w-full max-w-3xl px-4 pt-16 text-center md:px-6 md:pt-24">
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <div className="mx-auto w-full max-w-5xl px-4 pt-16 md:px-6 md:pt-24">
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
               <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-slate-950 md:text-5xl">
                 Building the management infrastructure for churches.
               </h1>
@@ -191,7 +195,7 @@ function AboutPage() {
             </motion.div>
           </div>
           <div className="mx-auto w-full max-w-5xl px-4 pb-14 pt-8 md:px-6 md:pb-20 md:pt-10">
-            <Reveal>
+            <Reveal className="mx-auto max-w-5xl">
               <div className="overflow-hidden rounded-2xl shadow-[0_18px_36px_-16px_rgba(15,23,42,0.18)]">
                 <img
                   src="/church login.jpg"
@@ -205,7 +209,7 @@ function AboutPage() {
 
         {/* ── OUR STORY ── */}
         <section className="bg-white py-16 md:py-20">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight text-slate-950">Our story</h2>
               <p className="mt-4 text-sm leading-relaxed text-slate-600">
@@ -233,7 +237,7 @@ function AboutPage() {
 
         {/* ── WHAT WE DO ── */}
         <section className="bg-slate-50 py-16 md:py-20">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight text-slate-950">What we do</h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-500">
@@ -258,7 +262,7 @@ function AboutPage() {
 
         {/* ── WHAT WE BELIEVE ABOUT CHURCH TECHNOLOGY ── */}
         <section className="bg-white py-16 md:py-20">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight text-slate-950">What we believe about church technology</h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-500">
@@ -296,8 +300,8 @@ function AboutPage() {
 
         {/* ── OUR MISSION ── */}
         <section className="bg-slate-950 py-20 md:py-24">
-          <div className="mx-auto w-full max-w-3xl px-4 text-center md:px-6">
-            <Reveal>
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-300">Our mission</p>
               <p className="mt-6 text-2xl font-semibold leading-snug tracking-tight text-white md:text-3xl">
                 To give every church — regardless of size or budget — an organized, accountable system for the work behind the ministry.
@@ -311,7 +315,7 @@ function AboutPage() {
 
         {/* ── OUR VALUES ── */}
         <section className="bg-slate-50 py-16 md:py-20">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <Reveal>
               <div className="relative mx-auto max-w-5xl overflow-hidden rounded-2xl">
                 <img
@@ -342,7 +346,7 @@ function AboutPage() {
 
         {/* ── THE PEOPLE BEHIND CHURCHCLERK ── */}
         <section className="bg-white py-16 md:py-20">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight text-slate-950">The people behind ChurchClerk</h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-500">
@@ -362,7 +366,7 @@ function AboutPage() {
         {/* ── CTA BANNER ── */}
         <section className="bg-white py-16 md:py-20">
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
-            <Reveal>
+            <Reveal className="mx-auto max-w-5xl">
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 px-6 py-14 text-center md:px-12">
                 {/* Geometric line-art decoration */}
                 <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -412,12 +416,12 @@ function AboutPage() {
                   Start using ChurchClerk to keep your members, branches, giving, and reports in one organized system.
                 </p>
                 <div className="mt-8">
-                  <Link to="/register" className="inline-flex items-center gap-2 rounded-lg bg-white px-7 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors">
+                  <LandingButton to="/register" variant="white" size="lg" className="py-3">
                     Get Started
                     <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                       <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
                     </svg>
-                  </Link>
+                  </LandingButton>
                 </div>
                 </div>
               </div>

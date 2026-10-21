@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import NotFoundPage from "../shared/pages/NotFoundPage.jsx";
 import JoinPage from "../features/member/pages/JoinPage.jsx";
@@ -20,7 +20,7 @@ import ResetPassword from "../features/auth/pages/ResetPassword.jsx";
 
 import DashboardHome from "../features/dashboard/pages/DashboardHome.jsx";
 import Profile from "../features/dashboard/pages/Profile.jsx";
-import ComingSoonPage from "../features/dashboard/pages/ComingSoonPage.jsx";
+import LandingPage from "../features/dashboard/pages/LandingPage.jsx";
 import FeaturesPage from "../features/dashboard/pages/FeaturesPage.jsx";
 import PricingPage from "../features/dashboard/pages/PricingPage.jsx";
 import AboutPage from "../features/dashboard/pages/AboutPage.jsx";
@@ -54,8 +54,9 @@ function RouteSkeletonFallback() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<ComingSoonPage />} />
-      <Route path="/product" element={<ComingSoonPage />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/home" element={<LandingPage />} />
+      <Route path="/product" element={<Navigate to="/" replace />} />
       <Route path="/features" element={<FeaturesPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/about" element={<AboutPage />} />

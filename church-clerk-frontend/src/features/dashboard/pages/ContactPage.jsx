@@ -1,17 +1,33 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
 import publicHttp from "../../../shared/services/publicHttp.js";
+import LandingButton from "../../../shared/components/LandingButton/index.jsx";
 
 const fade = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
+const DEMO_MESSAGE = "Hi, I'd like to book a demo of ChurchClerk for my church. Please let me know your availability. Thank you.";
+
 function ContactPage() {
+  const location = useLocation();
+  const formRef = useRef(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", email: "", church: "", message: "" });
+
+  useEffect(() => {
+    if (location.state?.intent === "demo") {
+      setSubmitted(false);
+      setForm(prev => ({ ...prev, message: prev.message || DEMO_MESSAGE }));
+      const t = setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+      return () => clearTimeout(t);
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -36,8 +52,8 @@ function ContactPage() {
       <LandingHeader />
       <main>
         <section className="relative overflow-hidden bg-white">
-          <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 text-center md:px-6">
-            <motion.div initial="hidden" animate="show" variants={fade} transition={{ duration: 0.55 }}>
+          <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 md:px-6">
+            <motion.div initial="hidden" animate="show" variants={fade} transition={{ duration: 0.55 }} className="mx-auto max-w-5xl text-center">
               <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-slate-950 md:text-6xl lg:text-7xl">
                 We'd love to hear from you.
               </h1>
@@ -49,10 +65,10 @@ function ContactPage() {
         </section>
 
         <section className="bg-white py-12">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
               {/* Form */}
-              <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={fade} transition={{ duration: 0.5 }}>
+              <motion.div ref={formRef} id="send-message" initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={fade} transition={{ duration: 0.5 }} className="scroll-mt-28">
                 <h2 className="text-2xl font-bold tracking-tight text-slate-900">Send us a message</h2>
                 <p className="mt-2 text-sm text-slate-500">Fill out the form below and we'll get back to you within 24 hours.</p>
 
@@ -92,9 +108,9 @@ function ContactPage() {
                       <textarea name="message" required rows={5} value={form.message} onChange={handleChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors resize-none" placeholder="How can we help?" />
                     </div>
                     {error && <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{error}</p>}
-                    <button type="submit" disabled={loading} className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                    <LandingButton type="submit" disabled={loading} className="w-full py-3">
                       {loading ? "Sending…" : "Send Message"}
-                    </button>
+                    </LandingButton>
                   </form>
                 )}
               </motion.div>

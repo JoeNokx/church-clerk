@@ -1,5 +1,5 @@
 import { formatMoney } from "../../utils/formatMoney.js";
-import { Link } from "react-router-dom";
+import LandingButton from "../LandingButton/index.jsx";
 
 function formatCurrency(amount, currency) {
   return formatMoney(amount, currency);
@@ -35,19 +35,11 @@ function PriceCard({
     : "text-sm font-semibold text-gray-900";
   const subtitleClass = isMostPopular ? "text-blue-100" : "text-slate-600";
   const memberLine = memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`;
-  const buttonClass = variant === "landing"
-    ? `mt-5 w-full inline-flex justify-center items-center gap-2 rounded-lg text-sm font-semibold px-4 py-2.5 shadow-sm disabled:opacity-60 ${
-        isCurrent
-          ? "bg-gray-100 text-gray-600"
-          : isMostPopular
-            ? "bg-blue-900 text-white hover:bg-blue-800"
-            : "border border-blue-900 text-blue-900 hover:bg-blue-50"
-      }`
-    : `mt-5 w-full rounded-lg px-4 py-2 text-xs font-semibold shadow-sm disabled:opacity-60 flex items-center justify-center gap-2 ${
-        isCurrent
-          ? "bg-gray-100 text-gray-600"
-          : "bg-blue-700 text-white hover:bg-blue-800"
-      }`;
+  const buttonClass = `mt-5 w-full rounded-lg px-4 py-2 text-xs font-semibold shadow-sm disabled:opacity-60 flex items-center justify-center gap-2 ${
+    isCurrent
+      ? "bg-gray-100 text-gray-600"
+      : "bg-blue-700 text-white hover:bg-blue-800"
+  }`;
 
   return (
     <div key={id} className={cardClass}>
@@ -78,9 +70,9 @@ function PriceCard({
         </div>
 
       {variant === "landing" && actionHref ? (
-        <Link to={actionHref} className={buttonClass}>
+        <LandingButton to={actionHref} variant={isMostPopular ? "primary" : "outline"} className="mt-5 w-full">
           {actionLabel}
-        </Link>
+        </LandingButton>
       ) : onAction ? (
         <button
           type="button"
