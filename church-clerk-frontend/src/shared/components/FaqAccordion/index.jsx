@@ -20,7 +20,7 @@ function FaqAccordion({ items = [] }) {
               aria-expanded={open}
               className="flex w-full items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-slate-50 md:px-6 md:py-5"
             >
-              <span className="text-sm font-semibold text-slate-900 md:text-base">{item.q}</span>
+              <span className="whitespace-pre-line text-left text-sm font-semibold leading-snug text-slate-900 md:text-base">{item.q}</span>
               <svg
                 viewBox="0 0 24 24"
                 fill="none"

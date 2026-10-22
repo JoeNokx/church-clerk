@@ -32,7 +32,7 @@ const PRICING_FAQS = [
     a: "One subscription covers your whole church account — all your branches work inside it, each keeping its own members, attendance, and financial records."
   },
   {
-    q: "What happens when we outgrow our plan's member limit?",
+    q: "What happens when we outgrow our plan's\nmember limit?",
     a: "You can upgrade to a higher plan at any point — every record you've entered carries over. Your church is never forced to start over."
   },
   {

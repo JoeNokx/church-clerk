@@ -207,6 +207,7 @@ const GROUPS = [
 
 function FeaturesPage() {
   const groupRefs = useRef({});
+  const tabRefs = useRef({});
   const [activeGroup, setActiveGroup] = useState(GROUPS[0].id);
   const location = useLocation();
 
@@ -238,6 +239,11 @@ function FeaturesPage() {
     });
     return () => observer.disconnect();
   }, []);
+
+  // Keep the active tab pill visible inside the horizontally scrollable tab bar (mobile)
+  useEffect(() => {
+    tabRefs.current[activeGroup]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeGroup]);
 
   return (
     <div className="min-h-screen overflow-x-clip bg-white" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
@@ -308,17 +314,20 @@ function FeaturesPage() {
                   <button
                     key={g.id}
                     type="button"
+                    ref={(el) => { tabRefs.current[g.id] = el; }}
                     onClick={() => scrollTo(g.id)}
-                    className={`flex shrink-0 items-center justify-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
+                    title={g.name}
+                    aria-label={g.name}
+                    className={`cck-allow-icons flex shrink-0 items-center justify-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
                       activeGroup === g.id
                         ? "bg-blue-600 text-white"
                         : "text-blue-800 hover:bg-white/50"
                     }`}
                   >
-                    <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${activeGroup === g.id ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"}`}>
-                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">{GROUP_ICONS[g.name]}</svg>
+                    <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full sm:h-5 sm:w-5 ${activeGroup === g.id ? "bg-white/20 text-white" : "bg-white text-blue-600 shadow-sm"}`}>
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 sm:h-3 sm:w-3">{GROUP_ICONS[g.name]}</svg>
                     </span>
-                    {g.name}
+                    <span className={activeGroup === g.id ? "" : "hidden sm:inline"}>{g.name}</span>
                   </button>
                 ))}
               </div>

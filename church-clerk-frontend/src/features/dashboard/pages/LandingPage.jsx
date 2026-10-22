@@ -318,7 +318,7 @@ const FAQS = [
     a: "No. Church Clerk is built for every leader in the church — administrators, treasurers, financial secretaries, youth and ministry leaders, cell leaders, and evangelism coordinators each get their own account, scoped to the people and records they're responsible for."
   },
   {
-    q: "Does it work for churches with more than one branch?",
+    q: "Does it work for churches with more than\none branch?",
     a: "Yes — multi-branch support is core to the product. Each branch keeps its own members, attendance, and finances, while headquarters gets a consolidated view across the whole network."
   },
   {
@@ -513,8 +513,10 @@ function LandingPage() {
                   Made for African Churches
                 </span>
                 <h1 className="mx-auto mt-6 max-w-3xl text-center text-4xl font-bold leading-[1.08] tracking-tight text-slate-950 md:max-w-none md:text-[3.5rem] lg:text-[4rem]">
-                  <span className="md:whitespace-nowrap">One system to manage all your</span>
-                  <br className="hidden md:block" />
+                  One system to
+                  <br />
+                  manage all your
+                  <br />
                   church operations.
                 </h1>
                 <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-500 md:text-lg">
