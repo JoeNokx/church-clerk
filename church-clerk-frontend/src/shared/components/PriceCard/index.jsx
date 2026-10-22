@@ -50,16 +50,16 @@ function PriceCard({
         </div>
       ) : null}
 
-      <div className={`flex items-start justify-between gap-2 ${isLanding ? "px-3 pt-3" : ""}`}>
-        <div>
+      <div className={isLanding ? "px-3 pt-3" : ""}>
+        <div className="flex items-start justify-between gap-2">
           <div className={nameClass}>{name || "—"}</div>
-          <div className={`mt-1 text-xs ${subtitleClass}`}>{description || memberLine}</div>
+          {savingsPct ? (
+            <span className="inline-flex shrink-0 items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">
+              Save {savingsPct}%
+            </span>
+          ) : null}
         </div>
-        {savingsPct ? (
-          <span className="inline-flex shrink-0 items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">
-            Save {savingsPct}%
-          </span>
-        ) : null}
+        <div className={`mt-1 text-xs ${subtitleClass}`}>{description || memberLine}</div>
       </div>
 
       <div className={isLanding ? "mt-3 flex flex-1 flex-col rounded-[1.75rem] bg-white p-5 shadow-sm" : "contents"}>

@@ -491,9 +491,9 @@ function LandingPage() {
       <main>
         {/* ── HERO ── */}
         <section className="relative overflow-hidden bg-white">
-          {/* Off-white backdrop with a faint blue glow — covers text and top two-thirds of the screenshot */}
+          {/* Off-white backdrop with a faint blue glow — full hero height */}
           <div
-            className="absolute inset-x-0 top-0 bottom-[100px] sm:bottom-[127px] lg:bottom-[180px]"
+            className="absolute inset-x-0 top-0 bottom-0"
             style={{
               backgroundColor: "#f8fafc",
               backgroundImage: "radial-gradient(ellipse 80% 65% at 50% 0%, rgba(37, 99, 235, 0.08), transparent)"
@@ -538,52 +538,70 @@ function LandingPage() {
             </div>
           </div>
 
-          {/* Product screenshot — clean browser frame, floating module icons */}
+          {/* Product screenshot — laptop mockup */}
           <div className="relative mx-auto w-full max-w-5xl px-4 pt-10 md:px-6 md:pt-14">
-            {/* Floating module icons — desktop only */}
-            <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden="true">
-              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5, duration: 0.4 }} className="absolute -left-6 top-6 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.7"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7, duration: 0.4 }} className="absolute -left-14 top-[42%] flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M4 10l8-6 8 6M6 10v10h12V10M10 20v-6h4v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.9, duration: 0.4 }} className="absolute -left-8 bottom-10 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 1v22M17 5.5c0-1.9-1.8-3.5-5-3.5S7 3.6 7 5.5 8.8 9 12 9s5 1.6 5 3.5S15.2 16 12 16s-5-1.6-5-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.4 }} className="absolute -right-6 top-10 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, duration: 0.4 }} className="absolute -right-14 top-[48%] flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M7 3v3M17 3v3M4 8h16M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2Z" stroke="currentColor" strokeWidth="1.7"/><path d="M8 13l2.5 2.5L16 9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1, duration: 0.4 }} className="absolute -right-8 bottom-14 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 shadow-md">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/><path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></svg>
-              </motion.div>
-            </div>
-
             <HeroScreenshot>
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
-                {/* Browser bar */}
-                <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+              <div className="relative flex flex-col items-center">
+                {/* Laptop lid — dark bezel frame */}
+                <div className="relative w-full rounded-t-2xl bg-slate-900 px-2 pb-2 pt-4 shadow-2xl sm:rounded-t-3xl sm:px-3 sm:pb-3 sm:pt-5">
+                  {/* Camera */}
+                  <div className="absolute left-1/2 top-1.5 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-slate-600 sm:top-2" />
+                  {/* Screen */}
+                  <div className="overflow-hidden rounded-lg bg-white sm:rounded-xl">
+                    {/* Browser bar */}
+                    <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                      </div>
+                      <div className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-md bg-slate-100 px-3 py-1">
+                        <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 shrink-0 text-slate-400">
+                          <path d="M8 1a4 4 0 00-4 4v1H3a1 1 0 00-1 1v7a1 1 0 001 1h10a1 1 0 001-1V7a1 1 0 00-1-1h-1V5a4 4 0 00-4-4zm0 1.5A2.5 2.5 0 0110.5 5v1h-5V5A2.5 2.5 0 018 2.5z" fill="currentColor" />
+                        </svg>
+                        <span className="truncate font-mono text-xs text-slate-500">app.churchclerkapp.com</span>
+                      </div>
+                      <div className="w-12" />
+                    </div>
+                    <img
+                      src="/hero image (3).png"
+                      alt="The ChurchClerk dashboard showing member, attendance, and finance overview"
+                      className="block h-auto w-full"
+                    />
                   </div>
-                  <div className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-md bg-slate-100 px-3 py-1">
-                    <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 shrink-0 text-slate-400">
-                      <path d="M8 1a4 4 0 00-4 4v1H3a1 1 0 00-1 1v7a1 1 0 001 1h10a1 1 0 001-1V7a1 1 0 00-1-1h-1V5a4 4 0 00-4-4zm0 1.5A2.5 2.5 0 0110.5 5v1h-5V5A2.5 2.5 0 018 2.5z" fill="currentColor" />
-                    </svg>
-                    <span className="truncate font-mono text-xs text-slate-500">app.churchclerkapp.com</span>
-                  </div>
-                  <div className="w-12" />
                 </div>
-                <img
-                  src="/hero image (3).png"
-                  alt="The ChurchClerk dashboard showing member, attendance, and finance overview"
-                  className="block h-[300px] w-full object-cover object-top sm:h-[380px] lg:h-[540px]"
-                />
+                {/* Laptop base — tapered aluminium lip with thumb notch */}
+                <div className="relative h-3.5 w-[104%] rounded-b-3xl bg-gradient-to-b from-slate-300 via-slate-200 to-slate-400 shadow-md sm:h-4">
+                  <div className="mx-auto h-1 w-24 rounded-b-lg bg-slate-400/70 sm:w-32" />
+                </div>
+                {/* Soft floor shadow */}
+                <div className="mx-auto mt-3 h-5 w-[70%] rounded-[100%] bg-slate-900/10 blur-md" aria-hidden="true" />
+
+                {/* Phone mockup — overlapping the laptop's bottom-right corner */}
+                <div className="absolute bottom-2 right-0 z-20 w-24 translate-x-1/2 sm:w-32 lg:w-44">
+                  <div className="relative rounded-[1.8rem] border border-slate-300 bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 p-[3px] shadow-2xl sm:rounded-[2.1rem]">
+                    {/* Side buttons */}
+                    <span className="absolute -left-[2px] top-[14%] h-7 w-[3px] rounded-l-md bg-slate-400 sm:h-9" aria-hidden="true" />
+                    <span className="absolute -left-[2px] top-[26%] h-7 w-[3px] rounded-l-md bg-slate-400 sm:h-9" aria-hidden="true" />
+                    <span className="absolute -right-[2px] top-[20%] h-10 w-[3px] rounded-r-md bg-slate-400 sm:h-14" aria-hidden="true" />
+                    {/* Inner bezel */}
+                    <div className="rounded-[1.55rem] bg-slate-200 p-1 sm:rounded-[1.85rem] sm:p-1.5">
+                      {/* Screen */}
+                      <div className="relative overflow-hidden rounded-[1.15rem] bg-white sm:rounded-[1.45rem]">
+                        <img
+                          src="/heroImgMobileV.jpg"
+                          alt="The ChurchClerk app on a phone showing the mobile dashboard"
+                          className="block h-auto w-full"
+                          loading="eager"
+                        />
+                        {/* Punch-hole camera */}
+                        <div className="absolute left-1/2 top-[2%] h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-slate-900 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
+                        {/* Home indicator */}
+                        <div className="absolute bottom-[2%] left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-slate-900/50 sm:w-10" aria-hidden="true" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </HeroScreenshot>
           </div>
@@ -599,7 +617,7 @@ function LandingPage() {
                   <small className="text-xs font-medium">Problems your church faces</small>
                 </div>
                 <h2 className="text-3xl font-bold tracking-tight text-slate-950">
-                  Church administration shouldn't feel scattered.
+                  Church management shouldn't feel chaotic.
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-slate-500 md:w-[80%]">
                   The work already gets done — it's just spread across notebooks, spreadsheets, and personal phones. That fragmentation costs time and hides what needs attention.
@@ -640,7 +658,7 @@ function LandingPage() {
             </Reveal>
             <Reveal className="md:w-[70%] lg:w-[60%] lg:text-center">
               <h2 className="text-3xl font-bold tracking-tight text-slate-950">
-                Everything your church needs, built in.
+                Every feature your church needs.
               </h2>
               <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[80%]">
                 One system designed to handle every corner of church administration — no scattered records, no stress.
@@ -846,7 +864,7 @@ function LandingPage() {
                 <small className="text-xs font-medium">Built for every leader</small>
               </div>
               <h2 className="text-3xl font-bold tracking-tight text-slate-950">
-                It's not just for the church clerk.
+                It's not just for the church administrator.
               </h2>
               <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
                 Everyone who leads people in your church gets their own account — scoped to the members and records they're responsible for.
@@ -1096,26 +1114,69 @@ function LandingPage() {
         </section>
 
         {/* ── FINAL CTA ── */}
-        <section className="bg-slate-950 py-20 md:py-28">
+        <section className="bg-white py-16 md:py-20">
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
-            <Reveal className="mx-auto max-w-3xl text-center">
-              <Eyebrow dark>Get Started</Eyebrow>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-white">
-                Your church deserves better tools for the work behind the scenes.
-              </h2>
-              <p className="mt-5 text-base leading-relaxed text-slate-400">
-                Start using ChurchClerk to keep your members, branches, giving, and reports in one organized system.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <LandingButton to="/register" size="lg" className="px-8 py-4">
-                  Get Started
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+            <Reveal className="mx-auto max-w-5xl">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 px-6 py-14 text-center md:px-12">
+                {/* Geometric line-art decoration */}
+                <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                  {/* Concentric arcs — top left */}
+                  <svg viewBox="0 0 200 200" fill="none" className="absolute -left-16 -top-16 h-56 w-56 text-white/10">
+                    <circle cx="100" cy="100" r="40" stroke="currentColor" strokeWidth="1.5" />
+                    <circle cx="100" cy="100" r="70" stroke="currentColor" strokeWidth="1.5" />
+                    <circle cx="100" cy="100" r="100" stroke="currentColor" strokeWidth="1.5" />
                   </svg>
-                </LandingButton>
-                <Link to="/login" className="text-sm font-semibold text-slate-400 hover:text-white transition-colors">
-                  Already have an account? Sign in
-                </Link>
+                  {/* Diamond grid — bottom right */}
+                  <svg viewBox="0 0 200 200" fill="none" className="absolute -bottom-14 -right-14 h-52 w-52 text-white/10">
+                    {[0, 1, 2, 3].map((row) =>
+                      [0, 1, 2, 3].map((col) => (
+                        <rect
+                          key={`${row}-${col}`}
+                          x={col * 50 + 10}
+                          y={row * 50 + 10}
+                          width="18"
+                          height="18"
+                          rx="2"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          transform={`rotate(45 ${col * 50 + 19} ${row * 50 + 19})`}
+                        />
+                      ))
+                    )}
+                  </svg>
+                  {/* Cross motif — top right */}
+                  <svg viewBox="0 0 24 24" fill="none" className="absolute right-10 top-8 h-10 w-10 text-white/15">
+                    <path d="M12 3v18M7 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  {/* Dot cluster — bottom left */}
+                  <svg viewBox="0 0 80 60" fill="none" className="absolute bottom-8 left-10 h-14 w-20 text-white/15">
+                    {[0, 1, 2, 3, 4].map((col) =>
+                      [0, 1, 2].map((row) => (
+                        <circle key={`${col}-${row}`} cx={col * 16 + 4} cy={row * 16 + 4} r="2" fill="currentColor" />
+                      ))
+                    )}
+                  </svg>
+                </div>
+
+                <div className="relative">
+                  <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+                    Your church deserves better tools for the work behind the scenes.
+                  </h2>
+                  <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-blue-100">
+                    Start using ChurchClerk to keep your members, branches, giving, and reports in one organized system.
+                  </p>
+                  <div className="mt-8 flex flex-col items-center justify-center gap-4">
+                    <LandingButton to="/register" variant="white" size="lg" className="py-3">
+                      Get Started
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                      </svg>
+                    </LandingButton>
+                    <Link to="/login" className="text-sm font-semibold text-blue-100 hover:text-white transition-colors">
+                      Already have an account? Sign in
+                    </Link>
+                  </div>
+                </div>
               </div>
             </Reveal>
           </div>
