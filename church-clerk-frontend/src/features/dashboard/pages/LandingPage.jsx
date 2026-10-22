@@ -578,7 +578,7 @@ function LandingPage() {
                 <div className="mx-auto mt-3 h-5 w-[70%] rounded-[100%] bg-slate-900/10 blur-md" aria-hidden="true" />
 
                 {/* Phone mockup — overlapping the laptop's bottom-right corner */}
-                <div className="absolute bottom-2 right-0 z-20 w-24 translate-x-1/2 sm:w-32 lg:w-44">
+                <div className="absolute bottom-2 right-0 z-20 w-24 sm:w-32 lg:w-44 xl:translate-x-1/2">
                   <div className="relative rounded-[1.8rem] border border-slate-300 bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 p-[3px] shadow-2xl sm:rounded-[2.1rem]">
                     {/* Side buttons */}
                     <span className="absolute -left-[2px] top-[14%] h-7 w-[3px] rounded-l-md bg-slate-400 sm:h-9" aria-hidden="true" />
