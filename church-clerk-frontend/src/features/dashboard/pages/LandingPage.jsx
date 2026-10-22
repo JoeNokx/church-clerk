@@ -579,15 +579,15 @@ function LandingPage() {
 
                 {/* Phone mockup — overlapping the laptop's bottom-right corner */}
                 <div className="absolute bottom-2 right-0 z-20 w-24 sm:w-32 lg:w-44 xl:translate-x-1/2">
-                  <div className="relative rounded-[1.8rem] border border-slate-300 bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 p-[3px] shadow-2xl sm:rounded-[2.1rem]">
+                  <div className="relative rounded-[1.1rem] border border-slate-300 bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 p-[3px] shadow-2xl sm:rounded-[1.45rem] lg:rounded-[1.9rem]">
                     {/* Side buttons */}
                     <span className="absolute -left-[2px] top-[14%] h-7 w-[3px] rounded-l-md bg-slate-400 sm:h-9" aria-hidden="true" />
                     <span className="absolute -left-[2px] top-[26%] h-7 w-[3px] rounded-l-md bg-slate-400 sm:h-9" aria-hidden="true" />
                     <span className="absolute -right-[2px] top-[20%] h-10 w-[3px] rounded-r-md bg-slate-400 sm:h-14" aria-hidden="true" />
                     {/* Inner bezel */}
-                    <div className="rounded-[1.55rem] bg-slate-200 p-1 sm:rounded-[1.85rem] sm:p-1.5">
+                    <div className="rounded-[0.9rem] bg-slate-200 p-1 sm:rounded-[1.2rem] lg:rounded-[1.65rem] lg:p-1.5">
                       {/* Screen */}
-                      <div className="relative overflow-hidden rounded-[1.15rem] bg-white sm:rounded-[1.45rem]">
+                      <div className="relative overflow-hidden rounded-[0.65rem] bg-white sm:rounded-[0.95rem] lg:rounded-[1.3rem]">
                         <img
                           src="/heroImgMobileV.jpg"
                           alt="The ChurchClerk app on a phone showing the mobile dashboard"
