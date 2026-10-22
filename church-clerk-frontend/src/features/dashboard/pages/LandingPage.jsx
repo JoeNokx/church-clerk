@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
 import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
 import http from "../../../shared/services/http.js";
@@ -8,7 +8,9 @@ import PriceCard from "../../../shared/components/PriceCard/index.jsx";
 import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
 import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
+import { computeSavingsPct } from "../../../shared/utils/planSavings.js";
 import LandingButton from "../../../shared/components/LandingButton/index.jsx";
+import FaqAccordion from "../../../shared/components/FaqAccordion/index.jsx";
 import { MODULE_ICONS } from "../components/landing/modules.jsx";
 
 function Reveal({ children, className = "", delay = 0 }) {
@@ -23,6 +25,41 @@ function Reveal({ children, className = "", delay = 0 }) {
     >
       {children}
     </motion.div>
+  );
+}
+
+function HeroScreenshot({ children }) {
+  const reduce = useReducedMotion();
+  const wrapRef = useRef(null);
+  const px = useMotionValue(0);
+  const py = useMotionValue(0);
+  const tiltX = useSpring(useTransform(py, [-0.5, 0.5], [3.5, -3.5]), { stiffness: 160, damping: 22 });
+  const tiltY = useSpring(useTransform(px, [-0.5, 0.5], [-4, 4]), { stiffness: 160, damping: 22 });
+
+  const onPointerMove = (e) => {
+    if (reduce || e.pointerType !== "mouse" || !wrapRef.current) return;
+    const r = wrapRef.current.getBoundingClientRect();
+    px.set((e.clientX - r.left) / r.width - 0.5);
+    py.set((e.clientY - r.top) / r.height - 0.5);
+  };
+  const onPointerLeave = () => { px.set(0); py.set(0); };
+
+  return (
+    <div ref={wrapRef} onPointerMove={onPointerMove} onPointerLeave={onPointerLeave} style={{ perspective: 1400 }} className="relative">
+      {/* Soft floor glow — sells the 3D depth */}
+      <div aria-hidden="true" className="absolute inset-x-8 -bottom-6 h-16 rounded-[100%] bg-blue-900/15 blur-2xl" />
+      <motion.div
+        initial={reduce ? { opacity: 1 } : { opacity: 0, y: 36, rotateX: 14 }}
+        whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: reduce ? 0 : 0.9, ease: [0.22, 1, 0.36, 1] }}
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        <motion.div style={{ rotateX: reduce ? 0 : tiltX, rotateY: reduce ? 0 : tiltY, transformStyle: "preserve-3d" }}>
+          {children}
+        </motion.div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -208,6 +245,97 @@ const TRUST_FEATURES = [
     alt: "Circuit board close-up",
     title: "Protected data",
     desc: "Church records stay backed up and recoverable, so nothing your church has built is lost."
+  }
+];
+
+const ROLES = [
+  {
+    icon: MODULE_ICONS["HQ & Branches"],
+    role: "Pastors & Leadership",
+    desc: "Oversight without the chasing — reports, branch views, and the whole church's picture in one place."
+  },
+  {
+    icon: MODULE_ICONS["Settings"],
+    role: "Church Administrators",
+    desc: "Run the full system — people, branches, finances, messaging, and settings."
+  },
+  {
+    icon: MODULE_ICONS["Tithe"],
+    role: "Treasurers & Financial Secretaries",
+    desc: "Keep the books — tithes, offerings, funds, expenses, and consolidated statements."
+  },
+  {
+    icon: MODULE_ICONS["Organisations"],
+    role: "Youth & Ministry Leaders",
+    desc: "Manage their own ministry — members, attendance, programs, and announcements."
+  },
+  {
+    icon: MODULE_ICONS["Members"],
+    role: "Cell & Group Leaders",
+    desc: "Look after their people — member records, meeting attendance, and follow-ups."
+  },
+  {
+    icon: MODULE_ICONS["Outreach & Follow-up"],
+    role: "Evangelism Coordinators",
+    desc: "Track outreach — visitor records, converts, and follow-up after services."
+  }
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "I used to chase reports from three branches every month. Now I open ChurchClerk and it's all there — attendance, giving, everything.",
+    name: "Pastor Francis Andoh",
+    detail: "Church Administrator, Precious Church International",
+    initials: "FA",
+    tone: "bg-blue-100 text-blue-700"
+  },
+  {
+    quote: "Recording offerings used to take a whole afternoon after service. The audit trail alone is worth it — every cedi is accounted for.",
+    name: "Elder Adjoa Mensah",
+    detail: "Treasurer, Grace Community Chapel",
+    initials: "AM",
+    tone: "bg-amber-100 text-amber-700"
+  },
+  {
+    quote: "I manage my cell's members and follow-ups myself — no more waiting on the church office for a simple list.",
+    name: "Deacon Thabo Mokoena",
+    detail: "Cell Group Leader, Living Faith Assembly",
+    initials: "TM",
+    tone: "bg-emerald-100 text-emerald-700"
+  },
+  {
+    quote: "Our youth ministry keeps its own attendance and sends its own announcements. The young people actually feel seen now.",
+    name: "Minister Ngozi Adeleke",
+    detail: "Youth Ministry Leader, New Life Tabernacle",
+    initials: "NA",
+    tone: "bg-violet-100 text-violet-700"
+  }
+];
+
+const FAQS = [
+  {
+    q: "Is Church Clerk only for the church administrator?",
+    a: "No. Church Clerk is built for every leader in the church — administrators, treasurers, financial secretaries, youth and ministry leaders, cell leaders, and evangelism coordinators each get their own account, scoped to the people and records they're responsible for."
+  },
+  {
+    q: "Does it work for churches with more than one branch?",
+    a: "Yes — multi-branch support is core to the product. Each branch keeps its own members, attendance, and finances, while headquarters gets a consolidated view across the whole network."
+  },
+  {
+    q: "How does SMS messaging work?",
+    a: "You can send announcements and SMS to your whole church or to specific groups — departments, ministries, visitors, or absent members. Plans include monthly SMS credits, and you can top up from the billing area when you need more."
+  },
+  {
+    q: "What records can we keep in the system?",
+    a: "Members and their profiles, departments and ministries, attendance, programs, tithes and offerings, pledges and fundraising, welfare, business ventures, general expenses, budgets — plus consolidated financial statements and reports."
+  },
+  {
+    q: "Who can see our church's financial records?",
+    a: "Only the people you allow. Role-based permissions mean each person sees only what their role grants — branch teams see their branch's records, and every sensitive action is logged against the account that made it."
+  },
+  {
+    q: "Can we start small and grow into it?",
+    a: "Yes. You can begin on the free plan, add your members and branches gradually, and upgrade whenever your church needs more capacity — your records carry over."
   }
 ];
 
@@ -434,7 +562,7 @@ function LandingPage() {
               </motion.div>
             </div>
 
-            <Reveal delay={0.15}>
+            <HeroScreenshot>
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
                 {/* Browser bar */}
                 <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
@@ -457,7 +585,7 @@ function LandingPage() {
                   className="block h-[300px] w-full object-cover object-top sm:h-[380px] lg:h-[540px]"
                 />
               </div>
-            </Reveal>
+            </HeroScreenshot>
           </div>
         </section>
 
@@ -470,7 +598,7 @@ function LandingPage() {
                   <div className="h-2 aspect-square rounded-full bg-blue-600" />
                   <small className="text-xs font-medium">Problems your church faces</small>
                 </div>
-                <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+                <h2 className="text-3xl font-bold tracking-tight text-slate-950">
                   Church administration shouldn't feel scattered.
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-slate-500 md:w-[80%]">
@@ -490,11 +618,11 @@ function LandingPage() {
                   ))}
                 </ul>
               </Reveal>
-              <div className="mx-auto -mt-20 hidden lg:block">
+              <div className="hidden w-full lg:block">
                 <img
                   src="/problemImg.jpg"
                   alt="The reality of church administration — scattered records and paperwork"
-                  className="h-full w-full rounded-2xl object-cover scale-90"
+                  className="h-full w-full rounded-2xl object-cover"
                 />
               </div>
             </div>
@@ -511,7 +639,7 @@ function LandingPage() {
               </div>
             </Reveal>
             <Reveal className="md:w-[70%] lg:w-[60%] lg:text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950">
                 Everything your church needs, built in.
               </h2>
               <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[80%]">
@@ -542,6 +670,40 @@ function LandingPage() {
           </div>
         </section>
 
+        {/* ── HOW IT WORKS ── */}
+        <section className="border-t border-slate-200 bg-white py-24 lg:py-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                <small className="text-xs font-medium">How it works</small>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950">
+                Getting started is simple.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
+                No technical background needed — from signup to your first report, the path is simple.
+              </p>
+            </Reveal>
+
+            <Reveal className="relative mt-14" delay={0.08}>
+              {/* Connecting line — desktop only */}
+              <div className="absolute left-[12.5%] right-[12.5%] top-6 hidden border-t-2 border-slate-200 lg:block" aria-hidden="true" />
+              <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+                {STEPS.map((s, i) => (
+                  <div key={s.title} className="relative text-center">
+                    <div className="relative z-10 mx-auto flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-blue-600 text-base font-bold text-white shadow-md">
+                      {i + 1}
+                    </div>
+                    <h3 className="mt-5 text-base font-bold text-slate-900">{s.title}</h3>
+                    <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-slate-500">{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
         {/* ── BENEFITS ── */}
         <section className="bg-white py-24 lg:py-32">
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
@@ -550,7 +712,7 @@ function LandingPage() {
                 <div className="h-2 aspect-square rounded-full bg-blue-600" />
                 <small className="text-xs font-medium">Why choose ChurchClerk</small>
               </div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950">
                 Benefits for your church.
               </h2>
               <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
@@ -635,49 +797,15 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* ── HOW IT WORKS ── */}
-        <section className="bg-white pb-24 lg:pb-32">
-          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
-            <Reveal className="mx-auto max-w-2xl text-center">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
-                <div className="h-2 aspect-square rounded-full bg-blue-600" />
-                <small className="text-xs font-medium">How it works</small>
-              </div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
-                Getting started is simple.
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
-                No technical background needed — from signup to your first report, the path is simple.
-              </p>
-            </Reveal>
-
-            <Reveal className="relative mt-14" delay={0.08}>
-              {/* Connecting line — desktop only */}
-              <div className="absolute left-[12.5%] right-[12.5%] top-6 hidden border-t-2 border-slate-200 lg:block" aria-hidden="true" />
-              <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-                {STEPS.map((s, i) => (
-                  <div key={s.title} className="relative text-center">
-                    <div className="relative z-10 mx-auto flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-blue-600 text-base font-bold text-white shadow-md">
-                      {i + 1}
-                    </div>
-                    <h3 className="mt-5 text-base font-bold text-slate-900">{s.title}</h3>
-                    <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-slate-500">{s.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
         {/* ── ACCOUNTABILITY ── */}
-        <section className="border-t border-slate-200 bg-slate-50 py-24 lg:py-32">
+        <section className="bg-white py-24 lg:py-32">
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
                 <div className="h-2 aspect-square rounded-full bg-blue-600" />
                 <small className="text-xs font-medium">Trust &amp; Control</small>
               </div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950">
                 Built for accountability.
               </h2>
               <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
@@ -709,12 +837,188 @@ function LandingPage() {
           </div>
         </section>
 
+        {/* ── WHO IT'S FOR ── */}
+        <section className="border-y border-slate-200 bg-slate-50 py-24 lg:py-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                <small className="text-xs font-medium">Built for every leader</small>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950">
+                It's not just for the church clerk.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
+                Everyone who leads people in your church gets their own account — scoped to the members and records they're responsible for.
+              </p>
+            </Reveal>
+
+            <div className="mt-16 grid gap-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+              {ROLES.map((r, i) => (
+                <Reveal key={r.role} delay={i * 0.05} className="h-full">
+                  <div className="relative h-full rounded-2xl border border-slate-200 bg-white px-5 pb-5 pt-8 text-center transition-shadow duration-200 hover:shadow-md">
+                    <span className="absolute -top-5 left-1/2 inline-flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-600">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">{r.icon}</svg>
+                    </span>
+                    <h3 className="text-sm font-bold text-slate-900">{r.role}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{r.desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+
+            <Reveal className="mt-8" delay={0.1}>
+              <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-slate-500">
+                Administrators see everything. <span className="font-semibold text-slate-900">Leaders see only their part</span> — role-based access keeps it that way.
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── TESTIMONIALS ── */}
+        <section className="bg-white py-24 lg:py-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                <small className="text-xs font-medium">Testimonials</small>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950">
+                Hear it from church leaders.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500 lg:mx-auto lg:w-[85%]">
+                The people who keep the church running — in their own words.
+              </p>
+            </Reveal>
+
+            <Reveal className="relative mt-14 overflow-hidden" delay={0.06}>
+              {/* Edge fades */}
+              <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-14 bg-gradient-to-r from-white to-transparent md:w-24" aria-hidden="true" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-14 bg-gradient-to-l from-white to-transparent md:w-24" aria-hidden="true" />
+              <div className="cck-marquee-track flex w-max gap-5 py-1" style={{ animationDuration: "32s" }}>
+                {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
+                  <figure key={`${t.name}-${i}`} className="flex w-64 shrink-0 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-[0_2px_10px_-6px_rgba(15,23,42,0.08)] md:w-[300px]">
+                    <blockquote className="flex-1 text-[13px] leading-relaxed text-slate-600">
+                      "{t.quote}"
+                    </blockquote>
+                    <figcaption className="mt-3 flex items-center gap-2.5 border-t border-slate-100 pt-3">
+                      <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${t.tone}`}>
+                        {t.initials}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-bold text-slate-900">{t.name}</p>
+                        <p className="truncate text-[11px] text-slate-400">{t.detail}</p>
+                      </div>
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── REFERRAL PROGRAM ── */}
+        <section className="border-y border-slate-200 bg-white py-24 lg:py-32">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <div className="grid items-center gap-12 lg:grid-cols-[1fr_0.9fr] lg:gap-16">
+              <Reveal>
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                  <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                  <small className="text-xs font-medium">Referral program</small>
+                </div>
+                <h2 className="text-3xl font-bold tracking-tight text-slate-950">
+                  Invite a church, Earn a free month.
+                </h2>
+                <p className="mt-4 text-base leading-relaxed text-slate-500">
+                  Churches already tell other churches about tools that work — ChurchClerk makes it count. Every church gets a unique referral code the moment it joins.
+                </p>
+                <ul className="mt-10 space-y-8">
+                  {[
+                    {
+                      n: "01",
+                      title: "Share your code",
+                      desc: "After registering your church, a unique referral code appears in your dashboard — share it with other churches that could use ChurchClerk."
+                    },
+                    {
+                      n: "02",
+                      title: "They sign up with it",
+                      desc: "The referred church enters your code when registering — and you'll see that church appear in your referral history."
+                    },
+                    {
+                      n: "03",
+                      title: "A free month lands on yours",
+                      desc: "When the referred church subscribes, a free month is added to your account — applied at your next renewal."
+                    }
+                  ].map((s) => (
+                    <li key={s.n} className="flex gap-5">
+                      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                        {s.n}
+                      </span>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900">{s.title}</h3>
+                        <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{s.desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+
+              {/* Referral dashboard mock */}
+              <Reveal delay={0.08}>
+                <div className="mx-auto w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-lg">
+                  <div className="border-b border-slate-100 px-6 py-4">
+                    <p className="text-sm font-semibold text-slate-900">Referral dashboard</p>
+                  </div>
+                  <div className="space-y-5 p-6">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Your referral code</p>
+                      <div className="mt-2 flex items-center justify-between rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-2.5">
+                        <span className="font-mono text-sm font-bold tracking-widest text-blue-700">CC-GRACE-4K2M</span>
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-blue-600"><rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.8" /><path d="M5 15V5a2 2 0 012-2h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { v: "3", l: "Churches referred" },
+                        { v: "2", l: "Months used" },
+                        { v: "1", l: "Remaining" }
+                      ].map((s) => (
+                        <div key={s.l} className="rounded-lg bg-slate-50 px-3 py-2.5 text-center">
+                          <p className="text-lg font-bold text-slate-900">{s.v}</p>
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">{s.l}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Referral history</p>
+                      <ul className="mt-2 divide-y divide-slate-100">
+                        {[
+                          { name: "Church A", status: "Rewarded" },
+                          { name: "Church B", status: "Rewarded" },
+                          { name: "Church C", status: "Pending" }
+                        ].map((r) => (
+                          <li key={r.name} className="flex items-center justify-between py-2.5">
+                            <span className="text-sm font-medium text-slate-800">{r.name}</span>
+                            <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${r.status === "Rewarded" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                              {r.status}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
         {/* ── PRICING ── */}
         <section id="pricing" className="border-t border-slate-200 bg-slate-50 py-20 md:py-28">
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <Reveal className="mx-auto max-w-2xl text-center">
               <Eyebrow>Pricing</Eyebrow>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950">
                 Plans that grow with your church.
               </h2>
               <p className="mt-4 text-base text-slate-600">
@@ -766,11 +1070,13 @@ function LandingPage() {
                     const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
                     const memberLimit = p?.memberLimit;
                     const memberLine = memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`;
+                    const adminFeatures = Array.isArray(p?.cardFeatures) ? p.cardFeatures.filter(Boolean) : [];
                     const descriptionFeatures = getPlanDescriptionFeatures(p, { max: 5 });
-                    const highlights = [memberLine, ...descriptionFeatures];
+                    const highlights = adminFeatures.length ? adminFeatures : [memberLine, ...descriptionFeatures];
+                    const savingsPct = computeSavingsPct(p?.pricing?.GHS || p?.priceByCurrency?.GHS || {}, billingInterval);
                     return (
                       <Reveal key={id} className="h-full" delay={idx * 0.04}>
-                        <PriceCard id={id} name={name} price={displayPrice} currency={displayCurrency} per={per} isMostPopular={isMostPopular} memberLimit={memberLimit} features={highlights} actionLabel="Get started" actionHref="/register" variant="landing" />
+                        <PriceCard id={id} name={name} price={displayPrice} currency={displayCurrency} per={per} isMostPopular={isMostPopular} savingsPct={savingsPct} memberLimit={memberLimit} description={p?.description} features={highlights} actionLabel="Get started" actionHref="/register" variant="landing" />
                       </Reveal>
                     );
                   })}
@@ -794,7 +1100,7 @@ function LandingPage() {
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <Reveal className="mx-auto max-w-3xl text-center">
               <Eyebrow dark>Get Started</Eyebrow>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl lg:text-5xl">
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-white">
                 Your church deserves better tools for the work behind the scenes.
               </h2>
               <p className="mt-5 text-base leading-relaxed text-slate-400">
@@ -811,6 +1117,27 @@ function LandingPage() {
                   Already have an account? Sign in
                 </Link>
               </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        <section className="bg-white py-24 lg:py-28">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-600/5 px-3 py-1 text-blue-700 outline outline-blue-600/30 lg:mb-6">
+                <div className="h-2 aspect-square rounded-full bg-blue-600" />
+                <small className="text-xs font-medium">FAQs</small>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950">
+                Questions churches ask.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500">
+                Still unsure about something? <Link to="/contact" className="font-semibold text-blue-700 hover:text-blue-800">Talk to us</Link> — we're happy to help.
+              </p>
+            </Reveal>
+            <Reveal className="mx-auto mt-10 max-w-3xl" delay={0.06}>
+              <FaqAccordion items={FAQS} />
             </Reveal>
           </div>
         </section>

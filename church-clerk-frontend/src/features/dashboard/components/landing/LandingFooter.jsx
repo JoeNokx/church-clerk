@@ -28,28 +28,35 @@ function LandingFooter() {
 
           <div className="grid grid-cols-2 gap-8 md:col-span-7 md:grid-cols-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Product</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Platform</p>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
                 <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
                 <li><Link to="/features" className="hover:text-white transition-colors">Features</Link></li>
                 <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+                <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
               </ul>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Platform</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Features</p>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><span className="text-slate-500">Member Management</span></li>
-                <li><span className="text-slate-500">Attendance</span></li>
-                <li><span className="text-slate-500">Finance & Giving</span></li>
-                <li><span className="text-slate-500">HQ & Branches</span></li>
+                <li><Link to="/features#people-ministries" className="hover:text-white transition-colors">People &amp; Ministries</Link></li>
+                <li><Link to="/features#finance" className="hover:text-white transition-colors">Finance</Link></li>
+                <li><Link to="/features#administration" className="hover:text-white transition-colors">Administration</Link></li>
+                <li><Link to="/features#communication" className="hover:text-white transition-colors">Communication</Link></li>
               </ul>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Account</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Contact Us</p>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><Link to="/register" className="hover:text-white transition-colors">Create Account</Link></li>
-                <li><Link to="/login" className="hover:text-white transition-colors">Sign In</Link></li>
+                <li>
+                  <a href="mailto:support@churchclerkapp.com" className="break-all hover:text-white transition-colors">support@churchclerkapp.com</a>
+                </li>
+                <li>
+                  <a href="tel:+233546022758" className="hover:text-white transition-colors">+233 54 602 2758</a>
+                </li>
+                <li>
+                  <a href="tel:+233548592769" className="hover:text-white transition-colors">+233 54 859 2769</a>
+                </li>
               </ul>
             </div>
             <div>

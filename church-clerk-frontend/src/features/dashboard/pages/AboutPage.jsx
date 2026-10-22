@@ -103,14 +103,14 @@ const TEAM = [
     role: "Product & Engineering",
     shortBio: "Leads the design and development of ChurchClerk.",
     fullBio: "Leads the design and development of ChurchClerk — turning the daily realities of church administration into a system that is organized, accountable, and simple enough for any team member to use.",
-    img: null
+    img: "/team-founder-1.jpg"
   },
   {
     name: "Co-Founder",
     role: "Operations & Church Relations",
     shortBio: "Works directly with churches to shape how ChurchClerk fits their work.",
     fullBio: "Works directly with churches to shape how ChurchClerk fits their work — from onboarding and branch setup to making sure the product reflects how real congregations operate.",
-    img: null
+    img: "/team-founder-2.jpg"
   }
 ];
 
@@ -198,8 +198,8 @@ function AboutPage() {
             <Reveal className="mx-auto max-w-5xl">
               <div className="overflow-hidden rounded-2xl shadow-[0_18px_36px_-16px_rgba(15,23,42,0.18)]">
                 <img
-                  src="/church login.jpg"
-                  alt="A church congregation gathered together"
+                  src="/aboutHero.jpg"
+                  alt="A church congregation praising during a service"
                   className="block h-[200px] w-full object-cover sm:h-[280px] lg:h-[340px]"
                 />
               </div>
@@ -288,8 +288,8 @@ function AboutPage() {
               <Reveal className="lg:col-span-5" delay={0.08}>
                 <div className="overflow-hidden rounded-2xl shadow-[0_18px_36px_-16px_rgba(15,23,42,0.18)]">
                   <img
-                    src="/church login.jpg"
-                    alt="Church members gathered in fellowship"
+                    src="/aboutBeliefs.jpg"
+                    alt="A man working on a laptop during a church service"
                     className="block h-[280px] w-full object-cover lg:h-[420px]"
                   />
                 </div>
@@ -319,12 +319,12 @@ function AboutPage() {
             <Reveal>
               <div className="relative mx-auto max-w-5xl overflow-hidden rounded-2xl">
                 <img
-                  src="/church login.jpg"
-                  alt=""
+                  src="/aboutValues.jpg"
+                  alt="A church member with hands raised in worship"
                   className="block h-[200px] w-full object-cover md:h-[260px]"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55">
-                  <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Our Values</h2>
+                  <h2 className="text-3xl font-bold tracking-tight text-white">Our Values</h2>
                 </div>
               </div>
             </Reveal>

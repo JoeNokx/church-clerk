@@ -95,6 +95,9 @@ function BillingPlansPage() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [cardFeatures, setCardFeatures] = useState([]);
+  const [featureEntry, setFeatureEntry] = useState("");
+  const [editingFeatureIndex, setEditingFeatureIndex] = useState(null);
   const [isActive, setIsActive] = useState(true);
 
   const [memberLimit, setMemberLimit] = useState("");
@@ -168,6 +171,9 @@ function BillingPlansPage() {
     setEditingId(null);
     setName("free lite");
     setDescription("");
+    setCardFeatures([]);
+    setFeatureEntry("");
+    setEditingFeatureIndex(null);
     setIsActive(true);
     setMemberLimit("");
     setUserLimit("");
@@ -187,6 +193,9 @@ function BillingPlansPage() {
     setEditingId(p?._id || null);
     setName(normalizePlanValue(p?.name));
     setDescription(safeString(p?.description));
+    setCardFeatures(Array.isArray(p?.cardFeatures) ? p.cardFeatures.map(safeString).filter(Boolean) : []);
+    setFeatureEntry("");
+    setEditingFeatureIndex(null);
     setIsActive(p?.isActive !== false);
 
     setMemberLimit(p?.memberLimit === null || p?.memberLimit === undefined ? "" : String(p.memberLimit));
@@ -300,6 +309,7 @@ function BillingPlansPage() {
         await adminUpdatePlan(editingId, {
           name: normalizedName,
           description,
+          cardFeatures,
           isActive,
           memberLimit: memberLimitNum,
           userLimit: userLimitNum,
@@ -312,6 +322,7 @@ function BillingPlansPage() {
         await adminCreatePlan({
           name: normalizedName,
           description,
+          cardFeatures,
           isActive,
           memberLimit: memberLimitNum,
           userLimit: userLimitNum,
@@ -553,8 +564,101 @@ function BillingPlansPage() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
+                    placeholder="Shown on the price card right under the plan name."
                     className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                   />
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-gray-600">Card Features</div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    Lines shown with a checkmark on the pricing card. If left empty, features are generated automatically from the modules below.
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      value={featureEntry}
+                      onChange={(e) => setFeatureEntry(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const v = featureEntry.trim();
+                          if (!v) return;
+                          if (editingFeatureIndex !== null) {
+                            setCardFeatures((prev) => prev.map((f, i) => (i === editingFeatureIndex ? v : f)));
+                            setEditingFeatureIndex(null);
+                            setFeatureEntry("");
+                          } else if (cardFeatures.length < 12) {
+                            setCardFeatures((prev) => [...prev, v]);
+                            setFeatureEntry("");
+                          }
+                        }
+                      }}
+                      className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                      placeholder="e.g. Unlimited member records"
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        const v = featureEntry.trim();
+                        if (!v) return;
+                        if (editingFeatureIndex !== null) {
+                          setCardFeatures((prev) => prev.map((f, i) => (i === editingFeatureIndex ? v : f)));
+                          setEditingFeatureIndex(null);
+                          setFeatureEntry("");
+                        } else if (cardFeatures.length < 12) {
+                          setCardFeatures((prev) => [...prev, v]);
+                          setFeatureEntry("");
+                        }
+                      }}
+                    >
+                      {editingFeatureIndex !== null ? "Update" : "Add"}
+                    </Button>
+                    {editingFeatureIndex !== null ? (
+                      <button
+                        type="button"
+                        onClick={() => { setEditingFeatureIndex(null); setFeatureEntry(""); }}
+                        className="text-xs text-gray-500 hover:text-gray-700"
+                      >
+                        Cancel
+                      </button>
+                    ) : null}
+                  </div>
+                  {cardFeatures.length > 0 ? (
+                    <ul className="mt-2 space-y-1.5">
+                      {cardFeatures.map((f, i) => (
+                        <li key={`${i}-${f}`} className="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-800">
+                          <span className="flex items-center gap-2">
+                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-100 text-green-600">
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><path d="M6 12.5l3.2 3.2L18 7.8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            </span>
+                            {f}
+                          </span>
+                          <span className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => { setEditingFeatureIndex(i); setFeatureEntry(f); }}
+                              className="text-gray-400 hover:text-blue-600"
+                              title="Edit"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCardFeatures((prev) => prev.filter((_, j) => j !== i));
+                                if (editingFeatureIndex === i) { setEditingFeatureIndex(null); setFeatureEntry(""); }
+                              }}
+                              className="text-gray-400 hover:text-red-600"
+                              title="Remove"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                            </button>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

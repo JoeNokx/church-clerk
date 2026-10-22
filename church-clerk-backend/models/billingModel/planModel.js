@@ -9,6 +9,14 @@ const planSchema = new mongoose.Schema(
     },
     description: String,
 
+    // Marketing copy for the price card checkmark list.
+    // Written by System Admin in Billing -> Plans; replaces the
+    // auto-generated feature lines on public pricing cards.
+    cardFeatures: {
+      type: [String],
+      default: []
+    },
+
     paystackPlanCodes: {
       hourly:    { type: String, default: null },
       daily:     { type: String, default: null },

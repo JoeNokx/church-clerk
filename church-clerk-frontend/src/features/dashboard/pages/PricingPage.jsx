@@ -8,9 +8,38 @@ import PriceCard from "../../../shared/components/PriceCard/index.jsx";
 import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
 import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
+import { computeSavingsPct } from "../../../shared/utils/planSavings.js";
 import LandingButton from "../../../shared/components/LandingButton/index.jsx";
+import FaqAccordion from "../../../shared/components/FaqAccordion/index.jsx";
 
 const fade = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
+
+const PRICING_FAQS = [
+  {
+    q: "Is the free plan really free?",
+    a: "Yes — the Free Lite plan costs nothing and requires no card to start. You only move to a paid plan when your church needs more members, features, or SMS credits."
+  },
+  {
+    q: "Can we pay monthly, every 6 months, or yearly?",
+    a: "Yes — every plan supports monthly, 6-month, and yearly billing. Switch the toggle above to see the price for each interval."
+  },
+  {
+    q: "How does SMS billing work?",
+    a: "Each plan includes a monthly SMS credit allowance, shown in the comparison table. If you need more, you can top up from the Billing area inside your account."
+  },
+  {
+    q: "Is the subscription per church or per branch?",
+    a: "One subscription covers your whole church account — all your branches work inside it, each keeping its own members, attendance, and financial records."
+  },
+  {
+    q: "What happens when we outgrow our plan's member limit?",
+    a: "You can upgrade to a higher plan at any point — every record you've entered carries over. Your church is never forced to start over."
+  },
+  {
+    q: "What is Ministry Plus?",
+    a: "Ministry Plus is a fully customized solution built around your church's specific workflows, scale, and integration needs. Contact us and we'll shape it with you."
+  }
+];
 
 const COMPARISON_GROUPS = [
   {
@@ -162,8 +191,7 @@ function PricingPage() {
           <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 md:px-6">
             <motion.div initial="hidden" animate="show" variants={fade} transition={{ duration: 0.55 }} className="mx-auto max-w-4xl text-center">
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl lg:text-6xl">
-                Plans that grow{" "}
-                <span className="text-blue-600">with your church.</span>
+                Plans that grow with your church.
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-500 md:text-lg">
                 Start free. Upgrade when you're ready. No hidden fees, no complicated contracts.
@@ -218,11 +246,13 @@ function PricingPage() {
                     const per = billingInterval === "monthly" ? "/month" : billingInterval === "halfYear" ? "/6 months" : "/year";
                     const memberLimit = p?.memberLimit;
                     const memberLine = memberLimit === null ? "Unlimited members" : `Up to ${Number(memberLimit || 0).toLocaleString()} members`;
+                    const adminFeatures = Array.isArray(p?.cardFeatures) ? p.cardFeatures.filter(Boolean) : [];
                     const descriptionFeatures = getPlanDescriptionFeatures(p, { max: 5 });
-                    const highlights = [memberLine, ...descriptionFeatures];
+                    const highlights = adminFeatures.length ? adminFeatures : [memberLine, ...descriptionFeatures];
+                    const savingsPct = computeSavingsPct(p?.pricing?.GHS || p?.priceByCurrency?.GHS || {}, billingInterval);
                     return (
                       <motion.div key={id} className="h-full" initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.4, delay: idx * 0.04 }}>
-                        <PriceCard id={id} name={name} price={displayPrice} currency={displayCurrency} per={per} isMostPopular={isMostPopular} memberLimit={memberLimit} features={highlights} actionLabel="Get started" actionHref="/register" variant="landing" />
+                        <PriceCard id={id} name={name} price={displayPrice} currency={displayCurrency} per={per} isMostPopular={isMostPopular} savingsPct={savingsPct} memberLimit={memberLimit} description={p?.description} features={highlights} actionLabel="Get started" actionHref="/register" variant="landing" />
                       </motion.div>
                     );
                   })}
@@ -298,12 +328,26 @@ function PricingPage() {
         <section className="bg-slate-950 py-16">
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Still have questions?</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-white">Still have questions?</h2>
               <p className="mt-4 text-slate-400">We're happy to help you choose the right plan for your church.</p>
               <LandingButton to="/contact" size="lg" className="mt-6 px-8 py-4 shadow-lg shadow-blue-600/30">
                 Contact Us
               </LandingButton>
             </div>
+          </div>
+        </section>
+
+        <section className="bg-white py-20 lg:py-24">
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-60px" }} variants={fade} transition={{ duration: 0.5 }} className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950">Pricing questions, answered.</h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-500">
+                Everything about plans, billing, and SMS — in one place.
+              </p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.45, delay: 0.06 }} className="mx-auto mt-10 max-w-3xl">
+              <FaqAccordion items={PRICING_FAQS} />
+            </motion.div>
           </div>
         </section>
       </main>

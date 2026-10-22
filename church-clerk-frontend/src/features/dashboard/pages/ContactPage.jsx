@@ -54,7 +54,7 @@ function ContactPage() {
         <section className="relative overflow-hidden bg-white">
           <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 md:px-6">
             <motion.div initial="hidden" animate="show" variants={fade} transition={{ duration: 0.55 }} className="mx-auto max-w-5xl text-center">
-              <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-slate-950 md:text-6xl lg:text-7xl">
+              <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-slate-950 md:text-5xl">
                 We'd love to hear from you.
               </h1>
               <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-slate-500 md:text-xl">
@@ -119,7 +119,7 @@ function ContactPage() {
               <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={fade} transition={{ duration: 0.5, delay: 0.1 }}>
                 <div className="relative overflow-hidden rounded-2xl">
                   <img
-                    src="/church login.jpg"
+                    src="/contactHero.jpg"
                     alt=""
                     className="absolute inset-0 h-full w-full object-cover"
                   />

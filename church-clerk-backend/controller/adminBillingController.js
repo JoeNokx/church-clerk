@@ -28,6 +28,9 @@ import { syncAllowancesForPlan } from "../services/announcement/allowanceService
 export const createPlan = async (req, res) => {
   try {
     const { name, description, memberLimit = null, userLimit = null, features = {}, featureCategories = {}, isActive = true, monthlySmsCredits = 0 } = req.body;
+    const cardFeatures = Array.isArray(req.body.cardFeatures)
+      ? req.body.cardFeatures.map((f) => String(f || "").trim()).filter(Boolean).slice(0, 12)
+      : [];
     const rawPriceByCurrency = normalizePriceByCurrency(req.body);
     const priceByCurrency = sanitizePriceByCurrency(rawPriceByCurrency);
 
@@ -58,6 +61,7 @@ export const createPlan = async (req, res) => {
     const plan = await Plan.create({
       name: normalizedName,
       description,
+      cardFeatures,
       paystackPlanCodes,
       memberLimit,
       userLimit,
@@ -119,6 +123,12 @@ export const updatePlan = async (req, res) => {
         return res.status(400).json({ message: "monthlySmsCredits must be a whole number >= 0" });
       }
       updates.monthlySmsCredits = n;
+    }
+
+    if (updates.cardFeatures !== undefined) {
+      updates.cardFeatures = Array.isArray(updates.cardFeatures)
+        ? updates.cardFeatures.map((f) => String(f || "").trim()).filter(Boolean).slice(0, 12)
+        : [];
     }
 
     delete updates.createdBy;

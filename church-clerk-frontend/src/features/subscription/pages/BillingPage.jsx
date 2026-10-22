@@ -26,6 +26,7 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
+import { computeSavingsPct } from "../../../shared/utils/planSavings.js";
 import { getSystemSettingsAdmin, updateSystemSettingsAdmin, toggleGovernanceFlags } from "../../settings/services/settings.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { isDelegateSession } from "../../../shared/utils/delegateSession.js";
@@ -794,21 +795,15 @@ function BillingPage() {
           const priceDisplay = toDisplayPrice(priceGhs);
           const perMap = { hourly: "/hour", daily: "/day", weekly: "/week", monthly: "/month", quarterly: "/quarter", halfYear: "/6 months", yearly: "/year" };
           const per = perMap[billingInterval] || `/${billingInterval}`;
-          const SAVINGS_MONTHS = { quarterly: 3, halfYear: 6, yearly: 12 };
-          const intervalMonths = SAVINGS_MONTHS[billingInterval] || null;
-          const planSavingsPct = (() => {
-            if (!intervalMonths) return null;
-            const ghsPrices = p?.pricing?.GHS || p?.priceByCurrency?.GHS || {};
-            const mprice = Number(ghsPrices?.monthly || 0);
-            const iprice = Number(priceGhs || 0);
-            if (!mprice || !iprice) return null;
-            const pct = Math.round((1 - iprice / (mprice * intervalMonths)) * 100);
-            return pct > 0 ? pct : null;
-          })();
+          const planSavingsPct = computeSavingsPct(
+            p?.pricing?.GHS || p?.priceByCurrency?.GHS || {},
+            billingInterval
+          );
 
           const planFeatures = getPlanDescriptionFeatures(p, { max: 5 });
           const memberLine = p?.memberLimit === null ? "Unlimited members" : `Up to ${Number(p?.memberLimit || 0).toLocaleString()} members`;
-          const highlights = [memberLine, ...planFeatures];
+          const adminFeatures = Array.isArray(p?.cardFeatures) ? p.cardFeatures.filter(Boolean) : [];
+          const highlights = adminFeatures.length ? adminFeatures : [memberLine, ...planFeatures];
 
           const isFreeLite = name.toLowerCase() === "free lite";
           const isFreeLiteDuringTrial = Boolean(isFreeLite && isFreeTrial);
@@ -823,7 +818,7 @@ function BillingPage() {
               ? "Subscribe now"
               : "Current plan"
             : isHQLockedPlan
-              ? "HQ: Premium only"
+              ? "Not available for HQ"
               : isFreeLiteDuringTrial
                 ? "Starts after trial"
                 : !subscribedPlanId
@@ -846,6 +841,7 @@ function BillingPage() {
                 isCurrent={isCurrent}
                 savingsPct={planSavingsPct}
                 memberLimit={p?.memberLimit}
+                description={p?.description}
                 features={highlights}
                 actionLabel={actionLabel}
                 onAction={canManageBilling ? () => onPlanAction(p) : undefined}

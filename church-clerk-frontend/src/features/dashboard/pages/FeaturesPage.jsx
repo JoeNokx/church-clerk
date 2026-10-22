@@ -263,7 +263,7 @@ function FeaturesPage() {
 
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="relative">
                 <div className="relative overflow-hidden rounded-3xl">
-                  <img src="/church login.jpg" alt="A church congregation gathered in worship" className="h-[300px] w-full object-cover md:h-[380px]" />
+                  <img src="/featuresHero.jpg" alt="Church leaders planning the work of the ministry together" className="h-[300px] w-full object-cover md:h-[380px]" />
                 </div>
                 <div className="absolute -left-4 top-8 hidden rounded-xl bg-white p-3 shadow-lg md:block">
                   <div className="flex items-center gap-2">
@@ -293,7 +293,7 @@ function FeaturesPage() {
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <div className="text-center">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-600">Features</span>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl lg:text-5xl">
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950">
                 One platform for the whole life of your church.
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-500">
@@ -357,7 +357,7 @@ function FeaturesPage() {
                             />
                           </div>
                           <div className={`border-t border-slate-100 p-6 md:p-10 lg:border-t-0 ${i % 2 === 0 ? "lg:order-1 lg:border-r" : "lg:border-l"}`}>
-                            <h3 className="text-2xl font-bold tracking-tight text-slate-950 md:text-3xl">
+                            <h3 className="text-xl font-bold tracking-tight text-slate-950 md:text-2xl">
                               {m.name}: <span className="text-slate-700">{m.accent}</span>
                             </h3>
                             <p className="mt-4 text-sm leading-relaxed text-slate-500 md:text-base">{m.desc}</p>
@@ -380,7 +380,7 @@ function FeaturesPage() {
         <section className="bg-slate-950 py-16">
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Start using these features today.</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-white">Start using these features today.</h2>
               <p className="mt-4 text-slate-400">Create your free account and get full access to every feature.</p>
               <LandingButton to="/register" size="lg" className="mt-6 px-8 py-4">
                 Get Started Free
