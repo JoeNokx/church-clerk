@@ -46,7 +46,9 @@ function ResetPassword() {
       setSuccess(res?.data?.message || "Password reset successfully");
       setTimeout(() => navigate("/login", { replace: true }), 600);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to reset password");
+      const msg = err?.response?.data?.message || "Failed to reset password";
+      if (/password/i.test(msg) && !/token/i.test(msg)) setFieldErrors({ newPassword: msg });
+      else setError(msg);
     } finally {
       setLoading(false);
       setIsSubmitting(false);
@@ -77,7 +79,7 @@ function ResetPassword() {
         <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700 text-sm">{success}</div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
           <label className="block font-medium text-gray-700 mb-1 text-sm">New Password</label>
           <input

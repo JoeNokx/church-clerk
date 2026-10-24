@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import LandingButton from "../../../../shared/components/LandingButton/index.jsx";
+import ScrollToTop from "../../../../shared/components/ScrollToTop/index.jsx";
 
 function LandingFooter() {
   return (
@@ -79,6 +80,7 @@ function LandingFooter() {
           </div>
         </div>
       </div>
+      <ScrollToTop />
     </footer>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../useAuth.js";
 import { registerUser } from "../services/auth.api.js";
@@ -8,9 +8,11 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import { validateForm, hasErrors } from "../../../shared/utils/validate.js";
 import { registerSchema } from "../auth.schemas.js";
 import Button from "../../../shared/components/Button/index.jsx";
+import { focusFirstInvalid, fieldFromServerMessage } from "../utils/fieldErrors.js";
 
 function Register() {
   const navigate = useNavigate();
+  const formRef = useRef(null);
   const { setUser, refreshUser } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,15 +36,12 @@ function Register() {
     if (phoneNumber && !isValidPhoneNumber(phoneNumber)) {
       errs.phoneNumber = "Enter a valid phone number";
     }
-    if (!agreedToTerms) {
-      setTermsError("You must agree to the Terms of Service and Privacy Policy to continue.");
-      setIsSubmitting(false);
-      return;
-    }
-    setTermsError("");
-    if (hasErrors(errs)) {
+    const termsMsg = agreedToTerms ? "" : "You must agree to the Terms of Service and Privacy Policy to continue.";
+    setTermsError(termsMsg);
+    if (hasErrors(errs) || termsMsg) {
       setFieldErrors(errs);
       setIsSubmitting(false);
+      focusFirstInvalid(e.currentTarget);
       return;
     }
     setFieldErrors({});
@@ -81,7 +80,14 @@ function Register() {
       }
 
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Something went wrong");
+      const msg = err?.response?.data?.message || err?.message || "Something went wrong";
+      const field = fieldFromServerMessage(msg, { email: ["email"], phoneNumber: ["phone"], password: ["password"], fullName: ["full name", "fullname"] });
+      if (field) {
+        setFieldErrors({ [field]: msg });
+        focusFirstInvalid(formRef.current);
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
       setIsSubmitting(false);
@@ -93,32 +99,31 @@ function Register() {
       title="Create an account"
       subtitle="Start by creating your admin account"
       footer={
-        <div className="space-y-3">
-          <div className="text-slate-500 text-sm">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+          <span className="text-slate-500">
             Already have an account?{" "}
             <a href="/login" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
               Sign in
             </a>
-          </div>
-          <div className="text-slate-400 text-sm">
-            <a href="/" className="hover:text-blue-600 hover:underline">
-              ← Back to home
-            </a>
-          </div>
+          </span>
+          <a href="/" className="text-slate-400 hover:text-blue-600 hover:underline">
+            ← Back to home
+          </a>
         </div>
       }
     >
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
 
-      <form onSubmit={handleRegister} className="space-y-5">
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Full Name</label>
+      <form ref={formRef} onSubmit={handleRegister} noValidate className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+        <div data-invalid={Boolean(fieldErrors.fullName)}>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
           <input
             type="text"
             placeholder="John Doe"
             value={fullName}
             onChange={(e) => { setFullName(e.target.value); setFieldErrors((p) => ({ ...p, fullName: undefined })); }}
-            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
+            className={`w-full rounded-xl border px-4 py-3 lg:py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
               fieldErrors.fullName
                 ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                 : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
@@ -127,14 +132,14 @@ function Register() {
           {fieldErrors.fullName && <p className="mt-1 text-xs text-red-600">{fieldErrors.fullName}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
+        <div data-invalid={Boolean(fieldErrors.email)}>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
-            className={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
+            className={`w-full rounded-xl border px-4 py-3 lg:py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
               fieldErrors.email
                 ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                 : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
@@ -142,14 +147,14 @@ function Register() {
           />
           {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
         </div>
+        </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Phone Number</label>
+        <div data-invalid={Boolean(fieldErrors.phoneNumber)}>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number</label>
           <PhoneNumberInput
             value={phoneNumber}
             onChange={(v) => { setPhoneNumber(v); setFieldErrors((p) => ({ ...p, phoneNumber: undefined })); }}
-            error={Boolean(fieldErrors.phoneNumber)}
-            inputClassName={`w-full rounded-xl border px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
+            inputClassName={`w-full rounded-xl border px-4 py-3 lg:py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
               fieldErrors.phoneNumber
                 ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                 : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
@@ -158,15 +163,15 @@ function Register() {
           {fieldErrors.phoneNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.phoneNumber}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
+        <div data-invalid={Boolean(fieldErrors.password)}>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Create a password (min. 8 characters)"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
-              className={`w-full rounded-xl border px-4 pr-11 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
+              className={`w-full rounded-xl border px-4 pr-11 py-3 lg:py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
                 fieldErrors.password
                   ? "border-red-400 focus:ring-red-300 focus:border-red-400"
                   : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
@@ -196,8 +201,8 @@ function Register() {
           {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
         </div>
 
-        <div>
-          <label className="flex items-start gap-3 cursor-pointer">
+        <div data-invalid={Boolean(termsError)}>
+          <label className={`flex items-start gap-3 cursor-pointer -mx-2.5 rounded-lg border px-2.5 py-1 transition ${termsError ? "border-red-300 bg-red-50" : "border-transparent"}`}>
             <input
               type="checkbox"
               checked={agreedToTerms}
@@ -205,7 +210,8 @@ function Register() {
                 setAgreedToTerms(e.target.checked);
                 if (e.target.checked) setTermsError("");
               }}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+              aria-invalid={Boolean(termsError)}
+              className={`mt-0.5 h-4 w-4 shrink-0 rounded text-blue-600 focus:ring-blue-500 focus:ring-offset-0 ${termsError ? "border-red-400" : "border-slate-300"}`}
             />
             <span className="text-sm leading-snug text-slate-600">
               I agree to ChurchClerk&apos;s{" "}
@@ -238,7 +244,7 @@ function Register() {
           variant="primary"
           loading={isSubmitting}
           loadingText="Creating account..."
-          className="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
+          className="w-full rounded-xl bg-blue-600 py-3 lg:py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
         >
           Create Account
         </Button>

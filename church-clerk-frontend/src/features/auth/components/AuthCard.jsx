@@ -15,7 +15,7 @@ function AuthCard({ children, title, subtitle, footer }) {
       </div>
 
       {title && (
-        <h1 className="mt-8 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+        <h1 className="mt-8 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl lg:mt-5 lg:text-2xl">
           {title}
         </h1>
       )}
@@ -23,12 +23,12 @@ function AuthCard({ children, title, subtitle, footer }) {
         <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
       )}
 
-      <div className="mt-8">
+      <div className="mt-8 lg:mt-5">
         {children}
       </div>
 
       {footer && (
-        <div className="mt-6 text-center text-sm text-slate-500">{footer}</div>
+        <div className="mt-6 text-center text-sm text-slate-500 lg:mt-4">{footer}</div>
       )}
     </div>
   );

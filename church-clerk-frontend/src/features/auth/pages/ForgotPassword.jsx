@@ -34,7 +34,9 @@ function ForgotPassword() {
       const res = await forgotPassword({ email });
       setSuccess(res?.data?.message || "If an account exists for that email, a reset link has been sent.");
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to request password reset");
+      const msg = err?.response?.data?.message || "Failed to request password reset";
+      if (msg.toLowerCase().includes("email")) setFieldErrors({ email: msg });
+      else setError(msg);
     } finally {
       setLoading(false);
       setIsSubmitting(false);
@@ -65,7 +67,7 @@ function ForgotPassword() {
         <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700 text-sm">{success}</div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
           <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
           <input

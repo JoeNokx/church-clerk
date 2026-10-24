@@ -139,6 +139,10 @@ function VerifyEmail() {
       setResendError("Please enter your email address.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+      setResendError("Enter a valid email address.");
+      return;
+    }
 
     setResendLoading(true);
     setResendMessage("");
@@ -204,9 +208,14 @@ function VerifyEmail() {
             <input
               type="email"
               value={resendEmail}
-              onChange={(ev) => setResendEmail(ev.target.value)}
+              onChange={(ev) => { setResendEmail(ev.target.value); setResendError(""); }}
               placeholder="you@example.com"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+              aria-invalid={Boolean(resendError)}
+              className={`w-full border rounded-lg px-3 py-2 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 text-sm ${
+                resendError
+                  ? "border-red-500 focus:ring-red-400 focus:border-red-500"
+                  : "border-gray-300 focus:ring-blue-900 focus:border-blue-900"
+              }`}
               autoComplete="email"
             />
           </div>

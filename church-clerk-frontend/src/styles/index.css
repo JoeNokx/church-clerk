@@ -258,6 +258,15 @@
   background-color: rgba(107, 114, 128, 0.8);
 }
 
+/* Hide the scrollbar while keeping the area scrollable */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes cck-marquee {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
