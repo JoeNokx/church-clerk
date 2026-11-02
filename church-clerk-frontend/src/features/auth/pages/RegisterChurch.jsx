@@ -65,6 +65,7 @@ function RegisterChurch() {
   const [currency, setCurrency] = useState("GHS");
   const [currencyTouched, setCurrencyTouched] = useState(false);
   const [foundedDate, setFoundedDate] = useState("");
+  const [registerAsMember, setRegisterAsMember] = useState(true);
   const [referralCodeInput, setReferralCodeInput] = useState("");
 
   const countryOptions = useMemo(() => {
@@ -356,6 +357,7 @@ function RegisterChurch() {
         currency: String(currency || "").trim().toUpperCase(),
         foundedDate,
         referralCodeInput,
+        registerAsMember,
       });
 
       try {
@@ -758,6 +760,19 @@ function RegisterChurch() {
           />
           {fieldError("referralCodeInput")}
         </div>
+
+        <label className="flex items-start gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={registerAsMember}
+            onChange={(e) => setRegisterAsMember(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
+          />
+          <span className="text-sm text-gray-700">
+            I'm a member of this church
+            <span className="mt-0.5 block text-xs text-gray-400">You'll be added as the first member — you can complete your member profile later.</span>
+          </span>
+        </label>
         </>)}
 
         <div className="flex gap-3 pt-1">

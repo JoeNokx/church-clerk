@@ -24,7 +24,8 @@ export const createOfferingSchema = Joi.object({
   serviceType: Joi.string().trim().min(1).max(100).required(),
   offeringType: Joi.string().trim().min(1).max(100).required(),
   serviceDate: Joi.string().isoDate().required(),
-  amount: Joi.number().positive().required()
+  amount: Joi.number().positive().required(),
+  note: Joi.string().trim().max(1000).allow("", null).optional()
 });
 
 export const createSpecialFundSchema = Joi.object({

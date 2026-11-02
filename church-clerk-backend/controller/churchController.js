@@ -1,5 +1,7 @@
 import Church from "../models/churchModel.js";
 import User from "../models/userModel.js";
+import Member from "../models/memberModel.js";
+import { getChurchPrefix, generateMemberId, takeMemberSerial, releaseMemberSerial } from "../utils/memberHelpers.js";
 import cloudinary from "../config/cloudinary.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import { sendEmail } from "../services/emailService.js";
@@ -35,7 +37,8 @@ const createMyChurch = async (req, res) => {
       country,
       currency,
       foundedDate,
-      referralCodeInput
+      referralCodeInput,
+      registerAsMember
     } = req.body;
 
     if (!name || !type || !phoneNumber || !pastor || !city) {
@@ -104,6 +107,50 @@ const createMyChurch = async (req, res) => {
 
     const updatedUser = await assignUserRole({ userId: req.user._id, churchId: church._id, currentRole: req.user.role });
 
+    // If the registrant opted in, seed them as the church's first member —
+    // they can complete the rest of the profile from the members page.
+    let registeredMember = null;
+    if (registerAsMember) {
+      try {
+        const nameParts = String(req.user?.fullName || "").trim().split(/\s+/).filter(Boolean);
+        const firstName = nameParts[0] || "Member";
+        const lastName = nameParts.slice(1).join(" ") || "—";
+
+        let memberPhone = validatedPhoneNumber;
+        try {
+          memberPhone = validatePhoneNumber(req.user?.phoneNumber || "", "GH");
+        } catch { /* fall back to the church phone just validated */ }
+
+        const memberPrefix = await getChurchPrefix(church._id);
+        const issuedSerial = await takeMemberSerial(church._id);
+        const memberId = generateMemberId(memberPrefix || "CH", issuedSerial - 1);
+
+        try {
+          registeredMember = await Member.create({
+            memberId,
+            firstName,
+            lastName,
+            email: req.user?.email,
+            phoneNumber: memberPhone,
+            status: "active",
+            church: church._id,
+            createdBy: req.user._id
+          });
+        } catch (memberErr) {
+          if (memberErr?.code !== 11000 && memberErr?.errorResponse?.code !== 11000) {
+            await releaseMemberSerial(church._id, issuedSerial).catch(() => {});
+          }
+          throw memberErr;
+        }
+
+        const totalMembers = await Member.countDocuments({ church: church._id });
+        await Church.findByIdAndUpdate(church._id, { memberCount: totalMembers });
+      } catch (memberErr) {
+        // Member seeding is best-effort — never fail church creation over it.
+        console.error("[createMyChurch] member seed failed:", memberErr?.message || memberErr);
+      }
+    }
+
     try {
       const recipient = updatedUser?.email || req.user?.email;
       if (recipient) {
@@ -126,7 +173,8 @@ const createMyChurch = async (req, res) => {
         userId: updatedUser._id,
         fullName: updatedUser.fullName,
         church: updatedUser.church
-      }
+      },
+      member: registeredMember ? { memberId: registeredMember.memberId } : null
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
