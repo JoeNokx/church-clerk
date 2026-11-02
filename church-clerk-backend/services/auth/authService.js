@@ -92,7 +92,7 @@ async function registerUser(data, req) {
   }
 
   let church = null;
-  let resolvedRole = "leader";
+  let resolvedRole = "churchadmin";
 
   if (churchId) {
     const nextChurch = await Church.findById(churchId).lean();
