@@ -9,6 +9,7 @@ import EmptyState from "../../../../shared/components/EmptyState/index.jsx";
 import KpiCard from "../../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../../shared/components/KpiGrid/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../../shared/utils/truncateTableText.js";
+import { kpiTrendText } from "../../../../shared/utils/kpiTrendText.js";
 
 function fmtDate(v) {
   if (!v) return "Not Specified";
@@ -135,6 +136,7 @@ export default function OverviewTab() {
           value={kpi?.totalEvents ?? 0}
           change={kpi?.change?.totalEvents}
           diff={kpi?.diff?.totalEvents}
+          diffText={kpiTrendText(kpi?.diff?.totalEvents, kpi?.change?.totalEvents, { noun: { one: "outreach", many: "outreaches" } })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -150,6 +152,7 @@ export default function OverviewTab() {
           value={kpi?.totalProspects ?? 0}
           change={kpi?.change?.totalProspects}
           diff={kpi?.diff?.totalProspects}
+          diffText={kpiTrendText(kpi?.diff?.totalProspects, kpi?.change?.totalProspects, { noun: { one: "person", many: "people" } })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -166,6 +169,7 @@ export default function OverviewTab() {
           value={kpi?.totalDecisions ?? 0}
           change={kpi?.change?.totalDecisions}
           diff={kpi?.diff?.totalDecisions}
+          diffText={kpiTrendText(kpi?.diff?.totalDecisions, kpi?.change?.totalDecisions, { noun: { one: "decision", many: "decisions" } })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -180,7 +184,9 @@ export default function OverviewTab() {
           value={fuStats?.overdue ?? 0}
           change={fuStats?.change?.overdue}
           diff={fuStats?.diff?.overdue}
+          diffText={kpiTrendText(fuStats?.diff?.overdue, fuStats?.change?.overdue, { noun: { one: "follow-up", many: "follow-ups" } })}
           compareLabel="last month"
+          upIsGood={false}
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="9" />
@@ -195,6 +201,7 @@ export default function OverviewTab() {
           value={`${analytics?.followUpRate ?? 0}%`}
           change={analytics?.change?.followUpRate}
           diff={analytics?.diff?.followUpRate}
+          diffText={kpiTrendText(analytics?.diff?.followUpRate, analytics?.change?.followUpRate, { period: "last year", format: (v) => `${v} point${v === 1 ? "" : "s"}`, moreWord: "higher", fewerWord: "lower" })}
           compareLabel="last year"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -210,6 +217,7 @@ export default function OverviewTab() {
           value={analytics?.totalConverted ?? 0}
           change={analytics?.change?.totalConverted}
           diff={analytics?.diff?.totalConverted}
+          diffText={kpiTrendText(analytics?.diff?.totalConverted, analytics?.change?.totalConverted, { period: "last year", noun: { one: "conversion", many: "conversions" } })}
           compareLabel="last year"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -226,6 +234,7 @@ export default function OverviewTab() {
           value={analytics?.totalVisitors ?? 0}
           change={analytics?.change?.totalVisitors}
           diff={analytics?.diff?.totalVisitors}
+          diffText={kpiTrendText(analytics?.diff?.totalVisitors, analytics?.change?.totalVisitors, { period: "last year", noun: { one: "visitor", many: "visitors" } })}
           compareLabel="last year"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -241,6 +250,7 @@ export default function OverviewTab() {
           value={fuStats?.completedThisMonth ?? 0}
           change={fuStats?.change?.completedThisMonth}
           diff={fuStats?.diff?.completedThisMonth}
+          diffText={kpiTrendText(fuStats?.diff?.completedThisMonth, fuStats?.change?.completedThisMonth, { noun: { one: "follow-up", many: "follow-ups" } })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

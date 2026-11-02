@@ -15,6 +15,7 @@ import SmsAllowance from "../models/billingModel/smsAllowanceModel.js";
 import Subscription from "../models/billingModel/subscriptionModel.js";
 import BillingHistory from "../models/billingModel/billingHistoryModel.js";
 import Plan from "../models/billingModel/planModel.js";
+import { purgeChurchData } from "../services/church/churchPurgeService.js";
 
 
 // GET all churches in system
@@ -870,10 +871,18 @@ const deleteChurch = async (req, res) => {
     const id = String(req.params?.id || "").trim();
     if (!id) return res.status(400).json({ message: "Church id is required" });
 
-    const church = await Church.findByIdAndDelete(id).lean();
+    const church = await Church.findById(id).select("_id").lean();
     if (!church) return res.status(404).json({ message: "Church not found" });
 
-    return res.status(200).json({ message: "Church deleted", data: { _id: id } });
+    // Wipe every church-scoped record first — the church doc goes
+    // last so a failure partway through can simply be retried.
+    const purged = await purgeChurchData(id);
+    await Church.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      message: "Church and all associated data deleted",
+      data: { _id: id, purged }
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

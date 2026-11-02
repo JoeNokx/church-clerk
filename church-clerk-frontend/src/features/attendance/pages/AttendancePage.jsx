@@ -30,6 +30,7 @@ import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
@@ -1337,6 +1338,7 @@ function AttendancePageInner() {
               value={Number(store?.visitorStats?.totalVisitors || 0).toLocaleString()}
               change={store?.visitorStats?.change?.totalVisitors}
               diff={store?.visitorStats?.diff?.totalVisitors}
+              diffText={kpiTrendText(store?.visitorStats?.diff?.totalVisitors, store?.visitorStats?.change?.totalVisitors, { noun: { one: "visitor", many: "visitors" } })}
               compareLabel="last month"
               iconBg="bg-blue-50"
               iconColor="text-blue-500"
@@ -1355,6 +1357,7 @@ function AttendancePageInner() {
               value={Number(store?.visitorStats?.thisWeekVisitors || 0).toLocaleString()}
               change={store?.visitorStats?.change?.thisWeekVisitors}
               diff={store?.visitorStats?.diff?.thisWeekVisitors}
+              diffText={kpiTrendText(store?.visitorStats?.diff?.thisWeekVisitors, store?.visitorStats?.change?.thisWeekVisitors, { period: "last week", noun: { one: "visitor", many: "visitors" } })}
               compareLabel="last week"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
@@ -1371,6 +1374,7 @@ function AttendancePageInner() {
               value={Number(store?.visitorStats?.thisMonthVisitors || 0).toLocaleString()}
               change={store?.visitorStats?.change?.thisMonthVisitors}
               diff={store?.visitorStats?.diff?.thisMonthVisitors}
+              diffText={kpiTrendText(store?.visitorStats?.diff?.thisMonthVisitors, store?.visitorStats?.change?.thisMonthVisitors, { noun: { one: "visitor", many: "visitors" } })}
               compareLabel="last month"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
@@ -1388,6 +1392,7 @@ function AttendancePageInner() {
               value={Number(store?.visitorStats?.convertedVisitors || 0).toLocaleString()}
               change={store?.visitorStats?.change?.convertedVisitors}
               diff={store?.visitorStats?.diff?.convertedVisitors}
+              diffText={kpiTrendText(store?.visitorStats?.diff?.convertedVisitors, store?.visitorStats?.change?.convertedVisitors, { noun: { one: "conversion", many: "conversions" } })}
               compareLabel="last month"
               iconBg="bg-emerald-50"
               iconColor="text-emerald-500"

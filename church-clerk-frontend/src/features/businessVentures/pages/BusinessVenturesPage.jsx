@@ -3,6 +3,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney, formatCompactMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import {
   createBusinessVenture,
   getBusinessKPI,
@@ -622,6 +623,7 @@ function BusinessVenturesPage() {
           value={totals.totalVentures}
           change={kpi?.change?.totalVentures}
           diff={kpi?.diff?.totalVentures}
+          diffText={kpiTrendText(kpi?.diff?.totalVentures, kpi?.change?.totalVentures, { noun: { one: "venture", many: "ventures" } })}
           compareLabel="last month"
           iconBg="bg-blue-50"
           iconColor="text-blue-500"
@@ -636,6 +638,8 @@ function BusinessVenturesPage() {
           title="Total Income"
           value={formatMoney(totals.totalIncome, currency)}
           change={kpi?.change?.totalIncome}
+          diff={kpi?.diff?.totalIncome}
+          diffText={kpiTrendText(kpi?.diff?.totalIncome, kpi?.change?.totalIncome, { format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           iconBg="bg-emerald-50"
           iconColor="text-emerald-500"
@@ -649,7 +653,10 @@ function BusinessVenturesPage() {
           title="Total Expenses"
           value={formatMoney(totals.totalExpenses, currency)}
           change={kpi?.change?.totalExpenses}
+          diff={kpi?.diff?.totalExpenses}
+          diffText={kpiTrendText(kpi?.diff?.totalExpenses, kpi?.change?.totalExpenses, { format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last month"
+          upIsGood={false}
           iconBg="bg-orange-50"
           iconColor="text-orange-500"
           icon={
@@ -662,6 +669,8 @@ function BusinessVenturesPage() {
           title="Net"
           value={formatMoney(totals.net, currency)}
           change={kpi?.change?.net}
+          diff={kpi?.diff?.net}
+          diffText={kpiTrendText(kpi?.diff?.net, kpi?.change?.net, { format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           iconBg="bg-violet-50"
           iconColor="text-violet-500"

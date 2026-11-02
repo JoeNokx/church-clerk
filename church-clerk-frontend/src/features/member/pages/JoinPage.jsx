@@ -229,10 +229,9 @@ export default function JoinPage() {
 
           {/* Photo */}
           <div className="flex flex-col items-center gap-3">
-            <button
-              type="button"
-              onClick={() => photoInputRef.current?.click()}
-              className="group relative h-20 w-20 rounded-full border-2 border-dashed border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 transition-colors overflow-hidden flex items-center justify-center"
+            <label
+              htmlFor="photoInput"
+              className="group relative h-20 w-20 rounded-full border-2 border-dashed border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 transition-colors overflow-hidden flex items-center justify-center cursor-pointer"
             >
               {photoPreviewUrl ? (
                 <img src={photoPreviewUrl} alt="Preview" className="h-full w-full object-cover rounded-full" />
@@ -247,9 +246,11 @@ export default function JoinPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-            </button>
-            <p className="text-xs text-gray-400">Click to upload photo (optional)</p>
-            <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            </label>
+            <label htmlFor="photoInput" className="text-xs text-gray-400 cursor-pointer">
+              Click to upload your photo (optional)
+            </label>
+            <input id="photoInput" ref={photoInputRef} type="file" accept="image/*" className="sr-only" onChange={handlePhotoChange} />
           </div>
 
           <div className="border-t border-gray-100" />

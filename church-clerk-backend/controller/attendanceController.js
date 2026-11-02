@@ -44,6 +44,20 @@ const linkProspectVisit = async (prospectId, visitorId) => {
   if (changed) await p.save();
 };
 
+// Some older visitor records store `attendance` as a single ObjectId
+// instead of an array — $addToSet only works on arrays, so wrap any
+// scalar value before pushing a session into it.
+const normalizeAttendanceArray = async (visitorId) => {
+  const _id = new mongoose.Types.ObjectId(String(visitorId));
+  const raw = await Visitor.collection.findOne({ _id }, { projection: { attendance: 1 } });
+  const stored = raw?.attendance;
+  if (stored === undefined || Array.isArray(stored)) return;
+  await Visitor.collection.updateOne(
+    { _id },
+    { $set: { attendance: stored === null ? [] : [stored] } }
+  );
+};
+
 // create visitor
 
 const createVisitor = async (req, res) => {
@@ -104,6 +118,7 @@ const createVisitor = async (req, res) => {
         await linkProspectVisit(existingVisitor.linkedProspect, existingVisitor._id);
       }
       if (session) {
+        await normalizeAttendanceArray(existingVisitor._id);
         await Visitor.updateOne(
           { _id: existingVisitor._id },
           { $addToSet: { attendance: session._id } }
@@ -411,6 +426,7 @@ const updateVisitor = async (req, res) => {
 
         const updateOp = { $set: req.body };
         if (sessionToAdd) {
+          await normalizeAttendanceArray(id);
           updateOp.$addToSet = { attendance: sessionToAdd._id };
         }
 

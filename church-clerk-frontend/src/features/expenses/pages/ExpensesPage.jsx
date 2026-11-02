@@ -7,6 +7,7 @@ import ExpensesForm from "../components/ExpensesForm.jsx";
 import ExpensesTable from "../components/ExpensesTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
@@ -20,7 +21,7 @@ function ExpensesPageInner() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
-  const [kpi, setKpi] = useState({ thisWeek: 0, thisMonth: 0, lastMonth: 0, thisYear: 0, change: null });
+  const [kpi, setKpi] = useState({ thisWeek: 0, thisMonth: 0, lastMonth: 0, thisYear: 0, change: null, diff: null });
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("expenses", "create") : false), [can]);
 
@@ -36,10 +37,11 @@ function ExpensesPageInner() {
         thisMonth: Number(data?.thisMonth || 0),
         lastMonth: Number(data?.lastMonth || 0),
         thisYear: Number(data?.thisYear || 0),
-        change: data?.change || null
+        change: data?.change || null,
+        diff: data?.diff || null
       });
     } catch {
-      setKpi({ thisWeek: 0, thisMonth: 0, lastMonth: 0, thisYear: 0, change: null });
+      setKpi({ thisWeek: 0, thisMonth: 0, lastMonth: 0, thisYear: 0, change: null, diff: null });
     }
   }, [store?.activeChurchId, store?.getGeneralExpensesKPI]);
 
@@ -94,7 +96,10 @@ function ExpensesPageInner() {
           title="This Week"
           value={formatMoney(kpi.thisWeek || 0, currency)}
           change={kpi.change?.thisWeek}
+          diff={kpi.diff?.thisWeek}
+          diffText={kpiTrendText(kpi.diff?.thisWeek, kpi.change?.thisWeek, { period: "last week", format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last week"
+          upIsGood={false}
           iconBg="bg-blue-50"
           iconColor="text-blue-500"
           icon={
@@ -109,7 +114,10 @@ function ExpensesPageInner() {
           title="This Month"
           value={formatMoney(kpi.thisMonth || 0, currency)}
           change={kpi.change?.thisMonth}
+          diff={kpi.diff?.thisMonth}
+          diffText={kpiTrendText(kpi.diff?.thisMonth, kpi.change?.thisMonth, { format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last month"
+          upIsGood={false}
           iconBg="bg-orange-50"
           iconColor="text-orange-500"
           icon={
@@ -138,7 +146,10 @@ function ExpensesPageInner() {
           title="This Year"
           value={formatMoney(kpi.thisYear || 0, currency)}
           change={kpi.change?.thisYear}
+          diff={kpi.diff?.thisYear}
+          diffText={kpiTrendText(kpi.diff?.thisYear, kpi.change?.thisYear, { period: "last year", format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last year"
+          upIsGood={false}
           iconBg="bg-violet-50"
           iconColor="text-violet-500"
           icon={

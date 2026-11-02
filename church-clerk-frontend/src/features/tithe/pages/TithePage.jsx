@@ -9,6 +9,7 @@ import TitheAggregateTable from "../components/TitheAggregateTable.jsx";
 import TitheIndividualForm from "../components/TitheIndividualForm.jsx";
 import TitheAggregateForm from "../components/TitheAggregateForm.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -523,6 +524,9 @@ function TithePageInner() {
   const thirdChange = mode === "aggregate" ? kpi?.change?.thisYearRecords : kpi?.change?.membersPaidThisMonth;
   const thirdDiff = mode === "aggregate" ? kpi?.diff?.thisYearRecords : kpi?.diff?.membersPaidThisMonth;
   const thirdCompareLabel = mode === "aggregate" ? "last year" : "last month";
+  const thirdNoun = mode === "aggregate" ? { one: "record", many: "records" } : { one: "member", many: "members" };
+  const moneyDiffText = (diff, change, period) =>
+    kpiTrendText(diff, change, { period, format: (v) => formatCurrency(v, currency), fewerWord: "less" });
 
   return (
     <div className="max-w-6xl">
@@ -609,6 +613,8 @@ function TithePageInner() {
                 title="This Month"
                 value={formatCurrency(kpiThisMonth, currency)}
                 change={kpi?.change?.thisMonth}
+                diff={kpi?.diff?.thisMonth}
+                diffText={moneyDiffText(kpi?.diff?.thisMonth, kpi?.change?.thisMonth, "last month")}
                 compareLabel="last month"
                 iconBg="bg-blue-50"
                 iconColor="text-blue-500"
@@ -624,6 +630,8 @@ function TithePageInner() {
                 title="This Year"
                 value={formatCurrency(kpiThisYear, currency)}
                 change={kpi?.change?.thisYear}
+                diff={kpi?.diff?.thisYear}
+                diffText={moneyDiffText(kpi?.diff?.thisYear, kpi?.change?.thisYear, "last year")}
                 compareLabel="last year"
                 iconBg="bg-emerald-50"
                 iconColor="text-emerald-500"
@@ -651,6 +659,7 @@ function TithePageInner() {
                 value={Number(thirdValue || 0).toLocaleString()}
                 change={thirdChange}
                 diff={thirdDiff}
+                diffText={kpiTrendText(thirdDiff, thirdChange, { period: thirdCompareLabel, noun: thirdNoun })}
                 compareLabel={thirdCompareLabel}
                 iconBg="bg-violet-50"
                 iconColor="text-violet-500"

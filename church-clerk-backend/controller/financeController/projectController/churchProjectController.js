@@ -396,7 +396,10 @@ const getChurchProjectsKPI = async (req, res) => {
     };
 
     const diff = {
-      totalProjects: totalProjects - totalProjectsPrev
+      totalProjects: totalProjects - totalProjectsPrev,
+      totalRaised: totalRaised - totalRaisedPrev,
+      totalTarget: totalTarget - totalTargetPrev,
+      totalSpent: totalSpent - totalSpentPrev
     };
 
     return res.status(200).json({

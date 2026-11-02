@@ -29,4 +29,27 @@ function generateMemberId(prefix, existingCount) {
   return `${prefix}-${padded}`;
 }
 
-export { parseOptionalDate, getChurchPrefix, generateMemberId };
+// Reserve the next member serial for a church — atomic, so concurrent
+// registrations can never be handed the same number.
+async function takeMemberSerial(churchId) {
+  const updated = await Church.findByIdAndUpdate(
+    churchId,
+    { $inc: { memberSerial: 1 } },
+    { new: true }
+  );
+  return updated ? Number(updated.memberSerial || 0) : null;
+}
+
+// Give back a serial that was taken but never used because the member
+// save failed. Only releases it while it's still the newest number
+// issued — if another registration has since taken a higher serial,
+// the unused number stays a safe gap rather than risking a re-issue.
+async function releaseMemberSerial(churchId, issuedSerial) {
+  if (!issuedSerial) return;
+  await Church.updateOne(
+    { _id: churchId, memberSerial: issuedSerial },
+    { $inc: { memberSerial: -1 } }
+  );
+}
+
+export { parseOptionalDate, getChurchPrefix, generateMemberId, takeMemberSerial, releaseMemberSerial };

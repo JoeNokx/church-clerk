@@ -5,7 +5,7 @@ import MemberStatusHistory from "./memberStatusHistoryModel.js";
 const memberSchema = new mongoose.Schema({
 
   // Personal information
-  memberId: { type: String, unique: true, trim: true },
+  memberId: { type: String, trim: true },
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
   email: { type: String, lowercase: true, trim: true },

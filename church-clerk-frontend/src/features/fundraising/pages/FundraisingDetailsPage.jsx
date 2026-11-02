@@ -19,6 +19,7 @@ import ImageLightbox from "../../../shared/components/ImageLightbox/index.jsx";
 import ReceiptPicker from "../../../shared/components/ReceiptPicker/index.jsx";
 import ReceiptView from "../../../shared/components/ReceiptView/index.jsx";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import AddContributorModal from "../components/AddContributorModal.jsx";
 import EditPledgeModal from "../../pledge/components/EditPledgeModal.jsx";
 import PledgeDetailsModal, { PaymentFormModal } from "../../pledge/components/PledgeDetailsModal.jsx";
@@ -787,6 +788,7 @@ function FundraisingDetailsPage() {
           value={formatCurrency(kpi?.totalContributions || 0, currency)}
           change={kpi?.change?.totalContributions}
           diff={kpi?.diff?.totalContributions}
+          diffText={kpiTrendText(kpi?.diff?.totalContributions, kpi?.change?.totalContributions, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -801,7 +803,9 @@ function FundraisingDetailsPage() {
           value={formatCurrency(kpi?.totalExpenses || 0, currency)}
           change={kpi?.change?.totalExpenses}
           diff={kpi?.diff?.totalExpenses}
+          diffText={kpiTrendText(kpi?.diff?.totalExpenses, kpi?.change?.totalExpenses, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
+          upIsGood={false}
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -815,6 +819,7 @@ function FundraisingDetailsPage() {
           value={formatCurrency(kpi?.balance || 0, currency)}
           change={kpi?.change?.balance}
           diff={kpi?.diff?.balance}
+          diffText={kpiTrendText(kpi?.diff?.balance, kpi?.change?.balance, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

@@ -275,6 +275,8 @@ const getTitheAggregateKPI = async (req, res) => {
     };
 
     const diff = {
+      thisMonth: thisMonth - lastMonthVal,
+      thisYear: thisYear - lastYearVal,
       thisMonthRecords: thisMonthRecords - lastMonthRecords,
       thisYearRecords: thisYearRecords - lastYearRecords
     };

@@ -309,6 +309,12 @@ const getGeneralExpensesKPI = async (req, res) => {
       thisYear: pctChange(thisYear, lastYearVal)
     };
 
+    const diff = {
+      thisWeek: thisWeek - lastWeekVal,
+      thisMonth: thisMonth - lastMonthVal,
+      thisYear: thisYear - lastYearVal
+    };
+
     return res.status(200).json({
       message: "general Expenses KPI fetched successfully",
       data: {
@@ -316,7 +322,8 @@ const getGeneralExpensesKPI = async (req, res) => {
         thisMonth,
         lastMonth: lastMonthVal,
         thisYear,
-        change
+        change,
+        diff
       }
     });
 

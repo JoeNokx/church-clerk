@@ -1,7 +1,7 @@
 import Church from "../models/churchModel.js";
 import Member from "../models/memberModel.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
-import { getChurchPrefix, generateMemberId, parseOptionalDate } from "../utils/memberHelpers.js";
+import { getChurchPrefix, generateMemberId, parseOptionalDate, takeMemberSerial, releaseMemberSerial } from "../utils/memberHelpers.js";
 import { memberFieldEnum } from "../utils/memberImportFields.js";
 import cloudinary from "../config/cloudinary.js";
 
@@ -95,41 +95,47 @@ export const selfRegisterMember = async (req, res) => {
     }
 
     const prefix = await getChurchPrefix(church._id);
-    const updatedChurch = await Church.findByIdAndUpdate(
-      church._id,
-      { $inc: { memberSerial: 1 } },
-      { new: true }
-    );
-    const memberId = generateMemberId(prefix || "CH", updatedChurch.memberSerial - 1);
+    const issuedSerial = await takeMemberSerial(church._id);
+    const memberId = generateMemberId(prefix || "CH", issuedSerial - 1);
 
     const { date: dob } = parseOptionalDate(dateOfBirth);
     const { date: joined } = parseOptionalDate(dateJoined);
 
     const createdBy = church.createdBy;
 
-    const member = await Member.create({
-      memberId,
-      firstName: String(firstName).trim(),
-      lastName: String(lastName).trim(),
-      email: email ? String(email).trim().toLowerCase() : undefined,
-      phoneNumber: validatedPhone,
-      gender: gender || undefined,
-      occupation: occupation || undefined,
-      nationality: nationality || undefined,
-      ageGroup: ageGroup || undefined,
-      dateOfBirth: dob || undefined,
-      streetAddress: streetAddress || undefined,
-      city: city || undefined,
-      region: region || undefined,
-      country: country || "Ghana",
-      maritalStatus: maritalStatus || undefined,
-      churchRole: churchRole || undefined,
-      dateJoined: joined || new Date(),
-      note: note || undefined,
-      status: MEMBER_STATUS_ENUM.includes(String(status || "").toLowerCase()) ? String(status).toLowerCase() : "active",
-      church: church._id,
-      createdBy
-    });
+    let member;
+    try {
+      member = await Member.create({
+        memberId,
+        firstName: String(firstName).trim(),
+        lastName: String(lastName).trim(),
+        email: email ? String(email).trim().toLowerCase() : undefined,
+        phoneNumber: validatedPhone,
+        gender: gender || undefined,
+        occupation: occupation || undefined,
+        nationality: nationality || undefined,
+        ageGroup: ageGroup || undefined,
+        dateOfBirth: dob || undefined,
+        streetAddress: streetAddress || undefined,
+        city: city || undefined,
+        region: region || undefined,
+        country: country || "Ghana",
+        maritalStatus: maritalStatus || undefined,
+        churchRole: churchRole || undefined,
+        dateJoined: joined || new Date(),
+        note: note || undefined,
+        status: MEMBER_STATUS_ENUM.includes(String(status || "").toLowerCase()) ? String(status).toLowerCase() : "active",
+        church: church._id,
+        createdBy
+      });
+    } catch (error) {
+      // Give the serial back when it's still safe to reuse — a
+      // duplicate-ID collision keeps it advanced to skip the clash.
+      if (error?.code !== 11000 && error?.errorResponse?.code !== 11000) {
+        await releaseMemberSerial(church._id, issuedSerial).catch(() => {});
+      }
+      throw error;
+    }
 
     if (req.file?.buffer) {
       try {

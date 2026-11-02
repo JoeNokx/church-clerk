@@ -4,6 +4,7 @@ import Program from "../models/programModel.js";
 import Offering from "../models/financeModel/offeringModel.js";
 import Visitor from "../models/visitorsModel.js";
 import { withCacheJson } from "../utils/cache.js";
+import { seedMissingMemberBaselines, getMemberStatusSnapshotAt } from "../utils/memberStatusSnapshot.js";
 
 
 
@@ -33,28 +34,38 @@ const getDashboardKPI = async (req, res) => {
         const pctChange = (current, previous) => {
           const c = Number(current || 0);
           const p = Number(previous || 0);
-          if (!p) return c ? 100 : 0;
-          return ((c - p) / p) * 100;
+          if (p > 0) return ((c - p) / p) * 100;
+          return c > 0 ? null : 0;
         };
+
+        await seedMissingMemberBaselines(query.church);
 
         // --- MEMBER KPIs (parallel) ---
         const [
           totalMembers,
           currentMembers,
           newMembersThisMonth,
-          totalMembersPrev,
-          currentMembersPrev,
-          newMembersPrevMonth
+          newMembersPrevMonth,
+          monthStartSnapshot
         ] = await Promise.all([
           Member.countDocuments(query),
           Member.countDocuments({ ...query, status: "active" }),
           Member.countDocuments({ ...query, dateJoined: { $gte: startOfMonth, $lt: startOfNextMonth } }),
-
-          // Previous month comparators
-          Member.countDocuments({ ...query, dateJoined: { $lt: startOfMonth } }),
-          Member.countDocuments({ ...query, status: "active", dateJoined: { $lt: startOfMonth } }),
-          Member.countDocuments({ ...query, dateJoined: { $gte: startOfPrevMonth, $lt: startOfMonth } })
+          Member.countDocuments({ ...query, dateJoined: { $gte: startOfPrevMonth, $lt: startOfMonth } }),
+          getMemberStatusSnapshotAt(query.church, startOfMonth)
         ]);
+
+        // Previous-month comparators from the status snapshot:
+        // totalMembersPrev = member records that existed at month start,
+        // currentMembersPrev = how many of them were active then (reconstructed
+        // from history; null when coverage is incomplete so no honest baseline exists).
+        const totalMembersPrev = monthStartSnapshot.memberCount;
+        const currentMembersPrev = monthStartSnapshot.hasComparisonData
+          ? Number(monthStartSnapshot.counts?.active || 0)
+          : null;
+
+        const buildChange = (current, prev) => (prev === null ? null : pctChange(current, prev));
+        const buildDiff = (current, prev) => (prev === null ? null : current - prev);
 
         // --- THIS SUNDAY ATTENDANCE (vs last Sunday) ---
         const today = new Date();
@@ -121,15 +132,15 @@ const getDashboardKPI = async (req, res) => {
         const thisSundayDate = thisSunday.toISOString().split("T")[0]; // YYYY-MM-DD
 
         const change = {
-          totalMembers: pctChange(totalMembers, totalMembersPrev),
-          currentMembers: pctChange(currentMembers, currentMembersPrev),
+          totalMembers: buildChange(totalMembers, totalMembersPrev),
+          currentMembers: buildChange(currentMembers, currentMembersPrev),
           newMembersThisMonth: pctChange(newMembersThisMonth, newMembersPrevMonth),
           lastSundayAttendance: pctChange(thisSundayAttendance, lastSundayAttendancePrevWeek)
         };
 
         const diff = {
-          totalMembers: totalMembers - totalMembersPrev,
-          currentMembers: currentMembers - currentMembersPrev,
+          totalMembers: buildDiff(totalMembers, totalMembersPrev),
+          currentMembers: buildDiff(currentMembers, currentMembersPrev),
           newMembersThisMonth: newMembersThisMonth - newMembersPrevMonth,
           lastSundayAttendance: thisSundayAttendance - lastSundayAttendancePrevWeek
         };

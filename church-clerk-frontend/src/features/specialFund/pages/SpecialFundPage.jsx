@@ -7,6 +7,7 @@ import SpecialFundForm from "../components/SpecialFundForm.jsx";
 import SpecialFundTable from "../components/SpecialFundTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
@@ -20,7 +21,7 @@ export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, e
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingFund, setEditingFund] = useState(null);
-  const [kpi, setKpi] = useState({ thisWeek: 0, thisMonth: 0, thisYear: 0, change: {} });
+  const [kpi, setKpi] = useState({ thisWeek: 0, thisMonth: 0, thisYear: 0, change: {}, diff: {} });
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("specialFunds", "create") : false), [can]);
   // const canCreate = true;
@@ -36,10 +37,11 @@ export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, e
         thisWeek: data?.thisWeek || 0,
         thisMonth: data?.thisMonth || 0,
         thisYear: data?.thisYear || 0,
-        change: data?.change || {}
+        change: data?.change || {},
+        diff: data?.diff || {}
       });
     } catch {
-      setKpi({ thisWeek: 0, thisMonth: 0, thisYear: 0, change: {} });
+      setKpi({ thisWeek: 0, thisMonth: 0, thisYear: 0, change: {}, diff: {} });
     }
   }, [store?.activeChurch, store?.getSpecialFundKPI]);
 
@@ -98,6 +100,8 @@ export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, e
           title="This Week"
           value={formatMoney(kpi.thisWeek || 0, currency)}
           change={kpi.change?.thisWeek}
+          diff={kpi.diff?.thisWeek}
+          diffText={kpiTrendText(kpi.diff?.thisWeek, kpi.change?.thisWeek, { period: "last week", format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last week"
           iconBg="bg-blue-50"
           iconColor="text-blue-500"
@@ -114,6 +118,8 @@ export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, e
           title="This Month"
           value={formatMoney(kpi.thisMonth || 0, currency)}
           change={kpi.change?.thisMonth}
+          diff={kpi.diff?.thisMonth}
+          diffText={kpiTrendText(kpi.diff?.thisMonth, kpi.change?.thisMonth, { format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           iconBg="bg-orange-50"
           iconColor="text-orange-500"
@@ -131,6 +137,8 @@ export function SpecialFundPageInner({ noHeader = false, openCreateRef = null, e
           title="This Year"
           value={formatMoney(kpi.thisYear || 0, currency)}
           change={kpi.change?.thisYear}
+          diff={kpi.diff?.thisYear}
+          diffText={kpiTrendText(kpi.diff?.thisYear, kpi.change?.thisYear, { period: "last year", format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last year"
           iconBg="bg-emerald-50"
           iconColor="text-emerald-500"

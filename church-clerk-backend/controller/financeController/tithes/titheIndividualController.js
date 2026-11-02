@@ -372,6 +372,8 @@ const getTitheIndividualKPI = async (req, res) => {
     };
 
     const diff = {
+      thisMonth: thisMonth - lastMonthVal,
+      thisYear: thisYear - lastYearVal,
       membersPaidThisMonth: membersPaidThisMonth - membersPaidLastMonth
     };
 

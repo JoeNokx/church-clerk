@@ -3,6 +3,7 @@ import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigat
 import PermissionContext from "../../permissions/permission.store.js";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney, formatCompactMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import {
   createChurchProject,
   getChurchProjects,
@@ -352,6 +353,7 @@ function FundraisingPageInner() {
           value={totals.totalProjects}
           change={projectsKpi?.change?.totalProjects}
           diff={projectsKpi?.diff?.totalProjects}
+          diffText={kpiTrendText(projectsKpi?.diff?.totalProjects, projectsKpi?.change?.totalProjects, { noun: { one: "campaign", many: "campaigns" } })}
           compareLabel="last month"
           tooltip={`${totals.activeCount} of ${totals.totalProjects} fundraising campaign${totals.totalProjects !== 1 ? "s" : ""} currently active`}
           iconBg="bg-blue-50"
@@ -366,6 +368,8 @@ function FundraisingPageInner() {
           title="Total Raised"
           value={formatCurrency(totals.totalRaised, currency)}
           change={projectsKpi?.change?.totalRaised}
+          diff={projectsKpi?.diff?.totalRaised}
+          diffText={kpiTrendText(projectsKpi?.diff?.totalRaised, projectsKpi?.change?.totalRaised, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           iconBg="bg-emerald-50"
           iconColor="text-emerald-500"
@@ -379,6 +383,8 @@ function FundraisingPageInner() {
           title="Total Target"
           value={formatCurrency(totals.totalTarget, currency)}
           change={projectsKpi?.change?.totalTarget}
+          diff={projectsKpi?.diff?.totalTarget}
+          diffText={kpiTrendText(projectsKpi?.diff?.totalTarget, projectsKpi?.change?.totalTarget, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           iconBg="bg-violet-50"
           iconColor="text-violet-500"
@@ -394,7 +400,10 @@ function FundraisingPageInner() {
           title="Total Spent"
           value={formatCurrency(totals.totalSpent, currency)}
           change={projectsKpi?.change?.totalSpent}
+          diff={projectsKpi?.diff?.totalSpent}
+          diffText={kpiTrendText(projectsKpi?.diff?.totalSpent, projectsKpi?.change?.totalSpent, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
+          upIsGood={false}
           iconBg="bg-orange-50"
           iconColor="text-orange-500"
           icon={

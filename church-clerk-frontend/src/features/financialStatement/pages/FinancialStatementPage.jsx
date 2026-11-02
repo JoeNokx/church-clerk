@@ -13,6 +13,7 @@ import {
   getReportsAnalytics
 } from "../../reportsAnalytics/services/reportsAnalytics.api.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
@@ -36,14 +37,6 @@ import {
 
 function formatCurrency(value, currency) {
   return formatMoney(value, currency);
-}
-
-function formatPercent(value) {
-  const v = Number(value || 0);
-  const rounded = Math.round(v * 10) / 10;
-  const absRounded = Math.abs(rounded);
-  const sign = rounded > 0 ? "+" : rounded < 0 ? "-" : "";
-  return `${sign}${absRounded}%`;
 }
 
 function clampPercent(value) {
@@ -678,6 +671,8 @@ function FinancialStatementContent() {
               title="Total Income"
               value={money(kpi.totalIncome)}
               change={kpi.incomeChangePct}
+              diff={kpi.incomeDiff}
+              diffText={kpiTrendText(kpi.incomeDiff, kpi.incomeChangePct, { period: comparisonLabel, format: (v) => money(v), fewerWord: "less" })}
               compareLabel={comparisonLabel}
               iconBg="bg-emerald-50"
               iconColor="text-emerald-500"
@@ -692,7 +687,10 @@ function FinancialStatementContent() {
               title="Total Expenses"
               value={money(kpi.totalExpenses)}
               change={kpi.expensesChangePct}
+              diff={kpi.expensesDiff}
+              diffText={kpiTrendText(kpi.expensesDiff, kpi.expensesChangePct, { period: comparisonLabel, format: (v) => money(v), fewerWord: "less" })}
               compareLabel={comparisonLabel}
+              upIsGood={false}
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               icon={
@@ -705,7 +703,10 @@ function FinancialStatementContent() {
             <KpiCard
               title="Surplus / Deficit"
               value={money(kpi.surplus)}
-              subtitle={`${formatPercent(kpi.surplusPctOfIncome)} of income`}
+              change={kpi.surplusChangePct}
+              diff={kpi.surplusDiff}
+              diffText={kpiTrendText(kpi.surplusDiff, kpi.surplusChangePct, { period: comparisonLabel, format: (v) => money(v), fewerWord: "less" })}
+              compareLabel={comparisonLabel}
               iconBg={Number(kpi.surplus || 0) >= 0 ? "bg-blue-50" : "bg-red-50"}
               iconColor={Number(kpi.surplus || 0) >= 0 ? "text-blue-500" : "text-red-500"}
               icon={

@@ -275,6 +275,12 @@ const getOfferingKPI = async (req, res) => {
       thisYear: pctChange(thisYear, lastYearVal)
     };
 
+    const diff = {
+      thisWeek: thisWeek - lastWeekVal,
+      thisMonth: thisMonth - lastMonthVal,
+      thisYear: thisYear - lastYearVal
+    };
+
     return res.status(200).json({
       message: "Offering KPI fetched successfully",
       data: {
@@ -284,7 +290,8 @@ const getOfferingKPI = async (req, res) => {
         lastMonth: lastMonthVal,
         thisYear,
         lastYear: lastYearVal,
-        change
+        change,
+        diff
       }
     });
 

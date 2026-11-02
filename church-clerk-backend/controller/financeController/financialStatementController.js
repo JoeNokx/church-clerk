@@ -634,6 +634,7 @@ async function buildStatement({ churchId, periodStart, periodEnd, prevStart, pre
   const pledgePipeline = await getPledgePipeline({ churchId, periodStart, periodEnd, pledgeSplit });
 
   const surplusPctOfIncome = totalIncome > 0 ? (surplus / totalIncome) * 100 : 0;
+  const prevSurplus = prevTotalIncome - prevTotalExpenses;
 
   return {
     period: {
@@ -647,6 +648,10 @@ async function buildStatement({ churchId, periodStart, periodEnd, prevStart, pre
       surplus,
       incomeChangePct: percentChange(totalIncome, prevTotalIncome),
       expensesChangePct: percentChange(totalExpenses, prevTotalExpenses),
+      surplusChangePct: percentChange(surplus, prevSurplus),
+      incomeDiff: totalIncome - prevTotalIncome,
+      expensesDiff: totalExpenses - prevTotalExpenses,
+      surplusDiff: surplus - prevSurplus,
       surplusPctOfIncome
     },
     incomeDetails,

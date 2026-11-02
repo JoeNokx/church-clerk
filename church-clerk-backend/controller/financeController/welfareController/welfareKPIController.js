@@ -88,6 +88,13 @@ const getWelfareKPI = async (req, res) => {
       thisYearDisbursement: pctChange(thisYearDisbursement, lastYearDisbursement)
     };
 
+    const diff = {
+      thisMonthContribution: thisMonthContribution - lastMonthContribution,
+      thisMonthDisbursement: thisMonthDisbursement - lastMonthDisbursement,
+      thisYearContribution: thisYearContribution - lastYearContribution,
+      thisYearDisbursement: thisYearDisbursement - lastYearDisbursement
+    };
+
     return res.status(200).json({
       message: "welfare KPI fetched successfully",
       data: {
@@ -95,7 +102,8 @@ const getWelfareKPI = async (req, res) => {
         thisMonthDisbursement,
         thisYearContribution,
         thisYearDisbursement,
-        change
+        change,
+        diff
       }
     });
 

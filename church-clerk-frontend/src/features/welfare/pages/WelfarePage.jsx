@@ -11,6 +11,7 @@ import WelfareDisbursementForm from "../components/WelfareDisbursementForm.jsx";
 import WelfareDisbursementTable from "../components/WelfareDisbursementTable.jsx";
 import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
@@ -35,7 +36,8 @@ function WelfarePageInner() {
     thisMonthDisbursement: 0,
     thisYearContribution: 0,
     thisYearDisbursement: 0,
-    change: null
+    change: null,
+    diff: null
   });
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("welfare", "create") : false), [can]);
@@ -53,7 +55,8 @@ function WelfarePageInner() {
         thisMonthDisbursement: Number(data?.thisMonthDisbursement || 0),
         thisYearContribution: Number(data?.thisYearContribution || 0),
         thisYearDisbursement: Number(data?.thisYearDisbursement || 0),
-        change: data?.change || null
+        change: data?.change || null,
+        diff: data?.diff || null
       });
     } catch {
       setKpi({
@@ -61,7 +64,8 @@ function WelfarePageInner() {
         thisMonthDisbursement: 0,
         thisYearContribution: 0,
         thisYearDisbursement: 0,
-        change: null
+        change: null,
+        diff: null
       });
     }
   }, [store?.activeChurchId, store?.getWelfareKPI]);
@@ -145,6 +149,8 @@ function WelfarePageInner() {
           title="Contributions (This Month)"
           value={formatMoney(kpi.thisMonthContribution || 0, currency)}
           change={kpi.change?.thisMonthContribution}
+          diff={kpi.diff?.thisMonthContribution}
+          diffText={kpiTrendText(kpi.diff?.thisMonthContribution, kpi.change?.thisMonthContribution, { format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           iconBg="bg-emerald-50"
           iconColor="text-emerald-500"
@@ -158,7 +164,10 @@ function WelfarePageInner() {
           title="Disbursements (This Month)"
           value={formatMoney(kpi.thisMonthDisbursement || 0, currency)}
           change={kpi.change?.thisMonthDisbursement}
+          diff={kpi.diff?.thisMonthDisbursement}
+          diffText={kpiTrendText(kpi.diff?.thisMonthDisbursement, kpi.change?.thisMonthDisbursement, { format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last month"
+          upIsGood={false}
           iconBg="bg-orange-50"
           iconColor="text-orange-500"
           icon={
@@ -171,6 +180,8 @@ function WelfarePageInner() {
           title="Contributions (This Year)"
           value={formatMoney(kpi.thisYearContribution || 0, currency)}
           change={kpi.change?.thisYearContribution}
+          diff={kpi.diff?.thisYearContribution}
+          diffText={kpiTrendText(kpi.diff?.thisYearContribution, kpi.change?.thisYearContribution, { period: "last year", format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last year"
           iconBg="bg-teal-50"
           iconColor="text-teal-500"
@@ -185,7 +196,10 @@ function WelfarePageInner() {
           title="Disbursements (This Year)"
           value={formatMoney(kpi.thisYearDisbursement || 0, currency)}
           change={kpi.change?.thisYearDisbursement}
+          diff={kpi.diff?.thisYearDisbursement}
+          diffText={kpiTrendText(kpi.diff?.thisYearDisbursement, kpi.change?.thisYearDisbursement, { period: "last year", format: (v) => formatMoney(v, currency), fewerWord: "less" })}
           compareLabel="last year"
+          upIsGood={false}
           iconBg="bg-rose-50"
           iconColor="text-rose-500"
           icon={

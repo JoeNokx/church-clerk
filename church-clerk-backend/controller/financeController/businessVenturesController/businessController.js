@@ -347,7 +347,10 @@ const getAllBusinessKPI = async(req, res) => {
     };
 
     const diff = {
-      totalVentures: totalVentures - totalVenturesPrev
+      totalVentures: totalVentures - totalVenturesPrev,
+      totalIncome: totalIncome - totalIncomePrev,
+      totalExpenses: totalExpenses - totalExpensesPrev,
+      net: net - netPrev
     };
 
     return res.status(200).json({

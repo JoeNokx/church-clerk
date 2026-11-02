@@ -7,6 +7,7 @@ import ChurchContext from "../../church/church.store.js";
 import AddLookupValueButton from "../../lookups/components/AddLookupValueButton.jsx";
 import { useLookupValues } from "../../lookups/hooks/useLookupValues.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
+import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
@@ -972,9 +973,9 @@ function BusinessVentureDetailsPage() {
         <KpiCard
           title="Total Income"
           value={formatCurrency(kpiCards.totalIncome, currency)}
-          subtitle={`${kpiCards.incomeCount} transactions`}
           change={kpi?.change?.totalIncome}
           diff={kpi?.diff?.totalIncome}
+          diffText={kpiTrendText(kpi?.diff?.totalIncome, kpi?.change?.totalIncome, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -987,10 +988,11 @@ function BusinessVentureDetailsPage() {
         <KpiCard
           title="Total Expenses"
           value={formatCurrency(kpiCards.totalExpenses, currency)}
-          subtitle={`${kpiCards.expensesCount} transactions`}
           change={kpi?.change?.totalExpenses}
           diff={kpi?.diff?.totalExpenses}
+          diffText={kpiTrendText(kpi?.diff?.totalExpenses, kpi?.change?.totalExpenses, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
+          upIsGood={false}
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17 7l-5 5-5-5M17 12l-5 5-5-5" />
@@ -1004,6 +1006,7 @@ function BusinessVentureDetailsPage() {
           value={formatCurrency(kpiCards.totalNet, currency)}
           change={kpi?.change?.totalNet}
           diff={kpi?.diff?.totalNet}
+          diffText={kpiTrendText(kpi?.diff?.totalNet, kpi?.change?.totalNet, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -1016,9 +1019,9 @@ function BusinessVentureDetailsPage() {
         <KpiCard
           title="This Month"
           value={formatCurrency(kpiCards.incomeThisMonth, currency)}
-          subtitle={`Expenses: ${formatCurrency(kpiCards.expensesThisMonth, currency)}`}
           change={kpi?.change?.totalIncome}
           diff={kpi?.diff?.totalIncome}
+          diffText={kpiTrendText(kpi?.diff?.totalIncome, kpi?.change?.totalIncome, { format: (v) => formatCurrency(v, currency), fewerWord: "less" })}
           compareLabel="last month"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

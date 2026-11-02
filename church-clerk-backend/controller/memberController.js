@@ -1,5 +1,5 @@
 import Member from "../models/memberModel.js"
-import MemberStatusHistory from "../models/memberStatusHistoryModel.js"
+import { seedMissingMemberBaselines, getMemberStatusSnapshotAt } from "../utils/memberStatusSnapshot.js";
 import Church from "../models/churchModel.js"
 import cloudinary from "../config/cloudinary.js"
 import Visitor from "../models/visitorsModel.js"
@@ -15,7 +15,7 @@ import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import { parseImportFileToObjects } from "../utils/spreadsheetParser.js";
 import ExcelJS from "exceljs";
-import { parseOptionalDate, getChurchPrefix, generateMemberId } from "../utils/memberHelpers.js";
+import { parseOptionalDate, getChurchPrefix, generateMemberId, takeMemberSerial, releaseMemberSerial } from "../utils/memberHelpers.js";
 import { validateMemberImportRows } from "../services/member/memberImportService.js";
 import { MEMBER_IMPORT_FIELDS } from "../utils/memberImportFields.js";
 import { annotateDeletable } from "../services/recordDependencyService.js";
@@ -191,14 +191,6 @@ const createMember = async (req, res) => {
     const prefix = await getChurchPrefix(churchId);
     if (!prefix) return res.status(404).json({ message: "Church not found" });
 
-    const updatedChurch = await Church.findByIdAndUpdate(
-      churchId,
-      { $inc: { memberSerial: 1 } },
-      { new: true }
-    );
-
-    const memberId = generateMemberId(prefix, updatedChurch.memberSerial - 1);
-
     let validatedPhoneNumber;
     try {
       validatedPhoneNumber = validatePhoneNumber(phoneNumber, "GH");
@@ -225,6 +217,12 @@ const createMember = async (req, res) => {
         return res.status(409).json({ message: "This outreach person has already been connected as a member." });
       }
     }
+
+    // Take a serial only once every check above has passed — a rejected
+    // registration shouldn't burn a number. If the save still fails,
+    // the serial is handed back when it's safe to reuse.
+    const issuedSerial = await takeMemberSerial(churchId);
+    const memberId = generateMemberId(prefix, issuedSerial - 1);
 
     let member;
     try {
@@ -257,6 +255,12 @@ const createMember = async (req, res) => {
         church: churchId
       });
     } catch (error) {
+      // Duplicate-ID collision means the number is somehow already
+      // taken — keep the serial advanced so the next create skips past
+      // it instead of colliding again.
+      if (error?.code !== 11000 && error?.errorResponse?.code !== 11000) {
+        await releaseMemberSerial(churchId, issuedSerial).catch(() => {});
+      }
       throw error;
     }
 
@@ -661,28 +665,7 @@ const getAllMembersKPI = async (req, res) => {
       return c > 0 ? null : 0;
     };
 
-    // Lazy baseline: members with no history rows get one stamped "now".
-    // Idempotent via the partial unique index on (church, member, source="baseline").
-    const memberIdsWithHistory = await MemberStatusHistory.distinct("member", { church: query.church });
-    const missingHistory = await Member.find({ ...query, _id: { $nin: memberIdsWithHistory } })
-      .select("_id status")
-      .lean();
-    if (missingHistory.length) {
-      const stamp = new Date();
-      await MemberStatusHistory.insertMany(
-        missingHistory.map((m) => ({
-          church: query.church,
-          member: m._id,
-          fromStatus: null,
-          toStatus: m.status,
-          changedAt: stamp,
-          source: "baseline"
-        })),
-        { ordered: false }
-      ).catch((e) => {
-        if (e?.code !== 11000) throw e;
-      });
-    }
+    await seedMissingMemberBaselines(query.church);
 
     const [
       totalMembers,
@@ -690,49 +673,33 @@ const getAllMembersKPI = async (req, res) => {
       inactiveMembers,
       formerMembers,
       uncategorisedMembers,
-      memberIdsAtBoundary
+      monthStartSnapshot
     ] = await Promise.all([
       Member.countDocuments({ ...query, status: { $in: MEMBER_STATUSES } }),
       Member.countDocuments({ ...query, status: "active" }),
       Member.countDocuments({ ...query, status: { $in: INACTIVE_STATUSES } }),
       Member.countDocuments({ ...query, status: { $in: FORMER_STATUSES } }),
       Member.countDocuments({ ...query, status: { $nin: MEMBER_STATUSES } }),
-      Member.find({ ...query, createdAt: { $lt: startOfMonth } }).distinct("_id")
+      getMemberStatusSnapshotAt(query.church, startOfMonth)
     ]);
 
     // A month-end comparison is only reliable when every member who existed at the
     // boundary has a status-history entry at or before it. Without that coverage,
     // no honest previous count exists — report it as unavailable instead of inventing.
-    const coveredIds = await MemberStatusHistory.distinct("member", {
-      church: query.church,
-      member: { $in: memberIdsAtBoundary },
-      changedAt: { $lt: startOfMonth }
-    });
-    const hasComparisonData = coveredIds.length === memberIdsAtBoundary.length;
+    const hasComparisonData = monthStartSnapshot.hasComparisonData;
 
     let previous = null;
     if (hasComparisonData) {
-      // Reconstruct each member's status at month start from history:
-      // the toStatus of their latest entry before the boundary.
-      const statusAtBoundary = await MemberStatusHistory.aggregate([
-        { $match: { church: query.church, member: { $in: memberIdsAtBoundary }, changedAt: { $lt: startOfMonth } } },
-        { $sort: { changedAt: -1 } },
-        { $group: { _id: "$member", toStatus: { $first: "$toStatus" } } },
-        { $group: { _id: "$toStatus", n: { $sum: 1 } } }
-      ]);
-
-      const bucket = { active: 0, inactive: 0, former: 0 };
-      for (const row of statusAtBoundary) {
-        const s = row?._id;
-        if (s === "active") bucket.active += row.n;
-        else if (INACTIVE_STATUSES.includes(s)) bucket.inactive += row.n;
-        else if (FORMER_STATUSES.includes(s)) bucket.former += row.n;
-      }
+      const counts = monthStartSnapshot.counts || {};
+      const sumStatuses = (statuses) => statuses.reduce((sum, s) => sum + (counts[s] || 0), 0);
+      const active = counts.active || 0;
+      const inactive = sumStatuses(INACTIVE_STATUSES);
+      const former = sumStatuses(FORMER_STATUSES);
       previous = {
-        totalMembers: bucket.active + bucket.inactive + bucket.former,
-        activeMembers: bucket.active,
-        inactiveMembers: bucket.inactive,
-        formerMembers: bucket.former
+        totalMembers: active + inactive + former,
+        activeMembers: active,
+        inactiveMembers: inactive,
+        formerMembers: former
       };
     }
 
