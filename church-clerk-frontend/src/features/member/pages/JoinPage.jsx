@@ -99,12 +99,44 @@ export default function JoinPage() {
     return () => URL.revokeObjectURL(url);
   }, [photoFile]);
 
-  const handlePhotoChange = (e) => {
+  // Phone cameras produce HEIC / very large JPEGs that other browsers
+  // can't display. Re-encode to a modest JPEG so the preview, upload,
+  // and stored photo all work everywhere. Falls back to the raw file
+  // if the browser can't decode it.
+  const normalizePhoto = (file) =>
+    new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      const done = (result) => { URL.revokeObjectURL(url); resolve(result); };
+      img.onload = () => {
+        try {
+          const maxDim = 1200;
+          const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(
+            (blob) => done(blob ? new File([blob], "photo.jpg", { type: "image/jpeg" }) : file),
+            "image/jpeg",
+            0.85
+          );
+        } catch {
+          done(file);
+        }
+      };
+      img.onerror = () => done(file);
+      img.src = url;
+    });
+
+  const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { setFormError("Photo must be under 5MB."); return; }
+    if (file.type && !file.type.startsWith("image/")) { setFormError("Please choose an image file."); return; }
+    const normalized = await normalizePhoto(file);
+    if (normalized.size > 5 * 1024 * 1024) { setFormError("Photo must be under 5MB."); return; }
     setFormError("");
-    setPhotoFile(file);
+    setPhotoFile(normalized);
     e.target.value = "";
   };
 

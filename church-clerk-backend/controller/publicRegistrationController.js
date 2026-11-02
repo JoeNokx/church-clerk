@@ -142,7 +142,7 @@ export const selfRegisterMember = async (req, res) => {
         const folder = `church-clerk/members/${church._id}`;
         const uploadResult = await new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
-            { folder, resource_type: "image", unique_filename: true },
+            { folder, resource_type: "image", unique_filename: true, format: "jpg" },
             (err, result) => { if (err) reject(err); else resolve(result); }
           );
           stream.end(req.file.buffer);

@@ -124,8 +124,7 @@ const importMembersFromFile = async (req, res) => {
 
     for (let i = 0; i < valid.length; i++) {
       const serial = startSerial + i;
-      const paddedNumber = String(serial).padStart(6, "0");
-      const memberId = `${prefix}-${paddedNumber}`;
+      const memberId = generateMemberId(prefix, serial - 1);
 
       const payload = valid[i]?.payload || {};
       try {
