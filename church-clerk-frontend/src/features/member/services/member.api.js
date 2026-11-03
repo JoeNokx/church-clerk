@@ -16,6 +16,10 @@ export const updateMember = async (id, payload) => {
   return await http.put(`/member/members/${id}`, payload);
 };
 
+export const getLinkableUsers = async (config = {}) => {
+  return await http.get("/member/members/linkable-users", config);
+};
+
 export const deleteMember = async (id) => {
   return await http.delete(`/member/members/${id}`);
 };

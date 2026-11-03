@@ -42,6 +42,16 @@ export const getServiceIndividualAttendances = async (params, config = {}) => {
   return await http.get("/attendance/individual-attendances", { params, ...(config || {}) });
 };
 
+// Absentees — members on a consecutive missed-services streak
+export const getAbsentees = async (params, config = {}) => {
+  return await http.get("/attendance/absentees", { params, ...(config || {}) });
+};
+
+// The specific services a member was marked absent for
+export const getMemberMissedServices = async (memberId, params, config = {}) => {
+  return await http.get(`/attendance/absentees/${memberId}/missed-services`, { params, ...(config || {}) });
+};
+
 export const createServiceIndividualAttendance = async (payload, config = {}) => {
   return await http.post("/attendance/individual-attendances", payload, config || {});
 };

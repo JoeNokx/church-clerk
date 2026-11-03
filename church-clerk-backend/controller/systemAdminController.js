@@ -900,6 +900,9 @@ const deleteSystemUser = async (req, res) => {
     const user = await User.findByIdAndDelete(id).lean();
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // Release the link from any member record pointing at this account.
+    await Member.updateMany({ user: id }, { $unset: { user: 1 } });
+
     return res.status(200).json({ message: "User deleted", data: { _id: id } });
   } catch (error) {
     return res.status(500).json({ message: error.message });

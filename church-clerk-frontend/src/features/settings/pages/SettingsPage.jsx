@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 import { useAuth } from "../../auth/useAuth.js";
@@ -38,6 +38,7 @@ import {
   getGovernanceFlagsSnapshot,
   toggleGovernanceFlags
 } from "../services/settings.api.js";
+import { getMembers } from "../../member/services/member.api.js";
 
 const humanizeKey = (key) => {
   const raw = String(key || "").trim();
@@ -112,6 +113,7 @@ function SettingsPage() {
   const location = useLocation();
   const { user, refreshUser } = useAuth();
   const guarded = useGuardedAction();
+  const navigate = useNavigate();
   const churchCtx = useContext(ChurchContext);
   const activeChurch = churchCtx?.activeChurch;
   const switchChurch = churchCtx?.switchChurch;
@@ -122,6 +124,11 @@ function SettingsPage() {
   const canDeactivateUsers = useMemo(
     () => (typeof can === "function" ? can("settingsUsersRoles", "deactivate") : false),
     [can]
+  );
+  // Only churchadmin (and system admins) may add or deactivate users.
+  const canManageUsers = useMemo(
+    () => ["churchadmin", "superadmin", "supportadmin"].includes(String(user?.role || "").toLowerCase()),
+    [user?.role]
   );
 
   const [tab, setTab] = useState("my-profile");
@@ -908,6 +915,13 @@ function SettingsPage() {
   const [newPhone, setNewPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [memberResults, setMemberResults] = useState([]);
+  const [memberSearching, setMemberSearching] = useState(false);
+  const [memberSearchOpen, setMemberSearchOpen] = useState(false);
+  const [addMode, setAddMode] = useState("manual");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [pickedMemberId, setPickedMemberId] = useState(null);
 
   const [userLimitModalOpen, setUserLimitModalOpen] = useState(false);
   const [userLimitMessage, setUserLimitMessage] = useState("");
@@ -1174,6 +1188,76 @@ function SettingsPage() {
     return () => clearTimeout(t);
   }, [auditSearch, auditModule, auditAction, auditRole, auditDateFrom, auditDateTo, canRead, tab]);
 
+  // Debounced member search inside the Add User modal — lets admins link a
+  // user to an existing church member and autofill their details.
+  useEffect(() => {
+    if (!addOpen || !String(memberSearch).trim()) {
+      setMemberResults([]);
+      setMemberSearchOpen(false);
+      return;
+    }
+    const t = setTimeout(async () => {
+      setMemberSearching(true);
+      try {
+        const res = await getMembers({ search: memberSearch.trim(), limit: 8 });
+        const list = res?.data?.members ?? res?.data?.data?.members ?? [];
+        // Hide members already linked to a user account — one person, one account.
+        setMemberResults(Array.isArray(list) ? list.filter((m) => !m?.user) : []);
+        setMemberSearchOpen(true);
+      } catch {
+        setMemberResults([]);
+      } finally {
+        setMemberSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [memberSearch, addOpen]);
+
+  const pickMember = (m) => {
+    setPickedMemberId(m?._id || null);
+    setNewFullName([m?.firstName, m?.lastName].filter(Boolean).join(" "));
+    if (m?.email) setNewEmail(m.email);
+    if (m?.phoneNumber) setNewPhone(m.phoneNumber);
+    setMemberSearch("");
+    setMemberResults([]);
+    setMemberSearchOpen(false);
+  };
+
+  // "Make Member" — link an existing unlinked member matching the user's
+  // phone/email, otherwise open the member form prefilled with their data.
+  const handleMakeMember = async (row) => {
+    try {
+      const findMatch = async (term) => {
+        const res = await getMembers({ search: term, limit: 50 });
+        const list = res?.data?.members ?? res?.data?.data?.members ?? [];
+        return (Array.isArray(list) ? list : []).find((m) => !m?.user && (
+          (row?.phoneNumber && String(m?.phoneNumber) === String(row.phoneNumber)) ||
+          (row?.email && String(m?.email || "").toLowerCase() === String(row.email).toLowerCase())
+        ));
+      };
+      const match = (row?.phoneNumber ? await findMatch(row.phoneNumber) : null) || (row?.email ? await findMatch(row.email) : null);
+      if (match) {
+        await updateChurchUser(row._id, { memberId: match._id });
+        showSuccess(`Linked to member ${match.memberId || match._id}.`);
+        loadUsers({});
+        return;
+      }
+      const parts = String(row?.fullName || "").trim().split(/\s+/).filter(Boolean);
+      const params = new URLSearchParams({
+        page: "member-form",
+        firstName: parts[0] || "",
+        lastName: parts.slice(1).join(" "),
+        email: row?.email || "",
+        phoneNumber: row?.phoneNumber || "",
+        linkUser: row._id,
+        returnTo: "/dashboard?page=settings&tab=users"
+      });
+      navigate(`/dashboard?${params.toString()}`);
+    } catch (e) {
+      showError(e?.response?.data?.message || e?.message || "Could not start member registration");
+    }
+  };
+
   const openDeactivateConfirm = (row) => {
     setConfirmUser(row);
     setConfirmOpen(true);
@@ -1213,6 +1297,12 @@ function SettingsPage() {
         setNewPhone("");
         setNewPassword("");
         setNewRole("");
+        setMemberSearch("");
+        setMemberResults([]);
+        setMemberSearchOpen(false);
+        setAddMode("manual");
+        setShowNewPassword(false);
+        setPickedMemberId(null);
         setAddOpen(true);
       } else {
         setUserLimitMessage(res?.data?.message || "You cannot add more users.");
@@ -1246,12 +1336,17 @@ function SettingsPage() {
         email: newEmail,
         phoneNumber: newPhone,
         password: newPassword,
-        role: newRole
+        role: newRole,
+        autoRegisterMember: addMode === "manual",
+        linkMemberId: addMode === "member" ? pickedMemberId : undefined
       });
+      if (addMode === "manual" && res?.data?.member == null) {
+        showWarning("User created, but their member record couldn't be added — use Make Member to register them.");
+      }
 
       const created = res?.data?.user;
       if (created) {
-        setUsers((prev) => [created, ...prev]);
+        setUsers((prev) => [{ ...created, hasMember: Boolean(res?.data?.member || res?.data?.linkedMember) }, ...prev]);
       } else {
         await loadUsers({});
       }
@@ -1296,7 +1391,7 @@ function SettingsPage() {
         fullName: editFullName,
         email: editEmail,
         phoneNumber: editPhone,
-        role: editRole
+        role: editRole,
       });
 
       const updated = res?.data?.user;
@@ -1313,7 +1408,8 @@ function SettingsPage() {
 
   const churchRoles = useMemo(() => {
     const list = roleConfig?.roleList?.churchRoles;
-    return Array.isArray(list) ? list : [];
+    // associateadmin is a system role — not assignable to church users.
+    return (Array.isArray(list) ? list : []).filter((r) => String(r).toLowerCase() !== "associateadmin");
   }, [roleConfig]);
 
   const rolePermissions = roleConfig?.roles || {};
@@ -2300,7 +2396,7 @@ function SettingsPage() {
                   <div className="font-semibold text-gray-900 text-sm">Users &amp; Roles</div>
                   <div className="mt-1 text-gray-500 text-xs">Manage user accounts and their assigned roles.</div>
                 </div>
-                {canWrite ? (
+                {canWrite && canManageUsers ? (
                   <button
                     type="button"
                     onClick={() => guarded(() => handleOpenAdd())}
@@ -2325,7 +2421,7 @@ function SettingsPage() {
                   },
                 ]}
               >
-                {canWrite ? (
+                {canWrite && canManageUsers ? (
                   <button
                     type="button"
                     onClick={() => guarded(() => handleOpenAdd())}
@@ -2393,7 +2489,7 @@ function SettingsPage() {
                       <th className="px-4 py-3 text-left font-semibold">Phone</th>
                       <th className="px-4 py-3 text-left font-semibold">Role</th>
                       <th className="px-4 py-3 text-left font-semibold">Status</th>
-                      <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                      {canManageUsers ? <th className="px-4 py-3 text-right font-semibold">Actions</th> : null}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -2420,12 +2516,25 @@ function SettingsPage() {
                                 {isActive ? "Active" : "Deactivated"}
                               </span>
                             </td>
+                            {canManageUsers ? (
                             <td className="px-4 py-3">
-                              <TableKebabMenu items={[
-                                canWrite && { label: "Edit", onClick: () => guarded(() => handleOpenEdit(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
-                                canDeactivateUsers && { label: isActive ? "Deactivate" : "Activate", onClick: () => guarded(() => openDeactivateConfirm(row)), danger: isActive, desktopClassName: `rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}` }
-                              ]} />
+                              <div className="flex items-center justify-end gap-2">
+                                {!row?.hasMember ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => guarded(() => handleMakeMember(row))}
+                                    className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 font-semibold text-indigo-700 hover:bg-indigo-100 text-xs"
+                                  >
+                                    Make Member
+                                  </button>
+                                ) : null}
+                                <TableKebabMenu forceKebab items={[
+                                  canWrite && { label: "Edit", onClick: () => guarded(() => handleOpenEdit(row)), desktopClassName: "rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs" },
+                                  canDeactivateUsers && { label: isActive ? "Deactivate" : "Activate", onClick: () => guarded(() => openDeactivateConfirm(row)), danger: isActive, desktopClassName: `rounded-lg px-3 py-1.5 font-semibold text-xs ${isActive ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"}` }
+                                ]} />
+                              </div>
                             </td>
+                            ) : null}
                           </tr>
                         );
                       })
@@ -2814,7 +2923,76 @@ function SettingsPage() {
 
             {addError ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{addError}</div> : null}
 
-            <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleCreateUser(e)); }} className="mt-4 space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); guarded(() => handleCreateUser(e)); }} className="mt-4 space-y-4" autoComplete="off">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1 text-sm">This user is</label>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="addUserMode"
+                      checked={addMode === "manual"}
+                      onChange={() => setAddMode("manual")}
+                      className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
+                    />
+                    Not registered as a member
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="addUserMode"
+                      checked={addMode === "member"}
+                      onChange={() => setAddMode("member")}
+                      className="h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
+                    />
+                    An existing member
+                  </label>
+                </div>
+              </div>
+
+              {addMode === "member" ? (
+                <div className="relative">
+                  <label className="block font-medium text-gray-700 mb-1 text-sm">Search member</label>
+                  <input
+                    type="text"
+                    placeholder="Search member by name, ID or phone"
+                    value={memberSearch}
+                    onChange={(e) => { setMemberSearch(e.target.value); setMemberSearchOpen(true); }}
+                    onFocus={() => memberResults.length && setMemberSearchOpen(true)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                  />
+                  {memberSearchOpen && memberSearch.trim() ? (
+                    <div className="absolute left-0 right-0 z-20 mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                      {memberSearching ? (
+                        <div className="px-3 py-2 text-gray-400 text-sm">Searching…</div>
+                      ) : memberResults.length ? (
+                        memberResults.map((m) => (
+                          <button
+                            key={m._id}
+                            type="button"
+                            onClick={() => pickMember(m)}
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-blue-50"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium text-gray-900 text-sm">
+                                {[m?.firstName, m?.lastName].filter(Boolean).join(" ") || "—"}
+                              </span>
+                              <span className="block truncate text-gray-400 text-xs">{m?.phoneNumber || m?.email || ""}</span>
+                            </span>
+                            {m?.memberId ? (
+                              <span className="shrink-0 font-mono text-xs text-gray-400">{m.memberId}</span>
+                            ) : null}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-gray-400 text-sm">No members found</div>
+                      )}
+                    </div>
+                  ) : null}
+                  <div className="mt-1 text-gray-400 text-xs">Pick a member to autofill their details.</div>
+                </div>
+              ) : null}
+
               <div>
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                 <input
@@ -2834,6 +3012,7 @@ function SettingsPage() {
                   placeholder="you@example.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
+                  autoComplete="off"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
                 />
@@ -2851,14 +3030,36 @@ function SettingsPage() {
 
               <div>
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Password</label>
-                <input
-                  type="password"
-                  placeholder="Create a password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="Create a password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((v) => !v)}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewPassword ? (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                        <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M10.6 5.1A9.8 9.8 0 0 1 12 5c5 0 9 4.5 10 7a15.6 15.6 0 0 1-3.3 4.4M6.6 6.6A15.5 15.5 0 0 0 2 12c.6 1.5 2.5 4 6 5.7a9.7 9.7 0 0 0 4 1.3c1.3 0 2.5-.3 3.6-.7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div>

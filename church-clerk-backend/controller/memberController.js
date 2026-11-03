@@ -1,4 +1,5 @@
 import Member from "../models/memberModel.js"
+import User from "../models/userModel.js"
 import { seedMissingMemberBaselines, getMemberStatusSnapshotAt } from "../utils/memberStatusSnapshot.js";
 import Church from "../models/churchModel.js"
 import cloudinary from "../config/cloudinary.js"
@@ -14,11 +15,13 @@ import DepartmentMember from "../models/organisationModel/departmentMembersModel
 import { checkAndHandleMemberLimit } from "../utils/memberLimitUtils.js";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import { parseImportFileToObjects } from "../utils/spreadsheetParser.js";
+import { escapeRegex } from "../utils/csvParser.js";
 import ExcelJS from "exceljs";
 import { parseOptionalDate, getChurchPrefix, generateMemberId, takeMemberSerial, releaseMemberSerial } from "../utils/memberHelpers.js";
 import { validateMemberImportRows } from "../services/member/memberImportService.js";
 import { MEMBER_IMPORT_FIELDS } from "../utils/memberImportFields.js";
 import { annotateDeletable } from "../services/recordDependencyService.js";
+import { getAttendanceOverrideBlock } from "../services/attendanceAbsenceService.js";
 
 const downloadMembersImportTemplate = async (req, res) => {
   try {
@@ -223,6 +226,21 @@ const createMember = async (req, res) => {
     const issuedSerial = await takeMemberSerial(churchId);
     const memberId = generateMemberId(prefix, issuedSerial - 1);
 
+    // Optional account link — used by the "Make Member" flow to attach the
+    // new member to a specific user regardless of edited phone/email.
+    let linkUserId = null;
+    if (req.body?.user) {
+      const targetUser = await User.findOne({ _id: req.body.user, church: churchId }).select("_id").lean();
+      if (!targetUser) {
+        return res.status(400).json({ message: "User not found in this church" });
+      }
+      const conflict = await Member.findOne({ church: churchId, user: req.body.user }).select("_id").lean();
+      if (conflict) {
+        return res.status(409).json({ message: "This user is already linked to another member" });
+      }
+      linkUserId = req.body.user;
+    }
+
     let member;
     try {
       member = await Member.create({
@@ -251,6 +269,7 @@ const createMember = async (req, res) => {
         group: groupIds || [], 
         ministry: ministryIds || [],
         createdBy,
+        user: linkUserId,
         church: churchId
       });
     } catch (error) {
@@ -387,10 +406,45 @@ const syncMemberAffiliations = async ({ memberId, churchId, userId, body }) => {
   }
 };
 
+// Church users a member can be linked to — flags ones already attached to
+// another member record.
+const listLinkableUsers = async (req, res) => {
+  try {
+    const churchId = req.activeChurch._id;
+    const [users, linked] = await Promise.all([
+      User.find({ church: churchId }).select("fullName email").sort({ fullName: 1 }).lean(),
+      Member.find({ church: churchId, user: { $ne: null } }).select("user").lean()
+    ]);
+    const linkedIds = new Set(linked.map((m) => String(m.user)));
+    return res.status(200).json({
+      users: users.map((u) => ({ ...u, linkedToMember: linkedIds.has(String(u._id)) }))
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 const updateMember = async (req, res) => {
   try {
     const memberId = req.params.id;
     const query = { _id: memberId, church: req.activeChurch._id }
+
+    // The account link is managed from the user side only — strip it so a
+    // stray payload can never write member.user through this endpoint.
+    delete req.body.user;
+
+    // A manual status change is a user override of the attendance
+    // auto-status rules — arm the snooze only when it actually contradicts
+    // what the automation would decide right now. Re-saving the same status
+    // leaves any existing override untouched.
+    if (req.body.status !== undefined) {
+      const current = await Member.findOne(query).select("status").lean();
+      if (current && String(current.status) !== String(req.body.status)) {
+        const block = await getAttendanceOverrideBlock(req.activeChurch._id, memberId, req.body.status);
+        req.body.attendanceStatusOverride = Boolean(block);
+        req.body.attendanceStatusOverrideBlocks = block;
+      }
+    }
 
     if (req.body?.phoneNumber !== undefined) {
       const rawPhone = String(req.body.phoneNumber || "").trim();
@@ -464,7 +518,7 @@ const getAllMembers = async (req, res) => {
     if (search) {
       const trimmed = String(search || "").trim();
       const isFast = String(fastSearch || "0") === "1";
-      const pattern = isFast ? `^${escapeRegex(trimmed)}` : trimmed;
+      const pattern = isFast ? `^${escapeRegex(trimmed)}` : escapeRegex(trimmed);
       const regex = { $regex: pattern, $options: "i" };
       query.$or = [
         { firstName: regex },
@@ -509,7 +563,7 @@ const getAllMembers = async (req, res) => {
     const members = await annotateDeletable("member",
       await Member.find(query)
         .sort({ createdAt: -1 })
-        .select("firstName lastName phoneNumber email dateJoined createdAt churchRole city status ageGroup visitorId department group cell ministry")
+        .select("firstName lastName phoneNumber email dateJoined createdAt churchRole city status ageGroup visitorId department group cell ministry user")
         .skip(skip)
         .limit(limitNum),
       req.activeChurch._id);
@@ -564,6 +618,7 @@ const getSingleMember = async (req, res) => {
       .populate("church", "name")
       .populate("cell", "name role status")
       .populate("group", "name role status")
+      .populate("user", "fullName email")
       .populate("department", "name role status")
       .populate("ministry", "name status")
 
@@ -833,6 +888,7 @@ export {
   createMember,
   getAllMembers,
   getSingleMember,
+  listLinkableUsers,
   updateMember,
   deleteMember,
   getAllMembersKPI,

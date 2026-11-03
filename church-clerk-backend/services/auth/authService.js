@@ -7,6 +7,7 @@ import { normalizeEmail } from "../../utils/requestHelpers.js";
 import { sendRegistrationVerificationEmail } from "./emailVerificationService.js";
 import { logActivity } from "../../utils/activityLogger.js";
 import { getClientIp, parseUserAgentMeta } from "../../utils/requestHelpers.js";
+import { linkUserToMatchingMember } from "../../utils/memberUserLink.js";
 
 async function registerUser(data, req) {
   const { fullName, email, phoneNumber, password, churchId } = data;
@@ -120,6 +121,10 @@ async function registerUser(data, req) {
     emailVerificationToken: crypto.randomBytes(32).toString("hex"),
     pendingVerificationToken: crypto.randomBytes(32).toString("hex")
   });
+
+  // If a member record with this phone/email already exists in the church,
+  // attach the new account to it — one person, one identity.
+  await linkUserToMatchingMember(user);
 
   const token = generateToken(user._id);
 

@@ -8,6 +8,10 @@ import { resolvePermissions } from "../utils/resolvePermissions.js"
 import Subscription from "../models/billingModel/subscriptionModel.js"
 import Plan from "../models/billingModel/planModel.js"
 import { sendRegistrationVerificationEmail } from "../services/auth/emailVerificationService.js"
+import Member from "../models/memberModel.js"
+import Church from "../models/churchModel.js"
+import { getChurchPrefix, generateMemberId, takeMemberSerial, releaseMemberSerial } from "../utils/memberHelpers.js"
+import { linkUserToMatchingMember } from "../utils/memberUserLink.js"
 
 //GET: fetch my profile
 const myProfile =  async (req, res) => {
@@ -202,6 +206,12 @@ const listChurchUsers = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    // Flag which users already have a linked member record.
+    const userIds = users.map((u) => u._id);
+    const linked = await Member.find({ church: churchId, user: { $in: userIds } }).select("user").lean();
+    const linkedIds = new Set(linked.map((m) => String(m.user)));
+    for (const u of users) u.hasMember = linkedIds.has(String(u._id));
+
     return res.status(200).json({ message: "Users fetched", users });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -215,7 +225,7 @@ const createChurchUser = async (req, res) => {
       return res.status(400).json({ message: "Active church context is required" });
     }
 
-    const { fullName, email, phoneNumber, password, role } = req.body;
+    const { fullName, email, phoneNumber, password, role, autoRegisterMember, linkMemberId } = req.body;
     if (!fullName || !email || !phoneNumber || !password || !role) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -249,6 +259,23 @@ const createChurchUser = async (req, res) => {
       return res.status(400).json({ message: "Phone number already registered" });
     }
 
+    // "Not registered as a member" — if a member already matches this
+    // phone/email, the admin should use the search-member option instead.
+    let preExistingMember = null;
+    if (autoRegisterMember) {
+      const normalizedEmail = String(email || "").toLowerCase().trim();
+      preExistingMember = await Member.findOne({
+        church: churchId,
+        $or: [
+          { phoneNumber: validatedPhoneNumber },
+          { email: { $regex: `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } }
+        ]
+      }).lean();
+      if (preExistingMember) {
+        return res.status(409).json({ message: "This person is already a member — choose the 'An existing member' option to link them." });
+      }
+    }
+
     const user = await User.create({
       fullName,
       email,
@@ -266,7 +293,75 @@ const createChurchUser = async (req, res) => {
       console.error("[createChurchUser] Failed to send verification email:", err.message);
     });
 
-    return res.status(201).json({ message: "User created. A verification email has been sent to their inbox.", user });
+    // Attach this account to an existing member record with the same
+    // phone/email when the explicit flows below don't already handle it.
+    if (!autoRegisterMember && !linkMemberId) {
+      linkUserToMatchingMember(user).catch(() => {});
+    }
+
+    // Optionally register the new user as a church member too — skipped if a
+    // member already matches their phone number or email.
+    let member = null;
+    if (autoRegisterMember) {
+      try {
+        const normalizedEmail = String(email || "").toLowerCase().trim();
+        {
+          const nameParts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+          const firstName = nameParts[0] || "Member";
+          const lastName = nameParts.slice(1).join(" ");
+
+          const prefix = await getChurchPrefix(churchId);
+          const issuedSerial = await takeMemberSerial(churchId);
+          const memberId = generateMemberId(prefix || "CH", issuedSerial - 1);
+
+          try {
+            member = await Member.create({
+              memberId,
+              firstName,
+              lastName,
+              email: normalizedEmail,
+              phoneNumber: validatedPhoneNumber,
+              status: "active",
+              church: churchId,
+              createdBy: req.user._id,
+              user: user._id
+            });
+            const totalMembers = await Member.countDocuments({ church: churchId });
+            await Church.findByIdAndUpdate(churchId, { memberCount: totalMembers });
+          } catch (memberErr) {
+            if (memberErr?.code !== 11000 && memberErr?.errorResponse?.code !== 11000) {
+              await releaseMemberSerial(churchId, issuedSerial).catch(() => {});
+            }
+            throw memberErr;
+          }
+        }
+      } catch (memberErr) {
+        // Best-effort — the user account was created successfully either way.
+        console.error("[createChurchUser] member auto-register failed:", memberErr?.message || memberErr);
+      }
+    }
+
+    // Optionally link the new user account to an existing member record.
+    let linkedMember = null;
+    let memberLinkConflict = false;
+    if (linkMemberId) {
+      try {
+        const target = await Member.findOne({ _id: linkMemberId, church: churchId });
+        if (target) {
+          if (target.user && String(target.user) !== String(user._id)) {
+            memberLinkConflict = true;
+          } else {
+            target.user = user._id;
+            await target.save();
+            linkedMember = target;
+          }
+        }
+      } catch (linkErr) {
+        console.error("[createChurchUser] member link failed:", linkErr?.message || linkErr);
+      }
+    }
+
+    return res.status(201).json({ message: "User created. A verification email has been sent to their inbox.", user, member, linkedMember, memberLinkConflict });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -280,7 +375,7 @@ const updateChurchUser = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { fullName, email, phoneNumber, role } = req.body;
+    const { fullName, email, phoneNumber, role, memberId } = req.body;
 
     let validatedPhoneNumber;
     if (phoneNumber !== undefined) {
@@ -315,6 +410,18 @@ const updateChurchUser = async (req, res) => {
       }
     }
 
+    // Validate the member link target before touching anything.
+    let linkTarget = null;
+    if (memberId !== undefined && memberId !== null && memberId !== "") {
+      linkTarget = await Member.findOne({ _id: memberId, church: churchId });
+      if (!linkTarget) {
+        return res.status(400).json({ message: "Member not found in this church" });
+      }
+      if (linkTarget.user && String(linkTarget.user) !== String(id)) {
+        return res.status(409).json({ message: "This member is already linked to another user" });
+      }
+    }
+
     const update = {};
     if (fullName !== undefined) update.fullName = fullName;
     if (email !== undefined) update.email = email;
@@ -342,6 +449,16 @@ const updateChurchUser = async (req, res) => {
     )
       .select("fullName email phoneNumber role isActive createdAt")
       .lean();
+
+    // Apply the member link — unset any member currently pointing at this
+    // user, then attach the selected one. Null memberId just unlinks.
+    if (memberId !== undefined) {
+      await Member.updateMany({ user: id, ...(linkTarget ? { _id: { $ne: linkTarget._id } } : {}) }, { $unset: { user: 1 } });
+      if (linkTarget) {
+        linkTarget.user = id;
+        await linkTarget.save();
+      }
+    }
 
     return res.status(200).json({ message: "User updated", user });
   } catch (error) {

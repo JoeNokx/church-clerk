@@ -21,8 +21,10 @@ import {
   getAttendanceCheckInLink,
   generateAttendanceCheckInLink,
   revokeAttendanceCheckInLink,
-  getVisitors
+  getVisitors,
+  getAbsentees
 } from "../services/attendance.api.js";
+import AbsenteesTab from "../components/AbsenteesTab.jsx";
 import { getMembers } from "../../member/services/member.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
@@ -34,6 +36,8 @@ import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
+
+const ATTENDANCE_TABS = ["log", "visitors", "absentees"];
 
 const FALLBACK_SERVICE_TYPES = [
   "Sunday Service",
@@ -94,7 +98,10 @@ function AttendancePageInner() {
   const store = useContext(AttendanceContext);
   const churchStore = useContext(ChurchContext);
 
-  const [activeTab, setActiveTab] = useState("log");
+  const [activeTab, setActiveTab] = useState(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    return ATTENDANCE_TABS.includes(t) ? t : "log";
+  });
 
   // --- visitors tab ---
   const [isVisitorFormOpen, setIsVisitorFormOpen] = useState(false);
@@ -167,6 +174,21 @@ function AttendancePageInner() {
   const [indivMarkingSuccess, setIndivMarkingSuccess] = useState("");
   const [indivMarkingOpen, setIndivMarkingOpen] = useState(false);
 
+  // --- absentees tab ---
+  const [absLoading, setAbsLoading] = useState(false);
+  const [absError, setAbsError] = useState("");
+  const [absRows, setAbsRows] = useState([]);
+  const [absPagination, setAbsPagination] = useState({ currentPage: 1, prevPage: null, nextPage: null });
+  const [absLimit, setAbsLimit] = useState(20);
+  const [absSearch, setAbsSearch] = useState("");
+  const [absServiceType, setAbsServiceType] = useState("");
+  const [absYear, setAbsYear] = useState(() => String(new Date().getFullYear()));
+  const [absMonth, setAbsMonth] = useState("");
+  const [absThreshold, setAbsThreshold] = useState(3);
+  const [absDormantThreshold, setAbsDormantThreshold] = useState(10);
+  const [absServiceTypes, setAbsServiceTypes] = useState([]);
+  const [absMetric, setAbsMetric] = useState("streak");
+
   const canCreateAttendance = useMemo(() => (typeof can === "function" ? can("attendance", "create") : false), [can]);
   const canUpdateAttendance = useMemo(() => (typeof can === "function" ? can("attendance", "update") : false), [can]);
   const canDeleteAttendance = useMemo(() => (typeof can === "function" ? can("attendance", "delete") : false), [can]);
@@ -178,6 +200,21 @@ function AttendancePageInner() {
   const navigate = useNavigate();
   const guarded = useGuardedAction();
 
+  // Keep the active tab in the URL so back-navigation (e.g. returning from a
+  // member's details page) restores the right tab.
+  useEffect(() => {
+    const t = new URLSearchParams(location.search).get("tab") || "log";
+    if (ATTENDANCE_TABS.includes(t) && t !== activeTab) setActiveTab(t);
+  }, [location.search, activeTab]);
+
+  const switchTab = (key) => {
+    setActiveTab(key);
+    setIndivViewing(null);
+    const p = new URLSearchParams(location.search);
+    if (key === "log") p.delete("tab"); else p.set("tab", key);
+    navigate({ pathname: location.pathname, search: `?${p.toString()}` }, { replace: true });
+  };
+
   // Handle prefillVisitor from outreach Connect flow
   useEffect(() => {
     const prefill = location?.state?.prefillVisitor;
@@ -186,11 +223,17 @@ function AttendancePageInner() {
     setEditingVisitor(prefill);
     setIsVisitorFormOpen(true);
     // Clear state so it doesn't re-trigger
-    navigate(location.pathname + location.search, { replace: true, state: null });
+    const p = new URLSearchParams(location.search);
+    p.set("tab", "visitors");
+    navigate({ pathname: location.pathname, search: `?${p.toString()}` }, { replace: true, state: null });
   }, [location?.state, location.pathname, location.search, navigate]);
 
   const { values: lookupServiceTypes, reload: reloadServiceTypes } = useLookupValues("serviceType");
   const serviceTypeOptions = lookupServiceTypes?.length ? lookupServiceTypes : FALLBACK_SERVICE_TYPES;
+  const absServiceTypeOptions = useMemo(
+    () => [...new Set([...serviceTypeOptions, ...absServiceTypes])].sort(),
+    [serviceTypeOptions, absServiceTypes]
+  );
 
   // --- filtered individual records ---
   const filteredIndivRecords = useMemo(() => {
@@ -252,6 +295,34 @@ function AttendancePageInner() {
       setIndivLoading(false);
     }
   }, [activeChurchId, indivLimit]);
+
+  const loadAbsentees = useCallback(async (page = 1, limit = absLimit) => {
+    if (!activeChurchId) return;
+    setAbsLoading(true);
+    setAbsError("");
+    try {
+      const res = await getAbsentees({
+        page,
+        limit,
+        threshold: absThreshold,
+        serviceType: absServiceType || undefined,
+        year: absYear || undefined,
+        month: absMonth || undefined,
+        search: String(absSearch || "").trim() || undefined
+      });
+      const payload = res?.data?.data ?? res?.data;
+      setAbsRows(Array.isArray(payload?.absentees) ? payload.absentees : []);
+      setAbsPagination(payload?.pagination || { currentPage: page, prevPage: null, nextPage: null });
+      if (payload?.dormantThreshold) setAbsDormantThreshold(Number(payload.dormantThreshold));
+      if (Array.isArray(payload?.serviceTypes)) setAbsServiceTypes(payload.serviceTypes);
+      setAbsMetric(payload?.metric === "count" ? "count" : "streak");
+    } catch (e) {
+      setAbsError(e?.response?.data?.message || e?.message || "Failed to load absentees");
+      setAbsRows([]);
+    } finally {
+      setAbsLoading(false);
+    }
+  }, [activeChurchId, absLimit, absThreshold, absServiceType, absYear, absMonth, absSearch]);
 
   const loadAllMembers = useCallback(async () => {
     if (!activeChurchId) return;
@@ -500,6 +571,12 @@ function AttendancePageInner() {
     if (activeTab === "log") loadIndivRecords(1);
   }, [activeTab, activeChurchId, loadIndivRecords]);
 
+  useEffect(() => {
+    if (!activeChurchId || activeTab !== "absentees") return;
+    const t = setTimeout(() => { void loadAbsentees(1); }, 300);
+    return () => clearTimeout(t);
+  }, [activeTab, activeChurchId, loadAbsentees]);
+
   const closeVisitorForm = () => { setIsVisitorFormOpen(false); setEditingVisitor(null); setVisitorFormSession(null); };
 
   return (
@@ -527,9 +604,10 @@ function AttendancePageInner() {
           tabs={[
             { key: "log", label: "Attendance Log" },
             { key: "visitors", label: "All Visitors" },
+            { key: "absentees", label: "Absentees" },
           ]}
           activeTab={activeTab}
-          onChange={(key) => { setActiveTab(key); setIndivViewing(null); }}
+          onChange={switchTab}
           sticky={false}
           className="mt-4"
         />
@@ -1422,6 +1500,32 @@ function AttendancePageInner() {
             />
           </div>
         </>
+      ) : null}
+
+      {/* ─── ABSENTEES TAB ─── */}
+      {activeTab === "absentees" ? (
+        <AbsenteesTab
+          rows={absRows}
+          loading={absLoading}
+          error={absError}
+          pagination={absPagination}
+          limit={absLimit}
+          search={absSearch}
+          onSearchChange={setAbsSearch}
+          serviceType={absServiceType}
+          onServiceTypeChange={setAbsServiceType}
+          serviceTypeOptions={absServiceTypeOptions}
+          year={absYear}
+          onYearChange={setAbsYear}
+          month={absMonth}
+          onMonthChange={setAbsMonth}
+          threshold={absThreshold}
+          onThresholdChange={setAbsThreshold}
+          dormantThreshold={absDormantThreshold}
+          metric={absMetric}
+          onPage={(p) => loadAbsentees(p)}
+          onLimitChange={(n) => { setAbsLimit(n); }}
+        />
       ) : null}
 
       <VisitorForm

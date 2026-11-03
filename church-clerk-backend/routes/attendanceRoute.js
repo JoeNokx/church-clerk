@@ -21,7 +21,9 @@ import {
   deleteServiceIndividualAttendance,
   getCheckInLinkStatus,
   generateCheckInLink,
-  revokeCheckInLink
+  revokeCheckInLink,
+  getAbsentees,
+  getAbsenteeMissedServices
 } from "../controller/serviceIndividualAttendanceController.js"
 import authorizeRoles from "../middleware/roleMiddleware.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -159,6 +161,28 @@ router.delete(
   deleteVisitorLog
 );
 
+
+// Absentees — members on a consecutive missed-services streak
+router.get(
+  "/absentees",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("attendance", "read"),
+  getAbsentees
+);
+router.get(
+  "/absentees/:memberId/missed-services",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("attendance", "read"),
+  getAbsenteeMissedServices
+);
 
 // Service Individual Attendance
 router.get(

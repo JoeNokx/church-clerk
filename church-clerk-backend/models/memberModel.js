@@ -7,7 +7,7 @@ const memberSchema = new mongoose.Schema({
   // Personal information
   memberId: { type: String, trim: true },
   firstName: { type: String, required: true, trim: true },
-  lastName: { type: String, required: true, trim: true },
+  lastName: { type: String, trim: true, default: "" },
   email: { type: String, lowercase: true, trim: true },
   phoneNumber: { type: String, required: true, trim: true },
   gender: { type: String, enum: ['male', 'female'] },
@@ -17,6 +17,12 @@ const memberSchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'dormant', 'transferred', 'left_church', 'deceased', 'temporarily_away', 'inactive', 'visitor', 'former'], default: 'active' },
   previousStatus: { type: String, enum: ['active', 'dormant', 'transferred', 'left_church', 'deceased', 'temporarily_away', 'inactive', 'visitor', 'former'] },
   statusChangedAt: { type: Date },
+  // Attendance auto-status snooze — armed when a manual status change
+  // contradicts the streak automation (see attendanceAbsenceService). While
+  // armed, the automation leaves this member alone until the streak that
+  // justified the override is gone.
+  attendanceStatusOverride: { type: Boolean, default: false },
+  attendanceStatusOverrideBlocks: { type: String, enum: ['dormant', 'active', null], default: null },
   photoUrl: { type: String, trim: true },
   note: {type: String, trim: true},
   dateOfBirth: Date,
@@ -47,8 +53,31 @@ const memberSchema = new mongoose.Schema({
 
   //creator
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+
+  // The login account this member belongs to — null for most members.
+  // Sparse unique: one user account can only belong to one member record.
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, unique: true, sparse: true },
 }, {
   timestamps: true
+});
+
+// Auto-link: after a member is saved, attach the church user account that
+// shares its phone or email — covers every member creation path. Uses
+// updateOne so this never re-triggers save hooks (status history).
+memberSchema.post("save", async function (doc) {
+  if (doc.user) return;
+  try {
+    const or = [];
+    if (doc.phoneNumber) or.push({ phoneNumber: doc.phoneNumber });
+    if (doc.email) or.push({ email: { $regex: `^${String(doc.email).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } });
+    if (!or.length) return;
+    const user = await mongoose.model("User").findOne({ church: doc.church, $or: or }).select("_id").lean();
+    if (!user) return;
+    await mongoose.model("Member").updateOne({ _id: doc._id, user: null }, { $set: { user: user._id } });
+    doc.user = user._id;
+  } catch (e) {
+    console.error("[member post-save link]", e?.message || e);
+  }
 });
 
 memberSchema.pre("save", async function () {

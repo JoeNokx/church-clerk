@@ -3,6 +3,7 @@ const router = express.Router()
 import {
   getAllMembers,
   getSingleMember,
+  listLinkableUsers,
   createMember,
   updateMember,
   deleteMember,
@@ -62,6 +63,16 @@ router.get(
    requirePermission("members", "create"),
    canCreateMember
  );
+router.get(
+  "/members/linkable-users",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("members", "read"),
+  listLinkableUsers
+);
 router.get(
   "/members/:id",
   protect,

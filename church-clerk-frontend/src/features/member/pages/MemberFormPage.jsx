@@ -107,11 +107,25 @@ function MemberFormPageInner() {
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const memberId = params.get("id");
+  const returnTo = params.get("returnTo");
+  const linkUserId = params.get("linkUser");
 
   const canCreate = useMemo(() => (typeof can === "function" ? can("members", "create") : false), [can]);
   const canEdit = useMemo(() => (typeof can === "function" ? can("members", "update") : false), [can]);
 
   const [pageMode, setPageMode] = useState(memberId ? "edit" : "create");
+
+  // Prefill fields when arriving from the "Make Member" user action.
+  useEffect(() => {
+    if (memberId) return;
+    const fn = params.get("firstName"); const ln = params.get("lastName");
+    const em = params.get("email"); const ph = params.get("phoneNumber");
+    if (fn) setFirstName(fn);
+    if (ln) setLastName(ln);
+    if (em) setEmail(em);
+    if (ph) setPhoneNumber(ph);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -471,7 +485,8 @@ function MemberFormPageInner() {
       status,
       note,
       visitorId: visitorId || null,
-      fromProspectId: fromProspectId || undefined
+      fromProspectId: fromProspectId || undefined,
+      user: linkUserId || undefined
     };
 
     try {
@@ -491,7 +506,7 @@ function MemberFormPageInner() {
         await store?.fetchMembers();
       }
 
-      toPage("members");
+      if (returnTo) navigate(returnTo); else toPage("members");
     } catch (e2) {
       const message = e2?.response?.data?.error || e2?.response?.data?.message || e2?.message || "Request failed";
       setError(message);
@@ -512,7 +527,7 @@ function MemberFormPageInner() {
 
         <button
           type="button"
-          onClick={() => toPage("members")}
+          onClick={() => (returnTo ? navigate(returnTo) : toPage("members"))}
           className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
         >
           Back

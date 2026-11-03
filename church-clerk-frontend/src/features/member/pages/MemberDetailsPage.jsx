@@ -274,6 +274,12 @@ function MemberDetailsPageInner() {
                     <span className="font-semibold text-gray-500 text-xs">Member ID:</span>
                     <IdChip value={member?.memberId} />
                     <StatusChip value={member?.status} />
+                    {member?.user ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 font-semibold text-indigo-700 text-xs">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3"><circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" /><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                        Account: {member.user.fullName || "Linked"}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </div>

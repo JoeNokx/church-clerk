@@ -75,6 +75,7 @@ router.post(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   blockUserCreationIfOverLimit,
   requirePermission("settingsUsersRoles", "create"),
   createChurchUser
@@ -86,6 +87,7 @@ router.put(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("settingsUsersRoles", "view"),
   updateChurchUser
 );
@@ -96,6 +98,7 @@ router.patch(
   setActiveChurch,
   readOnlyBranchGuard,
   attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("settingsUsersRoles", "deactivate"),
   setChurchUserActiveStatus
 );

@@ -3,8 +3,16 @@ import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceMo
 import Member from "../models/memberModel.js";
 import Visitor from "../models/visitorsModel.js";
 import { annotateDeletable } from "../services/recordDependencyService.js";
+import { applyAttendanceStatusTransitions, listAbsentees, listMemberMissedServices, ATTENDANCE_MEMBER_STATUSES } from "../services/attendanceAbsenceService.js";
 
-const ATTENDANCE_STATUSES = ["active", "dormant", "temporarily_away"];
+const ATTENDANCE_STATUSES = ATTENDANCE_MEMBER_STATUSES;
+
+// Auto active<->dormant transitions should never break the request that
+// triggered them — log and move on.
+const runStatusTransitions = (churchId, opts) =>
+  applyAttendanceStatusTransitions(churchId, opts).catch((e) =>
+    console.error("[attendance status transitions]", e?.message || e)
+  );
 
 const createServiceIndividualAttendance = async (req, res) => {
   try {
@@ -34,6 +42,8 @@ const createServiceIndividualAttendance = async (req, res) => {
       totalMembersSnapshot,
       expectedCount: Math.max(0, Number(expectedCount) || 0)
     });
+
+    await runStatusTransitions(churchId);
 
     return res.status(201).json({ message: "Attendance recorded successfully", attendance });
   } catch (error) {
@@ -163,6 +173,8 @@ const updateServiceIndividualAttendance = async (req, res) => {
 
     if (!attendance) return res.status(404).json({ message: "Attendance not found" });
 
+    await runStatusTransitions(churchId);
+
     return res.status(200).json({ message: "Attendance updated successfully", attendance });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -176,6 +188,8 @@ const deleteServiceIndividualAttendance = async (req, res) => {
     const attendance = await ServiceIndividualAttendance.findOneAndDelete({ _id: id, church: req.activeChurch._id });
 
     if (!attendance) return res.status(404).json({ message: "Attendance not found" });
+
+    await runStatusTransitions(req.activeChurch._id);
 
     return res.status(200).json({ message: "Attendance deleted successfully" });
   } catch (error) {
@@ -262,7 +276,31 @@ const memberCheckIn = async (req, res) => {
       $addToSet: { presentMembers: member._id },
       $pull: { absentMembers: member._id }
     });
+    await runStatusTransitions(attendance.church, { memberIds: [member._id] });
     return res.status(200).json({ message: `Welcome, ${member.firstName}! You have been marked as present.`, memberName: `${member.firstName} ${member.lastName}` });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── Absentees — members on a consecutive missed-services streak ──────
+const getAbsentees = async (req, res) => {
+  try {
+    const { threshold, serviceType, search, year, month, page, limit } = req.query;
+    const result = await listAbsentees(req.activeChurch._id, { threshold, serviceType, search, year, month, page, limit });
+    return res.status(200).json({ message: "Absentees fetched", ...result });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── Missed services for a single absentee ────────────────────────────
+const getAbsenteeMissedServices = async (req, res) => {
+  try {
+    const { serviceType, year, month, page, limit } = req.query;
+    const result = await listMemberMissedServices(req.activeChurch._id, req.params.memberId, { serviceType, year, month, page, limit });
+    if (!result) return res.status(404).json({ message: "Member not found" });
+    return res.status(200).json({ message: "Missed services fetched", ...result });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -278,5 +316,7 @@ export {
   generateCheckInLink,
   revokeCheckInLink,
   getAttendanceByCheckInToken,
-  memberCheckIn
+  memberCheckIn,
+  getAbsentees,
+  getAbsenteeMissedServices
 };
