@@ -3,6 +3,7 @@ import FinancialAdjustment, { AdjustmentStatuses, ImpactLevels } from "../../mod
 import FinancialAuditLog from "../../models/financeModel/governance/financialAuditLogModel.js";
 import { getSystemSettingsSnapshot } from "../../controller/systemSettingsController.js";
 import { getModelForEntity } from "./govModelRegistry.js";
+import OpeningBalance from "../../models/financeModel/openingBalanceModel.js";
 
 export const GovernanceModules = Object.freeze({
   TITHES: "tithes",
@@ -35,6 +36,24 @@ export async function logAudit({ actor, action, church, module, entityType, enti
 }
 
 export async function enforceBackdating({ user, churchId, module, entityType, date, reason, fullBody, onApprove }) {
+  // Books-open floor: nothing may be dated before the church's declared
+  // opening balance date — it would contradict the books.
+  if (date) {
+    const txDate = new Date(date);
+    if (!Number.isNaN(txDate.getTime())) {
+      const earliest = await OpeningBalance.findOne({ church: churchId })
+        .sort({ balanceAsOf: 1 })
+        .select("balanceAsOf")
+        .lean();
+      if (earliest?.balanceAsOf && txDate < new Date(earliest.balanceAsOf)) {
+        return {
+          status: "REJECTED",
+          message: `This date is before your opening balance date (${new Date(earliest.balanceAsOf).toISOString().slice(0, 10)}). Transactions can only be recorded from that date onward.`
+        };
+      }
+    }
+  }
+
   const isAdmin = ["superadmin", "churchadmin"].includes(String(user?.role || ""));
 
   // Admins can always backdate freely

@@ -18,6 +18,10 @@ export function backdatingGuard({ dateField, module, entityType }) {
         fullBody: req.body
       });
 
+      if (result.status === "REJECTED") {
+        return res.status(400).json({ message: result.message || "Rejected", status: result.status });
+      }
+
       if (result.status === "PENDING_APPROVAL") {
         return res.status(202).json({ message: "Backdated entry pending approval", status: result.status, requestId: result.requestId, error: result.error || null });
       }

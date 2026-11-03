@@ -22,3 +22,15 @@ export const exportFinancialStatement = async (params) => {
 export const getStatementBreakdownDetails = async (params) => {
   return await http.get("/financial-statement/financial-statements/details", { params });
 };
+
+export const getOpeningBalances = async (config = {}) => {
+  return await http.get("/financial-statement/opening-balance", config);
+};
+
+export const createOpeningBalance = async (payload, config = {}) => {
+  return await http.post("/financial-statement/opening-balance", payload, config);
+};
+
+export const updateOpeningBalance = async (id, payload, config = {}) => {
+  return await http.put(`/financial-statement/opening-balance/${id}`, payload, config);
+};

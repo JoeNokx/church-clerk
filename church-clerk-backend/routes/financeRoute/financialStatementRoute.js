@@ -7,6 +7,7 @@ import {
   exportFinancialStatement,
   getStatementBreakdownDetails
 } from "../../controller/financeController/financialStatementController.js";
+import { getOpeningBalances, createOpeningBalance, updateOpeningBalance } from "../../controller/financeController/openingBalanceController.js";
 import { protect } from "../../middleware/authMiddleware.js";
 import { setActiveChurch } from "../../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../../middleware/readOnlyBranchesMiddleware.js";
@@ -64,6 +65,37 @@ router.get(
   authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
   requirePermission("financialStatement", "export"),
   exportFinancialStatement
+);
+
+router.get(
+  "/opening-balance",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("financialStatement", "read"),
+  getOpeningBalances
+);
+router.post(
+  "/opening-balance",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("offerings", "update"),
+  createOpeningBalance
+);
+router.put(
+  "/opening-balance/:id",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin", "financialofficer"),
+  requirePermission("offerings", "update"),
+  updateOpeningBalance
 );
 
 export default router

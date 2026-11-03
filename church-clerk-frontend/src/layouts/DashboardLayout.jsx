@@ -95,8 +95,10 @@ function DashboardLayout() {
             <MobileSearchBanner user={user} churchName={activeChurch?.name || homeChurchName} />
           )}
 
+          {/* Full-bleed banners — mirrors <main>'s padding as negative margins */}
+          <div className="-mx-[16px] -mt-[16px] md:-mx-[24px] md:-mt-[24px] md:-mx-8 md:-mt-8 lg:-mx-4 lg:-mt-4">
           {isUserSuspended && (
-            <div className="mb-4 rounded-xl border-2 border-red-500 bg-red-50 px-4 py-3 text-red-900 text-sm">
+            <div className="mb-4 border-y-2 border-red-500 bg-red-50 px-4 py-2 text-red-900 text-sm">
               <div className="flex items-start gap-3">
                 <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
@@ -112,7 +114,7 @@ function DashboardLayout() {
             </div>
           )}
           {isChurchSuspended && (
-            <div className="mb-4 rounded-xl border-2 border-red-400 bg-red-50 px-4 py-3 text-red-900 text-sm">
+            <div className="mb-4 border-y-2 border-red-400 bg-red-50 px-4 py-2 text-red-900 text-sm">
               <div className="flex items-start gap-3">
                 <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -134,6 +136,7 @@ function DashboardLayout() {
           )}
           <SubscriptionStatusBanner />
           <InAppAnnouncementsHost />
+          </div>
 
           <div
             className={`relative ${isReadOnly ? "pointer-events-none select-none" : ""} ${isHqMonitoringBranch ? "hq-view-only" : ""}`}

@@ -20,6 +20,7 @@ import OutreachSupport from "../../models/outreachModel/outreachSupportModel.js"
 import OrganisationContribution from "../../models/organisationModel/organisationContributionModel.js";
 import Income from "../../models/financeModel/incomeExpenseModel/incomeModel.js";
 import Expense from "../../models/financeModel/incomeExpenseModel/expenseModel.js";
+import OpeningBalance from "../../models/financeModel/openingBalanceModel.js";
 
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
@@ -611,6 +612,54 @@ async function buildStatement({ churchId, periodStart, periodEnd, prevStart, pre
   const totalExpenses = expenseDetailsRaw.reduce((sum, r) => sum + Number(r.amount || 0), 0);
   const surplus = totalIncome - totalExpenses;
 
+  // Opening → closing: anchor the period to the church's declared opening
+  // balances, plus every recorded flow between the books-open date and the
+  // start of this period.
+  const [obAgg, earliestOb] = await Promise.all([
+    OpeningBalance.aggregate([
+      { $match: { church: churchId } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]),
+    OpeningBalance.findOne({ church: churchId })
+      .sort({ balanceAsOf: 1 })
+      .select("balanceAsOf")
+      .lean()
+  ]);
+
+  let openingBalance = null;
+  const booksOpenDate = earliestOb?.balanceAsOf || null;
+  const declared = Number(obAgg?.[0]?.total || 0);
+  if (booksOpenDate) {
+    // Pre-books money lives inside the declared figure itself — only count
+    // recorded flows from books-open up to (not including) this period.
+    const flowStart = new Date(booksOpenDate);
+    const flowEnd = new Date(new Date(periodStart).getTime() - 1);
+    let netFlowsBefore = 0;
+    if (flowEnd >= flowStart) {
+      const beforePledgeSplit = await sumPledgePaymentsByScope({ churchId, periodStart: flowStart, periodEnd: flowEnd });
+      const beforeIncome = await Promise.all(
+        incomeSources.map(async (s) => {
+          const base = await sumSource({ source: s, churchId, periodStart: flowStart, periodEnd: flowEnd });
+          const pledgeKey = pledgeSplitByKey[s.key];
+          return base + (pledgeKey ? Number(beforePledgeSplit?.[pledgeKey] || 0) : 0);
+        })
+      );
+      const beforeExpenses = await Promise.all(
+        expenseSources.map((s) => sumSource({ source: s, churchId, periodStart: flowStart, periodEnd: flowEnd }))
+      );
+      netFlowsBefore =
+        beforeIncome.reduce((sum, v) => sum + Number(v || 0), 0) -
+        beforeExpenses.reduce((sum, v) => sum + Number(v || 0), 0);
+    }
+    const periodOpening = declared + netFlowsBefore;
+    openingBalance = {
+      declared,
+      booksOpenDate,
+      periodOpening,
+      periodClosing: periodOpening + surplus
+    };
+  }
+
   const incomeDetails = withPercent(incomeDetailsRaw, totalIncome);
   const expenseDetails = withPercent(expenseDetailsRaw, totalExpenses);
 
@@ -654,6 +703,7 @@ async function buildStatement({ churchId, periodStart, periodEnd, prevStart, pre
       surplusDiff: surplus - prevSurplus,
       surplusPctOfIncome
     },
+    openingBalance,
     incomeDetails,
     expenseDetails,
     pledgePipeline,

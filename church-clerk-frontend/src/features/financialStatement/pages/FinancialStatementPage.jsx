@@ -17,6 +17,8 @@ import { kpiTrendText } from "../../../shared/utils/kpiTrendText.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
+import Button from "../../../shared/components/Button/index.jsx";
+import OpeningBalanceContent from "../components/OpeningBalanceContent.jsx";
 import FilterBar from "../../../shared/components/FilterBar/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import { SkeletonKpiCard, SkeletonTableRows } from "../../../shared/components/Skeleton/index.jsx";
@@ -720,6 +722,33 @@ function FinancialStatementContent() {
             />
           </KpiGrid>
 
+          {statement?.openingBalance ? (
+            <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6">
+              <div className="font-semibold text-gray-900 text-sm">Cash Position</div>
+              <div className="mt-1 text-gray-500 text-xs">
+                Opening balance plus all recorded income and expenses up to this period
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 md:grid-cols-4">
+                <div>
+                  <div className="text-gray-500 text-xs">Opening Balance</div>
+                  <div className="mt-1 font-semibold text-gray-900">{money(statement.openingBalance.periodOpening)}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs">+ Income</div>
+                  <div className="mt-1 font-semibold text-emerald-600">{money(kpi.totalIncome)}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs">− Expenses</div>
+                  <div className="mt-1 font-semibold text-red-600">{money(kpi.totalExpenses)}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs">= Closing Balance</div>
+                  <div className="mt-1 font-bold text-blue-700">{money(statement.openingBalance.periodClosing)}</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {statement?.pledgePipeline ? (
             <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 md:p-6">
               <div className="font-semibold text-gray-900 text-sm">Pledge Pipeline</div>
@@ -1152,13 +1181,16 @@ function FinancialStatementPage() {
   const { can } = useContext(PermissionContext) || {};
   const canReadStatement = useMemo(() => (typeof can === "function" ? can("financialStatement", "read") : true), [can]);
   const canReadAnalytics = useMemo(() => (typeof can === "function" ? can("reportsAnalytics", "read") : true), [can]);
+  const canUpdateOpeningBalance = useMemo(() => (typeof can === "function" ? can("offerings", "update") : false), [can]);
 
   const [overviewTab, setOverviewTab] = useState("statement");
+  const [obFormOpen, setObFormOpen] = useState(false);
 
   const tabs = useMemo(() => {
     const list = [];
     if (canReadStatement) list.push({ key: "statement", label: "Financial Statement" });
     if (canReadAnalytics) list.push({ key: "analytics", label: "Financial Analytics" });
+    if (canReadStatement) list.push({ key: "openingBalance", label: "Opening Balance" });
     return list;
   }, [canReadStatement, canReadAnalytics]);
 
@@ -1179,9 +1211,21 @@ function FinancialStatementPage() {
 
   return (
     <div className="max-w-6xl">
-      <div>
-        <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Financial Overview</h2>
-        <p className="mt-2 text-gray-600 text-sm hidden md:block">Statement and analytics for your church finances</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Financial Overview</h2>
+          <p className="mt-2 text-gray-600 text-sm hidden md:block">Statement and analytics for your church finances</p>
+        </div>
+        {overviewTab === "openingBalance" && canUpdateOpeningBalance ? (
+          <Button
+            type="button"
+            variant="primary"
+            className="shrink-0 rounded-lg px-4 py-2 text-sm"
+            onClick={() => setObFormOpen(true)}
+          >
+            Add Open Balance
+          </Button>
+        ) : null}
       </div>
 
       <PageTabs
@@ -1194,6 +1238,7 @@ function FinancialStatementPage() {
 
       {overviewTab === "statement" ? <FinancialStatementContent /> : null}
       {overviewTab === "analytics" ? <FinancialAnalyticsContent /> : null}
+      {overviewTab === "openingBalance" ? <OpeningBalanceContent formOpen={obFormOpen} setFormOpen={setObFormOpen} /> : null}
     </div>
   );
 }

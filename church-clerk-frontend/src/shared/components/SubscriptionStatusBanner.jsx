@@ -205,7 +205,7 @@ function SubscriptionStatusBanner() {
   if (!banner) return null;
 
   return (
-    <div className={`mb-4 rounded-xl border px-4 py-3 ${cls(banner.variant)} text-sm`}>
+    <div className={`mb-4 border-y px-4 py-2 ${cls(banner.variant)} text-sm`}>
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="font-semibold">{banner.title}</div>

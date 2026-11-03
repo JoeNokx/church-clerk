@@ -930,7 +930,7 @@ function AttendancePageInner() {
                               <div className="text-gray-500 text-xs mt-0.5">{indivViewing?.serviceType || "-"}</div>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {canUpdateAttendance ? (
+                              {canUpdateAttendance && sessionTab === "members" ? (
                               <button
                                 type="button"
                                 onClick={() => guarded(() => { setIndivLinkError(""); setIndivLinkModalOpen(true); })}
@@ -940,7 +940,7 @@ function AttendancePageInner() {
                                 Generate Link
                               </button>
                               ) : null}
-                              {canUpdateAttendance ? (
+                              {canUpdateAttendance && sessionTab === "members" ? (
                                 <button
                                   type="button"
                                   onClick={() => guarded(() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); })}

@@ -152,7 +152,7 @@ function InAppAnnouncementsHost() {
   return (
     <>
       {banner?._id ? (
-        <div className={`mb-4 rounded-xl border px-4 py-3 ${String(banner?.priority) === "critical" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
+        <div className={`mb-4 border-y px-4 py-2 ${String(banner?.priority) === "critical" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="font-semibold text-gray-900 truncate text-sm">{banner?.title || "System Announcement"}</div>
@@ -164,7 +164,7 @@ function InAppAnnouncementsHost() {
                 <button
                   type="button"
                   onClick={() => onAcknowledge(banner._id, "banner")}
-                  className="inline-flex h-11 items-center justify-center rounded-lg bg-gray-900 px-3 font-semibold text-white md:h-12 text-sm"
+                  className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-900 px-3 font-semibold text-white text-sm"
                 >
                   Acknowledge
                 </button>
@@ -173,7 +173,7 @@ function InAppAnnouncementsHost() {
                   <button
                     type="button"
                     onClick={() => onDismiss(banner._id, "banner")}
-                    className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 hover:bg-gray-50 md:h-12 text-sm"
+                    className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
                   >
                     Dismiss
                   </button>
