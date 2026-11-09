@@ -56,7 +56,7 @@ const memberSchema = new mongoose.Schema({
 
   // The login account this member belongs to — null for most members.
   // Sparse unique: one user account can only belong to one member record.
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, unique: true, sparse: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true, sparse: true },
 }, {
   timestamps: true
 });
