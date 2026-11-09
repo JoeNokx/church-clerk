@@ -22,6 +22,9 @@ import {
   getCheckInLinkStatus,
   generateCheckInLink,
   revokeCheckInLink,
+  getQrCheckInStatus,
+  generateQrCheckIn,
+  revokeQrCheckIn,
   getAbsentees,
   getAbsenteeMissedServices
 } from "../controller/serviceIndividualAttendanceController.js"
@@ -238,7 +241,7 @@ router.delete(
 );
 
 router.get(
-  "/individual-attendances/:id/checkin-link",
+  "/checkin-link",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
@@ -248,7 +251,7 @@ router.get(
   getCheckInLinkStatus
 );
 router.post(
-  "/individual-attendances/:id/checkin-link/generate",
+  "/checkin-link/generate",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
@@ -258,7 +261,7 @@ router.post(
   generateCheckInLink
 );
 router.delete(
-  "/individual-attendances/:id/checkin-link/revoke",
+  "/checkin-link/revoke",
   protect,
   setActiveChurch,
   readOnlyBranchGuard,
@@ -266,6 +269,36 @@ router.delete(
   authorizeRoles("superadmin", "supportadmin", "churchadmin"),
   requirePermission("attendance", "update"),
   revokeCheckInLink
+);
+router.get(
+  "/checkin-qr",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("attendance", "read"),
+  getQrCheckInStatus
+);
+router.post(
+  "/checkin-qr/generate",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("attendance", "update"),
+  generateQrCheckIn
+);
+router.delete(
+  "/checkin-qr/revoke",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  attachPermissions,
+  authorizeRoles("superadmin", "supportadmin", "churchadmin"),
+  requirePermission("attendance", "update"),
+  revokeQrCheckIn
 );
 
 export default router

@@ -502,9 +502,9 @@ function MembersPageInner() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 md:gap-3">
-          {/* Mobile: single Add Member button with popup — all items inside are writes; hide entirely when read-only */}
+          {/* Single Add Member button with popup — all items inside are writes; hide entirely when read-only */}
           {canEditChurch ? (
-          <div className="relative md:hidden">
+          <div className="relative">
             <div className="inline-flex rounded-lg bg-blue-600 shadow-sm overflow-hidden">
               <button
                 type="button"
@@ -534,7 +534,7 @@ function MembersPageInner() {
                       type="button"
                       onClick={() => guarded(() => { setMobileAddOpen(false); openCreate(); })}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
-                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                      className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
                     >
                       Register Member
                     </button>
@@ -544,7 +544,7 @@ function MembersPageInner() {
                       type="button"
                       onClick={() => guarded(() => { setMobileAddOpen(false); openRegLink(); })}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
-                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                      className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
                     >
                       Registration Link
                     </button>
@@ -554,7 +554,7 @@ function MembersPageInner() {
                       type="button"
                       onClick={() => guarded(() => { setMobileAddOpen(false); openQr(); })}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
-                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                      className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
                     >
                       QR Code
                     </button>
@@ -564,7 +564,7 @@ function MembersPageInner() {
                       type="button"
                       onClick={() => guarded(() => { setMobileAddOpen(false); openImport(); })}
                       style={{ textAlign: "left", padding: "0.5rem 1rem" }}
-                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                      className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                     >
                       Import Members
                     </button>
@@ -574,45 +574,6 @@ function MembersPageInner() {
             ) : null}
           </div>
           ) : null}
-
-          {/* Desktop: individual buttons */}
-          {isChurchAdmin && canEditChurch && (
-            <button
-              type="button"
-              onClick={() => guarded(openRegLink)}
-              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
-            >
-              Registration Link
-            </button>
-          )}
-          {isChurchAdmin && canEditChurch && (
-            <button
-              type="button"
-              onClick={() => guarded(openQr)}
-              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
-            >
-              QR Code
-            </button>
-          )}
-          {canImport && (
-            <button
-              type="button"
-              onClick={() => guarded(openImport)}
-              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
-            >
-              Import Members
-            </button>
-          )}
-          {canCreate && (
-            <button
-              type="button"
-              onClick={() => guarded(openCreate)}
-              className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 text-sm"
-            >
-              <span className="leading-none text-lg">+</span>
-              Add Member
-            </button>
-          )}
         </div>
       </div>
 

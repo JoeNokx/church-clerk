@@ -68,14 +68,26 @@ export const deleteServiceIndividualAttendance = async (id, config = {}) => {
   return await http.delete(`/attendance/individual-attendances/${id}`, config || {});
 };
 
-export const getAttendanceCheckInLink = async (id) => {
-  return await http.get(`/attendance/individual-attendances/${id}/checkin-link`);
+export const getAttendanceCheckInLink = async () => {
+  return await http.get("/attendance/checkin-link");
 };
 
-export const generateAttendanceCheckInLink = async (id) => {
-  return await http.post(`/attendance/individual-attendances/${id}/checkin-link/generate`, {});
+export const generateAttendanceCheckInLink = async () => {
+  return await http.post("/attendance/checkin-link/generate", {});
 };
 
-export const revokeAttendanceCheckInLink = async (id) => {
-  return await http.delete(`/attendance/individual-attendances/${id}/checkin-link/revoke`);
+export const revokeAttendanceCheckInLink = async () => {
+  return await http.delete("/attendance/checkin-link/revoke");
+};
+
+export const getAttendanceQrCheckIn = async () => {
+  return await http.get("/attendance/checkin-qr");
+};
+
+export const generateAttendanceQrCheckIn = async () => {
+  return await http.post("/attendance/checkin-qr/generate", {});
+};
+
+export const revokeAttendanceQrCheckIn = async () => {
+  return await http.delete("/attendance/checkin-qr/revoke");
 };

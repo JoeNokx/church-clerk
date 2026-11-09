@@ -1,11 +1,11 @@
 import publicHttp from "../../../shared/services/publicHttp.js";
 
-export const getAttendanceInfoByToken = async (token) => {
-  return await publicHttp.get(`/public/attendance/${token}`);
+export const getSelfCheckInInfo = async (token) => {
+  return await publicHttp.get(`/public/attendance-self/${token}`);
 };
 
-export const submitAttendanceCheckIn = async (token, payload) => {
-  return await publicHttp.post(`/public/attendance/${token}/check-in`, payload);
+export const submitSelfCheckIn = async (token, payload) => {
+  return await publicHttp.post(`/public/attendance-self/${token}/check-in`, payload);
 };
 
 export const getOrgAttendanceInfoByToken = async (token) => {

@@ -128,6 +128,30 @@ const churchSchema = new mongoose.Schema({
     default: false
   },
 
+  qrCheckInToken: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
+
+  qrCheckInActive: {
+    type: Boolean,
+    default: false
+  },
+
+  linkCheckInToken: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
+
+  linkCheckInActive: {
+    type: Boolean,
+    default: false
+  },
+
   logoUrl: { type: String, default: "" },
   logoPublicId: { type: String, default: "" }
 

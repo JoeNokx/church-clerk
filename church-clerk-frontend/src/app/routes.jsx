@@ -123,7 +123,8 @@ function AppRoutes() {
       </Route>
 
       <Route path="/join/:token" element={<JoinPage />} />
-      <Route path="/attend/:token" element={<AttendanceCheckInPage />} />
+      <Route path="/attend/link/:token" element={<AttendanceCheckInPage />} />
+      <Route path="/attend/qr/:token" element={<AttendanceCheckInPage />} />
       <Route path="/attend/org/:token" element={<AttendanceCheckInPage />} />
       <Route path="/shared-report/:token" element={<SharedReportPage />} />
       <Route path="*" element={<NotFoundPage />} />

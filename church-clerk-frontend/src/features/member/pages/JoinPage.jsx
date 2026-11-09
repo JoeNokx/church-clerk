@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getChurchInfoByToken, submitSelfRegistration } from "../services/publicRegistration.api.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import Select from "react-select";
+import { Country, State } from "country-state-city";
+import { AFRICAN_COUNTRY_CODES } from "../../../shared/utils/africanCountries.js";
 import Button from "../../../shared/components/Button/index.jsx";
 import {
   MEMBER_STATUS_OPTIONS,
@@ -77,6 +80,53 @@ export default function JoinPage() {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
   const photoInputRef = useRef(null);
+
+  const countryOptions = useMemo(() => {
+    const allow = new Set(AFRICAN_COUNTRY_CODES);
+    return Country.getAllCountries()
+      .filter((c) => allow.has(String(c?.isoCode || "").trim()))
+      .map((c) => ({ value: c.isoCode, label: c.name }));
+  }, []);
+
+  const selectedCountryOption = useMemo(() => {
+    const label = String(country || "").trim().toLowerCase();
+    if (!label) return null;
+    return countryOptions.find((o) => String(o.label || "").trim().toLowerCase() === label) || null;
+  }, [country, countryOptions]);
+
+  const regionOptions = useMemo(() => {
+    const code = String(selectedCountryOption?.value || "").trim();
+    if (!code) return [];
+    if (!AFRICAN_COUNTRY_CODES.includes(code)) return [];
+    return State.getStatesOfCountry(code).map((s) => ({ value: s.isoCode, label: s.name }));
+  }, [selectedCountryOption?.value]);
+
+  const selectedRegionOption = useMemo(() => {
+    const label = String(region || "").trim().toLowerCase();
+    if (!label) return null;
+    return regionOptions.find((o) => String(o.label || "").trim().toLowerCase() === label) || null;
+  }, [region, regionOptions]);
+
+  const selectStyles = useMemo(
+    () => ({
+      control: (base, state) => ({
+        ...base,
+        minHeight: 44,
+        height: 44,
+        borderRadius: "0.5rem",
+        borderColor: state.isFocused ? "#93c5fd" : "#e5e7eb",
+        boxShadow: state.isFocused ? "0 0 0 3px rgba(59,130,246,0.12)" : "none",
+        ":hover": { borderColor: state.isFocused ? "#93c5fd" : "#d1d5db" }
+      }),
+      valueContainer: (base) => ({ ...base, paddingTop: 0, paddingBottom: 0, paddingLeft: "0.75rem", paddingRight: "0.75rem" }),
+      input: (base) => ({ ...base, margin: 0, padding: 0 }),
+      indicatorsContainer: (base) => ({ ...base, height: 44 }),
+      placeholder: (base) => ({ ...base, color: "#9ca3af" }),
+      singleValue: (base) => ({ ...base, color: "#374151" }),
+      menuPortal: (base) => ({ ...base, zIndex: 9999 })
+    }),
+    []
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -280,7 +330,7 @@ export default function JoinPage() {
               </div>
             </label>
             <label htmlFor="photoInput" className="text-xs text-gray-400 cursor-pointer">
-              Click to upload your photo (optional)
+              Click to upload your photo
             </label>
             <input id="photoInput" ref={photoInputRef} type="file" accept="image/*" className="sr-only" onChange={handlePhotoChange} />
           </div>
@@ -355,10 +405,45 @@ export default function JoinPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Country">
-                  <input value={country} onChange={(e) => setCountry(e.target.value)} className={INPUT_CLS} placeholder="e.g. Ghana" />
+                  <Select
+                    inputId="join-country"
+                    isSearchable
+                    isClearable
+                    options={countryOptions}
+                    value={selectedCountryOption}
+                    onChange={(opt) => {
+                      if (!opt) {
+                        setCountry("");
+                        setRegion("");
+                        return;
+                      }
+                      setCountry(String(opt?.label || ""));
+                      setRegion("");
+                    }}
+                    placeholder="Select country"
+                    menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                    styles={selectStyles}
+                  />
                 </Field>
                 <Field label="Region">
-                  <input value={region} onChange={(e) => setRegion(e.target.value)} className={INPUT_CLS} placeholder="e.g. Greater Accra" />
+                  <Select
+                    inputId="join-region"
+                    isSearchable
+                    isClearable
+                    options={regionOptions}
+                    value={selectedRegionOption}
+                    onChange={(opt) => {
+                      if (!opt) {
+                        setRegion("");
+                        return;
+                      }
+                      setRegion(String(opt?.label || ""));
+                    }}
+                    placeholder={selectedCountryOption ? "Select region" : "Select country first"}
+                    isDisabled={!selectedCountryOption}
+                    menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                    styles={selectStyles}
+                  />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import {
-  getAttendanceInfoByToken,
-  submitAttendanceCheckIn,
+  getSelfCheckInInfo,
+  submitSelfCheckIn,
   getOrgAttendanceInfoByToken,
   submitOrgAttendanceCheckIn
 } from "../services/publicAttendance.api.js";
@@ -15,18 +15,27 @@ function formatDate(val) {
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function formatDay(val) {
+  if (!val) return "";
+  const d = new Date(val);
+  if (isNaN(d)) return "";
+  return d.toLocaleDateString("en-GB", { weekday: "long" });
+}
+
 export default function AttendanceCheckInPage() {
   const { token } = useParams();
   const { pathname } = useLocation();
-  const isOrg = pathname.startsWith("/attend/org");
-  const getInfo = isOrg ? getOrgAttendanceInfoByToken : getAttendanceInfoByToken;
-  const submitCheckIn = isOrg ? submitOrgAttendanceCheckIn : submitAttendanceCheckIn;
+  const isSelf = pathname.startsWith("/attend/qr") || pathname.startsWith("/attend/link");
+  const getInfo = isSelf ? getSelfCheckInInfo : getOrgAttendanceInfoByToken;
 
   const [session, setSession] = useState(null);
+  const [selfSessions, setSelfSessions] = useState([]);
+  const [selfSessionId, setSelfSessionId] = useState("");
   const [loadingSession, setLoadingSession] = useState(true);
   const [sessionError, setSessionError] = useState("");
 
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState(null);
@@ -36,10 +45,19 @@ export default function AttendanceCheckInPage() {
     setLoadingSession(true);
     setSessionError("");
     getInfo(token)
-      .then((res) => setSession(res?.data?.attendance || null))
+      .then((res) => {
+        if (isSelf) {
+          const sessions = Array.isArray(res?.data?.sessions) ? res.data.sessions : [];
+          setSession({ church: res?.data?.church || null });
+          setSelfSessions(sessions);
+          setSelfSessionId(sessions[0]?._id ? String(sessions[0]._id) : "");
+        } else {
+          setSession(res?.data?.attendance || null);
+        }
+      })
       .catch((e) => setSessionError(e?.response?.data?.message || "This check-in link is invalid or has expired."))
       .finally(() => setLoadingSession(false));
-  }, [token, getInfo]);
+  }, [token, getInfo, isSelf]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,8 +69,20 @@ export default function AttendanceCheckInPage() {
       setIsSubmitting(false);
       return;
     }
+    if (isSelf && !selfSessionId) {
+      setFormError("Please select a service session.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!agreed) {
+      setFormError("Please confirm you attended this service session.");
+      setIsSubmitting(false);
+      return;
+    }
     try {
-      const res = await submitCheckIn(token, { phoneNumber: phoneNumber.trim() });
+      const res = isSelf
+        ? await submitSelfCheckIn(token, { sessionId: selfSessionId, phoneNumber: phoneNumber.trim() })
+        : await submitOrgAttendanceCheckIn(token, { phoneNumber: phoneNumber.trim() });
       setSuccess({ message: res?.data?.message || "Check-in successful!", memberName: res?.data?.memberName || null });
     } catch (e) {
       setFormError(e?.response?.data?.message || "Check-in failed. Please try again.");
@@ -125,19 +155,48 @@ export default function AttendanceCheckInPage() {
             <p className="mt-1 text-gray-500 text-sm">Pastor: {session.church.pastor}</p>
           )}
           <div className="mt-3 inline-flex flex-col items-center gap-1 rounded-xl border border-blue-100 bg-blue-50 px-5 py-3">
-            <span className="font-semibold text-blue-900 text-base">{session?.serviceType || "Service"}</span>
+            <span className="font-semibold text-blue-900 text-base">
+              {isSelf
+                ? (selfSessions.find((s) => String(s._id) === selfSessionId)?.serviceType || "Service")
+                : (session?.serviceType || "Service")}
+            </span>
             {session?.entityName ? (
               <span className="text-blue-800 text-xs font-medium">{session.entityName}</span>
             ) : null}
-            <span className="text-blue-600 text-sm">{formatDate(session?.date)}</span>
+            <span className="text-blue-600 text-sm">
+              {isSelf
+                ? formatDate(selfSessions.find((s) => String(s._id) === selfSessionId)?.date)
+                : formatDate(session?.date)}
+            </span>
           </div>
-          <p className="mt-4 text-gray-600 text-sm">Enter your registered phone number to mark your attendance.</p>
+          <p className="mt-4 text-gray-600 text-sm">Enter the phone number you registered with the church to mark your attendance.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-xl border border-gray-200 bg-white p-6 space-y-4">
           {formError && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{formError}</div>
           )}
+
+          {isSelf ? (
+            <div>
+              <label className="block font-semibold text-gray-600 text-xs mb-1.5">
+                Service Session <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selfSessionId}
+                onChange={(e) => setSelfSessionId(e.target.value)}
+                disabled={!selfSessions.length}
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                {selfSessions.length === 0 ? <option value="">No service sessions available</option> : null}
+                {selfSessions.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {`${formatDay(s?.date)}, ${formatDate(s?.date)} — ${s?.serviceType || "Service"}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
 
           <div>
             <label className="block font-semibold text-gray-600 text-xs mb-1.5">
@@ -147,11 +206,24 @@ export default function AttendanceCheckInPage() {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="Enter your registered phone number"
+              placeholder="+233544455566"
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
-            <p className="mt-1.5 text-gray-400 text-xs">Enter the phone number you registered with (e.g. +233XXXXXXXXX)</p>
           </div>
+
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-200"
+            />
+            <span className="text-gray-600 text-sm">
+              I agree I attended church on <span className="font-semibold">{isSelf
+                ? `${selfSessions.find((s) => String(s._id) === selfSessionId)?.serviceType || "Service"}, ${formatDate(selfSessions.find((s) => String(s._id) === selfSessionId)?.date)}`
+                : `${session?.serviceType || "Service"}, ${formatDate(session?.date)}`}</span>
+            </span>
+          </label>
 
           <Button
             type="submit"

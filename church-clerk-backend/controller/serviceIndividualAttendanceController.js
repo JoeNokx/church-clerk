@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import Church from "../models/churchModel.js";
 import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Member from "../models/memberModel.js";
 import Visitor from "../models/visitorsModel.js";
@@ -199,14 +200,13 @@ const deleteServiceIndividualAttendance = async (req, res) => {
 
 const getCheckInLinkStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const attendance = await ServiceIndividualAttendance.findOne({ _id: id, church: req.activeChurch._id })
-      .select("selfCheckInToken selfCheckInActive date serviceType")
-      .lean();
-    if (!attendance) return res.status(404).json({ message: "Attendance not found" });
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+    const church = await Church.findById(churchId).select("linkCheckInToken linkCheckInActive").lean();
+    if (!church) return res.status(404).json({ message: "Church not found" });
     return res.status(200).json({
-      token: attendance.selfCheckInActive ? attendance.selfCheckInToken : null,
-      active: attendance.selfCheckInActive || false
+      token: church.linkCheckInActive ? church.linkCheckInToken : null,
+      active: church.linkCheckInActive || false
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -215,15 +215,16 @@ const getCheckInLinkStatus = async (req, res) => {
 
 const generateCheckInLink = async (req, res) => {
   try {
-    const { id } = req.params;
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
     const token = crypto.randomBytes(24).toString("hex");
-    const attendance = await ServiceIndividualAttendance.findOneAndUpdate(
-      { _id: id, church: req.activeChurch._id },
-      { selfCheckInToken: token, selfCheckInActive: true },
+    const church = await Church.findByIdAndUpdate(
+      churchId,
+      { linkCheckInToken: token, linkCheckInActive: true },
       { new: true }
     );
-    if (!attendance) return res.status(404).json({ message: "Attendance not found" });
-    return res.status(200).json({ message: "Check-in link generated", token: attendance.selfCheckInToken, active: true });
+    if (!church) return res.status(404).json({ message: "Church not found" });
+    return res.status(200).json({ message: "Check-in link generated", token: church.linkCheckInToken, active: true });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -231,41 +232,98 @@ const generateCheckInLink = async (req, res) => {
 
 const revokeCheckInLink = async (req, res) => {
   try {
-    const { id } = req.params;
-    const attendance = await ServiceIndividualAttendance.findOneAndUpdate(
-      { _id: id, church: req.activeChurch._id },
-      { $unset: { selfCheckInToken: 1 }, $set: { selfCheckInActive: false } },
-      { new: true }
-    );
-    if (!attendance) return res.status(404).json({ message: "Attendance not found" });
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+    await Church.findByIdAndUpdate(churchId, {
+      $unset: { linkCheckInToken: 1 },
+      $set: { linkCheckInActive: false }
+    });
     return res.status(200).json({ message: "Check-in link revoked" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
 
-const getAttendanceByCheckInToken = async (req, res) => {
+const getQrCheckInStatus = async (req, res) => {
   try {
-    const { token } = req.params;
-    const attendance = await ServiceIndividualAttendance.findOne({ selfCheckInToken: token, selfCheckInActive: true })
-      .populate("church", "name pastor city country")
-      .lean();
-    if (!attendance) return res.status(404).json({ message: "Check-in link is invalid or has been revoked." });
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+    const church = await Church.findById(churchId).select("qrCheckInToken qrCheckInActive").lean();
+    if (!church) return res.status(404).json({ message: "Church not found" });
     return res.status(200).json({
-      attendance: { date: attendance.date, serviceType: attendance.serviceType, church: attendance.church }
+      token: church.qrCheckInActive ? church.qrCheckInToken : null,
+      active: church.qrCheckInActive || false
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
 
-const memberCheckIn = async (req, res) => {
+const generateQrCheckIn = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+    const token = crypto.randomBytes(24).toString("hex");
+    const church = await Church.findByIdAndUpdate(
+      churchId,
+      { qrCheckInToken: token, qrCheckInActive: true },
+      { new: true }
+    );
+    if (!church) return res.status(404).json({ message: "Church not found" });
+    return res.status(200).json({ message: "Check-in QR code generated", token: church.qrCheckInToken, active: true });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const revokeQrCheckIn = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+    await Church.findByIdAndUpdate(churchId, {
+      $unset: { qrCheckInToken: 1 },
+      $set: { qrCheckInActive: false }
+    });
+    return res.status(200).json({ message: "Check-in QR code revoked" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const findChurchBySelfCheckInToken = (token, select = "_id") =>
+  Church.findOne({
+    $or: [
+      { qrCheckInToken: token, qrCheckInActive: true },
+      { linkCheckInToken: token, linkCheckInActive: true }
+    ]
+  }).select(select).lean();
+
+const getSelfCheckInInfo = async (req, res) => {
   try {
     const { token } = req.params;
-    const { phoneNumber } = req.body;
+    const church = await findChurchBySelfCheckInToken(token, "name pastor city country");
+    if (!church) return res.status(404).json({ message: "Check-in link is invalid or has been revoked." });
+    const sessions = await ServiceIndividualAttendance.find({ church: church._id })
+      .sort({ date: -1 })
+      .limit(10)
+      .select("date serviceType")
+      .lean();
+    return res.status(200).json({ church, sessions });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const selfMemberCheckIn = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { sessionId, phoneNumber } = req.body;
     if (!phoneNumber || !String(phoneNumber).trim()) return res.status(400).json({ message: "Phone number is required." });
-    const attendance = await ServiceIndividualAttendance.findOne({ selfCheckInToken: token, selfCheckInActive: true });
-    if (!attendance) return res.status(404).json({ message: "Check-in link is invalid or has been revoked." });
+    if (!sessionId || !String(sessionId).trim()) return res.status(400).json({ message: "Please select a service session." });
+    const church = await findChurchBySelfCheckInToken(token);
+    if (!church) return res.status(404).json({ message: "Check-in link is invalid or has been revoked." });
+    const attendance = await ServiceIndividualAttendance.findOne({ _id: sessionId, church: church._id });
+    if (!attendance) return res.status(404).json({ message: "Service session not found." });
     const member = await Member.findOne({ church: attendance.church, phoneNumber: String(phoneNumber).trim(), status: { $in: ATTENDANCE_STATUSES } }).lean();
     if (!member) return res.status(404).json({ message: "No member found with this phone number." });
     const alreadyPresent = attendance.presentMembers.some((pid) => String(pid) === String(member._id));
@@ -315,8 +373,11 @@ export {
   getCheckInLinkStatus,
   generateCheckInLink,
   revokeCheckInLink,
-  getAttendanceByCheckInToken,
-  memberCheckIn,
+  getQrCheckInStatus,
+  generateQrCheckIn,
+  revokeQrCheckIn,
+  getSelfCheckInInfo,
+  selfMemberCheckIn,
   getAbsentees,
   getAbsenteeMissedServices
 };

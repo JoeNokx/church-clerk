@@ -21,9 +21,14 @@ import {
   getAttendanceCheckInLink,
   generateAttendanceCheckInLink,
   revokeAttendanceCheckInLink,
+  getAttendanceQrCheckIn,
+  generateAttendanceQrCheckIn,
+  revokeAttendanceQrCheckIn,
   getVisitors,
   getAbsentees
 } from "../services/attendance.api.js";
+import QRCode from "../../../shared/components/QRCode/index.jsx";
+import { downloadQrCodePng } from "../../../shared/components/QRCode/utils.js";
 import AbsenteesTab from "../components/AbsenteesTab.jsx";
 import { getMembers } from "../../member/services/member.api.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
@@ -153,15 +158,127 @@ function AttendancePageInner() {
   const [indivConfirmLoading, setIndivConfirmLoading] = useState(false);
 
   const [indivFormModalOpen, setIndivFormModalOpen] = useState(false);
-  const [indivLinkModalOpen, setIndivLinkModalOpen] = useState(false);
-  const [indivLinkRecordId, setIndivLinkRecordId] = useState(null);
-  const [indivLinkToken, setIndivLinkToken] = useState(null);
-  const [indivLinkActive, setIndivLinkActive] = useState(false);
-  const [indivLinkLoading, setIndivLinkLoading] = useState(false);
-  const [indivLinkError, setIndivLinkError] = useState("");
-  const [indivLinkCopied, setIndivLinkCopied] = useState(false);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkToken, setLinkToken] = useState(null);
+  const [linkActive, setLinkActive] = useState(false);
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const [linkCopied, setLinkCopied] = useState(false);
 
-  const indivCheckInLink = indivLinkToken ? `${BASE_URL}/attend/${indivLinkToken}` : null;
+  const checkInLink = linkToken ? `${BASE_URL}/attend/link/${linkToken}` : null;
+
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrToken, setQrToken] = useState(null);
+  const [qrActive, setQrActive] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState("");
+  const [qrDownloading, setQrDownloading] = useState(false);
+
+  const qrCheckInLink = qrToken ? `${BASE_URL}/attend/qr/${qrToken}` : null;
+
+  const openQrModal = async () => {
+    setQrModalOpen(true);
+    setQrError("");
+    setQrLoading(true);
+    try {
+      const res = await getAttendanceQrCheckIn();
+      setQrToken(res?.data?.token || null);
+      setQrActive(res?.data?.active || false);
+    } catch (e) {
+      setQrError(e?.response?.data?.message || "Failed to load QR code.");
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const handleQrGenerate = async () => {
+    setQrError("");
+    setQrLoading(true);
+    try {
+      const r = await generateAttendanceQrCheckIn();
+      setQrToken(r?.data?.token || null);
+      setQrActive(true);
+    } catch (e) {
+      setQrError(e?.response?.data?.message || "Failed to generate QR code.");
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const handleQrRevoke = async () => {
+    setQrError("");
+    setQrLoading(true);
+    try {
+      await revokeAttendanceQrCheckIn();
+      setQrToken(null);
+      setQrActive(false);
+    } catch (e) {
+      setQrError(e?.response?.data?.message || "Failed to revoke QR code.");
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const openLinkModal = async () => {
+    setLinkModalOpen(true);
+    setLinkError("");
+    setLinkLoading(true);
+    try {
+      const res = await getAttendanceCheckInLink();
+      setLinkToken(res?.data?.token || null);
+      setLinkActive(res?.data?.active || false);
+    } catch (e) {
+      setLinkError(e?.response?.data?.message || "Failed to load check-in link.");
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleLinkGenerate = async () => {
+    setLinkError("");
+    setLinkLoading(true);
+    try {
+      const r = await generateAttendanceCheckInLink();
+      setLinkToken(r?.data?.token || null);
+      setLinkActive(true);
+    } catch (e) {
+      setLinkError(e?.response?.data?.message || "Failed to generate link.");
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleLinkRevoke = async () => {
+    setLinkError("");
+    setLinkLoading(true);
+    try {
+      await revokeAttendanceCheckInLink();
+      setLinkToken(null);
+      setLinkActive(false);
+    } catch (e) {
+      setLinkError(e?.response?.data?.message || "Failed to revoke link.");
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleLinkCopy = () => {
+    if (!checkInLink) return;
+    navigator.clipboard.writeText(checkInLink).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  };
+
+  const handleQrDownload = async () => {
+    if (!qrCheckInLink || qrDownloading) return;
+    setQrDownloading(true);
+    try {
+      await downloadQrCodePng(qrCheckInLink, "attendance-check-in-qr");
+    } finally {
+      setQrDownloading(false);
+    }
+  };
 
   const [indivMarkingSearch, setIndivMarkingSearch] = useState("");
   const [indivMarkingPage, setIndivMarkingPage] = useState(1);
@@ -437,11 +554,6 @@ function AttendancePageInner() {
     setIndivMarkingPage(1);
     setIndivMarkingError("");
     setIndivMarkingSuccess("");
-    setIndivLinkToken(null);
-    setIndivLinkActive(false);
-    setIndivLinkError("");
-    setIndivLinkCopied(false);
-    setIndivLinkRecordId(row?._id || null);
     setIndivViewLoading(true);
     try {
       const [res] = await Promise.all([
@@ -460,13 +572,6 @@ function AttendancePageInner() {
         : [];
       setIndivMarkingSelected(presIds);
       setIndivMarkingAbsent(absIds);
-      if (row?._id) {
-        try {
-          const lRes = await getAttendanceCheckInLink(row._id);
-          setIndivLinkToken(lRes?.data?.token || null);
-          setIndivLinkActive(lRes?.data?.active || false);
-        } catch { /* check-in link status is optional */ }
-      }
     } catch (e) {
       setIndivViewError(e?.response?.data?.message || e?.message || "Failed to load attendance");
     } finally {
@@ -584,17 +689,33 @@ function AttendancePageInner() {
       <div>
         <div className="flex items-center justify-between gap-3 md:items-start">
           <h2 className="font-semibold text-gray-900 md:text-3xl lg:text-4xl text-xl md:text-2xl">Attendance Records</h2>
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-2">
             {activeTab === "log" && canCreateAttendance ? (
-              <button
-                type="button"
-                data-hq-action="true"
-                onClick={() => guarded(() => void openIndivForm("create", null))}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
-              >
-                <span className="leading-none text-lg">+</span>
-                Create Attendance
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => guarded(() => void openLinkModal())}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+                >
+                  Check-In Link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => guarded(() => void openQrModal())}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
+                >
+                  QR Code
+                </button>
+                <button
+                  type="button"
+                  data-hq-action="true"
+                  onClick={() => guarded(() => void openIndivForm("create", null))}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 text-sm"
+                >
+                  <span className="leading-none text-lg">+</span>
+                  Create Attendance
+                </button>
+              </>
             ) : null}
           </div>
         </div>
@@ -1009,16 +1130,6 @@ function AttendancePageInner() {
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                               {canUpdateAttendance && sessionTab === "members" ? (
-                              <button
-                                type="button"
-                                onClick={() => guarded(() => { setIndivLinkError(""); setIndivLinkModalOpen(true); })}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 text-xs"
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                Generate Link
-                              </button>
-                              ) : null}
-                              {canUpdateAttendance && sessionTab === "members" ? (
                                 <button
                                   type="button"
                                   onClick={() => guarded(() => { setIndivMarkingSearch(""); setIndivMarkingPage(1); setIndivMarkingError(""); setIndivMarkingSuccess(""); setIndivMarkingOpen(true); })}
@@ -1346,47 +1457,97 @@ function AttendancePageInner() {
             </form>
           </SimpleModal>
 
-          {/* Generate Link modal */}
-          {indivLinkModalOpen ? (
+          {/* Check-in Link modal */}
+          {linkModalOpen ? (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
               <div className="w-full max-w-lg rounded-xl bg-white shadow-xl overflow-hidden">
                 <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                   <div>
                     <div className="font-semibold text-gray-900 text-sm">Attendance Check-In Link</div>
-                    <div className="mt-0.5 text-gray-500 text-xs">Share this link so members can mark themselves present.</div>
+                    <div className="mt-0.5 text-gray-500 text-xs">Share this link — members pick their service session and mark themselves present.</div>
                   </div>
-                  <button type="button" onClick={() => setIndivLinkModalOpen(false)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
+                  <button type="button" onClick={() => setLinkModalOpen(false)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                   </button>
                 </div>
                 <div className="p-5 space-y-4">
-                  {indivLinkError && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{indivLinkError}</div>
+                  {linkError && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{linkError}</div>
                   )}
-                  {indivLinkLoading ? (
+                  {linkLoading ? (
                     <div className="animate-pulse space-y-3">
                       <div className="h-4 w-32 rounded bg-gray-200" />
                       <div className="h-11 rounded-lg bg-gray-200" />
                     </div>
-                  ) : indivLinkToken && indivLinkActive ? (
+                  ) : linkToken && linkActive ? (
                     <>
                       <div>
                         <div className="font-semibold text-gray-600 text-xs mb-1.5">Shareable Link</div>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700 text-xs font-mono break-all">{indivCheckInLink}</div>
-                          <button type="button" onClick={() => { if (!indivCheckInLink) return; navigator.clipboard.writeText(indivCheckInLink).then(() => { setIndivLinkCopied(true); setTimeout(() => setIndivLinkCopied(false), 2000); }); }} className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 text-sm">{indivLinkCopied ? "Copied!" : "Copy"}</button>
+                          <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700 text-xs font-mono break-all">{checkInLink}</div>
+                          <button type="button" onClick={handleLinkCopy} className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 text-sm">{linkCopied ? "Copied!" : "Copy"}</button>
                         </div>
                       </div>
                       <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">Link is <span className="font-semibold">active</span>. Members can use this link to mark themselves as present.</div>
                       <div className="flex flex-col gap-2 md:flex-row">
-                        <button type="button" onClick={() => guarded(async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { const r = await generateAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(r?.data?.token || null); setIndivLinkActive(true); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to generate link."); } finally { setIndivLinkLoading(false); } })} disabled={indivLinkLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New Link</button>
-                        <button type="button" onClick={() => guarded(async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { await revokeAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(null); setIndivLinkActive(false); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to revoke link."); } finally { setIndivLinkLoading(false); } })} disabled={indivLinkLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke Link</button>
+                        <button type="button" onClick={() => guarded(handleLinkGenerate)} disabled={linkLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New Link</button>
+                        <button type="button" onClick={() => guarded(handleLinkRevoke)} disabled={linkLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke Link</button>
                       </div>
                     </>
                   ) : (
                     <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center">
                       <div className="text-gray-500 text-sm mb-3">No active check-in link. Generate one to share with members.</div>
-                      <button type="button" onClick={() => guarded(async () => { setIndivLinkError(""); setIndivLinkLoading(true); try { const r = await generateAttendanceCheckInLink(indivLinkRecordId); setIndivLinkToken(r?.data?.token || null); setIndivLinkActive(true); } catch (e) { setIndivLinkError(e?.response?.data?.message || "Failed to generate link."); } finally { setIndivLinkLoading(false); } })} disabled={indivLinkLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate Link</button>
+                      <button type="button" onClick={() => guarded(handleLinkGenerate)} disabled={linkLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate Link</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Check-in QR Code modal */}
+          {qrModalOpen ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 overflow-y-auto">
+              <div className="w-full max-w-md rounded-xl bg-white shadow-xl overflow-hidden">
+                <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">Attendance Check-In QR Code</div>
+                    <div className="mt-0.5 text-gray-500 text-xs">Members scan this code, pick their service session, and check in with their phone number.</div>
+                  </div>
+                  <button type="button" onClick={() => setQrModalOpen(false)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shrink-0" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  </button>
+                </div>
+                <div className="p-5 space-y-4">
+                  {qrError && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{qrError}</div>
+                  )}
+
+                  {qrLoading ? (
+                    <div className="animate-pulse space-y-3">
+                      <div className="mx-auto h-48 w-48 rounded-lg bg-gray-200" />
+                      <div className="h-11 rounded-lg bg-gray-200" />
+                    </div>
+                  ) : qrToken && qrActive ? (
+                    <>
+                      <div className="flex justify-center rounded-lg border border-gray-200 bg-white p-4">
+                        <QRCode value={qrCheckInLink} size={200} />
+                      </div>
+                      <button type="button" onClick={handleQrDownload} disabled={qrDownloading} className="w-full rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
+                        {qrDownloading ? "Preparing…" : "Download PNG"}
+                      </button>
+                      <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">
+                        QR code is <span className="font-semibold">active</span>. Members who scan it choose their service session and check in with their phone number.
+                      </div>
+                      <div className="flex flex-col gap-2 md:flex-row">
+                        <button type="button" onClick={() => guarded(handleQrGenerate)} disabled={qrLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New QR Code</button>
+                        <button type="button" onClick={() => guarded(handleQrRevoke)} disabled={qrLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke QR Code</button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center">
+                      <div className="text-gray-500 text-sm mb-3">No active check-in QR code. Generate one to share.</div>
+                      <button type="button" onClick={() => guarded(handleQrGenerate)} disabled={qrLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate QR Code</button>
                     </div>
                   )}
                 </div>
