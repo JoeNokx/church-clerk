@@ -666,6 +666,64 @@ const getMyRegistrationToken = async (req, res) => {
   }
 };
 
+const generateQrRegistrationToken = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+
+    const token = crypto.randomUUID().replace(/-/g, "");
+
+    const church = await Church.findByIdAndUpdate(
+      churchId,
+      { qrRegistrationToken: token, qrRegistrationTokenActive: true },
+      { new: true }
+    );
+
+    if (!church) return res.status(404).json({ message: "Church not found." });
+
+    return res.status(200).json({
+      message: "Registration QR code generated.",
+      token,
+      qrRegistrationTokenActive: church.qrRegistrationTokenActive
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to generate QR code.", error: error.message });
+  }
+};
+
+const revokeQrRegistrationToken = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+
+    await Church.findByIdAndUpdate(churchId, {
+      $unset: { qrRegistrationToken: "" },
+      qrRegistrationTokenActive: false
+    });
+
+    return res.status(200).json({ message: "Registration QR code revoked." });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to revoke QR code.", error: error.message });
+  }
+};
+
+const getMyQrRegistrationToken = async (req, res) => {
+  try {
+    const churchId = req.activeChurch?._id;
+    if (!churchId) return res.status(400).json({ message: "Church context not found." });
+
+    const church = await Church.findById(churchId).select("qrRegistrationToken qrRegistrationTokenActive").lean();
+    if (!church) return res.status(404).json({ message: "Church not found." });
+
+    return res.status(200).json({
+      token: church.qrRegistrationToken || null,
+      qrRegistrationTokenActive: church.qrRegistrationTokenActive || false
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch registration QR code.", error: error.message });
+  }
+};
+
 function requireHeadquarters(req, res) {
   const headquarters = req.activeChurch;
   if (String(headquarters?.type || "").toLowerCase() !== "headquarters") {
@@ -762,5 +820,8 @@ export {
   requestMyChurchSenderId,
   generateRegistrationToken,
   revokeRegistrationToken,
-  getMyRegistrationToken
+  getMyRegistrationToken,
+  generateQrRegistrationToken,
+  revokeQrRegistrationToken,
+  getMyQrRegistrationToken
 }

@@ -12,8 +12,10 @@ export const getChurchByToken = async (req, res) => {
     const { token } = req.params;
 
     const church = await Church.findOne({
-      registrationToken: token,
-      registrationTokenActive: true
+      $or: [
+        { registrationToken: token, registrationTokenActive: true },
+        { qrRegistrationToken: token, qrRegistrationTokenActive: true }
+      ]
     }).lean();
 
     if (!church) {
@@ -40,8 +42,10 @@ export const selfRegisterMember = async (req, res) => {
     const { token } = req.params;
 
     const church = await Church.findOne({
-      registrationToken: token,
-      registrationTokenActive: true
+      $or: [
+        { registrationToken: token, registrationTokenActive: true },
+        { qrRegistrationToken: token, qrRegistrationTokenActive: true }
+      ]
     });
 
     if (!church) {

@@ -1,116 +1,122 @@
 {
-  "hash": "c6fe80d0",
+  "hash": "1b4ef364",
   "configHash": "5e3f66f9",
-  "lockfileHash": "1b952546",
-  "browserHash": "86ba2de7",
+  "lockfileHash": "869568a7",
+  "browserHash": "67aa1860",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "8d76eebb",
+      "fileHash": "6b87b1ce",
       "needsInterop": true
     },
     "react-dom": {
       "src": "../../node_modules/react-dom/index.js",
       "file": "react-dom.js",
-      "fileHash": "76d4ed7e",
+      "fileHash": "d53a0f60",
       "needsInterop": true
     },
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "352cb8d7",
+      "fileHash": "dc42e49b",
       "needsInterop": true
     },
     "react/jsx-runtime": {
       "src": "../../node_modules/react/jsx-runtime.js",
       "file": "react_jsx-runtime.js",
-      "fileHash": "93ddd766",
+      "fileHash": "17c142de",
       "needsInterop": true
     },
     "@tanstack/react-query": {
       "src": "../../node_modules/@tanstack/react-query/build/modern/index.js",
       "file": "@tanstack_react-query.js",
-      "fileHash": "6226dd1d",
+      "fileHash": "4e2479bb",
       "needsInterop": false
     },
     "axios": {
       "src": "../../node_modules/axios/index.js",
       "file": "axios.js",
-      "fileHash": "b2dd10de",
+      "fileHash": "aa407998",
       "needsInterop": false
     },
     "country-state-city": {
       "src": "../../node_modules/country-state-city/lib/index.js",
       "file": "country-state-city.js",
-      "fileHash": "4ad78e2e",
+      "fileHash": "3211f54d",
       "needsInterop": false
     },
     "currency-codes": {
       "src": "../../node_modules/currency-codes/index.js",
       "file": "currency-codes.js",
-      "fileHash": "e5984b34",
+      "fileHash": "ee49ed99",
       "needsInterop": true
     },
     "framer-motion": {
       "src": "../../node_modules/framer-motion/dist/es/index.mjs",
       "file": "framer-motion.js",
-      "fileHash": "f020105e",
+      "fileHash": "db46f3b7",
       "needsInterop": false
     },
     "joi": {
       "src": "../../node_modules/joi/dist/joi-browser.min.js",
       "file": "joi.js",
-      "fileHash": "90e868c6",
+      "fileHash": "249de3b5",
       "needsInterop": true
     },
     "nprogress": {
       "src": "../../node_modules/nprogress/nprogress.js",
       "file": "nprogress.js",
-      "fileHash": "a379387e",
+      "fileHash": "1fef7a53",
       "needsInterop": true
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "53ed988b",
+      "fileHash": "adf0bdf9",
       "needsInterop": true
     },
     "react-loading-skeleton": {
       "src": "../../node_modules/react-loading-skeleton/dist/index.js",
       "file": "react-loading-skeleton.js",
-      "fileHash": "79d7d01d",
+      "fileHash": "e33b78f2",
       "needsInterop": false
     },
     "react-phone-number-input": {
       "src": "../../node_modules/react-phone-number-input/min/index.js",
       "file": "react-phone-number-input.js",
-      "fileHash": "e5f52eda",
+      "fileHash": "575b9d1f",
       "needsInterop": false
     },
     "react-router-dom": {
       "src": "../../node_modules/react-router-dom/dist/index.mjs",
       "file": "react-router-dom.js",
-      "fileHash": "d593d53e",
+      "fileHash": "f0161407",
       "needsInterop": false
     },
     "react-select": {
       "src": "../../node_modules/react-select/dist/react-select.esm.js",
       "file": "react-select.js",
-      "fileHash": "e5f9e110",
+      "fileHash": "5001c06b",
       "needsInterop": false
     },
     "react-toastify": {
       "src": "../../node_modules/react-toastify/dist/index.mjs",
       "file": "react-toastify.js",
-      "fileHash": "34453f21",
+      "fileHash": "1174a5c4",
       "needsInterop": false
     },
     "recharts": {
       "src": "../../node_modules/recharts/es6/index.js",
       "file": "recharts.js",
-      "fileHash": "f8776adf",
+      "fileHash": "cac5bb0b",
       "needsInterop": false
+    },
+    "qrcode": {
+      "src": "../../node_modules/qrcode/lib/browser.js",
+      "file": "qrcode.js",
+      "fileHash": "e80c2c29",
+      "needsInterop": true
     }
   },
   "chunks": {

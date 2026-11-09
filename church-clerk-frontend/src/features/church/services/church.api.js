@@ -62,3 +62,15 @@ export const generateRegistrationToken = async () => {
 export const revokeRegistrationToken = async () => {
   return await http.delete("/church/registration-link/revoke");
 };
+
+export const getQrRegistrationToken = async () => {
+  return await http.get("/church/registration-qr");
+};
+
+export const generateQrRegistrationToken = async () => {
+  return await http.post("/church/registration-qr/generate", {});
+};
+
+export const revokeQrRegistrationToken = async () => {
+  return await http.delete("/church/registration-qr/revoke");
+};

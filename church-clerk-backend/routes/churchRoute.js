@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { createMyChurch, searchHeadquartersChurches, searchBranchChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getMyBranchesConsolidated, getMyBranchMembers, getMyBranchAttendance, getMyBranchFinances, getMyBranchPerformance, getActiveChurchContext, requestMyChurchSenderId, generateRegistrationToken, revokeRegistrationToken, getMyRegistrationToken } from "../controller/churchController.js"
+import { createMyChurch, searchHeadquartersChurches, searchBranchChurches, getMyChurchProfile, updateMyChurchProfile, getMyBranches, getMyBranchesConsolidated, getMyBranchMembers, getMyBranchAttendance, getMyBranchFinances, getMyBranchPerformance, getActiveChurchContext, requestMyChurchSenderId, generateRegistrationToken, revokeRegistrationToken, getMyRegistrationToken, generateQrRegistrationToken, revokeQrRegistrationToken, getMyQrRegistrationToken } from "../controller/churchController.js"
 import { protect } from "../middleware/authMiddleware.js";
 import { setActiveChurch } from "../middleware/activeChurchMiddleware.js";
 import { readOnlyBranchGuard } from "../middleware/readOnlyBranchesMiddleware.js";
@@ -141,6 +141,33 @@ router.delete(
   readOnlyBranchGuard,
   authorizeRoles("churchadmin"),
   revokeRegistrationToken
+);
+
+router.get(
+  "/registration-qr",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("churchadmin"),
+  getMyQrRegistrationToken
+);
+
+router.post(
+  "/registration-qr/generate",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("churchadmin"),
+  generateQrRegistrationToken
+);
+
+router.delete(
+  "/registration-qr/revoke",
+  protect,
+  setActiveChurch,
+  readOnlyBranchGuard,
+  authorizeRoles("churchadmin"),
+  revokeQrRegistrationToken
 );
 
 export default router

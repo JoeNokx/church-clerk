@@ -8,7 +8,10 @@ import ChurchContext from "../../church/church.store.js";
 import {
   getRegistrationToken,
   generateRegistrationToken,
-  revokeRegistrationToken
+  revokeRegistrationToken,
+  getQrRegistrationToken,
+  generateQrRegistrationToken,
+  revokeQrRegistrationToken
 } from "../../church/services/church.api.js";
 import MemberFilters from "../components/MemberFilters.jsx";
 import { SkeletonKpiCard } from "../../../shared/components/Skeleton/index.jsx";
@@ -24,6 +27,7 @@ import { useMembersKpiQuery } from "../hooks/useMembers.js";
 import KpiCard from "../../../shared/components/KpiCard/index.jsx";
 import KpiGrid from "../../../shared/components/KpiGrid/index.jsx";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
+import QRCodeModal from "../../../shared/components/QRCodeModal/index.jsx";
 import { MEMBER_IMPORT_FIELDS } from "../memberFields.js";
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://churchclerkapp.com";
@@ -150,16 +154,22 @@ function MembersPageInner() {
   }, [user?.role]);
 
   const [regLinkOpen, setRegLinkOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [regToken, setRegToken] = useState(null);
   const [regTokenActive, setRegTokenActive] = useState(false);
   const [regLinkLoading, setRegLinkLoading] = useState(false);
   const [regLinkError, setRegLinkError] = useState("");
   const [regLinkCopied, setRegLinkCopied] = useState(false);
 
-  const regLink = regToken ? `${BASE_URL}/join/${regToken}` : null;
+  const [qrToken, setQrToken] = useState(null);
+  const [qrTokenActive, setQrTokenActive] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState("");
 
-  const openRegLink = async () => {
-    setRegLinkOpen(true);
+  const regLink = regToken ? `${BASE_URL}/join/${regToken}` : null;
+  const qrLink = qrToken ? `${BASE_URL}/join/${qrToken}` : null;
+
+  const loadRegToken = async () => {
     setRegLinkError("");
     setRegLinkLoading(true);
     try {
@@ -170,6 +180,54 @@ function MembersPageInner() {
       setRegLinkError(e?.response?.data?.message || "Failed to load registration link.");
     } finally {
       setRegLinkLoading(false);
+    }
+  };
+
+  const openRegLink = () => {
+    setRegLinkOpen(true);
+    loadRegToken();
+  };
+
+  const openQr = () => {
+    setQrOpen(true);
+    setQrError("");
+    setQrLoading(true);
+    getQrRegistrationToken()
+      .then((res) => {
+        setQrToken(res?.data?.token || null);
+        setQrTokenActive(res?.data?.qrRegistrationTokenActive || false);
+      })
+      .catch((e) => {
+        setQrError(e?.response?.data?.message || "Failed to load registration QR code.");
+      })
+      .finally(() => setQrLoading(false));
+  };
+
+  const handleQrGenerate = async () => {
+    setQrError("");
+    setQrLoading(true);
+    try {
+      const res = await generateQrRegistrationToken();
+      setQrToken(res?.data?.token || null);
+      setQrTokenActive(true);
+    } catch (e) {
+      setQrError(e?.response?.data?.message || "Failed to generate QR code.");
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const handleQrRevoke = async () => {
+    setQrError("");
+    setQrLoading(true);
+    try {
+      await revokeQrRegistrationToken();
+      setQrToken(null);
+      setQrTokenActive(false);
+    } catch (e) {
+      setQrError(e?.response?.data?.message || "Failed to revoke QR code.");
+    } finally {
+      setQrLoading(false);
     }
   };
 
@@ -491,6 +549,16 @@ function MembersPageInner() {
                       Registration Link
                     </button>
                   ) : null}
+                  {isChurchAdmin && canEditChurch ? (
+                    <button
+                      type="button"
+                      onClick={() => guarded(() => { setMobileAddOpen(false); openQr(); })}
+                      style={{ textAlign: "left", padding: "0.5rem 1rem" }}
+                      className="w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                    >
+                      QR Code
+                    </button>
+                  ) : null}
                   {canImport ? (
                     <button
                       type="button"
@@ -515,6 +583,15 @@ function MembersPageInner() {
               className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
             >
               Registration Link
+            </button>
+          )}
+          {isChurchAdmin && canEditChurch && (
+            <button
+              type="button"
+              onClick={() => guarded(openQr)}
+              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 text-sm"
+            >
+              QR Code
             </button>
           )}
           {canImport && (
@@ -1011,6 +1088,56 @@ function MembersPageInner() {
           </div>
         </div>
       ) : null}
+
+      {/* Registration QR Code modal */}
+      <QRCodeModal
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        title="Member Registration QR Code"
+        description="Share this QR code so people can scan it and register as members from home."
+        value={qrToken && qrTokenActive ? qrLink : null}
+        fileName="member-registration-qr"
+        loading={qrLoading}
+        error={qrError}
+      >
+        {qrToken && qrTokenActive ? (
+          <>
+            <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">
+              QR code is <span className="font-semibold">active</span>. Anyone who scans it can register as a church member.
+            </div>
+            <div className="flex flex-col gap-2 md:flex-row">
+              <button
+                type="button"
+                onClick={handleQrGenerate}
+                disabled={qrLoading}
+                className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
+              >
+                Generate New QR Code
+              </button>
+              <button
+                type="button"
+                onClick={handleQrRevoke}
+                disabled={qrLoading}
+                className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm"
+              >
+                Revoke QR Code
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-4 text-center">
+            <div className="text-gray-500 text-sm mb-3">No active registration QR code. Generate one to start sharing.</div>
+            <button
+              type="button"
+              onClick={handleQrGenerate}
+              disabled={qrLoading}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm"
+            >
+              Generate QR Code
+            </button>
+          </div>
+        )}
+      </QRCodeModal>
 
       {/* Member limit modal */}
       {limitModalOpen ? (

@@ -116,6 +116,18 @@ const churchSchema = new mongoose.Schema({
     default: false
   },
 
+  qrRegistrationToken: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
+
+  qrRegistrationTokenActive: {
+    type: Boolean,
+    default: false
+  },
+
   logoUrl: { type: String, default: "" },
   logoPublicId: { type: String, default: "" }
 
