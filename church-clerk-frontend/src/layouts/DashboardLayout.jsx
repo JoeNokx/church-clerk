@@ -95,8 +95,10 @@ function DashboardLayout() {
             <MobileSearchBanner user={user} churchName={activeChurch?.name || homeChurchName} />
           )}
 
-          {/* Full-bleed banners — mirrors <main>'s padding as negative margins */}
-          <div className="-mx-[16px] -mt-[16px] md:-mx-[24px] md:-mt-[24px] md:-mx-8 md:-mt-8 lg:-mx-4 lg:-mt-4">
+          {/* Full-bleed banners — mirrors <main>'s padding as negative margins;
+              empty: removes them when no banner renders so the outlet keeps
+              its top spacing. */}
+          <div className="-mx-[16px] -mt-[16px] md:-mx-[24px] md:-mt-[24px] md:-mx-8 md:-mt-8 lg:-mx-4 lg:-mt-4 empty:m-0">
           {isUserSuspended && (
             <div className="mb-4 border-y-2 border-red-500 bg-red-50 px-4 py-2 text-red-900 text-sm">
               <div className="flex items-start gap-3">
