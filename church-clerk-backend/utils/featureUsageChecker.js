@@ -10,6 +10,9 @@ import OutreachEvent from "../models/outreachModel/outreachEventModel.js";
 import OutreachProspect from "../models/outreachModel/outreachProspectModel.js";
 import OutreachFollowUp from "../models/outreachModel/outreachFollowUpModel.js";
 import OutreachTeam from "../models/outreachModel/outreachTeamModel.js";
+import CareCase from "../models/memberCareModel/careCaseModel.js";
+import CareVisit from "../models/memberCareModel/careVisitModel.js";
+import PrayerRequest from "../models/memberCareModel/prayerRequestModel.js";
 import Announcement from "../models/announcementModel.js";
 import TitheIndividual from "../models/financeModel/tithesModel/titheIndividualModel.js";
 import Budget from "../models/financeModel/budgetingModel.js";
@@ -35,6 +38,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
     members, attendance, visitors, programs,
     groups, departments, ministries, cells,
     outreachEvents, outreachProspects, outreachFollowUps, outreachTeams,
+    careCases, careVisits, prayerRequests,
     announcements, tithes, budgeting,
     projects, specialFunds, offerings,
     welfare, pledges, businessVentures,
@@ -52,6 +56,9 @@ export const detectTrialFeatureUsage = async (churchId) => {
     hasData(OutreachProspect, churchId),
     hasData(OutreachFollowUp, churchId),
     hasData(OutreachTeam, churchId),
+    hasData(CareCase, churchId),
+    hasData(CareVisit, churchId),
+    hasData(PrayerRequest, churchId),
     hasData(Announcement, churchId),
     hasData(TitheIndividual, churchId),
     hasData(Budget, churchId),
@@ -71,6 +78,7 @@ export const detectTrialFeatureUsage = async (churchId) => {
   if (programs) used.push("ProgramsEvents");
   if (groups || departments || ministries || cells) used.push("Organisations");
   if (outreachEvents || outreachProspects || outreachFollowUps || outreachTeams) used.push("Outreach");
+  if (careCases || careVisits || prayerRequests) used.push("MemberCare");
   if (announcements) used.push("Announcements");
   if (tithes) used.push("Tithe");
   if (budgeting) used.push("Budgeting");
@@ -87,6 +95,8 @@ export const detectTrialFeatureUsage = async (churchId) => {
 };
 
 export const FEATURE_ROUTE_MAP = [
+  // member-care must precede member — its prefix is a superset.
+  { feature: "MemberCare",       prefixes: ["/api/v1/member-care"] },
   { feature: "Members",          prefixes: ["/api/v1/member"] },
   { feature: "Attendance",       prefixes: ["/api/v1/attendance"] },
   { feature: "ProgramsEvents",   prefixes: ["/api/v1/program"] },
@@ -117,6 +127,7 @@ export const isFeatureEnabledInPlan = (planFeatures, moduleKey) => {
     // key — treat undefined as allowed so existing plans are unaffected.
     // Admins can explicitly set it to false to gate the module.
     case "Outreach":         return f.outreach !== false;
+    case "MemberCare":       return f.memberCare !== false;
     case "Announcements":    return Boolean(f.announcements || f.announcement);
     case "Tithe":            return Boolean(f.tithes);
     case "Budgeting":        return Boolean(f.budgeting || f.financeModule);

@@ -13,12 +13,21 @@ const DEFAULT_OFFERING_TYPES = [
   "fifth offering"
 ];
 
+const DEFAULT_SEED_TYPES = [
+  "Building Fund",
+  "Thanksgiving Seed"
+];
+
 function ProgramOfferingFilters() {
   const store = useContext(ProgramOfferingContext);
   const filters = store?.filters || {};
 
   const { values: lookupOfferingTypes } = useLookupValues("offeringType");
-  const offeringTypeOptions = lookupOfferingTypes?.length ? lookupOfferingTypes : DEFAULT_OFFERING_TYPES;
+  const { values: lookupSeedTypes } = useLookupValues("seedType");
+  const offeringTypeOptions = useMemo(() => {
+    const offering = lookupOfferingTypes?.length ? lookupOfferingTypes : DEFAULT_OFFERING_TYPES;
+    return [...new Set([...offering, ...(lookupSeedTypes || []), ...DEFAULT_SEED_TYPES])];
+  }, [lookupOfferingTypes, lookupSeedTypes]);
 
   const [searchValue, setSearchValue] = useState(filters.search || "");
 

@@ -20,13 +20,15 @@ import {
   sendDowngradeAppliedEmail
 } from "../../utils/subscriptionEmails.js";
 
-import { detectTrialFeatureUsage } from "../../utils/featureUsageChecker.js";
 import { findFreeLitePlan, isFreeTierPlanName } from "../../utils/planHelpers.js";
 import { resetAllowanceForPeriod } from "../../services/announcement/allowanceService.js";
 
 const validatePlanForChurch = (church, plan) => {
-  if (church.type === "Headquarters" && String(plan.name || "").toLowerCase() !== "premium") {
-    throw new Error("HQ churches must subscribe to Premium plan only");
+  if (church.type === "Headquarters") {
+    const planName = String(plan.name || "").toLowerCase();
+    if (planName !== "premium" && planName !== "enterprise") {
+      throw new Error("HQ churches must subscribe to the Premium or Enterprise plan only");
+    }
   }
 };
 
@@ -373,6 +375,56 @@ export const processSubscriptionBillings = async (subscription) => {
 
 // =============================
 
+// Apply a scheduled plan change (cancel → Free Lite, or downgrade to a
+// lower paid plan) once its effective date passes.
+//
+// Shared by both billing loops and the per-request lazy apply in
+// authMiddleware. Saving the subscription triggers the model's pre-save
+// hook, which re-scans feature usage — so modules first used on a paid
+// plan become read-only (not fully blocked) on the new lower plan.
+
+// =============================
+
+export const applyPendingPlanChange = async (subscription) => {
+  if (!subscription?.pendingPlan) return { applied: false, action: null };
+
+  const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
+  if (!effectiveAt || new Date(effectiveAt) > new Date()) {
+    return { applied: false, action: null };
+  }
+
+  const pendingAction = subscription.pendingPlanAction;
+  const newPlan = await Plan.findById(subscription.pendingPlan).lean();
+
+  subscription.plan = subscription.pendingPlan;
+  subscription.pendingPlan = null;
+  subscription.pendingPlanEffectiveDate = null;
+  subscription.pendingPlanAction = null;
+
+  // Landing on a free-tier plan ends the billing relationship entirely.
+  if (isFreeTierPlanName(newPlan?.name)) {
+    subscription.nextBillingDate = null;
+  } else if (!subscription.nextBillingDate) {
+    // A paid plan with no due date (e.g. a pending plan applied after a
+    // trial release already cleared it) must re-enter billing immediately,
+    // otherwise the church would get the paid plan without ever being
+    // charged.
+    subscription.nextBillingDate = new Date();
+  }
+
+  await subscription.save();
+
+  try {
+    const church = await Church.findById(subscription.church).lean();
+    if (pendingAction === "cancel") await sendCancellationAppliedEmail(church);
+    else if (pendingAction === "downgrade") await sendDowngradeAppliedEmail(church, newPlan?.name || "new plan");
+  } catch { /* email failure must not abort */ }
+
+  return { applied: true, action: pendingAction };
+};
+
+// =============================
+
 // Run billing cycle (daily or manual)
 
 // =============================
@@ -387,32 +439,9 @@ export const runBillingCycleForChurch = async (churchId) => {
   });
 
   for (const subscription of subscriptions) {
-    let pendingActionApplied = false;
-    let pendingAction = null;
-    let newPlan = null;
+    const { applied, action } = await applyPendingPlanChange(subscription);
 
-    if (subscription.pendingPlan) {
-      const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
-      if (effectiveAt && new Date(effectiveAt) <= today) {
-        pendingAction = subscription.pendingPlanAction;
-        newPlan = await Plan.findById(subscription.pendingPlan).lean();
-        subscription.plan = subscription.pendingPlan;
-        subscription.pendingPlan = null;
-        subscription.pendingPlanEffectiveDate = null;
-        subscription.pendingPlanAction = null;
-        pendingActionApplied = true;
-        // Landing on a free-tier plan ends the billing relationship entirely.
-        if (isFreeTierPlanName(newPlan?.name)) subscription.nextBillingDate = null;
-        await subscription.save();
-        try {
-          const church = await Church.findById(subscription.church).lean();
-          if (pendingAction === "cancel") await sendCancellationAppliedEmail(church);
-          else if (pendingAction === "downgrade") await sendDowngradeAppliedEmail(church, newPlan?.name || "new plan");
-        } catch { /* email failure must not abort */ }
-      }
-    }
-
-    if (pendingActionApplied && pendingAction === "cancel") continue;
+    if (applied && action === "cancel") continue;
 
     const result = await processSubscriptionBillings(subscription);
 
@@ -448,38 +477,8 @@ export const runBillingCycles = async () => {
     // STEP 1: Apply pending cancel/downgrade BEFORE charging.
     // Idempotency: pendingPlan is cleared after first apply.
     // -------------------------------------------------------
-    let pendingActionApplied = false;
-    let pendingAction = null;
-    let newPlan = null;
-
-    if (subscription.pendingPlan) {
-      const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
-      if (effectiveAt && new Date(effectiveAt) <= today) {
-        pendingAction = subscription.pendingPlanAction;
-        newPlan = await Plan.findById(subscription.pendingPlan).lean();
-
-        subscription.plan = subscription.pendingPlan;
-        subscription.pendingPlan = null;
-        subscription.pendingPlanEffectiveDate = null;
-        subscription.pendingPlanAction = null;
-        pendingActionApplied = true;
-
-        // Landing on a free-tier plan ends the billing relationship entirely.
-        if (isFreeTierPlanName(newPlan?.name)) subscription.nextBillingDate = null;
-
-        await subscription.save();
-
-        // Notify church
-        try {
-          const church = await Church.findById(subscription.church).lean();
-          if (pendingAction === "cancel") {
-            await sendCancellationAppliedEmail(church);
-          } else if (pendingAction === "downgrade") {
-            await sendDowngradeAppliedEmail(church, newPlan?.name || "new plan");
-          }
-        } catch { /* email failure must not abort billing cycle */ }
-      }
-    }
+    const { applied: pendingActionApplied, action: pendingAction } =
+      await applyPendingPlanChange(subscription);
 
     // -------------------------------------------------------
     // STEP 2: Skip charging if subscription was just cancelled.
@@ -522,13 +521,11 @@ export const releaseExpiredTrialForChurch = async (churchId) => {
     return subscription.toObject();
   }
 
-  const usedFeatures = await detectTrialFeatureUsage(churchId);
   subscription.plan = freeLitePlan._id;
   subscription.status = "active";
   subscription.trialStart = null;
   subscription.trialEnd = null;
   subscription.gracePeriodEnd = null;
-  subscription.trialFeaturesUsed = usedFeatures;
   // Free Lite has no billing cycle — no due date, so the subscription never
   // enters the billing job, never gets due-date notifications, and banked
   // referral free months stay preserved until the church upgrades.
@@ -571,14 +568,11 @@ export const releaseExpiredTrials = async () => {
 
   for (const subscription of expiredTrials) {
     try {
-      const usedFeatures = await detectTrialFeatureUsage(subscription.church);
-
       subscription.plan = freeLitePlan._id;
       subscription.status = "active";
       subscription.trialStart = null;
       subscription.trialEnd = null;
       subscription.gracePeriodEnd = null;
-      subscription.trialFeaturesUsed = usedFeatures;
       // Free Lite has no billing cycle — clear the due date entirely.
       subscription.nextBillingDate = null;
       subscription.expiryWarning.shown = false;

@@ -40,12 +40,7 @@ function SectionTitle({ children }) {
 
 function BgShell({ children }) {
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/church login.png')" }} />
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/90 via-slate-900/85 to-indigo-950/92" />
-      <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle, white 1.5px, transparent 1.5px)", backgroundSize: "28px 28px" }} />
-      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-32 h-[480px] w-[480px] rounded-full bg-indigo-700/15 blur-3xl pointer-events-none" />
+    <div className="relative min-h-screen flex items-center justify-center bg-white px-4 py-12">
       <div className="relative z-10 w-full max-w-[460px]">{children}</div>
     </div>
   );
@@ -238,7 +233,7 @@ export default function JoinPage() {
   if (loadingChurch) {
     return (
       <BgShell>
-        <div className="rounded-2xl bg-white px-8 py-10 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.55)] md:px-10 md:py-12 animate-pulse space-y-4">
+        <div className="rounded-2xl bg-white px-8 py-10 border border-gray-200 shadow-lg md:px-10 md:py-12 animate-pulse space-y-4">
           <div className="h-8 w-40 rounded bg-gray-200 mx-auto" />
           <div className="h-4 w-56 rounded bg-gray-200 mx-auto" />
           <div className="space-y-3 mt-6">
@@ -252,7 +247,7 @@ export default function JoinPage() {
   if (churchError) {
     return (
       <BgShell>
-        <div className="rounded-2xl bg-white px-8 py-10 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.55)] md:px-10 md:py-12 text-center">
+        <div className="rounded-2xl bg-white px-8 py-10 border border-gray-200 shadow-lg md:px-10 md:py-12 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
             <svg className="h-7 w-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
@@ -268,7 +263,7 @@ export default function JoinPage() {
   if (success) {
     return (
       <BgShell>
-        <div className="rounded-2xl bg-white px-8 py-10 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.55)] md:px-10 md:py-12 text-center">
+        <div className="rounded-2xl bg-white px-8 py-10 border border-gray-200 shadow-lg md:px-10 md:py-12 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -289,7 +284,7 @@ export default function JoinPage() {
 
   return (
     <BgShell>
-      <div className="rounded-2xl bg-white px-6 py-8 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.55)] md:px-8 md:py-10">
+      <div className="rounded-2xl bg-white px-6 py-8 border border-gray-200 shadow-lg md:px-8 md:py-10">
 
         {/* Church header */}
         <div className="mb-6 text-center">

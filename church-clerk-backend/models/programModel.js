@@ -49,7 +49,17 @@ dateTo: {
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }
+  },
+
+  advanceRegLinkToken: { type: String, trim: true, unique: true, sparse: true },
+  advanceRegLinkActive: { type: Boolean, default: false },
+  advanceRegQrToken: { type: String, trim: true, unique: true, sparse: true },
+  advanceRegQrActive: { type: Boolean, default: false },
+
+  checkInLinkToken: { type: String, trim: true, unique: true, sparse: true },
+  checkInLinkActive: { type: Boolean, default: false },
+  checkInQrToken: { type: String, trim: true, unique: true, sparse: true },
+  checkInQrActive: { type: Boolean, default: false }
 
 }, {timestamps: true});
 

@@ -24,6 +24,7 @@ import {
 } from "../utils/planHelpers.js";
 import { addInterval } from "../utils/dateBillingUtils.js";
 import { syncAllowancesForPlan } from "../services/announcement/allowanceService.js";
+import { detectTrialFeatureUsage } from "../utils/featureUsageChecker.js";
 
 export const createPlan = async (req, res) => {
   try {
@@ -266,6 +267,19 @@ export const updateSubscription = async (req, res) => {
     }).populate("church plan");
 
     if (!sub) return res.status(404).json({ message: "Subscription not found" });
+
+    // findByIdAndUpdate bypasses the model's pre-save hook, so re-scan the
+    // feature-usage ledger here when a plan is assigned directly — modules
+    // the church has data in must downgrade to read-only, not fully block.
+    if (req.body?.planId) {
+      try {
+        const used = await detectTrialFeatureUsage(sub.church?._id || sub.church);
+        const merged = [...new Set([...(sub.trialFeaturesUsed || []), ...used])];
+        await Subscription.updateOne({ _id: sub._id }, { $set: { trialFeaturesUsed: merged } });
+        sub.trialFeaturesUsed = merged;
+      } catch { /* ledger resync must not fail the update */ }
+    }
+
     return res.json({ message: "Subscription updated", subscription: sub });
   } catch (error) {
     return res.status(400).json({ message: error.message });

@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import NotFoundPage from "../shared/pages/NotFoundPage.jsx";
 import JoinPage from "../features/member/pages/JoinPage.jsx";
+import ProgramJoinPage from "../features/program/pages/ProgramJoinPage.jsx";
+import ProgramCheckInPage from "../features/program/pages/ProgramCheckInPage.jsx";
 import AttendanceCheckInPage from "../features/attendance/pages/AttendanceCheckInPage.jsx";
 import SharedReportPage from "../features/reportsAnalytics/pages/SharedReportPage.jsx";
 
@@ -123,6 +125,8 @@ function AppRoutes() {
       </Route>
 
       <Route path="/join/:token" element={<JoinPage />} />
+      <Route path="/program/join/:token" element={<ProgramJoinPage />} />
+      <Route path="/program/checkin/:token" element={<ProgramCheckInPage />} />
       <Route path="/attend/link/:token" element={<AttendanceCheckInPage />} />
       <Route path="/attend/qr/:token" element={<AttendanceCheckInPage />} />
       <Route path="/attend/org/:token" element={<AttendanceCheckInPage />} />

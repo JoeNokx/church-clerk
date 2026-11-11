@@ -10,6 +10,7 @@ const PEOPLE_ITEMS = [
   { key: "attendance",    label: "Attendance",        mod: "Attendance",       perm: "attendance" },
   { key: "programs", label: "Programs", mod: "ProgramsEvents", perm: "programs" },
   { key: "organisations", label: "Organisations",       mod: "Organisations",    perm: "organisation" },
+  { key: "member-care",   label: "Member Care",       mod: "MemberCare",       perm: "memberCare" },
   { key: "announcements", label: "Announcements",     mod: "Announcements",    perm: "announcements" },
 ];
 

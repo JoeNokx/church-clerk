@@ -1,16 +1,9 @@
 import mongoose from "mongoose";
 import Subscription from "../models/billingModel/subscriptionModel.js";
-import Plan from "../models/billingModel/planModel.js";
-import Church from "../models/churchModel.js";
 import {handlePaymentFailure} from "../controller/billingController/gracePeriodController.js";
 import {processBillingForSubscription} from "../controller/billingController/processBillingSubscription.js";
 import {chargeWithPaystack} from "../controller/billingController/paystackController.js";
-import {
-  sendCancellationAppliedEmail,
-  sendDowngradeAppliedEmail
-} from "../utils/subscriptionEmails.js";
-import { releaseExpiredTrials } from "../controller/billingController/subscriptionService.js";
-import { isFreeTierPlanName } from "../utils/planHelpers.js";
+import { releaseExpiredTrials, applyPendingPlanChange } from "../controller/billingController/subscriptionService.js";
 
 export const runDailyBillingJob = async () => {
   // Expire free trials first — a trial ends at trialEnd regardless of whether
@@ -35,36 +28,8 @@ export const runDailyBillingJob = async () => {
     // STEP 1: Apply pending cancel/downgrade BEFORE charging.
     // Idempotency: pendingPlan is cleared after first apply.
     // -------------------------------------------------------
-    let pendingActionApplied = false;
-    let pendingAction = null;
-
-    if (subscription.pendingPlan) {
-      const effectiveAt = subscription.pendingPlanEffectiveDate || subscription.nextBillingDate;
-      if (effectiveAt && new Date(effectiveAt) <= today) {
-        pendingAction = subscription.pendingPlanAction;
-        const newPlan = await Plan.findById(subscription.pendingPlan).lean();
-
-        subscription.plan = subscription.pendingPlan;
-        subscription.pendingPlan = null;
-        subscription.pendingPlanEffectiveDate = null;
-        subscription.pendingPlanAction = null;
-        pendingActionApplied = true;
-
-        // Landing on a free-tier plan ends the billing relationship entirely.
-        if (isFreeTierPlanName(newPlan?.name)) subscription.nextBillingDate = null;
-
-        await subscription.save();
-
-        try {
-          const church = await Church.findById(subscription.church).lean();
-          if (pendingAction === "cancel") {
-            await sendCancellationAppliedEmail(church);
-          } else if (pendingAction === "downgrade") {
-            await sendDowngradeAppliedEmail(church, newPlan?.name || "new plan");
-          }
-        } catch { /* email failure must not abort billing cycle */ }
-      }
-    }
+    const { applied: pendingActionApplied, action: pendingAction } =
+      await applyPendingPlanChange(subscription);
 
     // -------------------------------------------------------
     // STEP 2: Skip charging if subscription was just cancelled.

@@ -17,17 +17,12 @@ const planRank = (name) => {
   if (n === "basic") return 1;
   if (n === "standard") return 2;
   if (n === "premium") return 3;
+  if (n === "enterprise") return 4;
   return 99;
 };
 
 export const cancelSubscription = async (req, res) => {
   try {
-    if (req.activeChurch.type === "Headquarters") {
-      return res.status(400).json({
-        message: "Headquarters churches cannot cancel their Premium subscription."
-      });
-    }
-
     const subscription = await Subscription.findOne({
       church: req.activeChurch._id
     });
@@ -162,9 +157,9 @@ export const changePlan = async (req, res) => {
       : (subscription?.plan?.name || "free lite");
     const isUpgrade = planRank(newPlan?.name) > planRank(currentName);
 
-    if (!isUpgrade && req.activeChurch.type === "Headquarters") {
+    if (req.activeChurch.type === "Headquarters" && planRank(newPlan?.name) < planRank("premium")) {
       return res.status(400).json({
-        message: "Headquarters churches must remain on the Premium plan and cannot downgrade."
+        message: "Headquarters churches must remain on the Premium or Enterprise plan and cannot downgrade below Premium."
       });
     }
 

@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import PermissionContext from "../../permissions/permission.store.js";
 import AttendanceContext from "../attendance.store.js";
-import { getVisitors, getServiceIndividualAttendances } from "../services/attendance.api.js";
+import { getVisitors, getServiceIndividualAttendances, getProgramGuests } from "../services/attendance.api.js";
 import { getAllProspects } from "../../outreach/services/outreach.api.js";
 import debounce from "../../../shared/utils/debounce.js";
 import PhoneNumberInput from "../../../components/common/PhoneNumberInput.jsx";
@@ -57,9 +57,10 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
           return;
         }
         try {
-          const [vRes, pRes] = await Promise.all([
+          const [vRes, pRes, gRes] = await Promise.all([
             getVisitors({ search: q.trim(), page: 1, limit: 5 }).catch(() => null),
             getAllProspects({ search: q.trim(), page: 1, limit: 5 }).catch(() => null),
+            getProgramGuests({ search: q.trim() }).catch(() => null),
           ]);
           const vPayload = vRes?.data?.data ?? vRes?.data;
           const pPayload = pRes?.data?.data ?? pRes?.data;
@@ -70,7 +71,13 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
           const prospects = (Array.isArray(pPayload) ? pPayload : pPayload?.prospects || [])
             .filter((p) => !p.markedAsVisitor && !p.linkedVisitor && !p.linkedMember && p.stage !== "member")
             .map((p) => ({ kind: "prospect", ...p }));
-          setSearchResults([...visitors, ...prospects]);
+          // Program guests who already have a proper visitor record show up
+          // under "visitor" — skip them here so they aren't listed twice.
+          const visitorPhones = new Set(visitors.map((v) => String(v.phoneNumber || "").replace(/\D/g, "").slice(-9)));
+          const guests = (Array.isArray(gRes?.data?.guests) ? gRes.data.guests : [])
+            .filter((g) => !visitorPhones.has(String(g.phoneNumber || "").replace(/\D/g, "").slice(-9)))
+            .map((g) => ({ kind: "programGuest", ...g }));
+          setSearchResults([...visitors, ...prospects, ...guests]);
         } catch {
           setSearchResults([]);
         } finally {
@@ -154,6 +161,18 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
         email: Boolean(r.email),
         location: Boolean(loc),
       });
+      setFormError(null);
+    } else if (r.kind === "programGuest") {
+      // Pre-fill from the program record — saving creates a proper visitor
+      // (the phone dedupe links their guest record automatically).
+      setSelectedExisting(null);
+      setSelectedProspect(null);
+      setLockedFields({});
+      setFullName(r.fullName || "");
+      setPhoneNumber(r.phoneNumber || "");
+      setEmail(r.email || "");
+      setLocation(r.location || "");
+      setSource((s) => s || "Program");
       setFormError(null);
     } else {
       setSelectedExisting(r);
@@ -381,7 +400,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
 
           {mode !== "edit" ? (
             <div className="mb-4">
-              <label className="block font-semibold text-gray-500 text-xs">Search existing visitor or outreach person first</label>
+              <label className="block font-semibold text-gray-500 text-xs">Search existing visitor, outreach person, or program guest first</label>
               <input
                 value={searchQuery}
                 onChange={onSearchChange}
@@ -409,6 +428,8 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                       <span className="flex items-center gap-2 shrink-0">
                         {v.kind === "prospect" ? (
                           <span className="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700 text-[10px]">Prospect</span>
+                        ) : v.kind === "programGuest" ? (
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700 text-[10px]">Program Guest</span>
                         ) : (
                           <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 text-[10px]">Visitor</span>
                         )}
@@ -419,7 +440,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                 </div>
               ) : null}
               {!searchLoading && searchQuery.trim().length >= 2 && searchResults.length === 0 ? (
-                <div className="mt-2 text-gray-500 text-xs">No matching visitor or outreach person found — fill the details below to add a new one.</div>
+                <div className="mt-2 text-gray-500 text-xs">No matching visitor, outreach person, or program guest found — fill the details below to add a new one.</div>
               ) : null}
             </div>
           ) : null}

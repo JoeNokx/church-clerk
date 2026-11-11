@@ -3,6 +3,7 @@ import OutreachFollowUp from "../../models/outreachModel/outreachFollowUpModel.j
 import Member from "../../models/memberModel.js";
 import Visitor from "../../models/visitorsModel.js";
 import { annotateDeletable } from "../../services/recordDependencyService.js";
+import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 
 const PROSPECT_ALLOWED_FIELDS = [
   "firstName", "lastName", "phone", "alternativePhone", "email",
@@ -316,10 +317,43 @@ export const markAsVisitor = async (req, res) => {
 
     const { invitedBy } = req.body;
 
+    // Same person may already sit on the visitor register — match on the
+    // last 9 digits so stored format ("+233..." vs "0...") can't produce
+    // a duplicate record.
+    let normalizedPhone = "";
+    try {
+      normalizedPhone = prospect.phone ? validatePhoneNumber(prospect.phone, "GH") : "";
+    } catch {
+      normalizedPhone = "";
+    }
+    const phoneDigits = String(normalizedPhone || prospect.phone || "").replace(/\D/g, "");
+    if (phoneDigits.length >= 7) {
+      const suffix = phoneDigits.slice(-9);
+      const existingVisitor = await Visitor.findOne({
+        church: churchId,
+        phoneNumber: { $regex: `${suffix}$` }
+      });
+      if (existingVisitor) {
+        if (!existingVisitor.linkedProspect) {
+          existingVisitor.linkedProspect = prospect._id;
+          await existingVisitor.save();
+        }
+        prospect.markedAsVisitor = true;
+        prospect.linkedVisitor = existingVisitor._id;
+        prospect.markedAsVisitorAt = new Date();
+        prospect.stage = "visited-church";
+        await prospect.save();
+        return res.status(200).json({
+          message: "Already on the visitor register — linked to the existing record",
+          data: { prospect, visitor: existingVisitor }
+        });
+      }
+    }
+
     const newVisitor = await Visitor.create({
       church: churchId,
       fullName: `${prospect.firstName} ${prospect.lastName || ""}`.trim(),
-      phoneNumber: prospect.phone || "0000000000",
+      phoneNumber: normalizedPhone || "0000000000",
       email: prospect.email || "",
       location: prospect.address || prospect.community || "Unknown",
       invitedBy: invitedBy || "",

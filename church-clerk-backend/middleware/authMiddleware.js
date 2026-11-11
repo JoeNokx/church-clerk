@@ -5,8 +5,7 @@ import Subscription from "../models/billingModel/subscriptionModel.js";
 import Plan from "../models/billingModel/planModel.js";
 import Church from "../models/churchModel.js";
 import { FEATURE_ROUTE_MAP, isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
-import { releaseExpiredTrialForChurch } from "../controller/billingController/subscriptionService.js";
-import { isFreeTierPlanName } from "../utils/planHelpers.js";
+import { releaseExpiredTrialForChurch, applyPendingPlanChange } from "../controller/billingController/subscriptionService.js";
 
 
 
@@ -167,51 +166,8 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
         const now = new Date();
         const isTrialStatus =
           subscription.status === "free trial" || subscription.status === "trialing";
-        const isActiveTrial =
-          isTrialStatus &&
-          (!subscription.trialEnd || now <= new Date(subscription.trialEnd));
         if (effectiveRole === "superadmin" || effectiveRole === "supportadmin") {
           return next();
-        }
-
-        {
-          const financePrefixes = [
-            "/api/v1/tithe",
-            "/api/v1/income",
-            "/api/v1/expense",
-            "/api/v1/special-fund",
-            "/api/v1/offering",
-            "/api/v1/financial-statement",
-            "/api/v1/church-project",
-            "/api/v1/welfare",
-            "/api/v1/pledge",
-            "/api/v1/business-ventures",
-            "/api/v1/general-expenses"
-          ];
-
-          const path = req.originalUrl || "";
-          const isFinanceRoute = financePrefixes.some((p) => path.startsWith(p));
-
-          if (isFinanceRoute) {
-            let planName = "basic";
-            if (isActiveTrial) {
-              planName = "premium";
-            } else if (subscription.plan) {
-              const _pk = `p:${String(subscription.plan)}`;
-              let plan = _acGet(_pk);
-              if (!plan) { plan = await Plan.findById(subscription.plan).lean(); if (plan) _acSet(_pk, plan, _AC_TTL.p); }
-              planName = plan?.name || "basic";
-            }
-
-            if (planName === "basic") {
-              if (isWrite) {
-                return res.status(403).json({
-                  message:
-                    "Your subscription plan does not include access to this module. Please upgrade to continue."
-                });
-              }
-            }
-          }
         }
 
         // --- Trial expiry: trials end at trialEnd — no grace period.
@@ -233,16 +189,43 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
           }
         }
 
-        // --- Free Lite plan: enforce feature-level access ---
+        // --- Scheduled plan changes: a pending cancel/downgrade takes effect
+        // on the first request past its effective date (the billing crons
+        // remain the backstop for inactive churches). Applying re-scans the
+        // feature-usage ledger via the model's pre-save hook, so modules
+        // first used on a paid plan become read-only — not blocked — on the
+        // new lower plan.
+        if (effectiveSub.pendingPlan) {
+          const effectiveAt =
+            effectiveSub.pendingPlanEffectiveDate || effectiveSub.nextBillingDate;
+          if (effectiveAt && now >= new Date(effectiveAt)) {
+            try {
+              const subDoc = await Subscription.findById(effectiveSub._id);
+              const applied = subDoc ? await applyPendingPlanChange(subDoc) : null;
+              if (applied?.applied) {
+                effectiveSub = subDoc.toObject();
+                req.subscription = effectiveSub;
+                _ac.delete(`s:${String(req.activeChurch._id)}`);
+              }
+            } catch {
+              // Apply failed — enforcement below still uses the current plan.
+            }
+          }
+        }
+
+        // --- Feature-level access: enforced on every plan, not only Free
+        // Lite. A module the plan doesn't include is read-only when the
+        // church has data in it (usage ledger), and fully blocked when it
+        // was never used. Downgrades therefore gate modules the same way a
+        // Free Lite release does.
         const isEffectiveTrial = effectiveSub.status === "free trial" || effectiveSub.status === "trialing";
         if (!isEffectiveTrial && effectiveSub.plan) {
           const _fpk = `p:${String(effectiveSub.plan)}`;
-          let freeLitePlan = _acGet(_fpk);
-          if (!freeLitePlan) { freeLitePlan = await Plan.findById(effectiveSub.plan).lean(); if (freeLitePlan) _acSet(_fpk, freeLitePlan, _AC_TTL.p); }
-          const isFreeLite = isFreeTierPlanName(freeLitePlan?.name);
+          let currentPlan = _acGet(_fpk);
+          if (!currentPlan) { currentPlan = await Plan.findById(effectiveSub.plan).lean(); if (currentPlan) _acSet(_fpk, currentPlan, _AC_TTL.p); }
 
-          if (isFreeLite && freeLitePlan) {
-            const trialUsedSet = new Set(
+          if (currentPlan) {
+            const usedSet = new Set(
               Array.isArray(effectiveSub.trialFeaturesUsed) ? effectiveSub.trialFeaturesUsed : []
             );
             const path = req.originalUrl || "";
@@ -252,10 +235,10 @@ const protectWithCookie = (cookieNames, options = {}) => async (req, res, next) 
             );
 
             if (matchedFeature) {
-              const inPlan = isFeatureEnabledInPlan(freeLitePlan?.features, matchedFeature.feature);
+              const inPlan = isFeatureEnabledInPlan(currentPlan?.features, matchedFeature.feature);
 
               if (!inPlan) {
-                if (trialUsedSet.has(matchedFeature.feature)) {
+                if (usedSet.has(matchedFeature.feature)) {
                   if (isWrite) {
                     return res.status(403).json({
                       message: "Upgrade your plan to make changes. This feature is read-only on your current plan.",

@@ -146,6 +146,8 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
 
     (planAllows("Outreach") && canRead("outreach")) ||
 
+    (planAllows("MemberCare") && canRead("memberCare")) ||
+
     (planAllows("Announcements") && canRead("announcements"));
 
 
@@ -558,6 +560,27 @@ function Sidebar({ onNavigate = () => {}, onBeforeNavigate }) {
                     Outreach & Follow-up
 
                     {isReadOnly("Outreach") ? <LockBadge /> : null}
+
+                  </NavLink>
+
+                ) : null}
+
+                {planAllows("MemberCare") && canRead("memberCare") ? (
+
+                  <NavLink to={toPage("member-care")} className={itemClass("member-care")}>
+
+                    <span className="h-5 w-5 inline-flex items-center justify-center shrink-0">
+
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                        <path d="M12 21s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12 8v5M9.5 10.5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+
+                    </span>
+
+                    Member Care
+
+                    {isReadOnly("MemberCare") ? <LockBadge /> : null}
 
                   </NavLink>
 

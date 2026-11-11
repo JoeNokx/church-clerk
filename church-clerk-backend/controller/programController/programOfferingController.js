@@ -21,7 +21,7 @@ const createProgramOffering = async (req, res) => {
 
     const churchId = program?.church?._id || program?.church;
 
-    const { kind, offeringType, seedName, offeringDate, amount, note } = req.body || {};
+    const { kind, offeringType, seedName, seedType, offeringDate, amount, note } = req.body || {};
     const entryKind = kind === "seed" ? "seed" : "offering";
 
     if (!offeringDate || isNaN(Date.parse(offeringDate))) {
@@ -32,8 +32,8 @@ const createProgramOffering = async (req, res) => {
       return res.status(400).json({ message: "Valid amount is required" });
     }
 
-    if (entryKind === "seed" && !String(seedName || "").trim()) {
-      return res.status(400).json({ message: "seedName is required" });
+    if (entryKind === "seed" && !String(seedType || "").trim()) {
+      return res.status(400).json({ message: "seedType is required" });
     }
 
     if (entryKind === "offering" && !offeringType) {
@@ -46,7 +46,8 @@ const createProgramOffering = async (req, res) => {
       event: program._id,
       kind: entryKind,
       offeringType: entryKind === "offering" ? offeringType : undefined,
-      seedName: entryKind === "seed" ? String(seedName).trim() : undefined,
+      seedName: entryKind === "seed" ? String(seedName || "").trim() || undefined : undefined,
+      seedType: entryKind === "seed" ? String(seedType).trim() : undefined,
       offeringDate,
       amount: Number(amount),
       note: typeof note === "string" ? note.trim() : undefined
@@ -84,7 +85,7 @@ const getProgramOfferings = async (req, res) => {
 
     const query = { church: churchId, event: program._id };
 
-    if (offeringType) query.offeringType = offeringType;
+    if (offeringType) query.$or = [{ offeringType }, { seedType: offeringType }];
 
     if (search) {
       const User = (await import("../../models/userModel.js")).default;
@@ -172,8 +173,12 @@ const updateProgramOffering = async (req, res) => {
 
     if (body.seedName !== undefined) {
       body.seedName = typeof body.seedName === "string" ? body.seedName.trim() : "";
-      if (body.kind === "seed" && !body.seedName) {
-        return res.status(400).json({ message: "seedName is required" });
+    }
+
+    if (body.seedType !== undefined) {
+      body.seedType = typeof body.seedType === "string" ? body.seedType.trim() : "";
+      if (body.kind === "seed" && !body.seedType) {
+        return res.status(400).json({ message: "seedType is required" });
       }
     }
 

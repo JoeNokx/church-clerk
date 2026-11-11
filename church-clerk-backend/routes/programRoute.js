@@ -7,7 +7,7 @@ import getSingleProgram from "../controller/programController/getSingleProgram.j
 import updateProgram from "../controller/programController/updateProgram.js"
 import deleteProgram from "../controller/programController/deleteProgram.js"
 
-import {createProgramAttendee, getProgramAttendees, updateProgramAttendee, deleteProgramAttendee} from "../controller/programController/programAttendee.js"
+import {createProgramAttendee, getProgramAttendees, updateProgramAttendee, deleteProgramAttendee, advanceRegLink, advanceRegQr, checkInLink, checkInQr, ensureGuestVisitor, searchProgramGuests} from "../controller/programController/programAttendee.js"
 
 
 import {
@@ -187,6 +187,25 @@ router.delete(
   requirePermission("programs", "delete"),
   deleteProgramAttendee
 );
+
+router.get("/programs/:programId/advance-registration/link", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "view"), advanceRegLink.status);
+router.post("/programs/:programId/advance-registration/link/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), advanceRegLink.generate);
+router.delete("/programs/:programId/advance-registration/link/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), advanceRegLink.revoke);
+
+router.get("/programs/:programId/advance-registration/qr", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "view"), advanceRegQr.status);
+router.post("/programs/:programId/advance-registration/qr/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), advanceRegQr.generate);
+router.delete("/programs/:programId/advance-registration/qr/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), advanceRegQr.revoke);
+router.get("/program-guests/search", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("visitors", "view"), searchProgramGuests);
+
+router.post("/programs/:programId/attendees/:attendeeId/ensure-visitor", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), ensureGuestVisitor);
+
+router.get("/programs/:programId/check-in/link", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "view"), checkInLink.status);
+router.post("/programs/:programId/check-in/link/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), checkInLink.generate);
+router.delete("/programs/:programId/check-in/link/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), checkInLink.revoke);
+
+router.get("/programs/:programId/check-in/qr", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "view"), checkInQr.status);
+router.post("/programs/:programId/check-in/qr/generate", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), checkInQr.generate);
+router.delete("/programs/:programId/check-in/qr/revoke", protect, setActiveChurch, readOnlyBranchGuard, attachPermissions, authorizeRoles("superadmin", "supportadmin", "churchadmin"), requirePermission("programs", "update"), checkInQr.revoke);
 
 
 router.post(

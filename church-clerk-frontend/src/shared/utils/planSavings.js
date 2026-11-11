@@ -18,3 +18,21 @@ export function computeSavingsPct(ghsPrices, interval) {
   const pct = Math.round((1 - intervalPrice / (monthly * months)) * 100);
   return pct > 0 ? pct : null;
 }
+
+/**
+ * @param {Array} plans - plan objects with pricing/priceByCurrency
+ * @returns {object} map of interval -> rounded average savings percent
+ *                   across plans, e.g. { halfYear: 8, yearly: 15 }
+ */
+export function computeIntervalSavingsMap(plans) {
+  const result = {};
+  for (const interval of Object.keys(SAVINGS_MONTHS)) {
+    const percentages = (Array.isArray(plans) ? plans : [])
+      .map((p) => computeSavingsPct(p?.pricing?.GHS || p?.priceByCurrency?.GHS || {}, interval))
+      .filter((v) => v !== null);
+    if (percentages.length > 0) {
+      result[interval] = Math.round(percentages.reduce((a, b) => a + b, 0) / percentages.length);
+    }
+  }
+  return result;
+}

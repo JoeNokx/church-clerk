@@ -317,9 +317,9 @@ const updateMyChurchProfile = async (req, res) => {
         const sub = await Subscription.findOne({ church: currentChurch._id }).populate("plan").lean();
         const planName = String(sub?.plan?.name || "").trim().toLowerCase();
         const status = String(sub?.status || "").trim().toLowerCase();
-        if (planName !== "premium" || status !== "active") {
+        if ((planName !== "premium" && planName !== "enterprise") || status !== "active") {
           return res.status(403).json({
-            message: "Your church must have an active Premium subscription before switching to Headquarters type. Please upgrade to Premium first."
+            message: "Your church must have an active Premium or Enterprise subscription before switching to Headquarters type. Please upgrade to Premium or Enterprise first."
           });
         }
       }
@@ -561,11 +561,11 @@ const requestMyChurchSenderId = async (req, res) => {
     const isTrial =
       (subscriptionStatus === "free trial" || subscriptionStatus === "trialing") &&
       (!req.subscription?.trialEnd || new Date() <= new Date(req.subscription.trialEnd));
-    const allowedByPlan = isTrial || planName === "standard" || planName === "premium";
+    const allowedByPlan = isTrial || planName === "standard" || planName === "premium" || planName === "enterprise";
 
     if (!allowedByPlan) {
       return res.status(403).json({
-        message: "Sender ID requests are available on Standard and Premium plans only"
+        message: "Sender ID requests are available on Standard, Premium and Enterprise plans only"
       });
     }
 

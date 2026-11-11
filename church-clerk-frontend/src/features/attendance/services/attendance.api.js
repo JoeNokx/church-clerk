@@ -91,3 +91,7 @@ export const generateAttendanceQrCheckIn = async () => {
 export const revokeAttendanceQrCheckIn = async () => {
   return await http.delete("/attendance/checkin-qr/revoke");
 };
+
+export const getProgramGuests = async (params, config = {}) => {
+  return await http.get(`/program/program-guests/search`, { params, ...config });
+};

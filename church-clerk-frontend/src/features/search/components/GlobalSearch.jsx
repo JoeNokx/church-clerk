@@ -19,6 +19,7 @@ const MODULE_META = {
   churchProjects:   { label: "Fundraising",          page: "fundraising",       detailPage: "fundraising-details" },
   offerings:        { label: "Offerings & Funds",    page: "offering-funds",    detailPage: null },
   welfare:          { label: "Welfare",              page: "welfare",           detailPage: null },
+  memberCare:       { label: "Member Care",          page: "member-care",       detailPage: null },
   pledges:          { label: "Fundraising",          page: "fundraising",       detailPage: "pledge-details" },
   businessVentures: { label: "Business Ventures",   page: "business-ventures", detailPage: null },
   expenses:         { label: "General Expenses",     page: "expenses",          detailPage: null },
@@ -109,6 +110,12 @@ const MODULE_ICONS = {
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/>
     </svg>
   ),
+  memberCare: (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="1.7">
+      <path d="M12 21s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9Z"/>
+      <path d="M12 8v5M9.5 10.5h5" strokeLinecap="round"/>
+    </svg>
+  ),
   pledges: (
     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="1.7">
       <path d="M9 12l2 2 4-4"/>
@@ -148,6 +155,7 @@ const MODULE_COLORS = {
   churchProjects:   "text-gray-600 bg-gray-100",
   offerings:        "text-gray-600 bg-gray-100",
   welfare:          "text-gray-600 bg-gray-100",
+  memberCare:       "text-gray-600 bg-gray-100",
   pledges:          "text-gray-600 bg-gray-100",
   businessVentures: "text-gray-600 bg-gray-100",
   expenses:         "text-gray-600 bg-gray-100",
@@ -335,7 +343,7 @@ export default function GlobalSearch() {
   const moduleOrder = [
     "members","visitors","attendance","departments","cells","groups",
     "programs","announcements","tithe","budgeting","churchProjects",
-    "offerings","welfare","pledges","businessVentures","expenses",
+    "offerings","welfare","memberCare","pledges","businessVentures","expenses",
   ];
 
   const orderedModules = moduleOrder.filter((k) => results[k]?.length);

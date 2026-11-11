@@ -13,6 +13,11 @@ const OFFERING_TYPES = [
   "fifth offering"
 ];
 
+const SEED_TYPES = [
+  "Building Fund",
+  "Thanksgiving Seed"
+];
+
 function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
   const { can } = useContext(PermissionContext) || {};
   const store = useContext(ProgramOfferingContext);
@@ -22,9 +27,12 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
   const { values: lookupOfferingTypes, reload: reloadOfferingTypes } = useLookupValues("offeringType");
   const offeringTypeOptions = lookupOfferingTypes?.length ? lookupOfferingTypes : OFFERING_TYPES;
+  const { values: lookupSeedTypes, reload: reloadSeedTypes } = useLookupValues("seedType");
+  const seedTypeOptions = [...new Set([...(lookupSeedTypes || []), ...SEED_TYPES])];
 
   const [kind, setKind] = useState("offering");
   const [offeringType, setOfferingType] = useState("first offering");
+  const [seedType, setSeedType] = useState("");
   const [seedName, setSeedName] = useState("");
   const [offeringDate, setOfferingDate] = useState("");
   const [amount, setAmount] = useState("");
@@ -41,6 +49,7 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
     if (mode === "edit" && initialData) {
       setKind(initialData.kind === "seed" ? "seed" : "offering");
       setOfferingType(initialData.offeringType || "first offering");
+      setSeedType(initialData.seedType || "");
       setSeedName(initialData.seedName || "");
       setOfferingDate((initialData.offeringDate || "").slice(0, 10));
       setAmount(initialData.amount ?? "");
@@ -50,6 +59,7 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
 
     setKind("offering");
     setOfferingType("first offering");
+    setSeedType("");
     setSeedName("");
     setOfferingDate("");
     setAmount("");
@@ -68,8 +78,8 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
       return;
     }
 
-    if (kind === "seed" && !seedName.trim()) {
-      setFormError("Please enter a seed name.");
+    if (kind === "seed" && !seedType.trim()) {
+      setFormError("Please select a seed type.");
       setIsSubmitting(false);
       return;
     }
@@ -90,6 +100,7 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
       kind,
       offeringType: kind === "offering" ? offeringType : "",
       seedName: kind === "seed" ? seedName.trim() : "",
+      seedType: kind === "seed" ? seedType : "",
       offeringDate,
       amount: Number(amount),
       note: note ? note.trim() : undefined
@@ -142,29 +153,17 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <label className="block font-semibold text-gray-500 text-xs">Record Type</label>
-              <div className="mt-2 flex items-center gap-4">
-                <label className="inline-flex items-center gap-2 text-gray-700 text-sm">
-                  <input
-                    type="radio"
-                    name="offeringKind"
-                    value="offering"
-                    checked={kind === "offering"}
-                    onChange={() => setKind("offering")}
-                    className="h-4 w-4 text-blue-600"
-                  />
-                  Offering
-                </label>
-                <label className="inline-flex items-center gap-2 text-gray-700 text-sm">
-                  <input
-                    type="radio"
-                    name="offeringKind"
-                    value="seed"
-                    checked={kind === "seed"}
-                    onChange={() => setKind("seed")}
-                    className="h-4 w-4 text-blue-600"
-                  />
-                  Seed
-                </label>
+              <div className="mt-2 flex rounded-lg border border-gray-200 p-1 bg-gray-50">
+                {[["offering", "Offering"], ["seed", "Seed"]].map(([v, label]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setKind(v)}
+                    className={`flex-1 rounded-md py-2 font-semibold text-sm transition-colors ${kind === v ? "bg-white text-blue-700 shadow-sm border border-gray-200" : "text-gray-500 hover:text-gray-700"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -196,8 +195,36 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                 </select>
               </div>
             ) : (
+              <>
               <div>
-                <label className="block font-semibold text-gray-500 text-xs">Seed Name</label>
+                <div className="flex items-center justify-between">
+                  <label className="block font-semibold text-gray-500 text-xs">Seed Type</label>
+                  {canCreate || canEdit ? (
+                    <AddLookupValueButton
+                      label="Add type"
+                      kind="seedType"
+                      onCreated={async (value) => {
+                        await reloadSeedTypes();
+                        setSeedType(value);
+                      }}
+                    />
+                  ) : null}
+                </div>
+                <select
+                  value={seedType}
+                  onChange={(e) => setSeedType(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                >
+                  <option value="">Select a seed type</option>
+                  {seedTypeOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold text-gray-500 text-xs">Seed Name (optional)</label>
                 <input
                   value={seedName}
                   onChange={(e) => setSeedName(e.target.value)}
@@ -206,6 +233,7 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                   placeholder="e.g. Building fund seed"
                 />
               </div>
+              </>
             )}
 
             <div>

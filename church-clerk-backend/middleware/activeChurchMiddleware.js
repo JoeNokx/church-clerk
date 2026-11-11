@@ -6,8 +6,6 @@ import Plan from "../models/billingModel/planModel.js";
 
 import { isFeatureEnabledInPlan } from "../utils/featureUsageChecker.js";
 
-import { isFreeTierPlanName } from "../utils/planHelpers.js";
-
 
 
 export const setActiveChurch = async (req, res, next) => {
@@ -255,15 +253,17 @@ export const setActiveChurch = async (req, res, next) => {
 
 
 
-    const isFreeLitePlan = effectivePlan && isFreeTierPlanName(effectivePlan.name);
-
+    // Module gating applies to every plan — not only Free Lite. A module
+    // the plan doesn't include is "readOnly" when the church has data in
+    // it (usage ledger re-scanned at every downgrade), and false (fully
+    // blocked) when it was never used.
     const trialUsedSet = new Set(
       Array.isArray(subscription?.trialFeaturesUsed) ? subscription.trialFeaturesUsed : []
     );
 
     const computeModule = (moduleKey) => {
       if (isTrial) return true;
-      if (!isFreeLitePlan) return true;
+      if (!effectivePlan) return true;
       const allowed = isFeatureEnabledInPlan(effectivePlan?.features, moduleKey);
       if (allowed) return true;
       return trialUsedSet.has(moduleKey) ? "readOnly" : false;
@@ -284,6 +284,8 @@ export const setActiveChurch = async (req, res, next) => {
       Organisations: computeModule("Organisations"),
 
       Outreach: computeModule("Outreach"),
+
+      MemberCare: computeModule("MemberCare"),
 
       Announcements: computeModule("Announcements"),
 

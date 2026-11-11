@@ -1,4 +1,5 @@
 import { formatMoney } from "../../utils/formatMoney.js";
+import { formatPlanName } from "../../utils/planDisplay.js";
 import LandingButton from "../LandingButton/index.jsx";
 
 function formatCurrency(amount, currency) {
@@ -52,7 +53,7 @@ function PriceCard({
 
       <div className={isLanding ? "px-3 pt-3" : ""}>
         <div className="flex items-start justify-between gap-2">
-          <div className={nameClass}>{name || "—"}</div>
+          <div className={nameClass}>{formatPlanName(name) || "—"}</div>
           {savingsPct ? (
             <span className="inline-flex shrink-0 items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">
               Save {savingsPct}%
@@ -92,8 +93,8 @@ function PriceCard({
       <div className="mt-4 space-y-2 text-gray-700 text-xs">
         {!isLanding ? <div>{memberLine}</div> : null}
         {features?.map((item) => (
-          <div key={item} className="flex items-center gap-2">
-            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-100 text-green-600">
+          <div key={item} className="flex items-start gap-2">
+            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
               <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
                 <path
                   d="M6 12.5l3.2 3.2L18 7.8"

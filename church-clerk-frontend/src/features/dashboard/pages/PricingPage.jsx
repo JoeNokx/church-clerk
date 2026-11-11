@@ -4,11 +4,13 @@ import LandingHeader from "../components/landing/LandingHeader.jsx";
 import LandingFooter from "../components/landing/LandingFooter.jsx";
 import http from "../../../shared/services/http.js";
 import PriceCard from "../../../shared/components/PriceCard/index.jsx";
+import BillingIntervalToggle from "../../../shared/components/BillingIntervalToggle/index.jsx";
 
 import { convertGhsToCurrency } from "../../../shared/utils/fx.js";
 import { resolveCurrencyFromCountryCode } from "../../../shared/utils/geoCurrency.js";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
-import { computeSavingsPct } from "../../../shared/utils/planSavings.js";
+import { formatPlanName, isFreeTierPlanName } from "../../../shared/utils/planDisplay.js";
+import { computeSavingsPct, computeIntervalSavingsMap } from "../../../shared/utils/planSavings.js";
 import LandingButton from "../../../shared/components/LandingButton/index.jsx";
 import FaqAccordion from "../../../shared/components/FaqAccordion/index.jsx";
 
@@ -58,6 +60,7 @@ const COMPARISON_GROUPS = [
       { label: "Programs", keys: ["programsEvents"] },
       { label: "Organisations", keys: ["organisations"] },
       { label: "Outreach & Follow-up", keys: ["outreach"] },
+      { label: "Member Care", keys: ["memberCare"] },
       { label: "Announcements", keys: ["announcements", "announcement"] },
       { label: "Branches overview", keys: ["branchesOverview"] },
     ],
@@ -168,8 +171,8 @@ function PricingPage() {
   }, []);
 
   const plansSorted = useMemo(() => {
-    const rows = Array.isArray(plans) ? plans : [];
-    const order = { "free lite": 0, basic: 1, standard: 2, premium: 3 };
+    const rows = (Array.isArray(plans) ? plans : []).filter((p) => !isFreeTierPlanName(p?.name));
+    const order = { basic: 1, standard: 2, premium: 3, enterprise: 4 };
     return rows.slice().sort((a, b) => {
       const aName = String(a?.name || "").toLowerCase();
       const bName = String(b?.name || "").toLowerCase();
@@ -179,6 +182,8 @@ function PricingPage() {
       return aName.localeCompare(bName);
     });
   }, [plans]);
+
+  const savingsByInterval = useMemo(() => computeIntervalSavingsMap(plansSorted), [plansSorted]);
 
   const displayCurrency = String(visitorCurrency || "USD").trim().toUpperCase() || "USD";
 
@@ -203,13 +208,11 @@ function PricingPage() {
         <section className="bg-white py-12">
           <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
             <div className="flex flex-col items-center gap-3">
-              <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1">
-                {[{ key: "monthly", label: "Monthly" }, { key: "halfYear", label: "6 Months" }, { key: "yearly", label: "Yearly" }].map(({ key, label }) => (
-                  <button key={key} type="button" onClick={() => setBillingInterval(key)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${billingInterval === key ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-                  >{label}</button>
-                ))}
-              </div>
+              <BillingIntervalToggle
+                value={billingInterval}
+                onChange={setBillingInterval}
+                savingsByInterval={savingsByInterval}
+              />
               <p className="text-xs text-slate-400">
                 Prices shown in <span className="font-semibold text-slate-600">{displayCurrency}</span>
                 {fxLoading && <span className="ml-1">(updating…)</span>}
@@ -285,7 +288,7 @@ function PricingPage() {
                         <th scope="col" className="sticky left-0 z-10 bg-white pl-2 pr-0.5 md:pl-5 md:pr-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400 max-w-[110px] md:max-w-none md:static">Features</th>
                         {plansSorted.map((p) => (
                           <th key={p?._id || p?.name} scope="col" className="px-4 py-4 text-center">
-                            <div className="text-sm font-bold text-slate-900">{p?.name || "—"}</div>
+                            <div className="text-sm font-bold text-slate-900">{formatPlanName(p?.name) || "—"}</div>
                           </th>
                         ))}
                       </tr>

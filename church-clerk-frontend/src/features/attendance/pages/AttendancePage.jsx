@@ -167,6 +167,7 @@ function AttendancePageInner() {
 
   const checkInLink = linkToken ? `${BASE_URL}/attend/link/${linkToken}` : null;
 
+  const [selfCheckInMenuOpen, setSelfCheckInMenuOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrToken, setQrToken] = useState(null);
   const [qrActive, setQrActive] = useState(false);
@@ -692,20 +693,39 @@ function AttendancePageInner() {
           <div className="shrink-0 flex items-center gap-2">
             {activeTab === "log" && canCreateAttendance ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => guarded(() => void openLinkModal())}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-                >
-                  Check-In Link
-                </button>
-                <button
-                  type="button"
-                  onClick={() => guarded(() => void openQrModal())}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 text-sm"
-                >
-                  QR Code
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setSelfCheckInMenuOpen((v) => !v)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+                  >
+                    Self Check-In
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {selfCheckInMenuOpen ? (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setSelfCheckInMenuOpen(false)} />
+                      <div className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => guarded(() => { setSelfCheckInMenuOpen(false); void openLinkModal(); })}
+                          className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                        >
+                          Check-In Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => guarded(() => { setSelfCheckInMenuOpen(false); void openQrModal(); })}
+                          className="cck-allow-icons w-full text-left px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                        >
+                          QR Code
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
                 <button
                   type="button"
                   data-hq-action="true"

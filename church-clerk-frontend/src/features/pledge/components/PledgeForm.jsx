@@ -314,6 +314,7 @@ function PledgeForm({ scope, disabled, onDone, onCancel }) {
           </div>
         </div>
 
+        {!scope?.event ? (
         <div>
           <div className="flex items-center justify-between">
             <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
@@ -337,6 +338,7 @@ function PledgeForm({ scope, disabled, onDone, onCancel }) {
             ))}
           </select>
         </div>
+        ) : null}
 
         <div>
           <label className="block font-semibold text-gray-500 text-xs">Amount</label>

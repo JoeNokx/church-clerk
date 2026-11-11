@@ -6,6 +6,7 @@ import MinistryMember from "../../models/organisationModel/ministryMembersModel.
 import ProgramAttendees from "../../models/programModel/programAttendeesModel.js";
 import OutreachProspect from "../../models/outreachModel/outreachProspectModel.js";
 import Visitor from "../../models/visitorsModel.js";
+import ServiceIndividualAttendance from "../../models/serviceIndividualAttendanceModel.js";
 import mongoose from "mongoose";
 import { toObjectIdList } from "../../utils/announcementHelpers.js";
 
@@ -72,6 +73,18 @@ function hasSegmentFilters(audience) {
   return ["statuses", "genders", "ageGroups", "maritalStatuses"].some((k) => toTrimmedList(audience?.[k]).length);
 }
 
+// Members marked absent in service sessions. serviceSessionIds scopes to
+// selected sessions; a missing key means every recorded service — so the
+// audience is "all members who have missed church".
+async function distinctAbsentMemberIds({ churchId, serviceSessionIds }) {
+  const sessionIds = toObjectIdList(serviceSessionIds);
+  if (Array.isArray(serviceSessionIds) && !sessionIds.length) return [];
+  const query = { church: churchId };
+  if (sessionIds.length) query._id = { $in: sessionIds };
+  const ids = await ServiceIndividualAttendance.distinct("absentMembers", query);
+  return (Array.isArray(ids) ? ids : []).filter(Boolean);
+}
+
 async function countUniqueMembersForAudience({ churchId, audience }) {
   const type = String(audience?.type || "all").trim();
 
@@ -110,6 +123,11 @@ async function countUniqueMembersForAudience({ churchId, audience }) {
     return await Member.countDocuments({ church: churchId, _id: { $in: memberIds } });
   }
 
+  if (type === "missedService") {
+    const memberIds = await distinctAbsentMemberIds({ churchId, serviceSessionIds: audience?.serviceSessionIds });
+    return memberIds.length;
+  }
+
   if (type === "segment") {
     if (!hasSegmentFilters(audience)) return 0;
     return await Member.countDocuments(segmentQuery({ churchId, audience }));
@@ -135,6 +153,12 @@ async function resolveAudienceMembers({ churchId, audience }) {
 
   if (type === "members") {
     const memberIds = toObjectIdList(audience?.memberIds);
+    if (!memberIds.length) return [];
+    return await Member.find({ church: churchId, _id: { $in: memberIds } }).lean();
+  }
+
+  if (type === "missedService") {
+    const memberIds = await distinctAbsentMemberIds({ churchId, serviceSessionIds: audience?.serviceSessionIds });
     if (!memberIds.length) return [];
     return await Member.find({ church: churchId, _id: { $in: memberIds } }).lean();
   }

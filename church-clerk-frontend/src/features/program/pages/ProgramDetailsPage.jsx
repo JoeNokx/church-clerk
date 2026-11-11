@@ -3,8 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { getProgram as apiGetProgram } from "../services/program.api.js";
 import PermissionContext from "../../permissions/permission.store.js";
 import { useDashboardNavigator } from "../../../shared/hooks/useDashboardNavigator.js";
-import { createProgramAttendee, deleteProgramAttendee, getProgramAttendees, updateProgramAttendee } from "../attendees/services/programAttendees.api.js";
+import { createProgramAttendee, deleteProgramAttendee, getProgramAttendees, updateProgramAttendee, getAdvanceRegLink, generateAdvanceRegLink, revokeAdvanceRegLink, getAdvanceRegQr, generateAdvanceRegQr, revokeAdvanceRegQr, getCheckInLink, generateCheckInLink, revokeCheckInLink, getCheckInQr, generateCheckInQr, revokeCheckInQr, ensureGuestVisitor } from "../attendees/services/programAttendees.api.js";
+import { VisitorFollowUpForm } from "../../attendance/components/VisitorFollowUps.jsx";
 import { getMembers } from "../../member/services/member.api.js";
+import QRCode from "../../../shared/components/QRCode/index.jsx";
+import { downloadQrCodePng } from "../../../shared/components/QRCode/utils.js";
 import { getVisitors } from "../../attendance/services/attendance.api.js";
 import {
   deleteProgramAttendanceFile,
@@ -31,6 +34,8 @@ import { resolveEmptyReason, buildRecoveryActions } from "../../../shared/utils/
 import { truncateMobileName, truncateDesktopName } from "../../../shared/utils/truncateTableText.js";
 import { exportToExcel } from "../../../shared/utils/exportExcel.js";
 import { useGuardedAction } from "../../../shared/context/SubscriptionLockContext.jsx";
+
+const BASE_URL = typeof window !== "undefined" ? window.location.origin : "https://app.churchclerkapp.com";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -182,6 +187,303 @@ function ProgramDetailsPage() {
   const [filesLimit, setFilesLimit] = useState(20);
   const [previewFile, setPreviewFile] = useState(null);
 
+  const [advLinkOpen, setAdvLinkOpen] = useState(false);
+  const [advLinkToken, setAdvLinkToken] = useState(null);
+  const [advLinkActive, setAdvLinkActive] = useState(false);
+  const [advLinkLoading, setAdvLinkLoading] = useState(false);
+  const [advLinkError, setAdvLinkError] = useState("");
+  const [advLinkCopied, setAdvLinkCopied] = useState(false);
+  const advRegLink = advLinkToken ? `${BASE_URL}/program/join/${advLinkToken}` : null;
+
+  const [advQrOpen, setAdvQrOpen] = useState(false);
+  const [advQrToken, setAdvQrToken] = useState(null);
+  const [advQrActive, setAdvQrActive] = useState(false);
+  const [advQrLoading, setAdvQrLoading] = useState(false);
+  const [advQrError, setAdvQrError] = useState("");
+  const [advQrDownloading, setAdvQrDownloading] = useState(false);
+  const advRegQrLink = advQrToken ? `${BASE_URL}/program/join/${advQrToken}` : null;
+
+  const [chkLinkOpen, setChkLinkOpen] = useState(false);
+  const [chkLinkToken, setChkLinkToken] = useState(null);
+  const [chkLinkActive, setChkLinkActive] = useState(false);
+  const [chkLinkLoading, setChkLinkLoading] = useState(false);
+  const [chkLinkError, setChkLinkError] = useState("");
+  const [chkLinkCopied, setChkLinkCopied] = useState(false);
+  const chkInLink = chkLinkToken ? `${BASE_URL}/program/checkin/${chkLinkToken}` : null;
+
+  const [chkQrOpen, setChkQrOpen] = useState(false);
+  const [chkQrToken, setChkQrToken] = useState(null);
+  const [chkQrActive, setChkQrActive] = useState(false);
+  const [chkQrLoading, setChkQrLoading] = useState(false);
+  const [chkQrError, setChkQrError] = useState("");
+  const [chkQrDownloading, setChkQrDownloading] = useState(false);
+  const chkInQrLink = chkQrToken ? `${BASE_URL}/program/checkin/${chkQrToken}` : null;
+
+  const [advSearch, setAdvSearch] = useState("");
+  const [advDateFrom, setAdvDateFrom] = useState("");
+  const [advDateTo, setAdvDateTo] = useState("");
+  const [advPage, setAdvPage] = useState(1);
+  const [advLimit, setAdvLimit] = useState(20);
+
+  const [markPresentRow, setMarkPresentRow] = useState(null);
+  const [markPresentSaving, setMarkPresentSaving] = useState(false);
+
+  const [followUpVisitor, setFollowUpVisitor] = useState(null);
+  const [followUpLoadingId, setFollowUpLoadingId] = useState(null);
+
+  const openGuestFollowUp = async (r) => {
+    if (!r?._id || followUpLoadingId) return;
+    setFollowUpLoadingId(r._id);
+    try {
+      const res = await ensureGuestVisitor(programId, r._id);
+      const v = res?.data?.visitor;
+      if (v?._id) setFollowUpVisitor(v);
+      else alert("Could not prepare follow-up for this guest.");
+    } catch (e) {
+      alert(e?.response?.data?.message || "Failed to start follow-up.");
+    } finally {
+      setFollowUpLoadingId(null);
+    }
+  };
+
+  const openChkLink = async () => {
+    setChkLinkOpen(true);
+    setChkLinkError("");
+    setChkLinkLoading(true);
+    try {
+      const res = await getCheckInLink(programId);
+      setChkLinkToken(res?.data?.token || null);
+      setChkLinkActive(res?.data?.active || false);
+    } catch (e) {
+      setChkLinkError(e?.response?.data?.message || "Failed to load check-in link.");
+    } finally {
+      setChkLinkLoading(false);
+    }
+  };
+
+  const handleChkLinkGenerate = async () => {
+    setChkLinkError("");
+    setChkLinkLoading(true);
+    try {
+      const r = await generateCheckInLink(programId);
+      setChkLinkToken(r?.data?.token || null);
+      setChkLinkActive(true);
+    } catch (e) {
+      setChkLinkError(e?.response?.data?.message || "Failed to generate link.");
+    } finally {
+      setChkLinkLoading(false);
+    }
+  };
+
+  const handleChkLinkRevoke = async () => {
+    setChkLinkError("");
+    setChkLinkLoading(true);
+    try {
+      await revokeCheckInLink(programId);
+      setChkLinkToken(null);
+      setChkLinkActive(false);
+    } catch (e) {
+      setChkLinkError(e?.response?.data?.message || "Failed to revoke link.");
+    } finally {
+      setChkLinkLoading(false);
+    }
+  };
+
+  const openChkQr = async () => {
+    setChkQrOpen(true);
+    setChkQrError("");
+    setChkQrLoading(true);
+    try {
+      const res = await getCheckInQr(programId);
+      setChkQrToken(res?.data?.token || null);
+      setChkQrActive(res?.data?.active || false);
+    } catch (e) {
+      setChkQrError(e?.response?.data?.message || "Failed to load QR code.");
+    } finally {
+      setChkQrLoading(false);
+    }
+  };
+
+  const handleChkQrGenerate = async () => {
+    setChkQrError("");
+    setChkQrLoading(true);
+    try {
+      const r = await generateCheckInQr(programId);
+      setChkQrToken(r?.data?.token || null);
+      setChkQrActive(true);
+    } catch (e) {
+      setChkQrError(e?.response?.data?.message || "Failed to generate QR code.");
+    } finally {
+      setChkQrLoading(false);
+    }
+  };
+
+  const handleChkQrRevoke = async () => {
+    setChkQrError("");
+    setChkQrLoading(true);
+    try {
+      await revokeCheckInQr(programId);
+      setChkQrToken(null);
+      setChkQrActive(false);
+    } catch (e) {
+      setChkQrError(e?.response?.data?.message || "Failed to revoke QR code.");
+    } finally {
+      setChkQrLoading(false);
+    }
+  };
+
+  const openAdvLink = async () => {
+    setAdvLinkOpen(true);
+    setAdvLinkError("");
+    setAdvLinkLoading(true);
+    try {
+      const res = await getAdvanceRegLink(programId);
+      setAdvLinkToken(res?.data?.token || null);
+      setAdvLinkActive(res?.data?.active || false);
+    } catch (e) {
+      setAdvLinkError(e?.response?.data?.message || "Failed to load registration link.");
+    } finally {
+      setAdvLinkLoading(false);
+    }
+  };
+
+  const handleAdvLinkGenerate = async () => {
+    setAdvLinkError("");
+    setAdvLinkLoading(true);
+    try {
+      const r = await generateAdvanceRegLink(programId);
+      setAdvLinkToken(r?.data?.token || null);
+      setAdvLinkActive(true);
+    } catch (e) {
+      setAdvLinkError(e?.response?.data?.message || "Failed to generate link.");
+    } finally {
+      setAdvLinkLoading(false);
+    }
+  };
+
+  const handleAdvLinkRevoke = async () => {
+    setAdvLinkError("");
+    setAdvLinkLoading(true);
+    try {
+      await revokeAdvanceRegLink(programId);
+      setAdvLinkToken(null);
+      setAdvLinkActive(false);
+    } catch (e) {
+      setAdvLinkError(e?.response?.data?.message || "Failed to revoke link.");
+    } finally {
+      setAdvLinkLoading(false);
+    }
+  };
+
+  const openAdvQr = async () => {
+    setAdvQrOpen(true);
+    setAdvQrError("");
+    setAdvQrLoading(true);
+    try {
+      const res = await getAdvanceRegQr(programId);
+      setAdvQrToken(res?.data?.token || null);
+      setAdvQrActive(res?.data?.active || false);
+    } catch (e) {
+      setAdvQrError(e?.response?.data?.message || "Failed to load QR code.");
+    } finally {
+      setAdvQrLoading(false);
+    }
+  };
+
+  const handleAdvQrGenerate = async () => {
+    setAdvQrError("");
+    setAdvQrLoading(true);
+    try {
+      const r = await generateAdvanceRegQr(programId);
+      setAdvQrToken(r?.data?.token || null);
+      setAdvQrActive(true);
+    } catch (e) {
+      setAdvQrError(e?.response?.data?.message || "Failed to generate QR code.");
+    } finally {
+      setAdvQrLoading(false);
+    }
+  };
+
+  const handleAdvQrRevoke = async () => {
+    setAdvQrError("");
+    setAdvQrLoading(true);
+    try {
+      await revokeAdvanceRegQr(programId);
+      setAdvQrToken(null);
+      setAdvQrActive(false);
+    } catch (e) {
+      setAdvQrError(e?.response?.data?.message || "Failed to revoke QR code.");
+    } finally {
+      setAdvQrLoading(false);
+    }
+  };
+
+  const handleMarkPresent = async () => {
+    if (!markPresentRow?._id || markPresentSaving) return;
+    setMarkPresentSaving(true);
+    try {
+      await updateProgramAttendee(programId, markPresentRow._id, { present: true });
+      setMarkPresentRow(null);
+      await loadAttendees();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Failed to mark present");
+    } finally {
+      setMarkPresentSaving(false);
+    }
+  };
+
+  const filterByDateRange = (dateStr, from, to) => {
+    if (!from && !to) return true;
+    if (!dateStr) return false;
+    const d = dateStr.slice(0, 10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  };
+
+  const advanceRegistrants = useMemo(
+    () => attendees.filter((r) => r?.registeredInAdvance === true),
+    [attendees]
+  );
+
+  const filteredAdvance = useMemo(() => {
+    const q = advSearch.toLowerCase();
+    return advanceRegistrants.filter((r) => {
+      const matchSearch = !q ||
+        (r?.fullName || "").toLowerCase().includes(q) ||
+        (r?.email || "").toLowerCase().includes(q) ||
+        (r?.phoneNumber || "").toLowerCase().includes(q);
+      const matchDate = filterByDateRange(String(r?.registrationDate || r?.createdAt || ""), advDateFrom, advDateTo);
+      return matchSearch && matchDate;
+    });
+  }, [advanceRegistrants, advSearch, advDateFrom, advDateTo]);
+
+  const advTotalPages = Math.max(1, Math.ceil(filteredAdvance.length / advLimit));
+  const advCurrentPage = Math.min(advPage, advTotalPages);
+  const paginatedAdvance = useMemo(
+    () => filteredAdvance.slice((advCurrentPage - 1) * advLimit, advCurrentPage * advLimit),
+    [filteredAdvance, advCurrentPage, advLimit]
+  );
+  const advancePagination = useMemo(() => ({
+    totalResult: filteredAdvance.length,
+    totalPages: advTotalPages,
+    currentPage: advCurrentPage,
+    hasPrev: advCurrentPage > 1,
+    hasNext: advCurrentPage < advTotalPages,
+    prevPage: advCurrentPage > 1 ? advCurrentPage - 1 : null,
+    nextPage: advCurrentPage < advTotalPages ? advCurrentPage + 1 : null
+  }), [filteredAdvance.length, advTotalPages, advCurrentPage]);
+
+  const attendanceKpis = useMemo(() => {
+    const present = attendees.filter((r) => r?.present !== false);
+    const members = present.filter((r) => r?.attendeeType !== "guest").length;
+    const guests = present.filter((r) => r?.attendeeType === "guest").length;
+    const registered = advanceRegistrants.length;
+    const registeredAttended = present.filter((r) => r?.registeredInAdvance === true).length;
+    const attended = present.length;
+    return { members, guests, attended, registered, registeredAttended, diff: registered - registeredAttended };
+  }, [attendees, advanceRegistrants]);
+
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerSaving, setRegisterSaving] = useState(false);
   const [registerError, setRegisterError] = useState(null);
@@ -195,6 +497,8 @@ function ProgramDetailsPage() {
   const [regMemberOptions, setRegMemberOptions] = useState([]);
   const [regMemberSearching, setRegMemberSearching] = useState(false);
   const [regSelectedMember, setRegSelectedMember] = useState(null);
+  const [regAttendeeType, setRegAttendeeType] = useState("member");
+  const [regHeardAbout, setRegHeardAbout] = useState("");
 
 
   useEffect(() => {
@@ -509,6 +813,11 @@ function ProgramDetailsPage() {
       return;
     }
 
+    if (regAttendeeType === "guest" && !regHeardAbout) {
+      setRegisterError("Please select where they heard about the program.");
+      return;
+    }
+
     if (regSelectedMember && isMemberTaken(regSelectedMember)) {
       setRegisterError("This member is already added or registered.");
       return;
@@ -524,13 +833,16 @@ function ProgramDetailsPage() {
         email: regEmail || "",
         phoneNumber: regPhone,
         location: regLocation || "",
-        registrationDate: regDate || ""
+        registrationDate: regDate || "",
+        attendeeType: regAttendeeType,
+        heardAbout: regAttendeeType === "guest" ? regHeardAbout : ""
       }
     ]);
     setRegFullName("");
     setRegEmail("");
     setRegPhone("");
     setRegLocation("");
+    setRegHeardAbout("");
     resetRegisterMemberSearch();
   };
 
@@ -549,6 +861,10 @@ function ProgramDetailsPage() {
         setRegisterError("Invalid phone number");
         return;
       }
+      if (regAttendeeType === "guest" && !regHeardAbout) {
+        setRegisterError("Please select where they heard about the program.");
+        return;
+      }
       if (regSelectedMember && isMemberTaken(regSelectedMember)) {
         setRegisterError("This member is already added or registered.");
         return;
@@ -560,7 +876,9 @@ function ProgramDetailsPage() {
         email: regEmail || "",
         phoneNumber: regPhone,
         location: regLocation || "",
-        registrationDate: regDate || ""
+        registrationDate: regDate || "",
+        attendeeType: regAttendeeType,
+        heardAbout: regAttendeeType === "guest" ? regHeardAbout : ""
       });
     }
 
@@ -578,7 +896,10 @@ function ProgramDetailsPage() {
           email: item.email || undefined,
           phoneNumber: item.phoneNumber,
           location: item.location || undefined,
-          registrationDate: item.registrationDate || undefined
+          registrationDate: item.registrationDate || undefined,
+          attendeeType: item.attendeeType || "member",
+          heardAbout: item.heardAbout || undefined,
+          member: item.memberId || undefined
         });
       }
       setRegisterOpen(false);
@@ -587,6 +908,7 @@ function ProgramDetailsPage() {
       setRegPhone("");
       setRegLocation("");
       setRegDate("");
+      setRegHeardAbout("");
       setRegisterQueue([]);
       resetRegisterMemberSearch();
       await loadAttendees();
@@ -600,7 +922,7 @@ function ProgramDetailsPage() {
   useEffect(() => {
     if (!programId) return;
     if (activeMainTab !== "attendance") return;
-    if (activeTab === "registration") {
+    if (activeTab === "registration" || activeTab === "advance") {
       loadAttendees();
       return;
     }
@@ -647,6 +969,11 @@ function ProgramDetailsPage() {
       return;
     }
 
+    if (regAttendeeType === "guest" && !regHeardAbout) {
+      setRegisterError("Please select where they heard about the program.");
+      return;
+    }
+
     if (regSelectedMember && isMemberTaken(regSelectedMember)) {
       setRegisterError("This member is already added or registered.");
       return;
@@ -660,7 +987,10 @@ function ProgramDetailsPage() {
         email: regEmail || undefined,
         phoneNumber: regPhone,
         location: regLocation || undefined,
-        registrationDate: regDate || undefined
+        registrationDate: regDate || undefined,
+        attendeeType: regAttendeeType,
+        heardAbout: regAttendeeType === "guest" && regHeardAbout ? regHeardAbout : undefined,
+        member: regSelectedMember?._id || undefined
       });
       setRegisterOpen(false);
       setRegFullName("");
@@ -668,6 +998,7 @@ function ProgramDetailsPage() {
       setRegPhone("");
       setRegLocation("");
       setRegDate("");
+      setRegHeardAbout("");
       resetRegisterMemberSearch();
       await loadAttendees();
     } catch (err) {
@@ -696,18 +1027,10 @@ function ProgramDetailsPage() {
     }
   };
 
-  const filterByDateRange = (dateStr, from, to) => {
-    if (!from && !to) return true;
-    if (!dateStr) return false;
-    const d = dateStr.slice(0, 10);
-    if (from && d < from) return false;
-    if (to && d > to) return false;
-    return true;
-  };
 
   const filteredAttendees = useMemo(() => {
     const q = regSearch.toLowerCase();
-    return attendees.filter((r) => {
+    return attendees.filter((r) => r?.present !== false).filter((r) => {
       const matchSearch = !q ||
         (r?.fullName || "").toLowerCase().includes(q) ||
         (r?.email || "").toLowerCase().includes(q) ||
@@ -728,6 +1051,7 @@ function ProgramDetailsPage() {
   }, [files, filesSearch, filesDateFrom, filesDateTo]);
 
   useEffect(() => { setRegPage(1); }, [regSearch, regDateFrom, regDateTo]);
+  useEffect(() => { setAdvPage(1); }, [advSearch, advDateFrom, advDateTo]);
   useEffect(() => { setFilesPage(1); }, [filesSearch, filesDateFrom, filesDateTo]);
 
   const attendeesTotalPages = Math.max(1, Math.ceil(filteredAttendees.length / regLimit));
@@ -909,7 +1233,7 @@ function ProgramDetailsPage() {
         <PageTabs
           tabs={[
             { key: "offering", label: "Offerings & Seeds" },
-            { key: "attendance", label: "Record Attendance" },
+            { key: "attendance", label: "Attendance" },
             { key: "expenses", label: "Expenses" },
             { key: "pledge", label: "Pledges" },
           ]}
@@ -941,10 +1265,29 @@ function ProgramDetailsPage() {
       {!loading && !error && program && activeMainTab === "attendance" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
           <div className="py-4 md:py-5 lg:py-6 px-4 md:px-6">
+            <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                <div className="text-gray-500 font-semibold text-xs">Members Attended</div>
+                <div className="mt-1 font-bold text-gray-900 text-2xl">{attendanceKpis.members}</div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                <div className="text-gray-500 font-semibold text-xs">Guests Attended</div>
+                <div className="mt-1 font-bold text-gray-900 text-2xl">{attendanceKpis.guests}</div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                <div className="text-gray-500 font-semibold text-xs">Total Attended</div>
+                <div className="mt-1 font-bold text-blue-700 text-2xl">{attendanceKpis.attended}</div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                <div className="text-gray-500 font-semibold text-xs">Attended vs pre-Registered</div>
+                <div className="mt-1 font-bold text-gray-900 text-2xl">{attendanceKpis.registeredAttended}<span className="text-gray-400 font-semibold text-base"> / {attendanceKpis.registered}</span></div>
+                <div className="text-gray-400 text-xs">{attendanceKpis.diff > 0 ? `${attendanceKpis.diff} pre-registered but didn't come` : "All pre-registered attended"}</div>
+              </div>
+            </div>
             <PageTabs
               tabs={[
-                { key: "registration", label: "By Registration" },
-                { key: "files", label: "File Upload" },
+                { key: "registration", label: "Attendance Log" },
+                { key: "advance", label: "Pre-Registration" },
               ]}
               activeTab={activeTab}
               onChange={setActiveTab}
@@ -956,17 +1299,33 @@ function ProgramDetailsPage() {
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center justify-between gap-3 w-full md:w-auto md:block">
                     <div>
-                      <div className="font-semibold text-gray-900 text-sm">By Registration</div>
-                      <div className="text-gray-500 text-xs mt-0.5">Record and manage attendance collected for this program.</div>
+                      <div className="font-semibold text-gray-900 text-sm">Attendance Log</div>
+                      <div className="text-gray-500 text-xs mt-0.5">Attendance log for this program.</div>
                     </div>
                     {canEdit ? (
-                    <button
-                      type="button"
-                      onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); })}
-                      className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
-                    >
-                      Register
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => guarded(() => void openChkLink())}
+                        className="md:hidden inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+                      >
+                        Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => guarded(() => void openChkQr())}
+                        className="md:hidden inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+                      >
+                        QR
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => guarded(() => { setRegisterError(null); setRegisterOpen(true); })}
+                        className="md:hidden inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 text-sm h-10"
+                      >
+                        Record
+                      </button>
+                    </div>
                     ) : null}
                   </div>
                   <FilterBar
@@ -989,9 +1348,23 @@ function ProgramDetailsPage() {
                         <path d="M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                         <path d="M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
-                      Register
+                      Record
                     </button>
                     ) : null}
+                    <button
+                      type="button"
+                      onClick={() => guarded(() => void openChkLink())}
+                      className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
+                    >
+                      Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => guarded(() => void openChkQr())}
+                      className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
+                    >
+                      QR Code
+                    </button>
                     <button
                       type="button"
                       onClick={onExportAttendees}
@@ -1022,6 +1395,7 @@ function ProgramDetailsPage() {
                       <thead className="bg-white">
                         <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                           <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Name</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Type</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
@@ -1072,6 +1446,7 @@ function ProgramDetailsPage() {
                       <thead className="bg-white">
                         <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
                           <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Name</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Type</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
                           <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
@@ -1085,6 +1460,14 @@ function ProgramDetailsPage() {
                             <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.fullName || "—"}>
                               <span className="md:hidden">{truncateMobileName(r?.fullName)}</span>
                               <span className="hidden md:inline">{truncateDesktopName(r?.fullName)}</span>
+                              {r?.registeredInAdvance ? (
+                                <span className="ml-1.5 inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 font-semibold text-emerald-700 text-[10px] whitespace-nowrap">Pre-registered</span>
+                              ) : null}
+                            </td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
+                              <span className={`rounded-full px-2 py-0.5 font-semibold text-xs ${r?.attendeeType === "guest" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>
+                                {r?.attendeeType === "guest" ? "Guest" : "Member"}
+                              </span>
                             </td>
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6" title={r?.email || "—"}>
                               <span className="sm:hidden">{truncateMobileName(r?.email || "—")}</span>
@@ -1098,6 +1481,7 @@ function ProgramDetailsPage() {
                             <td className="max-md:px-4 py-2 text-gray-600 whitespace-nowrap px-4 md:px-6">{formatDate(r?.registrationDate || r?.createdAt)}</td>
                             <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
                               <TableKebabMenu items={[
+                                r?.attendeeType === "guest" && canEdit && { label: "Schedule Follow-up", onClick: () => guarded(() => void openGuestFollowUp(r)) },
                                 canEdit && { label: "Edit", onClick: () => guarded(() => openEditAttendee(r)) },
                                 canDelete && { label: "Delete", onClick: () => guarded(() => onDeleteAttendee(r)), danger: true }
                               ]} />
@@ -1116,6 +1500,170 @@ function ProgramDetailsPage() {
                   onPageChange={setRegPage}
                   itemName="attendees"
                   filtered={Boolean(regSearch || regDateFrom || regDateTo)}
+                  disabled={attendeesLoading}
+                  className="border-t border-gray-100"
+                />
+              </div>
+            ) : activeTab === "advance" ? (
+              <div className="mt-6">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center justify-between gap-3 w-full md:w-auto md:block">
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">Pre-Registration</div>
+                      <div className="text-gray-500 text-xs mt-0.5">People who registered before coming. Mark them present when they arrive.</div>
+                    </div>
+                    {canEdit ? (
+                    <div className="flex items-center gap-2 md:hidden">
+                      <button
+                        type="button"
+                        onClick={() => guarded(() => void openAdvLink())}
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+                      >
+                        Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => guarded(() => void openAdvQr())}
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm"
+                      >
+                        QR
+                      </button>
+                    </div>
+                    ) : null}
+                  </div>
+                  <div className="hidden md:flex items-center gap-2">
+                    <input
+                      value={advSearch}
+                      onChange={(e) => setAdvSearch(e.target.value)}
+                      placeholder="Search name, email, phone"
+                      className="h-10 w-full md:w-[160px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                    />
+                    {canEdit ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => guarded(() => void openAdvLink())}
+                        className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
+                      >
+                        Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => guarded(() => void openAdvQr())}
+                        className="hidden md:inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 text-sm h-10"
+                      >
+                        QR Code
+                      </button>
+                    </>
+                    ) : null}
+                    <FilterBar
+                      selects={[]}
+                      dateFrom={advDateFrom}
+                      dateTo={advDateTo}
+                      onDateApply={(from, to) => { setAdvDateFrom(from); setAdvDateTo(to); }}
+                    />
+                  </div>
+                  <MobileFilterBar
+                    searchValue={advSearch}
+                    onSearchChange={(v) => setAdvSearch(v)}
+                    searchPlaceholder="Search name, email, phone"
+                    dateFrom={advDateFrom}
+                    dateTo={advDateTo}
+                    onDateApply={(from, to) => { setAdvDateFrom(from); setAdvDateTo(to); }}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
+                  {attendeesLoading ? (
+                    <div className="p-6 animate-pulse space-y-3">
+                      {[0, 1, 2].map((i) => <div key={i} className="h-4 rounded bg-gray-200" />)}
+                    </div>
+                  ) : attendeesError ? (
+                    <div className="py-4 text-red-700 text-sm px-4 md:px-6">{attendeesError}</div>
+                  ) : !filteredAdvance.length ? (
+                    <EmptyState
+                      compact
+                      illustration="attendees"
+                      title="No advance registrations yet"
+                      description="Share the link or QR code so people can register before coming."
+                    />
+                  ) : (
+                    <table className="min-w-full">
+                      <thead className="bg-white">
+                        <tr className="text-left md:max-lg:text-sm font-semibold text-gray-500 text-xs">
+                          <th className="sticky left-0 z-20 bg-white max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Name</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Type</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Email</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Phone</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Location</th>
+                          <th className="max-md:px-4 py-3 whitespace-nowrap px-4 md:px-6">Registered</th>
+                          <th className="max-md:px-4 py-3 text-right whitespace-nowrap px-4 md:px-6">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {paginatedAdvance.map((r) => (
+                          <tr key={r?._id} className="text-gray-700 text-sm">
+                            <td className="sticky left-0 z-10 bg-white max-md:px-4 py-2 text-gray-900 whitespace-nowrap px-4 md:px-6" title={r?.fullName || "—"}>
+                              <span className="md:hidden">{truncateMobileName(r?.fullName)}</span>
+                              <span className="hidden md:inline">{truncateDesktopName(r?.fullName)}</span>
+                            </td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
+                              <span className={`rounded-full px-2 py-0.5 font-semibold text-xs ${r?.attendeeType === "guest" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>
+                                {r?.attendeeType === "guest" ? "Guest" : "Member"}
+                              </span>
+                            </td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
+                              <span className="sm:hidden">{truncateMobileName(r?.email || "—")}</span>
+                              <span className="hidden sm:inline">{r?.email || "—"}</span>
+                            </td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{r?.phoneNumber || "—"}</td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">
+                              <span className="sm:hidden">{truncateMobileName(r?.location || "—")}</span>
+                              <span className="hidden sm:inline">{r?.location || "—"}</span>
+                            </td>
+                            <td className="max-md:px-4 py-2 whitespace-nowrap px-4 md:px-6">{formatDate(r?.registrationDate || r?.createdAt)}</td>
+                            <td className="max-md:px-4 py-2 text-right whitespace-nowrap px-4 md:px-6">
+                              <div className="inline-flex items-center gap-2 justify-end">
+                                {r?.attendeeType === "guest" && canEdit ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => guarded(() => void openGuestFollowUp(r))}
+                                    disabled={followUpLoadingId === r?._id}
+                                    className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-xs"
+                                  >
+                                    {followUpLoadingId === r?._id ? "…" : "Follow-up"}
+                                  </button>
+                                ) : null}
+                                {r?.present ? (
+                                  <span className="inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 font-semibold text-emerald-700 text-xs">Present</span>
+                                ) : canEdit ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => guarded(() => setMarkPresentRow(r))}
+                                    className="rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white hover:bg-blue-700 text-xs"
+                                  >
+                                    Mark Present
+                                  </button>
+                                ) : (
+                                  <span className="text-gray-400 text-xs">Not present</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                <Pagination
+                  pagination={advancePagination}
+                  rowsCount={paginatedAdvance.length}
+                  limit={advLimit}
+                  onLimitChange={(n) => { setAdvLimit(n); setAdvPage(1); }}
+                  onPageChange={setAdvPage}
+                  itemName="registrations"
+                  filtered={Boolean(advSearch || advDateFrom || advDateTo)}
                   disabled={attendeesLoading}
                   className="border-t border-gray-100"
                 />
@@ -1466,6 +2014,196 @@ function ProgramDetailsPage() {
       </SimpleModal>
 
       <SimpleModal
+        open={Boolean(markPresentRow)}
+        title="Mark Present"
+        onClose={() => { if (markPresentSaving) return; setMarkPresentRow(null); }}
+      >
+        <div className="text-gray-700 text-sm">
+          Mark <span className="font-semibold">{markPresentRow?.fullName || "this person"}</span> as present for this program?
+        </div>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => { if (markPresentSaving) return; setMarkPresentRow(null); }}
+            disabled={markPresentSaving}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleMarkPresent()}
+            disabled={markPresentSaving}
+            className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-60 text-sm"
+          >
+            {markPresentSaving ? "Marking..." : "Mark Present"}
+          </button>
+        </div>
+      </SimpleModal>
+
+      <SimpleModal
+        open={advLinkOpen}
+        title="Advance Registration Link"
+        onClose={() => setAdvLinkOpen(false)}
+      >
+        <div className="space-y-4">
+          <div className="text-gray-500 text-xs">Share this link so people can register for this program before coming.</div>
+          {advLinkError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{advLinkError}</div>
+          ) : null}
+          {advLinkLoading ? (
+            <div className="animate-pulse space-y-3">
+              <div className="h-4 w-32 rounded bg-gray-200" />
+              <div className="h-11 rounded-lg bg-gray-200" />
+            </div>
+          ) : advLinkToken && advLinkActive ? (
+            <>
+              <div>
+                <div className="font-semibold text-gray-600 text-xs mb-1.5">Shareable Link</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700 text-xs font-mono break-all">{advRegLink}</div>
+                  <button type="button" onClick={() => { if (!advRegLink) return; navigator.clipboard.writeText(advRegLink).then(() => { setAdvLinkCopied(true); setTimeout(() => setAdvLinkCopied(false), 2000); }); }} className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 text-sm">{advLinkCopied ? "Copied!" : "Copy"}</button>
+                </div>
+              </div>
+              <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">Link is <span className="font-semibold">active</span>. Anyone with this link can register in advance.</div>
+              <div className="flex flex-col gap-2 md:flex-row">
+                <button type="button" onClick={() => guarded(handleAdvLinkGenerate)} disabled={advLinkLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New Link</button>
+                <button type="button" onClick={() => guarded(handleAdvLinkRevoke)} disabled={advLinkLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke Link</button>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center">
+              <div className="text-gray-500 text-sm mb-3">No active registration link. Generate one to start sharing.</div>
+              <button type="button" onClick={() => guarded(handleAdvLinkGenerate)} disabled={advLinkLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate Link</button>
+            </div>
+          )}
+        </div>
+      </SimpleModal>
+
+      <SimpleModal
+        open={advQrOpen}
+        title="Advance Registration QR Code"
+        onClose={() => setAdvQrOpen(false)}
+      >
+        <div className="space-y-4">
+          <div className="text-gray-500 text-xs">People scan this code to register for this program before coming.</div>
+          {advQrError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{advQrError}</div>
+          ) : null}
+          {advQrLoading ? (
+            <div className="animate-pulse space-y-3">
+              <div className="mx-auto h-48 w-48 rounded-lg bg-gray-200" />
+              <div className="h-11 rounded-lg bg-gray-200" />
+            </div>
+          ) : advQrToken && advQrActive ? (
+            <>
+              <div className="flex justify-center rounded-lg border border-gray-200 bg-white p-4">
+                <QRCode value={advRegQrLink} size={200} />
+              </div>
+              <button type="button" onClick={async () => { if (!advRegQrLink || advQrDownloading) return; setAdvQrDownloading(true); try { await downloadQrCodePng(advRegQrLink, "program-registration-qr"); } finally { setAdvQrDownloading(false); } }} disabled={advQrDownloading} className="w-full rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
+                {advQrDownloading ? "Preparing…" : "Download PNG"}
+              </button>
+              <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">QR code is <span className="font-semibold">active</span>. Anyone who scans it can register in advance.</div>
+              <div className="flex flex-col gap-2 md:flex-row">
+                <button type="button" onClick={() => guarded(handleAdvQrGenerate)} disabled={advQrLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New QR Code</button>
+                <button type="button" onClick={() => guarded(handleAdvQrRevoke)} disabled={advQrLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke QR Code</button>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center">
+              <div className="text-gray-500 text-sm mb-3">No active QR code. Generate one to start sharing.</div>
+              <button type="button" onClick={() => guarded(handleAdvQrGenerate)} disabled={advQrLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate QR Code</button>
+            </div>
+          )}
+        </div>
+      </SimpleModal>
+
+      <SimpleModal
+        open={chkLinkOpen}
+        title="Check-In Link"
+        onClose={() => setChkLinkOpen(false)}
+      >
+        <div className="space-y-4">
+          <div className="text-gray-500 text-xs">Share this link so people can check themselves in at the program.</div>
+          {chkLinkError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{chkLinkError}</div>
+          ) : null}
+          {chkLinkLoading ? (
+            <div className="animate-pulse space-y-3">
+              <div className="h-4 w-32 rounded bg-gray-200" />
+              <div className="h-11 rounded-lg bg-gray-200" />
+            </div>
+          ) : chkLinkToken && chkLinkActive ? (
+            <>
+              <div>
+                <div className="font-semibold text-gray-600 text-xs mb-1.5">Shareable Link</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-700 text-xs font-mono break-all">{chkInLink}</div>
+                  <button type="button" onClick={() => { if (!chkInLink) return; navigator.clipboard.writeText(chkInLink).then(() => { setChkLinkCopied(true); setTimeout(() => setChkLinkCopied(false), 2000); }); }} className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 text-sm">{chkLinkCopied ? "Copied!" : "Copy"}</button>
+                </div>
+              </div>
+              <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">Link is <span className="font-semibold">active</span>. Anyone with this link can check in.</div>
+              <div className="flex flex-col gap-2 md:flex-row">
+                <button type="button" onClick={() => guarded(handleChkLinkGenerate)} disabled={chkLinkLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New Link</button>
+                <button type="button" onClick={() => guarded(handleChkLinkRevoke)} disabled={chkLinkLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke Link</button>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center">
+              <div className="text-gray-500 text-sm mb-3">No active check-in link. Generate one to start sharing.</div>
+              <button type="button" onClick={() => guarded(handleChkLinkGenerate)} disabled={chkLinkLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate Link</button>
+            </div>
+          )}
+        </div>
+      </SimpleModal>
+
+      <SimpleModal
+        open={chkQrOpen}
+        title="Check-In QR Code"
+        onClose={() => setChkQrOpen(false)}
+      >
+        <div className="space-y-4">
+          <div className="text-gray-500 text-xs">People scan this code to check themselves in at the program.</div>
+          {chkQrError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{chkQrError}</div>
+          ) : null}
+          {chkQrLoading ? (
+            <div className="animate-pulse space-y-3">
+              <div className="mx-auto h-48 w-48 rounded-lg bg-gray-200" />
+              <div className="h-11 rounded-lg bg-gray-200" />
+            </div>
+          ) : chkQrToken && chkQrActive ? (
+            <>
+              <div className="flex justify-center rounded-lg border border-gray-200 bg-white p-4">
+                <QRCode value={chkInQrLink} size={200} />
+              </div>
+              <button type="button" onClick={async () => { if (!chkInQrLink || chkQrDownloading) return; setChkQrDownloading(true); try { await downloadQrCodePng(chkInQrLink, "program-checkin-qr"); } finally { setChkQrDownloading(false); } }} disabled={chkQrDownloading} className="w-full rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">
+                {chkQrDownloading ? "Preparing…" : "Download PNG"}
+              </button>
+              <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-xs">QR code is <span className="font-semibold">active</span>. Anyone who scans it can check in.</div>
+              <div className="flex flex-col gap-2 md:flex-row">
+                <button type="button" onClick={() => guarded(handleChkQrGenerate)} disabled={chkQrLoading} className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm">Generate New QR Code</button>
+                <button type="button" onClick={() => guarded(handleChkQrRevoke)} disabled={chkQrLoading} className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 text-sm">Revoke QR Code</button>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center">
+              <div className="text-gray-500 text-sm mb-3">No active QR code. Generate one to start sharing.</div>
+              <button type="button" onClick={() => guarded(handleChkQrGenerate)} disabled={chkQrLoading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 text-sm">Generate QR Code</button>
+            </div>
+          )}
+        </div>
+      </SimpleModal>
+
+      {followUpVisitor ? (
+        <VisitorFollowUpForm
+          visitor={followUpVisitor}
+          onClose={() => setFollowUpVisitor(null)}
+          onSaved={() => setFollowUpVisitor(null)}
+        />
+      ) : null}
+
+      <SimpleModal
         open={registerOpen}
         title="Register Attendee"
         onClose={() => {
@@ -1480,6 +2218,20 @@ function ProgramDetailsPage() {
               <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">{registerError}</div>
             ) : null}
 
+            <div className="mb-4 flex rounded-lg border border-gray-200 p-1 bg-gray-50">
+              {[["member", "Member"], ["guest", "Guest"]].map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => { setRegAttendeeType(v); clearRegisterMember(); setRegHeardAbout(""); }}
+                  className={`flex-1 rounded-md py-2 font-semibold text-sm transition-colors ${regAttendeeType === v ? "bg-white text-blue-700 shadow-sm border border-gray-200" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {regAttendeeType === "member" ? (
             <div className="mb-4">
               <label className="block font-semibold text-gray-500 text-xs">Find a member or visitor</label>
               <div className="mt-0.5 text-gray-400 text-xs">Search for an existing member or visitor to autofill the details, or type the attendee's info manually below.</div>
@@ -1552,6 +2304,7 @@ function ProgramDetailsPage() {
                 </>
               )}
             </div>
+            ) : null}
 
             <div className="grid grid-cols-1 gap-3">
               <input
@@ -1577,6 +2330,24 @@ function ProgramDetailsPage() {
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
                 placeholder="Location (optional)"
               />
+              {regAttendeeType === "guest" ? (
+                <div>
+                  <label className="block font-semibold text-gray-500 text-xs">Where did you hear about this program? <span className="text-red-500">*</span></label>
+                  <select
+                    value={regHeardAbout}
+                    onChange={(e) => setRegHeardAbout(e.target.value)}
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
+                  >
+                    <option value="">Select an option</option>
+                    <option value="Friend / Family">Friend / Family</option>
+                    <option value="TV / Radio">TV / Radio</option>
+                    <option value="Social Media">Social Media</option>
+                    <option value="Church Announcement">Church Announcement</option>
+                    <option value="Flyer / Poster">Flyer / Poster</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              ) : null}
               <div>
                 <label className="block font-semibold text-gray-500 text-xs">Registration Date</label>
                 <input
@@ -1655,7 +2426,7 @@ function ProgramDetailsPage() {
                 registerQueue?.length ? "bg-blue-700 hover:bg-blue-800" : "bg-green-700 hover:bg-green-800"
               }`}
             >
-              {registerSaving ? "Saving..." : registerQueue?.length ? "Register All" : "Register"}
+              {registerSaving ? "Saving..." : registerQueue?.length ? "Record All" : "Record"}
             </button>
           </div>
         </div>

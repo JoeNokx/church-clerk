@@ -144,7 +144,7 @@ function ProgramOfferingTable({ onEdit, onCreate }) {
           <tbody className="divide-y divide-gray-200">
             {rows.map((offering, index) => (
               <tr key={offering?._id ?? `row-${index}`} className="max-md:text-xs text-gray-700 text-sm">
-                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={(offering?.kind === "seed" ? offering?.seedName : offering?.offeringType) || "-"}><span className="sm:hidden">{truncateMobileName((offering?.kind === "seed" ? offering?.seedName : offering?.offeringType) || "-")}</span><span className="hidden sm:inline">{truncateDesktopName((offering?.kind === "seed" ? offering?.seedName : offering?.offeringType) || "-")}</span></td>
+                <td className="sticky left-0 z-10 bg-white max-md:px-4 py-1.5 text-gray-900 whitespace-nowrap px-4 md:px-6" title={(offering?.kind === "seed" ? offering?.seedType || offering?.seedName : offering?.offeringType) || "-"}><span className="sm:hidden">{truncateMobileName((offering?.kind === "seed" ? offering?.seedType || offering?.seedName : offering?.offeringType) || "-")}</span><span className="hidden sm:inline">{truncateDesktopName((offering?.kind === "seed" ? offering?.seedType || offering?.seedName : offering?.offeringType) || "-")}</span></td>
                 <td className="max-md:px-4 py-1.5 text-blue-700 whitespace-nowrap px-4 md:px-6">{_fm(offering?.amount || 0, currency)}</td>
                 <td className="max-md:px-4 py-1.5 whitespace-nowrap px-4 md:px-6">{formatDate(offering?.offeringDate)}</td>
                 <td className="max-md:px-4 py-1.5 text-gray-600 whitespace-nowrap px-4 md:px-6" title={offering?.createdBy?.fullName || "—"}><span className="sm:hidden">{truncateMobileName(offering?.createdBy?.fullName || "—")}</span><span className="hidden sm:inline">{truncateDesktopName(offering?.createdBy?.fullName || "—")}</span></td>
@@ -196,8 +196,8 @@ function ProgramOfferingTable({ onEdit, onCreate }) {
                   <div className="text-sm text-gray-900 capitalize">{viewRow?.kind === "seed" ? "Seed" : "Offering"}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{viewRow?.kind === "seed" ? "Seed Name" : "Offering Type"}</div>
-                  <div className="text-sm text-gray-900">{(viewRow?.kind === "seed" ? viewRow?.seedName : viewRow?.offeringType) || "—"}</div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{viewRow?.kind === "seed" ? "Seed Type" : "Offering Type"}</div>
+                  <div className="text-sm text-gray-900">{(viewRow?.kind === "seed" ? viewRow?.seedType || viewRow?.seedName : viewRow?.offeringType) || "—"}</div>
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Amount</div>

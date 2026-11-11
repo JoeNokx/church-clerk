@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { AFRICAN_CURRENCY_CODES } from "../../utils/africanCurrencies.js";
+import { detectTrialFeatureUsage } from "../../utils/featureUsageChecker.js";
 
 const normalizeSubscriptionStatus = (value) => {
   const v = String(value || "")
@@ -203,6 +204,24 @@ subscriptionSchema.pre("validate", function (next) {
     this.status = normalizeSubscriptionStatus(this.status);
   }
   next();
+});
+
+// Keep the feature-usage ledger in sync at EVERY plan change — not just at
+// trial release. A module first used during a paid period must become
+// read-only (not fully blocked) when the church later downgrades or is
+// cancelled to a plan that doesn't include it. Scanned data is unioned with
+// the existing ledger, so features used at any point are preserved.
+subscriptionSchema.pre("save", async function (next) {
+  try {
+    if (this.isModified("plan") && this.plan) {
+      const usedFeatures = await detectTrialFeatureUsage(this.church);
+      const prior = Array.isArray(this.trialFeaturesUsed) ? this.trialFeaturesUsed : [];
+      this.trialFeaturesUsed = [...new Set([...prior, ...usedFeatures])];
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default mongoose.model("Subscription", subscriptionSchema);

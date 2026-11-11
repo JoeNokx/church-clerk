@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { validatePhoneNumber } from "../utils/validatePhoneNumber.js";
 import Visitor from "../models/visitorsModel.js";
+import ProgramAttendees from "../models/programModel/programAttendeesModel.js";
 import VisitorLog from "../models/visitorLogModel.js";
 import ServiceIndividualAttendance from "../models/serviceIndividualAttendanceModel.js";
 import Member from "../models/memberModel.js";
@@ -20,6 +21,17 @@ const findLinkedProspect = async (churchId, phoneNumber) => {
       { alternativePhone: { $regex: `${suffix}$` } }
     ]
   }).select("_id markedAsVisitor linkedVisitor").lean();
+};
+
+// Find a visitor by phone regardless of stored format — matching on the
+// last 9 digits so "+233...", "233..." and "0..." all hit the same record.
+const findExistingVisitorByPhone = async (churchId, phoneNumber, { excludeId = null } = {}) => {
+  const digits = String(phoneNumber || "").replace(/\D/g, "");
+  if (digits.length < 7) return null;
+  const suffix = digits.slice(-9);
+  const query = { church: churchId, phoneNumber: { $regex: `${suffix}$` } };
+  if (excludeId) query._id = { $ne: excludeId };
+  return Visitor.findOne(query);
 };
 
 // Explicit link — the person was picked from outreach in the form, so we
@@ -98,12 +110,22 @@ const createVisitor = async (req, res) => {
       return res.status(400).json({ message: e?.message || "Invalid phone number" });
     }
 
-    const existingVisitor = await Visitor.findOne({
-      church: req.activeChurch._id,
-      phoneNumber: validatedPhoneNumber
-    });
+    const existingVisitor = await findExistingVisitorByPhone(
+      req.activeChurch._id,
+      validatedPhoneNumber
+    );
 
     if (existingVisitor) {
+      // Program guests are shadow visitor records — adding them to a real
+      // service session promotes them to a normal visitor.
+      if (existingVisitor.source === "program") {
+        existingVisitor.source = source || "";
+        await existingVisitor.save().catch(() => {});
+      }
+      await ProgramAttendees.updateMany(
+        { church: req.activeChurch._id, phoneNumber: validatedPhoneNumber },
+        { $set: { visitor: existingVisitor._id } }
+      );
       // Back-fill the outreach link if this person is a known prospect.
       if (!existingVisitor.linkedProspect) {
         const prospect = await findLinkedProspect(req.activeChurch._id, validatedPhoneNumber)
@@ -176,6 +198,11 @@ const createVisitor = async (req, res) => {
 
     const visitor = await Visitor.create(data);
 
+    await ProgramAttendees.updateMany(
+      { church: req.activeChurch._id, phoneNumber: validatedPhoneNumber },
+      { $set: { visitor: visitor._id } }
+    );
+
     if (linkedProspect) {
       await linkProspectVisit(linkedProspect._id, visitor._id);
     }
@@ -243,6 +270,8 @@ const getAllVisitors = async (req, res) => {
 
     if (sourceFilter) {
       query.source = sourceFilter;
+    } else {
+      query.source = { $ne: "program" };
     }
 
     if (attendance && mongoose.Types.ObjectId.isValid(attendance)) {
@@ -418,6 +447,18 @@ const updateVisitor = async (req, res) => {
               req.body.phoneNumber = validatePhoneNumber(rawPhone, "GH");
             } catch (e) {
               return res.status(400).json({ message: e?.message || "Invalid phone number" });
+            }
+            const phoneTaken = await findExistingVisitorByPhone(
+              req.activeChurch._id,
+              req.body.phoneNumber,
+              { excludeId: id }
+            );
+            if (phoneTaken) {
+              return res.status(409).json({
+                message: "Another visitor already uses this phone number.",
+                visitor: phoneTaken,
+                existing: true
+              });
             }
           } else {
             req.body.phoneNumber = "";

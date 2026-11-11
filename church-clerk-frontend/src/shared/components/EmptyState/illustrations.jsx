@@ -199,6 +199,20 @@ function Welfare({ size = "md" }) {
   );
 }
 
+/* ── Member Care ── */
+function MemberCare({ size = "md" }) {
+  const s = size === "sm" ? "h-8 w-8" : size === "lg" ? "h-14 w-14" : "h-11 w-11";
+  const ic = size === "sm" ? "h-4 w-4" : size === "lg" ? "h-7 w-7" : "h-6 w-6";
+  return (
+    <Wrap className={s}>
+      <svg viewBox="0 0 24 24" fill="none" className={`${ic} ${baseIcon}`}>
+        <path d="M12 21s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M12 8v5M9.5 10.5h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    </Wrap>
+  );
+}
+
 /* ── Pledge ── */
 function Pledge({ size = "md" }) {
   const s = size === "sm" ? "h-8 w-8" : size === "lg" ? "h-14 w-14" : "h-11 w-11";
@@ -618,6 +632,7 @@ export const illustrations = {
   income: Income,
   budgeting: Budgeting,
   welfare: Welfare,
+  memberCare: MemberCare,
   pledge: Pledge,
   specialFund: SpecialFund,
   notifications: Notifications,

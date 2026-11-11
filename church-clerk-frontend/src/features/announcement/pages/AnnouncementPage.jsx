@@ -11,7 +11,7 @@ import { getDepartments } from "../../department/services/department.api.js";
 import { getMinistries } from "../../ministry/services/ministry.api.js";
 import { getPrograms } from "../../program/services/program.api.js";
 import { getOutreachEvents } from "../../outreach/services/outreach.api.js";
-import { getVisitors } from "../../attendance/services/attendance.api.js";
+import { getVisitors, getServiceIndividualAttendances } from "../../attendance/services/attendance.api.js";
 import { getMembers } from "../../member/services/member.api.js";
 import TableKebabMenu from "../../../shared/components/TableKebabMenu/index.jsx";
 import PageTabs from "../../../shared/components/PageTabs/index.jsx";
@@ -840,6 +840,10 @@ function formatAudienceLabel(audience) {
   if (type === "outreach") {
     const n = Array.isArray(audience?.outreachIds) ? audience.outreachIds.length : 0;
     return n ? `${n} outreach event${n > 1 ? "s" : ""}` : "Outreach Prospects";
+  }
+  if (type === "missedService") {
+    const n = Array.isArray(audience?.serviceSessionIds) ? audience.serviceSessionIds.length : 0;
+    return n ? `${n} missed service session${n > 1 ? "s" : ""}` : "Missed Services (all)";
   }
   if (type === "visitors") {
     const n = Array.isArray(audience?.visitorIds) ? audience.visitorIds.length : 0;
@@ -1813,6 +1817,12 @@ const AUDIENCE_OPTIONS = [
     icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><path d="M3 11l14-6v14L3 13v-2z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><path d="M17 8a4 4 0 010 8M7 13v5a1 1 0 001 1h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
   },
   {
+    value: "missedService",
+    label: "Missed Service",
+    hint: "Members who missed church — all, or a selected session",
+    icon: <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+  },
+  {
     value: "visitors",
     label: "Visitors",
     hint: "Everyone recorded in the visitors register",
@@ -1878,6 +1888,8 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
   const [ministries, setMinistries] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [outreachEvents, setOutreachEvents] = useState([]);
+  const [serviceSessions, setServiceSessions] = useState([]);
+  const [serviceSessionIds, setServiceSessionIds] = useState([]);
 
   const [groupIds, setGroupIds] = useState([]);
   const [cellIds, setCellIds] = useState([]);
@@ -1909,6 +1921,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
   const ministryOptions = useMemo(() => toAudienceOptions(ministries, (x) => x?.name || "—"), [ministries]);
   const programOptions = useMemo(() => toAudienceOptions(programs, (x) => x?.name || x?.title || "—"), [programs]);
   const outreachOptions = useMemo(() => toAudienceOptions(outreachEvents, (x) => x?.title || x?.name || "—"), [outreachEvents]);
+  const serviceSessionOptions = useMemo(() => toAudienceOptions(serviceSessions, (s) => `${s?.serviceType || "Service"} — ${s?.date ? new Date(s.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "—"}`), [serviceSessions]);
 
   const [channels, setChannels] = useState({ sms: true });
 
@@ -1980,6 +1993,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     const prefillProgramIds = prefill?.audience?.programIds ?? prefill?.audience?.eventIds;
     setProgramIds(Array.isArray(prefillProgramIds) ? prefillProgramIds.map(String) : []);
     setOutreachIds(Array.isArray(prefill?.audience?.outreachIds) ? prefill.audience.outreachIds.map(String) : []);
+    setServiceSessionIds(Array.isArray(prefill?.audience?.serviceSessionIds) ? prefill.audience.serviceSessionIds.map(String) : []);
     setSegStatuses(Array.isArray(prefill?.audience?.statuses) ? prefill.audience.statuses.map(String) : []);
     setSegGenders(Array.isArray(prefill?.audience?.genders) ? prefill.audience.genders.map(String) : []);
     setSegAgeGroups(Array.isArray(prefill?.audience?.ageGroups) ? prefill.audience.ageGroups.map(String) : []);
@@ -2068,6 +2082,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             visitorIds,
             programIds,
             outreachIds,
+            serviceSessionIds,
             statuses: segStatuses,
             genders: segGenders,
             ageGroups: segAgeGroups,
@@ -2106,7 +2121,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
     return () => {
       cancelled = true;
     };
-  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, ministryIds, programIds, outreachIds, memberIds, visitorIds, segStatuses, segGenders, segAgeGroups, segMaritalStatuses, isLocked, open]);
+  }, [audienceType, cellIds, channels, content, departmentIds, groupIds, ministryIds, programIds, outreachIds, serviceSessionIds, memberIds, visitorIds, segStatuses, segGenders, segAgeGroups, segMaritalStatuses, isLocked, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -2116,13 +2131,14 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
 
     const load = async () => {
       try {
-        const [g, c, d, mn, ev, or] = await Promise.allSettled([
+        const [g, c, d, mn, ev, or, sv] = await Promise.allSettled([
           getGroups({ page: 1, limit: 200 }),
           getCells({ page: 1, limit: 200 }),
           getDepartments({ page: 1, limit: 200 }),
           getMinistries({ page: 1, limit: 200 }),
           getPrograms({ page: 1, limit: 200 }),
-          getOutreachEvents({ page: 1, limit: 200 })
+          getOutreachEvents({ page: 1, limit: 200 }),
+          getServiceIndividualAttendances({ page: 1, limit: 100 })
         ]);
 
         if (cancelled) return;
@@ -2148,6 +2164,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
         setGroups(groupsRows);
         setCells(cellsRows);
         setDepartments(departmentsRows);
+        setServiceSessions(sv.status === "fulfilled" ? (sv.value?.data?.attendances || []) : []);
         setMinistries(ministriesRows);
         setPrograms(programsRows);
         setOutreachEvents(outreachRows);
@@ -2401,6 +2418,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           visitorIds,
           programIds,
           outreachIds,
+          serviceSessionIds,
           statuses: segStatuses,
           genders: segGenders,
           ageGroups: segAgeGroups,
@@ -2670,6 +2688,16 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
                 <AudienceMultiSelect label="Outreach Events" options={outreachOptions} values={outreachIds} onChange={setOutreachIds} placeholder="Search outreach events..." />
               </div>
               {!outreachEvents.length ? <div className="mt-2 text-gray-500 text-xs">No outreach events found.</div> : null}
+            </div>
+          ) : null}
+
+          {audienceType === "missedService" ? (
+            <div className="mt-4">
+              <div className="text-gray-500 text-xs">Members marked absent will receive the message — all missed services, or narrow it to selected sessions.</div>
+              <div className="mt-3">
+                <AudienceMultiSelect label="Service Sessions (optional)" options={serviceSessionOptions} values={serviceSessionIds} onChange={setServiceSessionIds} placeholder="Search service sessions..." />
+              </div>
+              {!serviceSessions.length ? <div className="mt-2 text-gray-500 text-xs">No service sessions found.</div> : null}
             </div>
           ) : null}
 
@@ -2969,6 +2997,7 @@ function AutomationAudiencePicker({ value, onChange }) {
   const ministryIds = useMemo(() => (Array.isArray(audience.ministryIds) ? audience.ministryIds.map(String) : []), [audience.ministryIds]);
   const programIds = useMemo(() => (Array.isArray(audience.programIds) ? audience.programIds.map(String) : []), [audience.programIds]);
   const outreachIds = useMemo(() => (Array.isArray(audience.outreachIds) ? audience.outreachIds.map(String) : []), [audience.outreachIds]);
+  const serviceSessionIds = useMemo(() => (Array.isArray(audience.serviceSessionIds) ? audience.serviceSessionIds.map(String) : []), [audience.serviceSessionIds]);
   const segStatuses = useMemo(() => (Array.isArray(audience.statuses) ? audience.statuses.map(String) : []), [audience.statuses]);
   const segGenders = useMemo(() => (Array.isArray(audience.genders) ? audience.genders.map(String) : []), [audience.genders]);
   const segAgeGroups = useMemo(() => (Array.isArray(audience.ageGroups) ? audience.ageGroups.map(String) : []), [audience.ageGroups]);
@@ -2978,19 +3007,20 @@ function AutomationAudiencePicker({ value, onChange }) {
   // audience type needs them. The ref guard (not state) prevents the
   // "loading" state change from cancelling the in-flight fetch on re-run.
   useEffect(() => {
-    if (!["groups", "programs", "outreach"].includes(type)) return;
+    if (!["groups", "programs", "outreach", "missedService"].includes(type)) return;
     if (listsStarted.current) return;
     listsStarted.current = true;
     setListsLoading(true);
     (async () => {
       try {
-        const [g, c, d, mn, ev, or] = await Promise.allSettled([
+        const [g, c, d, mn, ev, or, sv] = await Promise.allSettled([
           getGroups({ page: 1, limit: 200 }),
           getCells({ page: 1, limit: 200 }),
           getDepartments({ page: 1, limit: 200 }),
           getMinistries({ page: 1, limit: 200 }),
           getPrograms({ page: 1, limit: 200 }),
-          getOutreachEvents({ page: 1, limit: 200 })
+          getOutreachEvents({ page: 1, limit: 200 }),
+          getServiceIndividualAttendances({ page: 1, limit: 100 })
         ]);
         setLists({
           groups: g.status === "fulfilled" ? (g.value?.data?.groups || []) : [],
@@ -2998,7 +3028,8 @@ function AutomationAudiencePicker({ value, onChange }) {
           departments: d.status === "fulfilled" ? (d.value?.data?.departments || []) : [],
           ministries: mn.status === "fulfilled" ? (mn.value?.data?.ministries || mn.value?.data?.data?.ministries || []) : [],
           programs: ev.status === "fulfilled" ? (ev.value?.data?.programs || ev.value?.data?.data?.programs || ev.value?.data?.data || []) : [],
-          outreach: or.status === "fulfilled" ? (or.value?.data?.data || or.value?.data?.events || or.value?.data?.data?.events || []) : []
+          outreach: or.status === "fulfilled" ? (or.value?.data?.data || or.value?.data?.events || or.value?.data?.data?.events || []) : [],
+          serviceSessions: sv.status === "fulfilled" ? (sv.value?.data?.attendances || []) : []
         });
       } catch {
         /* lists stay empty — picker still usable */
@@ -3163,6 +3194,12 @@ function AutomationAudiencePicker({ value, onChange }) {
         </div>
       ) : null}
 
+      {type === "missedService" ? (
+        <div className="mt-3">
+          <AudienceMultiSelect label="Service Sessions (optional)" options={toAudienceOptions(lists.serviceSessions, (s) => `${s?.serviceType || "Service"} — ${s?.date ? new Date(s.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "—"}`)} values={serviceSessionIds} onChange={(v) => set({ serviceSessionIds: v })} />
+        </div>
+      ) : null}
+
       {type === "members" ? (
         <div className="mt-3">
           <input
@@ -3262,6 +3299,7 @@ function AutomationFormModal({ open, initial, onClose, onSaved }) {
       ministryIds: a.ministryIds || [], memberIds: a.memberIds || [],
       ...(a.visitorIds !== undefined ? { visitorIds: a.visitorIds } : {}),
       programIds: a.programIds || [], outreachIds: a.outreachIds || [],
+      serviceSessionIds: a.serviceSessionIds || [],
       statuses: a.statuses || [], genders: a.genders || [], ageGroups: a.ageGroups || [],
       maritalStatuses: a.maritalStatuses || []
     });
@@ -4014,6 +4052,7 @@ function AnnouncementPage() {
         memberIds: Array.isArray(m?.audience?.memberIds) ? m.audience.memberIds : [],
         programIds: Array.isArray(m?.audience?.programIds ?? m?.audience?.eventIds) ? (m.audience.programIds ?? m.audience.eventIds) : [],
         outreachIds: Array.isArray(m?.audience?.outreachIds) ? m.audience.outreachIds : [],
+        serviceSessionIds: Array.isArray(m?.audience?.serviceSessionIds) ? m.audience.serviceSessionIds : [],
         statuses: Array.isArray(m?.audience?.statuses) ? m.audience.statuses : [],
         genders: Array.isArray(m?.audience?.genders) ? m.audience.genders : [],
         ageGroups: Array.isArray(m?.audience?.ageGroups) ? m.audience.ageGroups : [],

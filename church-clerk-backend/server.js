@@ -377,6 +377,7 @@ app.use("/api/v1/church-governance", Routes.churchGovernanceRoute);
 app.use("/api/v1/public", Routes.publicRoute);
 app.use("/api/v1/search", Routes.globalSearchRoute);
 app.use("/api/v1/outreach", Routes.outreachRoute);
+app.use("/api/v1/member-care", Routes.memberCareRoute);
 app.use("/api/v1/support-requests", Routes.supportRequestRoute);
 
 // 404

@@ -2,6 +2,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import { getChurchByToken, selfRegisterMember } from "../controller/publicRegistrationController.js";
 import { getSelfCheckInInfo, selfMemberCheckIn } from "../controller/serviceIndividualAttendanceController.js";
+import { getAdvanceRegInfo, advanceRegisterAttendee, searchAdvanceRegMembers, getCheckInInfo, selfCheckInAttendee } from "../controller/programController/programAttendee.js";
 import { getOrgAttendanceByCheckInToken, orgMemberCheckIn } from "../controller/organisationController/organisationCheckInController.js";
 import { uploadMemoryFile } from "../middleware/uploadMemoryFile.js";
 import { sendEmail } from "../services/emailService.js";
@@ -39,6 +40,14 @@ const checkInLimiter = rateLimit({
 
 router.get("/attendance-self/:token", getSelfCheckInInfo);
 router.post("/attendance-self/:token/check-in", checkInLimiter, selfMemberCheckIn);
+
+router.get("/program/:token", getAdvanceRegInfo);
+router.get("/program/:token/member-search", searchAdvanceRegMembers);
+
+router.get("/program-checkin/:token", getCheckInInfo);
+router.get("/program-checkin/:token/member-search", searchAdvanceRegMembers);
+router.post("/program-checkin/:token/check-in", checkInLimiter, selfCheckInAttendee);
+router.post("/program/:token/register", registrationLimiter, advanceRegisterAttendee);
 
 router.get("/attendance/org/:token", getOrgAttendanceByCheckInToken);
 router.post("/attendance/org/:token/check-in", checkInLimiter, orgMemberCheckIn);

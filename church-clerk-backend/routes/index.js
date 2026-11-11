@@ -62,6 +62,7 @@ import publicRoute from "./publicRoute.js";
 import supportRequestRoute from "./supportRequestRoute.js";
 import globalSearchRoute from "./globalSearchRoute.js";
 import outreachRoute from "./outreachRoute.js";
+import memberCareRoute from "./memberCareRoute.js";
 
 // export all routes
 export {
@@ -103,5 +104,6 @@ export {
   publicRoute,
   globalSearchRoute,
   outreachRoute,
+  memberCareRoute,
   supportRequestRoute
 };

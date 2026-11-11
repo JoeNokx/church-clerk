@@ -50,9 +50,9 @@ const normalizePlanName = (name) => {
 };
 
 const validatePlanName = (name) => {
-  const allowed = ["free", "free lite", "light", "basic", "standard", "premium"];
+  const allowed = ["free", "free lite", "light", "basic", "standard", "premium", "enterprise"];
   if (!allowed.includes(String(name || "").trim().toLowerCase())) {
-    throw new Error("Invalid plan name. Allowed: free, free lite, light, basic, standard, premium");
+    throw new Error("Invalid plan name. Allowed: free, free lite, light, basic, standard, premium, enterprise");
   }
 };
 
@@ -69,7 +69,8 @@ const PLAN_TIER = {
   light: 0,
   basic: 1,
   standard: 2,
-  premium: 3
+  premium: 3,
+  enterprise: 4
 };
 
 const planTier = (plan) => {

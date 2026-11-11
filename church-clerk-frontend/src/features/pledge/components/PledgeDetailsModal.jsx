@@ -391,17 +391,15 @@ function PledgeDetailsModal({ open, pledgeId, view = "details", onClose, onChang
                     <div className="font-semibold text-gray-500 text-xs">Days Until Deadline</div>
                     <div className="mt-1 font-semibold text-gray-900 text-sm">{daysUntilDeadline ?? "—"}</div>
                   </div>
+                  {!pledge?.event ? (
                   <div>
                     <div className="font-semibold text-gray-500 text-xs">Service Type</div>
                     <div className="mt-1 font-semibold text-gray-900 text-sm">{pledge?.serviceType || "—"}</div>
                   </div>
+                  ) : null}
                   <div>
                     <div className="font-semibold text-gray-500 text-xs">Deadline</div>
                     <div className="mt-1 font-semibold text-gray-900 text-sm">{formatDate(pledge?.deadline)}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-500 text-xs">Fundraising</div>
-                    <div className="mt-1 font-semibold text-gray-900 text-sm">{pledge?.churchProject?.name || "—"}</div>
                   </div>
                 </div>
 

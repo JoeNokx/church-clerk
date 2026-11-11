@@ -158,21 +158,36 @@ const updateServiceIndividualAttendance = async (req, res) => {
 
     const churchId = req.activeChurch._id;
 
+    const existing = await ServiceIndividualAttendance.findOne({ _id: id, church: churchId }).lean();
+    if (!existing) return res.status(404).json({ message: "Attendance not found" });
+
     const totalMembersSnapshot = await Member.countDocuments({ church: churchId, status: { $in: ATTENDANCE_STATUSES } });
 
-    const presentIds = Array.isArray(presentMembers) ? presentMembers.filter(Boolean) : [];
-    const absentIds = Array.isArray(absentMembers) ? absentMembers.filter(Boolean) : [];
-    // Ensure mutual exclusivity: a member cannot be both present and absent
-    const absentSet = new Set(absentIds.map((id) => String(id)));
-    const cleanPresentIds = presentIds.filter((id) => !absentSet.has(String(id)));
+    // Only touch fields the caller actually sent — partial updates (e.g.
+    // saving member marks) must not wipe speaker/date/absent data with
+    // empty defaults.
+    const update = { totalMembersSnapshot };
+    if (date !== undefined) update.date = date;
+    if (serviceType !== undefined) update.serviceType = serviceType;
+    if (mainSpeaker !== undefined) update.mainSpeaker = String(mainSpeaker || "");
+    if (expectedCount !== undefined) update.expectedCount = Math.max(0, Number(expectedCount) || 0);
+
+    if (presentMembers !== undefined || absentMembers !== undefined) {
+      // Ensure mutual exclusivity: a member cannot be both present and
+      // absent. An unsent list keeps its stored value and still
+      // participates in the exclusivity check.
+      const presentIds = Array.isArray(presentMembers) ? presentMembers.filter(Boolean) : null;
+      const absentIds = Array.isArray(absentMembers) ? absentMembers.filter(Boolean) : (existing.absentMembers || []);
+      const absentSet = new Set(absentIds.map((mid) => String(mid)));
+      if (presentIds) update.presentMembers = presentIds.filter((mid) => !absentSet.has(String(mid)));
+      if (absentMembers !== undefined) update.absentMembers = absentIds;
+    }
 
     const attendance = await ServiceIndividualAttendance.findOneAndUpdate(
       { _id: id, church: churchId },
-      { date, serviceType, mainSpeaker: mainSpeaker || "", presentMembers: cleanPresentIds, absentMembers: absentIds, totalMembersSnapshot, ...(expectedCount !== undefined ? { expectedCount: Math.max(0, Number(expectedCount) || 0) } : {}) },
+      update,
       { new: true, runValidators: true }
     );
-
-    if (!attendance) return res.status(404).json({ message: "Attendance not found" });
 
     await runStatusTransitions(churchId);
 
@@ -324,7 +339,12 @@ const selfMemberCheckIn = async (req, res) => {
     if (!church) return res.status(404).json({ message: "Check-in link is invalid or has been revoked." });
     const attendance = await ServiceIndividualAttendance.findOne({ _id: sessionId, church: church._id });
     if (!attendance) return res.status(404).json({ message: "Service session not found." });
-    const member = await Member.findOne({ church: attendance.church, phoneNumber: String(phoneNumber).trim(), status: { $in: ATTENDANCE_STATUSES } }).lean();
+    // Match on the last 9 digits so "0551234567" and "+233551234567"
+    // resolve to the same member regardless of stored format.
+    const phoneDigits = String(phoneNumber).replace(/\D/g, "");
+    if (phoneDigits.length < 7) return res.status(400).json({ message: "Invalid phone number." });
+    const suffix = phoneDigits.slice(-9);
+    const member = await Member.findOne({ church: attendance.church, phoneNumber: { $regex: `${suffix}$` }, status: { $in: ATTENDANCE_STATUSES } }).lean();
     if (!member) return res.status(404).json({ message: "No member found with this phone number." });
     const alreadyPresent = attendance.presentMembers.some((pid) => String(pid) === String(member._id));
     if (alreadyPresent) {

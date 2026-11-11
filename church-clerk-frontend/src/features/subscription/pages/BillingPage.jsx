@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth.js";
 import PriceCard from "../../../shared/components/PriceCard/index.jsx";
+import BillingIntervalToggle from "../../../shared/components/BillingIntervalToggle/index.jsx";
 import Pagination from "../../../shared/components/Pagination/index.jsx";
 import {
   cancelMySubscription,
@@ -26,7 +27,8 @@ import ChurchContext from "../../church/church.store.js";
 import { formatMoney } from "../../../shared/utils/formatMoney.js";
 import { getUsdToGhsRate } from "../../../shared/utils/fx.js";
 import { getPlanDescriptionFeatures } from "../../../shared/utils/planDescription.js";
-import { computeSavingsPct } from "../../../shared/utils/planSavings.js";
+import { formatPlanName, isFreeTierPlanName } from "../../../shared/utils/planDisplay.js";
+import { computeSavingsPct, computeIntervalSavingsMap } from "../../../shared/utils/planSavings.js";
 import { getSystemSettingsAdmin, updateSystemSettingsAdmin, toggleGovernanceFlags } from "../../settings/services/settings.api.js";
 import EmptyState from "../../../shared/components/EmptyState/index.jsx";
 import { isDelegateSession } from "../../../shared/utils/delegateSession.js";
@@ -59,6 +61,7 @@ const COMPARISON_GROUPS = [
       { label: "Programs", keys: ["programsEvents"] },
       { label: "Organisations", keys: ["organisations"] },
       { label: "Outreach & Follow-up", keys: ["outreach"] },
+      { label: "Member Care", keys: ["memberCare"] },
       { label: "Announcements", keys: ["announcements", "announcement"] },
       { label: "Branches overview", keys: ["branchesOverview"] },
     ],
@@ -479,8 +482,8 @@ function BillingPage() {
   }, [history]);
 
   const plansSorted = useMemo(() => {
-    const rows = Array.isArray(plans) ? plans : [];
-    const order = { "free lite": 0, basic: 1, standard: 2, premium: 3 };
+    const rows = (Array.isArray(plans) ? plans : []).filter((p) => !isFreeTierPlanName(p?.name));
+    const order = { basic: 1, standard: 2, premium: 3, enterprise: 4 };
     return rows.slice().sort((a, b) => {
       const aName = String(a?.name || "").toLowerCase();
       const bName = String(b?.name || "").toLowerCase();
@@ -491,27 +494,7 @@ function BillingPage() {
     });
   }, [plans]);
 
-  const savingsByInterval = useMemo(() => {
-    const MONTHLY_EQUIV = { quarterly: 3, halfYear: 6, yearly: 12 };
-    const paidPlans = plansSorted.filter((p) => String(p?.name || "").trim().toLowerCase() !== "free lite");
-    const result = {};
-    for (const [interval, months] of Object.entries(MONTHLY_EQUIV)) {
-      const percentages = paidPlans
-        .map((p) => {
-          const ghsPrices = p?.pricing?.GHS || p?.priceByCurrency?.GHS || {};
-          const mprice = Number(ghsPrices?.monthly || 0);
-          const iprice = Number(ghsPrices?.[interval] || 0);
-          if (!mprice || !iprice) return null;
-          const pct = Math.round((1 - iprice / (mprice * months)) * 100);
-          return pct > 0 ? pct : null;
-        })
-        .filter((v) => v !== null);
-      if (percentages.length > 0) {
-        result[interval] = Math.round(percentages.reduce((a, b) => a + b, 0) / percentages.length);
-      }
-    }
-    return result;
-  }, [plansSorted]);
+  const savingsByInterval = useMemo(() => computeIntervalSavingsMap(plansSorted), [plansSorted]);
 
   // Sync UI-only state and history when query data arrives or refreshes after a mutation.
   useEffect(() => {
@@ -651,8 +634,8 @@ function BillingPage() {
     const isFreeLite = nextName === "free lite";
     const wouldBeDowngrade = isFreeLite || (subscribedPlanId && nextLimit <= subscribedLimit);
 
-    if (isHQ && (wouldBeDowngrade || nextName !== "premium")) {
-      setError("Headquarters churches must remain on the Premium plan and cannot downgrade or cancel.");
+    if (isHQ && nextName !== "premium" && nextName !== "enterprise") {
+      setError("Headquarters churches must remain on the Premium or Enterprise plan.");
       return;
     }
 
@@ -719,7 +702,7 @@ function BillingPage() {
   const currentPlanFeatures = getPlanDescriptionFeatures(currentPlan, { max: 6 });
   const currentPlanName = String(currentPlan?.name || "").trim().toLowerCase();
   const isFreeLitePlan = currentPlanName === "free lite";
-  const isPaidPlan = ["basic", "standard", "premium"].includes(currentPlanName);
+  const isPaidPlan = ["basic", "standard", "premium", "enterprise"].includes(currentPlanName);
 
   const planManagementCard = (
     <div ref={plansRef} className="mt-6 rounded-xl border border-gray-200 bg-white p-4 md:p-6 lg:p-8">
@@ -729,15 +712,15 @@ function BillingPage() {
       </div>
 
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
-        <div className="font-semibold text-gray-500 text-xs">Current: {isFreeTrial ? "Free trial" : currentPlan?.name || "—"} Plan</div>
+        <div className="font-semibold text-gray-500 text-xs">Current: {isFreeTrial ? "Free trial" : formatPlanName(currentPlan?.name) || "—"} Plan</div>
         <div className="mt-1 text-gray-600 text-xs">
           {currentPlan?.memberLimit === null ? "Unlimited members" : `Up to ${Number(currentPlan?.memberLimit || 0).toLocaleString()} members`}
         </div>
         {currentPlanFeatures.length ? (
           <div className="mt-3 space-y-2 text-gray-700 text-xs">
             {currentPlanFeatures.map((item) => (
-              <div key={item} className="flex items-center gap-2">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-50 text-green-700">
+              <div key={item} className="flex items-start gap-2">
+                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-700">
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                     <path
                       d="M6 12.5l3.2 3.2L18 7.8"
@@ -759,26 +742,11 @@ function BillingPage() {
         <div className="flex flex-col items-center justify-center gap-3">
           <div className="font-semibold text-gray-500 text-xs">Available Plans</div>
 
-          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-            {[
-              { key: "monthly",  label: "Monthly" },
-              { key: "halfYear", label: "6 Months" },
-              { key: "yearly",   label: "Yearly" }
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setBillingInterval(key)}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                  billingInterval === key
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <BillingIntervalToggle
+            value={billingInterval}
+            onChange={setBillingInterval}
+            savingsByInterval={savingsByInterval}
+          />
           <p className="text-xs text-slate-400">
             Prices shown in <span className="font-semibold text-slate-600">{displayCurrency}</span>
           </p>
@@ -807,7 +775,7 @@ function BillingPage() {
 
           const isFreeLite = name.toLowerCase() === "free lite";
           const isFreeLiteDuringTrial = Boolean(isFreeLite && isFreeTrial);
-          const isHQLockedPlan = isHQ && name.toLowerCase() !== "premium";
+          const isHQLockedPlan = isHQ && name.toLowerCase() !== "premium" && name.toLowerCase() !== "enterprise";
 
           const nextLimit = limitValue(p?.memberLimit);
           const isUpgrade = Boolean(subscribedPlanId && nextLimit > subscribedLimit);
@@ -885,7 +853,7 @@ function BillingPage() {
                   <th scope="col" className="sticky left-0 z-10 bg-white pl-2 pr-0.5 md:pl-5 md:pr-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400 max-w-[110px] md:max-w-none md:static">Features</th>
                   {plansSorted.map((p) => (
                     <th key={p?._id || p?.name} scope="col" className="px-4 py-4 text-center">
-                      <div className="text-sm font-bold text-slate-900">{p?.name || "—"}</div>
+                      <div className="text-sm font-bold text-slate-900">{formatPlanName(p?.name) || "—"}</div>
                     </th>
                   ))}
                 </tr>
@@ -964,8 +932,8 @@ function BillingPage() {
           <button
             type="button"
             onClick={onCancel}
-            disabled={manageLoading || isFreeTrial || isHQ}
-            title={isFreeTrial ? "Cannot cancel during free trial" : isHQ ? "Headquarters churches cannot cancel their Premium subscription" : undefined}
+            disabled={manageLoading || isFreeTrial}
+            title={isFreeTrial ? "Cannot cancel during free trial" : undefined}
             className="rounded-lg border border-red-200 bg-white px-4 py-2 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 text-xs"
           >
             Cancel Subscription
@@ -1211,7 +1179,7 @@ function BillingPage() {
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <div className="font-semibold text-gray-500 text-xs">Current Plan</div>
-            <div className="mt-1 font-semibold text-gray-900 text-lg">{isFreeTrial ? "Free trial" : currentPlan?.name || "—"}</div>
+            <div className="mt-1 font-semibold text-gray-900 text-lg">{isFreeTrial ? "Free trial" : formatPlanName(currentPlan?.name) || "—"}</div>
             <div className="text-gray-500 text-xs">
               {!isFreeTrial && currentPriceGhs && currentPriceDisplay !== null ? `${formatCurrency(currentPriceDisplay, displayCurrency)}/${overviewIntervalLabel}` : ""}
             </div>
@@ -1516,7 +1484,7 @@ function BillingPage() {
       <ModalShell
         open={showDowngradeConfirm}
         title="Downgrade Plan"
-        subtitle={`Switch to ${pendingDowngradePlan?.name || "a lower"} plan`}
+        subtitle={`Switch to ${formatPlanName(pendingDowngradePlan?.name) || "a lower"} plan`}
         onClose={() => { if (manageLoading) return; setShowDowngradeConfirm(false); setPendingDowngradePlan(null); }}
         maxWidthClass="max-w-xl"
       >
@@ -1589,12 +1557,12 @@ function BillingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <div className="font-semibold text-gray-500 uppercase tracking-wide text-xs">Current Plan</div>
-                <div className="mt-1 font-bold text-gray-900 text-base">{prorationData.currentPlan?.name || "—"}</div>
+                <div className="mt-1 font-bold text-gray-900 text-base">{formatPlanName(prorationData.currentPlan?.name) || "—"}</div>
                 <div className="mt-1 text-gray-500 text-xs">{display(bd.currentPlanPrice ?? 0)}/{billingInterval}</div>
               </div>
               <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
                 <div className="font-semibold text-blue-600 uppercase tracking-wide text-xs">New Plan</div>
-                <div className="mt-1 font-bold text-blue-900 text-base">{prorationData.newPlan?.name || "—"}</div>
+                <div className="mt-1 font-bold text-blue-900 text-base">{formatPlanName(prorationData.newPlan?.name) || "—"}</div>
                 <div className="mt-1 text-blue-700 text-xs">{display(bd.newPlanPrice ?? 0)}/{billingInterval}</div>
               </div>
             </div>
@@ -1605,11 +1573,11 @@ function BillingPage() {
                 <span className="font-semibold text-gray-900">{bd.remainingDays ?? 0} / {bd.totalDays ?? 0} days ({pctRemaining}%)</span>
               </div>
               <div className="flex justify-between px-4 py-3 text-green-700">
-                <span>Credit from {prorationData.currentPlan?.name}</span>
+                <span>Credit from {formatPlanName(prorationData.currentPlan?.name)}</span>
                 <span className="font-semibold">− {display(bd.currentPlanCredit ?? 0)}</span>
               </div>
               <div className="flex justify-between px-4 py-3 text-gray-700">
-                <span>{prorationData.newPlan?.name} for remaining period</span>
+                <span>{formatPlanName(prorationData.newPlan?.name)} for remaining period</span>
                 <span className="font-semibold">+ {display(bd.newPlanCost ?? 0)}</span>
               </div>
               <div className="flex justify-between px-4 py-3 bg-blue-50 rounded-b-xl">
@@ -1619,7 +1587,7 @@ function BillingPage() {
             </div>
 
             <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-gray-600 text-xs">
-              Your plan upgrades <strong>immediately</strong> on payment. Next renewal on <strong>{renewDate}</strong> at the full {prorationData.newPlan?.name} price ({display(bd.newPlanPrice ?? 0)}).
+              Your plan upgrades <strong>immediately</strong> on payment. Next renewal on <strong>{renewDate}</strong> at the full {formatPlanName(prorationData.newPlan?.name)} price ({display(bd.newPlanPrice ?? 0)}).
             </div>
 
             <div className="mt-5 flex items-center justify-end gap-3">
@@ -1671,18 +1639,18 @@ function BillingPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-4 text-sm">
                   <div className="text-gray-700">Plan</div>
-                  <div className="font-semibold text-gray-900">{selectedPlan?.name || "—"}</div>
+                  <div className="font-semibold text-gray-900">{formatPlanName(selectedPlan?.name) || "—"}</div>
                 </div>
                 {isProration && (
                   <>
                     <div className="flex items-center justify-between gap-4 text-green-700 text-sm">
-                      <div>Credit from {prorationData.currentPlan?.name}</div>
+                      <div>Credit from {formatPlanName(prorationData.currentPlan?.name)}</div>
                       <div className="font-semibold">
                         − {isGhana ? formatCurrency(bd.currentPlanCredit ?? 0, "GHS") : toDisplayPrice(bd.currentPlanCredit ?? 0) !== null ? formatCurrency(toDisplayPrice(bd.currentPlanCredit ?? 0), "USD") : "—"}
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-4 text-sm">
-                      <div className="text-gray-700">{selectedPlan?.name} for remaining period</div>
+                      <div className="text-gray-700">{formatPlanName(selectedPlan?.name)} for remaining period</div>
                       <div className="font-semibold text-gray-900">
                         + {isGhana ? formatCurrency(bd.newPlanCost ?? 0, "GHS") : toDisplayPrice(bd.newPlanCost ?? 0) !== null ? formatCurrency(toDisplayPrice(bd.newPlanCost ?? 0), "USD") : "—"}
                       </div>
@@ -1782,7 +1750,7 @@ function BillingPage() {
           <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
             <div className="text-sm">
               <span className="text-gray-500">Plan: </span>
-              <span className="font-semibold text-gray-900">{selectedPlan?.name || "—"}</span>
+              <span className="font-semibold text-gray-900">{formatPlanName(selectedPlan?.name) || "—"}</span>
             </div>
             <div className="text-right">
               <div className="font-semibold text-gray-900 text-sm">
@@ -2083,7 +2051,7 @@ function BillingPage() {
             <div className="mt-5 w-full rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-left">
               <div className="font-semibold text-green-900 text-sm">What's Next:</div>
               <div className="mt-2 space-y-1 text-green-900/90 text-sm">
-                <div>- Your {selectedPlan?.name || currentPlan?.name || "subscription"} is now active</div>
+                <div>- Your {formatPlanName(selectedPlan?.name) || formatPlanName(currentPlan?.name) || "subscription"} is now active</div>
                 <div>- Receipt has been sent to your email</div>
                 <div>- Next billing: {nextBillingText}</div>
                 <div>- Invoice available in billing history</div>

@@ -41,6 +41,9 @@ import OutreachProspect from "../models/outreachModel/outreachProspectModel.js";
 import OutreachFollowUp from "../models/outreachModel/outreachFollowUpModel.js";
 import OutreachTeam from "../models/outreachModel/outreachTeamModel.js";
 import OutreachSupport from "../models/outreachModel/outreachSupportModel.js";
+import CareCase from "../models/memberCareModel/careCaseModel.js";
+import CareVisit from "../models/memberCareModel/careVisitModel.js";
+import PrayerRequest from "../models/memberCareModel/prayerRequestModel.js";
 import GeneralExpenses from "../models/generalExpenseModel.js";
 import AnnouncementMessage from "../models/announcementMessageModel.js";
 import AnnouncementMessageDelivery from "../models/announcementMessageDeliveryModel.js";
@@ -96,6 +99,11 @@ const ENTITY = {
       { model: OutreachFollowUp, field: "assignedTo", label: "follow-up assignments" },
       { model: OutreachFollowUp, field: "conductedBy", label: "follow-ups" },
       { model: OutreachTeam, field: "members.member", label: "outreach teams" },
+      { model: CareCase, field: "member", label: "care cases" },
+      { model: CareCase, field: "assignedTo", label: "care case assignments" },
+      { model: CareVisit, field: "member", label: "care visits" },
+      { model: CareVisit, field: "conductedBy", label: "care visits" },
+      { model: PrayerRequest, field: "member", label: "prayer requests" },
       { model: AnnouncementMessageDelivery, field: "member", label: "announcement deliveries" },
     ],
   },
@@ -206,6 +214,17 @@ const ENTITY = {
       return [];
     },
     links: [],
+  },
+
+  // A care case is deletable only while it has no logged visits — visits
+  // are the case's history.
+  careCase: {
+    model: CareCase,
+    label: "care case",
+    self: () => [],
+    links: [
+      { model: CareVisit, field: "careCase", label: "care visits" },
+    ],
   },
 
   // individual attendance records carry member check-ins — locked once they

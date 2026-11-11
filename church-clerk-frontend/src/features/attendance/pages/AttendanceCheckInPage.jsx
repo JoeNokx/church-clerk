@@ -93,7 +93,7 @@ export default function AttendanceCheckInPage() {
 
   if (loadingSession) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="w-full max-w-md animate-pulse space-y-4">
           <div className="h-8 w-40 rounded bg-gray-200 mx-auto" />
           <div className="h-4 w-56 rounded bg-gray-200 mx-auto" />
@@ -105,7 +105,7 @@ export default function AttendanceCheckInPage() {
 
   if (sessionError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
             <svg className="h-7 w-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -121,7 +121,7 @@ export default function AttendanceCheckInPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -140,7 +140,7 @@ export default function AttendanceCheckInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-white py-8 px-4">
       <div className="mx-auto w-full max-w-md">
         <div className="mb-6 text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 mb-3">
@@ -206,7 +206,7 @@ export default function AttendanceCheckInPage() {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+233544455566"
+              placeholder="0544455566"
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>

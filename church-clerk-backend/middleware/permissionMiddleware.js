@@ -34,7 +34,8 @@ export const requirePermission = (moduleKey, actionKey) => {
       m === "referrals" ||
       m === "settings" ||
       m === "supportHelp" ||
-      m === "outreach"
+      m === "outreach" ||
+      m === "memberCare"
     ) {
       return m;
     }
@@ -84,6 +85,9 @@ export const requirePermission = (moduleKey, actionKey) => {
     // Legacy plans lack the outreach flag — default to allowed so existing
     // plans are unaffected; only an explicit false gates the module.
     if (featureKey === "outreach") return features?.outreach !== false;
+    // Same legacy rule as outreach — plans created before Member Care
+    // existed have no flag; only an explicit false gates the module.
+    if (featureKey === "memberCare") return features?.memberCare !== false;
     if (featureKey === "announcements") return Boolean(features?.announcements || features?.announcement);
     if (featureKey === "specialFunds") return Boolean(features?.specialFunds || features?.specialFund);
 

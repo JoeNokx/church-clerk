@@ -61,6 +61,8 @@ const BranchesOverviewPage = React.lazy(() => import("../../church/pages/Branche
 
 const WelfarePage = React.lazy(() => import("../../welfare/pages/WelfarePage.jsx"));
 
+const MemberCarePage = React.lazy(() => import("../../memberCare/pages/MemberCarePage.jsx"));
+
 const ExpensesPage = React.lazy(() => import("../../expenses/pages/ExpensesPage.jsx"));
 
 const BudgetingPage = React.lazy(() => import("../../budgeting/pages/BudgetingPage.jsx"));
@@ -1474,6 +1476,8 @@ function DashboardHome() {
   if (page === "branches-overview") PageComponent = BranchesOverviewPage;
 
   if (page === "welfare") PageComponent = WelfarePage;
+
+  if (page === "member-care") PageComponent = MemberCarePage;
 
   if (page === "pledge-details") PageComponent = PledgeDetailsPage;
 

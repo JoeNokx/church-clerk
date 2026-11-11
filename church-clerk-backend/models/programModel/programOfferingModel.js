@@ -19,6 +19,7 @@ const programOfferingSchema = new mongoose.Schema(
     },
 
     seedName: { type: String, trim: true },
+    seedType: { type: String, trim: true },
 
     offeringDate: { type: Date, required: true },
 

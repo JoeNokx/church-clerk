@@ -26,6 +26,7 @@ const planRank = (name) => {
   if (n === "basic") return 1;
   if (n === "standard") return 2;
   if (n === "premium" || n.includes("premium")) return 3;
+  if (n === "enterprise") return 4;
   return 99;
 };
 

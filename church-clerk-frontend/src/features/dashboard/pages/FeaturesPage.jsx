@@ -67,6 +67,12 @@ const GROUPS = [
         desc: "Record visitors, first-timers, and outreach contacts — then assign follow-ups and watch people move from first visit to full membership.",
         bullets: ["Visitor and contact records", "Assigned follow-ups with status", "Convert prospects into members"],
       },
+      {
+        name: "Member Care",
+        accent: "Care that doesn't depend on memory.",
+        desc: "Track pastoral care cases — illness, bereavement, hospital visits, family crises — log every visit and call, and keep the church's prayer list in one place.",
+        bullets: ["Care cases with assigned caregivers", "Visit and follow-up history per case", "Prayer requests with answered tracking"],
+      },
     ],
   },
   {

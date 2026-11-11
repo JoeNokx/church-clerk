@@ -12,6 +12,7 @@ const planRank = (plan) => {
   if (n === "basic") return 1;
   if (n === "standard") return 2;
   if (n === "premium") return 3;
+  if (n === "enterprise") return 4;
   return 99;
 };
 

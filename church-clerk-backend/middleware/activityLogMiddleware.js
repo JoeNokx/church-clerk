@@ -58,6 +58,7 @@ function inferModule(req) {
   const url = String(req.originalUrl || "");
 
   const mappings = [
+    ["/api/v1/member-care", "MemberCare"],
     ["/api/v1/member", "Members"],
     ["/api/v1/attendance", "Attendance"],
     ["/api/v1/program", "Programs"],

@@ -146,6 +146,7 @@ function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
                 </div>
               </div>
 
+              {!initialData?.event ? (
               <div>
                 <div className="flex items-center justify-between">
                   <label className="block font-semibold text-gray-500 text-xs">Service Type</label>
@@ -169,6 +170,7 @@ function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
                   ))}
                 </select>
               </div>
+              ) : null}
 
               <div>
                 <label className="block font-semibold text-gray-500 text-xs">Amount</label>

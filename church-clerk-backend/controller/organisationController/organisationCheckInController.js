@@ -67,9 +67,16 @@ const orgMemberCheckIn = async (req, res) => {
     const churchId = attendance.church?._id || attendance.church;
     const entityId = attendance[entityField]?._id || attendance[entityField];
 
+    // Match on the last 9 digits so "0551234567" and "+233551234567"
+    // resolve to the same member regardless of stored format.
+    const phoneDigits = String(phoneNumber).replace(/\D/g, "");
+    if (phoneDigits.length < 7) {
+      return res.status(400).json({ message: "Invalid phone number." });
+    }
+    const suffix = phoneDigits.slice(-9);
     const member = await Member.findOne({
       church: churchId,
-      phoneNumber: String(phoneNumber).trim(),
+      phoneNumber: { $regex: `${suffix}$` },
       status: { $in: ATTENDANCE_STATUSES }
     }).lean();
     if (!member) {

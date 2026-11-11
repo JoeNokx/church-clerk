@@ -31,6 +31,7 @@ const FEATURE_GROUPS = [
       { key: "programsEvents", label: "Programs" },
       { key: "organisations", label: "Organisations" },
       { key: "outreach", label: "Outreach & Follow-up" },
+      { key: "memberCare", label: "Member Care" },
       { key: "announcements", label: "Announcements" }
     ]
   },
@@ -75,7 +76,7 @@ const getEmptyFeatures = () => {
 
 const normalizePlanValue = (value) => {
   const v = safeString(value).trim().toLowerCase();
-  if (v === "free lite" || v === "basic" || v === "standard" || v === "premium") return v;
+  if (v === "free lite" || v === "basic" || v === "standard" || v === "premium" || v === "enterprise") return v;
   return "free lite";
 };
 
@@ -115,7 +116,8 @@ function BillingPlansPage() {
       { value: "free lite", label: "Free Lite" },
       { value: "basic", label: "Basic" },
       { value: "standard", label: "Standard" },
-      { value: "premium", label: "Premium" }
+      { value: "premium", label: "Premium" },
+      { value: "enterprise", label: "Enterprise" }
     ],
     []
   );
@@ -125,7 +127,7 @@ function BillingPlansPage() {
     return arr.sort((a, b) => {
       const aName = safeString(a?.name).toLowerCase();
       const bName = safeString(b?.name).toLowerCase();
-      const order = (n) => (n === "free lite" ? 0 : n === "basic" ? 1 : n === "standard" ? 2 : n === "premium" ? 3 : 99);
+      const order = (n) => (n === "free lite" ? 0 : n === "basic" ? 1 : n === "standard" ? 2 : n === "premium" ? 3 : n === "enterprise" ? 4 : 99);
       return order(aName) - order(bName);
     });
   }, [plans]);

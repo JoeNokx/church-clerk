@@ -24,6 +24,7 @@ export const ROLE_PERMISSIONS = {
     programs: ["read", "create", "update", "delete"],
     announcements: ["read", "create", "update", "delete"],
     outreach: ["read", "create", "update", "delete"],
+    memberCare: ["read", "create", "update", "delete"],
     reportsAnalytics: ["read"],
     billing: ["read"],
     referrals: ["read"],
@@ -54,6 +55,7 @@ export const ROLE_PERMISSIONS = {
     budgeting: ["read", "create", "update", "delete"],
     announcements: ["read", "create", "update", "delete"],
     outreach: ["read", "create", "update", "delete"],
+    memberCare: ["read", "create", "update", "delete"],
     finance: ["read"],
     billing: ["read", "create", "update", "delete"],
     referrals: ["read"],
@@ -87,6 +89,7 @@ export const ROLE_PERMISSIONS = {
   associateadmin: {
     dashboard: ["read"],
     outreach: ["read", "create", "update", "delete"],
+    memberCare: ["read", "create", "update", "delete"],
     billing: ["read"],
     settingsMyProfile: ["read", "update"]
   },
@@ -95,6 +98,7 @@ export const ROLE_PERMISSIONS = {
     dashboard: ["read"],
     organisation: ["read", "create", "update", "delete"],
     outreach: ["read", "create", "update", "delete"],
+    memberCare: ["read", "create", "update", "delete"],
     settingsMyProfile: ["read", "update"]
   },
 
@@ -104,6 +108,7 @@ export const ROLE_PERMISSIONS = {
     announcements: ["read", "create"],
     attendance: ["read", "create"],
     outreach: ["read", "create", "update"],
+    memberCare: ["read", "create", "update"],
     settingsMyProfile: ["read", "update"]
   },
 
@@ -112,6 +117,7 @@ export const ROLE_PERMISSIONS = {
     members: ["read"],
     attendance: ["read"],
     outreach: ["read", "create", "update"],
+    memberCare: ["read", "create", "update"],
     reportsAnalytics: ["read"],
     settingsMyProfile: ["read", "update"]
   }

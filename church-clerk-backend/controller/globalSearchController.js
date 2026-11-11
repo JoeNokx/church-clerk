@@ -12,6 +12,7 @@ import Budget from "../models/financeModel/budgetingModel.js";
 import ChurchProject from "../models/financeModel/projectModel/churchProjectModel.js";
 import Offering from "../models/financeModel/offeringModel.js";
 import WelfareDisbursement from "../models/financeModel/welfareModel/welfareDisbursementModel.js";
+import CareCase from "../models/memberCareModel/careCaseModel.js";
 import Pledge from "../models/financeModel/pledgeModel/pledgeModel.js";
 import BusinessVentures from "../models/financeModel/businessModel/businessVenturesModel.js";
 import GeneralExpenses from "../models/generalExpenseModel.js";
@@ -398,6 +399,36 @@ export const globalSearch = async (req, res) => {
                 badge: r.amount != null ? `GH₵ ${Number(r.amount).toLocaleString()}` : "",
                 date: r.date,
                 module: "welfare",
+              }));
+            }
+          })
+      );
+    }
+
+    // Member Care — confidential cases stay invisible to anyone but
+    // churchadmin / superadmin, same rule as the module endpoints.
+    if (can(perms, "memberCare")) {
+      const caseFilter = { ...base, $or: [{ title: regex }, { category: regex }, { referenceId: regex }] };
+      const canConfidential =
+        perms.super === true ||
+        ["churchadmin", "superadmin"].includes(String(req.user?.role || "").trim().toLowerCase());
+      if (!canConfidential) caseFilter.confidential = { $ne: true };
+      tasks.push(
+        CareCase.find(caseFilter)
+          .select("_id title category status priority member dateOpened createdAt")
+          .populate("member", "firstName lastName photoUrl")
+          .sort({ createdAt: -1 })
+          .limit(LIMIT)
+          .lean()
+          .then((rows) => {
+            if (rows.length) {
+              results.memberCare = rows.map((r) => ({
+                _id: r._id,
+                title: r.title || "—",
+                subtitle: `${r.member?.firstName || ""} ${r.member?.lastName || ""}`.trim() || r.category || "",
+                badge: r.status || "",
+                date: r.dateOpened || r.createdAt,
+                module: "memberCare",
               }));
             }
           })
