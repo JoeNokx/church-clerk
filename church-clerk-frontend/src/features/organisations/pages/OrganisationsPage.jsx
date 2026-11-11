@@ -347,6 +347,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
+                placeholder="e.g. Weekly youth fellowship meetings"
               />
             </div>
 
@@ -409,7 +410,7 @@ function MinistryForm({ open, type, mode, initialData, onClose, onSuccess }) {
                           )
                         }
                         className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                        placeholder="Venue"
+                        placeholder="e.g. Church Hall"
                       />
                     </div>
 

@@ -446,7 +446,7 @@ function IncomeFormModal({ open, mode, initialData, onClose, onSubmit, title, cu
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g. Extra details about this income"
+            placeholder="e.g. Sold 20 hymn books"
           />
         </div>
 
@@ -674,7 +674,7 @@ function ExpenseFormModal({ open, mode, initialData, onClose, onSubmit, title, c
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="e.g. Extra details about this expense"
+              placeholder="e.g. Restocked shop shelves"
             />
           </div>
         </div>

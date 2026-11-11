@@ -349,7 +349,7 @@ export default function JoinPage() {
                   error={Boolean(formError && !isValidPhoneNumber(phoneNumber || ""))} />
               </Field>
               <Field label="Email">
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={INPUT_CLS} placeholder="e.g. john@example.com" />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={INPUT_CLS} placeholder="e.g. name@example.com" />
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Gender">
@@ -469,7 +469,7 @@ export default function JoinPage() {
               <Field label="Note (optional)">
                 <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="Any additional information..." />
+                  placeholder="e.g. I would like to join the choir" />
               </Field>
             </div>
           </div>

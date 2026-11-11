@@ -916,6 +916,7 @@ function MembersPageInner() {
                     {f.options ? (
                       <select
                         value={editDraft[f.key] || ""}
+                        placeholder={f.label ? `Enter ${String(f.label).toLowerCase()}` : "Enter value"}
                         onChange={(e) => setEditDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                         className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-gray-700 text-sm focus:border-blue-500 focus:outline-none"
                       >
@@ -927,6 +928,7 @@ function MembersPageInner() {
                       <input
                         type={f.type === "date" ? "date" : "text"}
                         value={editDraft[f.key] || ""}
+                        placeholder={f.label ? `Enter ${String(f.label).toLowerCase()}` : "Enter value"}
                         onChange={(e) => setEditDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                         className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-gray-700 text-sm focus:border-blue-500 focus:outline-none"
                       />

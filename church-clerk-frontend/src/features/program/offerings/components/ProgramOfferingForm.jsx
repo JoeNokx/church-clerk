@@ -243,7 +243,7 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                 onChange={(e) => setAmount(e.target.value)}
                 type="number"
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="0"
+                placeholder="0.00"
               />
             </div>
 
@@ -268,7 +268,7 @@ function ProgramOfferingForm({ open, mode, initialData, onClose, onSuccess }) {
                 maxLength={500}
                 type="text"
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Optional (max 500 chars)"
+                placeholder="e.g. Thanksgiving seed"
               />
             </div>
           </div>

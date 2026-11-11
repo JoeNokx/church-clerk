@@ -253,7 +253,7 @@ function CareCaseForm({ open, mode, initialData, onClose, onSuccess }) {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 className="mt-2 w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 py-2 text-[14px] text-gray-700 lg:text-sm"
-                placeholder="Brief description of the care need..."
+                placeholder="e.g. Recovering from surgery, needs weekly visits"
               />
             </div>
 

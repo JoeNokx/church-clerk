@@ -274,7 +274,7 @@ function SupportFormModal({ open, mode, initialData, eventId, onClose, onSaved, 
                     value={manualName}
                     onChange={(e) => setManualName(e.target.value)}
                     className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                    placeholder="Name"
+                    placeholder="e.g. John Doe"
                   />
                 ) : (
                   <div className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 flex items-center md:h-12 lg:h-11 lg:text-sm">
@@ -309,7 +309,7 @@ function SupportFormModal({ open, mode, initialData, eventId, onClose, onSaved, 
                         if (selectedPerson) setSelectedPerson(null);
                       }}
                       className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                      placeholder="Search member or visitor by name, phone, email"
+                      placeholder="Search members or visitors by name, phone, or email"
                     />
                     {debouncedQuery.trim() || searchLoading ? (
                       <div className="mt-3 max-h-64 overflow-y-auto rounded-lg border border-gray-200">
@@ -350,7 +350,7 @@ function SupportFormModal({ open, mode, initialData, eventId, onClose, onSaved, 
                       value={manualName}
                       onChange={(e) => setManualName(e.target.value)}
                       className="mt-3 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                      placeholder="Type their name if not a member or visitor"
+                      placeholder="e.g. John Doe"
                     />
                   </>
                 )}
@@ -364,7 +364,7 @@ function SupportFormModal({ open, mode, initialData, eventId, onClose, onSaved, 
                 onChange={(e) => setAmount(e.target.value)}
                 type="number"
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder="0"
+                placeholder="0.00"
               />
             </div>
 

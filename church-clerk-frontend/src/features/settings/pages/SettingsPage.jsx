@@ -1582,6 +1582,7 @@ function SettingsPage() {
                   <input
                     type="text"
                     value={myFullName}
+                    placeholder="e.g. John Doe"
                     onChange={(e) => setMyFullName(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
@@ -1594,6 +1595,7 @@ function SettingsPage() {
                   <input
                     type="email"
                     value={myEmail}
+                    placeholder="e.g. name@example.com"
                     onChange={(e) => setMyEmail(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
@@ -1659,6 +1661,7 @@ function SettingsPage() {
                   <input
                     type={pwOldShow ? "text" : "password"}
                     value={pwOld}
+                    placeholder="Enter your current password"
                     onChange={(e) => setPwOld(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     required
@@ -1677,6 +1680,7 @@ function SettingsPage() {
                     <input
                       type={pwNewShow ? "text" : "password"}
                       value={pwNew}
+                      placeholder="Create a new password (min. 8 characters)"
                       onChange={(e) => setPwNew(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                       required
@@ -1693,6 +1697,7 @@ function SettingsPage() {
                     <input
                       type={pwConfirmShow ? "text" : "password"}
                       value={pwConfirm}
+                      placeholder="Confirm your new password"
                       onChange={(e) => setPwConfirm(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                       required
@@ -1872,7 +1877,7 @@ function SettingsPage() {
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Church Name</label>
                 <input
                   type="text"
-                  placeholder="Your church name"
+                  placeholder="e.g. Grace Assembly Church"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
@@ -1885,7 +1890,7 @@ function SettingsPage() {
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Pastor's Name</label>
                 <input
                   type="text"
-                  placeholder="Pastor's full name"
+                  placeholder="e.g. Rev. John Mensah"
                   value={pastor}
                   onChange={(e) => setPastor(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
@@ -2072,7 +2077,7 @@ function SettingsPage() {
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Church Email (optional)</label>
                 <input
                   type="email"
-                  placeholder="church@example.com"
+                  placeholder="e.g. name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
@@ -2162,7 +2167,7 @@ function SettingsPage() {
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Location</label>
                 <input
                   type="text"
-                  placeholder="Enter your location"
+                  placeholder="e.g. Accra"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
@@ -2225,7 +2230,7 @@ function SettingsPage() {
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Referral Code (optional)</label>
                 <input
                   type="text"
-                  placeholder="Referral code"
+                  placeholder="e.g. GRACE2026"
                   value={referralCodeInput}
                   onChange={(e) => setReferralCodeInput(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
@@ -2347,7 +2352,7 @@ function SettingsPage() {
                     value={senderIdInput}
                     onChange={(e) => setSenderIdInput(String(e.target.value || "").toUpperCase())}
                     maxLength={11}
-                    placeholder="E.g. MYCHURCH"
+                    placeholder="e.g. MYCHURCH"
                     className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                     disabled={!canWrite || senderIdLoading}
                   />
@@ -2957,7 +2962,7 @@ function SettingsPage() {
                   <label className="block font-medium text-gray-700 mb-1 text-sm">Search member</label>
                   <input
                     type="text"
-                    placeholder="Search member by name, ID or phone"
+                    placeholder="Search members by name, ID, or phone"
                     value={memberSearch}
                     onChange={(e) => { setMemberSearch(e.target.value); setMemberSearchOpen(true); }}
                     onFocus={() => memberResults.length && setMemberSearchOpen(true)}
@@ -2999,7 +3004,7 @@ function SettingsPage() {
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
                 <input
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="e.g. John Doe"
                   value={newFullName}
                   onChange={(e) => setNewFullName(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
@@ -3011,7 +3016,7 @@ function SettingsPage() {
                 <label className="block font-medium text-gray-700 mb-1 text-sm">Email Address</label>
                 <input
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="e.g. name@example.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   autoComplete="off"
@@ -3128,6 +3133,7 @@ function SettingsPage() {
                 <input
                   type="text"
                   value={editFullName}
+                  placeholder="e.g. John Doe"
                   onChange={(e) => setEditFullName(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required
@@ -3139,6 +3145,7 @@ function SettingsPage() {
                 <input
                   type="email"
                   value={editEmail}
+                  placeholder="e.g. name@example.com"
                   onChange={(e) => setEditEmail(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
                   required

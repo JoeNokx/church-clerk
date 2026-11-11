@@ -120,7 +120,7 @@ function AbsenteesTab({
           <input
             value={search}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder="Search name or phone..."
+            placeholder="Search by name or phone..."
             className="h-9 flex-1 min-w-[160px] rounded-lg border border-gray-200 bg-white px-2.5 text-gray-700 text-xs outline-none focus:ring-2 focus:ring-blue-100"
           />
           <div className="relative shrink-0">
@@ -158,7 +158,7 @@ function AbsenteesTab({
               onChange={(e) => onYearChange?.(e.target.value.replace(/[^\d]/g, "").slice(0, 4))}
               type="text"
               inputMode="numeric"
-              placeholder="Year"
+              placeholder="e.g. 2026"
               className="h-9 w-14 bg-transparent px-2 text-gray-700 outline-none"
             />
           </div>

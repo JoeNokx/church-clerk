@@ -213,7 +213,7 @@ function ProgramEditPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  placeholder="Program title"
+                  placeholder="e.g. Easter Convention"
                 />
               </Field>
 
@@ -264,7 +264,7 @@ function ProgramEditPage() {
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
                   className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  placeholder="Program venue"
+                  placeholder="e.g. Main Auditorium"
                 />
               </Field>
 
@@ -274,7 +274,7 @@ function ProgramEditPage() {
                     value={organizers}
                     onChange={(e) => setOrganizers(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                    placeholder="e.g. John Doe, Jane Doe"
+                    placeholder="e.g. Pastor John, Deacon Kofi"
                   />
                 </Field>
               </div>
@@ -285,7 +285,7 @@ function ProgramEditPage() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
-                    placeholder="Optional program description"
+                    placeholder="e.g. A 3-day revival for the whole community"
                   />
                 </Field>
               </div>

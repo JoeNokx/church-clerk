@@ -206,7 +206,7 @@ function VisitForm({ open, mode, careCase, initialData, onClose, onSuccess }) {
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
                 className="mt-2 w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 py-2 text-[14px] text-gray-700 lg:text-sm"
-                placeholder="What happened during the visit..."
+                placeholder="e.g. Prayed with the family and shared encouragement"
               />
             </div>
           </div>

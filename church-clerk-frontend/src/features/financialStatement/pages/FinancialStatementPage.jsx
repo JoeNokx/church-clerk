@@ -99,7 +99,7 @@ function YearInput({ value, onChange }) {
         if (n >= 1900 && n <= 2100) onChange(n);
       }}
       maxLength={4}
-      placeholder="YYYY"
+      placeholder="e.g. 2026"
       className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-gray-900 text-sm w-24"
     />
   );

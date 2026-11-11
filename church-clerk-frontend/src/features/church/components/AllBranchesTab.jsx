@@ -197,7 +197,7 @@ function AllBranchesTab({ onViewBranch }) {
                   setSearchValue(e.target.value);
                   debouncedSearch(e.target.value);
                 }}
-                placeholder="Search name, location or pastor..."
+                placeholder="Search by name, location, or pastor..."
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
               />
               <Select value={status || "all"} onChange={(e) => onStatusChange(e.target.value)}>

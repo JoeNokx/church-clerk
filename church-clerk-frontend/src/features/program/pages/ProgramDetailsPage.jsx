@@ -1535,7 +1535,7 @@ function ProgramDetailsPage() {
                     <input
                       value={advSearch}
                       onChange={(e) => setAdvSearch(e.target.value)}
-                      placeholder="Search name, email, phone"
+                      placeholder="Search by name, phone, or email"
                       className="h-10 w-full md:w-[160px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                     />
                     {canEdit ? (
@@ -1899,13 +1899,13 @@ function ProgramDetailsPage() {
                 value={editAttendeeFullName}
                 onChange={(e) => setEditAttendeeFullName(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Full name"
+                placeholder="e.g. John Doe"
               />
               <input
                 value={editAttendeeEmail}
                 onChange={(e) => setEditAttendeeEmail(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Email (optional)"
+                placeholder="e.g. name@example.com"
               />
               <PhoneNumberInput
                 value={editAttendeePhone}
@@ -1916,7 +1916,7 @@ function ProgramDetailsPage() {
                 value={editAttendeeLocation}
                 onChange={(e) => setEditAttendeeLocation(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Location (optional)"
+                placeholder="e.g. Accra"
               />
               <div>
                 <label className="block font-semibold text-gray-500 text-xs">Registration Date</label>
@@ -1966,7 +1966,7 @@ function ProgramDetailsPage() {
             value={editFileName}
             onChange={(e) => setEditFileName(e.target.value)}
             className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="File name"
+            placeholder="e.g. Program flyer"
           />
 
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -2258,7 +2258,7 @@ function ProgramDetailsPage() {
                     onChange={(e) => setRegMemberQuery(e.target.value)}
                     type="text"
                     className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                    placeholder="Search member or visitor by name, phone, email"
+                    placeholder="Search members or visitors by name, phone, or email"
                   />
                   {String(regMemberQuery || "").trim() ? (
                     <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
@@ -2311,13 +2311,13 @@ function ProgramDetailsPage() {
                 value={regFullName}
                 onChange={(e) => setRegFullName(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Full name"
+                placeholder="e.g. John Doe"
               />
               <input
                 value={regEmail}
                 onChange={(e) => setRegEmail(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Email (optional)"
+                placeholder="e.g. name@example.com"
               />
               <PhoneNumberInput
                 value={regPhone}
@@ -2328,7 +2328,7 @@ function ProgramDetailsPage() {
                 value={regLocation}
                 onChange={(e) => setRegLocation(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Location (optional)"
+                placeholder="e.g. Accra"
               />
               {regAttendeeType === "guest" ? (
                 <div>

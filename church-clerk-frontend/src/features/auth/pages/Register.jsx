@@ -120,7 +120,7 @@ function Register() {
           <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
           <input
             type="text"
-            placeholder="John Doe"
+            placeholder="e.g. John Doe"
             value={fullName}
             onChange={(e) => { setFullName(e.target.value); setFieldErrors((p) => ({ ...p, fullName: undefined })); }}
             className={`w-full rounded-xl border px-4 py-3 lg:py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${
@@ -136,7 +136,7 @@ function Register() {
           <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
           <input
             type="email"
-            placeholder="you@example.com"
+            placeholder="e.g. name@example.com"
             value={email}
             onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
             className={`w-full rounded-xl border px-4 py-3 lg:py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 ${

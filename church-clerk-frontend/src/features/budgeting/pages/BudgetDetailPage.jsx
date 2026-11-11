@@ -412,7 +412,7 @@ function AddItemModal({ onAdd, onClose, saving, initialData, defaultPeriod }) {
                     <input
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      placeholder="Type a category — e.g. Transport, Materials"
+                      placeholder="e.g. Transport, Materials"
                       className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
                     />
                     <p className="mt-1.5 text-[11px] text-amber-600">
@@ -540,7 +540,7 @@ function AddItemModal({ onAdd, onClose, saving, initialData, defaultPeriod }) {
               Notes <span className="font-normal text-gray-400">(optional)</span>
             </label>
             <input value={notes} onChange={(e) => setNotes(e.target.value.slice(0, 500))}
-              maxLength={500} placeholder="Short note"
+              maxLength={500} placeholder="e.g. Transport for outreach"
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700" />
             <div className="mt-0.5 text-right text-[10px] text-gray-400">{notes.length}/500</div>
           </div>

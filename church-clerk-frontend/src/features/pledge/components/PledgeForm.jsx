@@ -256,7 +256,7 @@ function PledgeForm({ scope, disabled, onDone, onCancel }) {
               onChange={(e) => setPersonQuery(e.target.value)}
               type="text"
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="Search member or visitor by name, phone, email"
+              placeholder="Search members or visitors by name, phone, or email"
             />
             {String(personQuery || "").trim() ? (
               <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
@@ -303,7 +303,7 @@ function PledgeForm({ scope, disabled, onDone, onCancel }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g., John Doe"
+            placeholder="e.g. John Doe"
           />
         </div>
 
@@ -378,7 +378,7 @@ function PledgeForm({ scope, disabled, onDone, onCancel }) {
             onChange={(e) => setNote(e.target.value.slice(0, 500))}
             maxLength={500}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Optional (max 500 chars)"
+            placeholder="e.g. Promise to pay in full by December"
           />
           <div className="mt-1 text-right text-gray-400 text-xs">{note.length}/500</div>
         </div>

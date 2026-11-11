@@ -264,7 +264,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
                         }
                       }}
                       className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                      placeholder="Search name, phone, email..."
+                      placeholder="Search by name, phone, or email..."
                     />
 
                     <div ref={listRef} className="mt-3 max-h-64 overflow-y-auto rounded-lg border border-gray-200">
@@ -306,7 +306,7 @@ function WelfareContributionForm({ open, mode, initialData, onClose, onSuccess }
                 onChange={(e) => setAmount(e.target.value)}
                 type="number"
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder="0"
+                placeholder="0.00"
               />
             </div>
 

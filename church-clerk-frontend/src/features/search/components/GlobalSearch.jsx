@@ -370,7 +370,7 @@ export default function GlobalSearch() {
           value={query}
           onChange={handleChange}
           onFocus={() => setOpen(true)}
-          placeholder="Search members, finance, attendance…"
+          placeholder="Search members, finance, attendance..."
           className="flex-1 min-w-0 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none"
           autoComplete="off"
           spellCheck={false}

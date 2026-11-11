@@ -429,7 +429,7 @@ function RegisterChurch() {
           <label className="block font-medium text-gray-700 mb-1 text-sm">Church Name <span className="text-red-500">*</span></label>
           <input
             type="text"
-            placeholder="Your church name"
+            placeholder="e.g. Grace Assembly Church"
             value={name}
             onChange={(e) => { setName(e.target.value); clearFieldError("name"); }}
             aria-invalid={Boolean(fieldErrors.name)}
@@ -583,7 +583,7 @@ function RegisterChurch() {
           <label className="block font-medium text-gray-700 mb-1 text-sm">Pastor's Name <span className="text-red-500">*</span></label>
           <input
             type="text"
-            placeholder="Pastor's full name"
+            placeholder="e.g. Rev. John Mensah"
             value={pastor}
             onChange={(e) => { setPastor(e.target.value); clearFieldError("pastor"); }}
             aria-invalid={Boolean(fieldErrors.pastor)}
@@ -606,7 +606,7 @@ function RegisterChurch() {
           <label className="block font-medium text-gray-700 mb-1 text-sm">Church Email (optional)</label>
           <input
             type="email"
-            placeholder="church@example.com"
+            placeholder="e.g. name@example.com"
             value={email}
             onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
             aria-invalid={Boolean(fieldErrors.email)}
@@ -685,7 +685,7 @@ function RegisterChurch() {
           <label className="block font-medium text-gray-700 mb-1 text-sm">City <span className="text-red-500">*</span></label>
           <input
             type="text"
-            placeholder="City"
+            placeholder="e.g. Accra"
             value={city}
             onChange={(e) => { setCity(e.target.value); clearFieldError("city"); }}
             aria-invalid={Boolean(fieldErrors.city)}
@@ -698,7 +698,7 @@ function RegisterChurch() {
           <label className="block font-medium text-gray-700 mb-1 text-sm">Location (optional)</label>
           <input
             type="text"
-            placeholder="Street address"
+            placeholder="e.g. 12 Main Street"
             value={streetAddress}
             onChange={(e) => setStreetAddress(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-3 md:py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900 text-sm"
@@ -752,7 +752,7 @@ function RegisterChurch() {
           <label className="block font-medium text-gray-700 mb-1 text-sm">Referral Code (optional)</label>
           <input
             type="text"
-            placeholder="Referral code"
+            placeholder="e.g. GRACE2026"
             value={referralCodeInput}
             onChange={(e) => { setReferralCodeInput(e.target.value); clearFieldError("referralCodeInput"); }}
             aria-invalid={Boolean(fieldErrors.referralCodeInput)}

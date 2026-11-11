@@ -203,7 +203,7 @@ function TicketDetailView({ ticket, onBack, onUpdate }) {
           <textarea
             value={ratingFeedback}
             onChange={(e) => setRatingFeedback(e.target.value)}
-            placeholder="Optional feedback…"
+            placeholder="e.g. Great support, thank you"
             rows={2}
             className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-200"
           />
@@ -236,7 +236,7 @@ function TicketDetailView({ ticket, onBack, onUpdate }) {
           <textarea
             value={reopenNote}
             onChange={(e) => setReopenNote(e.target.value)}
-            placeholder="Describe what still needs to be resolved…"
+            placeholder="e.g. Still cannot log in on mobile"
             rows={3}
             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200"
           />
@@ -875,7 +875,7 @@ function SupportHelpPage() {
                   value={form.subject}
                   onChange={(e) => setField("subject", e.target.value)}
                   className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200 text-sm"
-                  placeholder="E.g. Cannot export report"
+                  placeholder="e.g. Cannot export report"
                 />
               </div>
 
@@ -924,7 +924,7 @@ function SupportHelpPage() {
                   onChange={(e) => setField("description", e.target.value)}
                   rows={5}
                   className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200 text-sm"
-                  placeholder="Describe the issue in detail..."
+                  placeholder="e.g. Export button does nothing on the reports page"
                 />
               </div>
 

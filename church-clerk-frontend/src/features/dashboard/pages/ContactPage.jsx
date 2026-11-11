@@ -93,15 +93,15 @@ function ContactPage() {
                   <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700">Name</label>
-                      <input type="text" name="name" required value={form.name} onChange={handleChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors" placeholder="Your full name" />
+                      <input type="text" name="name" required value={form.name} onChange={handleChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors" placeholder="e.g. John Doe" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700">Email</label>
-                      <input type="email" name="email" required value={form.email} onChange={handleChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors" placeholder="you@example.com" />
+                      <input type="email" name="email" required value={form.email} onChange={handleChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors" placeholder="e.g. name@example.com" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700">Church (optional)</label>
-                      <input type="text" name="church" value={form.church} onChange={handleChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors" placeholder="Your church name" />
+                      <input type="text" name="church" value={form.church} onChange={handleChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors" placeholder="e.g. Grace Assembly Church" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700">Message</label>

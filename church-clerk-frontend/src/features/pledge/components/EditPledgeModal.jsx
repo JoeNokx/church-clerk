@@ -135,7 +135,7 @@ function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  placeholder="e.g., John Doe"
+                  placeholder="e.g. John Doe"
                 />
               </div>
 
@@ -210,7 +210,7 @@ function EditPledgeModal({ open, initialData, onClose, onSubmit }) {
                   onChange={(e) => setNote(e.target.value.slice(0, 500))}
                   maxLength={500}
                   className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                  placeholder="Optional (max 500 chars)"
+                  placeholder="e.g. Promise to pay in full by December"
                 />
                 <div className="mt-1 text-right text-gray-400 text-xs">{note.length}/500</div>
               </div>

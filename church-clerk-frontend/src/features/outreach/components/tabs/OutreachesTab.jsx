@@ -220,7 +220,7 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LBL}>Location</label>
-              <input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Venue / address" className={INP} />
+              <input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="e.g. Community Park, Accra" className={INP} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -231,7 +231,7 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
           </div>
           <SearchableChipSelect
             label="Coordinator(s)"
-            placeholder="Search coordinator…"
+            placeholder="Search coordinator..."
             options={members}
             selected={form.coordinator}
             getLabel={(m) => `${m.firstName} ${m.lastName}`}
@@ -240,7 +240,7 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
           />
           <SearchableChipSelect
             label="Outreach Team(s)"
-            placeholder="Search team…"
+            placeholder="Search team..."
             options={teams}
             selected={form.teams}
             getLabel={(t) => t.name}
@@ -249,15 +249,15 @@ function EventFormModal({ open, mode, initialData, members, teams, onClose, onSa
           />
           <div>
             <label className={LBL}>Objective</label>
-            <textarea value={form.objective} onChange={(e) => set("objective", e.target.value)} rows={2} placeholder="What do you aim to achieve?" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
+            <textarea value={form.objective} onChange={(e) => set("objective", e.target.value)} rows={2} placeholder="e.g. Reach 100 people with the gospel" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
           <div>
             <label className={LBL}>Description (optional)</label>
-            <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={2} placeholder="Brief description of the outreach" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
+            <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={2} placeholder="e.g. Door-to-door evangelism in Ablekuma" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
           <div>
             <label className={LBL}>Internal Notes</label>
-            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} placeholder="Notes for the team" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
+            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} placeholder="e.g. Meet at the church gate by 6am" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
           {error ? <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{error}</div> : null}
         </div>

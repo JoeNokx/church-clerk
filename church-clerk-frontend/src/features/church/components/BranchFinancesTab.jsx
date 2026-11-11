@@ -68,6 +68,7 @@ function MonthYearPicker({ month, year, onChange }) {
             </button>
             <input
               type="number"
+              placeholder="e.g. 2026"
               value={draftYear}
               onChange={(e) => setDraftYear(e.target.value === "" ? "" : parseInt(e.target.value, 10) || draftYear)}
               onBlur={(e) => commitYear(e.target.value)}

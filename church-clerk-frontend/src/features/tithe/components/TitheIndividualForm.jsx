@@ -298,7 +298,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
                 onChange={(e) => setAmount(e.target.value)}
                 type="number"
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder="0"
+                placeholder="0.00"
               />
             </div>
 
@@ -353,7 +353,7 @@ function TitheIndividualForm({ open, mode, initialData, onClose, onSuccess }) {
                   }
                 }}
                 type="text"
-                placeholder="Type name, phone, email..."
+                placeholder="Search by name, phone, or email..."
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
               />
 

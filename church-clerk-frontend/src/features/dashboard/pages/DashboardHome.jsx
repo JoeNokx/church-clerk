@@ -1234,7 +1234,7 @@ function DashboardOverview({ onNavigate }) {
 
                   }}
 
-                  placeholder="Search members"
+                  placeholder="Search by name, phone, or ID"
 
                   className="flex-1 min-w-[160px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 text-sm"
 

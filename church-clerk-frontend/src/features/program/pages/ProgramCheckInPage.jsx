@@ -255,7 +255,7 @@ export default function ProgramCheckInPage() {
                     value={memberQuery}
                     onChange={(e) => setMemberQuery(e.target.value)}
                     className={INPUT_CLS}
-                    placeholder="Start typing your name…"
+                    placeholder="Start typing your name..."
                   />
                 </Field>
                 {memberQuery.trim().length >= 2 && (
@@ -305,7 +305,7 @@ export default function ProgramCheckInPage() {
           )}
 
           <Field label="Email">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={INPUT_CLS} placeholder="e.g. john@example.com" />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={INPUT_CLS} placeholder="e.g. name@example.com" />
           </Field>
           <Field label="Location">
             <input value={location} onChange={(e) => setLocation(e.target.value)} className={INPUT_CLS} placeholder="e.g. Accra" />

@@ -112,7 +112,7 @@ function AddLookupValueModal({ open, kind, onClose, onCreated }) {
               }
             }}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Type and save"
+            placeholder="e.g. New option"
           />
 
           <div className="mt-5 flex items-center justify-end gap-3">

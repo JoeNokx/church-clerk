@@ -94,7 +94,7 @@ function EventSearchSelect({ events, value, onChange }) {
         value={open ? search : (selected ? `${selected.title}${selected.date ? " — " + fmtDate(selected.date) : ""}` : "")}
         onChange={(e) => { const v = e.target.value; setSearch(v); onChange(""); setOpen(!!v.trim()); }}
         onFocus={(e) => e.target.select()}
-        placeholder="Search outreach event…"
+        placeholder="Search outreach event..."
         className={INP}
         autoComplete="off"
       />
@@ -305,27 +305,27 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LBL}>First Name <span className="text-red-500">*</span></label>
-              <input value={form.firstName} onChange={(e) => { set("firstName", e.target.value); clearTimeout(dupTimer.current); dupTimer.current = setTimeout(() => runDupCheck(form.phone, form.email, e.target.value, form.lastName), 700); }} placeholder="First name" className={INP} />
+              <input value={form.firstName} onChange={(e) => { set("firstName", e.target.value); clearTimeout(dupTimer.current); dupTimer.current = setTimeout(() => runDupCheck(form.phone, form.email, e.target.value, form.lastName), 700); }} placeholder="e.g. Kwame" className={INP} />
             </div>
             <div>
               <label className={LBL}>Last Name</label>
-              <input value={form.lastName} onChange={(e) => set("lastName", e.target.value)} placeholder="Last name" className={INP} />
+              <input value={form.lastName} onChange={(e) => set("lastName", e.target.value)} placeholder="e.g. Mensah" className={INP} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LBL}>Phone</label>
-              <input value={form.phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="e.g. 0244123456" className={INP} />
+              <input value={form.phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="e.g. 0551234567" className={INP} />
             </div>
             <div>
               <label className={LBL}>Alt. Phone</label>
-              <input value={form.alternativePhone} onChange={(e) => set("alternativePhone", e.target.value)} placeholder="Alternative number" className={INP} />
+              <input value={form.alternativePhone} onChange={(e) => set("alternativePhone", e.target.value)} placeholder="e.g. 0551234567" className={INP} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LBL}>Email</label>
-              <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="email@example.com" className={INP} />
+              <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="e.g. name@example.com" className={INP} />
             </div>
             <div>
               <label className={LBL}>Occupation</label>
@@ -440,7 +440,7 @@ export function PersonFormModal({ open, mode, initialData, events, defaultOutrea
 
           <div>
             <label className={LBL}>Notes (optional)</label>
-            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} placeholder="Additional notes about this person…" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
+            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} placeholder="e.g. Interested in joining the youth fellowship" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
 
           {mode === "create" && duplicates && duplicates.length > 0 && step === "form" ? (

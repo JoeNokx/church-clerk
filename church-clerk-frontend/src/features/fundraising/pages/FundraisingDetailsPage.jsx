@@ -313,7 +313,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
             value={contributorName}
             onChange={(e) => setContributorName(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g., John Mensah"
+            placeholder="e.g. John Mensah"
           />
         </div>
 
@@ -345,7 +345,7 @@ function ContributionFormModal({ open, mode, initialData, projectName, disabled,
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Optional"
+            placeholder="e.g. Part payment of pledge"
             maxLength={500}
           />
         </div>
@@ -470,7 +470,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
               value={spentOn}
               onChange={(e) => setSpentOn(e.target.value)}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="e.g., Foundation materials"
+              placeholder="e.g. Foundation materials"
             />
           </div>
           <div>
@@ -528,7 +528,7 @@ function ExpenseFormModal({ open, mode, initialData, projectName, disabled, onCl
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="Optional"
+            placeholder="e.g. Cement and blocks for foundation"
             maxLength={2000}
           />
         </div>

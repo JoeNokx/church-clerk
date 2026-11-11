@@ -148,7 +148,7 @@ function EntityPicker({ entityType, value, onChange, className = "" }) {
           setOpen(!!v.trim());
           if (!v) onChange(null, "");
         }}
-        placeholder={`Search ${entityType}…`}
+        placeholder={`Search ${entityType}...`}
         className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 md:h-12"
         autoComplete="off"
       />
@@ -257,7 +257,7 @@ export function MemberMultiPicker({ selected = [], onChange, className = "" }) {
           setSearch(v);
           setOpen(!!v.trim());
         }}
-        placeholder="Search members to add…"
+        placeholder="Search members to add..."
         className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 md:h-12"
         autoComplete="off"
       />

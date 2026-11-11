@@ -70,7 +70,7 @@ function RejectModal({ open, onClose, onConfirm, loading }) {
         <div className="mb-4 text-sm text-gray-500">Provide a reason for rejection (optional).</div>
         <textarea
           className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 min-h-[80px]"
-          placeholder="Reason..."
+          placeholder="Reason for this decision..."
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />

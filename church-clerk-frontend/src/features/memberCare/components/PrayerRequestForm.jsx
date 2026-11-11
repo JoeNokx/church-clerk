@@ -139,7 +139,7 @@ function PrayerRequestForm({ open, mode, initialData, onClose, onSuccess }) {
                       value={requesterName}
                       onChange={(e) => setRequesterName(e.target.value)}
                       className={inputClass}
-                      placeholder="Or type a name if not a member..."
+                      placeholder="e.g. John Doe"
                     />
                   ) : null}
                 </div>
@@ -153,7 +153,7 @@ function PrayerRequestForm({ open, mode, initialData, onClose, onSuccess }) {
                 onChange={(e) => setRequest(e.target.value)}
                 rows={4}
                 className="mt-2 w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 py-2 text-[14px] text-gray-700 lg:text-sm"
-                placeholder="What should we pray about..."
+                placeholder="e.g. Healing for my mother"
               />
             </div>
 
@@ -181,7 +181,7 @@ function PrayerRequestForm({ open, mode, initialData, onClose, onSuccess }) {
                   onChange={(e) => setAnswerNote(e.target.value)}
                   rows={2}
                   className="mt-2 w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 py-2 text-[14px] text-gray-700 lg:text-sm"
-                  placeholder="How was this prayer answered..."
+                  placeholder="e.g. He got the job he prayed for"
                 />
               </div>
             ) : null}

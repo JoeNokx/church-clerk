@@ -396,7 +396,7 @@ function EntitySelect({ entityModule, entityParams, value, onChange, allLabel })
               onKeyDown={(e) => {
                 if (e.key === "Escape") setOpen(false);
               }}
-              placeholder="Search…"
+              placeholder="Search..."
               className="h-8 w-full rounded-md border border-gray-200 px-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>

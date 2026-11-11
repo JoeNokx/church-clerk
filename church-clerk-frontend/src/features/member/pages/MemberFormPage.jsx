@@ -612,7 +612,7 @@ function MemberFormPageInner() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                    placeholder="e.g. kwame.mensah@example.com"
+                    placeholder="e.g. name@example.com"
                   />
                 </Field>
 
@@ -792,7 +792,7 @@ function MemberFormPageInner() {
                     onChange={(e) => setNote(e.target.value)}
                     className="w-full h-full min-h-[5.5rem] rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                     rows={3}
-                    placeholder="e.g. Any extra information about the member"
+                    placeholder="e.g. Recently joined from Tema branch"
                   />
                 </Field>
               </div>
@@ -1075,7 +1075,7 @@ function MemberFormPageInner() {
                 onChange={(e) => setAddGroupDescription(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                 rows={3}
-                placeholder="e.g. Brief description of the group"
+                placeholder="e.g. Weekly youth fellowship meetings"
               />
             </Field>
           </div>

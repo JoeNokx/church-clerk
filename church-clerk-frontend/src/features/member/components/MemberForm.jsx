@@ -203,7 +203,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                placeholder="e.g. john.doe@email.com (optional)"
+                placeholder="e.g. name@example.com"
               />
             </div>
 
@@ -269,7 +269,7 @@ function MemberForm({ open, mode, initialData, onClose, onSuccess }) {
                 onChange={(e) => setNote(e.target.value)}
                 className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                 rows={3}
-                placeholder="Any extra notes about this member (optional)"
+                placeholder="e.g. Recently joined from Tema branch"
               />
             </div>
           </div>

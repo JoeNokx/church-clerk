@@ -206,7 +206,7 @@ export default function AttendanceCheckInPage() {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="0544455566"
+              placeholder="e.g. 0551234567"
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>

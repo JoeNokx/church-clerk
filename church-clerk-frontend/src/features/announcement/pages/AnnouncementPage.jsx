@@ -694,7 +694,7 @@ function TemplatesTab({ open, onUseTemplate }) {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Template name"
+            placeholder="e.g. Weekly service reminder"
             disabled={loading || !canWrite}
             className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
@@ -702,7 +702,7 @@ function TemplatesTab({ open, onUseTemplate }) {
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Message"
+            placeholder="e.g. Dear {firstName}, service holds this Sunday at 9am."
             disabled={loading || !canWrite}
             className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
           />
@@ -1332,7 +1332,7 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={loading}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60 text-sm"
-                placeholder="Message title"
+                placeholder="e.g. Sunday Service Reminder"
               />
             </div>
 
@@ -1344,7 +1344,7 @@ function EditScheduledMessageModal({ open, onClose, message, onSave, loading }) 
                 disabled={loading}
                 rows={5}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60 text-sm"
-                placeholder="Message content"
+                placeholder="e.g. Dear {firstName}, service holds this Sunday at 9am."
               />
             </div>
 
@@ -2544,7 +2544,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
+            placeholder="e.g. Sunday Service Reminder"
             className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
           />
 
@@ -2552,7 +2552,7 @@ function CommunicationTab({ open, wallet, allowance, onSent, prefill, prefillKey
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Message content"
+              placeholder="e.g. Dear {firstName}, service holds this Sunday at 9am."
               className="min-h-[140px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
             />
             <div className="mt-1 text-gray-500 text-xs">Characters: {messageCharCount}</div>
@@ -3205,7 +3205,7 @@ function AutomationAudiencePicker({ value, onChange }) {
           <input
             value={memberSearch}
             onChange={(e) => setMemberSearch(e.target.value)}
-            placeholder="Search members by name…"
+            placeholder="Search members by name..."
             className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
             autoComplete="off"
           />
@@ -3237,7 +3237,7 @@ function AutomationAudiencePicker({ value, onChange }) {
           <input
             value={visitorSearch}
             onChange={(e) => setVisitorSearch(e.target.value)}
-            placeholder="Search visitors by name…"
+            placeholder="Search visitors by name..."
             className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
             autoComplete="off"
           />

@@ -124,7 +124,7 @@ function BudgetingFilters() {
           type="number"
           value={year}
           onChange={(e) => onFiscalYearChange(e.target.value)}
-          placeholder="Year"
+          placeholder="e.g. 2026"
           min="1900"
           max="2999"
           className="h-10 w-full md:w-[110px] rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-blue-100"

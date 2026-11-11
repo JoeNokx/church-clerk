@@ -174,7 +174,7 @@ function ContributionForm({ project, disabled, onDone, onCancel }) {
               onChange={(e) => setPersonQuery(e.target.value)}
               type="text"
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="Search member or visitor by name, phone, email"
+              placeholder="Search members or visitors by name, phone, or email"
             />
             {String(personQuery || "").trim() ? (
               <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200">
@@ -220,7 +220,7 @@ function ContributionForm({ project, disabled, onDone, onCancel }) {
           value={contributorName}
           onChange={(e) => setContributorName(e.target.value)}
           className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          placeholder="e.g., John Mensah"
+          placeholder="e.g. John Mensah"
         />
       </div>
 
@@ -252,7 +252,7 @@ function ContributionForm({ project, disabled, onDone, onCancel }) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-          placeholder="Optional"
+          placeholder="e.g. Part payment of pledge"
           maxLength={500}
         />
       </div>

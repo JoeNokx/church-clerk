@@ -202,7 +202,7 @@ function BranchMembershipTab() {
                   setSearchValue(e.target.value);
                   debouncedSearch(e.target.value);
                 }}
-                placeholder="Search name, phone or ID..."
+                placeholder="Search by name, phone, or ID..."
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 text-sm"
               />
               <Select value={status} onChange={(e) => onFilterChange(setStatus)(e.target.value)}>

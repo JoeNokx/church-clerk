@@ -110,7 +110,7 @@ export function MemberFollowUpForm({ member, followUp = null, defaultNotes = "",
           </div>
           <div>
             <label className={LBL}>Notes / Outcome</label>
-            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} placeholder="What happened during this follow-up?" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
+            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} placeholder="e.g. Called to check on her — recovering well" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-blue-500 resize-none" />
           </div>
           {formError ? <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{formError}</div> : null}
         </div>

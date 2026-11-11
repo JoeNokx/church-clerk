@@ -150,7 +150,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g., New Church Building"
+            placeholder="e.g. New Church Building"
           />
         </div>
 
@@ -171,7 +171,7 @@ function AddProjectModal({ open, onClose, onSuccess, disabled }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
-            placeholder="Fundraising details"
+            placeholder="e.g. Raise funds for the new auditorium roof"
           />
         </div>
 
@@ -673,7 +673,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g., New Church Building"
+            placeholder="e.g. New Church Building"
           />
         </div>
 
@@ -694,7 +694,7 @@ function EditProjectModal({ open, onClose, onSuccess, initialData }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
-            placeholder="Fundraising details"
+            placeholder="e.g. Raise funds for the new auditorium roof"
           />
         </div>
 

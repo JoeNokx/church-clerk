@@ -405,7 +405,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                 value={searchQuery}
                 onChange={onSearchChange}
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder="Search by name or phone number"
+                placeholder="Search by name or phone"
               />
               {searchLoading ? (
                 <div className="mt-2 text-gray-500 text-xs">Searching…</div>
@@ -527,7 +527,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={!!lockedFields.email}
                 className={`mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 md:h-12 text-sm ${lockedFields.email ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white text-gray-700"}`}
-                placeholder=""
+                placeholder="e.g. name@example.com"
               />
             </div>
 
@@ -538,7 +538,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                 onChange={(e) => setLocation(e.target.value)}
                 disabled={!!lockedFields.location}
                 className={`mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 md:h-12 text-sm ${lockedFields.location ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white text-gray-700"}`}
-                placeholder=""
+                placeholder="e.g. Accra"
               />
             </div>
 
@@ -548,7 +548,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                 value={invitedBy}
                 onChange={(e) => setInvitedBy(e.target.value)}
                 className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                placeholder=""
+                placeholder="e.g. John Doe"
               />
             </div>
 
@@ -581,6 +581,7 @@ function VisitorForm({ open, mode, initialData, session, onClose, onSuccess }) {
                 onChange={(e) => setNote(e.target.value)}
                 className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700 text-sm"
                 rows={3}
+                placeholder="e.g. Enjoyed the service"
               />
             </div>
           </div>

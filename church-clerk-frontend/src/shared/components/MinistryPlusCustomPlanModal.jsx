@@ -96,7 +96,7 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
-              placeholder="you@example.com"
+              placeholder="e.g. name@example.com"
               className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
             />
           </div>
@@ -119,7 +119,7 @@ export default function MinistryPlusCustomPlanModal({ open, onClose, defaultEmai
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
-            placeholder="Describe the features, workflows, and integrations you need..."
+            placeholder="e.g. Payroll and volunteer scheduling for 3 branches"
             className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm"
           />
         </div>

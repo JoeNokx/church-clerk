@@ -1460,7 +1460,7 @@ function OrganisationDetailsPage() {
                       value={addMemberValue}
                       onChange={(e) => setAddMemberValue(e.target.value)}
                       className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                      placeholder="Search by name, email, or phone"
+                      placeholder="Search by name, phone, or email"
                     />
                     {String(addMemberValue || "").trim() ? (
                       <div className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
@@ -1526,7 +1526,7 @@ function OrganisationDetailsPage() {
                     value={addMemberRole}
                     onChange={(e) => setAddMemberRole(e.target.value)}
                     className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-                    placeholder="e.g. leader"
+                    placeholder="e.g. Chairman"
                   />
                 </div>
                 <div>
@@ -1635,7 +1635,7 @@ function OrganisationDetailsPage() {
               value={roleModalValue}
               onChange={(e) => setRoleModalValue(e.target.value)}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="e.g. leader"
+              placeholder="e.g. Chairman"
             />
           </div>
 
@@ -2645,7 +2645,7 @@ function OrganisationDetailsPage() {
                         onChange={(e) => setOfferingAmount(e.target.value)}
                         type="number"
                         className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                        placeholder="0"
+                        placeholder="0.00"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -2655,7 +2655,7 @@ function OrganisationDetailsPage() {
                         onChange={(e) => setOfferingNote(e.target.value.slice(0, 500))}
                         maxLength={500}
                         className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                        placeholder="e.g. Extra details about this record (max 500 chars)"
+                        placeholder="e.g. Snacks for the youth meeting"
                       />
                       <div className="mt-1 text-right text-gray-400 text-xs">{offeringNote.length}/500 chars</div>
                     </div>
@@ -2890,7 +2890,7 @@ function OrganisationDetailsPage() {
                             value={contributionMemberQuery}
                             onChange={(e) => setContributionMemberQuery(e.target.value)}
                             className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                            placeholder="Search by name, email, or phone"
+                            placeholder="Search by name, phone, or email"
                           />
                           {String(contributionMemberQuery || "").trim() ? (
                             <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-gray-200">
@@ -2942,7 +2942,7 @@ function OrganisationDetailsPage() {
                         onChange={(e) => setContributionAmount(e.target.value)}
                         type="number"
                         className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                        placeholder="0"
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -2963,7 +2963,7 @@ function OrganisationDetailsPage() {
                         onChange={(e) => setContributionNote(e.target.value.slice(0, 500))}
                         maxLength={500}
                         className="mt-2 h-[44px] w-full rounded-[10px] md:rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-700 md:h-12 lg:h-11 lg:text-sm"
-                        placeholder="e.g. Monthly dues (max 500 chars)"
+                        placeholder="e.g. Monthly dues of GHS 20"
                       />
                       <div className="mt-1 text-right text-gray-400 text-xs">{contributionNote.length}/500 chars</div>
                     </div>

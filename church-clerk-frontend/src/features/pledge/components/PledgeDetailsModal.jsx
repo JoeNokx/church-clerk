@@ -189,7 +189,7 @@ export function PaymentFormModal({ open, mode, initialData, onClose, onSubmit })
               value={note}
               onChange={(e) => setNote(e.target.value)}
               className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-              placeholder="Optional"
+              placeholder="e.g. Part payment"
             />
           </div>
         </div>

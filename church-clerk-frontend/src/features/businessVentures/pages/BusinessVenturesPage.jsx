@@ -126,7 +126,7 @@ function ManagerMemberSearch({ selected, onSelect }) {
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => { if (results.length) setOpen(true); }}
         className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-        placeholder="Search members by name, phone or email"
+        placeholder="Search members by name, phone, or email"
       />
       {open ? (
         <div className="absolute left-0 right-0 z-20 mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -234,7 +234,7 @@ function AddBusinessModal({ open, onClose, onSuccess }) {
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g., Bookshop"
+            placeholder="e.g. Bookshop"
           />
         </div>
 
@@ -399,7 +399,7 @@ function EditBusinessModal({ open, initialData, onClose, onSuccess }) {
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             className="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-gray-700 md:h-12 text-sm"
-            placeholder="e.g., Bookshop"
+            placeholder="e.g. Bookshop"
           />
         </div>
 
